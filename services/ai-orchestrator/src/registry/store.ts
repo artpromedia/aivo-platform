@@ -38,7 +38,7 @@ interface AgentConfigRow {
 function normalizeInput(input: AgentConfigInput): AgentConfigInput {
   return {
     ...input,
-    hyperparameters: input.hyperparameters,
+    hyperparameters: input.hyperparameters ?? {},
     rolloutPercentage: input.rolloutPercentage ?? DEFAULT_ROLLOUT,
     isActive: input.isActive ?? true,
   };
@@ -162,7 +162,9 @@ export class PgAgentConfigStore implements AgentConfigStore {
       [id]
     );
     if (res.rowCount === 0) return null;
-    return rowToConfig(res.rows[0]);
+    const row = res.rows[0];
+    if (!row) return null;
+    return rowToConfig(row);
   }
 
   async create(input: AgentConfigInput): Promise<AgentConfig> {
@@ -185,7 +187,11 @@ export class PgAgentConfigStore implements AgentConfigStore {
         normalized.isActive ?? true,
       ]
     );
-    return rowToConfig(res.rows[0]);
+    const row = res.rows[0];
+    if (!row) {
+      throw new Error('Failed to insert agent config');
+    }
+    return rowToConfig(row);
   }
 
   async update(id: string, patch: AgentConfigPatch): Promise<AgentConfig | null> {
@@ -221,7 +227,9 @@ export class PgAgentConfigStore implements AgentConfigStore {
       values
     );
     if (res.rowCount === 0) return null;
-    return rowToConfig(res.rows[0]);
+    const row = res.rows[0];
+    if (!row) return null;
+    return rowToConfig(row);
   }
 
   async dispose(): Promise<void> {
