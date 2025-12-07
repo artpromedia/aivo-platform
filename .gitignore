@@ -14,6 +14,7 @@ coverage
 .vscode
 *.log
 *.tmp
+*.tsbuildinfo
 .mypy_cache
 .pyc
 __pycache__
