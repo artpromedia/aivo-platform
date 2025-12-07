@@ -1,6 +1,7 @@
 import { Role } from '@aivo/ts-rbac';
-import { importSPKI, jwtVerify, type JWTPayload, type KeyLike } from 'jose';
+import { importSPKI, jwtVerify, type KeyLike } from 'jose';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import type { NextResponse } from 'next/server';
 
 const ACCESS_COOKIE = 'aivo_access_token';
@@ -51,6 +52,14 @@ export async function getAuthSession(): Promise<AuthSession | null> {
   } catch (err) {
     return null;
   }
+}
+
+export async function requireAuth(): Promise<AuthSession> {
+  const session = await getAuthSession();
+  if (!session) {
+    redirect('/login');
+  }
+  return session;
 }
 
 type CookieResponse = Pick<NextResponse, 'cookies'>;

@@ -7,12 +7,14 @@
     "noEmit": true,
     "moduleResolution": "Bundler",
     "module": "esnext",
+    "baseUrl": ".",
+    "paths": {},
     "plugins": [
       {
         "name": "next"
       }
     ]
   },
-  "include": ["app/**/*", "components/**/*", "next-env.d.ts", ".next/types/**/*.ts"],
+  "include": ["app/**/*", "components/**/*", "lib/**/*", "next-env.d.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules", ".next", "dist", "build"]
 }

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma';
+import { prisma } from '../prisma.js';
 
 export async function registerResolveRoutes(app: FastifyInstance) {
   app.get('/tenant/resolve', async (request, reply) => {

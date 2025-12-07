@@ -28,7 +28,7 @@ export function LoginForm() {
       }
       router.push('/tenants');
       router.refresh();
-    } catch (_err) {
+    } catch {
       setError('Unexpected error. Please try again.');
       setLoading(false);
     }

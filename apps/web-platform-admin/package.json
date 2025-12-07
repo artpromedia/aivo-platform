@@ -12,13 +12,13 @@
   "dependencies": {
     "@aivo/ts-rbac": "workspace:*",
     "jose": "^5.9.2",
-    "next": "15.0.3",
-    "react": "19.0.0-rc.1",
-    "react-dom": "19.0.0-rc.1"
+    "next": "14.2.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
-    "@types/react": "^19.2.7",
+    "@types/react": "^18.3.12",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",

@@ -18,7 +18,8 @@ export default [
       "**/coverage/**",
       "**/tailwind.config.ts",
       "**/vitest.config.ts",
-      "**/*.test.ts"
+      "**/*.test.ts",
+      "**/*.config.mjs"
     ]
   },
   ...tseslint.configs.strictTypeChecked,

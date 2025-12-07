@@ -33,7 +33,7 @@ export interface TokenPayload {
 export async function verifyJwt(token: string): Promise<TokenPayload> {
   const publicKey = await getPublicKey();
   const { payload } = await jwtVerify(token, publicKey);
-  return payload as TokenPayload;
+  return payload as unknown as TokenPayload;
 }
 
 export function getPublicKeyPem(): string {

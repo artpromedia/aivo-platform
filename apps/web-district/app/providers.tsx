@@ -3,7 +3,7 @@
 import type { Role } from '@aivo/ts-rbac';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -35,11 +35,11 @@ export function AuthProvider({
   const router = useRouter();
   const [state] = useState<AuthState>(initialAuth);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
     router.refresh();
-  };
+  }, [router]);
 
   const value = useMemo(() => ({ ...state, logout }), [state, logout]);
 
