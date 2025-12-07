@@ -1,0 +1,27 @@
+{
+  "name": "@aivo/web-platform-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "lint": "eslint .",
+    "test": "node -e \"console.log('web-platform-admin: add tests soon')\"",
+    "build": "next build"
+  },
+  "dependencies": {
+    "@aivo/ts-rbac": "workspace:*",
+    "jose": "^5.9.2",
+    "next": "15.0.3",
+    "react": "19.0.0-rc.1",
+    "react-dom": "19.0.0-rc.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/react": "^19.2.7",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
+  }
+}

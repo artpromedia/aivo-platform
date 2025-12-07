@@ -1,0 +1,12 @@
+{
+  "name": "@aivo/assessment-svc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"start assessment-svc dev server\"",
+    "lint": "echo \"lint assessment-svc\"",
+    "test": "echo \"test assessment-svc\"",
+    "build": "echo \"build assessment-svc\""
+  }
+}

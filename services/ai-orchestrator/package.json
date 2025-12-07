@@ -1,0 +1,12 @@
+{
+  "name": "@aivo/ai-orchestrator",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"start ai-orchestrator dev server\"",
+    "lint": "echo \"lint ai-orchestrator\"",
+    "test": "echo \"test ai-orchestrator\"",
+    "build": "echo \"build ai-orchestrator\""
+  }
+}

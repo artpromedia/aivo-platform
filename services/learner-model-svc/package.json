@@ -1,0 +1,12 @@
+{
+  "name": "@aivo/learner-model-svc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"start learner-model-svc dev server\"",
+    "lint": "echo \"lint learner-model-svc\"",
+    "test": "echo \"test learner-model-svc\"",
+    "build": "echo \"build learner-model-svc\""
+  }
+}

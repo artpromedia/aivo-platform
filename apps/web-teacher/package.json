@@ -1,0 +1,12 @@
+{
+  "name": "@aivo/web-teacher",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"start web-teacher dev server\"",
+    "lint": "echo \"lint web-teacher\"",
+    "test": "echo \"test web-teacher\"",
+    "build": "echo \"build web-teacher\""
+  }
+}

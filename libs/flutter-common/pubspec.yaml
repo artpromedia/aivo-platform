@@ -1,0 +1,14 @@
+name: flutter_common
+version: 0.0.0
+publish_to: "none"
+description: Shared Flutter models/themes. Placeholder scaffolding.
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

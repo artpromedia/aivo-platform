@@ -1,0 +1,5 @@
+[project]
+name = "aivo-py-common"
+version = "0.0.0"
+description = "Shared Python utilities for AI/ML. Placeholder scaffolding."
+requires-python = ">=3.11"

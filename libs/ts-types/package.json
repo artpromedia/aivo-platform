@@ -1,0 +1,11 @@
+{
+  "name": "@aivo/ts-types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo \"lint ts-types\"",
+    "test": "echo \"test ts-types\"",
+    "build": "echo \"build ts-types\""
+  }
+}

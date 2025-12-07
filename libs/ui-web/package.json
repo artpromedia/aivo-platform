@@ -1,0 +1,11 @@
+{
+  "name": "@aivo/ui-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo \"lint ui-web\"",
+    "test": "echo \"test ui-web\"",
+    "build": "echo \"build ui-web\""
+  }
+}
