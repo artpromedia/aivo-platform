@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 
 import { useAuth } from '../app/providers';
 
+import { AccessibilityControls } from './accessibility-controls';
+
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/schools', label: 'Schools' },
@@ -17,7 +19,7 @@ export function Nav() {
 
   return (
     <header className="border-b border-border bg-surface/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <div className="text-lg font-semibold">Aivo District Admin</div>
         <nav className="flex items-center gap-4 text-sm font-medium">
           {links.map((link) => {
@@ -54,8 +56,11 @@ export function Nav() {
             </button>
           )}
         </nav>
-        <div className="text-xs text-muted">
-          {isAuthenticated ? `Signed in as ${userName ?? 'user'}` : 'Guest'}
+        <div className="flex flex-col items-end gap-2">
+          <AccessibilityControls />
+          <div className="text-xs text-muted">
+            {isAuthenticated ? `Signed in as ${userName ?? 'user'}` : 'Guest'}
+          </div>
         </div>
       </div>
     </header>

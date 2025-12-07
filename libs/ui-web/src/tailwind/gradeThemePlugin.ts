@@ -23,6 +23,12 @@ const colorEntries = [
 
 const fontSizeKeys = ['display', 'headline', 'title', 'body', 'label', 'caption'] as const;
 
+interface ThemeOptions {
+  highContrast?: boolean;
+  dyslexia?: boolean;
+  reducedMotion?: boolean;
+}
+
 function kebab(input: string): string {
   return input.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
@@ -50,23 +56,26 @@ function colorToRgbChannels(value: string): string {
   return value;
 }
 
-function buildThemeVariables(grade: GradeBand): Record<string, string> {
+function buildThemeVariables(grade: GradeBand, options: ThemeOptions = {}): Record<string, string> {
   const theme = tokens.gradeThemes[grade];
   if (!theme) {
     throw new Error(`Unknown grade theme: ${grade}`);
   }
   const vars: Record<string, string> = {};
 
+  const colorSource =
+    options.highContrast && theme.colorHighContrast ? theme.colorHighContrast : theme.color;
+
   for (const entry of colorEntries) {
-    const color = theme.color[entry.token];
+    const color = colorSource[entry.token];
     if (color) {
       vars[`--color-${entry.name}`] = colorToRgbChannels(color);
     }
   }
 
   // backdrop keeps alpha as-is for overlays
-  if (theme.color.backdrop) {
-    vars['--color-backdrop'] = theme.color.backdrop;
+  if (colorSource.backdrop) {
+    vars['--color-backdrop'] = colorSource.backdrop;
   }
 
   for (const size of fontSizeKeys) {
@@ -84,7 +93,7 @@ function buildThemeVariables(grade: GradeBand): Record<string, string> {
     family.map((name) => (name.includes(' ') ? `"${name}"` : name)).join(', ');
   const defaultFamily = formatFamily(tokens.base.font.family.default);
   const dyslexiaFamily = formatFamily(tokens.base.font.family.dyslexia_friendly);
-  vars['--font-family-default'] = defaultFamily;
+  vars['--font-family-default'] = options.dyslexia ? dyslexiaFamily : defaultFamily;
   vars['--font-family-dyslexia'] = dyslexiaFamily;
 
   for (const [name, radius] of Object.entries(tokens.base.radius)) {
@@ -100,7 +109,10 @@ function buildThemeVariables(grade: GradeBand): Record<string, string> {
       `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread}px ${shadow.color}`;
   }
 
-  for (const [durationName, duration] of Object.entries(tokens.base.motion.duration)) {
+  const motionDurations = options.reducedMotion
+    ? tokens.base.motion.durationReduced
+    : tokens.base.motion.duration;
+  for (const [durationName, duration] of Object.entries(motionDurations)) {
     vars[`--motion-duration-${kebab(durationName)}`] = `${duration}ms`;
   }
   for (const [durationName, duration] of Object.entries(tokens.base.motion.durationReduced)) {
@@ -139,12 +151,29 @@ function gradeThemeBase(defaultGrade: GradeBand) {
 
   for (const grade of Object.keys(tokens.gradeThemes)) {
     base[`[data-grade-theme="${grade}"]`] = buildThemeVariables(grade);
+    base[`[data-grade-theme="${grade}"][data-a11y-high-contrast="true"]`] = buildThemeVariables(
+      grade,
+      { highContrast: true }
+    );
   }
+
+  base['[data-a11y-dyslexia="true"]'] = {
+    '--font-family-default': 'var(--font-family-dyslexia)',
+  };
+
+  const reducedMotionVars = buildThemeVariables(defaultGrade, { reducedMotion: true });
+  const reducedMotionOverrides: Record<string, string> = Object.fromEntries(
+    Object.entries(reducedMotionVars).filter(
+      ([key]) => key.startsWith('--motion-duration') || key.startsWith('--motion-easing')
+    )
+  );
+  base['[data-a11y-reduced-motion="true"]'] = reducedMotionOverrides;
+
   return base;
 }
 
 export function createGradeThemePlugin(defaultGrade: GradeBand = 'G6_8') {
-  const colorTheme = Object.fromEntries(
+  const colorTheme: Record<string, string> = Object.fromEntries(
     colorEntries.map((entry) => [entry.name, `rgb(var(--color-${entry.name}) / <alpha-value>)`])
   );
 

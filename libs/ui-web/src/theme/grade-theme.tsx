@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { gradeBandLabels, gradeBands, type GradeBand } from './tokens';
+import { gradeBandLabels, gradeBands, type GradeBand } from './tokens.js';
 
 interface GradeThemeContextValue {
   grade: GradeBand;
@@ -14,7 +14,13 @@ interface GradeThemeContextValue {
 
 const GradeThemeContext = createContext<GradeThemeContextValue | null>(null);
 
-export function GradeThemeProvider({ children, initialGrade = 'G6_8' }: { children: ReactNode; initialGrade?: GradeBand }) {
+export function GradeThemeProvider({
+  children,
+  initialGrade = 'G6_8',
+}: {
+  children: ReactNode;
+  initialGrade?: GradeBand;
+}) {
   const [grade, setGrade] = useState<GradeBand>(initialGrade);
 
   useEffect(() => {

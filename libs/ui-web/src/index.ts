@@ -1,5 +1,6 @@
 export { createGradeThemePlugin } from './tailwind/gradeThemePlugin';
 export { GradeThemeProvider, useGradeTheme } from './theme/grade-theme';
+export { AccessibilityProvider, useAccessibility } from './theme/accessibility';
 export type { GradeBand } from './theme/tokens';
 
 export { Button } from './components/button';
