@@ -145,6 +145,25 @@ importers:
 
   apps/web-teacher: {}
 
+  libs/ts-data-access:
+    dependencies:
+      '@aivo/ts-rbac':
+        specifier: workspace:*
+        version: link:../ts-rbac
+    devDependencies:
+      '@types/node':
+        specifier: ^22.7.5
+        version: 22.19.1
+      eslint:
+        specifier: ^9.12.0
+        version: 9.39.1(jiti@2.6.1)
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.4
+        version: 2.1.9(@types/node@22.19.1)
+
   libs/ts-rbac:
     dependencies:
       express:

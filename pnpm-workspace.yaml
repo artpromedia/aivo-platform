@@ -3,3 +3,4 @@ packages:
   - "services/*"
   - "libs/ts-*"
   - "libs/ui-web"
+  - "libs/ts-data-access"
