@@ -1,12 +1,27 @@
 {
   "name": "@aivo/ai-orchestrator",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo \"start ai-orchestrator dev server\"",
-    "lint": "echo \"lint ai-orchestrator\"",
-    "test": "echo \"test ai-orchestrator\"",
-    "build": "echo \"build ai-orchestrator\""
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "seed:agent-configs": "tsx scripts/seedAgentConfigs.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "pg": "^8.13.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/pg": "^8.11.6",
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.1",
+    "vitest": "^2.1.4"
   }
 }
