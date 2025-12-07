@@ -1,0 +1,52 @@
+[
+  {
+    "id": "base-1",
+    "grade": "3",
+    "domain": "Math",
+    "promptContext": "Create a word problem involving addition and subtraction within 100.",
+    "expectedProperties": {
+      "mustInclude": ["addition", "subtraction"],
+      "maxWords": 60
+    }
+  },
+  {
+    "id": "base-2",
+    "grade": "4",
+    "domain": "ELA",
+    "promptContext": "Generate a reading comprehension question about a short fable.",
+    "expectedProperties": {
+      "mustInclude": ["question"],
+      "maxWords": 50
+    }
+  },
+  {
+    "id": "base-3",
+    "grade": "5",
+    "domain": "Math",
+    "promptContext": "Create a fraction comparison question.",
+    "expectedProperties": {
+      "mustInclude": ["fraction"],
+      "maxWords": 60
+    }
+  },
+  {
+    "id": "base-4",
+    "grade": "6",
+    "domain": "Math",
+    "promptContext": "Generate a ratio word problem.",
+    "expectedProperties": {
+      "mustInclude": ["ratio"],
+      "maxWords": 70
+    }
+  },
+  {
+    "id": "base-5",
+    "grade": "4",
+    "domain": "ELA",
+    "promptContext": "Produce a vocabulary question that asks for a synonym of 'brave'.",
+    "expectedProperties": {
+      "mustInclude": ["synonym", "brave"],
+      "maxWords": 50
+    }
+  }
+]

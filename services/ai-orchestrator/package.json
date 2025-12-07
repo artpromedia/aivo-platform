@@ -9,7 +9,9 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "seed:agent-configs": "tsx scripts/seedAgentConfigs.ts"
+    "seed:agent-configs": "tsx scripts/seedAgentConfigs.ts",
+    "eval:baseline": "tsx eval/run_evals.ts baseline",
+    "eval:tutor": "tsx eval/run_evals.ts tutor"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

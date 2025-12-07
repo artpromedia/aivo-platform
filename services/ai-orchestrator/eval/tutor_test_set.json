@@ -1,0 +1,57 @@
+[
+  {
+    "id": "tutor-1",
+    "subject": "Math",
+    "problem": "Solve 23 + 18 without regrouping explicitly.",
+    "targetDifficulty": "easy",
+    "expectedProperties": {
+      "mustInclude": ["hint", "strategy"],
+      "mustNotInclude": ["41"],
+      "maxWords": 120
+    }
+  },
+  {
+    "id": "tutor-2",
+    "subject": "Math",
+    "problem": "Explain how to subtract 503 - 198 using regrouping.",
+    "targetDifficulty": "medium",
+    "expectedProperties": {
+      "mustInclude": ["regroup", "borrow"],
+      "mustNotInclude": ["305"],
+      "maxWords": 140
+    }
+  },
+  {
+    "id": "tutor-3",
+    "subject": "ELA",
+    "problem": "Give a hint for identifying the main idea of a paragraph.",
+    "targetDifficulty": "easy",
+    "expectedProperties": {
+      "mustInclude": ["main idea", "look for"],
+      "mustNotInclude": ["The main idea is"],
+      "maxWords": 120
+    }
+  },
+  {
+    "id": "tutor-4",
+    "subject": "Math",
+    "problem": "Provide a hint for solving 3/4 + 1/8.",
+    "targetDifficulty": "medium",
+    "expectedProperties": {
+      "mustInclude": ["common denominator", "eighths"],
+      "mustNotInclude": ["7/8"],
+      "maxWords": 130
+    }
+  },
+  {
+    "id": "tutor-5",
+    "subject": "ELA",
+    "problem": "Offer a hint to understand a metaphor in a poem.",
+    "targetDifficulty": "medium",
+    "expectedProperties": {
+      "mustInclude": ["metaphor", "compare"],
+      "mustNotInclude": ["means"],
+      "maxWords": 130
+    }
+  }
+]

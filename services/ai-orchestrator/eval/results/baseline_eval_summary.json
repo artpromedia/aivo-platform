@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2025-12-07T11:52:41.128Z",
+  "orchestrator": "http://localhost:4010/internal",
+  "suites": [
+    {
+      "agentType": "BASELINE",
+      "versionLabel": "active",
+      "results": [
+        {
+          "id": "base-1",
+          "pass": true,
+          "reasons": [],
+          "safetyStatus": "OK",
+          "tokensUsed": 14,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:4a820b50] You are BASELINE. Payload: {\"grade\":\"3\",\"domain\":\"Math\",\"promptContext\":\"Create a word problem "
+        },
+        {
+          "id": "base-2",
+          "pass": true,
+          "reasons": [],
+          "safetyStatus": "OK",
+          "tokensUsed": 13,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:e5c3b304] You are BASELINE. Payload: {\"grade\":\"4\",\"domain\":\"ELA\",\"promptContext\":\"Generate a reading comp"
+        },
+        {
+          "id": "base-3",
+          "pass": true,
+          "reasons": [],
+          "safetyStatus": "OK",
+          "tokensUsed": 9,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:f3c04142] You are BASELINE. Payload: {\"grade\":\"5\",\"domain\":\"Math\",\"promptContext\":\"Create a fraction comp"
+        },
+        {
+          "id": "base-4",
+          "pass": true,
+          "reasons": [],
+          "safetyStatus": "OK",
+          "tokensUsed": 9,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:3666045c] You are BASELINE. Payload: {\"grade\":\"6\",\"domain\":\"Math\",\"promptContext\":\"Generate a ratio word "
+        },
+        {
+          "id": "base-5",
+          "pass": true,
+          "reasons": [],
+          "safetyStatus": "OK",
+          "tokensUsed": 15,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:304211bc] You are BASELINE. Payload: {\"grade\":\"4\",\"domain\":\"ELA\",\"promptContext\":\"Produce a vocabulary qu"
+        }
+      ],
+      "summary": {
+        "total": 5,
+        "passed": 5,
+        "passRate": 100,
+        "safetyViolations": 0,
+        "avgTokens": 12
+      }
+    }
+  ],
+  "versions": {}
+}

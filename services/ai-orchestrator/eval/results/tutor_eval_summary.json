@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2025-12-07T11:56:23.532Z",
+  "orchestrator": "http://localhost:4010/internal",
+  "suites": [
+    {
+      "agentType": "TUTOR",
+      "versionLabel": "active",
+      "results": [
+        {
+          "id": "tutor-1",
+          "pass": false,
+          "reasons": ["should not include: 41"],
+          "safetyStatus": "OK",
+          "tokensUsed": 11,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:dc69c320] You are TUTOR. Payload: {\"subject\":\"Math\",\"problem\":\"Solve 23 + 18 without regrouping explicitl"
+        },
+        {
+          "id": "tutor-2",
+          "pass": false,
+          "reasons": ["should not include: 305"],
+          "safetyStatus": "OK",
+          "tokensUsed": 13,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:45ada672] You are TUTOR. Payload: {\"subject\":\"Math\",\"problem\":\"Explain how to subtract 503 - 198 using re"
+        },
+        {
+          "id": "tutor-3",
+          "pass": false,
+          "reasons": ["should not include: The main idea is"],
+          "safetyStatus": "OK",
+          "tokensUsed": 20,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:8c0f55dc] You are TUTOR. Payload: {\"subject\":\"ELA\",\"problem\":\"Give a hint for identifying the main idea o"
+        },
+        {
+          "id": "tutor-4",
+          "pass": false,
+          "reasons": ["should not include: 7/8"],
+          "safetyStatus": "OK",
+          "tokensUsed": 13,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:6ce5a585] You are TUTOR. Payload: {\"subject\":\"Math\",\"problem\":\"Provide a hint for solving 3/4 + 1/8.\",\"ta"
+        },
+        {
+          "id": "tutor-5",
+          "pass": false,
+          "reasons": ["should not include: means"],
+          "safetyStatus": "OK",
+          "tokensUsed": 14,
+          "configVersion": "v1",
+          "contentPreview": "[mock-response:c591c151] You are TUTOR. Payload: {\"subject\":\"ELA\",\"problem\":\"Offer a hint to understand a metaphor in a "
+        }
+      ],
+      "summary": {
+        "total": 5,
+        "passed": 0,
+        "passRate": 0,
+        "safetyViolations": 0,
+        "avgTokens": 14.2
+      }
+    }
+  ],
+  "versions": {}
+}
