@@ -90,18 +90,41 @@ function selectConfigForKey(configs: AgentConfig[], key: string): AgentConfig {
   if (!configs.length) {
     throw new Error('No configs provided');
   }
-  const sorted = [...configs].sort((a, b) => {
+  const activeConfigs = configs.filter((c) => c.isActive);
+  if (!activeConfigs.length) {
+    throw new Error('No active configuration found');
+  }
+
+  const sorted = [...activeConfigs].sort((a, b) => {
     if (b.rolloutPercentage !== a.rolloutPercentage) {
       return b.rolloutPercentage - a.rolloutPercentage;
     }
     return b.updatedAt.getTime() - a.updatedAt.getTime();
   });
+
+  const total = sorted.reduce((acc, c) => acc + c.rolloutPercentage, 0);
+  const normalizedTotal = total > 0 ? total : 0;
   const bucket = hashToBucket(key);
-  let cumulative = 0;
-  for (const config of sorted) {
-    cumulative += config.rolloutPercentage;
-    if (bucket < cumulative) return config;
+
+  // Normalize if over 100 to keep deterministic weighting
+  const weights = sorted.map((c) => c.rolloutPercentage);
+  let scale = 1;
+  if (normalizedTotal > 100) {
+    scale = 100 / normalizedTotal;
+    console.warn(`Rollout percentages exceed 100 (total=${normalizedTotal}). Normalizing.`);
   }
+
+  let cumulative = 0;
+  for (let i = 0; i < sorted.length; i += 1) {
+    const weight = weights[i] * scale;
+    cumulative += weight;
+    const candidate = sorted[i];
+    if (candidate && bucket < cumulative) {
+      return candidate;
+    }
+  }
+
+  // If total < 100 and bucket falls outside, fallback to first
   const fallback = sorted[0];
   if (!fallback) {
     throw new Error('No configs provided');

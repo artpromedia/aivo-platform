@@ -30,16 +30,16 @@ type AgentType = 'BASELINE' | 'TUTOR';
 type TestCase = BaselineTestCase | TutorTestCase;
 
 interface AgentVersions {
-  current?: string;
-  candidate?: string;
+  current?: string | undefined;
+  candidate?: string | undefined;
 }
 
 interface CallResult {
   content: string;
   tokensUsed: number;
   safetyStatus: string;
-  safetyReason?: string;
-  metadata?: Record<string, unknown>;
+  safetyReason?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 interface CaseResult {
@@ -47,9 +47,9 @@ interface CaseResult {
   pass: boolean;
   reasons: string[];
   safetyStatus: string;
-  safetyReason?: string;
+  safetyReason?: string | undefined;
   tokensUsed: number;
-  configVersion?: string;
+  configVersion?: string | undefined;
   contentPreview: string;
 }
 

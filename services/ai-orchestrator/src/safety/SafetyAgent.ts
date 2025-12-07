@@ -2,15 +2,15 @@ export type SafetyStatus = 'OK' | 'BLOCKED' | 'NEEDS_REVIEW';
 
 export interface SafetyResult {
   status: SafetyStatus;
-  reason?: string;
-  transformedContent?: string;
+  reason?: string | undefined;
+  transformedContent?: string | undefined;
 }
 
 export interface SafetyContext {
   tenantId: string;
   agentType: string;
-  userRole?: string;
-  learnerId?: string;
+  userRole?: string | undefined;
+  learnerId?: string | undefined;
 }
 
 interface RawResponse {

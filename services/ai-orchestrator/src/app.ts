@@ -6,10 +6,13 @@ import { config } from './config.js';
 import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js';
 import type { AgentConfigStore } from './registry/store.js';
 import { registerInternalRoutes } from './routes/internal.js';
+import { createTelemetryStore } from './telemetry/index.js';
+import type { TelemetryStore } from './telemetry/index.js';
 
 export interface AppOptions {
   registry?: AgentConfigRegistry;
   store?: AgentConfigStore;
+  telemetryStore?: TelemetryStore;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -19,6 +22,7 @@ export function createApp(options: AppOptions = {}) {
   const registry =
     options.registry ??
     new AgentConfigRegistry(store, { cacheTtlMs: config.agentConfigCacheTtlMs });
+  const telemetryStore = options.telemetryStore ?? createTelemetryStore(config.databaseUrl);
 
   app.addHook('onRequest', async (request, reply) => {
     const incoming = request.headers['x-correlation-id'];
@@ -28,7 +32,7 @@ export function createApp(options: AppOptions = {}) {
     reply.header('x-correlation-id', correlationId);
   });
 
-  app.register(registerInternalRoutes, { prefix: '/internal', registry, store });
+  app.register(registerInternalRoutes, { prefix: '/internal', registry, store, telemetryStore });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
@@ -38,10 +42,14 @@ export function createApp(options: AppOptions = {}) {
   app.decorate('config', config);
   app.decorate('registry', registry);
   app.decorate('agentConfigStore', store);
+  app.decorate('telemetryStore', telemetryStore);
 
   app.addHook('onClose', async () => {
     if (typeof store.dispose === 'function') {
       await store.dispose();
+    }
+    if (typeof telemetryStore.dispose === 'function') {
+      await telemetryStore.dispose();
     }
   });
 

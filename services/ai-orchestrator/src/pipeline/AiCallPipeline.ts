@@ -1,14 +1,18 @@
+import { randomUUID } from 'node:crypto';
+
 import { getProvider } from '../providers/index.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import { evaluateSafety, type SafetyResult, type SafetyStatus } from '../safety/SafetyAgent.js';
+import { estimateCostUsd } from '../telemetry/cost.js';
+import type { TelemetryStore } from '../telemetry/index.js';
 import type { AgentType } from '../types/agentConfig.js';
 
 export interface AiCallContext {
   tenantId: string;
   agentType: AgentType;
-  userRole?: string;
-  learnerId?: string;
-  metadata?: Record<string, unknown>;
+  userRole?: string | undefined;
+  learnerId?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 export interface AiCallInput {
@@ -21,18 +25,23 @@ export interface AiCallOutput {
   content: string;
   tokensUsed: number;
   safetyStatus: SafetyStatus;
-  safetyReason?: string;
-  error?: string;
-  metadata?: Record<string, unknown>;
+  safetyReason?: string | undefined;
+  error?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 // Unified AI call pipeline. Future extensions: support message arrays, tool calls, and streaming.
 export async function runAiCall(
   registry: AgentConfigRegistry,
   context: AiCallContext,
-  input: AiCallInput
+  input: AiCallInput,
+  telemetryStore?: TelemetryStore
 ): Promise<AiCallOutput> {
-  const config = await registry.getActiveConfig(context.agentType);
+  const requestId =
+    (context.metadata as { correlationId?: string } | undefined)?.correlationId ?? randomUUID();
+  const startedAt = new Date();
+  const rolloutKey = context.learnerId ?? context.tenantId ?? 'default-rollout-key';
+  const config = await registry.getConfigForRollout(context.agentType, rolloutKey);
   const provider = getProvider(config.provider);
 
   const prompt =
@@ -45,28 +54,98 @@ export async function runAiCall(
       userRole: context.userRole,
     });
 
-  const providerResult = await provider.generateCompletion({
-    prompt,
-    promptTemplate: config.promptTemplate,
-    modelName: config.modelName,
-    hyperparameters: config.hyperparameters,
-    metadata: {
-      ...context.metadata,
-      ...input.metadata,
-      agentType: context.agentType,
-      configVersion: config.version,
-      configId: config.id,
-    },
-  });
+  let providerResult;
+  let safetyResult: SafetyResult;
+  let completedAt: Date = new Date();
+  try {
+    providerResult = await provider.generateCompletion({
+      prompt,
+      promptTemplate: config.promptTemplate,
+      modelName: config.modelName,
+      hyperparameters: config.hyperparameters,
+      metadata: {
+        ...context.metadata,
+        ...input.metadata,
+        agentType: context.agentType,
+        configVersion: config.version,
+        configId: config.id,
+      },
+    });
 
-  const safetyResult: SafetyResult = evaluateSafety(context, {
-    content: providerResult.content,
-  });
+    safetyResult = evaluateSafety(context, {
+      content: providerResult.content,
+    });
+    completedAt = new Date();
+  } catch (err: unknown) {
+    completedAt = new Date();
+    if (telemetryStore) {
+      const elapsedMs = completedAt.getTime() - startedAt.getTime();
+      const errorMessage = truncateErrorMessage(err);
+      const logEntry = {
+        id: randomUUID(),
+        tenantId: context.tenantId,
+        agentType: context.agentType,
+        modelName: config.modelName,
+        provider: config.provider,
+        version: config.version,
+        requestId,
+        startedAt,
+        completedAt,
+        latencyMs: elapsedMs,
+        tokensPrompt: 0,
+        tokensCompletion: 0,
+        estimatedCostUsd: 0,
+        safetyStatus: 'NEEDS_REVIEW' as const,
+        status: 'ERROR' as const,
+        errorCode: err instanceof Error ? err.name : 'UnknownError',
+        errorMessage,
+      };
+      void telemetryStore.record(logEntry).catch((logErr: unknown) => {
+        console.error('Failed to record AI call telemetry (error path)', logErr);
+      });
+    }
+    throw err;
+  }
 
   const content = safetyResult.transformedContent ?? providerResult.content;
+  const tokensPrompt = providerResult.tokensPrompt ?? providerResult.tokensUsed;
+  const tokensCompletion = providerResult.tokensCompletion ?? 0;
+  const tokensUsed = providerResult.tokensUsed;
+  const latencyMs = completedAt.getTime() - startedAt.getTime();
+  const estimatedCostUsd = estimateCostUsd(
+    config.provider,
+    config.modelName,
+    tokensPrompt + tokensCompletion
+  );
+
+  if (telemetryStore) {
+    const logEntry = {
+      id: randomUUID(),
+      tenantId: context.tenantId,
+      agentType: context.agentType,
+      modelName: config.modelName,
+      provider: config.provider,
+      version: config.version,
+      requestId,
+      startedAt,
+      completedAt,
+      latencyMs,
+      tokensPrompt,
+      tokensCompletion,
+      estimatedCostUsd,
+      safetyStatus: safetyResult.status,
+      status: 'SUCCESS' as const,
+      errorCode: undefined,
+      errorMessage: undefined,
+    };
+    void telemetryStore.record(logEntry).catch((err: unknown) => {
+      console.error('Failed to record AI call telemetry', err);
+    });
+  }
+
   const output: AiCallOutput = {
     content,
-    tokensUsed: providerResult.tokensUsed,
+    tokensUsed,
     safetyStatus: safetyResult.status,
     safetyReason: safetyResult.reason,
     metadata: {
@@ -105,4 +184,9 @@ function logCall(context: AiCallContext, output: AiCallOutput, rawContent: strin
       contentPreview: `${preview}${rawContent.length > preview.length ? '…' : ''}`,
     })
   );
+}
+
+function truncateErrorMessage(err: unknown, max = 256): string {
+  const text = err instanceof Error ? err.message : String(err);
+  return text.length > max ? `${text.slice(0, max - 3)}...` : text;
 }

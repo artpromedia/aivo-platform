@@ -16,10 +16,14 @@ export class MockLLMProvider implements LLMProvider {
       .digest('hex')
       .slice(0, 8);
     const content = `[mock-response:${digest}] ${params.prompt}`;
-    const tokensUsed = this.estimateTokens(params.prompt);
+    const tokensPrompt = this.estimateTokens(params.prompt);
+    const tokensCompletion = Math.max(4, Math.round(tokensPrompt * 0.2));
+    const tokensUsed = tokensPrompt + tokensCompletion;
     return {
       content,
       tokensUsed,
+      tokensPrompt,
+      tokensCompletion,
       metadata: {
         provider: this.name,
         seed: this.seed,

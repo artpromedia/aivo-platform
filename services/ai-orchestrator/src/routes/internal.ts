@@ -5,6 +5,7 @@ import { config } from '../config.js';
 import { runAiCall } from '../pipeline/AiCallPipeline.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import type { AgentConfigStore } from '../registry/store.js';
+import type { TelemetryStore } from '../telemetry/index.js';
 import {
   AGENT_TYPES,
   PROVIDER_TYPES,
@@ -28,6 +29,10 @@ const listConfigsQuerySchema = z.object({
   is_active: z.coerce.boolean().optional(),
 });
 
+const rolloutPlanQuerySchema = z.object({
+  agentType: z.enum(AGENT_TYPES),
+});
+
 const createConfigSchema = z.object({
   agentType: z.enum(AGENT_TYPES),
   modelName: z.string().min(1),
@@ -44,13 +49,14 @@ const patchConfigSchema = createConfigSchema.partial();
 interface InternalRoutesOptions {
   registry: AgentConfigRegistry;
   store: AgentConfigStore;
+  telemetryStore: TelemetryStore;
 }
 
 export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> = async (
   app: FastifyInstance,
   opts: InternalRoutesOptions
 ) => {
-  const { registry, store } = opts;
+  const { registry, store, telemetryStore } = opts;
 
   app.addHook('preHandler', async (request, reply) => {
     if (!request.url.startsWith('/internal/')) return;
@@ -79,7 +85,8 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       {
         rawPrompt: `echo:${parsed.data.message}`,
         metadata: { correlationId },
-      }
+      },
+      telemetryStore
     );
     reply.code(200).send({ response: result });
   });
@@ -144,6 +151,62 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     reply.code(200).send({ config: updated });
   });
 
+  app.post<{ Params: { id: string } }>('/ai/configs/:id/disable', async (request, reply) => {
+    const updated = await registry.update(request.params.id, {
+      rolloutPercentage: 0,
+      isActive: false,
+    });
+    if (!updated) {
+      reply.code(404).send({ error: 'Config not found' });
+      return;
+    }
+    reply.code(200).send({ config: updated });
+  });
+
+  app.get('/ai/configs/rollout-plan', async (request, reply) => {
+    const parsed = rolloutPlanQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      reply.code(400).send({ error: 'Invalid query' });
+      return;
+    }
+    const configs = await store.list({ agentType: parsed.data.agentType, isActive: true });
+    const sorted = configs
+      .sort((a, b) => {
+        if (b.rolloutPercentage !== a.rolloutPercentage)
+          return b.rolloutPercentage - a.rolloutPercentage;
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+      })
+      .map((c) => ({
+        id: c.id,
+        version: c.version,
+        rolloutPercentage: c.rolloutPercentage,
+        updatedAt: c.updatedAt,
+      }));
+
+    const total = sorted.reduce((acc, c) => acc + c.rolloutPercentage, 0);
+    let scale = 1;
+    if (total > 100) {
+      scale = 100 / total;
+    }
+    let cumulative = 0;
+    const plan = sorted.map((c) => {
+      const weight = c.rolloutPercentage * scale;
+      cumulative += weight;
+      return {
+        ...c,
+        normalizedPercentage: Number(weight.toFixed(2)),
+        cumulativeWeight: Number(cumulative.toFixed(2)),
+      };
+    });
+
+    reply.code(200).send({
+      agentType: parsed.data.agentType,
+      totalPercentage: total,
+      normalized: total > 100,
+      plan,
+    });
+  });
+
   app.post('/ai/test-agent', async (request, reply) => {
     const parsed = testAgentBodySchema.safeParse(request.body);
     if (!parsed.success) {
@@ -161,9 +224,20 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       {
         payload: parsed.data.payload,
         metadata: parsed.data.metadata,
-      }
+      },
+      telemetryStore
     );
 
     reply.code(200).send({ response: result });
+  });
+
+  app.get('/ai/metrics/summary', async (request, reply) => {
+    const tenantId =
+      typeof request.query === 'object' && request.query !== null
+        ? (request.query as Record<string, string> | undefined)?.tenantId
+        : undefined;
+
+    const summary = await telemetryStore.summary(tenantId);
+    reply.code(200).send({ summary });
   });
 };

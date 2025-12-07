@@ -8,6 +8,8 @@ export interface IAgentRequest<Payload = unknown> {
 export interface IAgentResponse<Content = unknown> {
   content: Content;
   tokensUsed: number;
+  tokensPrompt?: number | undefined;
+  tokensCompletion?: number | undefined;
   metadata?: Record<string, unknown>;
 }
 
