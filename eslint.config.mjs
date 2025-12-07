@@ -118,7 +118,8 @@ export default [
     files: ["apps/**/*.{ts,tsx,js,jsx}"],
     rules: {
       ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs["core-web-vitals"].rules
+      ...nextPlugin.configs["core-web-vitals"].rules,
+      "@next/next/no-html-link-for-pages": "off"
     }
   }
 ];

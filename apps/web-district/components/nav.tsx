@@ -8,6 +8,7 @@ import { useAuth } from '../app/providers';
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/schools', label: 'Schools' },
+  { href: '/privacy', label: 'Privacy & Consent' },
 ];
 
 export function Nav() {
