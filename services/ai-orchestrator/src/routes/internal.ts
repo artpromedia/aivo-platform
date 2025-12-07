@@ -2,10 +2,9 @@ import { type FastifyInstance, type FastifyPluginAsync, type FastifyRequest } fr
 import { z } from 'zod';
 
 import { config } from '../config.js';
-import { getProvider } from '../providers/index.js';
+import { runAiCall } from '../pipeline/AiCallPipeline.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import type { AgentConfigStore } from '../registry/store.js';
-import type { IAgentRequest } from '../types/agent.js';
 import {
   AGENT_TYPES,
   PROVIDER_TYPES,
@@ -69,11 +68,19 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       return;
     }
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
-    const provider = getProvider();
-    const result = await provider.generateCompletion({
-      prompt: `echo:${parsed.data.message}`,
-      metadata: { correlationId },
-    });
+    // Reuse pipeline with a pass-through prompt
+    const result = await runAiCall(
+      registry,
+      {
+        tenantId: 'echo',
+        agentType: 'BASELINE',
+        metadata: { correlationId },
+      },
+      {
+        rawPrompt: `echo:${parsed.data.message}`,
+        metadata: { correlationId },
+      }
+    );
     reply.code(200).send({ response: result });
   });
 
@@ -144,58 +151,19 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       return;
     }
 
-    const agentType = parsed.data.agentType;
-    const activeConfig = await registry.getActiveConfig(agentType);
-    const provider = getProvider(activeConfig.provider);
-
-    const req: IAgentRequest = {
-      tenantId: parsed.data.tenantId,
-      agentType,
-      payload: parsed.data.payload,
-      metadata: parsed.data.metadata,
-    };
-
-    const renderedPrompt = renderPrompt(activeConfig.promptTemplate, {
-      payload: req.payload,
-      tenantId: req.tenantId,
-      agentType: req.agentType,
-    });
-
-    const providerResult = await provider.generateCompletion({
-      prompt: renderedPrompt,
-      promptTemplate: activeConfig.promptTemplate,
-      modelName: activeConfig.modelName,
-      hyperparameters: activeConfig.hyperparameters,
-      metadata: {
-        ...req.metadata,
-        agentType: req.agentType,
-        configVersion: activeConfig.version,
-        configId: activeConfig.id,
+    const result = await runAiCall(
+      registry,
+      {
+        tenantId: parsed.data.tenantId,
+        agentType: parsed.data.agentType,
+        metadata: parsed.data.metadata,
       },
-    });
+      {
+        payload: parsed.data.payload,
+        metadata: parsed.data.metadata,
+      }
+    );
 
-    const response = {
-      content: providerResult.content,
-      tokensUsed: providerResult.tokensUsed,
-      metadata: {
-        ...providerResult.metadata,
-        tenantId: req.tenantId,
-        agentType: req.agentType,
-        modelName: activeConfig.modelName,
-        provider: activeConfig.provider,
-        configVersion: activeConfig.version,
-      },
-    };
-
-    reply.code(200).send({ response });
+    reply.code(200).send({ response: result });
   });
 };
-
-function renderPrompt(template: string, context: Record<string, unknown>): string {
-  return template.replace(/{{\s*(\w+)\s*}}/g, (_match, key: string) => {
-    const value = context[key];
-    if (value === undefined || value === null) return '';
-    if (typeof value === 'string') return value;
-    return JSON.stringify(value);
-  });
-}

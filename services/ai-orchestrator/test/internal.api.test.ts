@@ -66,6 +66,28 @@ describe('internal AI routes', () => {
     expect(body.response.metadata.tenantId).toBe('tenant-123');
     expect(body.response.metadata.modelName).toBe('mock-model');
     expect(body.response.metadata.configVersion).toBe('v1');
+    expect(body.response.safetyStatus).toBeDefined();
+  });
+
+  it('test-agent flags unsafe content', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/internal/ai/test-agent',
+      headers: {
+        'content-type': 'application/json',
+        'x-internal-api-key': config.internalApiKey,
+      },
+      payload: {
+        tenantId: 'tenant-123',
+        agentType: 'BASELINE',
+        payload: { text: 'I want to kill myself' },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.response.safetyStatus).not.toBe('OK');
+    expect(body.response.safetyReason).toBe('self-harm');
   });
 
   it('lists agent configs', async () => {
