@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { GradeThemeProvider } from '@aivo/ui-web';
+
 import { Nav } from '../components/nav';
 import { getAuthSession } from '../lib/auth';
 
@@ -23,12 +25,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   };
 
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900">
-        <AuthProvider initialAuth={initialAuth}>
-          <Nav />
-          <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>
-        </AuthProvider>
+    <html lang="en" data-grade-theme="G6_8">
+      <body className="min-h-screen bg-background text-text antialiased">
+        <GradeThemeProvider initialGrade="G6_8">
+          <AuthProvider initialAuth={initialAuth}>
+            <Nav />
+            <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>
+          </AuthProvider>
+        </GradeThemeProvider>
       </body>
     </html>
   );

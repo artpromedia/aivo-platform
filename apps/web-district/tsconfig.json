@@ -8,7 +8,9 @@
     "moduleResolution": "Bundler",
     "module": "esnext",
     "baseUrl": ".",
-    "paths": {},
+    "paths": {
+      "@aivo/*": ["../../libs/*/src", "../../services/*/src", "../../apps/*/src"]
+    },
     "plugins": [
       {
         "name": "next"

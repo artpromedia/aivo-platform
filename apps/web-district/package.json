@@ -10,6 +10,7 @@
     "build": "next build"
   },
   "dependencies": {
+    "@aivo/ui-web": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
     "jose": "^5.9.2",
     "next": "14.2.18",

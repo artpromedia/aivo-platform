@@ -16,7 +16,7 @@ export function Nav() {
   const { isAuthenticated, userName, logout } = useAuth();
 
   return (
-    <header className="border-b bg-white/70 backdrop-blur">
+    <header className="border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="text-lg font-semibold">Aivo District Admin</div>
         <nav className="flex items-center gap-4 text-sm font-medium">
@@ -26,8 +26,8 @@ export function Nav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded px-3 py-2 transition hover:bg-slate-100 ${
-                  active ? 'bg-slate-200' : ''
+                className={`rounded-lg px-3 py-2 transition hover:bg-surface-muted ${
+                  active ? 'bg-surface-muted text-text' : 'text-muted'
                 }`}
               >
                 {link.label}
@@ -37,7 +37,9 @@ export function Nav() {
           {!isAuthenticated && (
             <Link
               href="/login"
-              className={`rounded px-3 py-2 transition hover:bg-slate-100 ${pathname === '/login' ? 'bg-slate-200' : ''}`}
+              className={`rounded-lg px-3 py-2 transition hover:bg-surface-muted ${
+                pathname === '/login' ? 'bg-surface-muted text-text' : 'text-muted'
+              }`}
             >
               Login
             </Link>
@@ -46,13 +48,13 @@ export function Nav() {
             <button
               type="button"
               onClick={() => void logout()}
-              className="rounded px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-text transition hover:bg-surface-muted"
             >
               Logout
             </button>
           )}
         </nav>
-        <div className="text-xs text-slate-600">
+        <div className="text-xs text-muted">
           {isAuthenticated ? `Signed in as ${userName ?? 'user'}` : 'Guest'}
         </div>
       </div>

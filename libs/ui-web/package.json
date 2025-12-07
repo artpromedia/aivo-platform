@@ -1,11 +1,24 @@
 {
   "name": "@aivo/ui-web",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "lint": "echo \"lint ui-web\"",
     "test": "echo \"test ui-web\"",
     "build": "echo \"build ui-web\""
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.14"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.0"
   }
 }

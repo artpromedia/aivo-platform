@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "name": "Aivo Design Tokens",
+    "version": "0.1.0",
+    "description": "Cross-platform tokens for the Aivo Learning Platform (web + mobile)",
+    "gradeBands": {
+      "K5": "K-5",
+      "G6_8": "6-8",
+      "G9_12": "9-12"
+    }
+  },
+  "base": {
+    "color": {
+      "neutral": {
+        "50": "#F8FAFD",
+        "100": "#F1F4F9",
+        "200": "#E3E8F0",
+        "300": "#D3DAE6",
+        "400": "#A7B3C8",
+        "500": "#7C8AA3",
+        "600": "#5C6880",
+        "700": "#3F4B60",
+        "800": "#283446",
+        "900": "#1A2330"
+      }
+    },
+    "font": {
+      "family": {
+        "default": ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        "dyslexia_friendly": ["Atkinson Hyperlegible", "Inter", "sans-serif"]
+      }
+    },
+    "space": {
+      "0": 0,
+      "1": 4,
+      "2": 8,
+      "3": 12,
+      "4": 16,
+      "5": 20,
+      "6": 24,
+      "7": 32,
+      "8": 40
+    },
+    "radius": {
+      "xs": 2,
+      "sm": 4,
+      "md": 8,
+      "lg": 12,
+      "xl": 16,
+      "pill": 999
+    },
+    "shadow": {
+      "soft": { "color": "rgba(26, 39, 58, 0.12)", "x": 0, "y": 8, "blur": 24, "spread": 0 },
+      "raised": { "color": "rgba(26, 39, 58, 0.18)", "x": 0, "y": 10, "blur": 32, "spread": 0 }
+    },
+    "elevation": {
+      "level1": { "shadow": "soft", "opacity": 1 },
+      "level2": { "shadow": "raised", "opacity": 1 },
+      "overlay": { "shadow": "raised", "opacity": 0.92 }
+    },
+    "motion": {
+      "duration": { "fast": 120, "base": 200, "slow": 320 },
+      "durationReduced": { "fast": 0, "base": 0, "slow": 120 },
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)",
+        "emphasized": "cubic-bezier(0.3, 0, 0.2, 1)",
+        "reduced": "linear"
+      }
+    }
+  },
+  "gradeThemes": {
+    "K5": {
+      "scale": { "font": 1.06, "space": 1.08 },
+      "color": {
+        "background": "#F8FBFF",
+        "surface": "#FFFFFF",
+        "surfaceMuted": "#EEF5FF",
+        "primary": "#2D6BFF",
+        "secondary": "#FF9C32",
+        "accent": "#FF5E9C",
+        "info": "#4BA8F5",
+        "success": "#1FB77A",
+        "warning": "#FFB545",
+        "error": "#E64B58",
+        "border": "#C8D7FF",
+        "focus": "#1D4ED8",
+        "backdrop": "rgba(16, 36, 69, 0.45)",
+        "textPrimary": "#102445",
+        "textSecondary": "#3E5575",
+        "textOnAccent": "#FFFFFF"
+      },
+      "fontSize": {
+        "display": 36,
+        "headline": 30,
+        "title": 24,
+        "body": 18,
+        "label": 14,
+        "caption": 12
+      },
+      "lineHeight": {
+        "display": 44,
+        "headline": 38,
+        "title": 30,
+        "body": 26,
+        "label": 18,
+        "caption": 16
+      }
+    },
+    "G6_8": {
+      "scale": { "font": 1.03, "space": 1.04 },
+      "color": {
+        "background": "#F6F8FC",
+        "surface": "#FFFFFF",
+        "surfaceMuted": "#EEF1F7",
+        "primary": "#2F6AE6",
+        "secondary": "#3FB4A5",
+        "accent": "#FF7A59",
+        "info": "#4098F2",
+        "success": "#1FA97A",
+        "warning": "#F5A524",
+        "error": "#D83A52",
+        "border": "#CBD5E1",
+        "focus": "#1E40AF",
+        "backdrop": "rgba(21, 36, 59, 0.42)",
+        "textPrimary": "#15243B",
+        "textSecondary": "#42526B",
+        "textOnAccent": "#FFFFFF"
+      },
+      "fontSize": {
+        "display": 34,
+        "headline": 28,
+        "title": 22,
+        "body": 17,
+        "label": 14,
+        "caption": 12
+      },
+      "lineHeight": {
+        "display": 42,
+        "headline": 36,
+        "title": 30,
+        "body": 25,
+        "label": 18,
+        "caption": 16
+      }
+    },
+    "G9_12": {
+      "scale": { "font": 1.0, "space": 1.0 },
+      "color": {
+        "background": "#F5F6F8",
+        "surface": "#FFFFFF",
+        "surfaceMuted": "#ECEFF3",
+        "primary": "#2648A6",
+        "secondary": "#2E7D74",
+        "accent": "#C8518B",
+        "info": "#3C87E0",
+        "success": "#1C9B6C",
+        "warning": "#F19D38",
+        "error": "#CC3D4A",
+        "border": "#C2C8D3",
+        "focus": "#1E3A8A",
+        "backdrop": "rgba(15, 23, 42, 0.38)",
+        "textPrimary": "#0F172A",
+        "textSecondary": "#3C4A67",
+        "textOnAccent": "#FFFFFF"
+      },
+      "fontSize": {
+        "display": 32,
+        "headline": 26,
+        "title": 20,
+        "body": 16,
+        "label": 13,
+        "caption": 11
+      },
+      "lineHeight": {
+        "display": 40,
+        "headline": 34,
+        "title": 28,
+        "body": 24,
+        "label": 18,
+        "caption": 16
+      }
+    }
+  }
+}
