@@ -1,8 +1,7 @@
-// @ts-expect-error - Tailwind plugin types
 import plugin from 'tailwindcss/plugin';
 
-import type { GradeBand } from '../theme/tokens';
-import { tokens } from '../theme/tokens';
+import type { GradeBand } from '../theme/tokens.js';
+import { tokens } from '../theme/tokens.js';
 
 const colorEntries = [
   { token: 'background', name: 'background' },
@@ -40,8 +39,8 @@ function colorToRgbChannels(value: string): string {
   if (value.startsWith('#')) {
     return hexToRgbChannels(value);
   }
-  const match = value.match(/rgba?\(([^)]+)\)/i);
-  if (match && match[1]) {
+  const match = /rgba?\(([^)]+)\)/i.exec(value);
+  if (match?.[1]) {
     const [r, g, b] = match[1]
       .split(',')
       .slice(0, 3)
@@ -53,15 +52,22 @@ function colorToRgbChannels(value: string): string {
 
 function buildThemeVariables(grade: GradeBand): Record<string, string> {
   const theme = tokens.gradeThemes[grade];
+  if (!theme) {
+    throw new Error(`Unknown grade theme: ${grade}`);
+  }
   const vars: Record<string, string> = {};
 
   for (const entry of colorEntries) {
     const color = theme.color[entry.token];
-    vars[`--color-${entry.name}`] = colorToRgbChannels(color);
+    if (color) {
+      vars[`--color-${entry.name}`] = colorToRgbChannels(color);
+    }
   }
 
   // backdrop keeps alpha as-is for overlays
-  vars['--color-backdrop'] = theme.color.backdrop;
+  if (theme.color.backdrop) {
+    vars['--color-backdrop'] = theme.color.backdrop;
+  }
 
   for (const size of fontSizeKeys) {
     vars[`--font-size-${kebab(size)}`] = `${theme.fontSize[size]}px`;
@@ -90,26 +96,30 @@ function buildThemeVariables(grade: GradeBand): Record<string, string> {
     { color: string; x: number; y: number; blur: number; spread: number }
   >;
   for (const [name, shadow] of Object.entries(shadows)) {
-    vars[`--shadow-${kebab(name)}`] = `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread}px ${shadow.color}`;
+    vars[`--shadow-${kebab(name)}`] =
+      `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread}px ${shadow.color}`;
   }
 
-  for (const [durationName, duration] of Object.entries(tokens.base.motion.duration as Record<string, number>)) {
+  for (const [durationName, duration] of Object.entries(tokens.base.motion.duration)) {
     vars[`--motion-duration-${kebab(durationName)}`] = `${duration}ms`;
   }
-  for (const [durationName, duration] of Object.entries(tokens.base.motion.durationReduced as Record<string, number>)) {
+  for (const [durationName, duration] of Object.entries(tokens.base.motion.durationReduced)) {
     vars[`--motion-duration-reduced-${kebab(durationName)}`] = `${duration}ms`;
   }
-  for (const [easingName, easing] of Object.entries(tokens.base.motion.easing as Record<string, string>)) {
+  for (const [easingName, easing] of Object.entries(tokens.base.motion.easing)) {
     vars[`--motion-easing-${kebab(easingName)}`] = easing;
   }
 
   return vars;
 }
 
-function buildFontSizes() {
+function buildFontSizes(): Record<string, [string, { lineHeight: string }]> {
   const sizes: Record<string, [string, { lineHeight: string }]> = {};
   for (const key of fontSizeKeys) {
-    sizes[key] = [`var(--font-size-${kebab(key)})`, { lineHeight: `var(--line-height-${kebab(key)})` }];
+    sizes[key] = [
+      `var(--font-size-${kebab(key)})`,
+      { lineHeight: `var(--line-height-${kebab(key)})` },
+    ];
   }
   return sizes;
 }
@@ -127,8 +137,8 @@ function gradeThemeBase(defaultGrade: GradeBand) {
     ':root': buildThemeVariables(defaultGrade),
   };
 
-  for (const grade of Object.keys(tokens.gradeThemes) as GradeBand[]) {
-    base[`[data-grade-theme="${String(grade)}"]`] = buildThemeVariables(grade);
+  for (const grade of Object.keys(tokens.gradeThemes)) {
+    base[`[data-grade-theme="${grade}"]`] = buildThemeVariables(grade);
   }
   return base;
 }
@@ -139,7 +149,6 @@ export function createGradeThemePlugin(defaultGrade: GradeBand = 'G6_8') {
   );
 
   return plugin(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ({ addBase }: { addBase: (base: Record<string, Record<string, string>>) => void }) => {
       addBase(gradeThemeBase(defaultGrade));
     },

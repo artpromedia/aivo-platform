@@ -223,7 +223,7 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       },
       {
         payload: parsed.data.payload,
-        metadata: parsed.data.metadata,
+        metadata: parsed.data.metadata ?? {},
       },
       telemetryStore
     );

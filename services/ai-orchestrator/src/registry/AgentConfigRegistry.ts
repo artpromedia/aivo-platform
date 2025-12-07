@@ -116,7 +116,7 @@ function selectConfigForKey(configs: AgentConfig[], key: string): AgentConfig {
 
   let cumulative = 0;
   for (let i = 0; i < sorted.length; i += 1) {
-    const weight = weights[i] * scale;
+    const weight = (weights[i] ?? 0) * scale;
     cumulative += weight;
     const candidate = sorted[i];
     if (candidate && bucket < cumulative) {

@@ -49,6 +49,7 @@ class ParentApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
     final router = ref.watch(_routerProvider);
+    final theme = ref.watch(gradeThemeProvider);
     if (authState.status == AuthStatus.loading) {
       return MaterialApp(
         home: Scaffold(
@@ -67,7 +68,7 @@ class ParentApp extends ConsumerWidget {
     }
     return MaterialApp.router(
       title: 'Aivo Parent',
-      theme: buildAppTheme(),
+      theme: theme,
       routerConfig: router,
       locale: const Locale('en'),
       supportedLocales: const [Locale('en')],

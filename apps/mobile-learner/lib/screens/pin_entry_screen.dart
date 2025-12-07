@@ -5,6 +5,7 @@ import 'package:flutter_common/flutter_common.dart';
 
 import '../pin/pin_controller.dart';
 import '../pin/pin_state.dart';
+import '../learner/theme_loader.dart';
 
 class PinEntryScreen extends ConsumerStatefulWidget {
   const PinEntryScreen({super.key});
@@ -36,6 +37,8 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
       setState(() => _error = state.error);
     }
     if (state.isAuthenticated) {
+      final learnerId = state.learnerId!;
+      await loadAndApplyLearnerTheme(ref, learnerId);
       if (mounted) context.go('/plan');
     }
   }

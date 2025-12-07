@@ -53,8 +53,8 @@ describe('AgentConfigRegistry', () => {
   it('normalizes rollout when total exceeds 100 and preserves proportions', async () => {
     const registry = new AgentConfigRegistry(
       new InMemoryAgentConfigStore([
-        { ...baseSeed[0], id: 'cfg-over-a', rolloutPercentage: 80 },
-        { ...baseSeed[1], id: 'cfg-over-b', rolloutPercentage: 40 },
+        { ...baseSeed[0]!, id: 'cfg-over-a', rolloutPercentage: 80 },
+        { ...baseSeed[1]!, id: 'cfg-over-b', rolloutPercentage: 40 },
       ])
     );
 
@@ -72,8 +72,8 @@ describe('AgentConfigRegistry', () => {
 
   it('changes selected config after rollout percentage update', async () => {
     const store = new InMemoryAgentConfigStore([
-      { ...baseSeed[0], id: 'cfg-roll-a', rolloutPercentage: 20 },
-      { ...baseSeed[1], id: 'cfg-roll-b', rolloutPercentage: 80 },
+      { ...baseSeed[0]!, id: 'cfg-roll-a', rolloutPercentage: 20 },
+      { ...baseSeed[1]!, id: 'cfg-roll-b', rolloutPercentage: 80 },
     ]);
     const registry = new AgentConfigRegistry(store);
 

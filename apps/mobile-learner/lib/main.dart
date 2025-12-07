@@ -8,6 +8,7 @@ import 'pin/pin_state.dart';
 import 'screens/pin_entry_screen.dart';
 import 'screens/today_plan_screen.dart';
 import 'screens/session_complete_screen.dart';
+import 'learner/theme_loader.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final pinState = ref.watch(pinControllerProvider);
@@ -33,13 +34,36 @@ void main() {
   runApp(const ProviderScope(child: LearnerApp()));
 }
 
-class LearnerApp extends ConsumerWidget {
+class LearnerApp extends ConsumerStatefulWidget {
   const LearnerApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LearnerApp> createState() => _LearnerAppState();
+}
+
+class _LearnerAppState extends ConsumerState<LearnerApp> {
+  bool _themeLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listen<PinAuthState>(pinControllerProvider, (previous, next) {
+      if (!next.isAuthenticated) {
+        _themeLoaded = false;
+        return;
+      }
+      if (next.isAuthenticated && !_themeLoaded && next.learnerId != null) {
+        _themeLoaded = true;
+        loadAndApplyLearnerTheme(ref, next.learnerId!);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final pinState = ref.watch(pinControllerProvider);
     final router = ref.watch(_routerProvider);
+    final theme = ref.watch(gradeThemeProvider);
     if (pinState.status == PinStatus.loading) {
       return MaterialApp(
         home: Scaffold(
@@ -58,7 +82,7 @@ class LearnerApp extends ConsumerWidget {
     }
     return MaterialApp.router(
       title: 'Aivo Learner',
-      theme: buildAppTheme(),
+      theme: theme,
       routerConfig: router,
       locale: const Locale('en'),
       supportedLocales: const [Locale('en')],
