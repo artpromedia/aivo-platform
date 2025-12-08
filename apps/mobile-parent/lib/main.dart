@@ -6,6 +6,7 @@ import 'package:flutter_common/flutter_common.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'screens/add_child_screen.dart';
+import 'screens/baseline_result_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 
@@ -25,6 +26,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/add-child',
         builder: (context, state) => const AddChildScreen(),
+      ),
+      GoRoute(
+        path: '/baseline-results/:profileId',
+        builder: (context, state) {
+          final profileId = state.pathParameters['profileId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return BaselineResultScreen(
+            profileId: profileId,
+            learnerId: extra['learnerId']?.toString() ?? '',
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
+          );
+        },
       ),
     ],
     redirect: (context, state) {

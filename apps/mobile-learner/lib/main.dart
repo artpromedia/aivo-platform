@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 
+import 'baseline/baseline_controller.dart';
 import 'pin/pin_controller.dart';
 import 'pin/pin_state.dart';
+import 'screens/baseline_break_screen.dart';
+import 'screens/baseline_complete_screen.dart';
+import 'screens/baseline_intro_screen.dart';
+import 'screens/baseline_question_screen.dart';
 import 'screens/pin_entry_screen.dart';
 import 'screens/today_plan_screen.dart';
 import 'screens/session_complete_screen.dart';
@@ -15,22 +20,56 @@ const bool _enableDesignSystemGallery = bool.fromEnvironment('AIVO_DESIGN_GALLER
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final pinState = ref.watch(pinControllerProvider);
+  final baselineState = ref.watch(learnerBaselineControllerProvider);
+
   return GoRouter(
     initialLocation: '/pin',
     routes: [
       GoRoute(path: '/pin', builder: (context, state) => const PinEntryScreen()),
       GoRoute(path: '/plan', builder: (context, state) => const TodayPlanScreen()),
       GoRoute(path: '/complete', builder: (context, state) => const SessionCompleteScreen()),
+      // Baseline flow routes
+      GoRoute(path: '/baseline/intro', builder: (context, state) => const BaselineIntroScreen()),
+      GoRoute(path: '/baseline/question', builder: (context, state) => const BaselineQuestionScreen()),
+      GoRoute(path: '/baseline/break', builder: (context, state) => const BaselineBreakScreen()),
+      GoRoute(path: '/baseline/complete', builder: (context, state) => const BaselineCompleteScreen()),
       if (_enableDesignSystemGallery)
         GoRoute(path: '/design-system', builder: (context, state) => const DesignSystemGalleryScreen()),
     ],
     redirect: (context, state) {
       if (_enableDesignSystemGallery && state.subloc == '/design-system') return null;
       if (pinState.status == PinStatus.loading) return null;
+
       final authed = pinState.isAuthenticated;
       final atPin = state.subloc == '/pin';
+
+      // Not authenticated -> go to PIN
       if (!authed && !atPin) return '/pin';
-      if (authed && atPin) return '/plan';
+
+      // Authenticated at PIN -> check baseline status and route appropriately
+      if (authed && atPin) {
+        // Check baseline status
+        final profile = baselineState.profile;
+
+        if (profile == null && !baselineState.isLoading) {
+          // No profile loaded yet - go to plan (baseline check happens there)
+          return '/plan';
+        }
+
+        // Route based on baseline status
+        switch (profile?.status) {
+          case BaselineProfileStatus.notStarted:
+            return '/baseline/intro';
+          case BaselineProfileStatus.inProgress:
+            return '/baseline/question';
+          case BaselineProfileStatus.completed:
+          case BaselineProfileStatus.finalAccepted:
+          case BaselineProfileStatus.retestAllowed:
+          case null:
+            return '/plan';
+        }
+      }
+
       return null;
     },
   );
@@ -49,18 +88,31 @@ class LearnerApp extends ConsumerStatefulWidget {
 
 class _LearnerAppState extends ConsumerState<LearnerApp> {
   bool _themeLoaded = false;
+  bool _baselineChecked = false;
 
   @override
   void initState() {
     super.initState();
     ref.listen<PinAuthState>(pinControllerProvider, (previous, next) {
+      // Reset on logout
       if (!next.isAuthenticated) {
         _themeLoaded = false;
+        _baselineChecked = false;
         return;
       }
-      if (next.isAuthenticated && !_themeLoaded && next.learnerId != null) {
-        _themeLoaded = true;
-        loadAndApplyLearnerTheme(ref, next.learnerId!);
+
+      // On authentication, load theme and check baseline
+      if (next.isAuthenticated && next.learnerId != null) {
+        if (!_themeLoaded) {
+          _themeLoaded = true;
+          loadAndApplyLearnerTheme(ref, next.learnerId!);
+        }
+
+        if (!_baselineChecked) {
+          _baselineChecked = true;
+          ref.read(learnerBaselineControllerProvider.notifier)
+              .checkBaselineStatus(next.learnerId!);
+        }
       }
     });
   }
@@ -70,6 +122,7 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
     final pinState = ref.watch(pinControllerProvider);
     final router = ref.watch(_routerProvider);
     final theme = ref.watch(gradeThemeProvider);
+
     if (pinState.status == PinStatus.loading) {
       return MaterialApp(
         home: Scaffold(
@@ -86,6 +139,7 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
         ),
       );
     }
+
     return MaterialApp.router(
       title: 'Aivo Learner',
       theme: theme,
