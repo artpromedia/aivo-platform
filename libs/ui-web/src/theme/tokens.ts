@@ -15,6 +15,12 @@ export const tokens = aivoTokens as {
       duration: Record<string, number>;
       durationReduced: Record<string, number>;
       easing: Record<string, string>;
+      reduced: boolean;
+    };
+    accessibility?: {
+      supportsHighContrast?: boolean;
+      supportsDyslexia?: boolean;
+      supportsReducedMotion?: boolean;
     };
   };
   gradeThemes: Record<
@@ -22,6 +28,7 @@ export const tokens = aivoTokens as {
     {
       scale: { font: number; space: number };
       color: Record<string, string>;
+      colorHighContrast?: Record<string, string>;
       fontSize: Record<string, number>;
       lineHeight: Record<string, number>;
     }
@@ -29,8 +36,8 @@ export const tokens = aivoTokens as {
 };
 export type GradeBand = keyof typeof tokens.gradeThemes;
 
-export const gradeBandLabels: Record<GradeBand, string> = tokens.meta.gradeBands as Record<GradeBand, string>;
+export const gradeBandLabels: Record<GradeBand, string> = tokens.meta.gradeBands;
 
 export function gradeBands(): GradeBand[] {
-  return Object.keys(tokens.gradeThemes) as GradeBand[];
+  return Object.keys(tokens.gradeThemes);
 }

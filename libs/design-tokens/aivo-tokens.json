@@ -65,7 +65,13 @@
         "standard": "cubic-bezier(0.2, 0, 0, 1)",
         "emphasized": "cubic-bezier(0.3, 0, 0.2, 1)",
         "reduced": "linear"
-      }
+      },
+      "reduced": true
+    },
+    "accessibility": {
+      "supportsHighContrast": true,
+      "supportsDyslexia": true,
+      "supportsReducedMotion": true
     }
   },
   "gradeThemes": {
@@ -104,6 +110,24 @@
         "body": 26,
         "label": 18,
         "caption": 16
+      },
+      "colorHighContrast": {
+        "background": "#FFFFFF",
+        "surface": "#FFFFFF",
+        "surfaceMuted": "#E1EBFF",
+        "primary": "#0F3FB5",
+        "secondary": "#C25F00",
+        "accent": "#B5005C",
+        "info": "#0C63AE",
+        "success": "#0E7A52",
+        "warning": "#B96A00",
+        "error": "#B11224",
+        "border": "#0A3A99",
+        "focus": "#0A3A99",
+        "backdrop": "rgba(8, 20, 45, 0.55)",
+        "textPrimary": "#0A1730",
+        "textSecondary": "#1E2F4F",
+        "textOnAccent": "#FFFFFF"
       }
     },
     "G6_8": {
@@ -141,6 +165,24 @@
         "body": 25,
         "label": 18,
         "caption": 16
+      },
+      "colorHighContrast": {
+        "background": "#FFFFFF",
+        "surface": "#FFFFFF",
+        "surfaceMuted": "#E4E8F2",
+        "primary": "#1B4EB2",
+        "secondary": "#11786B",
+        "accent": "#B54028",
+        "info": "#135EA3",
+        "success": "#0E7A52",
+        "warning": "#B86D00",
+        "error": "#B1263A",
+        "border": "#0F307C",
+        "focus": "#0F307C",
+        "backdrop": "rgba(12, 23, 41, 0.55)",
+        "textPrimary": "#0D1830",
+        "textSecondary": "#22324E",
+        "textOnAccent": "#FFFFFF"
       }
     },
     "G9_12": {
@@ -178,6 +220,24 @@
         "body": 24,
         "label": 18,
         "caption": 16
+      },
+      "colorHighContrast": {
+        "background": "#FFFFFF",
+        "surface": "#FFFFFF",
+        "surfaceMuted": "#E2E5EB",
+        "primary": "#1A357E",
+        "secondary": "#0F5C52",
+        "accent": "#9A2F6B",
+        "info": "#154F9E",
+        "success": "#0D6E4E",
+        "warning": "#B05F00",
+        "error": "#A31E32",
+        "border": "#0D2A68",
+        "focus": "#0D2A68",
+        "backdrop": "rgba(7, 12, 24, 0.55)",
+        "textPrimary": "#0A1126",
+        "textSecondary": "#1D2A45",
+        "textOnAccent": "#FFFFFF"
       }
     }
   }
