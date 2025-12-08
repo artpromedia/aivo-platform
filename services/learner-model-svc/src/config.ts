@@ -15,12 +15,9 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
 }
 
 export const config = {
-  port: Number(process.env.PORT || 4010),
+  port: Number(process.env.PORT || 4015),
   databaseUrl:
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_baseline',
-  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
-  aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
-  learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4015',
-  serviceToken: process.env.SERVICE_TOKEN || '',
+    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_learner_model',
+  baselineSvcUrl: process.env.BASELINE_SVC_URL || 'http://localhost:4010',
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
 };

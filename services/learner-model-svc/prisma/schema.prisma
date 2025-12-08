@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum SkillDomain {
+  ELA
+  MATH
+  SCIENCE
+  SPEECH
+  SEL
+
+  @@map("skill_domain")
+}
+
+enum GradeBand {
+  K5
+  G6_8
+  G9_12
+
+  @@map("grade_band")
+}
+
+// ── Models ───────────────────────────────────────────────────────────────────
+
+/// Master catalog of skills in the learning graph.
+/// Seeded from skills library; rarely changes at runtime.
+model Skill {
+  id          String      @id @default(uuid()) @db.Uuid
+  skillCode   String      @unique @map("skill_code")
+  domain      SkillDomain
+  gradeBand   GradeBand   @map("grade_band")
+  displayName String      @map("display_name")
+  description String?
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Prerequisites (skills that must be mastered before this one)
+  prerequisiteFor SkillPrerequisite[] @relation("PrerequisiteSkill")
+  hasPrerequisite SkillPrerequisite[] @relation("DependentSkill")
+
+  // Learner states for this skill
+  learnerStates LearnerSkillState[]
+
+  @@index([domain, gradeBand])
+  @@map("skills")
+}
+
+/// Edge in the skill prerequisite graph.
+/// prerequisiteSkill must be mastered before dependentSkill.
+model SkillPrerequisite {
+  id                  String @id @default(uuid()) @db.Uuid
+  prerequisiteSkillId String @map("prerequisite_skill_id") @db.Uuid
+  dependentSkillId    String @map("dependent_skill_id") @db.Uuid
+
+  prerequisiteSkill Skill @relation("PrerequisiteSkill", fields: [prerequisiteSkillId], references: [id], onDelete: Cascade)
+  dependentSkill    Skill @relation("DependentSkill", fields: [dependentSkillId], references: [id], onDelete: Cascade)
+
+  @@unique([prerequisiteSkillId, dependentSkillId])
+  @@index([dependentSkillId])
+  @@map("skill_prerequisites")
+}
+
+/// A learner's mastery state for a specific skill.
+/// Updated as the learner progresses through learning activities.
+model LearnerSkillState {
+  id               String   @id @default(uuid()) @db.Uuid
+  virtualBrainId   String   @map("virtual_brain_id") @db.Uuid
+  skillId          String   @map("skill_id") @db.Uuid
+  masteryLevel     Decimal  @map("mastery_level") @db.Decimal(6, 3)
+  confidence       Decimal  @db.Decimal(5, 3)
+  lastAssessedAt   DateTime @map("last_assessed_at") @db.Timestamptz
+  practiceCount    Int      @default(0) @map("practice_count")
+  correctStreak    Int      @default(0) @map("correct_streak")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  virtualBrain VirtualBrain @relation(fields: [virtualBrainId], references: [id], onDelete: Cascade)
+  skill        Skill        @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([virtualBrainId, skillId])
+  @@index([virtualBrainId, masteryLevel])
+  @@map("learner_skill_states")
+}
+
+/// A learner's Virtual Brain - their personalized learning model.
+/// Initialized from baseline assessment, evolves over time.
+model VirtualBrain {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  learnerId          String   @map("learner_id") @db.Uuid
+  baselineProfileId  String?  @map("baseline_profile_id") @db.Uuid
+  baselineAttemptId  String?  @map("baseline_attempt_id") @db.Uuid
+  gradeBand          GradeBand @map("grade_band")
+  initializationJson Json?    @map("initialization_json")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  skillStates LearnerSkillState[]
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@map("virtual_brains")
+}
