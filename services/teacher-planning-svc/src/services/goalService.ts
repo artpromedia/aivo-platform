@@ -151,6 +151,53 @@ export async function getGoalById(goalId: string, tenantId?: string): Promise<Go
 }
 
 /**
+ * Get multiple goals by IDs
+ */
+export async function getGoalsByIds(goalIds: string[], tenantId?: string): Promise<Map<string, Goal>> {
+  if (goalIds.length === 0) {
+    return new Map();
+  }
+
+  interface WhereClause {
+    id: { in: string[] };
+    tenantId?: string;
+  }
+
+  const where: WhereClause = { id: { in: goalIds } };
+  if (tenantId) where.tenantId = tenantId;
+
+  const goals = await prisma.goal.findMany({
+    where,
+    include: {
+      objectives: {
+        orderBy: { orderIndex: 'asc' },
+      },
+    },
+  });
+
+  // Collect all skill IDs for batch lookup
+  const skillIds = goals
+    .map((g) => g.skillId)
+    .filter((id): id is string => id !== null);
+
+  const skillsMap = skillIds.length > 0 ? await getSkillsByIds(skillIds) : new Map();
+
+  const result = new Map<string, Goal>();
+  for (const goal of goals) {
+    const mapped = mapGoalFromDb(goal);
+    if (mapped.skillId) {
+      const skill = skillsMap.get(mapped.skillId);
+      if (skill) {
+        mapped.skill = skill;
+      }
+    }
+    result.set(goal.id, mapped);
+  }
+
+  return result;
+}
+
+/**
  * List goals for a learner
  */
 export async function listGoals(params: ListGoalsParams): Promise<ListGoalsResult> {

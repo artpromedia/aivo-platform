@@ -4,8 +4,6 @@
  * Handles goals, objectives, session plans, and progress notes.
  */
 
-import type { GradeBand } from '@aivo/ui-web';
-
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -112,17 +110,19 @@ const TEACHER_PLANNING_SVC_URL = process.env.NEXT_PUBLIC_TEACHER_PLANNING_SVC_UR
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${TEACHER_PLANNING_SVC_URL}${path}`;
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(options?.headers ?? {}),
+  };
+  
   const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    ...(options ?? {}),
+    headers,
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || `API error: ${res.status}`);
+    const errorData = await res.json().catch(() => ({ message: res.statusText })) as { message?: string };
+    throw new Error(errorData.message ?? `API error: ${res.status}`);
   }
 
   return res.json() as Promise<T>;
@@ -300,6 +300,25 @@ export async function createProgressNote(input: CreateProgressNoteInput): Promis
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SESSION PLAN DETAIL API
+// ══════════════════════════════════════════════════════════════════════════════
+
+/** Session plan with enriched goals for the Run Session view */
+export interface SessionPlanDetail extends SessionPlan {
+  /** Map of goalId -> Goal for items in this plan */
+  goals: Record<string, Goal>;
+  /** Linked goalIds from metadata */
+  linkedGoalIds: string[];
+}
+
+/**
+ * Fetch session plan with full details including enriched goals
+ */
+export async function fetchSessionPlanDetail(planId: string): Promise<SessionPlanDetail> {
+  return apiFetch<SessionPlanDetail>(`/session-plans/${planId}/detail`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

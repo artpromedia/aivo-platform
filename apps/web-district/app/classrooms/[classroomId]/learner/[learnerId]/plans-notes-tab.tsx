@@ -25,7 +25,7 @@ import { useLearnerProfile } from './context';
  * - Progress notes timeline with Add Note modal
  */
 export function PlansNotesTab() {
-  const { learner, goals, sessionPlans, progressNotes, refetchSessionPlans, refetchProgressNotes } =
+  const { learner, classroomId, goals, sessionPlans, progressNotes, refetchSessionPlans, refetchProgressNotes } =
     useLearnerProfile();
   const [activeSection, setActiveSection] = useState<'plans' | 'notes'>('plans');
   const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
@@ -142,6 +142,7 @@ export function PlansNotesTab() {
                 <SessionPlanCard
                   key={plan.id}
                   plan={plan}
+                  classroomId={classroomId}
                   onUpdateStatus={handleUpdatePlanStatus}
                 />
               ))}
@@ -205,11 +206,13 @@ export function PlansNotesTab() {
 
 interface SessionPlanCardProps {
   plan: SessionPlan;
+  classroomId: string;
   onUpdateStatus: (planId: string, status: SessionPlanStatus) => void;
 }
 
-function SessionPlanCard({ plan, onUpdateStatus }: SessionPlanCardProps) {
+function SessionPlanCard({ plan, classroomId, onUpdateStatus }: SessionPlanCardProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const canStart = plan.status === 'DRAFT' || plan.status === 'PLANNED';
 
   return (
     <Card>
@@ -217,9 +220,12 @@ function SessionPlanCard({ plan, onUpdateStatus }: SessionPlanCardProps) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h4 className="font-medium">
+              <a
+                href={`/classrooms/${classroomId}/learner/${plan.learnerId}/session-plans/${plan.id}`}
+                className="font-medium hover:text-primary hover:underline"
+              >
                 {plan.sessionTemplateName || `${plan.sessionType} Session`}
-              </h4>
+              </a>
               <Badge tone={getSessionTypeTone(plan.sessionType)}>
                 {formatSessionType(plan.sessionType)}
               </Badge>
@@ -245,38 +251,49 @@ function SessionPlanCard({ plan, onUpdateStatus }: SessionPlanCardProps) {
             </div>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => setShowStatusMenu(!showStatusMenu)}
-              className="flex items-center gap-1"
-            >
-              <Badge tone={getStatusTone(plan.status)}>
-                {formatStatus(plan.status)}
-              </Badge>
-              <ChevronDownIcon className="w-4 h-4 text-muted" />
-            </button>
-
-            {showStatusMenu && (
-              <div className="absolute top-8 right-0 z-10 bg-background border border-border rounded-md shadow-lg py-1 min-w-[140px]">
-                {(
-                  ['DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as SessionPlanStatus[]
-                ).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => {
-                      onUpdateStatus(plan.id, s);
-                      setShowStatusMenu(false);
-                    }}
-                    className={cn(
-                      'w-full text-left px-3 py-1.5 text-sm hover:bg-surface',
-                      plan.status === s && 'font-medium bg-surface'
-                    )}
-                  >
-                    {formatStatus(s)}
-                  </button>
-                ))}
-              </div>
+          <div className="flex items-center gap-2">
+            {canStart && (
+              <a
+                href={`/classrooms/${classroomId}/learner/${plan.learnerId}/session-plans/${plan.id}`}
+                className="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90"
+              >
+                View & Start
+              </a>
             )}
+            
+            <div className="relative">
+              <button
+                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                className="flex items-center gap-1"
+              >
+                <Badge tone={getStatusTone(plan.status)}>
+                  {formatStatus(plan.status)}
+                </Badge>
+                <ChevronDownIcon className="w-4 h-4 text-muted" />
+              </button>
+
+              {showStatusMenu && (
+                <div className="absolute top-8 right-0 z-10 bg-background border border-border rounded-md shadow-lg py-1 min-w-[140px]">
+                  {(
+                    ['DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as SessionPlanStatus[]
+                  ).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        onUpdateStatus(plan.id, s);
+                        setShowStatusMenu(false);
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-1.5 text-sm hover:bg-surface',
+                        plan.status === s && 'font-medium bg-surface'
+                      )}
+                    >
+                      {formatStatus(s)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

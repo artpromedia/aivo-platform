@@ -24,6 +24,7 @@ import {
   createSessionPlan,
   listSessionPlans,
   getSessionPlanById,
+  getSessionPlanDetail,
   updateSessionPlan,
   replaceSessionPlanItems,
 } from '../services/sessionPlanService.js';
@@ -146,6 +147,34 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       await ensureCanReadLearner(request, plan.learnerId);
 
       return reply.send(plan);
+    }
+  );
+
+  /**
+   * GET /session-plans/:planId/detail
+   * Get session plan with full details including enriched goals
+   * Used for the "Run Session" view with all context needed
+   */
+  fastify.get(
+    '/session-plans/:planId/detail',
+    async (
+      request: FastifyRequest<{
+        Params: { planId: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const user = request.user!;
+      if (!user) throw new ForbiddenError('Authentication required');
+
+      const { planId } = planIdParamSchema.parse(request.params);
+      const tenantId = getTenantIdForQuery(user);
+
+      const detail = await getSessionPlanDetail(planId, tenantId);
+
+      // RBAC check via learner
+      await ensureCanReadLearner(request, detail.learnerId);
+
+      return reply.send(detail);
     }
   );
 

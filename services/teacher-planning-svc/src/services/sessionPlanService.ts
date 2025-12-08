@@ -15,9 +15,11 @@ import type {
   SessionPlanItem,
   SessionPlanMetadata,
   SessionPlanItemAiMetadata,
+  Goal,
 } from '../types/domain.js';
 
 import { getSkillsByIds, validateSessionId } from './externalClients.js';
+import { getGoalsByIds } from './goalService.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SESSION PLAN CRUD
@@ -150,6 +152,52 @@ export async function getSessionPlanById(planId: string, tenantId?: string): Pro
   }
 
   return result;
+}
+
+/**
+ * Session plan detail with enriched goal information
+ */
+export interface SessionPlanDetail extends SessionPlan {
+  /** Map of goalId -> Goal for items in this plan */
+  goals: Record<string, Goal>;
+  /** Linked goalIds from metadata */
+  linkedGoalIds: string[];
+}
+
+/**
+ * Get session plan with full details including goals
+ * Used for the "Run Session" view with all context needed
+ */
+export async function getSessionPlanDetail(planId: string, tenantId?: string): Promise<SessionPlanDetail> {
+  // Get the base plan with skill enrichment
+  const plan = await getSessionPlanById(planId, tenantId);
+
+  // Collect all goal IDs from items and metadata
+  const goalIdsFromItems = plan.items
+    ?.map((item: SessionPlanItem) => item.goalId)
+    .filter((id): id is string => id !== null) ?? [];
+
+  // Safely extract linkedGoalIds from metadata (may be {} or undefined)
+  const metadata = plan.metadataJson as SessionPlanMetadata | null;
+  const rawLinkedGoalIds = metadata?.linkedGoalIds;
+  const linkedGoalIds = Array.isArray(rawLinkedGoalIds) ? rawLinkedGoalIds : [];
+
+  const allGoalIds = [...new Set([...goalIdsFromItems, ...linkedGoalIds])];
+
+  // Fetch goals in batch
+  const goalsMap = await getGoalsByIds(allGoalIds, tenantId);
+
+  // Convert map to record
+  const goals: Record<string, Goal> = {};
+  for (const [id, goal] of goalsMap.entries()) {
+    goals[id] = goal;
+  }
+
+  return {
+    ...plan,
+    goals,
+    linkedGoalIds,
+  };
 }
 
 /**
