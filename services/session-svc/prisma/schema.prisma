@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of learning session - represents the primary purpose of the activity block.
+/// Designed to be extensible for future agent types (SEL, tutoring, etc.)
+enum SessionType {
+  LEARNING    // Today's Plan / daily practice
+  HOMEWORK    // Homework Helper sessions
+  BASELINE    // Baseline assessment sessions
+  PRACTICE    // Free practice / skill drill
+  SEL         // Social-emotional learning sessions
+  ASSESSMENT  // Other assessments (not baseline)
+
+  @@map("session_type")
+}
+
+/// Origin of the session - where/how it was initiated.
+/// Important for analytics segmentation and UX research.
+enum SessionOrigin {
+  MOBILE_LEARNER   // Learner using mobile app
+  WEB_LEARNER      // Learner using web app
+  TEACHER_LED      // Teacher-initiated classroom session
+  HOMEWORK_HELPER  // Triggered by Homework Helper agent
+  PARENT_APP       // Parent-initiated session
+  SYSTEM           // System-generated (e.g., scheduled practice)
+
+  @@map("session_origin")
+}
+
+/// Event types that can occur within a session.
+/// Organized by category for easier querying and analytics.
+enum SessionEventType {
+  // ─── Session Lifecycle ───────────────────────────────────────────────────────
+  SESSION_STARTED
+  SESSION_PAUSED
+  SESSION_RESUMED
+  SESSION_ENDED
+  SESSION_ABANDONED  // Session ended without explicit completion
+
+  // ─── Activity Events ─────────────────────────────────────────────────────────
+  ACTIVITY_STARTED
+  ACTIVITY_COMPLETED
+  ACTIVITY_SKIPPED
+  ACTIVITY_RESPONSE_SUBMITTED  // Single response within activity
+
+  // ─── Homework Helper Events ──────────────────────────────────────────────────
+  HOMEWORK_CAPTURED       // Photo/document captured
+  HOMEWORK_PARSED         // OCR/parsing complete
+  HOMEWORK_STEP_STARTED
+  HOMEWORK_STEP_COMPLETED
+  HOMEWORK_HINT_REQUESTED
+  HOMEWORK_SOLUTION_SHOWN
+
+  // ─── Focus & Regulation Events ───────────────────────────────────────────────
+  FOCUS_LOSS_DETECTED     // Disengagement detected
+  FOCUS_BREAK_STARTED     // Learner taking a break
+  FOCUS_BREAK_ENDED       // Break concluded
+  FOCUS_INTERVENTION_SHOWN // Regulation prompt displayed
+  FOCUS_INTERVENTION_COMPLETED
+
+  // ─── Skill & Mastery Events ──────────────────────────────────────────────────
+  SKILL_MASTERY_UPDATED   // Virtual Brain state change
+  SKILL_UNLOCKED          // New skill became available
+
+  // ─── Engagement Events ───────────────────────────────────────────────────────
+  REWARD_EARNED
+  STREAK_MILESTONE
+  ACHIEVEMENT_UNLOCKED
+
+  @@map("session_event_type")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// A Session represents a coherent block of learner activity.
+/// It serves as the top-level container for all learning events and is the
+/// primary unit for analytics, progress tracking, and Virtual Brain updates.
+///
+/// Design notes:
+/// - Sessions are immutable once ended (ended_at is set)
+/// - duration_ms is computed on completion for query efficiency
+/// - metadata_json allows flexible context without schema changes
+model Session {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String        @map("tenant_id") @db.Uuid
+  learnerId   String        @map("learner_id") @db.Uuid
+  sessionType SessionType   @map("session_type")
+  origin      SessionOrigin
+
+  startedAt   DateTime      @default(now()) @map("started_at") @db.Timestamptz
+  endedAt     DateTime?     @map("ended_at") @db.Timestamptz
+  durationMs  Int?          @map("duration_ms")  // Computed on completion
+
+  /// Flexible metadata - examples:
+  /// { "classroomId": "uuid", "assignedByTeacherId": "uuid" }
+  /// { "planId": "uuid", "targetSkills": ["SKL001", "SKL002"] }
+  /// { "homeworkSubject": "math", "grade": 5 }
+  metadataJson Json?        @map("metadata_json") @db.JsonB
+
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  events      SessionEvent[]
+
+  // ─── Indexes ─────────────────────────────────────────────────────────────────
+  // Primary lookup: sessions for a learner, most recent first
+  @@index([tenantId, learnerId, startedAt(sort: Desc)], name: "idx_sessions_learner_recent")
+  // Filter by type for analytics
+  @@index([tenantId, sessionType, startedAt(sort: Desc)], name: "idx_sessions_type_recent")
+  // Uncompleted sessions (for resume functionality)
+  @@index([tenantId, learnerId, endedAt], name: "idx_sessions_incomplete")
+
+  @@map("sessions")
+}
+
+/// SessionEvent represents a discrete occurrence within a session.
+/// Events are append-only and immutable - they form the audit trail
+/// for all learning activity and feed into analytics pipelines.
+///
+/// Design notes:
+/// - event_time is the actual time of occurrence (may differ from created_at)
+/// - metadata_json schema varies by event_type (see docs)
+/// - tenant_id/learner_id denormalized for efficient queries without joins
+model SessionEvent {
+  id          String           @id @default(uuid()) @db.Uuid
+  sessionId   String           @map("session_id") @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  learnerId   String           @map("learner_id") @db.Uuid
+  eventType   SessionEventType @map("event_type")
+  eventTime   DateTime         @map("event_time") @db.Timestamptz
+
+  /// Event-specific metadata - schema depends on event_type. Examples:
+  ///
+  /// ACTIVITY_COMPLETED:
+  /// { "activityId": "uuid", "skillCode": "SKL001", "score": 0.85, "durationMs": 45000 }
+  ///
+  /// HOMEWORK_STEP_COMPLETED:
+  /// { "stepIndex": 2, "correct": true, "hintUsed": false }
+  ///
+  /// FOCUS_LOSS_DETECTED:
+  /// { "focusScore": 0.3, "idleSeconds": 45, "trigger": "gaze_away" }
+  ///
+  /// SKILL_MASTERY_UPDATED:
+  /// { "skillCode": "SKL001", "previousMastery": 0.6, "newMastery": 0.72 }
+  metadataJson Json?           @map("metadata_json") @db.JsonB
+
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  session     Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // ─── Indexes ─────────────────────────────────────────────────────────────────
+  // Timeline within a session
+  @@index([sessionId, eventTime(sort: Asc)], name: "idx_events_session_timeline")
+  // Learner event history (for analytics, Virtual Brain updates)
+  @@index([tenantId, learnerId, eventTime(sort: Desc)], name: "idx_events_learner_history")
+  // Filter by event type (for specific analytics queries)
+  @@index([tenantId, eventType, eventTime(sort: Desc)], name: "idx_events_type_recent")
+
+  @@map("session_events")
+}

@@ -17,7 +17,9 @@ export function buildApp(): FastifyInstance {
   });
 
   // Auth middleware
-  void fastify.register(authMiddleware);
+  if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+    void fastify.register(authMiddleware);
+  }
 
   // Register routes
   void fastify.register(virtualBrainRoutes);

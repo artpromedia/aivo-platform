@@ -10,23 +10,25 @@
     "build": "next build"
   },
   "dependencies": {
-    "@aivo/ui-web": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
+    "@aivo/ui-web": "workspace:*",
+    "date-fns": "^4.1.0",
     "jose": "^5.9.2",
     "next": "14.2.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^22.7.5",
-    "@types/react": "^18.3.12",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
-    "jsdom": "^26.0.0",
-    "vitest": "^2.1.4",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.12",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^26.0.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }

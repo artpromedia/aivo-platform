@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 const _baseUrl = String.fromEnvironment(
-  'LEARNER_MODEL_API_URL',
-  defaultValue: 'http://localhost:4015/api',
+  'LEARNER_MODEL_BASE_URL',
+  defaultValue: 'http://localhost:4015',
 );
 
-const _useMock = bool.fromEnvironment('USE_PLAN_MOCK', defaultValue: true);
+const _useMock = bool.fromEnvironment('USE_PLAN_MOCK', defaultValue: false);
 
 /// Service for interacting with Virtual Brain Plan APIs.
 class PlanService {
@@ -24,66 +24,57 @@ class PlanService {
   Future<DifficultyRecommendationResponse> getDifficultyRecommendation(
     String learnerId, {
     String? domain,
+    String? skillCode,
   }) async {
     if (_useMock) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      return _mockDifficultyRecommendation(domain);
+      await Future.delayed(const Duration(milliseconds: 300));
+      return _mockDifficultyRecommendation(learnerId, domain: domain, skillCode: skillCode);
     }
 
     final queryParams = <String, dynamic>{};
     if (domain != null) queryParams['domain'] = domain;
+    if (skillCode != null) queryParams['skillCode'] = skillCode;
 
     final response = await _dio.get(
       '/virtual-brains/$learnerId/difficulty-recommendation',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return DifficultyRecommendationResponse.fromJson(response.data);
+    return DifficultyRecommendationResponse.fromJson(response.data as Map<String, dynamic>);
   }
 
-  DifficultyRecommendationResponse _mockDifficultyRecommendation(String? domain) {
-    // Mock shows some domains recommending increase, some decrease
+  DifficultyRecommendationResponse _mockDifficultyRecommendation(
+    String learnerId, {
+    String? domain,
+    String? skillCode,
+  }) {
+    final mastery = domain == 'MATH' ? 0.72 : 0.48;
+    final recommendation = mastery > 0.7
+        ? DifficultyRecommendation.harder
+        : mastery < 0.4
+            ? DifficultyRecommendation.easier
+            : DifficultyRecommendation.same;
+
     return DifficultyRecommendationResponse(
-      learnerId: 'mock-learner-id',
-      overall: DifficultyRecommendation.increase,
-      currentDifficultyBand: 2,
-      suggestedDifficultyBand: 3,
-      byDomain: {
-        'READING_FOUNDATIONS': const DomainRecommendation(
-          recommendation: DifficultyRecommendation.increase,
-          avgMastery: 0.85,
-          activitiesCompleted: 12,
-          currentBand: 2,
-          suggestedBand: 3,
-        ),
-        'READING_COMPREHENSION': const DomainRecommendation(
-          recommendation: DifficultyRecommendation.maintain,
-          avgMastery: 0.55,
-          activitiesCompleted: 8,
-          currentBand: 2,
-          suggestedBand: 2,
-        ),
-        'NUMBER_SENSE': const DomainRecommendation(
-          recommendation: DifficultyRecommendation.decrease,
-          avgMastery: 0.32,
-          activitiesCompleted: 6,
-          currentBand: 3,
-          suggestedBand: 2,
-        ),
-        'OPERATIONS': const DomainRecommendation(
-          recommendation: DifficultyRecommendation.maintain,
-          avgMastery: 0.60,
-          activitiesCompleted: 10,
-          currentBand: 2,
-          suggestedBand: 2,
-        ),
-        'PROBLEM_SOLVING': const DomainRecommendation(
-          recommendation: DifficultyRecommendation.increase,
-          avgMastery: 0.78,
-          activitiesCompleted: 5,
-          currentBand: 2,
-          suggestedBand: 3,
-        ),
-      },
+      learnerId: learnerId,
+      recommendation: recommendation,
+      reason: recommendation == DifficultyRecommendation.harder
+          ? 'Great progress lately. Let’s introduce more challenge.'
+          : recommendation == DifficultyRecommendation.easier
+              ? 'Accuracy dipped; easing difficulty to rebuild confidence.'
+              : 'Current level is working; keep consistency.',
+      currentMastery: mastery,
+      recentPerformance: const RecentPerformance(
+        totalAttempts: 20,
+        correctCount: 14,
+        correctRate: 0.7,
+      ),
+      suggestedDifficultyLevel: recommendation == DifficultyRecommendation.harder
+          ? 4
+          : recommendation == DifficultyRecommendation.easier
+              ? 2
+              : 3,
+      scopeDomain: domain,
+      scopeSkillCode: skillCode,
     );
   }
 }
@@ -92,7 +83,8 @@ class PlanService {
 final planServiceProvider = Provider<PlanService>((ref) => PlanService());
 
 /// Provider for fetching difficulty recommendation for a learner.
-final difficultyRecommendationProvider = FutureProvider.family<DifficultyRecommendationResponse, String>(
+final difficultyRecommendationProvider =
+    FutureProvider.family<DifficultyRecommendationResponse, String>(
   (ref, learnerId) async {
     final service = ref.read(planServiceProvider);
     return service.getDifficultyRecommendation(learnerId);

@@ -4,7 +4,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../utils/cn';
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
+interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   title?: ReactNode;
   subtitle?: ReactNode;
   action?: ReactNode;
@@ -12,7 +12,10 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 export function Card({ title, subtitle, action, className, children, ...props }: CardProps) {
   return (
-    <div className={cn('rounded-xl border border-border bg-surface shadow-soft', className)} {...props}>
+    <div
+      className={cn('rounded-xl border border-border bg-surface shadow-soft', className)}
+      {...props}
+    >
       {(title || subtitle || action) && (
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div className="space-y-1">

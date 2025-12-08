@@ -1,6 +1,7 @@
 'use client';
 
 import { useAccessibility } from '@aivo/ui-web';
+import React from 'react';
 
 function ToggleButton({
   label,

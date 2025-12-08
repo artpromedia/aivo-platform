@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 const _baseUrl = String.fromEnvironment('LEARNER_MODEL_BASE_URL', defaultValue: 'http://localhost:4015');
-const _usePlanMock = bool.fromEnvironment('USE_PLAN_MOCK', defaultValue: true);
+const _usePlanMock = bool.fromEnvironment('USE_PLAN_MOCK', defaultValue: false);
 
 /// Exception thrown by plan API operations.
 class PlanException implements Exception {
