@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum BaselineDomain {
+  ELA
+  MATH
+  SCIENCE
+  SPEECH
+  SEL
+
+  @@map("baseline_domain")
+}
+
+enum GradeBand {
+  K5
+  G6_8
+  G9_12
+
+  @@map("grade_band")
+}
+
+enum BaselineStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  RETEST_ALLOWED
+  FINAL_ACCEPTED
+
+  @@map("baseline_status")
+}
+
+enum RetestReasonType {
+  DISTRACTED
+  ANXIETY
+  TECHNICAL_ISSUE
+  OTHER
+
+  @@map("retest_reason_type")
+}
+
+// ── Models ───────────────────────────────────────────────────────────────────
+
+model BaselineProfile {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @db.Uuid
+  learnerId      String         @db.Uuid
+  gradeBand      GradeBand      @map("grade_band")
+  status         BaselineStatus @default(NOT_STARTED)
+  attemptCount   Int            @default(0) @map("attempt_count") @db.SmallInt
+  finalAttemptId String?        @map("final_attempt_id") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  attempts     BaselineAttempt[] @relation("ProfileAttempts")
+  finalAttempt BaselineAttempt?  @relation("FinalAttempt", fields: [finalAttemptId], references: [id])
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@map("baseline_profiles")
+}
+
+model BaselineAttempt {
+  id                  String            @id @default(uuid()) @db.Uuid
+  baselineProfileId   String            @map("baseline_profile_id") @db.Uuid
+  attemptNumber       Int               @map("attempt_number") @db.SmallInt
+  startedAt           DateTime?         @map("started_at") @db.Timestamptz
+  completedAt         DateTime?         @map("completed_at") @db.Timestamptz
+  domainScoresJson    Json?             @map("domain_scores_json")
+  overallEstimateJson Json?             @map("overall_estimate_json")
+  retestReasonType    RetestReasonType? @map("retest_reason_type")
+  retestReasonNotes   String?           @map("retest_reason_notes")
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  profile         BaselineProfile          @relation("ProfileAttempts", fields: [baselineProfileId], references: [id], onDelete: Cascade)
+  profileFinal    BaselineProfile?         @relation("FinalAttempt")
+  items           BaselineItem[]
+  skillEstimates  BaselineSkillEstimate[]
+
+  @@unique([baselineProfileId, attemptNumber])
+  @@index([baselineProfileId, attemptNumber])
+  @@map("baseline_attempts")
+}
+
+model BaselineItem {
+  id                String         @id @default(uuid()) @db.Uuid
+  baselineAttemptId String         @map("baseline_attempt_id") @db.Uuid
+  sequenceIndex     Int            @map("sequence_index") @db.SmallInt
+  domain            BaselineDomain
+  gradeBand         GradeBand      @map("grade_band")
+  promptJson        Json           @map("prompt_json")
+  correctAnswerJson Json           @map("correct_answer_json")
+  aiMetadataJson    Json?          @map("ai_metadata_json")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  attempt   BaselineAttempt    @relation(fields: [baselineAttemptId], references: [id], onDelete: Cascade)
+  responses BaselineResponse[]
+
+  @@unique([baselineAttemptId, sequenceIndex])
+  @@index([baselineAttemptId, domain, sequenceIndex])
+  @@map("baseline_items")
+}
+
+model BaselineResponse {
+  id             String   @id @default(uuid()) @db.Uuid
+  baselineItemId String   @map("baseline_item_id") @db.Uuid
+  learnerId      String   @map("learner_id") @db.Uuid
+  responseJson   Json     @map("response_json")
+  isCorrect      Boolean? @map("is_correct")
+  score          Decimal? @db.Decimal(5, 3)
+  latencyMs      Int?     @map("latency_ms")
+  submittedAt    DateTime @default(now()) @map("submitted_at") @db.Timestamptz
+
+  item BaselineItem @relation(fields: [baselineItemId], references: [id], onDelete: Cascade)
+
+  @@unique([baselineItemId, learnerId])
+  @@index([learnerId, baselineItemId])
+  @@map("baseline_responses")
+}
+
+model BaselineSkillEstimate {
+  id                String         @id @default(uuid()) @db.Uuid
+  baselineAttemptId String         @map("baseline_attempt_id") @db.Uuid
+  skillCode         String         @map("skill_code")
+  domain            BaselineDomain
+  estimatedLevel    Decimal        @map("estimated_level") @db.Decimal(6, 3)
+  confidence        Decimal        @db.Decimal(5, 3)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  attempt BaselineAttempt @relation(fields: [baselineAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([baselineAttemptId, skillCode])
+  @@index([baselineAttemptId, skillCode])
+  @@map("baseline_skill_estimates")
+}
