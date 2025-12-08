@@ -16,6 +16,7 @@ export default [
       "**/build/**",
       "**/.next/**",
       "**/coverage/**",
+      "**/generated/**",
       "libs/ts-rbac/src/**/*.js",
       "libs/ts-rbac/src/**/*.js.map",
       "libs/ts-rbac/src/**/*.d.ts",
@@ -23,7 +24,8 @@ export default [
       "**/tailwind.config.ts",
       "**/vitest.config.ts",
       "**/*.test.ts",
-      "**/*.config.mjs"
+      "**/*.config.mjs",
+      "**/tests/**"
     ]
   },
   ...tseslint.configs.strictTypeChecked,
