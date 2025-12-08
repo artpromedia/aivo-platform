@@ -26,7 +26,14 @@ final _routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/pin',
     routes: [
       GoRoute(path: '/pin', builder: (context, state) => const PinEntryScreen()),
-      GoRoute(path: '/plan', builder: (context, state) => const TodayPlanScreen()),
+      GoRoute(
+        path: '/plan',
+        builder: (context, state) {
+          // Get learnerId from pinState - fallback to empty string which will show error
+          final learnerId = pinState.learnerId ?? '';
+          return TodayPlanScreen(learnerId: learnerId);
+        },
+      ),
       GoRoute(path: '/complete', builder: (context, state) => const SessionCompleteScreen()),
       // Baseline flow routes
       GoRoute(path: '/baseline/intro', builder: (context, state) => const BaselineIntroScreen()),

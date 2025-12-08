@@ -108,3 +108,40 @@ model VirtualBrain {
   @@index([tenantId, learnerId])
   @@map("virtual_brains")
 }
+
+// ── Learning Objects ─────────────────────────────────────────────────────────
+
+/// Learning content catalog - activities, lessons, exercises.
+/// Each object targets a specific skill and difficulty level.
+model LearningObject {
+  id               String      @id @default(uuid()) @db.Uuid
+  tenantId         String?     @map("tenant_id") @db.Uuid // null = global/shared
+  skillCode        String      @map("skill_code")
+  domain           SkillDomain
+  gradeBand        GradeBand   @map("grade_band")
+  difficultyLevel  Int         @map("difficulty_level") @db.SmallInt // 1-5 scale
+  objectType       LearningObjectType @map("object_type")
+  title            String
+  description      String?
+  estimatedMinutes Int         @map("estimated_minutes") @db.SmallInt
+  contentUrl       String?     @map("content_url")
+  metadataJson     Json?       @map("metadata_json")
+  isActive         Boolean     @default(true) @map("is_active")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([skillCode, difficultyLevel])
+  @@index([domain, gradeBand, difficultyLevel])
+  @@map("learning_objects")
+}
+
+enum LearningObjectType {
+  LESSON
+  EXERCISE
+  GAME
+  VIDEO
+  READING
+  ASSESSMENT
+
+  @@map("learning_object_type")
+}

@@ -6,3 +6,4 @@ export 'theme/grade_theme_controller.dart';
 export 'l10n/local_strings.dart';
 export 'data/learner.dart';
 export 'data/baseline.dart';
+export 'data/plan.dart';

@@ -19,5 +19,7 @@ export const config = {
   databaseUrl:
     process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_learner_model',
   baselineSvcUrl: process.env.BASELINE_SVC_URL || 'http://localhost:4010',
+  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
+  aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
 };

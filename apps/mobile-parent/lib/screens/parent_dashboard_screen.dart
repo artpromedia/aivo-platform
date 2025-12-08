@@ -9,6 +9,7 @@ import '../baseline/baseline_controller.dart';
 import '../baseline/baseline_service.dart';
 import '../learners/learner_service.dart';
 import '../widgets/baseline_status_card.dart';
+import '../widgets/difficulty_recommendation_card.dart';
 
 class ParentDashboardScreen extends ConsumerWidget {
   const ParentDashboardScreen({super.key});
@@ -97,7 +98,27 @@ class ParentDashboardScreen extends ConsumerWidget {
                     );
                   }
 
-                  return _BaselineCardsList(learners: learners);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _BaselineCardsList(learners: learners),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Difficulty Recommendations Section
+                      Text('Learning Progress', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Personalized difficulty recommendations for each child',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      ...learners.map((learner) => DifficultyRecommendationCard(learner: learner)),
+                    ],
+                  );
                 },
                 loading: () => const Center(
                   child: Padding(

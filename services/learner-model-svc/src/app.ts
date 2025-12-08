@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { planRoutes } from './routes/plan.js';
 import { virtualBrainRoutes } from './routes/virtualBrain.js';
 
 export function buildApp(): FastifyInstance {
@@ -20,6 +21,7 @@ export function buildApp(): FastifyInstance {
 
   // Register routes
   void fastify.register(virtualBrainRoutes);
+  void fastify.register(planRoutes);
 
   return fastify;
 }
