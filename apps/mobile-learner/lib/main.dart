@@ -8,7 +8,10 @@ import 'pin/pin_state.dart';
 import 'screens/pin_entry_screen.dart';
 import 'screens/today_plan_screen.dart';
 import 'screens/session_complete_screen.dart';
+import 'screens/design_system_gallery_screen.dart';
 import 'learner/theme_loader.dart';
+
+const bool _enableDesignSystemGallery = bool.fromEnvironment('AIVO_DESIGN_GALLERY', defaultValue: false);
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final pinState = ref.watch(pinControllerProvider);
@@ -18,8 +21,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pin', builder: (context, state) => const PinEntryScreen()),
       GoRoute(path: '/plan', builder: (context, state) => const TodayPlanScreen()),
       GoRoute(path: '/complete', builder: (context, state) => const SessionCompleteScreen()),
+      if (_enableDesignSystemGallery)
+        GoRoute(path: '/design-system', builder: (context, state) => const DesignSystemGalleryScreen()),
     ],
     redirect: (context, state) {
+      if (_enableDesignSystemGallery && state.subloc == '/design-system') return null;
       if (pinState.status == PinStatus.loading) return null;
       final authed = pinState.isAuthenticated;
       final atPin = state.subloc == '/pin';
