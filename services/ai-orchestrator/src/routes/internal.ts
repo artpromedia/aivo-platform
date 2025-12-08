@@ -240,4 +240,31 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     const summary = await telemetryStore.summary(tenantId);
     reply.code(200).send({ summary });
   });
+
+  /**
+   * GET /ai/metrics/agents - Agent-specific metrics breakdown for observability dashboards.
+   * Returns calls, safety violations, and latency broken down by agent type and use case.
+   */
+  app.get('/ai/metrics/agents', async (request, reply) => {
+    const tenantId =
+      typeof request.query === 'object' && request.query !== null
+        ? (request.query as Record<string, string> | undefined)?.tenantId
+        : undefined;
+
+    if (telemetryStore.agentMetrics) {
+      const metrics = await telemetryStore.agentMetrics(tenantId);
+      reply.code(200).send({ metrics });
+    } else {
+      // Fallback for stores that don't support agentMetrics
+      reply.code(200).send({
+        metrics: {
+          callsByAgent: {},
+          safetyViolationsByAgent: {},
+          needsReviewByAgent: {},
+          avgLatencyByAgent: {},
+          callsByUseCase: {},
+        },
+      });
+    }
+  });
 };
