@@ -10,6 +10,7 @@ import '../baseline/baseline_service.dart';
 import '../learners/learner_service.dart';
 import '../widgets/baseline_status_card.dart';
 import '../widgets/difficulty_recommendation_card.dart';
+import '../widgets/homework_focus_card.dart';
 
 class ParentDashboardScreen extends ConsumerWidget {
   const ParentDashboardScreen({super.key});
@@ -102,6 +103,24 @@ class ParentDashboardScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _BaselineCardsList(learners: learners),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Homework & Focus Analytics Section
+                      Text('Homework & Focus', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      Text(
+                        'See how your children use the homework helper and manage focus',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      ...learners.map((learner) => HomeworkFocusCard(
+                        learner: learner,
+                        parentId: authState.userId ?? '',
+                      )),
                       
                       const SizedBox(height: 24),
                       

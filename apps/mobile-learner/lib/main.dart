@@ -4,12 +4,17 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import 'baseline/baseline_controller.dart';
+import 'focus/focus_service.dart';
 import 'pin/pin_controller.dart';
 import 'pin/pin_state.dart';
 import 'screens/baseline_break_screen.dart';
 import 'screens/baseline_complete_screen.dart';
 import 'screens/baseline_intro_screen.dart';
 import 'screens/baseline_question_screen.dart';
+import 'screens/focus_break_screen.dart';
+import 'screens/homework_helper_intro_screen.dart';
+import 'screens/homework_steps_screen.dart';
+import 'screens/homework_text_input_screen.dart';
 import 'screens/pin_entry_screen.dart';
 import 'screens/today_plan_screen.dart';
 import 'screens/session_complete_screen.dart';
@@ -40,6 +45,44 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/baseline/question', builder: (context, state) => const BaselineQuestionScreen()),
       GoRoute(path: '/baseline/break', builder: (context, state) => const BaselineBreakScreen()),
       GoRoute(path: '/baseline/complete', builder: (context, state) => const BaselineCompleteScreen()),
+      // Homework Helper flow routes
+      GoRoute(
+        path: '/homework/intro',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return HomeworkHelperIntroScreen(learnerId: learnerId);
+        },
+      ),
+      GoRoute(
+        path: '/homework/input',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return HomeworkTextInputScreen(learnerId: learnerId);
+        },
+      ),
+      GoRoute(
+        path: '/homework/steps',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return HomeworkStepsScreen(learnerId: learnerId);
+        },
+      ),
+      // Focus/Regulation break route
+      GoRoute(
+        path: '/focus/break',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final learnerId = extra?['learnerId'] as String? ?? pinState.learnerId ?? '';
+          final activity = extra?['activity'] as RegulationActivity? ??
+              const RegulationActivity(
+                type: BreakActivityType.breathing,
+                title: 'Take a Breath',
+                instructions: 'Let\'s take a few deep breaths together.',
+                durationSeconds: 60,
+              );
+          return FocusBreakScreen(learnerId: learnerId, activity: activity);
+        },
+      ),
       if (_enableDesignSystemGallery)
         GoRoute(path: '/design-system', builder: (context, state) => const DesignSystemGalleryScreen()),
     ],

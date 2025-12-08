@@ -7,6 +7,7 @@ import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'screens/add_child_screen.dart';
 import 'screens/baseline_result_screen.dart';
+import 'screens/homework_focus_detail_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 
@@ -36,6 +37,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
             profileId: profileId,
             learnerId: extra['learnerId']?.toString() ?? '',
             learnerName: extra['learnerName']?.toString() ?? 'Child',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/homework-focus-detail/:learnerId',
+        builder: (context, state) {
+          final learnerId = state.pathParameters['learnerId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return HomeworkFocusDetailScreen(
+            learnerId: learnerId,
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
+            parentId: extra['parentId']?.toString() ?? '',
           );
         },
       ),
