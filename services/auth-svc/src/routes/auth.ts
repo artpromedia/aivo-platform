@@ -49,7 +49,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance) {
     const user = await prisma.user.create({
       data: {
         email,
-        phone,
+        phone: phone ?? null,
         passwordHash,
         tenantId,
         status: 'ACTIVE',
@@ -60,7 +60,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance) {
       include: { roles: true },
     });
 
-    const roles = user.roles.map((r: { role: string }) => r.role as Role);
+    const roles = user.roles.map((r) => r.role as Role);
     const accessToken = await signAccessToken({ sub: user.id, tenant_id: user.tenantId, roles });
     const refreshToken = await signRefreshToken({ sub: user.id, tenant_id: user.tenantId, roles });
 

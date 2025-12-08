@@ -20,8 +20,8 @@ export async function registerSchoolRoutes(app: FastifyInstance) {
       data: {
         tenantId: params.data.id,
         name: body.data.name,
-        address: body.data.address,
-        externalId: body.data.external_id,
+        address: body.data.address ?? null,
+        externalId: body.data.external_id ?? null,
       },
     });
     return reply.status(201).send(school);

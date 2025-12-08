@@ -24,3 +24,6 @@ __pycache__
 .flutter-plugins-dependencies
 .packages
 pubspec.lock
+
+# Prisma generated clients
+**/generated/prisma-client
