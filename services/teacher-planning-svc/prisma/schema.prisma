@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum GoalDomain {
+  ELA
+  MATH
+  SCIENCE
+  SPEECH
+  SEL
+  OTHER
+
+  @@map("goal_domain")
+}
+
+enum GoalStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+
+  @@map("goal_status")
+}
+
+enum ObjectiveStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  MET
+  NOT_MET
+
+  @@map("objective_status")
+}
+
+enum SessionPlanType {
+  LEARNING
+  THERAPY
+  GROUP
+  ASSESSMENT
+  PRACTICE
+  OTHER
+
+  @@map("session_plan_type")
+}
+
+enum SessionPlanStatus {
+  DRAFT
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("session_plan_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Goal {
+  id                String     @id @default(uuid()) @db.Uuid
+  tenantId          String     @map("tenant_id") @db.Uuid
+  learnerId         String     @map("learner_id") @db.Uuid
+  createdByUserId   String     @map("created_by_user_id") @db.Uuid
+
+  title             String
+  description       String?
+  domain            GoalDomain
+
+  skillId           String?    @map("skill_id") @db.Uuid
+
+  startDate         DateTime   @default(now()) @map("start_date") @db.Date
+  targetDate        DateTime?  @map("target_date") @db.Date
+
+  status            GoalStatus @default(DRAFT)
+  progressRating    Int?       @map("progress_rating") @db.SmallInt
+
+  metadataJson      Json?      @default("{}") @map("metadata_json")
+
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  objectives        GoalObjective[]
+  sessionPlanItems  SessionPlanItem[]
+  progressNotes     ProgressNote[]
+
+  @@index([tenantId, learnerId, status])
+  @@index([tenantId, status])
+  @@index([learnerId])
+  @@index([skillId])
+  @@index([createdByUserId])
+  @@map("goals")
+}
+
+model GoalObjective {
+  id              String          @id @default(uuid()) @db.Uuid
+  goalId          String          @map("goal_id") @db.Uuid
+
+  description     String
+  successCriteria String?         @map("success_criteria")
+
+  status          ObjectiveStatus @default(NOT_STARTED)
+  progressRating  Int?            @map("progress_rating") @db.SmallInt
+
+  orderIndex      Int             @default(0) @map("order_index")
+
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  goal              Goal              @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  sessionPlanItems  SessionPlanItem[]
+  progressNotes     ProgressNote[]
+
+  @@index([goalId])
+  @@index([goalId, status])
+  @@map("goal_objectives")
+}
+
+model SessionPlan {
+  id                       String            @id @default(uuid()) @db.Uuid
+  tenantId                 String            @map("tenant_id") @db.Uuid
+  learnerId                String            @map("learner_id") @db.Uuid
+  createdByUserId          String            @map("created_by_user_id") @db.Uuid
+
+  sessionTemplateName      String?           @map("session_template_name")
+
+  scheduledFor             DateTime?         @map("scheduled_for") @db.Timestamptz
+  estimatedDurationMinutes Int?              @map("estimated_duration_minutes")
+
+  sessionType              SessionPlanType   @default(LEARNING) @map("session_type")
+  status                   SessionPlanStatus @default(DRAFT)
+
+  sessionId                String?           @map("session_id") @db.Uuid
+
+  metadataJson             Json?             @default("{}") @map("metadata_json")
+
+  createdAt                DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  items         SessionPlanItem[]
+  progressNotes ProgressNote[]
+
+  @@index([tenantId, learnerId, status])
+  @@index([tenantId, scheduledFor])
+  @@index([sessionId])
+  @@index([createdByUserId])
+  @@map("session_plans")
+}
+
+model SessionPlanItem {
+  id                       String   @id @default(uuid()) @db.Uuid
+  sessionPlanId            String   @map("session_plan_id") @db.Uuid
+
+  orderIndex               Int      @default(0) @map("order_index")
+
+  goalId                   String?  @map("goal_id") @db.Uuid
+  goalObjectiveId          String?  @map("goal_objective_id") @db.Uuid
+  skillId                  String?  @map("skill_id") @db.Uuid
+
+  activityType             String   @map("activity_type")
+  activityDescription      String?  @map("activity_description")
+  estimatedDurationMinutes Int?     @map("estimated_duration_minutes")
+
+  aiMetadataJson           Json?    @default("{}") @map("ai_metadata_json")
+
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  sessionPlan   SessionPlan    @relation(fields: [sessionPlanId], references: [id], onDelete: Cascade)
+  goal          Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  goalObjective GoalObjective? @relation(fields: [goalObjectiveId], references: [id], onDelete: SetNull)
+
+  @@index([sessionPlanId])
+  @@index([goalId])
+  @@index([skillId])
+  @@map("session_plan_items")
+}
+
+model ProgressNote {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String   @map("learner_id") @db.Uuid
+  createdByUserId   String   @map("created_by_user_id") @db.Uuid
+
+  sessionId         String?  @map("session_id") @db.Uuid
+  sessionPlanId     String?  @map("session_plan_id") @db.Uuid
+
+  goalId            String?  @map("goal_id") @db.Uuid
+  goalObjectiveId   String?  @map("goal_objective_id") @db.Uuid
+
+  noteText          String   @map("note_text")
+  rating            Int?     @db.SmallInt
+
+  evidenceUri       String?  @map("evidence_uri")
+
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  sessionPlan   SessionPlan?   @relation(fields: [sessionPlanId], references: [id], onDelete: SetNull)
+  goal          Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  goalObjective GoalObjective? @relation(fields: [goalObjectiveId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@index([sessionId])
+  @@index([goalId])
+  @@index([sessionPlanId])
+  @@index([createdByUserId])
+  @@map("progress_notes")
+}
