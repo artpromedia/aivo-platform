@@ -4,6 +4,9 @@
  * Business logic for managing goals and objectives.
  */
 
+import type { Prisma } from '@prisma/client';
+
+import { BadRequestError, NotFoundError } from '../middleware/errorHandler.js';
 import { prisma } from '../prisma.js';
 import type {
   Goal,
@@ -14,8 +17,8 @@ import type {
   ProgressRating,
   GoalMetadata,
 } from '../types/domain.js';
+
 import { getSkillById, getSkillsByIds } from './externalClients.js';
-import { BadRequestError, NotFoundError } from '../middleware/errorHandler.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // GOAL CRUD
@@ -26,28 +29,28 @@ export interface CreateGoalParams {
   learnerId: string;
   createdByUserId: string;
   title: string;
-  description?: string;
+  description?: string | undefined;
   domain: GoalDomain;
-  skillId?: string;
-  startDate?: Date;
-  targetDate?: Date;
-  metadataJson?: GoalMetadata;
+  skillId?: string | undefined;
+  startDate?: Date | undefined;
+  targetDate?: Date | undefined;
+  metadataJson?: GoalMetadata | undefined;
 }
 
 export interface UpdateGoalParams {
-  title?: string;
-  description?: string | null;
-  status?: GoalStatus;
-  targetDate?: Date | null;
-  progressRating?: ProgressRating | null;
-  metadataJson?: GoalMetadata | null;
+  title?: string | undefined;
+  description?: string | null | undefined;
+  status?: GoalStatus | undefined;
+  targetDate?: Date | null | undefined;
+  progressRating?: ProgressRating | null | undefined;
+  metadataJson?: GoalMetadata | null | undefined;
 }
 
 export interface ListGoalsParams {
-  tenantId?: string;
+  tenantId: string;
   learnerId: string;
-  status?: GoalStatus;
-  domain?: GoalDomain;
+  status?: GoalStatus | undefined;
+  domain?: GoalDomain | undefined;
   page: number;
   pageSize: number;
 }
@@ -88,13 +91,13 @@ export async function createGoal(params: CreateGoalParams): Promise<Goal> {
       learnerId,
       createdByUserId,
       title,
-      description,
+      description: description ?? null,
       domain,
-      skillId,
+      skillId: skillId ?? null,
       startDate: startDate || new Date(),
-      targetDate,
+      targetDate: targetDate ?? null,
       status: 'ACTIVE',
-      metadataJson: metadataJson || {},
+      metadataJson: (metadataJson || {}) as Prisma.InputJsonValue,
     },
     include: {
       objectives: true,
@@ -105,7 +108,10 @@ export async function createGoal(params: CreateGoalParams): Promise<Goal> {
 
   // Enrich with skill info
   if (result.skillId) {
-    result.skill = await getSkillById(result.skillId) || undefined;
+    const skill = await getSkillById(result.skillId);
+    if (skill) {
+      result.skill = skill;
+    }
   }
 
   return result;
@@ -135,7 +141,10 @@ export async function getGoalById(goalId: string, tenantId?: string): Promise<Go
 
   // Enrich with skill info
   if (result.skillId) {
-    result.skill = await getSkillById(result.skillId) || undefined;
+    const skill = await getSkillById(result.skillId);
+    if (skill) {
+      result.skill = skill;
+    }
   }
 
   return result;
@@ -178,14 +187,17 @@ export async function listGoals(params: ListGoalsParams): Promise<ListGoalsResul
 
   // Batch enrich skill info
   const skillIds = mappedGoals
-    .map((g) => g.skillId)
+    .map((g: Goal) => g.skillId)
     .filter((id): id is string => id !== null);
 
   if (skillIds.length > 0) {
     const skillsMap = await getSkillsByIds(skillIds);
     for (const goal of mappedGoals) {
-      if (goal.skillId && skillsMap.has(goal.skillId)) {
-        goal.skill = skillsMap.get(goal.skillId);
+      if (goal.skillId) {
+        const skill = skillsMap.get(goal.skillId);
+        if (skill) {
+          goal.skill = skill;
+        }
       }
     }
   }
@@ -212,7 +224,9 @@ export async function updateGoal(
       ...(params.status !== undefined && { status: params.status }),
       ...(params.targetDate !== undefined && { targetDate: params.targetDate }),
       ...(params.progressRating !== undefined && { progressRating: params.progressRating }),
-      ...(params.metadataJson !== undefined && { metadataJson: params.metadataJson || {} }),
+      ...(params.metadataJson !== undefined && {
+        metadataJson: (params.metadataJson || {}) as Prisma.InputJsonValue,
+      }),
     },
     include: {
       objectives: {
@@ -224,7 +238,10 @@ export async function updateGoal(
   const result = mapGoalFromDb(goal);
 
   if (result.skillId) {
-    result.skill = await getSkillById(result.skillId) || undefined;
+    const skill = await getSkillById(result.skillId);
+    if (skill) {
+      result.skill = skill;
+    }
   }
 
   return result;
@@ -237,15 +254,15 @@ export async function updateGoal(
 export interface CreateObjectiveParams {
   goalId: string;
   description: string;
-  successCriteria?: string;
-  orderIndex?: number;
+  successCriteria?: string | undefined;
+  orderIndex?: number | undefined;
 }
 
 export interface UpdateObjectiveParams {
-  description?: string;
-  successCriteria?: string | null;
-  status?: ObjectiveStatus;
-  progressRating?: ProgressRating | null;
+  description?: string | undefined;
+  successCriteria?: string | null | undefined;
+  status?: ObjectiveStatus | undefined;
+  progressRating?: ProgressRating | null | undefined;
 }
 
 /**
@@ -274,7 +291,7 @@ export async function createObjective(
     data: {
       goalId,
       description,
-      successCriteria,
+      successCriteria: successCriteria ?? null,
       orderIndex: finalOrderIndex,
       status: 'NOT_STARTED',
     },
@@ -383,7 +400,7 @@ function mapGoalFromDb(db: DbGoal): Goal {
     metadataJson: db.metadataJson as GoalMetadata | null,
     createdAt: db.createdAt,
     updatedAt: db.updatedAt,
-    objectives: db.objectives?.map(mapObjectiveFromDb),
+    objectives: db.objectives ? db.objectives.map(mapObjectiveFromDb) : [],
   };
 }
 

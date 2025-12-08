@@ -6,22 +6,19 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import {
-  createProgressNoteSchema,
-  progressNoteQuerySchema,
-  learnerIdParamSchema,
-} from '../schemas/index.js';
-import {
-  createProgressNote,
-  listProgressNotes,
-} from '../services/progressNoteService.js';
+import { ForbiddenError } from '../middleware/errorHandler.js';
 import {
   ensureCanReadLearner,
   ensureCanWriteLearner,
   getTenantIdForQuery,
 } from '../middleware/rbac.js';
+import {
+  createProgressNoteSchema,
+  progressNoteQuerySchema,
+  learnerIdParamSchema,
+} from '../schemas/index.js';
+import { createProgressNote, listProgressNotes } from '../services/progressNoteService.js';
 import type { AuthUser, ProgressRating } from '../types/index.js';
-import { ForbiddenError } from '../middleware/errorHandler.js';
 
 export async function registerProgressNoteRoutes(fastify: FastifyInstance): Promise<void> {
   // ════════════════════════════════════════════════════════════════════════════
@@ -42,7 +39,7 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const body = createProgressNoteSchema.parse(request.body);
@@ -85,7 +82,7 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { learnerId } = learnerIdParamSchema.parse(request.params);
@@ -94,10 +91,8 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
       // RBAC check
       await ensureCanReadLearner(request, learnerId);
 
-      const tenantId = getTenantIdForQuery(user);
-
       const result = await listProgressNotes({
-        tenantId,
+        tenantId: user.tenantId,
         learnerId,
         goalId: query.goalId,
         sessionId: query.sessionId,

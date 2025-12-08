@@ -8,17 +8,18 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 
 import { createApp } from '../src/app.js';
+import type { AuthUser } from '../src/types/index.js';
 
 // We'll use a modified approach - set up different users per test
-const mockUser = {
+const mockUser: AuthUser = {
   userId: '11111111-1111-1111-1111-111111111111',
   email: 'teacher@school.edu',
   tenantId: '22222222-2222-2222-2222-222222222222',
-  role: 'TEACHER' as const,
+  role: 'TEACHER',
 };
 
 // Track the current mock user for each test
-let currentMockUser = { ...mockUser };
+let currentMockUser: AuthUser = { ...mockUser };
 
 // Mock auth to inject current mock user
 vi.mock('../src/middleware/auth.js', () => ({

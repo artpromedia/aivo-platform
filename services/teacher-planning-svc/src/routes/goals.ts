@@ -6,6 +6,12 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+import { ForbiddenError } from '../middleware/errorHandler.js';
+import {
+  ensureCanReadLearner,
+  ensureCanWriteLearner,
+  getTenantIdForQuery,
+} from '../middleware/rbac.js';
 import {
   createGoalSchema,
   updateGoalSchema,
@@ -25,13 +31,13 @@ import {
   getObjectiveById,
   updateObjective,
 } from '../services/goalService.js';
-import {
-  ensureCanReadLearner,
-  ensureCanWriteLearner,
-  getTenantIdForQuery,
-} from '../middleware/rbac.js';
-import type { AuthUser, GoalDomain, GoalStatus, ObjectiveStatus, ProgressRating } from '../types/index.js';
-import { ForbiddenError } from '../middleware/errorHandler.js';
+import type {
+  AuthUser,
+  GoalDomain,
+  GoalStatus,
+  ObjectiveStatus,
+  ProgressRating,
+} from '../types/index.js';
 
 export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void> {
   // ════════════════════════════════════════════════════════════════════════════
@@ -51,7 +57,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { learnerId } = learnerIdParamSchema.parse(request.params);
@@ -60,13 +66,11 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       // RBAC check
       await ensureCanReadLearner(request, learnerId);
 
-      const tenantId = getTenantIdForQuery(user);
-
       const result = await listGoals({
-        tenantId,
+        tenantId: user.tenantId,
         learnerId,
-        status: query.status as GoalStatus | undefined,
-        domain: query.domain as GoalDomain | undefined,
+        status: query.status,
+        domain: query.domain,
         page: query.page,
         pageSize: query.pageSize,
       });
@@ -96,7 +100,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { learnerId } = learnerIdParamSchema.parse(request.params);
@@ -134,7 +138,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { goalId } = goalIdParamSchema.parse(request.params);
@@ -162,7 +166,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { goalId } = goalIdParamSchema.parse(request.params);
@@ -178,8 +182,13 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
         {
           title: body.title,
           description: body.description,
-          status: body.status as GoalStatus | undefined,
-          targetDate: body.targetDate ? new Date(body.targetDate) : body.targetDate,
+          status: body.status,
+          targetDate:
+            body.targetDate !== undefined
+              ? body.targetDate
+                ? new Date(body.targetDate)
+                : null
+              : undefined,
           progressRating: body.progressRating as ProgressRating | null | undefined,
           metadataJson: body.metadataJson,
         },
@@ -207,7 +216,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { goalId } = goalIdParamSchema.parse(request.params);
@@ -244,7 +253,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { objectiveId } = objectiveIdParamSchema.parse(request.params);
@@ -273,7 +282,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { objectiveId } = objectiveIdParamSchema.parse(request.params);
@@ -290,7 +299,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
         {
           description: body.description,
           successCriteria: body.successCriteria,
-          status: body.status as ObjectiveStatus | undefined,
+          status: body.status,
           progressRating: body.progressRating as ProgressRating | null | undefined,
         },
         tenantId

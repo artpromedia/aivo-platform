@@ -4,9 +4,9 @@
  * Business logic for logging and retrieving progress notes.
  */
 
+import { NotFoundError } from '../middleware/errorHandler.js';
 import { prisma } from '../prisma.js';
 import type { ProgressNote, ProgressRating } from '../types/domain.js';
-import { NotFoundError } from '../middleware/errorHandler.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PROGRESS NOTE CRUD
@@ -16,20 +16,20 @@ export interface CreateProgressNoteParams {
   tenantId: string;
   learnerId: string;
   createdByUserId: string;
-  sessionId?: string;
-  sessionPlanId?: string;
-  goalId?: string;
-  goalObjectiveId?: string;
+  sessionId?: string | undefined;
+  sessionPlanId?: string | undefined;
+  goalId?: string | undefined;
+  goalObjectiveId?: string | undefined;
   noteText: string;
-  rating?: ProgressRating;
-  evidenceUri?: string;
+  rating?: ProgressRating | undefined;
+  evidenceUri?: string | undefined;
 }
 
 export interface ListProgressNotesParams {
-  tenantId?: string;
+  tenantId: string;
   learnerId: string;
-  goalId?: string;
-  sessionId?: string;
+  goalId?: string | undefined;
+  sessionId?: string | undefined;
   page: number;
   pageSize: number;
 }
@@ -42,9 +42,7 @@ export interface ListProgressNotesResult {
 /**
  * Create a new progress note
  */
-export async function createProgressNote(
-  params: CreateProgressNoteParams
-): Promise<ProgressNote> {
+export async function createProgressNote(params: CreateProgressNoteParams): Promise<ProgressNote> {
   const {
     tenantId,
     learnerId,
@@ -63,13 +61,13 @@ export async function createProgressNote(
       tenantId,
       learnerId,
       createdByUserId,
-      sessionId,
-      sessionPlanId,
-      goalId,
-      goalObjectiveId,
+      sessionId: sessionId ?? null,
+      sessionPlanId: sessionPlanId ?? null,
+      goalId: goalId ?? null,
+      goalObjectiveId: goalObjectiveId ?? null,
       noteText,
-      rating,
-      evidenceUri,
+      rating: rating ?? null,
+      evidenceUri: evidenceUri ?? null,
     },
   });
 

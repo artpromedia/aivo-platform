@@ -6,6 +6,12 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+import { ForbiddenError } from '../middleware/errorHandler.js';
+import {
+  ensureCanReadLearner,
+  ensureCanWriteLearner,
+  getTenantIdForQuery,
+} from '../middleware/rbac.js';
 import {
   createSessionPlanSchema,
   updateSessionPlanSchema,
@@ -21,13 +27,7 @@ import {
   updateSessionPlan,
   replaceSessionPlanItems,
 } from '../services/sessionPlanService.js';
-import {
-  ensureCanReadLearner,
-  ensureCanWriteLearner,
-  getTenantIdForQuery,
-} from '../middleware/rbac.js';
 import type { AuthUser, SessionPlanType, SessionPlanStatus } from '../types/index.js';
-import { ForbiddenError } from '../middleware/errorHandler.js';
 
 export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promise<void> {
   // ════════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { learnerId } = learnerIdParamSchema.parse(request.params);
@@ -62,12 +62,10 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       // RBAC check
       await ensureCanReadLearner(request, learnerId);
 
-      const tenantId = getTenantIdForQuery(user);
-
       const result = await listSessionPlans({
-        tenantId,
+        tenantId: user.tenantId,
         learnerId,
-        status: query.status as SessionPlanStatus | undefined,
+        status: query.status,
         from: query.from ? new Date(query.from) : undefined,
         to: query.to ? new Date(query.to) : undefined,
         page: query.page,
@@ -99,7 +97,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { learnerId } = learnerIdParamSchema.parse(request.params);
@@ -136,7 +134,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { planId } = planIdParamSchema.parse(request.params);
@@ -164,7 +162,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { planId } = planIdParamSchema.parse(request.params);
@@ -178,8 +176,13 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       const plan = await updateSessionPlan(
         planId,
         {
-          status: body.status as SessionPlanStatus | undefined,
-          scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : body.scheduledFor,
+          status: body.status,
+          scheduledFor:
+            body.scheduledFor !== undefined
+              ? body.scheduledFor
+                ? new Date(body.scheduledFor)
+                : null
+              : undefined,
           templateName: body.templateName,
           sessionId: body.sessionId,
           estimatedDurationMinutes: body.estimatedDurationMinutes,
@@ -209,7 +212,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       }>,
       reply: FastifyReply
     ) => {
-      const user = request.user as AuthUser;
+      const user = request.user!;
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { planId } = planIdParamSchema.parse(request.params);

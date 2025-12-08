@@ -4,6 +4,9 @@
  * Business logic for managing session plans and items.
  */
 
+import type { Prisma } from '@prisma/client';
+
+import { BadRequestError, NotFoundError } from '../middleware/errorHandler.js';
 import { prisma } from '../prisma.js';
 import type {
   SessionPlan,
@@ -13,8 +16,8 @@ import type {
   SessionPlanMetadata,
   SessionPlanItemAiMetadata,
 } from '../types/domain.js';
+
 import { getSkillsByIds, validateSessionId } from './externalClients.js';
-import { BadRequestError, NotFoundError } from '../middleware/errorHandler.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SESSION PLAN CRUD
@@ -25,28 +28,28 @@ export interface CreateSessionPlanParams {
   learnerId: string;
   createdByUserId: string;
   sessionType: SessionPlanType;
-  scheduledFor?: Date;
-  templateName?: string;
-  goalIds?: string[];
-  estimatedDurationMinutes?: number;
-  metadataJson?: SessionPlanMetadata;
+  scheduledFor?: Date | undefined;
+  templateName?: string | undefined;
+  goalIds?: string[] | undefined;
+  estimatedDurationMinutes?: number | undefined;
+  metadataJson?: SessionPlanMetadata | undefined;
 }
 
 export interface UpdateSessionPlanParams {
-  status?: SessionPlanStatus;
-  scheduledFor?: Date | null;
-  templateName?: string | null;
-  sessionId?: string | null;
-  estimatedDurationMinutes?: number | null;
-  metadataJson?: SessionPlanMetadata | null;
+  status?: SessionPlanStatus | undefined;
+  scheduledFor?: Date | null | undefined;
+  templateName?: string | null | undefined;
+  sessionId?: string | null | undefined;
+  estimatedDurationMinutes?: number | null | undefined;
+  metadataJson?: SessionPlanMetadata | null | undefined;
 }
 
 export interface ListSessionPlansParams {
-  tenantId?: string;
+  tenantId: string;
   learnerId: string;
-  status?: SessionPlanStatus;
-  from?: Date;
-  to?: Date;
+  status?: SessionPlanStatus | undefined;
+  from?: Date | undefined;
+  to?: Date | undefined;
   page: number;
   pageSize: number;
 }
@@ -84,11 +87,11 @@ export async function createSessionPlan(params: CreateSessionPlanParams): Promis
       learnerId,
       createdByUserId,
       sessionType,
-      scheduledFor,
-      sessionTemplateName: templateName,
-      estimatedDurationMinutes,
+      scheduledFor: scheduledFor ?? null,
+      sessionTemplateName: templateName ?? null,
+      estimatedDurationMinutes: estimatedDurationMinutes ?? null,
       status: 'DRAFT',
-      metadataJson: metadata,
+      metadataJson: metadata as Prisma.InputJsonValue,
     },
     include: {
       items: {
@@ -103,10 +106,7 @@ export async function createSessionPlan(params: CreateSessionPlanParams): Promis
 /**
  * Get a session plan by ID
  */
-export async function getSessionPlanById(
-  planId: string,
-  tenantId?: string
-): Promise<SessionPlan> {
+export async function getSessionPlanById(planId: string, tenantId?: string): Promise<SessionPlan> {
   interface WhereClause {
     id: string;
     tenantId?: string;
@@ -133,14 +133,17 @@ export async function getSessionPlanById(
   // Enrich items with skill info
   if (result.items && result.items.length > 0) {
     const skillIds = result.items
-      .map((item) => item.skillId)
+      .map((item: SessionPlanItem) => item.skillId)
       .filter((id): id is string => id !== null);
 
     if (skillIds.length > 0) {
       const skillsMap = await getSkillsByIds(skillIds);
       for (const item of result.items) {
-        if (item.skillId && skillsMap.has(item.skillId)) {
-          item.skill = skillsMap.get(item.skillId);
+        if (item.skillId) {
+          const skill = skillsMap.get(item.skillId);
+          if (skill) {
+            item.skill = skill;
+          }
         }
       }
     }
@@ -226,7 +229,9 @@ export async function updateSessionPlan(
       ...(params.estimatedDurationMinutes !== undefined && {
         estimatedDurationMinutes: params.estimatedDurationMinutes,
       }),
-      ...(params.metadataJson !== undefined && { metadataJson: params.metadataJson || {} }),
+      ...(params.metadataJson !== undefined && {
+        metadataJson: (params.metadataJson || {}) as Prisma.InputJsonValue,
+      }),
     },
     include: {
       items: {
@@ -244,13 +249,13 @@ export async function updateSessionPlan(
 
 export interface CreateSessionPlanItemParams {
   orderIndex: number;
-  goalId?: string;
-  goalObjectiveId?: string;
-  skillId?: string;
+  goalId?: string | undefined;
+  goalObjectiveId?: string | undefined;
+  skillId?: string | undefined;
   activityType: string;
-  activityDescription?: string;
-  estimatedDurationMinutes?: number;
-  aiMetadataJson?: SessionPlanItemAiMetadata;
+  activityDescription?: string | undefined;
+  estimatedDurationMinutes?: number | undefined;
+  aiMetadataJson?: SessionPlanItemAiMetadata | undefined;
 }
 
 /**
@@ -278,13 +283,13 @@ export async function replaceSessionPlanItems(
           data: {
             sessionPlanId: planId,
             orderIndex: item.orderIndex,
-            goalId: item.goalId,
-            goalObjectiveId: item.goalObjectiveId,
-            skillId: item.skillId,
+            goalId: item.goalId ?? null,
+            goalObjectiveId: item.goalObjectiveId ?? null,
+            skillId: item.skillId ?? null,
             activityType: item.activityType,
-            activityDescription: item.activityDescription,
-            estimatedDurationMinutes: item.estimatedDurationMinutes,
-            aiMetadataJson: item.aiMetadataJson || {},
+            activityDescription: item.activityDescription ?? null,
+            estimatedDurationMinutes: item.estimatedDurationMinutes ?? null,
+            aiMetadataJson: (item.aiMetadataJson || {}) as Prisma.InputJsonValue,
           },
         })
       )
@@ -297,14 +302,17 @@ export async function replaceSessionPlanItems(
 
   // Enrich with skill info
   const skillIds = mappedItems
-    .map((item) => item.skillId)
+    .map((item: SessionPlanItem) => item.skillId)
     .filter((id): id is string => id !== null);
 
   if (skillIds.length > 0) {
     const skillsMap = await getSkillsByIds(skillIds);
     for (const item of mappedItems) {
-      if (item.skillId && skillsMap.has(item.skillId)) {
-        item.skill = skillsMap.get(item.skillId);
+      if (item.skillId) {
+        const skill = skillsMap.get(item.skillId);
+        if (skill) {
+          item.skill = skill;
+        }
       }
     }
   }
@@ -363,7 +371,7 @@ function mapSessionPlanFromDb(db: DbSessionPlan): SessionPlan {
     metadataJson: db.metadataJson as SessionPlanMetadata | null,
     createdAt: db.createdAt,
     updatedAt: db.updatedAt,
-    items: db.items?.map(mapSessionPlanItemFromDb),
+    items: db.items ? db.items.map(mapSessionPlanItemFromDb) : [],
   };
 }
 
