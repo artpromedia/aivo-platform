@@ -12,6 +12,7 @@ dependencies:
   dio: ^5.7.0
   flutter_secure_storage: ^9.2.2
   jwt_decode: ^0.3.1
+  share_plus: ^10.0.0
   flutter_common:
     path: ../../libs/flutter-common
 

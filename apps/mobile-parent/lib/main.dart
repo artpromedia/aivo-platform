@@ -10,6 +10,7 @@ import 'screens/baseline_result_screen.dart';
 import 'screens/homework_focus_detail_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
+import 'screens/progress_report_screen.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
@@ -49,6 +50,17 @@ final _routerProvider = Provider<GoRouter>((ref) {
             learnerId: learnerId,
             learnerName: extra['learnerName']?.toString() ?? 'Child',
             parentId: extra['parentId']?.toString() ?? '',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/progress-report/:learnerId',
+        builder: (context, state) {
+          final learnerId = state.pathParameters['learnerId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return ProgressReportScreen(
+            learnerId: learnerId,
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
           );
         },
       ),
