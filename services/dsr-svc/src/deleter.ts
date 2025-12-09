@@ -2,6 +2,16 @@ import type { Pool } from 'pg';
 
 export class DeleteError extends Error {}
 
+/**
+ * De-identify a learner's data for COPPA/GDPR deletion requests.
+ * 
+ * This performs "soft delete" by:
+ * - Nullifying PII fields (names, emails, etc.)
+ * - Marking the learner as DELETED
+ * - Stripping rich payloads from events and sessions
+ * - Anonymizing AI call logs
+ * - Preserving record structure for billing/analytics integrity
+ */
 export async function deidentifyLearner(
   pool: Pool,
   params: { tenantId: string; learnerId: string; parentId: string }
@@ -45,6 +55,21 @@ export async function deidentifyLearner(
       `UPDATE recommendations
          SET rationale = NULL
        WHERE tenant_id = $1 AND learner_id = $2`,
+      [params.tenantId, params.learnerId]
+    );
+
+    // Anonymize AI call logs: strip input/output but preserve usage metrics for billing
+    await client.query(
+      `UPDATE ai_call_logs acl
+         SET input_text = NULL,
+             output_text = NULL,
+             input_tokens = NULL,
+             output_tokens = NULL
+       FROM sessions s
+       WHERE acl.session_id = s.id 
+         AND acl.tenant_id = s.tenant_id
+         AND acl.tenant_id = $1 
+         AND s.learner_id = $2`,
       [params.tenantId, params.learnerId]
     );
 

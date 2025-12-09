@@ -11,10 +11,14 @@ import {
   getDsrRequestById,
   getDsrRequestForParent,
   listDsrRequestsForParent,
+  listDsrRequestsForTenant,
+  listDsrRequestsByStatus,
+  approveDsrRequest,
+  rejectDsrRequest,
   markDeclined,
   updateRequestStatus,
 } from '../repository.js';
-import type { DsrRequest, DsrRequestType } from '../types.js';
+import type { DsrRequest, DsrRequestType, DsrRequestStatus } from '../types.js';
 
 const createBodySchema = z.object({
   learnerId: z.string(),
@@ -25,6 +29,17 @@ const createBodySchema = z.object({
 const patchBodySchema = z.object({
   status: z.enum(['DECLINED']),
   reason: z.string().min(1).max(2000),
+});
+
+const adminPatchBodySchema = z.object({
+  action: z.enum(['APPROVE', 'REJECT']),
+  reason: z.string().max(2000).optional(),
+});
+
+const adminQuerySchema = z.object({
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'FAILED']).optional(),
+  limit: z.coerce.number().min(1).max(100).default(50),
+  offset: z.coerce.number().min(0).default(0),
 });
 
 export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
@@ -116,7 +131,7 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
 
     const record = await createDsrRequest(pool, {
       tenantId: auth.tenantId,
-      parentId: auth.userId,
+      requestedByUserId: auth.userId,
       learnerId: parsed.data.learnerId,
       requestType: parsed.data.requestType as DsrRequestType,
       reason: parsed.data.reason ?? null,
@@ -174,6 +189,150 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
         reason: parsed.data.reason,
         completed: true,
       });
+      reply.code(200).send({ request: updated });
+    }
+  );
+
+  // ════════════════════════════════════════════════════════════════════════════════
+  // ADMIN ENDPOINTS
+  // ════════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /admin/requests - List DSR requests for tenant (admin view)
+   * Supports filtering by status and pagination
+   */
+  fastify.get(
+    '/admin/requests',
+    { preHandler: requireRole([Role.DISTRICT_ADMIN, Role.PLATFORM_ADMIN]) },
+    async (request, reply) => {
+      const auth = (request as any).auth as AuthContext;
+      const parsed = adminQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        reply.code(400).send({ error: 'Invalid query parameters' });
+        return;
+      }
+
+      const { requests, total } = await listDsrRequestsForTenant(pool, auth.tenantId, {
+        status: parsed.data.status as DsrRequestStatus | undefined,
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      });
+
+      reply.code(200).send({
+        requests,
+        pagination: {
+          total,
+          limit: parsed.data.limit,
+          offset: parsed.data.offset,
+          hasMore: parsed.data.offset + requests.length < total,
+        },
+      });
+    }
+  );
+
+  /**
+   * GET /admin/requests/all - List DSR requests across all tenants (platform admin only)
+   * Supports filtering by status
+   */
+  fastify.get(
+    '/admin/requests/all',
+    { preHandler: requireRole([Role.PLATFORM_ADMIN]) },
+    async (request, reply) => {
+      const parsed = adminQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        reply.code(400).send({ error: 'Invalid query parameters' });
+        return;
+      }
+
+      const { requests, total } = await listDsrRequestsByStatus(pool, {
+        status: parsed.data.status as DsrRequestStatus | undefined,
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      });
+
+      reply.code(200).send({
+        requests,
+        pagination: {
+          total,
+          limit: parsed.data.limit,
+          offset: parsed.data.offset,
+          hasMore: parsed.data.offset + requests.length < total,
+        },
+      });
+    }
+  );
+
+  /**
+   * GET /admin/requests/:id - Get a specific DSR request (admin view)
+   */
+  fastify.get(
+    '/admin/requests/:id',
+    { preHandler: requireRole([Role.DISTRICT_ADMIN, Role.PLATFORM_ADMIN]) },
+    async (request, reply) => {
+      const auth = (request as any).auth as AuthContext;
+      const { id } = request.params as { id: string };
+
+      const record = await getDsrRequestById(pool, id, auth.tenantId);
+      if (!record) {
+        reply.code(404).send({ error: 'Request not found' });
+        return;
+      }
+
+      let exportPayload: unknown = undefined;
+      if (record.request_type === 'EXPORT' && record.export_location) {
+        try {
+          exportPayload = JSON.parse(record.export_location);
+        } catch {
+          exportPayload = null;
+        }
+      }
+
+      reply.code(200).send({ request: record, export: exportPayload });
+    }
+  );
+
+  /**
+   * PATCH /admin/requests/:id - Approve or reject a DSR request
+   */
+  fastify.patch(
+    '/admin/requests/:id',
+    { preHandler: requireRole([Role.DISTRICT_ADMIN, Role.PLATFORM_ADMIN]) },
+    async (request, reply) => {
+      const auth = (request as any).auth as AuthContext;
+      const { id } = request.params as { id: string };
+      const parsed = adminPatchBodySchema.safeParse(request.body);
+
+      if (!parsed.success) {
+        reply.code(400).send({ error: 'Invalid payload' });
+        return;
+      }
+
+      const record = await getDsrRequestById(pool, id, auth.tenantId);
+      if (!record) {
+        reply.code(404).send({ error: 'Request not found' });
+        return;
+      }
+
+      if (record.status !== 'PENDING') {
+        reply.code(400).send({ error: `Cannot ${parsed.data.action.toLowerCase()} request with status ${record.status}` });
+        return;
+      }
+
+      let updated: DsrRequest;
+      if (parsed.data.action === 'APPROVE') {
+        updated = await approveDsrRequest(pool, id, auth.tenantId, auth.userId);
+        // Note: The actual export/delete processing would be handled by a background worker
+        // after approval. For now, we just mark it as approved and IN_PROGRESS.
+      } else {
+        updated = await rejectDsrRequest(
+          pool,
+          id,
+          auth.tenantId,
+          auth.userId,
+          parsed.data.reason ?? 'Rejected by administrator'
+        );
+      }
+
       reply.code(200).send({ request: updated });
     }
   );

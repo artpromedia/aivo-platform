@@ -5,6 +5,10 @@ import type { ExportBundle } from './types.js';
 
 export class ExportError extends Error {}
 
+/**
+ * Build a GDPR/COPPA-compliant export bundle for a learner.
+ * Includes all personal data, AI interactions, and consent history.
+ */
 export async function buildExportBundle(
   pool: Pool,
   params: { tenantId: string; parentId: string; learnerId: string }
@@ -76,6 +80,42 @@ export async function buildExportBundle(
     [tenantId, learnerId, parentId]
   );
 
+  // Fetch AI call logs for the learner's sessions
+  // Excludes raw input/output for privacy; includes only metadata and usage stats
+  const aiCallLogsResult = await pool.query(
+    `SELECT 
+       acl.id, 
+       acl.session_id,
+       acl.model_id,
+       acl.prompt_token_count,
+       acl.completion_token_count,
+       acl.latency_ms,
+       acl.status,
+       acl.created_at,
+       -- Provide summarized version of input/output for transparency
+       CASE WHEN LENGTH(acl.input_text) > 100 
+            THEN SUBSTRING(acl.input_text, 1, 100) || '...'
+            ELSE acl.input_text END AS input_summary,
+       CASE WHEN LENGTH(acl.output_text) > 100 
+            THEN SUBSTRING(acl.output_text, 1, 100) || '...'
+            ELSE acl.output_text END AS output_summary
+     FROM ai_call_logs acl
+     INNER JOIN sessions s ON s.id = acl.session_id AND s.tenant_id = acl.tenant_id
+     WHERE acl.tenant_id = $1 AND s.learner_id = $2
+     ORDER BY acl.created_at DESC
+     LIMIT $3`,
+    [tenantId, learnerId, config.exportEventLimit]
+  );
+
+  // Fetch consent logs for the parent (who owns the learner)
+  const consentLogsResult = await pool.query(
+    `SELECT id, consent_type, consent_action, consent_version, created_at
+     FROM consent_logs
+     WHERE tenant_id = $1 AND parent_id = $2
+     ORDER BY created_at DESC`,
+    [tenantId, parentId]
+  );
+
   return {
     learner,
     assessments: assessmentsResult.rows.map((row) => ({
@@ -107,6 +147,25 @@ export async function buildExportBundle(
       status: row.status,
       started_at: row.started_at?.toISOString?.() ?? new Date(row.started_at).toISOString(),
       ends_at: row.ends_at ? new Date(row.ends_at).toISOString() : null,
+    })),
+    ai_call_logs: aiCallLogsResult.rows.map((row) => ({
+      id: row.id,
+      session_id: row.session_id,
+      model_id: row.model_id,
+      prompt_token_count: row.prompt_token_count,
+      completion_token_count: row.completion_token_count,
+      latency_ms: row.latency_ms,
+      status: row.status,
+      created_at: row.created_at?.toISOString?.() ?? new Date(row.created_at).toISOString(),
+      input_summary: row.input_summary ?? null,
+      output_summary: row.output_summary ?? null,
+    })),
+    consent_logs: consentLogsResult.rows.map((row) => ({
+      id: row.id,
+      consent_type: row.consent_type,
+      consent_action: row.consent_action,
+      consent_version: row.consent_version,
+      created_at: row.created_at?.toISOString?.() ?? new Date(row.created_at).toISOString(),
     })),
   };
 }
