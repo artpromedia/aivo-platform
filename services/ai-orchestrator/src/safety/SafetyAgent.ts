@@ -1,7 +1,12 @@
 export type SafetyStatus = 'OK' | 'BLOCKED' | 'NEEDS_REVIEW';
 
+/** More granular safety labels for logging and incident management */
+export type SafetyLabel = 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH';
+
 export interface SafetyResult {
   status: SafetyStatus;
+  /** Granular label for logging/incidents */
+  label: SafetyLabel;
   reason?: string | undefined;
   transformedContent?: string | undefined;
 }
@@ -35,6 +40,7 @@ export function evaluateSafety(context: SafetyContext, rawResponse: RawResponse)
   if (matchesAny(text, SELF_HARM_KEYWORDS)) {
     return {
       status: 'BLOCKED',
+      label: 'HIGH',
       reason: 'self-harm',
       transformedContent: FALLBACK_MESSAGE,
     };
@@ -43,6 +49,7 @@ export function evaluateSafety(context: SafetyContext, rawResponse: RawResponse)
   if (matchesAny(text, EXPLICIT_KEYWORDS)) {
     return {
       status: 'BLOCKED',
+      label: 'HIGH',
       reason: 'explicit-content',
       transformedContent: FALLBACK_MESSAGE,
     };
@@ -51,12 +58,13 @@ export function evaluateSafety(context: SafetyContext, rawResponse: RawResponse)
   if (matchesAny(text, DIAGNOSIS_PATTERNS)) {
     return {
       status: 'NEEDS_REVIEW',
+      label: 'MEDIUM',
       reason: 'diagnosis-like-statement',
       transformedContent: FALLBACK_MESSAGE,
     };
   }
 
-  return { status: 'OK' };
+  return { status: 'OK', label: 'SAFE' };
 }
 
 function matchesAny(text: string, keywords: string[]): boolean {

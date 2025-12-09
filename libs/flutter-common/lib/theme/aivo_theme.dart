@@ -113,12 +113,10 @@ ThemeData _buildTheme({required _AivoColors colors, required _AivoTypography typ
     primary: colors.primary,
     secondary: colors.secondary,
     surface: colors.surface,
-    background: colors.background,
     error: colors.error,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
     onSurface: colors.textPrimary,
-    onBackground: colors.textPrimary,
     onError: Colors.white,
   );
 

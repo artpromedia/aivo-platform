@@ -35,7 +35,7 @@ class _DesignSystemGalleryScreenState extends ConsumerState<DesignSystemGalleryS
             Switch(
               value: dyslexiaFont,
               onChanged: (value) => setState(() => dyslexiaFont = value),
-              activeColor: theme.colorScheme.primary,
+              activeThumbColor: theme.colorScheme.primary,
             ),
             const Padding(
               padding: EdgeInsets.only(right: 12.0),
