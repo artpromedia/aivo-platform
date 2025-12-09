@@ -336,4 +336,104 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
       reply.code(200).send({ request: updated });
     }
   );
+
+  // ════════════════════════════════════════════════════════════════════════════════
+  // STATS ENDPOINT (Platform Admin Compliance Dashboard)
+  // ════════════════════════════════════════════════════════════════════════════════
+
+  const statsQuerySchema = z.object({
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  });
+
+  /**
+   * GET /admin/dsr/stats - Get DSR request statistics for compliance dashboard
+   * Platform Admin only
+   */
+  fastify.get(
+    '/admin/dsr/stats',
+    { preHandler: requireRole([Role.PLATFORM_ADMIN]) },
+    async (request, reply) => {
+      const parsed = statsQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        reply.code(400).send({ error: 'Invalid date range parameters', details: parsed.error.issues });
+        return;
+      }
+
+      const { from, to } = parsed.data;
+
+      // TODO: Replace with real database aggregation queries
+      // For now, return mock data to enable frontend development
+      //
+      // Real implementation would be:
+      // const typeStats = await pool.query(
+      //   `SELECT request_type, COUNT(*) as count FROM dsr_requests
+      //    WHERE created_at >= $1 AND created_at <= $2 GROUP BY request_type`,
+      //   [from, to]
+      // );
+      // const statusStats = await pool.query(
+      //   `SELECT status, COUNT(*) as count FROM dsr_requests
+      //    WHERE created_at >= $1 AND created_at <= $2 GROUP BY status`,
+      //   [from, to]
+      // );
+      // const recent = await pool.query(
+      //   `SELECT r.*, t.name as tenant_name FROM dsr_requests r
+      //    LEFT JOIN tenants t ON r.tenant_id = t.id
+      //    WHERE r.created_at >= $1 AND r.created_at <= $2
+      //    ORDER BY r.created_at DESC LIMIT 10`,
+      //   [from, to]
+      // );
+
+      const mockStats = {
+        totalRequests: 34,
+        countsByType: {
+          EXPORT: 28,
+          DELETE: 6,
+        },
+        countsByStatus: {
+          PENDING: 3,
+          IN_PROGRESS: 2,
+          COMPLETED: 26,
+          REJECTED: 2,
+          FAILED: 1,
+        },
+        recentRequests: [
+          {
+            id: 'dsr-001',
+            tenantId: 'tenant-001',
+            tenantName: 'Springfield School District',
+            requestType: 'EXPORT',
+            status: 'PENDING',
+            learnerId: 'learner-abc',
+            createdAt: new Date().toISOString(),
+            completedAt: null,
+          },
+          {
+            id: 'dsr-002',
+            tenantId: 'tenant-002',
+            tenantName: 'Riverdale Academy',
+            requestType: 'DELETE',
+            status: 'IN_PROGRESS',
+            learnerId: 'learner-def',
+            createdAt: new Date(Date.now() - 86400000).toISOString(),
+            completedAt: null,
+          },
+          {
+            id: 'dsr-003',
+            tenantId: 'tenant-001',
+            tenantName: 'Springfield School District',
+            requestType: 'EXPORT',
+            status: 'COMPLETED',
+            learnerId: 'learner-ghi',
+            createdAt: new Date(Date.now() - 172800000).toISOString(),
+            completedAt: new Date(Date.now() - 86400000).toISOString(),
+          },
+        ],
+        periodStart: from,
+        periodEnd: to,
+      };
+
+      reply.code(200).send(mockStats);
+    }
+  );
 };

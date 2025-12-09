@@ -8,6 +8,7 @@ import { useAuth } from '../app/providers';
 const links = [
   { href: '/tenants', label: 'Tenants' },
   { href: '/ai/incidents', label: 'AI Incidents' },
+  { href: '/compliance', label: 'Compliance' },
   { href: '/flags', label: 'Feature Flags' },
 ];
 

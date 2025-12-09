@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { createPolicyEnforcer, type PolicyEnforcer } from './policy/index.js';
 import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js';
 import type { AgentConfigStore } from './registry/store.js';
+import { registerAdminStatsRoutes } from './routes/adminStats.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
@@ -41,6 +42,9 @@ export function createApp(options: AppOptions = {}) {
   });
 
   app.register(registerInternalRoutes, { prefix: '/internal', registry, store, telemetryStore });
+
+  // Admin stats routes for compliance dashboard
+  app.register(registerAdminStatsRoutes, { pool: policyPool });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
