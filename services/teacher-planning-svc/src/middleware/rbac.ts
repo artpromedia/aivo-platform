@@ -9,8 +9,9 @@
 
 import type { FastifyRequest } from 'fastify';
 
+import type { AuthUser, UserRole, Visibility } from '../types/index.js';
+
 import { ForbiddenError } from './errorHandler.js';
-import type { AuthUser, UserRole } from '../types/index.js';
 
 /** Roles that can create/edit goals and plans */
 const EDUCATOR_ROLES: UserRole[] = ['TEACHER', 'THERAPIST'];
@@ -21,11 +22,33 @@ const ADMIN_ROLES: UserRole[] = ['DISTRICT_ADMIN', 'PLATFORM_ADMIN'];
 /** Roles with full platform access */
 const SUPER_ROLES: UserRole[] = ['PLATFORM_ADMIN', 'SUPPORT'];
 
+/** Roles that can view therapist-only content */
+const THERAPIST_ACCESS_ROLES: UserRole[] = [
+  'THERAPIST',
+  'DISTRICT_ADMIN',
+  'PLATFORM_ADMIN',
+  'SUPPORT',
+];
+
 /**
  * Check if user has an educator role (can create/edit)
  */
 export function isEducator(user: AuthUser): boolean {
   return EDUCATOR_ROLES.includes(user.role);
+}
+
+/**
+ * Check if user is a therapist
+ */
+export function isTherapist(user: AuthUser): boolean {
+  return user.role === 'THERAPIST';
+}
+
+/**
+ * Check if user is a teacher (non-therapist educator)
+ */
+export function isTeacher(user: AuthUser): boolean {
+  return user.role === 'TEACHER';
 }
 
 /**
@@ -40,6 +63,49 @@ export function isAdmin(user: AuthUser): boolean {
  */
 export function isSuperUser(user: AuthUser): boolean {
   return SUPER_ROLES.includes(user.role);
+}
+
+/**
+ * Check if user can view therapist-only content
+ */
+export function canViewTherapistContent(user: AuthUser): boolean {
+  return THERAPIST_ACCESS_ROLES.includes(user.role);
+}
+
+/**
+ * Get the allowed visibility levels for a user's role
+ * Used to filter goals/notes based on user permissions
+ */
+export function getAllowedVisibilityLevels(user: AuthUser): Visibility[] {
+  if (canViewTherapistContent(user)) {
+    // Therapists, admins can see all visibility levels
+    return ['ALL_EDUCATORS', 'THERAPISTS_ONLY', 'CUSTOM'];
+  }
+  // Teachers can only see ALL_EDUCATORS
+  return ['ALL_EDUCATORS'];
+}
+
+/**
+ * Check if a user can view content with a specific visibility
+ */
+export function canViewVisibility(user: AuthUser, visibility: Visibility): boolean {
+  if (visibility === 'ALL_EDUCATORS') {
+    return true;
+  }
+  // THERAPISTS_ONLY and CUSTOM require therapist access
+  return canViewTherapistContent(user);
+}
+
+/**
+ * Get the default visibility for creating content based on user role and mode
+ * @param user The authenticated user
+ * @param therapistMode Whether the user is in therapist mode (for users with both roles)
+ */
+export function getDefaultVisibility(user: AuthUser, therapistMode = false): Visibility {
+  if (isTherapist(user) || therapistMode) {
+    return 'THERAPISTS_ONLY';
+  }
+  return 'ALL_EDUCATORS';
 }
 
 /**

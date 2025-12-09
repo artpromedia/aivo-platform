@@ -12,6 +12,23 @@ export const paginationSchema = z.object({
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+// VISIBILITY & PRIVACY SCHEMAS
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const visibilitySchema = z.enum(['ALL_EDUCATORS', 'THERAPISTS_ONLY', 'CUSTOM']);
+export const noteTagSchema = z.enum([
+  'speech',
+  'ot',
+  'behavior',
+  'academic',
+  'social',
+  'motor',
+  'sensory',
+  'communication',
+]);
+export const noteTagsSchema = z.array(noteTagSchema);
+
+// ══════════════════════════════════════════════════════════════════════════════
 // GOAL SCHEMAS
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -26,6 +43,7 @@ export const createGoalSchema = z.object({
   skillId: uuidSchema.optional(),
   startDate: z.string().datetime().optional(),
   targetDate: z.string().datetime().optional(),
+  visibility: visibilitySchema.optional(),
   metadataJson: z.record(z.unknown()).optional(),
 });
 
@@ -35,6 +53,7 @@ export const updateGoalSchema = z.object({
   status: goalStatusSchema.optional(),
   targetDate: z.string().datetime().nullish(),
   progressRating: progressRatingSchema.nullish(),
+  visibility: visibilitySchema.optional(),
   metadataJson: z.record(z.unknown()).nullish(),
 });
 
@@ -66,8 +85,21 @@ export const updateObjectiveSchema = z.object({
 // SESSION PLAN SCHEMAS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const sessionPlanTypeSchema = z.enum(['LEARNING', 'THERAPY', 'GROUP', 'ASSESSMENT', 'PRACTICE', 'OTHER']);
-export const sessionPlanStatusSchema = z.enum(['DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']);
+export const sessionPlanTypeSchema = z.enum([
+  'LEARNING',
+  'THERAPY',
+  'GROUP',
+  'ASSESSMENT',
+  'PRACTICE',
+  'OTHER',
+]);
+export const sessionPlanStatusSchema = z.enum([
+  'DRAFT',
+  'PLANNED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+]);
 
 export const createSessionPlanSchema = z.object({
   sessionType: sessionPlanTypeSchema,
@@ -122,6 +154,8 @@ export const createProgressNoteSchema = z.object({
   goalObjectiveId: uuidSchema.optional(),
   noteText: z.string().min(1).max(10000),
   rating: progressRatingSchema.optional(),
+  visibility: visibilitySchema.optional(),
+  tags: noteTagsSchema.optional(),
   evidenceUri: z.string().url().max(2000).optional(),
 });
 

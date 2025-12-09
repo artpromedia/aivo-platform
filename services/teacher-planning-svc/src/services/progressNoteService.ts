@@ -4,9 +4,11 @@
  * Business logic for logging and retrieving progress notes.
  */
 
+import type { Prisma } from '@prisma/client';
+
 import { NotFoundError } from '../middleware/errorHandler.js';
 import { prisma } from '../prisma.js';
-import type { ProgressNote, ProgressRating } from '../types/domain.js';
+import type { ProgressNote, ProgressRating, Visibility, NoteTag } from '../types/domain.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PROGRESS NOTE CRUD
@@ -22,6 +24,8 @@ export interface CreateProgressNoteParams {
   goalObjectiveId?: string | undefined;
   noteText: string;
   rating?: ProgressRating | undefined;
+  visibility?: Visibility | undefined;
+  tags?: NoteTag[] | undefined;
   evidenceUri?: string | undefined;
 }
 
@@ -30,6 +34,8 @@ export interface ListProgressNotesParams {
   learnerId: string;
   goalId?: string | undefined;
   sessionId?: string | undefined;
+  /** Visibility levels to include (for filtering based on user role) */
+  allowedVisibility?: Visibility[] | undefined;
   page: number;
   pageSize: number;
 }
@@ -53,6 +59,8 @@ export async function createProgressNote(params: CreateProgressNoteParams): Prom
     goalObjectiveId,
     noteText,
     rating,
+    visibility,
+    tags,
     evidenceUri,
   } = params;
 
@@ -67,6 +75,8 @@ export async function createProgressNote(params: CreateProgressNoteParams): Prom
       goalObjectiveId: goalObjectiveId ?? null,
       noteText,
       rating: rating ?? null,
+      visibility: visibility ?? 'ALL_EDUCATORS',
+      tags: (tags ?? []) as Prisma.InputJsonValue,
       evidenceUri: evidenceUri ?? null,
     },
   });
@@ -104,19 +114,24 @@ export async function getProgressNoteById(
 export async function listProgressNotes(
   params: ListProgressNotesParams
 ): Promise<ListProgressNotesResult> {
-  const { tenantId, learnerId, goalId, sessionId, page, pageSize } = params;
+  const { tenantId, learnerId, goalId, sessionId, allowedVisibility, page, pageSize } = params;
 
   interface WhereClause {
     learnerId: string;
     tenantId?: string;
     goalId?: string;
     sessionId?: string;
+    visibility?: { in: Visibility[] };
   }
 
   const where: WhereClause = { learnerId };
   if (tenantId) where.tenantId = tenantId;
   if (goalId) where.goalId = goalId;
   if (sessionId) where.sessionId = sessionId;
+  // Filter by allowed visibility levels (for role-based filtering)
+  if (allowedVisibility && allowedVisibility.length > 0) {
+    where.visibility = { in: allowedVisibility };
+  }
 
   const [notes, total] = await Promise.all([
     prisma.progressNote.findMany({
@@ -149,6 +164,8 @@ interface DbProgressNote {
   goalObjectiveId: string | null;
   noteText: string;
   rating: number | null;
+  visibility: string;
+  tags: unknown;
   evidenceUri: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -166,6 +183,8 @@ function mapProgressNoteFromDb(db: DbProgressNote): ProgressNote {
     goalObjectiveId: db.goalObjectiveId,
     noteText: db.noteText,
     rating: db.rating as ProgressRating | null,
+    visibility: db.visibility as Visibility,
+    tags: (Array.isArray(db.tags) ? db.tags : []) as NoteTag[],
     evidenceUri: db.evidenceUri,
     createdAt: db.createdAt,
     updatedAt: db.updatedAt,

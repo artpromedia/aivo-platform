@@ -87,11 +87,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
         GoRoute(path: '/design-system', builder: (context, state) => const DesignSystemGalleryScreen()),
     ],
     redirect: (context, state) {
-      if (_enableDesignSystemGallery && state.subloc == '/design-system') return null;
+      if (_enableDesignSystemGallery && state.matchedLocation == '/design-system') return null;
       if (pinState.status == PinStatus.loading) return null;
 
       final authed = pinState.isAuthenticated;
-      final atPin = state.subloc == '/pin';
+      final atPin = state.matchedLocation == '/pin';
 
       // Not authenticated -> go to PIN
       if (!authed && !atPin) return '/pin';

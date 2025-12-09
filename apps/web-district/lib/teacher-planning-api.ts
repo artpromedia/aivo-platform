@@ -11,9 +11,37 @@
 export type GoalDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL' | 'OTHER';
 export type GoalStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED';
 export type ObjectiveStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'MET' | 'NOT_MET';
-export type SessionPlanType = 'LEARNING' | 'THERAPY' | 'GROUP' | 'ASSESSMENT' | 'PRACTICE' | 'OTHER';
+export type SessionPlanType =
+  | 'LEARNING'
+  | 'THERAPY'
+  | 'GROUP'
+  | 'ASSESSMENT'
+  | 'PRACTICE'
+  | 'OTHER';
 export type SessionPlanStatus = 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type ProgressRating = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Visibility controls who can view goals and progress notes.
+ * - ALL_EDUCATORS: Visible to teachers, therapists, and district admins
+ * - THERAPISTS_ONLY: Visible only to therapists and district admins
+ * - CUSTOM: Future ACL-based visibility (currently treated as THERAPISTS_ONLY)
+ */
+export type Visibility = 'ALL_EDUCATORS' | 'THERAPISTS_ONLY' | 'CUSTOM';
+
+/** Tags for categorizing progress notes */
+export type NoteTag =
+  | 'speech'
+  | 'ot'
+  | 'behavior'
+  | 'academic'
+  | 'social'
+  | 'motor'
+  | 'sensory'
+  | 'communication';
+
+/** User mode for therapist toggle */
+export type EducatorMode = 'teacher' | 'therapist';
 
 export interface Goal {
   id: string;
@@ -28,6 +56,7 @@ export interface Goal {
   targetDate: string | null;
   status: GoalStatus;
   progressRating: ProgressRating | null;
+  visibility: Visibility;
   metadataJson: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
@@ -87,6 +116,8 @@ export interface ProgressNote {
   goalObjectiveId: string | null;
   noteText: string;
   rating: ProgressRating | null;
+  visibility: Visibility;
+  tags: NoteTag[];
   evidenceUri: string | null;
   createdAt: string;
   updatedAt: string;
@@ -106,22 +137,30 @@ export interface PaginatedResponse<T> {
 // API CLIENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-const TEACHER_PLANNING_SVC_URL = process.env.NEXT_PUBLIC_TEACHER_PLANNING_SVC_URL || '/api/planning';
+const TEACHER_PLANNING_SVC_URL =
+  process.env.NEXT_PUBLIC_TEACHER_PLANNING_SVC_URL || '/api/planning';
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${TEACHER_PLANNING_SVC_URL}${path}`;
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options?.headers ?? {}),
-  };
-  
+  const existingHeaders = options?.headers;
+  const headerRecord: Record<string, string> = { 'Content-Type': 'application/json' };
+
+  // Merge existing headers if they're a plain object
+  if (existingHeaders && typeof existingHeaders === 'object' && !Array.isArray(existingHeaders)) {
+    Object.assign(headerRecord, existingHeaders);
+  }
+
+  const headers: HeadersInit = headerRecord;
+
   const res = await fetch(url, {
-    ...(options ?? {}),
+    ...options,
     headers,
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: res.statusText })) as { message?: string };
+    const errorData = (await res.json().catch(() => ({ message: res.statusText }))) as {
+      message?: string;
+    };
     throw new Error(errorData.message ?? `API error: ${res.status}`);
   }
 
@@ -155,6 +194,7 @@ export interface CreateGoalInput {
   skillId?: string;
   startDate?: string;
   targetDate?: string;
+  visibility?: Visibility;
   metadataJson?: Record<string, unknown>;
 }
 
@@ -171,6 +211,7 @@ export interface UpdateGoalInput {
   status?: GoalStatus;
   targetDate?: string | null;
   progressRating?: ProgressRating | null;
+  visibility?: Visibility;
 }
 
 export async function updateGoal(goalId: string, input: UpdateGoalInput): Promise<Goal> {
@@ -292,6 +333,8 @@ export interface CreateProgressNoteInput {
   goalObjectiveId?: string;
   noteText: string;
   rating?: ProgressRating;
+  visibility?: Visibility;
+  tags?: NoteTag[];
   evidenceUri?: string;
 }
 
@@ -333,7 +376,8 @@ export function mockGoals(learnerId: string): Goal[] {
       learnerId,
       createdByUserId: 'user-1',
       title: 'Improve reading fluency to grade level',
-      description: 'Student will read grade-level text with 95% accuracy and appropriate expression',
+      description:
+        'Student will read grade-level text with 95% accuracy and appropriate expression',
       domain: 'ELA',
       skillId: 'skill-reading-fluency',
       startDate: '2025-01-01',
@@ -341,6 +385,7 @@ export function mockGoals(learnerId: string): Goal[] {
       status: 'ACTIVE',
       progressRating: 2,
       metadataJson: { standardsTag: 'CCSS.ELA-LITERACY.RF.3.4' },
+      visibility: 'ALL_EDUCATORS',
       createdAt: '2025-01-01T00:00:00Z',
       updatedAt: '2025-01-15T00:00:00Z',
       objectives: [
@@ -383,6 +428,7 @@ export function mockGoals(learnerId: string): Goal[] {
       status: 'ACTIVE',
       progressRating: 1,
       metadataJson: null,
+      visibility: 'ALL_EDUCATORS',
       createdAt: '2025-01-15T00:00:00Z',
       updatedAt: '2025-01-20T00:00:00Z',
       objectives: [
@@ -449,9 +495,12 @@ export function mockProgressNotes(learnerId: string): ProgressNote[] {
       sessionPlanId: 'plan-1',
       goalId: 'goal-1',
       goalObjectiveId: 'obj-2',
-      noteText: 'Student read 68 WPM today with 2 errors. Showing improvement in expression. Practiced with "Charlotte\'s Web" passage.',
+      noteText:
+        'Student read 68 WPM today with 2 errors. Showing improvement in expression. Practiced with "Charlotte\'s Web" passage.',
       rating: 3,
       evidenceUri: null,
+      visibility: 'ALL_EDUCATORS',
+      tags: ['academic'],
       createdAt: '2025-12-05T15:30:00Z',
       updatedAt: '2025-12-05T15:30:00Z',
     },
@@ -464,9 +513,12 @@ export function mockProgressNotes(learnerId: string): ProgressNote[] {
       sessionPlanId: null,
       goalId: 'goal-2',
       goalObjectiveId: 'obj-3',
-      noteText: 'Practiced 5s and 6s multiplication tables. Student struggled with 6x7 and 6x8. Used manipulatives to help visualize.',
+      noteText:
+        'Practiced 5s and 6s multiplication tables. Student struggled with 6x7 and 6x8. Used manipulatives to help visualize.',
       rating: 2,
       evidenceUri: null,
+      visibility: 'ALL_EDUCATORS',
+      tags: ['academic'],
       createdAt: '2025-12-04T14:00:00Z',
       updatedAt: '2025-12-04T14:00:00Z',
     },
@@ -479,9 +531,12 @@ export function mockProgressNotes(learnerId: string): ProgressNote[] {
       sessionPlanId: null,
       goalId: 'goal-1',
       goalObjectiveId: null,
-      noteText: 'Great session! Student self-corrected multiple times and showed improved confidence when reading aloud.',
+      noteText:
+        'Great session! Student self-corrected multiple times and showed improved confidence when reading aloud.',
       rating: 4,
       evidenceUri: null,
+      visibility: 'ALL_EDUCATORS',
+      tags: [],
       createdAt: '2025-12-02T10:00:00Z',
       updatedAt: '2025-12-02T10:00:00Z',
     },

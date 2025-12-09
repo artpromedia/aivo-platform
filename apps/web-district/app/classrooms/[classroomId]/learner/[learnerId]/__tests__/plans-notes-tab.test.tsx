@@ -3,14 +3,13 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-import type { Goal, SessionPlan, ProgressNote } from '@/lib/teacher-planning-api';
-
-import { PlansNotesTab } from '../plans-notes-tab';
+import type { Goal, SessionPlan, ProgressNote } from '../../../../../../lib/teacher-planning-api';
 import { LearnerProfileProvider, type LearnerProfileContextValue } from '../context';
+import { PlansNotesTab } from '../plans-notes-tab';
 
 // Mock the API module
-vi.mock('@/lib/teacher-planning-api', async () => {
-  const actual = await vi.importActual('@/lib/teacher-planning-api');
+vi.mock('../../../../../../lib/teacher-planning-api', async () => {
+  const actual = await vi.importActual('../../../../../../lib/teacher-planning-api');
   return {
     ...actual,
     createSessionPlan: vi.fn(),
@@ -34,6 +33,7 @@ const mockGoals: Goal[] = [
     status: 'ACTIVE',
     progressRating: 2,
     metadataJson: null,
+    visibility: 'ALL_EDUCATORS',
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-15T00:00:00Z',
   },
@@ -85,6 +85,8 @@ const mockProgressNotes: ProgressNote[] = [
     noteText: 'Student read 68 WPM today with 2 errors. Showing improvement in expression.',
     rating: 3,
     evidenceUri: null,
+    visibility: 'ALL_EDUCATORS',
+    tags: [],
     createdAt: '2025-12-05T15:30:00Z',
     updatedAt: '2025-12-05T15:30:00Z',
   },
@@ -100,12 +102,16 @@ const mockProgressNotes: ProgressNote[] = [
     noteText: 'Great session! Student showed improved confidence when reading aloud.',
     rating: 4,
     evidenceUri: null,
+    visibility: 'ALL_EDUCATORS',
+    tags: [],
     createdAt: '2025-12-02T10:00:00Z',
     updatedAt: '2025-12-02T10:00:00Z',
   },
 ];
 
-function createMockContext(overrides: Partial<LearnerProfileContextValue> = {}): LearnerProfileContextValue {
+function createMockContext(
+  overrides: Partial<LearnerProfileContextValue> = {}
+): LearnerProfileContextValue {
   return {
     learner: {
       id: 'learner-1',
@@ -133,11 +139,7 @@ function TestWrapper({
   children: React.ReactNode;
   contextValue: LearnerProfileContextValue;
 }) {
-  return (
-    <LearnerProfileProvider value={contextValue}>
-      {children}
-    </LearnerProfileProvider>
-  );
+  return <LearnerProfileProvider value={contextValue}>{children}</LearnerProfileProvider>;
 }
 
 describe('PlansNotesTab', () => {
@@ -246,7 +248,7 @@ describe('PlansNotesTab', () => {
       const refetchSessionPlans = vi.fn();
       const context = createMockContext({ refetchSessionPlans });
 
-      const { createSessionPlan } = await import('@/lib/teacher-planning-api');
+      const { createSessionPlan } = await import('../../../../../../lib/teacher-planning-api');
       const mockCreateSessionPlan = vi.mocked(createSessionPlan);
       mockCreateSessionPlan.mockResolvedValueOnce({
         id: 'plan-3',
@@ -290,10 +292,13 @@ describe('PlansNotesTab', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateSessionPlan).toHaveBeenCalledWith('learner-1', expect.objectContaining({
-          sessionType: 'THERAPY',
-          templateName: 'New Session',
-        }));
+        expect(mockCreateSessionPlan).toHaveBeenCalledWith(
+          'learner-1',
+          expect.objectContaining({
+            sessionType: 'THERAPY',
+            templateName: 'New Session',
+          })
+        );
         expect(refetchSessionPlans).toHaveBeenCalled();
       });
     });
@@ -333,8 +338,14 @@ describe('PlansNotesTab', () => {
       await user.click(notesToggle);
 
       await waitFor(() => {
-        expect(screen.getByText('Student read 68 WPM today with 2 errors. Showing improvement in expression.')).toBeInTheDocument();
-        expect(screen.getByText('Great session! Student showed improved confidence when reading aloud.')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'Student read 68 WPM today with 2 errors. Showing improvement in expression.'
+          )
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText('Great session! Student showed improved confidence when reading aloud.')
+        ).toBeInTheDocument();
       });
     });
 
@@ -406,7 +417,7 @@ describe('PlansNotesTab', () => {
       const refetchProgressNotes = vi.fn();
       const context = createMockContext({ refetchProgressNotes });
 
-      const { createProgressNote } = await import('@/lib/teacher-planning-api');
+      const { createProgressNote } = await import('../../../../../../lib/teacher-planning-api');
       const mockCreateProgressNote = vi.mocked(createProgressNote);
       mockCreateProgressNote.mockResolvedValueOnce({
         id: 'note-3',
@@ -420,6 +431,8 @@ describe('PlansNotesTab', () => {
         noteText: 'New progress note text',
         rating: null,
         evidenceUri: null,
+        visibility: 'ALL_EDUCATORS',
+        tags: [],
         createdAt: '2025-01-01T00:00:00Z',
         updatedAt: '2025-01-01T00:00:00Z',
       });
@@ -451,10 +464,12 @@ describe('PlansNotesTab', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateProgressNote).toHaveBeenCalledWith(expect.objectContaining({
-          learnerId: 'learner-1',
-          noteText: 'New progress note text',
-        }));
+        expect(mockCreateProgressNote).toHaveBeenCalledWith(
+          expect.objectContaining({
+            learnerId: 'learner-1',
+            noteText: 'New progress note text',
+          })
+        );
         expect(refetchProgressNotes).toHaveBeenCalled();
       });
     });
@@ -529,15 +544,16 @@ describe('PlansNotesTab', () => {
       await user.click(notesToggle);
 
       await waitFor(() => {
-        const noteCards = screen.getAllByRole('article', { hidden: true }).length > 0
-          ? screen.getAllByRole('article', { hidden: true })
-          : document.querySelectorAll('[class*="Card"]');
-        
+        const noteCards =
+          screen.getAllByRole('article', { hidden: true }).length > 0
+            ? screen.getAllByRole('article', { hidden: true })
+            : document.querySelectorAll('[class*="Card"]');
+
         // The first note should be the most recent (note-1 from Dec 5)
         const allText = document.body.textContent || '';
         const dec5Index = allText.indexOf('Student read 68 WPM');
         const dec2Index = allText.indexOf('Great session!');
-        
+
         // Dec 5 note should appear before Dec 2 note
         expect(dec5Index).toBeLessThan(dec2Index);
       });

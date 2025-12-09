@@ -11,6 +11,7 @@ import {
   ensureCanReadLearner,
   ensureCanWriteLearner,
   getTenantIdForQuery,
+  getAllowedVisibilityLevels,
 } from '../middleware/rbac.js';
 import {
   createProgressNoteSchema,
@@ -18,7 +19,7 @@ import {
   learnerIdParamSchema,
 } from '../schemas/index.js';
 import { createProgressNote, listProgressNotes } from '../services/progressNoteService.js';
-import type { AuthUser, ProgressRating } from '../types/index.js';
+import type { AuthUser, ProgressRating, Visibility, NoteTag } from '../types/index.js';
 
 export async function registerProgressNoteRoutes(fastify: FastifyInstance): Promise<void> {
   // ════════════════════════════════════════════════════════════════════════════
@@ -57,6 +58,8 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
         goalObjectiveId: body.goalObjectiveId,
         noteText: body.noteText,
         rating: body.rating as ProgressRating | undefined,
+        visibility: body.visibility,
+        tags: body.tags as NoteTag[] | undefined,
         evidenceUri: body.evidenceUri,
       });
 
@@ -91,11 +94,15 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
       // RBAC check
       await ensureCanReadLearner(request, learnerId);
 
+      // Filter notes based on user's visibility permissions
+      const allowedVisibility = getAllowedVisibilityLevels(user);
+
       const result = await listProgressNotes({
         tenantId: user.tenantId,
         learnerId,
         goalId: query.goalId,
         sessionId: query.sessionId,
+        allowedVisibility,
         page: query.page,
         pageSize: query.pageSize,
       });

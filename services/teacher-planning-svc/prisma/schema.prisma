@@ -62,6 +62,14 @@ enum SessionPlanStatus {
   @@map("session_plan_status")
 }
 
+enum Visibility {
+  ALL_EDUCATORS
+  THERAPISTS_ONLY
+  CUSTOM
+
+  @@map("visibility")
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MODELS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -83,6 +91,7 @@ model Goal {
 
   status            GoalStatus @default(DRAFT)
   progressRating    Int?       @map("progress_rating") @db.SmallInt
+  visibility        Visibility @default(ALL_EDUCATORS)
 
   metadataJson      Json?      @default("{}") @map("metadata_json")
 
@@ -98,6 +107,7 @@ model Goal {
   @@index([learnerId])
   @@index([skillId])
   @@index([createdByUserId])
+  @@index([visibility])
   @@map("goals")
 }
 
@@ -186,24 +196,26 @@ model SessionPlanItem {
 }
 
 model ProgressNote {
-  id                String   @id @default(uuid()) @db.Uuid
-  tenantId          String   @map("tenant_id") @db.Uuid
-  learnerId         String   @map("learner_id") @db.Uuid
-  createdByUserId   String   @map("created_by_user_id") @db.Uuid
+  id                String     @id @default(uuid()) @db.Uuid
+  tenantId          String     @map("tenant_id") @db.Uuid
+  learnerId         String     @map("learner_id") @db.Uuid
+  createdByUserId   String     @map("created_by_user_id") @db.Uuid
 
-  sessionId         String?  @map("session_id") @db.Uuid
-  sessionPlanId     String?  @map("session_plan_id") @db.Uuid
+  sessionId         String?    @map("session_id") @db.Uuid
+  sessionPlanId     String?    @map("session_plan_id") @db.Uuid
 
-  goalId            String?  @map("goal_id") @db.Uuid
-  goalObjectiveId   String?  @map("goal_objective_id") @db.Uuid
+  goalId            String?    @map("goal_id") @db.Uuid
+  goalObjectiveId   String?    @map("goal_objective_id") @db.Uuid
 
-  noteText          String   @map("note_text")
-  rating            Int?     @db.SmallInt
+  noteText          String     @map("note_text")
+  rating            Int?       @db.SmallInt
+  visibility        Visibility @default(ALL_EDUCATORS)
+  tags              Json?      @default("[]") @db.JsonB
 
-  evidenceUri       String?  @map("evidence_uri")
+  evidenceUri       String?    @map("evidence_uri")
 
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz
 
   sessionPlan   SessionPlan?   @relation(fields: [sessionPlanId], references: [id], onDelete: SetNull)
   goal          Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
@@ -214,5 +226,6 @@ model ProgressNote {
   @@index([goalId])
   @@index([sessionPlanId])
   @@index([createdByUserId])
+  @@index([visibility])
   @@map("progress_notes")
 }

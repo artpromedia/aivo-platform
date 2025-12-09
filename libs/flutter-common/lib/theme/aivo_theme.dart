@@ -133,7 +133,7 @@ ThemeData _buildTheme({required _AivoColors colors, required _AivoTypography typ
       centerTitle: true,
       elevation: 0,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: colors.surface,
       elevation: 1,
       shadowColor: Colors.black12,

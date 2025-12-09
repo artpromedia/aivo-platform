@@ -208,7 +208,6 @@ class FocusBreakFAB extends ConsumerWidget {
   }
 
   Future<void> _showBreakOptions(BuildContext context, WidgetRef ref) async {
-    final theme = Theme.of(context);
     final gradeBand = ref.read(gradeThemeControllerProvider);
 
     // First, optionally ask how they're feeling

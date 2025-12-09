@@ -11,6 +11,8 @@ import {
   ensureCanReadLearner,
   ensureCanWriteLearner,
   getTenantIdForQuery,
+  getAllowedVisibilityLevels,
+  canViewVisibility,
 } from '../middleware/rbac.js';
 import {
   createGoalSchema,
@@ -37,6 +39,7 @@ import type {
   GoalStatus,
   ObjectiveStatus,
   ProgressRating,
+  Visibility,
 } from '../types/index.js';
 
 export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void> {
@@ -66,11 +69,15 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       // RBAC check
       await ensureCanReadLearner(request, learnerId);
 
+      // Filter goals based on user's visibility permissions
+      const allowedVisibility = getAllowedVisibilityLevels(user);
+
       const result = await listGoals({
         tenantId: user.tenantId,
         learnerId,
         status: query.status,
         domain: query.domain,
+        allowedVisibility,
         page: query.page,
         pageSize: query.pageSize,
       });
@@ -119,6 +126,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
         skillId: body.skillId,
         startDate: body.startDate ? new Date(body.startDate) : undefined,
         targetDate: body.targetDate ? new Date(body.targetDate) : undefined,
+        visibility: body.visibility,
         metadataJson: body.metadataJson,
       });
 
@@ -149,6 +157,11 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       // RBAC check via learner
       await ensureCanReadLearner(request, goal.learnerId);
 
+      // Check visibility permissions
+      if (!canViewVisibility(user, goal.visibility)) {
+        throw new ForbiddenError('You do not have permission to view this goal');
+      }
+
       return reply.send(goal);
     }
   );
@@ -173,9 +186,14 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       const body = updateGoalSchema.parse(request.body);
       const tenantId = getTenantIdForQuery(user);
 
-      // Get goal to check learner access
+      // Get goal to check learner access and visibility
       const existing = await getGoalById(goalId, tenantId);
       await ensureCanWriteLearner(request, existing.learnerId);
+
+      // Check visibility permissions for viewing/editing
+      if (!canViewVisibility(user, existing.visibility)) {
+        throw new ForbiddenError('You do not have permission to modify this goal');
+      }
 
       const goal = await updateGoal(
         goalId,
@@ -190,6 +208,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
                 : null
               : undefined,
           progressRating: body.progressRating as ProgressRating | null | undefined,
+          visibility: body.visibility,
           metadataJson: body.metadataJson,
         },
         tenantId

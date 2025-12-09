@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../app/providers';
 
 import { AccessibilityControls } from './accessibility-controls';
+import { EducatorModeToggle } from './educator-mode-toggle';
 
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -20,7 +21,10 @@ export function Nav() {
   return (
     <header className="border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <div className="text-lg font-semibold">Aivo District Admin</div>
+        <div className="flex items-center gap-4">
+          <div className="text-lg font-semibold">Aivo District Admin</div>
+          {isAuthenticated && <EducatorModeToggle />}
+        </div>
         <nav className="flex items-center gap-4 text-sm font-medium">
           {links.map((link) => {
             const active = pathname === link.href;

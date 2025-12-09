@@ -6,7 +6,6 @@ import 'package:flutter_common/flutter_common.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
 import '../baseline/baseline_controller.dart';
-import '../baseline/baseline_service.dart';
 import '../learners/learner_service.dart';
 import '../widgets/baseline_status_card.dart';
 import '../widgets/difficulty_recommendation_card.dart';

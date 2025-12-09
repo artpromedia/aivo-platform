@@ -1,8 +1,11 @@
 'use client';
 
 import { Card, Badge, Heading, Button } from '@aivo/ui-web';
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
+import { VisibilityBadge, VisibilitySelector } from '../../../../../components/visibility-badge';
+import { cn } from '../../../../../lib/cn';
+import { useEducatorMode } from '../../../../../lib/educator-mode';
 import {
   createGoal,
   createObjective,
@@ -14,8 +17,8 @@ import {
   type GoalObjective,
   type CreateGoalInput,
   type ObjectiveStatus,
+  type Visibility,
 } from '../../../../../lib/teacher-planning-api';
-import { cn } from '@/lib/cn';
 
 import { useLearnerProfile } from './context';
 
@@ -26,6 +29,7 @@ import { useLearnerProfile } from './context';
  * - List of goals with expand/collapse objectives
  * - Add Goal button with modal form
  * - Edit and Add Objective actions per goal
+ * - Visibility badges for therapist-only goals
  */
 export function GoalsTab() {
   const { learner, goals, refetchGoals } = useLearnerProfile();
@@ -83,9 +87,7 @@ export function GoalsTab() {
     async (goalId: string, description: string, successCriteria?: string) => {
       setIsLoading(true);
       try {
-        const input = successCriteria 
-          ? { description, successCriteria } 
-          : { description };
+        const input = successCriteria ? { description, successCriteria } : { description };
         await createObjective(goalId, input);
         await refetchGoals();
         setAddingObjectiveForGoal(null);
@@ -121,7 +123,12 @@ export function GoalsTab() {
       {/* Header with Add Button */}
       <div className="flex items-center justify-between">
         <Heading level={2}>Goals</Heading>
-        <Button variant="primary" onClick={() => setShowAddGoalModal(true)}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setShowAddGoalModal(true);
+          }}
+        >
           + Add Goal
         </Button>
       </div>
@@ -131,7 +138,12 @@ export function GoalsTab() {
         <Card>
           <div className="p-8 text-center">
             <p className="text-muted mb-4">No goals have been created for this learner yet.</p>
-            <Button variant="primary" onClick={() => setShowAddGoalModal(true)}>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowAddGoalModal(true);
+              }}
+            >
               Create First Goal
             </Button>
           </div>
@@ -195,7 +207,9 @@ export function GoalsTab() {
       {/* Add Goal Modal */}
       {showAddGoalModal && (
         <AddGoalModal
-          onClose={() => setShowAddGoalModal(false)}
+          onClose={() => {
+            setShowAddGoalModal(false);
+          }}
           onSubmit={handleAddGoal}
           isLoading={isLoading}
         />
@@ -205,7 +219,9 @@ export function GoalsTab() {
       {editingGoal && (
         <EditGoalModal
           goal={editingGoal}
-          onClose={() => setEditingGoal(null)}
+          onClose={() => {
+            setEditingGoal(null);
+          }}
           onSubmit={(input) => handleEditGoal(editingGoal.id, input)}
           isLoading={isLoading}
         />
@@ -215,7 +231,9 @@ export function GoalsTab() {
       {addingObjectiveForGoal && (
         <AddObjectiveModal
           goalId={addingObjectiveForGoal}
-          onClose={() => setAddingObjectiveForGoal(null)}
+          onClose={() => {
+            setAddingObjectiveForGoal(null);
+          }}
           onSubmit={handleAddObjective}
           isLoading={isLoading}
         />
@@ -258,9 +276,15 @@ function GoalSection({
             key={goal.id}
             goal={goal}
             isExpanded={expandedGoals.has(goal.id)}
-            onToggleExpand={() => onToggleExpand(goal.id)}
-            onEdit={() => onEdit(goal)}
-            onAddObjective={() => onAddObjective(goal.id)}
+            onToggleExpand={() => {
+              onToggleExpand(goal.id);
+            }}
+            onEdit={() => {
+              onEdit(goal);
+            }}
+            onAddObjective={() => {
+              onAddObjective(goal.id);
+            }}
             onUpdateObjectiveStatus={onUpdateObjectiveStatus}
           />
         ))}
@@ -304,19 +328,20 @@ function GoalCard({
             aria-expanded={isExpanded}
             aria-label={isExpanded ? 'Collapse objectives' : 'Expand objectives'}
           >
-            <ChevronIcon className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-90')} />
+            <ChevronIcon
+              className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-90')}
+            />
           </button>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-medium">{goal.title}</h4>
               <div className="flex items-center gap-2">
-                <Badge tone={getDomainTone(goal.domain)}>
-                  {goal.domain}
-                </Badge>
-                <Badge tone={getStatusTone(goal.status)}>
-                  {formatStatus(goal.status)}
-                </Badge>
+                <h4 className="font-medium">{goal.title}</h4>
+                <VisibilityBadge visibility={goal.visibility} compact />
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge tone={getDomainTone(goal.domain)}>{goal.domain}</Badge>
+                <Badge tone={getStatusTone(goal.status)}>{formatStatus(goal.status)}</Badge>
               </div>
             </div>
 
@@ -401,7 +426,9 @@ function ObjectiveItem({ objective, onUpdateStatus }: ObjectiveItemProps) {
     <li className="flex items-start gap-3 p-2 rounded-md hover:bg-surface">
       <div className="relative">
         <button
-          onClick={() => setShowStatusMenu(!showStatusMenu)}
+          onClick={() => {
+            setShowStatusMenu(!showStatusMenu);
+          }}
           className={cn(
             'w-5 h-5 rounded-full border-2 flex items-center justify-center',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
@@ -465,10 +492,14 @@ interface AddGoalModalProps {
 }
 
 function AddGoalModal({ onClose, onSubmit, isLoading }: AddGoalModalProps) {
+  const { getDefaultVisibility, getVisibilityOptions } = useEducatorMode();
+  const visibilityOptions = getVisibilityOptions();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [domain, setDomain] = useState<GoalDomain>('ELA');
   const [targetDate, setTargetDate] = useState('');
+  const [visibility, setVisibility] = useState<Visibility>(getDefaultVisibility());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -477,6 +508,7 @@ function AddGoalModal({ onClose, onSubmit, isLoading }: AddGoalModalProps) {
     const input: CreateGoalInput = {
       title: title.trim(),
       domain,
+      visibility,
     };
     if (description.trim()) {
       input.description = description.trim();
@@ -498,7 +530,9 @@ function AddGoalModal({ onClose, onSubmit, isLoading }: AddGoalModalProps) {
             id="goal-title"
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="e.g., Improve reading fluency"
             required
@@ -512,7 +546,9 @@ function AddGoalModal({ onClose, onSubmit, isLoading }: AddGoalModalProps) {
           <textarea
             id="goal-description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
             placeholder="Describe the goal in detail..."
           />
@@ -526,7 +562,9 @@ function AddGoalModal({ onClose, onSubmit, isLoading }: AddGoalModalProps) {
             <select
               id="goal-domain"
               value={domain}
-              onChange={(e) => setDomain(e.target.value as GoalDomain)}
+              onChange={(e) => {
+                setDomain(e.target.value as GoalDomain);
+              }}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="ELA">ELA</option>
@@ -546,11 +584,22 @@ function AddGoalModal({ onClose, onSubmit, isLoading }: AddGoalModalProps) {
               id="goal-target-date"
               type="date"
               value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
+              onChange={(e) => {
+                setTargetDate(e.target.value);
+              }}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
+
+        {/* Visibility Selector - only shown if user has therapist capabilities */}
+        {visibilityOptions.length > 1 && (
+          <VisibilitySelector
+            value={visibility}
+            onChange={setVisibility}
+            options={visibilityOptions}
+          />
+        )}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
@@ -577,9 +626,13 @@ interface EditGoalModalProps {
 }
 
 function EditGoalModal({ goal, onClose, onSubmit, isLoading }: EditGoalModalProps) {
+  const { getVisibilityOptions } = useEducatorMode();
+  const visibilityOptions = getVisibilityOptions();
+
   const [title, setTitle] = useState(goal.title);
   const [description, setDescription] = useState(goal.description ?? '');
   const [status, setStatus] = useState<GoalStatus>(goal.status);
+  const [visibility, setVisibility] = useState<Visibility>(goal.visibility);
   const [targetDate, setTargetDate] = useState(
     goal.targetDate ? goal.targetDate.split('T')[0] : ''
   );
@@ -592,6 +645,7 @@ function EditGoalModal({ goal, onClose, onSubmit, isLoading }: EditGoalModalProp
       title: title.trim(),
       description: description.trim() || null,
       status,
+      visibility,
       targetDate: targetDate || null,
     });
   };
@@ -607,7 +661,9 @@ function EditGoalModal({ goal, onClose, onSubmit, isLoading }: EditGoalModalProp
             id="edit-goal-title"
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
@@ -620,7 +676,9 @@ function EditGoalModal({ goal, onClose, onSubmit, isLoading }: EditGoalModalProp
           <textarea
             id="edit-goal-description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
           />
         </div>
@@ -633,7 +691,9 @@ function EditGoalModal({ goal, onClose, onSubmit, isLoading }: EditGoalModalProp
             <select
               id="edit-goal-status"
               value={status}
-              onChange={(e) => setStatus(e.target.value as GoalStatus)}
+              onChange={(e) => {
+                setStatus(e.target.value as GoalStatus);
+              }}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="DRAFT">Draft</option>
@@ -652,11 +712,22 @@ function EditGoalModal({ goal, onClose, onSubmit, isLoading }: EditGoalModalProp
               id="edit-goal-target-date"
               type="date"
               value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
+              onChange={(e) => {
+                setTargetDate(e.target.value);
+              }}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
+
+        {/* Visibility Selector - only shown if user has therapist capabilities */}
+        {visibilityOptions.length > 1 && (
+          <VisibilitySelector
+            value={visibility}
+            onChange={setVisibility}
+            options={visibilityOptions}
+          />
+        )}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
@@ -703,7 +774,9 @@ function AddObjectiveModal({ goalId, onClose, onSubmit, isLoading }: AddObjectiv
           <textarea
             id="obj-description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
             placeholder="e.g., Read 50 WPM with less than 3 errors"
             required
@@ -718,7 +791,9 @@ function AddObjectiveModal({ goalId, onClose, onSubmit, isLoading }: AddObjectiv
             id="obj-criteria"
             type="text"
             value={successCriteria}
-            onChange={(e) => setSuccessCriteria(e.target.value)}
+            onChange={(e) => {
+              setSuccessCriteria(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="e.g., 3 consecutive sessions meeting criteria"
           />
@@ -751,7 +826,9 @@ function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -781,7 +858,13 @@ function Modal({ title, onClose, children }: ModalProps) {
 
 function ChevronIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   );
@@ -789,7 +872,13 @@ function ChevronIcon({ className }: { className?: string }) {
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={3}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -797,7 +886,13 @@ function CheckIcon({ className }: { className?: string }) {
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   );

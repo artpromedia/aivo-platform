@@ -70,10 +70,9 @@ class HomeworkState {
 
 /// Controller for managing homework helper state.
 class HomeworkController extends StateNotifier<HomeworkState> {
-  HomeworkController(this._service, this._learnerId) : super(const HomeworkState());
+  HomeworkController(this._service, String learnerId) : super(const HomeworkState());
 
   final HomeworkService _service;
-  final String _learnerId;
 
   String? _currentGradeBand;
 

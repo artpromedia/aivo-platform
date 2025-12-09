@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_common/flutter_common.dart';
 
 import 'package:mobile_parent/analytics/analytics_service.dart';
 import 'package:mobile_parent/widgets/homework_focus_card.dart';
@@ -219,8 +220,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: HomeworkFocusCard(
-                learnerId: 'learner-1',
-                learnerName: 'Alex',
+                learner: const Learner(id: 'learner-1', tenantId: 'tenant-1', name: 'Alex', grade: 3),
                 parentId: 'parent-1',
               ),
             ),
@@ -238,8 +238,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: HomeworkFocusCard(
-                learnerId: 'learner-1',
-                learnerName: 'Alex',
+                learner: const Learner(id: 'learner-1', tenantId: 'tenant-1', name: 'Alex', grade: 3),
                 parentId: 'parent-1',
               ),
             ),

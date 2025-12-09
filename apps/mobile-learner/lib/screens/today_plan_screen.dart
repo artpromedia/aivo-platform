@@ -125,7 +125,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${plan.activities.length} activities • ~${plan.totalDurationMinutes} minutes',
+            '${plan.activities.length} activities • ~${plan.totalMinutes} minutes',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -174,7 +174,7 @@ class _ActivityCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getDomainColor(activity.skillDomain),
+          backgroundColor: _getDomainColor(activity.domain),
           child: Text(
             index.toString(),
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -192,7 +192,7 @@ class _ActivityCard extends StatelessWidget {
               children: [
                 Icon(Icons.timer_outlined, size: 14, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text('${activity.estimatedDurationMinutes} min'),
+                Text('${activity.estimatedMinutes} min'),
                 const SizedBox(width: 16),
                 Icon(_getObjectTypeIcon(activity.objectType), size: 14, color: Colors.grey[600]),
                 const SizedBox(width: 4),
@@ -208,18 +208,20 @@ class _ActivityCard extends StatelessWidget {
     );
   }
 
-  Color _getDomainColor(SkillDomain domain) {
-    switch (domain) {
-      case SkillDomain.readingFoundations:
+  Color _getDomainColor(String domain) {
+    switch (domain.toLowerCase()) {
+      case 'reading_foundations':
         return Colors.blue;
-      case SkillDomain.readingComprehension:
+      case 'reading_comprehension':
         return Colors.indigo;
-      case SkillDomain.numberSense:
+      case 'number_sense':
         return Colors.orange;
-      case SkillDomain.operations:
+      case 'operations':
         return Colors.red;
-      case SkillDomain.problemSolving:
+      case 'problem_solving':
         return Colors.purple;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -227,12 +229,16 @@ class _ActivityCard extends StatelessWidget {
     switch (type) {
       case LearningObjectType.lesson:
         return Icons.menu_book;
-      case LearningObjectType.practice:
+      case LearningObjectType.exercise:
         return Icons.edit_note;
       case LearningObjectType.assessment:
         return Icons.assignment;
       case LearningObjectType.game:
         return Icons.sports_esports;
+      case LearningObjectType.video:
+        return Icons.play_circle;
+      case LearningObjectType.reading:
+        return Icons.auto_stories;
     }
   }
 
@@ -240,12 +246,16 @@ class _ActivityCard extends StatelessWidget {
     switch (type) {
       case LearningObjectType.lesson:
         return 'Lesson';
-      case LearningObjectType.practice:
-        return 'Practice';
+      case LearningObjectType.exercise:
+        return 'Exercise';
       case LearningObjectType.assessment:
         return 'Assessment';
       case LearningObjectType.game:
         return 'Game';
+      case LearningObjectType.video:
+        return 'Video';
+      case LearningObjectType.reading:
+        return 'Reading';
     }
   }
 }

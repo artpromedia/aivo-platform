@@ -92,8 +92,6 @@ class HomeworkFocusCard extends ConsumerWidget {
   }
 
   Widget _buildMetrics(BuildContext context, LearnerAnalytics analytics) {
-    final theme = Theme.of(context);
-
     return Column(
       children: [
         Row(

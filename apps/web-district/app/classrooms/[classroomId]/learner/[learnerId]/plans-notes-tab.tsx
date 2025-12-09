@@ -1,8 +1,11 @@
 'use client';
 
 import { Card, Badge, Heading, Button } from '@aivo/ui-web';
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
+import { VisibilityBadge, VisibilitySelector } from '../../../../../components/visibility-badge';
+import { cn } from '../../../../../lib/cn';
+import { useEducatorMode } from '../../../../../lib/educator-mode';
 import {
   createSessionPlan,
   createProgressNote,
@@ -12,8 +15,8 @@ import {
   type SessionPlanType,
   type SessionPlanStatus,
   type ProgressRating,
+  type Visibility,
 } from '../../../../../lib/teacher-planning-api';
-import { cn } from '@/lib/cn';
 
 import { useLearnerProfile } from './context';
 
@@ -25,8 +28,15 @@ import { useLearnerProfile } from './context';
  * - Progress notes timeline with Add Note modal
  */
 export function PlansNotesTab() {
-  const { learner, classroomId, goals, sessionPlans, progressNotes, refetchSessionPlans, refetchProgressNotes } =
-    useLearnerProfile();
+  const {
+    learner,
+    classroomId,
+    goals,
+    sessionPlans,
+    progressNotes,
+    refetchSessionPlans,
+    refetchProgressNotes,
+  } = useLearnerProfile();
   const [activeSection, setActiveSection] = useState<'plans' | 'notes'>('plans');
   const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
@@ -94,7 +104,9 @@ export function PlansNotesTab() {
       {/* Section Toggle */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => setActiveSection('plans')}
+          onClick={() => {
+            setActiveSection('plans');
+          }}
           className={cn(
             'px-4 py-2 rounded-md text-sm font-medium transition-colors',
             activeSection === 'plans'
@@ -105,7 +117,9 @@ export function PlansNotesTab() {
           Session Plans ({sessionPlans.length})
         </button>
         <button
-          onClick={() => setActiveSection('notes')}
+          onClick={() => {
+            setActiveSection('notes');
+          }}
           className={cn(
             'px-4 py-2 rounded-md text-sm font-medium transition-colors',
             activeSection === 'notes'
@@ -122,7 +136,12 @@ export function PlansNotesTab() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <Heading level={2}>Session Plans</Heading>
-            <Button variant="primary" onClick={() => setShowCreatePlanModal(true)}>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowCreatePlanModal(true);
+              }}
+            >
               + Create Plan
             </Button>
           </div>
@@ -131,7 +150,12 @@ export function PlansNotesTab() {
             <Card>
               <div className="p-8 text-center">
                 <p className="text-muted mb-4">No session plans have been created yet.</p>
-                <Button variant="primary" onClick={() => setShowCreatePlanModal(true)}>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setShowCreatePlanModal(true);
+                  }}
+                >
                   Create First Plan
                 </Button>
               </div>
@@ -156,7 +180,12 @@ export function PlansNotesTab() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <Heading level={2}>Progress Notes</Heading>
-            <Button variant="primary" onClick={() => setShowAddNoteModal(true)}>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowAddNoteModal(true);
+              }}
+            >
               + Add Note
             </Button>
           </div>
@@ -165,7 +194,12 @@ export function PlansNotesTab() {
             <Card>
               <div className="p-8 text-center">
                 <p className="text-muted mb-4">No progress notes have been recorded yet.</p>
-                <Button variant="primary" onClick={() => setShowAddNoteModal(true)}>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setShowAddNoteModal(true);
+                  }}
+                >
                   Add First Note
                 </Button>
               </div>
@@ -180,7 +214,9 @@ export function PlansNotesTab() {
       {showCreatePlanModal && (
         <CreatePlanModal
           goals={goals}
-          onClose={() => setShowCreatePlanModal(false)}
+          onClose={() => {
+            setShowCreatePlanModal(false);
+          }}
           onSubmit={handleCreatePlan}
           isLoading={isLoading}
         />
@@ -191,7 +227,9 @@ export function PlansNotesTab() {
         <AddNoteModal
           goals={goals}
           sessionPlans={sessionPlans}
-          onClose={() => setShowAddNoteModal(false)}
+          onClose={() => {
+            setShowAddNoteModal(false);
+          }}
           onSubmit={handleAddNote}
           isLoading={isLoading}
         />
@@ -260,22 +298,28 @@ function SessionPlanCard({ plan, classroomId, onUpdateStatus }: SessionPlanCardP
                 View & Start
               </a>
             )}
-            
+
             <div className="relative">
               <button
-                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                onClick={() => {
+                  setShowStatusMenu(!showStatusMenu);
+                }}
                 className="flex items-center gap-1"
               >
-                <Badge tone={getStatusTone(plan.status)}>
-                  {formatStatus(plan.status)}
-                </Badge>
+                <Badge tone={getStatusTone(plan.status)}>{formatStatus(plan.status)}</Badge>
                 <ChevronDownIcon className="w-4 h-4 text-muted" />
               </button>
 
               {showStatusMenu && (
                 <div className="absolute top-8 right-0 z-10 bg-background border border-border rounded-md shadow-lg py-1 min-w-[140px]">
                   {(
-                    ['DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as SessionPlanStatus[]
+                    [
+                      'DRAFT',
+                      'PLANNED',
+                      'IN_PROGRESS',
+                      'COMPLETED',
+                      'CANCELLED',
+                    ] as SessionPlanStatus[]
                   ).map((s) => (
                     <button
                       key={s}
@@ -336,8 +380,8 @@ function NotesTimeline({ notes, goals }: NotesTimelineProps) {
                 note.rating !== null && note.rating >= 3
                   ? 'border-green-500'
                   : note.rating !== null && note.rating <= 1
-                  ? 'border-red-500'
-                  : 'border-primary'
+                    ? 'border-red-500'
+                    : 'border-primary'
               )}
             />
 
@@ -352,13 +396,10 @@ function NotesTimeline({ notes, goals }: NotesTimelineProps) {
                         minute: '2-digit',
                       })}
                     </span>
-                    {note.goalId && (
-                      <Badge tone="info">
-                        {getGoalTitle(note.goalId)}
-                      </Badge>
-                    )}
+                    {note.goalId && <Badge tone="info">{getGoalTitle(note.goalId)}</Badge>}
+                    <VisibilityBadge visibility={note.visibility} compact />
                   </div>
-                  {note.rating !== null && <RatingStars rating={note.rating as ProgressRating} />}
+                  {note.rating !== null && <RatingStars rating={note.rating} />}
                 </div>
 
                 <p className="text-sm whitespace-pre-wrap">{note.noteText}</p>
@@ -466,7 +507,9 @@ function CreatePlanModal({ goals, onClose, onSubmit, isLoading }: CreatePlanModa
           <select
             id="plan-type"
             value={sessionType}
-            onChange={(e) => setSessionType(e.target.value as SessionPlanType)}
+            onChange={(e) => {
+              setSessionType(e.target.value as SessionPlanType);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="LEARNING">Learning</option>
@@ -486,7 +529,9 @@ function CreatePlanModal({ goals, onClose, onSubmit, isLoading }: CreatePlanModa
             id="plan-name"
             type="text"
             value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
+            onChange={(e) => {
+              setTemplateName(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="e.g., Reading Fluency Practice"
           />
@@ -501,7 +546,9 @@ function CreatePlanModal({ goals, onClose, onSubmit, isLoading }: CreatePlanModa
               id="plan-date"
               type="date"
               value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
+              onChange={(e) => {
+                setScheduledDate(e.target.value);
+              }}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -514,7 +561,9 @@ function CreatePlanModal({ goals, onClose, onSubmit, isLoading }: CreatePlanModa
               id="plan-time"
               type="time"
               value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
+              onChange={(e) => {
+                setScheduledTime(e.target.value);
+              }}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -523,9 +572,7 @@ function CreatePlanModal({ goals, onClose, onSubmit, isLoading }: CreatePlanModa
         {/* Goal Selection */}
         {goals.length > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Associated Goals (optional)
-            </label>
+            <label className="block text-sm font-medium mb-2">Associated Goals (optional)</label>
             <div className="max-h-32 overflow-y-auto border border-border rounded-md p-2">
               {goals.map((goal) => (
                 <label
@@ -535,7 +582,9 @@ function CreatePlanModal({ goals, onClose, onSubmit, isLoading }: CreatePlanModa
                   <input
                     type="checkbox"
                     checked={selectedGoalIds.includes(goal.id)}
-                    onChange={() => toggleGoal(goal.id)}
+                    onChange={() => {
+                      toggleGoal(goal.id);
+                    }}
                     className="rounded border-border"
                   />
                   <span className="text-sm truncate">{goal.title}</span>
@@ -571,15 +620,20 @@ interface AddNoteModalProps {
     goalId?: string;
     sessionPlanId?: string;
     rating?: ProgressRating;
+    visibility?: Visibility;
   }) => void;
   isLoading: boolean;
 }
 
 function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: AddNoteModalProps) {
+  const { getDefaultVisibility, getVisibilityOptions } = useEducatorMode();
+  const visibilityOptions = getVisibilityOptions();
+
   const [noteText, setNoteText] = useState('');
   const [goalId, setGoalId] = useState('');
   const [sessionPlanId, setSessionPlanId] = useState('');
   const [rating, setRating] = useState<ProgressRating | ''>('');
+  const [visibility, setVisibility] = useState<Visibility>(getDefaultVisibility());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -590,7 +644,8 @@ function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: Add
       goalId?: string;
       sessionPlanId?: string;
       rating?: ProgressRating;
-    } = { noteText: noteText.trim() };
+      visibility?: Visibility;
+    } = { noteText: noteText.trim(), visibility };
 
     if (goalId) {
       input.goalId = goalId;
@@ -615,7 +670,9 @@ function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: Add
           <textarea
             id="note-text"
             value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
+            onChange={(e) => {
+              setNoteText(e.target.value);
+            }}
             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
             placeholder="Describe the learner's progress, observations, or achievements..."
             required
@@ -631,7 +688,9 @@ function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: Add
               <select
                 id="note-goal"
                 value={goalId}
-                onChange={(e) => setGoalId(e.target.value)}
+                onChange={(e) => {
+                  setGoalId(e.target.value);
+                }}
                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None</option>
@@ -652,7 +711,9 @@ function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: Add
               <select
                 id="note-session"
                 value={sessionPlanId}
-                onChange={(e) => setSessionPlanId(e.target.value)}
+                onChange={(e) => {
+                  setSessionPlanId(e.target.value);
+                }}
                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None</option>
@@ -673,7 +734,9 @@ function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: Add
               <button
                 key={r}
                 type="button"
-                onClick={() => setRating(rating === r ? '' : r)}
+                onClick={() => {
+                  setRating(rating === r ? '' : r);
+                }}
                 className={cn(
                   'w-10 h-10 rounded-md border-2 flex items-center justify-center text-sm font-medium transition-colors',
                   rating === r
@@ -689,17 +752,26 @@ function AddNoteModal({ goals, sessionPlans, onClose, onSubmit, isLoading }: Add
               {rating === 0
                 ? 'No progress'
                 : rating === 1
-                ? 'Minimal'
-                : rating === 2
-                ? 'Some'
-                : rating === 3
-                ? 'Good'
-                : rating === 4
-                ? 'Excellent'
-                : 'Optional'}
+                  ? 'Minimal'
+                  : rating === 2
+                    ? 'Some'
+                    : rating === 3
+                      ? 'Good'
+                      : rating === 4
+                        ? 'Excellent'
+                        : 'Optional'}
             </span>
           </div>
         </div>
+
+        {/* Visibility Selector - only shown if user has therapist capabilities */}
+        {visibilityOptions.length > 1 && (
+          <VisibilitySelector
+            value={visibility}
+            onChange={setVisibility}
+            options={visibilityOptions}
+          />
+        )}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
@@ -728,7 +800,9 @@ function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -758,7 +832,13 @@ function Modal({ title, onClose, children }: ModalProps) {
 
 function CalendarIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -770,7 +850,13 @@ function CalendarIcon({ className }: { className?: string }) {
 
 function ClockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -782,7 +868,13 @@ function ClockIcon({ className }: { className?: string }) {
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
     </svg>
   );
@@ -808,7 +900,13 @@ function StarIcon({ className, filled }: { className?: string; filled: boolean }
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   );

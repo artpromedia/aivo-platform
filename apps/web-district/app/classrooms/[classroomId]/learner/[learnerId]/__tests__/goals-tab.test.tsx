@@ -1,16 +1,15 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-import type { Goal, GoalObjective } from '@/lib/teacher-planning-api';
-
-import { GoalsTab } from '../goals-tab';
+import type { Goal, GoalObjective } from '../../../../../../lib/teacher-planning-api';
 import { LearnerProfileProvider, type LearnerProfileContextValue } from '../context';
+import { GoalsTab } from '../goals-tab';
 
 // Mock the API module
-vi.mock('@/lib/teacher-planning-api', async () => {
-  const actual = await vi.importActual('@/lib/teacher-planning-api');
+vi.mock('../../../../../../lib/teacher-planning-api', async () => {
+  const actual = await vi.importActual('../../../../../../lib/teacher-planning-api');
   return {
     ...actual,
     createGoal: vi.fn(),
@@ -60,6 +59,7 @@ const mockGoals: Goal[] = [
     status: 'ACTIVE',
     progressRating: 2,
     metadataJson: null,
+    visibility: 'ALL_EDUCATORS',
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-15T00:00:00Z',
     objectives: mockObjectives,
@@ -79,6 +79,7 @@ const mockGoals: Goal[] = [
     status: 'DRAFT',
     progressRating: 1,
     metadataJson: null,
+    visibility: 'ALL_EDUCATORS',
     createdAt: '2025-01-15T00:00:00Z',
     updatedAt: '2025-01-20T00:00:00Z',
     objectives: [],
@@ -86,7 +87,9 @@ const mockGoals: Goal[] = [
   },
 ];
 
-function createMockContext(overrides: Partial<LearnerProfileContextValue> = {}): LearnerProfileContextValue {
+function createMockContext(
+  overrides: Partial<LearnerProfileContextValue> = {}
+): LearnerProfileContextValue {
   return {
     learner: {
       id: 'learner-1',
@@ -114,11 +117,7 @@ function TestWrapper({
   children: React.ReactNode;
   contextValue: LearnerProfileContextValue;
 }) {
-  return (
-    <LearnerProfileProvider value={contextValue}>
-      {children}
-    </LearnerProfileProvider>
-  );
+  return <LearnerProfileProvider value={contextValue}>{children}</LearnerProfileProvider>;
 }
 
 describe('GoalsTab', () => {
@@ -184,7 +183,9 @@ describe('GoalsTab', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('No goals have been created for this learner yet.')).toBeInTheDocument();
+        expect(
+          screen.getByText('No goals have been created for this learner yet.')
+        ).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Create First Goal' })).toBeInTheDocument();
       });
     });
@@ -332,7 +333,7 @@ describe('GoalsTab', () => {
       const refetchGoals = vi.fn();
       const context = createMockContext({ refetchGoals });
 
-      const { createGoal } = await import('@/lib/teacher-planning-api');
+      const { createGoal } = await import('../../../../../../lib/teacher-planning-api');
       const mockCreateGoal = vi.mocked(createGoal);
       mockCreateGoal.mockResolvedValueOnce({
         id: 'goal-3',
@@ -348,6 +349,7 @@ describe('GoalsTab', () => {
         status: 'DRAFT',
         progressRating: null,
         metadataJson: null,
+        visibility: 'ALL_EDUCATORS',
         createdAt: '2025-01-01T00:00:00Z',
         updatedAt: '2025-01-01T00:00:00Z',
       });
@@ -378,10 +380,13 @@ describe('GoalsTab', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateGoal).toHaveBeenCalledWith('learner-1', expect.objectContaining({
-          title: 'New Test Goal',
-          domain: 'SCIENCE',
-        }));
+        expect(mockCreateGoal).toHaveBeenCalledWith(
+          'learner-1',
+          expect.objectContaining({
+            title: 'New Test Goal',
+            domain: 'SCIENCE',
+          })
+        );
         expect(refetchGoals).toHaveBeenCalled();
       });
     });
@@ -461,7 +466,7 @@ describe('GoalsTab', () => {
       const refetchGoals = vi.fn();
       const context = createMockContext({ refetchGoals });
 
-      const { createObjective } = await import('@/lib/teacher-planning-api');
+      const { createObjective } = await import('../../../../../../lib/teacher-planning-api');
       const mockCreateObjective = vi.mocked(createObjective);
       mockCreateObjective.mockResolvedValueOnce({
         id: 'obj-3',
@@ -502,9 +507,12 @@ describe('GoalsTab', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateObjective).toHaveBeenCalledWith('goal-1', expect.objectContaining({
-          description: 'New objective description',
-        }));
+        expect(mockCreateObjective).toHaveBeenCalledWith(
+          'goal-1',
+          expect.objectContaining({
+            description: 'New objective description',
+          })
+        );
         expect(refetchGoals).toHaveBeenCalled();
       });
     });

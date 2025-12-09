@@ -11,9 +11,34 @@
 export type GoalDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL' | 'OTHER';
 export type GoalStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED';
 export type ObjectiveStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'MET' | 'NOT_MET';
-export type SessionPlanType = 'LEARNING' | 'THERAPY' | 'GROUP' | 'ASSESSMENT' | 'PRACTICE' | 'OTHER';
+export type SessionPlanType =
+  | 'LEARNING'
+  | 'THERAPY'
+  | 'GROUP'
+  | 'ASSESSMENT'
+  | 'PRACTICE'
+  | 'OTHER';
 export type SessionPlanStatus = 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type ProgressRating = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Visibility controls who can view goals and progress notes.
+ * - ALL_EDUCATORS: Visible to teachers, therapists, and district admins
+ * - THERAPISTS_ONLY: Visible only to therapists and district admins
+ * - CUSTOM: Future ACL-based visibility (currently treated as THERAPISTS_ONLY)
+ */
+export type Visibility = 'ALL_EDUCATORS' | 'THERAPISTS_ONLY' | 'CUSTOM';
+
+/** Tags for categorizing progress notes (e.g., speech, ot, behavior) */
+export type NoteTag =
+  | 'speech'
+  | 'ot'
+  | 'behavior'
+  | 'academic'
+  | 'social'
+  | 'motor'
+  | 'sensory'
+  | 'communication';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ENTITIES
@@ -32,6 +57,7 @@ export interface Goal {
   targetDate: Date | null;
   status: GoalStatus;
   progressRating: ProgressRating | null;
+  visibility: Visibility;
   metadataJson: GoalMetadata | null;
   createdAt: Date;
   updatedAt: Date;
@@ -117,6 +143,8 @@ export interface ProgressNote {
   goalObjectiveId: string | null;
   noteText: string;
   rating: ProgressRating | null;
+  visibility: Visibility;
+  tags: NoteTag[];
   evidenceUri: string | null;
   createdAt: Date;
   updatedAt: Date;

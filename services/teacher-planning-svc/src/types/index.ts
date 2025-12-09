@@ -12,6 +12,8 @@ export type {
   SessionPlanType,
   SessionPlanStatus,
   ProgressRating,
+  Visibility,
+  NoteTag,
   Goal,
   GoalObjective,
   SessionPlan,
@@ -26,7 +28,14 @@ export type {
 // JWT & AUTH TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export type UserRole = 'PARENT' | 'LEARNER' | 'TEACHER' | 'THERAPIST' | 'DISTRICT_ADMIN' | 'PLATFORM_ADMIN' | 'SUPPORT';
+export type UserRole =
+  | 'PARENT'
+  | 'LEARNER'
+  | 'TEACHER'
+  | 'THERAPIST'
+  | 'DISTRICT_ADMIN'
+  | 'PLATFORM_ADMIN'
+  | 'SUPPORT';
 
 /** JWT payload from auth-svc */
 export interface JwtPayload {

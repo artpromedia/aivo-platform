@@ -16,6 +16,7 @@ import type {
   ObjectiveStatus,
   ProgressRating,
   GoalMetadata,
+  Visibility,
 } from '../types/domain.js';
 
 import { getSkillById, getSkillsByIds } from './externalClients.js';
@@ -34,6 +35,7 @@ export interface CreateGoalParams {
   skillId?: string | undefined;
   startDate?: Date | undefined;
   targetDate?: Date | undefined;
+  visibility?: Visibility | undefined;
   metadataJson?: GoalMetadata | undefined;
 }
 
@@ -43,6 +45,7 @@ export interface UpdateGoalParams {
   status?: GoalStatus | undefined;
   targetDate?: Date | null | undefined;
   progressRating?: ProgressRating | null | undefined;
+  visibility?: Visibility | undefined;
   metadataJson?: GoalMetadata | null | undefined;
 }
 
@@ -51,6 +54,8 @@ export interface ListGoalsParams {
   learnerId: string;
   status?: GoalStatus | undefined;
   domain?: GoalDomain | undefined;
+  /** Visibility levels to include (for filtering based on user role) */
+  allowedVisibility?: Visibility[] | undefined;
   page: number;
   pageSize: number;
 }
@@ -74,6 +79,7 @@ export async function createGoal(params: CreateGoalParams): Promise<Goal> {
     skillId,
     startDate,
     targetDate,
+    visibility,
     metadataJson,
   } = params;
 
@@ -97,6 +103,7 @@ export async function createGoal(params: CreateGoalParams): Promise<Goal> {
       startDate: startDate || new Date(),
       targetDate: targetDate ?? null,
       status: 'ACTIVE',
+      visibility: visibility ?? 'ALL_EDUCATORS',
       metadataJson: (metadataJson || {}) as Prisma.InputJsonValue,
     },
     include: {
@@ -153,7 +160,10 @@ export async function getGoalById(goalId: string, tenantId?: string): Promise<Go
 /**
  * Get multiple goals by IDs
  */
-export async function getGoalsByIds(goalIds: string[], tenantId?: string): Promise<Map<string, Goal>> {
+export async function getGoalsByIds(
+  goalIds: string[],
+  tenantId?: string
+): Promise<Map<string, Goal>> {
   if (goalIds.length === 0) {
     return new Map();
   }
@@ -176,9 +186,7 @@ export async function getGoalsByIds(goalIds: string[], tenantId?: string): Promi
   });
 
   // Collect all skill IDs for batch lookup
-  const skillIds = goals
-    .map((g) => g.skillId)
-    .filter((id): id is string => id !== null);
+  const skillIds = goals.map((g) => g.skillId).filter((id): id is string => id !== null);
 
   const skillsMap = skillIds.length > 0 ? await getSkillsByIds(skillIds) : new Map();
 
@@ -201,19 +209,24 @@ export async function getGoalsByIds(goalIds: string[], tenantId?: string): Promi
  * List goals for a learner
  */
 export async function listGoals(params: ListGoalsParams): Promise<ListGoalsResult> {
-  const { tenantId, learnerId, status, domain, page, pageSize } = params;
+  const { tenantId, learnerId, status, domain, allowedVisibility, page, pageSize } = params;
 
   interface WhereClause {
     learnerId: string;
     tenantId?: string;
     status?: GoalStatus;
     domain?: GoalDomain;
+    visibility?: { in: Visibility[] };
   }
 
   const where: WhereClause = { learnerId };
   if (tenantId) where.tenantId = tenantId;
   if (status) where.status = status;
   if (domain) where.domain = domain;
+  // Filter by allowed visibility levels (for role-based filtering)
+  if (allowedVisibility && allowedVisibility.length > 0) {
+    where.visibility = { in: allowedVisibility };
+  }
 
   const [goals, total] = await Promise.all([
     prisma.goal.findMany({
@@ -271,6 +284,7 @@ export async function updateGoal(
       ...(params.status !== undefined && { status: params.status }),
       ...(params.targetDate !== undefined && { targetDate: params.targetDate }),
       ...(params.progressRating !== undefined && { progressRating: params.progressRating }),
+      ...(params.visibility !== undefined && { visibility: params.visibility }),
       ...(params.metadataJson !== undefined && {
         metadataJson: (params.metadataJson || {}) as Prisma.InputJsonValue,
       }),
@@ -412,6 +426,7 @@ interface DbGoal {
   targetDate: Date | null;
   status: string;
   progressRating: number | null;
+  visibility: string;
   metadataJson: unknown;
   createdAt: Date;
   updatedAt: Date;
@@ -444,6 +459,7 @@ function mapGoalFromDb(db: DbGoal): Goal {
     targetDate: db.targetDate,
     status: db.status as GoalStatus,
     progressRating: db.progressRating as ProgressRating | null,
+    visibility: db.visibility as Visibility,
     metadataJson: db.metadataJson as GoalMetadata | null,
     createdAt: db.createdAt,
     updatedAt: db.updatedAt,

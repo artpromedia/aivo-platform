@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { Nav } from '../components/nav';
 import { getAuthSession } from '../lib/auth';
+import { EducatorModeProvider } from '../lib/educator-mode';
 
 import { AuthProvider } from './providers';
 
@@ -29,8 +30,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <GradeThemeProvider initialGrade="G6_8">
           <AccessibilityProvider>
             <AuthProvider initialAuth={initialAuth}>
-              <Nav />
-              <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>
+              <EducatorModeProvider>
+                <Nav />
+                <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>
+              </EducatorModeProvider>
             </AuthProvider>
           </AccessibilityProvider>
         </GradeThemeProvider>
