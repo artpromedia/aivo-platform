@@ -7,12 +7,15 @@ import { useAuth } from '../app/providers';
 
 const links = [
   { href: '/tenants', label: 'Tenants' },
+  { href: '/ai/incidents', label: 'AI Incidents' },
   { href: '/flags', label: 'Feature Flags' },
 ];
 
 export function Nav() {
   const pathname = usePathname();
   const { isAuthenticated, userName, logout } = useAuth();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
   return (
     <header className="border-b bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -23,7 +26,7 @@ export function Nav() {
               key={link.href}
               href={link.href}
               className={`rounded px-3 py-2 transition hover:bg-slate-100 ${
-                pathname === link.href ? 'bg-slate-200' : ''
+                isActive(link.href) ? 'bg-slate-200' : ''
               }`}
             >
               {link.label}
