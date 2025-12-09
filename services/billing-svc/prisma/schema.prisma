@@ -1,0 +1,475 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// BILLING SERVICE - PRISMA SCHEMA
+// ══════════════════════════════════════════════════════════════════════════════
+// 
+// This schema defines the billing & subscription data model for the Aivo platform.
+// It supports:
+//   - Parent (consumer) subscriptions with base + add-on modules
+//   - District contracts with seat-based licensing
+//   - Payment provider abstraction (Stripe, manual invoice, etc.)
+//   - Trials, proration, and invoice management
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of billing account - determines business rules and UI flows
+enum BillingAccountType {
+  PARENT_CONSUMER   // Individual parent paying for their children
+  DISTRICT          // School district with seat-based licensing
+  PLATFORM_INTERNAL // Internal/free accounts (e.g., demo, testing)
+}
+
+/// Current status of a subscription
+enum SubscriptionStatus {
+  IN_TRIAL    // Active trial period, no charges yet
+  ACTIVE      // Paid and in good standing
+  PAST_DUE    // Payment failed, grace period
+  CANCELED    // User canceled, may have access until period end
+  EXPIRED     // Subscription ended, no access
+}
+
+/// Type of plan - determines pricing logic and features
+enum PlanType {
+  PARENT_BASE     // Core ELA + Math for parent subscribers
+  PARENT_ADDON    // Add-on modules (SEL, Speech, Science, etc.)
+  DISTRICT_BASE   // Base district licensing
+  DISTRICT_ADDON  // District add-on modules
+}
+
+/// Billing frequency
+enum BillingPeriod {
+  MONTHLY
+  YEARLY
+}
+
+/// Payment provider for processing payments
+enum PaymentProvider {
+  STRIPE          // Stripe payment processor
+  MANUAL_INVOICE  // Manual invoicing (for districts)
+  TEST_FAKE       // Test/fake provider for development
+}
+
+/// Invoice status
+enum InvoiceStatus {
+  DRAFT         // Being prepared, not yet finalized
+  OPEN          // Finalized and awaiting payment
+  PAID          // Successfully paid
+  VOID          // Canceled/voided
+  UNCOLLECTIBLE // Payment failed, written off
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BILLING ACCOUNTS
+// ══════════════════════════════════════════════════════════════════════════════
+// 
+// A billing account represents a paying entity - either a parent or a district.
+// It links to a tenant and optionally to an owner user.
+//
+
+model BillingAccount {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  /// Reference to the tenant this billing account belongs to
+  tenantId              String              @db.Uuid
+  
+  /// Type of billing account
+  accountType           BillingAccountType
+  
+  /// Owner user (for parent accounts). Null for district/internal accounts.
+  ownerUserId           String?             @db.Uuid
+  
+  /// Display name for the account (e.g., "Smith Family" or "North Valley District")
+  displayName           String
+  
+  /// Payment provider used for this account
+  provider              PaymentProvider     @default(STRIPE)
+  
+  /// External customer ID in the payment provider (e.g., Stripe customer ID)
+  providerCustomerId    String?
+  
+  /// Default currency for this account
+  defaultCurrency       String              @default("USD") @db.VarChar(3)
+  
+  /// Email for billing notifications
+  billingEmail          String?
+  
+  /// Additional metadata (e.g., tax exemption info, contract terms)
+  metadataJson          Json?
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  
+  // Relations
+  subscriptions         Subscription[]
+  billingInstruments    BillingInstrument[]
+  invoices              Invoice[]
+  
+  @@index([tenantId, accountType])
+  @@index([providerCustomerId])
+  @@map("billing_accounts")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PLANS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Plans define what's available for purchase. Plans are reusable templates
+// that subscriptions reference. They include pricing and feature definitions.
+//
+
+model Plan {
+  id              String        @id @default(uuid()) @db.Uuid
+  
+  /// Unique SKU identifier (e.g., "PARENT_BASE", "ADDON_SEL", "DISTRICT_BASE_1Y")
+  sku             String        @unique
+  
+  /// Type of plan
+  planType        PlanType
+  
+  /// Human-readable name
+  name            String
+  
+  /// Description for display
+  description     String?
+  
+  /// Price in cents per unit per billing period
+  unitPriceCents  Int
+  
+  /// Billing frequency
+  billingPeriod   BillingPeriod @default(MONTHLY)
+  
+  /// Whether this plan is currently available for new subscriptions
+  isActive        Boolean       @default(true)
+  
+  /// Trial duration in days (0 = no trial)
+  trialDays       Int           @default(0)
+  
+  /// Metadata: features, limits, modules included, etc.
+  /// Example: { "modules": ["ELA", "MATH"], "maxLearners": 5 }
+  metadataJson    Json?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  subscriptions       Subscription[]
+  subscriptionItems   SubscriptionItem[]
+  
+  @@index([planType, isActive])
+  @@map("plans")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUBSCRIPTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// A subscription represents an active (or past) agreement between a billing
+// account and a plan. Tracks status, billing periods, and trial information.
+//
+
+model Subscription {
+  id                      String              @id @default(uuid()) @db.Uuid
+  
+  /// The billing account that owns this subscription
+  billingAccountId        String              @db.Uuid
+  
+  /// The plan this subscription is based on
+  planId                  String              @db.Uuid
+  
+  /// Current subscription status
+  status                  SubscriptionStatus  @default(IN_TRIAL)
+  
+  /// Quantity: # of children (parent) or seats/learners (district)
+  quantity                Int                 @default(1)
+  
+  /// Trial period start (null if no trial)
+  trialStartAt            DateTime?           @db.Timestamptz
+  
+  /// Trial period end (null if no trial)
+  trialEndAt              DateTime?           @db.Timestamptz
+  
+  /// Current billing period start
+  currentPeriodStart      DateTime            @db.Timestamptz
+  
+  /// Current billing period end
+  currentPeriodEnd        DateTime            @db.Timestamptz
+  
+  /// Whether subscription will be canceled at period end
+  cancelAtPeriodEnd       Boolean             @default(false)
+  
+  /// Date when subscription was canceled (null if not canceled)
+  canceledAt              DateTime?           @db.Timestamptz
+  
+  /// Date when subscription ended/will end
+  endedAt                 DateTime?           @db.Timestamptz
+  
+  /// External subscription ID in payment provider
+  providerSubscriptionId  String?
+  
+  /// Metadata: specific modules unlocked, contract terms, etc.
+  /// Example: { "modules": ["ELA", "MATH", "SEL"], "contractNumber": "DST-2024-001" }
+  metadataJson            Json?
+  
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  
+  // Relations
+  billingAccount          BillingAccount      @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+  plan                    Plan                @relation(fields: [planId], references: [id])
+  subscriptionItems       SubscriptionItem[]
+  invoiceLineItems        InvoiceLineItem[]
+  
+  @@index([billingAccountId, status])
+  @@index([providerSubscriptionId])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUBSCRIPTION ITEMS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Line items within a subscription for itemized billing.
+// Useful when a single subscription includes multiple plans (e.g., base + add-ons)
+// or when tracking per-learner allocation.
+//
+
+model SubscriptionItem {
+  id              String        @id @default(uuid()) @db.Uuid
+  
+  /// Parent subscription
+  subscriptionId  String        @db.Uuid
+  
+  /// The plan/product for this line item
+  planId          String        @db.Uuid
+  
+  /// SKU reference (denormalized for query convenience)
+  sku             String
+  
+  /// Quantity of this item
+  quantity        Int           @default(1)
+  
+  /// Optional: Specific learner this item is allocated to
+  learnerId       String?       @db.Uuid
+  
+  /// Metadata: module-specific settings, etc.
+  metadataJson    Json?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  subscription    Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  plan            Plan          @relation(fields: [planId], references: [id])
+  
+  @@index([subscriptionId])
+  @@index([learnerId])
+  @@map("subscription_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BILLING INSTRUMENTS (Payment Methods)
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Stored payment methods. Only tokenized references are stored - never raw card data.
+//
+
+model BillingInstrument {
+  id                        String          @id @default(uuid()) @db.Uuid
+  
+  /// The billing account this payment method belongs to
+  billingAccountId          String          @db.Uuid
+  
+  /// External payment method ID in payment provider (e.g., Stripe pm_xxx)
+  providerPaymentMethodId   String
+  
+  /// Card brand (e.g., "visa", "mastercard", "amex")
+  brand                     String?
+  
+  /// Last 4 digits of card number
+  last4                     String?         @db.VarChar(4)
+  
+  /// Expiry month (1-12)
+  expiryMonth               Int?            @db.SmallInt
+  
+  /// Expiry year (e.g., 2025)
+  expiryYear                Int?            @db.SmallInt
+  
+  /// Whether this is the default payment method for the account
+  isDefault                 Boolean         @default(false)
+  
+  /// Type of instrument (card, bank_account, etc.)
+  instrumentType            String          @default("card")
+  
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+  
+  // Relations
+  billingAccount            BillingAccount  @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+  
+  @@index([billingAccountId])
+  @@index([providerPaymentMethodId])
+  @@map("billing_instruments")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INVOICES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Invoices track charges and payments. They can be generated automatically
+// from subscriptions or manually for districts.
+//
+
+model Invoice {
+  id                  String          @id @default(uuid()) @db.Uuid
+  
+  /// Billing account this invoice belongs to
+  billingAccountId    String          @db.Uuid
+  
+  /// External invoice ID in payment provider
+  providerInvoiceId   String?
+  
+  /// Human-readable invoice number (e.g., "INV-2024-00001")
+  invoiceNumber       String?         @unique
+  
+  /// Total amount due in cents
+  amountDueCents      Int
+  
+  /// Amount already paid in cents
+  amountPaidCents     Int             @default(0)
+  
+  /// Currency code
+  currency            String          @default("USD") @db.VarChar(3)
+  
+  /// Invoice status
+  status              InvoiceStatus   @default(DRAFT)
+  
+  /// Billing period start this invoice covers
+  periodStart         DateTime        @db.Timestamptz
+  
+  /// Billing period end this invoice covers
+  periodEnd           DateTime        @db.Timestamptz
+  
+  /// When the invoice was finalized and sent
+  issuedAt            DateTime?       @db.Timestamptz
+  
+  /// Payment due date
+  dueAt               DateTime?       @db.Timestamptz
+  
+  /// When payment was received
+  paidAt              DateTime?       @db.Timestamptz
+  
+  /// PDF URL or path
+  pdfUrl              String?
+  
+  /// Metadata: proration info, adjustments, notes, etc.
+  metadataJson        Json?
+  
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  // Relations
+  billingAccount      BillingAccount  @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+  lineItems           InvoiceLineItem[]
+  
+  @@index([billingAccountId, issuedAt(sort: Desc)])
+  @@index([status])
+  @@index([providerInvoiceId])
+  @@map("invoices")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INVOICE LINE ITEMS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Individual line items on an invoice. Can represent subscription charges,
+// prorations, one-time charges, credits, etc.
+//
+
+model InvoiceLineItem {
+  id              String        @id @default(uuid()) @db.Uuid
+  
+  /// Parent invoice
+  invoiceId       String        @db.Uuid
+  
+  /// Optional: linked subscription for recurring charges
+  subscriptionId  String?       @db.Uuid
+  
+  /// Description of the charge
+  description     String
+  
+  /// Unit price in cents
+  unitPriceCents  Int
+  
+  /// Quantity
+  quantity        Int           @default(1)
+  
+  /// Total amount in cents (unitPriceCents * quantity, or custom for prorations)
+  amountCents     Int
+  
+  /// Type of line item
+  lineItemType    String        @default("subscription") // subscription, proration, credit, one_time
+  
+  /// Metadata: proration details, period adjustments, etc.
+  /// Example: { "prorationFactor": 0.5, "originalPeriodStart": "...", "reason": "mid-cycle upgrade" }
+  metadataJson    Json?
+  
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+  
+  @@index([invoiceId])
+  @@index([subscriptionId])
+  @@map("invoice_line_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// USAGE RECORDS (for metered billing - future)
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Tracks usage for metered billing scenarios (e.g., API calls, extra learners).
+// Included for future extensibility but not required for initial implementation.
+//
+
+model UsageRecord {
+  id              String        @id @default(uuid()) @db.Uuid
+  
+  /// Subscription this usage is for
+  subscriptionId  String        @db.Uuid
+  
+  /// Metric being tracked (e.g., "learner_count", "api_calls", "storage_gb")
+  metric          String
+  
+  /// Quantity of usage
+  quantity        Int
+  
+  /// Timestamp of the usage
+  timestamp       DateTime      @db.Timestamptz
+  
+  /// Whether this has been invoiced
+  invoiced        Boolean       @default(false)
+  
+  /// Metadata: additional context
+  metadataJson    Json?
+  
+  createdAt       DateTime      @default(now())
+  
+  @@index([subscriptionId, metric, timestamp])
+  @@index([invoiced])
+  @@map("usage_records")
+}
