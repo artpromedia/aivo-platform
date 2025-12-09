@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import Fastify, { type FastifyRequest } from 'fastify';
+import { Pool } from 'pg';
 
 import { config } from './config.js';
+import { createPolicyEnforcer, type PolicyEnforcer } from './policy/index.js';
 import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js';
 import type { AgentConfigStore } from './registry/store.js';
 import { registerInternalRoutes } from './routes/internal.js';
@@ -13,6 +15,7 @@ export interface AppOptions {
   registry?: AgentConfigRegistry;
   store?: AgentConfigStore;
   telemetryStore?: TelemetryStore;
+  policyEnforcer?: PolicyEnforcer;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -23,6 +26,11 @@ export function createApp(options: AppOptions = {}) {
     options.registry ??
     new AgentConfigRegistry(store, { cacheTtlMs: config.agentConfigCacheTtlMs });
   const telemetryStore = options.telemetryStore ?? createTelemetryStore(config.databaseUrl);
+
+  // Initialize PolicyEnforcer singleton for policy enforcement in the AI pipeline
+  // This creates a shared Pool for policy lookups
+  const policyPool = new Pool({ connectionString: config.databaseUrl });
+  const policyEnforcer = options.policyEnforcer ?? createPolicyEnforcer(policyPool);
 
   app.addHook('onRequest', async (request, reply) => {
     const incoming = request.headers['x-correlation-id'];
@@ -43,6 +51,7 @@ export function createApp(options: AppOptions = {}) {
   app.decorate('registry', registry);
   app.decorate('agentConfigStore', store);
   app.decorate('telemetryStore', telemetryStore);
+  app.decorate('policyEnforcer', policyEnforcer);
 
   app.addHook('onClose', async () => {
     if (typeof store.dispose === 'function') {
@@ -51,6 +60,8 @@ export function createApp(options: AppOptions = {}) {
     if (typeof telemetryStore.dispose === 'function') {
       await telemetryStore.dispose();
     }
+    // Clean up policy pool
+    await policyPool.end();
   });
 
   return app;

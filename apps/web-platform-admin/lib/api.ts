@@ -10,15 +10,19 @@ import type {
   AiCallLogWithLinkReason,
   AiIncident,
   AiIncidentListItem,
+  CreatePolicyInput,
   CreateTenantInput,
+  EffectivePolicy,
   Entitlement,
   FeatureFlag,
   IncidentFilters,
   PaginatedResponse,
+  PolicyDocument,
   Tenant,
   TenantAiActivitySummary,
   TenantListItem,
   UpdateIncidentInput,
+  UpdatePolicyInput,
 } from './types';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -236,4 +240,127 @@ export async function getTenantIncidents(
     `/admin/incidents?tenantId=${tenantId}&page=${page}&pageSize=${pageSize}`,
     { accessToken }
   );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// POLICY API
+// ══════════════════════════════════════════════════════════════════════════════
+
+const POLICY_SVC_URL = process.env.POLICY_SVC_URL ?? AI_ORCHESTRATOR_URL;
+
+/**
+ * Get the effective (merged) policy for a tenant
+ */
+export async function getTenantEffectivePolicy(
+  accessToken: string,
+  tenantId: string
+): Promise<EffectivePolicy> {
+  return apiFetch<EffectivePolicy>(POLICY_SVC_URL, `/admin/policies/effective/${tenantId}`, {
+    accessToken,
+  });
+}
+
+/**
+ * Get the global policy
+ */
+export async function getGlobalPolicy(accessToken: string): Promise<PolicyDocument | null> {
+  return apiFetch<PolicyDocument | null>(POLICY_SVC_URL, '/admin/policies/global', { accessToken });
+}
+
+/**
+ * Get tenant-specific policy override (if any)
+ */
+export async function getTenantPolicy(
+  accessToken: string,
+  tenantId: string
+): Promise<PolicyDocument | null> {
+  return apiFetch<PolicyDocument | null>(POLICY_SVC_URL, `/admin/policies/tenant/${tenantId}`, {
+    accessToken,
+  });
+}
+
+/**
+ * List all policy documents (for global management)
+ */
+export async function listPolicies(
+  accessToken: string,
+  scopeType?: 'GLOBAL' | 'TENANT',
+  page = 1,
+  pageSize = 20
+): Promise<PaginatedResponse<PolicyDocument>> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (scopeType) params.set('scopeType', scopeType);
+
+  return apiFetch<PaginatedResponse<PolicyDocument>>(
+    POLICY_SVC_URL,
+    `/admin/policies?${params.toString()}`,
+    { accessToken }
+  );
+}
+
+/**
+ * Create a new policy document
+ */
+export async function createPolicy(
+  accessToken: string,
+  input: CreatePolicyInput
+): Promise<PolicyDocument> {
+  return apiFetch<PolicyDocument>(POLICY_SVC_URL, '/admin/policies', {
+    method: 'POST',
+    body: JSON.stringify(input),
+    accessToken,
+  });
+}
+
+/**
+ * Update an existing policy document
+ */
+export async function updatePolicy(
+  accessToken: string,
+  policyId: string,
+  input: UpdatePolicyInput
+): Promise<PolicyDocument> {
+  return apiFetch<PolicyDocument>(POLICY_SVC_URL, `/admin/policies/${policyId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+    accessToken,
+  });
+}
+
+/**
+ * Activate a policy document (deactivates others of the same scope)
+ */
+export async function activatePolicy(
+  accessToken: string,
+  policyId: string
+): Promise<PolicyDocument> {
+  return apiFetch<PolicyDocument>(POLICY_SVC_URL, `/admin/policies/${policyId}/activate`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+/**
+ * Create or update a tenant policy override
+ */
+export async function upsertTenantPolicy(
+  accessToken: string,
+  tenantId: string,
+  policyJson: CreatePolicyInput['policyJson']
+): Promise<PolicyDocument> {
+  return apiFetch<PolicyDocument>(POLICY_SVC_URL, `/admin/policies/tenant/${tenantId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ policyJson }),
+    accessToken,
+  });
+}
+
+/**
+ * Delete a tenant policy override (revert to global defaults)
+ */
+export async function deleteTenantPolicy(accessToken: string, tenantId: string): Promise<void> {
+  await apiFetch<Record<string, never>>(POLICY_SVC_URL, `/admin/policies/tenant/${tenantId}`, {
+    method: 'DELETE',
+    accessToken,
+  });
 }

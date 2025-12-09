@@ -200,3 +200,77 @@ export interface TenantAiActivitySummary {
   totalCostCents: number;
   callsByDay: { date: string; count: number }[];
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// POLICY TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export type PolicyScopeType = 'GLOBAL' | 'TENANT';
+
+export interface SafetyPolicy {
+  severity_thresholds: {
+    low_max_per_session: number;
+    medium_escalates_immediately: boolean;
+    high_blocks_response: boolean;
+  };
+  blocked_categories: string[];
+  require_human_review_above: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface AiPolicy {
+  allowed_providers: string[];
+  allowed_models: string[];
+  max_tokens_per_request: number;
+  max_requests_per_minute: number;
+  latency_budget_ms: number;
+  cost_limit_cents_per_day: number;
+}
+
+export interface RetentionPolicy {
+  ai_call_logs_days: number;
+  session_events_days: number;
+  homework_uploads_days: number;
+  consent_logs_days: number;
+  ai_incidents_days: number;
+  dsr_exports_days: number;
+  prefer_soft_delete: boolean;
+}
+
+export interface Policy {
+  safety: SafetyPolicy;
+  ai: AiPolicy;
+  retention: RetentionPolicy;
+}
+
+export interface PolicyDocument {
+  id: string;
+  scopeType: PolicyScopeType;
+  tenantId: string | null;
+  version: number;
+  name: string;
+  isActive: boolean;
+  policyJson: Partial<Policy>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EffectivePolicy {
+  safety: SafetyPolicy;
+  ai: AiPolicy;
+  retention: RetentionPolicy;
+  computedAt: Date;
+}
+
+export interface CreatePolicyInput {
+  scopeType: PolicyScopeType;
+  tenantId?: string | null;
+  name: string;
+  policyJson: Partial<Policy>;
+  description?: string;
+}
+
+export interface UpdatePolicyInput {
+  name?: string;
+  policyJson?: Partial<Policy>;
+  description?: string;
+}

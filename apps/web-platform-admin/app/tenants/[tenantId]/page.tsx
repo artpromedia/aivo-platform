@@ -3,11 +3,20 @@ import { notFound } from 'next/navigation';
 import {
   getTenant,
   getTenantAiActivity,
+  getTenantEffectivePolicy,
   getTenantEntitlements,
   getTenantFeatureFlags,
+  getTenantPolicy,
 } from '../../../lib/api';
 import { requirePlatformAdmin } from '../../../lib/auth';
-import type { Entitlement, FeatureFlag, Tenant, TenantAiActivitySummary } from '../../../lib/types';
+import type {
+  EffectivePolicy,
+  Entitlement,
+  FeatureFlag,
+  PolicyDocument,
+  Tenant,
+  TenantAiActivitySummary,
+} from '../../../lib/types';
 
 import { TenantDetailClient } from './tenant-detail-client';
 
@@ -85,6 +94,36 @@ const MOCK_AI_ACTIVITY: TenantAiActivitySummary = {
   })),
 };
 
+const MOCK_EFFECTIVE_POLICY: EffectivePolicy = {
+  safety: {
+    severity_thresholds: {
+      low_max_per_session: 5,
+      medium_escalates_immediately: false,
+      high_blocks_response: true,
+    },
+    blocked_categories: [],
+    require_human_review_above: 'MEDIUM',
+  },
+  ai: {
+    allowed_providers: ['openai', 'anthropic'],
+    allowed_models: ['gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet'],
+    max_tokens_per_request: 4096,
+    max_requests_per_minute: 100,
+    latency_budget_ms: 30000,
+    cost_limit_cents_per_day: 50000,
+  },
+  retention: {
+    ai_call_logs_days: 90,
+    session_events_days: 365,
+    homework_uploads_days: 730,
+    consent_logs_days: 2555,
+    ai_incidents_days: 365,
+    dsr_exports_days: 90,
+    prefer_soft_delete: false,
+  },
+  computedAt: new Date(),
+};
+
 interface PageProps {
   params: Promise<{ tenantId: string }>;
 }
@@ -100,14 +139,19 @@ export default async function TenantDetailPage({ params }: PageProps) {
   let featureFlags: FeatureFlag[];
   let entitlements: Entitlement[];
   let aiActivity: TenantAiActivitySummary | null;
+  let effectivePolicy: EffectivePolicy | null;
+  let tenantPolicyOverride: PolicyDocument | null;
 
   try {
-    [tenant, featureFlags, entitlements, aiActivity] = await Promise.all([
-      getTenant(auth.accessToken, tenantId),
-      getTenantFeatureFlags(auth.accessToken, tenantId),
-      getTenantEntitlements(auth.accessToken, tenantId),
-      getTenantAiActivity(auth.accessToken, tenantId).catch(() => null),
-    ]);
+    [tenant, featureFlags, entitlements, aiActivity, effectivePolicy, tenantPolicyOverride] =
+      await Promise.all([
+        getTenant(auth.accessToken, tenantId),
+        getTenantFeatureFlags(auth.accessToken, tenantId),
+        getTenantEntitlements(auth.accessToken, tenantId),
+        getTenantAiActivity(auth.accessToken, tenantId).catch(() => null),
+        getTenantEffectivePolicy(auth.accessToken, tenantId).catch(() => null),
+        getTenantPolicy(auth.accessToken, tenantId).catch(() => null),
+      ]);
   } catch {
     // Use mock data in development
     if (tenantId === 'tenant-1' || tenantId === 'tenant-2' || tenantId === 'tenant-3') {
@@ -115,6 +159,8 @@ export default async function TenantDetailPage({ params }: PageProps) {
       featureFlags = MOCK_FLAGS.map((f) => ({ ...f, tenantId }));
       entitlements = MOCK_ENTITLEMENTS.map((e) => ({ ...e, tenantId }));
       aiActivity = MOCK_AI_ACTIVITY;
+      effectivePolicy = MOCK_EFFECTIVE_POLICY;
+      tenantPolicyOverride = null;
     } else {
       notFound();
     }
@@ -126,6 +172,8 @@ export default async function TenantDetailPage({ params }: PageProps) {
       featureFlags={featureFlags}
       entitlements={entitlements}
       aiActivity={aiActivity}
+      effectivePolicy={effectivePolicy}
+      tenantPolicyOverride={tenantPolicyOverride}
     />
   );
 }

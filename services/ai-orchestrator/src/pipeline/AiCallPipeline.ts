@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
-import type { AiLoggingService, LogAiCallInput, SafetyLabel } from '../logging/index.js';
+import type { AiLoggingService, LogAiCallInput } from '../logging/index.js';
+import { getPolicyEnforcer, PolicyViolationError } from '../policy/index.js';
 import { getProvider } from '../providers/index.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import { evaluateSafety, type SafetyResult, type SafetyStatus } from '../safety/SafetyAgent.js';
 import { estimateCostUsd } from '../telemetry/cost.js';
 import type { TelemetryStore } from '../telemetry/index.js';
-import type { AgentType, ProviderType } from '../types/agentConfig.js';
+import type { AgentType } from '../types/agentConfig.js';
 
 export interface AiCallContext {
   tenantId: string;
@@ -53,6 +54,32 @@ export async function runAiCall(
   const rolloutKey = context.learnerId ?? context.tenantId;
   const config = await registry.getConfigForRollout(context.agentType, rolloutKey);
   const provider = getProvider(config.provider);
+
+  // ─── Policy Enforcement (Pre-Call) ────────────────────────────────────────────
+  // Check if the call is allowed by policy before executing.
+  // Policy violations throw PolicyViolationError which should propagate.
+  // Database/infrastructure errors are logged but don't block the call (fail-open).
+  const policyEnforcer = getPolicyEnforcer();
+  if (policyEnforcer) {
+    try {
+      const featureKey = policyEnforcer.getFeatureKeyForAgentType(context.agentType);
+      await policyEnforcer.enforcePolicy({
+        tenantId: context.tenantId,
+        modelName: config.modelName,
+        provider: config.provider,
+        feature: featureKey ?? undefined,
+      });
+    } catch (err) {
+      // Re-throw policy violations - these are intentional blocks
+      if (err instanceof PolicyViolationError) {
+        throw err;
+      }
+      // Log infrastructure errors (e.g., DB connection) but don't block the call
+      // This is a "fail-open" strategy - if policy DB is down, allow calls
+      console.warn('[PolicyEnforcer] Policy enforcement failed (continuing):', err);
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────────
 
   const prompt =
     input.rawPrompt ??

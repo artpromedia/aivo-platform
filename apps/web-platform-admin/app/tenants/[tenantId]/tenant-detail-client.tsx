@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { PolicyTab } from '../../../components/PolicyTab';
 import type {
+  EffectivePolicy,
   Entitlement,
   FeatureFlag,
+  PolicyDocument,
   Tenant,
   TenantAiActivitySummary,
   TenantStatus,
@@ -22,9 +25,11 @@ interface TenantDetailClientProps {
   featureFlags: FeatureFlag[];
   entitlements: Entitlement[];
   aiActivity: TenantAiActivitySummary | null;
+  effectivePolicy: EffectivePolicy | null;
+  tenantPolicyOverride: PolicyDocument | null;
 }
 
-type TabId = 'overview' | 'flags' | 'ai-activity';
+type TabId = 'overview' | 'flags' | 'ai-activity' | 'policy';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -49,6 +54,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'flags', label: 'Feature Flags & Entitlements' },
   { id: 'ai-activity', label: 'AI Activity' },
+  { id: 'policy', label: 'Policy' },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -60,6 +66,8 @@ export function TenantDetailClient({
   featureFlags,
   entitlements,
   aiActivity,
+  effectivePolicy,
+  tenantPolicyOverride,
 }: TenantDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -175,6 +183,13 @@ export function TenantDetailClient({
       )}
       {activeTab === 'ai-activity' && (
         <AiActivityTab tenantId={tenant.id} aiActivity={aiActivity} />
+      )}
+      {activeTab === 'policy' && (
+        <PolicyTab
+          tenantId={tenant.id}
+          effectivePolicy={effectivePolicy}
+          tenantOverride={tenantPolicyOverride}
+        />
       )}
     </div>
   );

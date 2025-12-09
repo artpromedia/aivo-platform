@@ -16,6 +16,7 @@
     "eval:focus-safety": "tsx eval/run_safety_evals.ts focus"
   },
   "dependencies": {
+    "@aivo/ts-policy-engine": "workspace:*",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "pg": "^8.13.1",
