@@ -473,3 +473,50 @@ model UsageRecord {
   @@index([invoiced])
   @@map("usage_records")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAYMENT EVENTS (Audit Log)
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Tracks all payment-related events from external providers (Stripe webhooks,
+// etc.) for auditing, debugging, and reconciliation purposes.
+//
+
+model PaymentEvent {
+  id                  String          @id @default(uuid()) @db.Uuid
+  
+  /// Payment provider that sent the event
+  provider            PaymentProvider @default(STRIPE)
+  
+  /// Event type from the provider (e.g., "invoice.paid", "customer.subscription.deleted")
+  eventType           String
+  
+  /// Provider's unique event ID for deduplication
+  providerEventId     String          @unique
+  
+  /// Associated billing account (if identifiable)
+  billingAccountId    String?         @db.Uuid
+  
+  /// Associated subscription (if identifiable)
+  subscriptionId      String?         @db.Uuid
+  
+  /// Associated invoice (if identifiable)
+  invoiceId           String?         @db.Uuid
+  
+  /// Raw event payload from the provider
+  payload             Json
+  
+  /// When we finished processing this event
+  processedAt         DateTime?       @db.Timestamptz
+  
+  /// Error message if processing failed
+  error               String?
+  
+  createdAt           DateTime        @default(now())
+  
+  @@index([provider, eventType])
+  @@index([billingAccountId])
+  @@index([providerEventId])
+  @@index([createdAt])
+  @@map("payment_events")
+}
