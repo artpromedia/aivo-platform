@@ -555,6 +555,49 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@22.19.1)(jsdom@26.1.0)
 
+  services/content-authoring-svc:
+    dependencies:
+      '@aivo/ts-rbac':
+        specifier: workspace:*
+        version: link:../../libs/ts-rbac
+      '@aivo/ts-types':
+        specifier: workspace:*
+        version: link:../../libs/ts-types
+      '@aivo/ts-utils':
+        specifier: workspace:*
+        version: link:../../libs/ts-utils
+      '@fastify/cors':
+        specifier: ^9.0.1
+        version: 9.0.1
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
+      fastify:
+        specifier: ^4.28.1
+        version: 4.29.1
+      slugify:
+        specifier: ^1.6.6
+        version: 1.6.6
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.6
+        version: 20.19.26
+      prisma:
+        specifier: ^5.22.0
+        version: 5.22.0
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@20.19.26)(jsdom@26.1.0)
+
   services/content-svc:
     dependencies:
       '@aivo/ts-rbac':
@@ -4943,6 +4986,10 @@ packages:
   slice-ansi@7.1.2:
     resolution: {integrity: sha512-iOBWFgUX7caIZiuutICxVgX1SdxwAVFFKwt1EvMYYec/NWO5meOJ6K5uQxhrYBdQJne4KxiqZc+KptFOWFSI9w==}
     engines: {node: '>=18'}
+
+  slugify@1.6.6:
+    resolution: {integrity: sha512-h+z7HKHYXj6wJU+AnS/+IH8Uh9fdcX1Lrhg1/VMdf9PwoBQXFcXiAdsy2tSK0P6gKwJLXp02r90ahUCqHk9rrw==}
+    engines: {node: '>=8.0.0'}
 
   sonic-boom@4.2.0:
     resolution: {integrity: sha512-INb7TM37/mAcsGmc9hyyI6+QR3rR1zVRu36B0NeGXKnOOLiZOfER5SA+N7X7k3yUYRzLWafduTDvJAfDswwEww==}
@@ -9703,6 +9750,8 @@ snapshots:
     dependencies:
       ansi-styles: 6.2.3
       is-fullwidth-code-point: 5.1.0
+
+  slugify@1.6.6: {}
 
   sonic-boom@4.2.0:
     dependencies:

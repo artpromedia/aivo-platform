@@ -131,6 +131,7 @@ CREATE TABLE learning_object_versions (
   
   -- Change tracking
   change_summary        TEXT,
+  review_notes          TEXT,
   
   -- ── Content Payload ────────────────────────────────────────────────────────
   -- Structured content discriminated by "type" field
@@ -155,6 +156,7 @@ CREATE TABLE learning_object_versions (
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   published_at          TIMESTAMPTZ,
+  retired_at            TIMESTAMPTZ,
   
   -- Unique version number per learning object
   CONSTRAINT uq_lov_lo_version UNIQUE (learning_object_id, version_number),
@@ -201,6 +203,9 @@ CREATE TABLE learning_object_skills (
   -- FK to skills table (enforced at app level for cross-service)
   skill_id                    UUID NOT NULL,
   
+  -- Is this the primary skill for this version
+  is_primary                  BOOLEAN NOT NULL DEFAULT false,
+  
   -- Relevance weight (0.0 - 1.0), higher = more relevant
   weight                      NUMERIC(4, 3) CHECK (weight >= 0 AND weight <= 1),
   
@@ -219,13 +224,13 @@ COMMENT ON COLUMN learning_object_skills.weight IS 'Relevance weight 0.0-1.0. Hi
 -- Audit trail for workflow state transitions.
 
 CREATE TABLE learning_object_version_transitions (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  version_id      UUID NOT NULL REFERENCES learning_object_versions(id) ON DELETE CASCADE,
-  from_state      learning_object_version_state NOT NULL,
-  to_state        learning_object_version_state NOT NULL,
-  user_id         UUID NOT NULL,
-  comment         TEXT,
-  transitioned_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  version_id            UUID NOT NULL REFERENCES learning_object_versions(id) ON DELETE CASCADE,
+  from_state            learning_object_version_state NOT NULL,
+  to_state              learning_object_version_state NOT NULL,
+  transitioned_by_user_id UUID NOT NULL,
+  reason                TEXT,
+  transitioned_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 COMMENT ON TABLE learning_object_version_transitions IS 'Audit trail for all workflow state changes.';

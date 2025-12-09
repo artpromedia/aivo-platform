@@ -46,7 +46,6 @@ enum LearningObjectVersionState {
 // ══════════════════════════════════════════════════════════════════════════════
 
 /// Logical identity of a learning content unit.
-/// Examples: "ELA G3 reading passage: Dogs in Winter"
 model LearningObject {
   id               String                   @id @default(uuid()) @db.Uuid
   tenantId         String?                  @map("tenant_id") @db.Uuid
@@ -60,7 +59,6 @@ model LearningObject {
   createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz
   updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
 
-  // Relations
   versions LearningObjectVersion[]
   tags     LearningObjectTag[]
 
@@ -71,7 +69,6 @@ model LearningObject {
 }
 
 /// Versioned content with review workflow.
-/// Only one PUBLISHED version per LO at a time.
 model LearningObjectVersion {
   id                 String                      @id @default(uuid()) @db.Uuid
   learningObjectId   String                      @map("learning_object_id") @db.Uuid
@@ -91,7 +88,6 @@ model LearningObjectVersion {
   publishedAt        DateTime?                   @map("published_at") @db.Timestamptz
   retiredAt          DateTime?                   @map("retired_at") @db.Timestamptz
 
-  // Relations
   learningObject LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
   skills         LearningObjectSkill[]
   transitions    LearningObjectVersionTransition[]
@@ -109,7 +105,6 @@ model LearningObjectTag {
   tag              String
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  // Relations
   learningObject LearningObject @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
 
   @@unique([learningObjectId, tag])
@@ -117,7 +112,7 @@ model LearningObjectTag {
   @@map("learning_object_tags")
 }
 
-/// Version-specific skill alignments beyond the primary skill.
+/// Version-specific skill alignments.
 model LearningObjectSkill {
   id                       String   @id @default(uuid()) @db.Uuid
   learningObjectVersionId  String   @map("learning_object_version_id") @db.Uuid
@@ -126,7 +121,6 @@ model LearningObjectSkill {
   weight                   Decimal? @db.Decimal(4, 3)
   createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  // Relations
   learningObjectVersion LearningObjectVersion @relation(fields: [learningObjectVersionId], references: [id], onDelete: Cascade)
 
   @@unique([learningObjectVersionId, skillId])
@@ -134,7 +128,7 @@ model LearningObjectSkill {
   @@map("learning_object_skills")
 }
 
-/// Audit trail for all workflow state changes.
+/// Audit trail for workflow state changes.
 model LearningObjectVersionTransition {
   id                    String                      @id @default(uuid()) @db.Uuid
   versionId             String                      @map("version_id") @db.Uuid
@@ -144,7 +138,6 @@ model LearningObjectVersionTransition {
   reason                String?
   transitionedAt        DateTime                    @default(now()) @map("transitioned_at") @db.Timestamptz
 
-  // Relations
   version LearningObjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   @@index([versionId, transitionedAt(sort: Desc)])
