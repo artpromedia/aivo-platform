@@ -115,6 +115,8 @@ export interface CreateSubscriptionParams {
   trialDays?: number;
   metadata?: Record<string, string>;
   paymentBehavior?: Stripe.SubscriptionCreateParams.PaymentBehavior;
+  /** Idempotency key to prevent duplicate charges on retry */
+  idempotencyKey?: string;
 }
 
 export async function createSubscription(
@@ -142,7 +144,13 @@ export async function createSubscription(
     subscriptionParams.trial_period_days = params.trialDays;
   }
 
-  return stripe.subscriptions.create(subscriptionParams);
+  // Include idempotency key if provided
+  const requestOptions: Stripe.RequestOptions = {};
+  if (params.idempotencyKey) {
+    requestOptions.idempotencyKey = params.idempotencyKey;
+  }
+
+  return stripe.subscriptions.create(subscriptionParams, requestOptions);
 }
 
 export async function getSubscription(subscriptionId: string): Promise<Stripe.Subscription | null> {
@@ -268,10 +276,7 @@ export async function listInvoices(customerId: string): Promise<Stripe.Invoice[]
 // WEBHOOK OPERATIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export function constructWebhookEvent(
-  payload: string | Buffer,
-  signature: string
-): Stripe.Event {
+export function constructWebhookEvent(payload: string | Buffer, signature: string): Stripe.Event {
   return stripe.webhooks.constructEvent(payload, signature, config.stripe.webhookSecret);
 }
 

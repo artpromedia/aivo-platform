@@ -8,7 +8,9 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import rawBody from 'fastify-raw-body';
 
 import { config } from './config.js';
+import { exportMetrics } from './metrics.js';
 import { paymentRoutes, webhookRoutes } from './routes/index.js';
+import { generateCorrelationId } from './safety.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -29,6 +31,20 @@ export async function buildApp(): Promise<FastifyInstance> {
           },
     requestIdHeader: 'x-request-id',
     requestIdLogLabel: 'requestId',
+    genReqId: () => generateCorrelationId(),
+  });
+
+  // Add correlation ID to all requests
+  app.addHook('onRequest', async (request) => {
+    // Use existing correlation ID from header or generate new one
+    const correlationId =
+      (request.headers['x-correlation-id'] as string) || request.id || generateCorrelationId();
+
+    // Attach to request for use in handlers
+    (request as typeof request & { correlationId: string }).correlationId = correlationId;
+
+    // Add to log context
+    request.log = request.log.child({ correlationId });
   });
 
   // Enable raw body for Stripe webhook signature verification
@@ -43,6 +59,12 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Health check endpoint
   app.get('/health', async () => {
     return { status: 'ok', service: 'payments-svc' };
+  });
+
+  // Prometheus metrics endpoint (internal only)
+  app.get('/internal/metrics', async (request, reply) => {
+    reply.header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+    return exportMetrics();
   });
 
   // Register routes

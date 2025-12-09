@@ -2,13 +2,21 @@
  * Payment Routes - Customer, Payment Methods, and Subscriptions
  *
  * Internal-facing API endpoints called by billing logic or frontend proxies.
+ *
+ * SAFETY FEATURES:
+ * - Idempotency keys: All Stripe API calls include deterministic idempotency keys
+ * - Correlation logging: All operations include correlationId for tracing
+ * - Metrics: Key operations are instrumented
  */
+
+import crypto from 'node:crypto';
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { config } from '../config.js';
 import { getDbClient } from '../db.js';
+import * as metrics from '../metrics.js';
 import * as stripeClient from '../stripe.js';
 import {
   SubscriptionStatus,
@@ -20,6 +28,7 @@ import {
   type CancelSubscriptionResponse,
   type EnsureCustomerResponse,
 } from '../types.js';
+import { generateIdempotencyKey } from '../webhook-safety.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -118,10 +127,7 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
         isNew: true,
       };
 
-      fastify.log.info(
-        { billingAccountId, customerId: customer.id },
-        'Created Stripe customer'
-      );
+      fastify.log.info({ billingAccountId, customerId: customer.id }, 'Created Stripe customer');
 
       return reply.status(201).send(response);
     }
@@ -225,6 +231,8 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{
     Body: CreateSubscriptionRequest;
   }>('/payments/subscriptions', async (request: FastifyRequest, reply: FastifyReply) => {
+    const correlationId = (request.headers['x-request-id'] as string) ?? crypto.randomUUID();
+
     const bodyResult = CreateSubscriptionSchema.safeParse(request.body);
     if (!bodyResult.success) {
       return reply.status(400).send({
@@ -274,6 +282,15 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
           ? plan.trialDays
           : config.defaultTrialDays;
 
+    // Generate idempotency key for Stripe API call
+    // This prevents double-charging if the request is retried
+    const idempotencyKey = generateIdempotencyKey({
+      operation: 'createSubscription',
+      billingAccountId,
+      planSku,
+      quantity,
+    });
+
     // Create Stripe subscription params
     const subscriptionParams: stripeClient.CreateSubscriptionParams = {
       customerId: account.providerCustomerId,
@@ -283,9 +300,11 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
         billingAccountId,
         planId: plan.id,
         planSku,
+        correlationId,
         ...(metadata ? { customMetadata: JSON.stringify(metadata) } : {}),
       },
       paymentBehavior: 'default_incomplete',
+      idempotencyKey,
     };
     if (effectiveTrialDays > 0) {
       subscriptionParams.trialDays = effectiveTrialDays;
@@ -335,13 +354,18 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       currentPeriodEnd: currentPeriodEnd.toISOString(),
     };
 
+    // Record metrics
+    metrics.recordSubscriptionCreated(planSku, account.accountType ?? 'UNKNOWN');
+
     fastify.log.info(
       {
         subscriptionId: subscription.id,
         providerSubscriptionId: stripeSubscription.id,
+        billingAccountId,
         planSku,
         status,
         trialDays: effectiveTrialDays,
+        correlationId,
       },
       'Created subscription'
     );
@@ -368,7 +392,9 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       const bodyResult = CancelSubscriptionSchema.safeParse(request.body ?? {});
-      const { cancelImmediately } = bodyResult.success ? bodyResult.data : { cancelImmediately: false };
+      const { cancelImmediately } = bodyResult.success
+        ? bodyResult.data
+        : { cancelImmediately: false };
 
       const { subscriptionId } = paramsResult.data;
 
@@ -383,10 +409,7 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       // Cancel in Stripe
-      await stripeClient.cancelSubscription(
-        subscription.providerSubscriptionId,
-        cancelImmediately
-      );
+      await stripeClient.cancelSubscription(subscription.providerSubscriptionId, cancelImmediately);
 
       // Update local subscription
       const canceledAt = new Date();

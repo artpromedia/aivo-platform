@@ -32,6 +32,15 @@ export const config = {
 
   // Default trial days for parent subscriptions
   defaultTrialDays: parseInt(process.env.DEFAULT_TRIAL_DAYS ?? '30', 10),
+
+  // Entitlements service URL (for sync operations)
+  entitlementsSvcUrl: process.env.ENTITLEMENTS_SVC_URL ?? 'http://localhost:4080',
+
+  // Dunning configuration
+  dunning: {
+    gracePeriodDays: parseInt(process.env.DUNNING_GRACE_PERIOD_DAYS ?? '7', 10),
+    enableAutoDowngrade: process.env.DUNNING_AUTO_DOWNGRADE !== 'false',
+  },
 } as const;
 
 // Validate Stripe keys in production

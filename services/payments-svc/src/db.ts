@@ -9,13 +9,13 @@
 import { config } from './config.js';
 import {
   PaymentProvider,
+  SubscriptionStatus,
   type BillingAccount,
   type BillingInstrument,
   type Invoice,
   type PaymentEvent,
   type Plan,
   type Subscription,
-  type SubscriptionStatus,
   type InvoiceStatus,
 } from './types.js';
 
@@ -38,6 +38,10 @@ interface DbClient {
   createSubscription(data: CreateSubscriptionData): Promise<Subscription>;
   getSubscription(id: string): Promise<Subscription | null>;
   getSubscriptionByProviderId(providerId: string): Promise<Subscription | null>;
+  getActiveSubscriptionForAccountAndPlan(
+    billingAccountId: string,
+    planSku: string
+  ): Promise<Subscription | null>;
   updateSubscription(id: string, data: UpdateSubscriptionData): Promise<Subscription>;
 
   // Billing Instruments
@@ -53,6 +57,7 @@ interface DbClient {
 
   // Payment Events
   createPaymentEvent(data: CreatePaymentEventData): Promise<PaymentEvent>;
+  getPaymentEventByProviderId(providerEventId: string): Promise<PaymentEvent | null>;
 }
 
 interface CreateSubscriptionData {
@@ -205,6 +210,19 @@ class HttpDbClient implements DbClient {
     }
   }
 
+  async getActiveSubscriptionForAccountAndPlan(
+    billingAccountId: string,
+    planSku: string
+  ): Promise<Subscription | null> {
+    try {
+      return await this.fetch<Subscription>(
+        `/internal/subscriptions/active?billingAccountId=${billingAccountId}&planSku=${planSku}`
+      );
+    } catch {
+      return null;
+    }
+  }
+
   async updateSubscription(id: string, data: UpdateSubscriptionData): Promise<Subscription> {
     return this.fetch<Subscription>(`/internal/subscriptions/${id}`, {
       method: 'PATCH',
@@ -253,6 +271,16 @@ class HttpDbClient implements DbClient {
       body: JSON.stringify(data),
     });
   }
+
+  async getPaymentEventByProviderId(providerEventId: string): Promise<PaymentEvent | null> {
+    try {
+      return await this.fetch<PaymentEvent>(
+        `/internal/payment-events/by-provider/${providerEventId}`
+      );
+    } catch {
+      return null;
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -269,6 +297,7 @@ class InMemoryDbClient implements DbClient {
   private invoices = new Map<string, Invoice>();
   private invoicesByProviderId = new Map<string, Invoice>();
   private paymentEvents = new Map<string, PaymentEvent>();
+  private paymentEventsByProviderId = new Map<string, PaymentEvent>();
 
   // Seed methods for testing
   seedBillingAccount(account: BillingAccount): void {
@@ -335,15 +364,39 @@ class InMemoryDbClient implements DbClient {
     return this.subscriptionsByProviderId.get(providerId) ?? null;
   }
 
+  async getActiveSubscriptionForAccountAndPlan(
+    billingAccountId: string,
+    planSku: string
+  ): Promise<Subscription | null> {
+    // Find the plan by SKU first
+    const plan = this.plansBySku.get(planSku);
+    if (!plan) return null;
+
+    // Find active subscription for this account and plan
+    for (const subscription of this.subscriptions.values()) {
+      if (
+        subscription.billingAccountId === billingAccountId &&
+        subscription.planId === plan.id &&
+        (subscription.status === SubscriptionStatus.ACTIVE ||
+          subscription.status === SubscriptionStatus.IN_TRIAL)
+      ) {
+        return subscription;
+      }
+    }
+    return null;
+  }
+
   async updateSubscription(id: string, data: UpdateSubscriptionData): Promise<Subscription> {
     const subscription = this.subscriptions.get(id);
     if (!subscription) throw new Error(`Subscription not found: ${id}`);
 
     if (data.status !== undefined) subscription.status = data.status;
-    if (data.cancelAtPeriodEnd !== undefined) subscription.cancelAtPeriodEnd = data.cancelAtPeriodEnd;
+    if (data.cancelAtPeriodEnd !== undefined)
+      subscription.cancelAtPeriodEnd = data.cancelAtPeriodEnd;
     if (data.canceledAt !== undefined) subscription.canceledAt = data.canceledAt;
     if (data.endedAt !== undefined) subscription.endedAt = data.endedAt;
-    if (data.currentPeriodStart !== undefined) subscription.currentPeriodStart = data.currentPeriodStart;
+    if (data.currentPeriodStart !== undefined)
+      subscription.currentPeriodStart = data.currentPeriodStart;
     if (data.currentPeriodEnd !== undefined) subscription.currentPeriodEnd = data.currentPeriodEnd;
     if (data.trialEndAt !== undefined) subscription.trialEndAt = data.trialEndAt;
     subscription.updatedAt = new Date();
@@ -437,7 +490,19 @@ class InMemoryDbClient implements DbClient {
       createdAt: new Date(),
     };
     this.paymentEvents.set(id, event);
+    this.paymentEventsByProviderId.set(data.providerEventId, event);
     return event;
+  }
+
+  async getPaymentEventByProviderId(providerEventId: string): Promise<PaymentEvent | null> {
+    return this.paymentEventsByProviderId.get(providerEventId) ?? null;
+  }
+
+  // Helper method for tests to get all payment events for a billing account
+  getPaymentEvents(billingAccountId: string): PaymentEvent[] {
+    return Array.from(this.paymentEvents.values()).filter(
+      (e) => e.billingAccountId === billingAccountId
+    );
   }
 }
 
