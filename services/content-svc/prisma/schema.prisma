@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum LearningObjectSubject {
+  ELA
+  MATH
+  SCIENCE
+  SEL
+  SPEECH
+  OTHER
+
+  @@map("learning_object_subject")
+}
+
+enum LearningObjectGradeBand {
+  K_2
+  G3_5
+  G6_8
+  G9_12
+
+  @@map("learning_object_grade_band")
+}
+
+enum LearningObjectVersionState {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  RETIRED
+
+  @@map("learning_object_version_state")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Logical identity of a learning content unit.
+/// Examples: "ELA G3 reading passage: Dogs in Winter"
+model LearningObject {
+  id               String                   @id @default(uuid()) @db.Uuid
+  tenantId         String?                  @map("tenant_id") @db.Uuid
+  slug             String
+  title            String
+  subject          LearningObjectSubject
+  gradeBand        LearningObjectGradeBand  @map("grade_band")
+  primarySkillId   String?                  @map("primary_skill_id") @db.Uuid
+  isActive         Boolean                  @default(true) @map("is_active")
+  createdByUserId  String                   @map("created_by_user_id") @db.Uuid
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  versions LearningObjectVersion[]
+  tags     LearningObjectTag[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, subject, gradeBand])
+  @@index([primarySkillId])
+  @@map("learning_objects")
+}
+
+/// Versioned content with review workflow.
+/// Only one PUBLISHED version per LO at a time.
+model LearningObjectVersion {
+  id                 String                      @id @default(uuid()) @db.Uuid
+  learningObjectId   String                      @map("learning_object_id") @db.Uuid
+  versionNumber      Int                         @map("version_number")
+  state              LearningObjectVersionState  @default(DRAFT)
+  createdByUserId    String                      @map("created_by_user_id") @db.Uuid
+  reviewedByUserId   String?                     @map("reviewed_by_user_id") @db.Uuid
+  approvedByUserId   String?                     @map("approved_by_user_id") @db.Uuid
+  changeSummary      String?                     @map("change_summary")
+  contentJson        Json                        @map("content_json")
+  accessibilityJson  Json                        @default("{}") @map("accessibility_json")
+  standardsJson      Json                        @default("{}") @map("standards_json")
+  metadataJson       Json                        @default("{}") @map("metadata_json")
+  createdAt          DateTime                    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime                    @updatedAt @map("updated_at") @db.Timestamptz
+  publishedAt        DateTime?                   @map("published_at") @db.Timestamptz
+
+  // Relations
+  learningObject LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
+  skills         LearningObjectSkill[]
+  transitions    LearningObjectVersionTransition[]
+
+  @@unique([learningObjectId, versionNumber])
+  @@index([learningObjectId, state, versionNumber(sort: Desc)])
+  @@index([state])
+  @@map("learning_object_versions")
+}
+
+/// Flexible tags for content discovery and filtering.
+model LearningObjectTag {
+  id               String   @id @default(uuid()) @db.Uuid
+  learningObjectId String   @map("learning_object_id") @db.Uuid
+  tag              String
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  learningObject LearningObject @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
+
+  @@unique([learningObjectId, tag])
+  @@index([tag])
+  @@map("learning_object_tags")
+}
+
+/// Version-specific skill alignments beyond the primary skill.
+model LearningObjectSkill {
+  id                       String   @id @default(uuid()) @db.Uuid
+  learningObjectVersionId  String   @map("learning_object_version_id") @db.Uuid
+  skillId                  String   @map("skill_id") @db.Uuid
+  weight                   Decimal? @db.Decimal(4, 3)
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  learningObjectVersion LearningObjectVersion @relation(fields: [learningObjectVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([learningObjectVersionId, skillId])
+  @@index([skillId])
+  @@map("learning_object_skills")
+}
+
+/// Audit trail for all workflow state changes.
+model LearningObjectVersionTransition {
+  id            String                      @id @default(uuid()) @db.Uuid
+  versionId     String                      @map("version_id") @db.Uuid
+  fromState     LearningObjectVersionState  @map("from_state")
+  toState       LearningObjectVersionState  @map("to_state")
+  userId        String                      @map("user_id") @db.Uuid
+  comment       String?
+  transitionedAt DateTime                   @default(now()) @map("transitioned_at") @db.Timestamptz
+
+  // Relations
+  version LearningObjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId, transitionedAt(sort: Desc)])
+  @@map("learning_object_version_transitions")
+}

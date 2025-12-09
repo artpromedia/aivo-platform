@@ -4,3 +4,4 @@
  */
 
 export * from './virtualBrain.js';
+export * from './learningObject.js';
