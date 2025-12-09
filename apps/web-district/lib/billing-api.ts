@@ -1,0 +1,401 @@
+/**
+ * Billing & Entitlements API Service
+ * 
+ * Handles fetching seat usage, module entitlements, and invoice data
+ * for the District Billing Dashboard.
+ */
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface SeatUsage {
+  tenantId: string;
+  totalSeats: number;
+  usedSeats: number;
+  availableSeats: number;
+  lastUpdatedAt: string;
+}
+
+export interface ModuleEntitlement {
+  id: string;
+  tenantId: string;
+  featureCode: string;
+  featureName: string;
+  isEnabled: boolean;
+  source: string; // Plan SKU or 'ADD_ON' or 'TRIAL'
+  expiresAt?: string | null;
+}
+
+export type InvoiceStatus = 'DRAFT' | 'OPEN' | 'PAID' | 'PAST_DUE' | 'VOID' | 'UNCOLLECTIBLE';
+
+export interface Invoice {
+  id: string;
+  billingAccountId: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  amountCents: number;
+  currency: string;
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  paidAt?: string | null;
+  hostedInvoiceUrl?: string | null;
+  hostedPdfUrl?: string | null;
+  createdAt: string;
+}
+
+export interface BillingAccount {
+  id: string;
+  tenantId: string;
+  displayName: string;
+  billingEmail?: string;
+  providerCustomerId?: string;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+const entitlementsSvcUrl = process.env.ENTITLEMENTS_SVC_URL ?? 'http://localhost:4080';
+const billingSvcUrl = process.env.BILLING_SVC_URL ?? 'http://localhost:4060';
+
+const USE_MOCK = process.env.USE_BILLING_MOCK === 'true' || process.env.NODE_ENV === 'development';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// API FUNCTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetch seat usage for a tenant.
+ */
+export async function fetchSeatUsage(tenantId: string, accessToken?: string): Promise<SeatUsage> {
+  if (USE_MOCK) {
+    return mockSeatUsage(tenantId);
+  }
+
+  const res = await fetch(`${entitlementsSvcUrl}/entitlements/tenant/${tenantId}/seats`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    next: { revalidate: 60 }, // Cache for 1 minute
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch seat usage: ${res.status}`);
+  }
+
+  return res.json() as Promise<SeatUsage>;
+}
+
+/**
+ * Fetch module entitlements for a tenant.
+ */
+export async function fetchModuleEntitlements(
+  tenantId: string,
+  accessToken?: string
+): Promise<ModuleEntitlement[]> {
+  if (USE_MOCK) {
+    return mockModuleEntitlements(tenantId);
+  }
+
+  const res = await fetch(`${entitlementsSvcUrl}/entitlements/tenant/${tenantId}`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch entitlements: ${res.status}`);
+  }
+
+  const data = (await res.json()) as ModuleEntitlement[];
+  return data.filter((e) => e.featureCode.startsWith('MODULE_'));
+}
+
+/**
+ * Fetch billing account for current tenant.
+ */
+export async function fetchBillingAccount(
+  tenantId: string,
+  accessToken?: string
+): Promise<BillingAccount | null> {
+  if (USE_MOCK) {
+    return mockBillingAccount(tenantId);
+  }
+
+  const res = await fetch(`${billingSvcUrl}/billing-accounts/by-tenant/${tenantId}`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    next: { revalidate: 300 }, // Cache for 5 minutes
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`Failed to fetch billing account: ${res.status}`);
+  }
+
+  return res.json() as Promise<BillingAccount>;
+}
+
+/**
+ * Fetch invoices for a billing account.
+ */
+export async function fetchInvoices(
+  billingAccountId: string,
+  accessToken?: string
+): Promise<Invoice[]> {
+  if (USE_MOCK) {
+    return mockInvoices(billingAccountId);
+  }
+
+  const res = await fetch(`${billingSvcUrl}/billing-accounts/${billingAccountId}/invoices`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch invoices: ${res.status}`);
+  }
+
+  return res.json() as Promise<Invoice[]>;
+}
+
+/**
+ * Get CSV export URL for invoices.
+ */
+export function getInvoiceExportUrl(billingAccountId: string): string {
+  if (USE_MOCK) {
+    // In mock mode, return a data URL that triggers download
+    return '#export-csv';
+  }
+  return `${billingSvcUrl}/billing-accounts/${billingAccountId}/invoices/export`;
+}
+
+/**
+ * Export invoices to CSV (client-side fallback).
+ */
+export function exportInvoicesToCsv(invoices: Invoice[]): string {
+  const headers = ['Invoice Number', 'Date', 'Period', 'Amount', 'Status', 'Paid Date'];
+  const rows = invoices.map((inv) => [
+    inv.invoiceNumber,
+    new Date(inv.createdAt).toLocaleDateString(),
+    `${new Date(inv.periodStart).toLocaleDateString()} - ${new Date(inv.periodEnd).toLocaleDateString()}`,
+    formatCurrency(inv.amountCents, inv.currency),
+    inv.status,
+    inv.paidAt ? new Date(inv.paidAt).toLocaleDateString() : '',
+  ]);
+
+  const csvContent = [headers.join(','), ...rows.map((r) => r.map(escapeCSV).join(','))].join('\n');
+  return csvContent;
+}
+
+/**
+ * Trigger CSV download in browser.
+ */
+export function downloadCsv(content: string, filename: string): void {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+export function formatCurrency(amountCents: number, currency = 'USD'): string {
+  const amount = amountCents / 100;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+  }).format(amount);
+}
+
+export function getInvoiceStatusLabel(status: InvoiceStatus): string {
+  const labels: Record<InvoiceStatus, string> = {
+    DRAFT: 'Draft',
+    OPEN: 'Open',
+    PAID: 'Paid',
+    PAST_DUE: 'Past Due',
+    VOID: 'Void',
+    UNCOLLECTIBLE: 'Uncollectible',
+  };
+  return labels[status] || status;
+}
+
+export function getInvoiceStatusTone(status: InvoiceStatus): 'neutral' | 'info' | 'success' | 'warning' | 'error' {
+  switch (status) {
+    case 'PAID':
+      return 'success';
+    case 'OPEN':
+      return 'info';
+    case 'PAST_DUE':
+      return 'error';
+    case 'VOID':
+    case 'UNCOLLECTIBLE':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
+
+export function getModuleDisplayName(featureCode: string): string {
+  const names: Record<string, string> = {
+    MODULE_ELA: 'English Language Arts (ELA)',
+    MODULE_MATH: 'Mathematics',
+    MODULE_SEL: 'Social-Emotional Learning',
+    MODULE_SPEECH: 'Speech & Language',
+    MODULE_SCIENCE: 'Science',
+    MODULE_CODING: 'Coding & Computational Thinking',
+    MODULE_WRITING: 'Creative Writing',
+  };
+  return names[featureCode] || featureCode.replace('MODULE_', '').replace(/_/g, ' ');
+}
+
+export function getSeatUsagePercentage(usage: SeatUsage): number {
+  if (usage.totalSeats === 0) return 0;
+  return Math.round((usage.usedSeats / usage.totalSeats) * 100);
+}
+
+export function getSeatUsageLevel(usage: SeatUsage): 'normal' | 'warning' | 'critical' {
+  const percentage = getSeatUsagePercentage(usage);
+  if (percentage >= 100) return 'critical';
+  if (percentage >= 90) return 'warning';
+  return 'normal';
+}
+
+function escapeCSV(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOCK DATA
+// ══════════════════════════════════════════════════════════════════════════════
+
+export function mockSeatUsage(tenantId: string): SeatUsage {
+  return {
+    tenantId,
+    totalSeats: 500,
+    usedSeats: 467,
+    availableSeats: 33,
+    lastUpdatedAt: new Date().toISOString(),
+  };
+}
+
+export function mockModuleEntitlements(tenantId: string): ModuleEntitlement[] {
+  return [
+    {
+      id: 'ent-ela',
+      tenantId,
+      featureCode: 'MODULE_ELA',
+      featureName: 'English Language Arts',
+      isEnabled: true,
+      source: 'DISTRICT_PREMIUM',
+    },
+    {
+      id: 'ent-math',
+      tenantId,
+      featureCode: 'MODULE_MATH',
+      featureName: 'Mathematics',
+      isEnabled: true,
+      source: 'DISTRICT_PREMIUM',
+    },
+    {
+      id: 'ent-sel',
+      tenantId,
+      featureCode: 'MODULE_SEL',
+      featureName: 'Social-Emotional Learning',
+      isEnabled: true,
+      source: 'DISTRICT_PREMIUM',
+    },
+    {
+      id: 'ent-speech',
+      tenantId,
+      featureCode: 'MODULE_SPEECH',
+      featureName: 'Speech & Language',
+      isEnabled: true,
+      source: 'ADD_ON',
+    },
+    {
+      id: 'ent-science',
+      tenantId,
+      featureCode: 'MODULE_SCIENCE',
+      featureName: 'Science',
+      isEnabled: false,
+      source: 'DISTRICT_PREMIUM',
+    },
+    {
+      id: 'ent-coding',
+      tenantId,
+      featureCode: 'MODULE_CODING',
+      featureName: 'Coding',
+      isEnabled: false,
+      source: 'DISTRICT_PREMIUM',
+    },
+  ];
+}
+
+export function mockBillingAccount(tenantId: string): BillingAccount {
+  return {
+    id: `ba_${tenantId}`,
+    tenantId,
+    displayName: 'District Billing Account',
+    billingEmail: 'billing@district.edu',
+    providerCustomerId: 'cus_mock_123',
+  };
+}
+
+export function mockInvoices(billingAccountId: string): Invoice[] {
+  const now = new Date();
+  return [
+    {
+      id: 'inv_001',
+      billingAccountId,
+      invoiceNumber: 'INV-2024-001',
+      status: 'PAID',
+      amountCents: 1250000, // $12,500
+      currency: 'USD',
+      periodStart: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(),
+      periodEnd: new Date(now.getFullYear(), now.getMonth(), 0).toISOString(),
+      dueDate: new Date(now.getFullYear(), now.getMonth(), 15).toISOString(),
+      paidAt: new Date(now.getFullYear(), now.getMonth(), 10).toISOString(),
+      hostedInvoiceUrl: 'https://invoice.stripe.com/i/mock_inv_001',
+      hostedPdfUrl: 'https://invoice.stripe.com/i/mock_inv_001/pdf',
+      createdAt: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(),
+    },
+    {
+      id: 'inv_002',
+      billingAccountId,
+      invoiceNumber: 'INV-2024-002',
+      status: 'OPEN',
+      amountCents: 1250000,
+      currency: 'USD',
+      periodStart: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+      periodEnd: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString(),
+      dueDate: new Date(now.getFullYear(), now.getMonth() + 1, 15).toISOString(),
+      paidAt: null,
+      hostedInvoiceUrl: 'https://invoice.stripe.com/i/mock_inv_002',
+      createdAt: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+    },
+    {
+      id: 'inv_003',
+      billingAccountId,
+      invoiceNumber: 'INV-2023-012',
+      status: 'PAID',
+      amountCents: 1150000,
+      currency: 'USD',
+      periodStart: new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString(),
+      periodEnd: new Date(now.getFullYear(), now.getMonth() - 1, 0).toISOString(),
+      dueDate: new Date(now.getFullYear(), now.getMonth() - 1, 15).toISOString(),
+      paidAt: new Date(now.getFullYear(), now.getMonth() - 1, 12).toISOString(),
+      hostedInvoiceUrl: 'https://invoice.stripe.com/i/mock_inv_003',
+      hostedPdfUrl: 'https://invoice.stripe.com/i/mock_inv_003/pdf',
+      createdAt: new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString(),
+    },
+  ];
+}

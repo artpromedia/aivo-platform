@@ -18,6 +18,7 @@ import {
   completeSession,
   type Session,
   type ActivityProgress,
+  type SessionMetadata,
 } from '@/lib/session-api';
 import { cn } from '@/lib/cn';
 

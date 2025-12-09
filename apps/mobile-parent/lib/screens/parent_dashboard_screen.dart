@@ -7,10 +7,12 @@ import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
 import '../baseline/baseline_controller.dart';
 import '../learners/learner_service.dart';
+import '../subscription/subscription_controller.dart';
 import '../widgets/baseline_status_card.dart';
 import '../widgets/difficulty_recommendation_card.dart';
 import '../widgets/homework_focus_card.dart';
 import '../widgets/progress_report_link_card.dart';
+import '../widgets/subscription_banners.dart';
 
 class ParentDashboardScreen extends ConsumerWidget {
   const ParentDashboardScreen({super.key});
@@ -27,6 +29,14 @@ class ParentDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(strings.parentDashboard),
         actions: [
+          // Subscription status chip in app bar
+          const PastDuePaymentChip(),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Subscription & Modules',
+            icon: const Icon(Icons.workspace_premium),
+            onPressed: () => context.push('/subscription'),
+          ),
           IconButton(
             tooltip: 'Logout',
             icon: const Icon(Icons.logout),
@@ -38,6 +48,7 @@ class ParentDashboardScreen extends ConsumerWidget {
         onRefresh: () async {
           if (authState.tenantId != null) {
             ref.invalidate(childrenProvider(authState.tenantId!));
+            ref.read(subscriptionControllerProvider.notifier).loadSubscriptionData();
           }
         },
         child: SingleChildScrollView(
@@ -46,16 +57,34 @@ class ParentDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Payment/Trial status banners
+              const PastDuePaymentBanner(),
+              const TrialEndingBanner(),
+              
               Text('Welcome, parent!', style: Theme.of(context).textTheme.headlineSmall),
               if (authState.status == AuthStatus.authenticated)
                 Text('Tenant: ${authState.tenantId}', style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 16),
 
-              // Add child button
-              FilledButton.icon(
-                icon: const Icon(Icons.person_add_alt),
-                label: Text(strings.addChild),
-                onPressed: () => context.push('/add-child'),
+              // Quick actions row
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.person_add_alt),
+                      label: Text(strings.addChild),
+                      onPressed: () => context.push('/add-child'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.settings),
+                      label: const Text('Subscription'),
+                      onPressed: () => context.push('/subscription'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 

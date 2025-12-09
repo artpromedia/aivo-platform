@@ -14,7 +14,9 @@ import {
 import {
   getSessionSummary,
   type SessionSummary,
+  type SessionMetadata,
 } from '@/lib/session-api';
+import { cn } from '@/lib/cn';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
