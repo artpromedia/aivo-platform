@@ -11,17 +11,24 @@
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "etl": "tsx src/etl/cli.ts",
+    "etl:run": "tsx src/etl/cli.ts run",
+    "etl:dimensions": "tsx src/etl/cli.ts sync-dimensions",
+    "etl:facts": "tsx src/etl/cli.ts build-facts",
+    "etl:status": "tsx src/etl/cli.ts status"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
     "fastify": "^4.28.1",
     "fastify-plugin": "^4.5.1",
     "jose": "^5.9.2",
+    "pg": "^8.13.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
+    "@types/pg": "^8.11.10",
     "prisma": "^6.1.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
