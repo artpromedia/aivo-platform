@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { getUserFromRequest, getUserTenantId, requireRoles } from '../auth.js';
 import { prisma } from '../prisma.js';
+import { runVersionQaChecks, getVersionQaChecks } from '../qa-engine.js';
 import {
   AUTHOR_ROLES,
   REVIEWER_ROLES,
@@ -17,6 +18,13 @@ import {
   canAccessTenant,
   canEditVersion,
 } from '../rbac.js';
+import {
+  addReviewNote,
+  addApprovalNote,
+  addRejectionNote,
+  getReviewNotes,
+  type NoteType,
+} from '../review-notes.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -58,6 +66,15 @@ const SkillsBodySchema = z.object({
 
 const RejectBodySchema = z.object({
   reason: z.string().min(1).max(2000),
+});
+
+const ApproveBodySchema = z.object({
+  note: z.string().max(2000).optional(),
+});
+
+const ReviewNoteBodySchema = z.object({
+  noteText: z.string().min(1).max(2000),
+  noteType: z.enum(['GENERAL', 'FEEDBACK']).default('GENERAL'),
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -411,6 +428,9 @@ export async function versionRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Run QA checks before submission
+      const qaResults = await runVersionQaChecks(version.id);
+
       const result = await prisma.$transaction(async (tx) => {
         const updated = await tx.learningObjectVersion.update({
           where: { id: version.id },
@@ -427,6 +447,13 @@ export async function versionRoutes(fastify: FastifyInstance) {
         versionNumber: result.versionNumber,
         state: result.state,
         message: 'Version submitted for review',
+        qaChecks: {
+          overallStatus: qaResults.overallStatus,
+          passed: qaResults.passed,
+          warnings: qaResults.warnings,
+          failed: qaResults.failed,
+          checks: qaResults.checks,
+        },
       });
     }
   );
@@ -450,6 +477,10 @@ export async function versionRoutes(fastify: FastifyInstance) {
           .status(400)
           .send({ error: 'Invalid parameters', details: paramsResult.error.flatten() });
       }
+
+      // Optional approval note
+      const bodyResult = ApproveBodySchema.safeParse(request.body ?? {});
+      const approvalNote = bodyResult.success ? bodyResult.data.note : undefined;
 
       const { loId, versionNumber } = paramsResult.data;
       const version = await getVersionWithLO(loId, versionNumber);
@@ -475,7 +506,11 @@ export async function versionRoutes(fastify: FastifyInstance) {
       const result = await prisma.$transaction(async (tx) => {
         const updated = await tx.learningObjectVersion.update({
           where: { id: version.id },
-          data: { state: 'APPROVED' },
+          data: {
+            state: 'APPROVED',
+            reviewedByUserId: user.sub,
+            approvedByUserId: user.sub,
+          },
         });
 
         await createTransition(tx, version.id, 'IN_REVIEW', 'APPROVED', user.sub);
@@ -483,11 +518,19 @@ export async function versionRoutes(fastify: FastifyInstance) {
         return updated;
       });
 
+      // Add approval note after transaction
+      if (approvalNote) {
+        await addApprovalNote(version.id, user.sub, approvalNote);
+      } else {
+        await addApprovalNote(version.id, user.sub);
+      }
+
       return reply.send({
         id: result.id,
         versionNumber: result.versionNumber,
         state: result.state,
         message: 'Version approved',
+        approvalNote: approvalNote ?? null,
       });
     }
   );
@@ -545,13 +588,19 @@ export async function versionRoutes(fastify: FastifyInstance) {
       const result = await prisma.$transaction(async (tx) => {
         const updated = await tx.learningObjectVersion.update({
           where: { id: version.id },
-          data: { state: 'DRAFT' },
+          data: {
+            state: 'DRAFT',
+            reviewedByUserId: user.sub,
+          },
         });
 
         await createTransition(tx, version.id, 'IN_REVIEW', 'DRAFT', user.sub, reason);
 
         return updated;
       });
+
+      // Add rejection note
+      await addRejectionNote(version.id, user.sub, reason);
 
       return reply.send({
         id: result.id,
@@ -722,6 +771,215 @@ export async function versionRoutes(fastify: FastifyInstance) {
         state: result.state,
         createdAt: result.createdAt,
         message: `Version ${result.versionNumber} created`,
+      });
+    }
+  );
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // QA CHECKS & REVIEW NOTES ENDPOINTS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /learning-objects/:loId/versions/:versionNumber/qa-checks
+   * Get QA check results for a version.
+   */
+  fastify.get(
+    '/learning-objects/:loId/versions/:versionNumber/qa-checks',
+    { preHandler: [requireRoles(AUTHOR_ROLES)] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = VersionParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send({ error: 'Invalid parameters', details: paramsResult.error.flatten() });
+      }
+
+      const { loId, versionNumber } = paramsResult.data;
+      const version = await getVersionWithLO(loId, versionNumber);
+
+      if (!version) {
+        return reply.status(404).send({ error: 'Not found', message: 'Version not found' });
+      }
+
+      const userTenantId = getUserTenantId(user);
+      if (!canAccessTenant(userTenantId, version.learningObject.tenantId, user.roles)) {
+        return reply
+          .status(403)
+          .send({ error: 'Forbidden', message: 'Access denied to this tenant' });
+      }
+
+      const checks = await getVersionQaChecks(version.id);
+
+      const passed = checks.filter((c) => c.status === 'PASSED').length;
+      const warnings = checks.filter((c) => c.status === 'WARNING').length;
+      const failed = checks.filter((c) => c.status === 'FAILED').length;
+
+      return reply.send({
+        versionId: version.id,
+        versionNumber: version.versionNumber,
+        checks,
+        summary: {
+          passed,
+          warnings,
+          failed,
+          overallStatus: failed > 0 ? 'FAILED' : warnings > 0 ? 'WARNING' : 'PASSED',
+        },
+      });
+    }
+  );
+
+  /**
+   * POST /learning-objects/:loId/versions/:versionNumber/qa-checks/run
+   * Run QA checks on-demand.
+   */
+  fastify.post(
+    '/learning-objects/:loId/versions/:versionNumber/qa-checks/run',
+    { preHandler: [requireRoles(AUTHOR_ROLES)] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = VersionParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send({ error: 'Invalid parameters', details: paramsResult.error.flatten() });
+      }
+
+      const { loId, versionNumber } = paramsResult.data;
+      const version = await getVersionWithLO(loId, versionNumber);
+
+      if (!version) {
+        return reply.status(404).send({ error: 'Not found', message: 'Version not found' });
+      }
+
+      const userTenantId = getUserTenantId(user);
+      if (!canAccessTenant(userTenantId, version.learningObject.tenantId, user.roles)) {
+        return reply
+          .status(403)
+          .send({ error: 'Forbidden', message: 'Access denied to this tenant' });
+      }
+
+      const qaResults = await runVersionQaChecks(version.id);
+
+      return reply.send({
+        versionId: version.id,
+        versionNumber: version.versionNumber,
+        checks: qaResults.checks,
+        summary: {
+          passed: qaResults.passed,
+          warnings: qaResults.warnings,
+          failed: qaResults.failed,
+          overallStatus: qaResults.overallStatus,
+        },
+      });
+    }
+  );
+
+  /**
+   * GET /learning-objects/:loId/versions/:versionNumber/review-notes
+   * Get review notes for a version.
+   */
+  fastify.get(
+    '/learning-objects/:loId/versions/:versionNumber/review-notes',
+    { preHandler: [requireRoles(AUTHOR_ROLES)] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = VersionParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send({ error: 'Invalid parameters', details: paramsResult.error.flatten() });
+      }
+
+      const { loId, versionNumber } = paramsResult.data;
+      const version = await getVersionWithLO(loId, versionNumber);
+
+      if (!version) {
+        return reply.status(404).send({ error: 'Not found', message: 'Version not found' });
+      }
+
+      const userTenantId = getUserTenantId(user);
+      if (!canAccessTenant(userTenantId, version.learningObject.tenantId, user.roles)) {
+        return reply
+          .status(403)
+          .send({ error: 'Forbidden', message: 'Access denied to this tenant' });
+      }
+
+      const notes = await getReviewNotes(version.id);
+
+      return reply.send({
+        versionId: version.id,
+        versionNumber: version.versionNumber,
+        notes,
+      });
+    }
+  );
+
+  /**
+   * POST /learning-objects/:loId/versions/:versionNumber/review-notes
+   * Add a review note to a version.
+   */
+  fastify.post(
+    '/learning-objects/:loId/versions/:versionNumber/review-notes',
+    { preHandler: [requireRoles(REVIEWER_ROLES)] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = VersionParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send({ error: 'Invalid parameters', details: paramsResult.error.flatten() });
+      }
+
+      const bodyResult = ReviewNoteBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply
+          .status(400)
+          .send({ error: 'Invalid request body', details: bodyResult.error.flatten() });
+      }
+
+      const { loId, versionNumber } = paramsResult.data;
+      const { noteText, noteType } = bodyResult.data;
+
+      const version = await getVersionWithLO(loId, versionNumber);
+
+      if (!version) {
+        return reply.status(404).send({ error: 'Not found', message: 'Version not found' });
+      }
+
+      const userTenantId = getUserTenantId(user);
+      if (!canAccessTenant(userTenantId, version.learningObject.tenantId, user.roles)) {
+        return reply
+          .status(403)
+          .send({ error: 'Forbidden', message: 'Access denied to this tenant' });
+      }
+
+      const note = await addReviewNote({
+        learningObjectVersionId: version.id,
+        authorUserId: user.sub,
+        noteText,
+        noteType: noteType as NoteType,
+      });
+
+      return reply.status(201).send({
+        note,
+        message: 'Review note added',
       });
     }
   );

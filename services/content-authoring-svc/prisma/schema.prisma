@@ -78,7 +78,7 @@ model LearningObjectVersion {
   reviewedByUserId   String?                     @map("reviewed_by_user_id") @db.Uuid
   approvedByUserId   String?                     @map("approved_by_user_id") @db.Uuid
   changeSummary      String?                     @map("change_summary")
-  reviewNotes        String?                     @map("review_notes")
+  legacyReviewNotes  String?                     @map("review_notes") // Deprecated: use reviewNotesList
   contentJson        Json                        @map("content_json")
   accessibilityJson  Json                        @default("{}") @map("accessibility_json")
   standardsJson      Json                        @default("{}") @map("standards_json")
@@ -88,9 +88,11 @@ model LearningObjectVersion {
   publishedAt        DateTime?                   @map("published_at") @db.Timestamptz
   retiredAt          DateTime?                   @map("retired_at") @db.Timestamptz
 
-  learningObject LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
-  skills         LearningObjectSkill[]
-  transitions    LearningObjectVersionTransition[]
+  learningObject    LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
+  skills            LearningObjectSkill[]
+  transitions       LearningObjectVersionTransition[]
+  qaChecks          LearningObjectVersionCheck[]
+  reviewNotesList   LearningObjectVersionReviewNote[]
 
   @@unique([learningObjectId, versionNumber])
   @@index([learningObjectId, state, versionNumber(sort: Desc)])
@@ -142,4 +144,58 @@ model LearningObjectVersionTransition {
 
   @@index([versionId, transitionedAt(sort: Desc)])
   @@map("learning_object_version_transitions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QA CHECKS & REVIEW NOTES
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum QaCheckType {
+  ACCESSIBILITY
+  METADATA_COMPLETENESS
+  POLICY_LANGUAGE
+  CONTENT_STRUCTURE
+  SKILL_ALIGNMENT
+
+  @@map("qa_check_type")
+}
+
+enum QaCheckStatus {
+  PASSED
+  WARNING
+  FAILED
+
+  @@map("qa_check_status")
+}
+
+/// Automated QA check results for a version.
+model LearningObjectVersionCheck {
+  id                       String                @id @default(uuid()) @db.Uuid
+  learningObjectVersionId  String                @map("learning_object_version_id") @db.Uuid
+  checkType                QaCheckType           @map("check_type")
+  status                   QaCheckStatus
+  message                  String
+  details                  Json?                 @default("{}")
+  createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  learningObjectVersion LearningObjectVersion @relation(fields: [learningObjectVersionId], references: [id], onDelete: Cascade)
+
+  @@index([learningObjectVersionId, checkType])
+  @@index([status])
+  @@map("learning_object_version_checks")
+}
+
+/// Reviewer notes attached to a version during review.
+model LearningObjectVersionReviewNote {
+  id                       String   @id @default(uuid()) @db.Uuid
+  learningObjectVersionId  String   @map("learning_object_version_id") @db.Uuid
+  authorUserId             String   @map("author_user_id") @db.Uuid
+  noteText                 String   @map("note_text")
+  noteType                 String   @default("GENERAL") @map("note_type") // GENERAL, APPROVAL, REJECTION, FEEDBACK
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  learningObjectVersion LearningObjectVersion @relation(fields: [learningObjectVersionId], references: [id], onDelete: Cascade)
+
+  @@index([learningObjectVersionId, createdAt(sort: Desc)])
+  @@map("learning_object_version_review_notes")
 }
