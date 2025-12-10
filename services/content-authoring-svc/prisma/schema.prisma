@@ -93,6 +93,7 @@ model LearningObjectVersion {
   transitions       LearningObjectVersionTransition[]
   qaChecks          LearningObjectVersionCheck[]
   reviewNotesList   LearningObjectVersionReviewNote[]
+  translations      LearningObjectTranslation[]
 
   @@unique([learningObjectId, versionNumber])
   @@index([learningObjectId, state, versionNumber(sort: Desc)])
@@ -198,4 +199,47 @@ model LearningObjectVersionReviewNote {
 
   @@index([learningObjectVersionId, createdAt(sort: Desc)])
   @@map("learning_object_version_review_notes")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INTERNATIONALIZATION & ACCESSIBILITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum CognitiveLoad {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("cognitive_load")
+}
+
+enum TranslationStatus {
+  DRAFT
+  READY
+  NEEDS_UPDATE
+
+  @@map("translation_status")
+}
+
+/// Localized content for a Learning Object version.
+/// Each version can have multiple translations, one per locale.
+model LearningObjectTranslation {
+  id                       String             @id @default(uuid()) @db.Uuid
+  learningObjectVersionId  String             @map("learning_object_version_id") @db.Uuid
+  locale                   String             @db.VarChar(10) // e.g., "en", "es", "en-US", "es-MX"
+  status                   TranslationStatus  @default(DRAFT)
+  contentJson              Json               @map("content_json")       // Localized content
+  accessibilityJson        Json               @default("{}") @map("accessibility_json") // Localized alt text, hints
+  metadataJson             Json               @default("{}") @map("metadata_json")      // Locale-specific metadata
+  translatedByUserId       String?            @map("translated_by_user_id") @db.Uuid
+  reviewedByUserId         String?            @map("reviewed_by_user_id") @db.Uuid
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  learningObjectVersion LearningObjectVersion @relation(fields: [learningObjectVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([learningObjectVersionId, locale])
+  @@index([locale])
+  @@index([status])
+  @@map("learning_object_translations")
 }

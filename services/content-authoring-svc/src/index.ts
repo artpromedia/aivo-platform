@@ -25,13 +25,28 @@
  * - POST   /learning-objects/:loId/versions/:vn/publish
  *
  * - GET    /review-queue                                  List items for review
+ *
+ * Translations (i18n):
+ * - GET    /learning-objects/:loId/versions/:vn/translations
+ * - GET    /learning-objects/:loId/versions/:vn/translations/:locale
+ * - PUT    /learning-objects/:loId/versions/:vn/translations/:locale
+ * - PATCH  /learning-objects/:loId/versions/:vn/translations/:locale/status
+ * - DELETE /learning-objects/:loId/versions/:vn/translations/:locale
+ *
+ * Content Resolution (for consumers):
+ * - POST   /content/learning-objects/resolve
+ * - POST   /content/learning-objects/:learningObjectId/resolve
+ * - POST   /content/learning-objects/best-match
+ * - GET    /content/accessibility-profile/schema
  */
 
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
 
 import { registerAuthHook } from './auth.js';
+import { contentRoutes } from './routes/content.js';
 import { learningObjectRoutes } from './routes/learningObjects.js';
+import { translationRoutes } from './routes/translations.js';
 import { versionRoutes } from './routes/versions.js';
 
 const PORT = parseInt(process.env.PORT ?? '4021', 10);
@@ -61,6 +76,8 @@ async function main() {
   // Register routes
   await fastify.register(learningObjectRoutes, { prefix: '/api' });
   await fastify.register(versionRoutes, { prefix: '/api' });
+  await fastify.register(translationRoutes, { prefix: '/api' });
+  await fastify.register(contentRoutes, { prefix: '/api' });
 
   // Start server
   try {

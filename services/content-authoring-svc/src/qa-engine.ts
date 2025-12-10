@@ -55,6 +55,14 @@ interface AccessibilityJson {
   readingLevel?: string;
   flesch_kincaid_grade?: number;
   complexity?: string;
+
+  // Extended accessibility profile flags
+  supportsDyslexiaFriendlyFont?: boolean;
+  supportsReducedStimuli?: boolean;
+  hasScreenReaderOptimizedStructure?: boolean;
+  hasHighContrastMode?: boolean;
+  supportsTextToSpeech?: boolean;
+  estimatedCognitiveLoad?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
 interface MetadataJson {
@@ -395,6 +403,79 @@ function getGradeLevelRange(gradeBand: string): { min: number; max: number } {
   }
 }
 
+/**
+ * Check accessibility profile completeness.
+ * K-5 content should have basic accessibility flags filled.
+ */
+function checkAccessibilityProfile(
+  accessibilityJson: AccessibilityJson,
+  gradeBand: string
+): QaCheckResult {
+  const details: Record<string, unknown> = {};
+  const issues: string[] = [];
+  const warnings: string[] = [];
+
+  // Check which flags are set
+  const flags = {
+    supportsDyslexiaFriendlyFont: accessibilityJson.supportsDyslexiaFriendlyFont ?? false,
+    supportsReducedStimuli: accessibilityJson.supportsReducedStimuli ?? false,
+    hasScreenReaderOptimizedStructure: accessibilityJson.hasScreenReaderOptimizedStructure ?? false,
+    hasHighContrastMode: accessibilityJson.hasHighContrastMode ?? false,
+    supportsTextToSpeech: accessibilityJson.supportsTextToSpeech ?? false,
+    estimatedCognitiveLoad: accessibilityJson.estimatedCognitiveLoad ?? null,
+  };
+
+  details.flags = flags;
+  const flagsSet = Object.values(flags).filter((v) => v !== false && v !== null).length;
+  details.flagsSetCount = flagsSet;
+
+  // K-5 content should have basic accessibility flags (K_2, G3_5)
+  const isYoungerGradeBand = gradeBand === 'K_2' || gradeBand === 'G3_5';
+
+  if (isYoungerGradeBand) {
+    // For younger grades, we require at least cognitive load and dyslexia-friendly flag
+    if (!flags.estimatedCognitiveLoad) {
+      issues.push('estimatedCognitiveLoad should be set for K-5 content');
+    }
+    if (!flags.supportsDyslexiaFriendlyFont) {
+      warnings.push('K-5 content should indicate dyslexia-friendly font support');
+    }
+    if (!flags.supportsReducedStimuli) {
+      warnings.push('K-5 content should indicate reduced stimuli support');
+    }
+  }
+
+  // All content should have screen reader structure info
+  if (!flags.hasScreenReaderOptimizedStructure) {
+    warnings.push('Screen reader optimized structure flag not set');
+  }
+
+  if (issues.length > 0) {
+    return {
+      checkType: 'ACCESSIBILITY' as QaCheckType,
+      status: 'FAILED',
+      message: `Accessibility profile incomplete: ${issues.join('; ')}`,
+      details,
+    };
+  }
+
+  if (warnings.length > 0) {
+    return {
+      checkType: 'ACCESSIBILITY' as QaCheckType,
+      status: 'WARNING',
+      message: `Accessibility profile warnings: ${warnings.join('; ')}`,
+      details,
+    };
+  }
+
+  return {
+    checkType: 'ACCESSIBILITY' as QaCheckType,
+    status: 'PASSED',
+    message: `Accessibility profile complete (${flagsSet} flags set)`,
+    details,
+  };
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN QA ENGINE FUNCTION
 // ══════════════════════════════════════════════════════════════════════════════
@@ -436,6 +517,7 @@ export async function runVersionQaChecks(loVersionId: string): Promise<QaCheckSu
   // Run all checks
   const checks: QaCheckResult[] = [
     checkAccessibility(contentJson, accessibilityJson, version.learningObject.gradeBand),
+    checkAccessibilityProfile(accessibilityJson, version.learningObject.gradeBand),
     checkMetadataCompleteness(
       version.learningObject.subject,
       version.learningObject.gradeBand,
@@ -506,6 +588,7 @@ export async function getVersionQaChecks(loVersionId: string): Promise<QaCheckRe
 
 export const qaChecks = {
   checkAccessibility,
+  checkAccessibilityProfile,
   checkMetadataCompleteness,
   checkPolicyLanguage,
   checkContentStructure,
