@@ -137,6 +137,15 @@ export const FeaturePolicySchema = z.object({
 
   /** Enable parent portal features */
   parent_portal_enabled: z.boolean().default(true),
+
+  /** Enable experimentation (A/B testing) */
+  experimentation_enabled: z.boolean().default(true),
+
+  /** Allowed feature areas for experimentation (empty = all allowed) */
+  experimentation_allowed_areas: z.array(z.string()).default([]),
+
+  /** Maximum number of active experiments for tenant */
+  experimentation_max_active: z.number().int().min(0).max(100).default(10),
 });
 
 export type FeaturePolicy = z.infer<typeof FeaturePolicySchema>;

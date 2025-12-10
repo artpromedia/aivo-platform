@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
 import { classroomAnalyticsRoutes } from './routes/classroomAnalytics.js';
+import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
 import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
 import { parentAnalyticsRoutes } from './routes/parentAnalytics.js';
 import { teacherAnalyticsRoutes } from './routes/teacherAnalytics.js';
@@ -35,6 +36,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(teacherAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(classroomAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(tenantAnalyticsRoutes, { prefix: '/analytics' });
+  await app.register(experimentAnalyticsRoutes, { prefix: '/analytics' });
 
   return app;
 }

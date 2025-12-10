@@ -11,7 +11,9 @@ void main() {
     late LearningProgressSummary mockProgress;
     late HomeworkUsageSummary mockHomework;
     late FocusBreakSummary mockFocus;
+    // ignore: unused_local_variable
     late LearnerSummary mockSummary;
+    // ignore: unused_local_variable
     late StrengthsAndNeeds mockStrengthsAndNeeds;
 
     setUp(() {
