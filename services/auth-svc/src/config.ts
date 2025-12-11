@@ -14,6 +14,19 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
   throw new Error('JWT key not provided');
 }
 
+function readOptionalKey(keyEnv: string | undefined, fileEnv: string | undefined): string | undefined {
+  if (keyEnv) return keyEnv;
+  if (fileEnv) {
+    const abs = path.resolve(fileEnv);
+    try {
+      return fs.readFileSync(abs, 'utf-8');
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 export const config = {
   port: Number(process.env.PORT || 4001),
   databaseUrl:
@@ -23,4 +36,22 @@ export const config = {
   refreshTokenTtl: process.env.REFRESH_TOKEN_TTL || '7d',
   jwtPrivateKey: readKey(process.env.JWT_PRIVATE_KEY, process.env.JWT_PRIVATE_KEY_PATH),
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
+
+  // SSO Configuration
+  baseUrl: process.env.AUTH_SERVICE_BASE_URL || 'http://localhost:4001',
+  webAppUrl: process.env.WEB_APP_URL || 'http://localhost:3000',
+  
+  // SAML SP Configuration
+  samlSpEntityId: process.env.SAML_SP_ENTITY_ID || 'https://aivo.education/sp',
+  samlSpPrivateKey: readOptionalKey(
+    process.env.SAML_SP_PRIVATE_KEY,
+    process.env.SAML_SP_PRIVATE_KEY_PATH
+  ),
+  samlSpCertificate: readOptionalKey(
+    process.env.SAML_SP_CERTIFICATE,
+    process.env.SAML_SP_CERTIFICATE_PATH
+  ),
+
+  // SSO State Encryption
+  ssoStateEncryptionKey: process.env.SSO_STATE_ENCRYPTION_KEY || 'dev-key-change-in-production',
 };
