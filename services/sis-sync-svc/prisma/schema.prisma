@@ -1,0 +1,392 @@
+// This is your Prisma schema file for SIS Sync Service
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// SIS Provider Configuration
+// ============================================================================
+
+/// Supported SIS provider types
+enum SisProviderType {
+  CLEVER
+  CLASSLINK
+  ONEROSTER_API
+  ONEROSTER_CSV
+  CUSTOM
+}
+
+/// Status of a sync run
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  PARTIAL
+  FAILURE
+  CANCELLED
+}
+
+/// Entity types that can be synced
+enum SisEntityType {
+  SCHOOL
+  CLASS
+  TEACHER
+  STUDENT
+  ENROLLMENT
+}
+
+/// SIS Provider configuration for a tenant/district
+model SisProvider {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  
+  /// Type of SIS provider (Clever, ClassLink, OneRoster, etc.)
+  providerType SisProviderType @map("provider_type")
+  
+  /// Display name for this integration
+  name      String
+  
+  /// Provider-specific configuration (encrypted at rest)
+  /// For Clever: { clientId, clientSecret, districtId }
+  /// For ClassLink: { clientId, clientSecret, tenantId }
+  /// For OneRoster API: { baseUrl, clientId, clientSecret }
+  /// For OneRoster CSV: { sftpHost, sftpUser, sftpKeyPath, remotePath }
+  configJson String @map("config_json") @db.Text
+  
+  /// Whether this provider is currently enabled
+  enabled   Boolean @default(true)
+  
+  /// Last successful sync timestamp
+  lastSyncAt DateTime? @map("last_sync_at")
+  
+  /// Cron expression for scheduled syncs (e.g., "0 2 * * *" for 2 AM daily)
+  syncSchedule String? @map("sync_schedule")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  syncRuns    SisSyncRun[]
+  rawSchools  SisRawSchool[]
+  rawClasses  SisRawClass[]
+  rawUsers    SisRawUser[]
+  rawEnrollments SisRawEnrollment[]
+  fieldMappings SisFieldMapping[]
+  
+  @@unique([tenantId, providerType])
+  @@index([tenantId])
+  @@index([enabled])
+  @@map("sis_providers")
+}
+
+/// Record of each sync run for audit and debugging
+model SisSyncRun {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  providerId String   @map("provider_id")
+  
+  /// Current status of the sync run
+  status     SyncStatus @default(PENDING)
+  
+  /// When the sync started
+  startedAt  DateTime @default(now()) @map("started_at")
+  
+  /// When the sync completed (success or failure)
+  completedAt DateTime? @map("completed_at")
+  
+  /// Statistics about the sync run
+  /// { schools: { created: 5, updated: 10, deactivated: 2 }, ... }
+  statsJson  String?  @map("stats_json") @db.Text
+  
+  /// Error message if the sync failed
+  errorMessage String? @map("error_message") @db.Text
+  
+  /// Detailed error log for debugging
+  errorLog   String?  @map("error_log") @db.Text
+  
+  /// Who triggered the sync (null for scheduled syncs)
+  triggeredBy String? @map("triggered_by")
+  
+  /// Whether this was a manual or scheduled sync
+  isManual   Boolean  @default(false) @map("is_manual")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  provider   SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("sis_sync_runs")
+}
+
+// ============================================================================
+// Staging Tables for Raw SIS Data
+// These tables hold the raw data from SIS providers before transformation
+// ============================================================================
+
+/// Raw school data from SIS provider
+model SisRawSchool {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  providerId String   @map("provider_id")
+  
+  /// External ID from the SIS provider (sourcedId in OneRoster)
+  externalId String   @map("external_id")
+  
+  /// Raw JSON data from the provider
+  rawJson    String   @map("raw_json") @db.Text
+  
+  /// Parsed/normalized fields for matching
+  name       String?
+  schoolNumber String? @map("school_number")
+  
+  /// Whether this record has been processed in the current sync
+  processed  Boolean  @default(false)
+  
+  /// Reference to the Aivo School entity after sync
+  aivoSchoolId String? @map("aivo_school_id")
+  
+  /// Last sync run that updated this record
+  lastSyncRunId String? @map("last_sync_run_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  provider   SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([providerId, externalId])
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([processed])
+  @@map("sis_raw_schools")
+}
+
+/// Raw class/section data from SIS provider
+model SisRawClass {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  providerId String   @map("provider_id")
+  
+  /// External ID from the SIS provider
+  externalId String   @map("external_id")
+  
+  /// External ID of the parent school
+  schoolExternalId String? @map("school_external_id")
+  
+  /// Raw JSON data from the provider
+  rawJson    String   @map("raw_json") @db.Text
+  
+  /// Parsed/normalized fields
+  name       String?
+  courseCode String?  @map("course_code")
+  grade      String?
+  subject    String?
+  
+  /// Term/period information
+  termStart  DateTime? @map("term_start")
+  termEnd    DateTime? @map("term_end")
+  
+  /// Whether this record has been processed
+  processed  Boolean  @default(false)
+  
+  /// Reference to the Aivo Classroom entity after sync
+  aivoClassroomId String? @map("aivo_classroom_id")
+  
+  lastSyncRunId String? @map("last_sync_run_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  provider   SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([providerId, externalId])
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([schoolExternalId])
+  @@index([processed])
+  @@map("sis_raw_classes")
+}
+
+/// Raw user data from SIS provider (teachers, students, admins)
+model SisRawUser {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  providerId String   @map("provider_id")
+  
+  /// External ID from the SIS provider
+  externalId String   @map("external_id")
+  
+  /// Raw JSON data from the provider
+  rawJson    String   @map("raw_json") @db.Text
+  
+  /// User role in the SIS (teacher, student, administrator)
+  sisRole    String   @map("sis_role")
+  
+  /// Parsed/normalized fields for matching
+  email      String?
+  firstName  String?  @map("first_name")
+  lastName   String?  @map("last_name")
+  username   String?
+  studentNumber String? @map("student_number")
+  
+  /// Grade level (for students)
+  grade      String?
+  
+  /// Whether this record has been processed
+  processed  Boolean  @default(false)
+  
+  /// Reference to the Aivo User entity after sync
+  aivoUserId String?  @map("aivo_user_id")
+  
+  lastSyncRunId String? @map("last_sync_run_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  provider   SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([providerId, externalId])
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([email])
+  @@index([sisRole])
+  @@index([processed])
+  @@map("sis_raw_users")
+}
+
+/// Raw enrollment data (student/teacher to class assignments)
+model SisRawEnrollment {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  providerId String   @map("provider_id")
+  
+  /// External ID from the SIS provider (if available)
+  externalId String?  @map("external_id")
+  
+  /// External ID of the user being enrolled
+  userExternalId String @map("user_external_id")
+  
+  /// External ID of the class
+  classExternalId String @map("class_external_id")
+  
+  /// Role in the enrollment (student, teacher)
+  role       String
+  
+  /// Raw JSON data from the provider
+  rawJson    String   @map("raw_json") @db.Text
+  
+  /// Whether this enrollment is primary (for teachers with multiple sections)
+  isPrimary  Boolean  @default(true) @map("is_primary")
+  
+  /// Start/end dates for the enrollment
+  startDate  DateTime? @map("start_date")
+  endDate    DateTime? @map("end_date")
+  
+  /// Whether this record has been processed
+  processed  Boolean  @default(false)
+  
+  lastSyncRunId String? @map("last_sync_run_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  provider   SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([providerId, userExternalId, classExternalId])
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([userExternalId])
+  @@index([classExternalId])
+  @@index([processed])
+  @@map("sis_raw_enrollments")
+}
+
+// ============================================================================
+// Field Mapping Configuration
+// Allows districts to customize how SIS fields map to Aivo fields
+// ============================================================================
+
+/// Custom field mapping for a provider
+model SisFieldMapping {
+  id         String   @id @default(cuid())
+  providerId String   @map("provider_id")
+  
+  /// Entity type this mapping applies to
+  entityType SisEntityType @map("entity_type")
+  
+  /// Source field path in the raw JSON (e.g., "data.demographics.grade")
+  sourceField String  @map("source_field")
+  
+  /// Target Aivo field name
+  targetField String  @map("target_field")
+  
+  /// Optional transformation function name
+  transformFn String? @map("transform_fn")
+  
+  /// Whether this mapping is active
+  enabled    Boolean  @default(true)
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  provider   SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([providerId, entityType, targetField])
+  @@index([providerId])
+  @@map("sis_field_mappings")
+}
+
+// ============================================================================
+// Sync Queue for Processing
+// ============================================================================
+
+/// Queue for pending sync operations
+model SisSyncQueue {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  providerId String   @map("provider_id")
+  
+  /// Entity type to sync
+  entityType SisEntityType @map("entity_type")
+  
+  /// Operation type (upsert, deactivate)
+  operation  String
+  
+  /// Payload for the operation
+  payload    String   @db.Text
+  
+  /// Number of retry attempts
+  attempts   Int      @default(0)
+  
+  /// Last error message
+  lastError  String?  @map("last_error") @db.Text
+  
+  /// When to process this item (for retries with backoff)
+  processAt  DateTime @default(now()) @map("process_at")
+  
+  /// Reference to the sync run
+  syncRunId  String   @map("sync_run_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([processAt])
+  @@index([syncRunId])
+  @@map("sis_sync_queue")
+}

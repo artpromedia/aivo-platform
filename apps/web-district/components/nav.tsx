@@ -12,6 +12,8 @@ const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/schools', label: 'Schools' },
   { href: '/privacy', label: 'Privacy & Consent' },
+  { href: '/integrations/sis', label: 'SIS Integration' },
+  { href: '/settings/sso', label: 'SSO Settings' },
 ];
 
 export function Nav() {
