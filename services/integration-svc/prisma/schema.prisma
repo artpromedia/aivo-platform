@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Supported webhook event types that partners can subscribe to
+enum WebhookEventType {
+  // Session events
+  SESSION_STARTED
+  SESSION_COMPLETED
+  SESSION_ABANDONED
+
+  // Assessment events
+  BASELINE_STARTED
+  BASELINE_COMPLETED
+  ASSESSMENT_COMPLETED
+
+  // Learning events
+  SKILL_MASTERY_UPDATED
+  RECOMMENDATION_CREATED
+  ACTIVITY_COMPLETED
+
+  // Engagement events
+  STREAK_MILESTONE
+  ACHIEVEMENT_UNLOCKED
+
+  // Administrative events
+  LEARNER_ENROLLED
+  LEARNER_UNENROLLED
+
+  @@map("webhook_event_type")
+}
+
+/// Status of webhook delivery attempts
+enum WebhookDeliveryStatus {
+  PENDING            // Queued for delivery
+  IN_PROGRESS        // Currently being delivered
+  SUCCESS            // Delivered successfully (2xx response)
+  FAILED             // Temporary failure, will retry
+  PERMANENT_FAILURE  // Max retries exceeded or non-retryable error
+
+  @@map("webhook_delivery_status")
+}
+
+/// Status of API keys
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+
+  @@map("api_key_status")
+}
+
+/// Scopes that can be granted to API keys
+enum ApiScope {
+  // Read scopes
+  READ_LEARNER_PROGRESS    // Can read learner progress data
+  READ_SESSION_DATA        // Can read session metadata
+  READ_ANALYTICS           // Can read analytics/reports
+
+  // Write scopes
+  WRITE_EXTERNAL_EVENTS    // Can push external learning events
+  WRITE_ENROLLMENTS        // Can manage enrollments
+
+  // Webhook scopes
+  MANAGE_WEBHOOKS          // Can create/update/delete webhooks
+
+  @@map("api_scope")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WEBHOOK ENDPOINTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Webhook endpoint configuration for a tenant
+/// Partners register these to receive real-time event notifications
+model WebhookEndpoint {
+  id             String             @id @default(uuid()) @db.Uuid
+  tenantId       String             @db.Uuid
+  name           String             /// Human-readable name for the endpoint
+  description    String?            /// Optional description
+  url            String             /// Target URL for webhook delivery
+  secretKeyRef   String             /// KMS reference or encrypted secret for signing
+  enabled        Boolean            @default(true)
+  eventTypes     WebhookEventType[] /// Events this endpoint subscribes to
+  
+  /// Optional filters to narrow down events
+  filterJson     Json?              /// e.g., { "subjects": ["MATH"], "grades": ["G3_5"] }
+  
+  /// Metadata
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  createdBy      String             @db.Uuid  /// User who created the endpoint
+  
+  /// Delivery tracking
+  lastDeliveryAt DateTime?          /// Last successful delivery
+  failureCount   Int                @default(0) /// Consecutive failures
+  disabledAt     DateTime?          /// Auto-disabled after too many failures
+  disabledReason String?
+  
+  /// Relations
+  deliveries     WebhookDelivery[]
+  attempts       WebhookDeliveryAttempt[]
+
+  @@index([tenantId])
+  @@index([tenantId, enabled])
+  @@index([eventTypes])
+  @@map("webhook_endpoints")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WEBHOOK DELIVERIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Individual webhook delivery attempt record
+/// Tracks the full lifecycle of delivering an event to an endpoint
+model WebhookDelivery {
+  id              String                @id @default(uuid()) @db.Uuid
+  webhookId       String                @db.Uuid
+  eventType       WebhookEventType
+  eventId         String                @db.Uuid  /// Unique ID for this event (for idempotency)
+  
+  /// Payload
+  payloadJson     Json                  /// The JSON payload being delivered
+  
+  /// Delivery status
+  status          WebhookDeliveryStatus @default(PENDING)
+  attemptCount    Int                   @default(0)
+  maxAttempts     Int                   @default(5)
+  
+  /// Timing
+  createdAt       DateTime              @default(now())
+  scheduledAt     DateTime              @default(now()) /// When next attempt should occur
+  firstAttemptAt  DateTime?
+  lastAttemptAt   DateTime?
+  completedAt     DateTime?
+  
+  /// Response tracking
+  lastStatusCode  Int?
+  lastErrorMessage String?
+  responseTimeMs   Int?
+  
+  /// Relations
+  webhook         WebhookEndpoint       @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  attempts        WebhookDeliveryAttempt[]
+
+  @@index([webhookId])
+  @@index([status, scheduledAt])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("webhook_deliveries")
+}
+
+/// Individual delivery attempt log
+/// Keeps detailed record of each HTTP request made
+model WebhookDeliveryAttempt {
+  id              String    @id @default(uuid()) @db.Uuid
+  deliveryId      String?   @db.Uuid
+  endpointId      String?   @db.Uuid
+  attemptNumber   Int?
+  
+  /// Event details (for standalone function compatibility)
+  eventType       WebhookEventType?
+  eventId         String?   @db.Uuid
+  payload         Json?     /// The JSON payload being delivered
+  
+  /// Status tracking
+  status          String    @default("PENDING")
+  retryCount      Int       @default(0)
+  nextRetryAt     DateTime?
+  
+  /// Request details
+  requestedAt     DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  requestHeaders  Json?     /// Headers sent (excluding secret)
+  
+  /// Response details
+  responseStatus  Int?
+  responseBody    String?   /// First 1KB of response for debugging
+  responseTimeMs  Int?
+  deliveredAt     DateTime?
+  
+  /// Error details
+  errorType       String?   /// TIMEOUT, CONNECTION_ERROR, INVALID_RESPONSE, etc.
+  errorMessage    String?
+  
+  /// Relations
+  delivery        WebhookDelivery?  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  endpoint        WebhookEndpoint?  @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+  @@index([endpointId])
+  @@index([status])
+  @@map("webhook_delivery_attempts")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// API KEYS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// API key for external partner access
+/// Supports both simple API keys and OAuth client credentials
+model ApiKey {
+  id              String        @id @default(uuid()) @db.Uuid
+  tenantId        String        @db.Uuid
+  name            String        /// Human-readable name
+  description     String?
+  
+  /// Key details
+  keyPrefix       String        /// First 8 chars for identification (e.g., "aivo_pk_")
+  keyHash         String        @unique /// SHA-256 hash of the full key
+  
+  /// OAuth client credentials (optional)
+  clientId        String?       @unique /// For OAuth2 client credentials flow
+  clientSecretHash String?      /// bcrypt hash of client secret
+  
+  /// Permissions
+  scopes          ApiScope[]    /// What this key can access
+  
+  /// Rate limiting
+  rateLimitPerMinute Int        @default(60)
+  rateLimitPerDay    Int        @default(10000)
+  rateLimitPerHour   Int        @default(1000)
+  
+  /// Status & lifecycle
+  status          ApiKeyStatus  @default(ACTIVE)
+  expiresAt       DateTime?     /// Optional expiration
+  lastUsedAt      DateTime?
+  usageCount      Int           @default(0)
+  
+  /// Metadata
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       String        @db.Uuid
+  revokedAt       DateTime?
+  revokedBy       String?       @db.Uuid
+  revokeReason    String?
+  revocationReason String?
+  
+  /// IP restrictions (optional)
+  allowedIps      String[]      /// Empty = allow all
+  
+  /// Usage logs relation
+  usageLogs       ApiKeyUsageLog[]
+
+  @@index([tenantId])
+  @@index([keyPrefix])
+  @@index([keyHash])
+  @@index([clientId])
+  @@index([status])
+  @@map("api_keys")
+}
+
+/// API key usage log for auditing
+model ApiKeyUsageLog {
+  id            String    @id @default(uuid()) @db.Uuid
+  apiKeyId      String    @db.Uuid
+  
+  /// Request details
+  endpoint      String    /// API endpoint called
+  method        String    /// HTTP method
+  statusCode    Int
+  responseTimeMs Int
+  
+  /// Context
+  ipAddress     String?
+  userAgent     String?
+  
+  /// Timestamp
+  createdAt     DateTime  @default(now())
+  
+  /// Relations
+  apiKey        ApiKey    @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId])
+  @@index([createdAt])
+  @@map("api_key_usage_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXTERNAL EVENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// External learning events pushed by partners
+/// These feed into analytics and can influence recommendations
+model ExternalLearningEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @db.Uuid
+  learnerId       String    @db.Uuid
+  
+  /// Event details
+  source          String    /// Partner identifier (e.g., "math-fluency-app")
+  activityType    String    /// Type of activity (e.g., "game", "video", "quiz")
+  subject         String?   /// Subject area if applicable
+  topic           String?   /// Specific topic if available
+  
+  /// Metrics
+  durationMinutes Int?
+  score           Float?    /// Normalized 0-100 score if applicable
+  completed       Boolean   @default(true)
+  
+  /// Raw data from partner
+  metadataJson    Json?     /// Additional partner-specific data
+  
+  /// Tracking
+  apiKeyId        String    @db.Uuid  /// Which API key submitted this
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime? /// When it was processed by analytics
+  
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([tenantId, learnerId])
+  @@index([createdAt])
+  @@index([source])
+  @@map("external_learning_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INTEGRATION SETTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tenant-level integration settings
+/// Controls what data can be exposed via public APIs
+model IntegrationSettings {
+  id                      String    @id @default(uuid()) @db.Uuid
+  tenantId                String    @unique @db.Uuid
+  
+  /// Data sharing controls
+  allowLearnerProgress    Boolean   @default(false) /// Allow reading learner progress
+  allowSessionData        Boolean   @default(false) /// Allow reading session metadata
+  allowAnalytics          Boolean   @default(false) /// Allow reading analytics
+  allowExternalEvents     Boolean   @default(false) /// Allow pushing external events
+  
+  /// Privacy settings
+  excludePiiFromWebhooks  Boolean   @default(true)  /// Strip PII from webhook payloads
+  anonymizeLearnerId      Boolean   @default(false) /// Use hashed IDs in external APIs
+  
+  /// Webhook settings
+  maxWebhookEndpoints     Int       @default(10)
+  webhookRetryEnabled     Boolean   @default(true)
+  
+  /// API key settings
+  maxApiKeys              Int       @default(5)
+  defaultKeyExpireDays    Int?      /// Null = no expiration
+  
+  /// Metadata
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@map("integration_settings")
+}

@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+dist/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Prisma
+prisma/migrations/*_*/migration.sql
+
+# Test
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db

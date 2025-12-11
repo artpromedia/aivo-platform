@@ -1,7 +1,17 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { AlertTriangle, Check, Copy, Eye, EyeOff, RefreshCw, Shield, Upload, X } from 'lucide-react';
+import { useState, useCallback, useEffect, type ChangeEvent } from 'react';
+
+// Simple icon components (replace with actual icons when lucide-react is added)
+const AlertTriangle = () => <span>⚠️</span>;
+const Check = () => <span>✓</span>;
+const Copy = () => <span>📋</span>;
+const Eye = () => <span>👁️</span>;
+const EyeOff = () => <span>🔒</span>;
+const RefreshCw = () => <span>🔄</span>;
+const Shield = () => <span>🛡️</span>;
+const Upload = () => <span>📤</span>;
+const X = () => <span>✕</span>;
 
 // ============================================================================
 // TYPES
@@ -52,12 +62,12 @@ interface SsoConfigPageProps {
 // MOCK API (replace with actual API calls)
 // ============================================================================
 
-async function fetchIdpConfig(tenantId: string): Promise<IdpConfig | null> {
+async function fetchIdpConfig(_tenantId: string): Promise<IdpConfig | null> {
   // Mock implementation
   return null;
 }
 
-async function fetchTenantSsoSettings(tenantId: string): Promise<TenantSsoSettings> {
+async function fetchTenantSsoSettings(_tenantId: string): Promise<TenantSsoSettings> {
   return {
     ssoEnabled: false,
     ssoRequired: false,
@@ -65,16 +75,16 @@ async function fetchTenantSsoSettings(tenantId: string): Promise<TenantSsoSettin
   };
 }
 
-async function saveIdpConfig(tenantId: string, config: Partial<IdpConfig>): Promise<IdpConfig> {
+async function saveIdpConfig(_tenantId: string, config: Partial<IdpConfig>): Promise<IdpConfig> {
   // Mock implementation
   return config as IdpConfig;
 }
 
-async function saveTenantSsoSettings(tenantId: string, settings: TenantSsoSettings): Promise<void> {
+async function saveTenantSsoSettings(_tenantId: string, _settings: TenantSsoSettings): Promise<void> {
   // Mock implementation
 }
 
-async function testSsoConnection(tenantId: string): Promise<{ success: boolean; message: string }> {
+async function testSsoConnection(_tenantId: string): Promise<{ success: boolean; message: string }> {
   return { success: true, message: 'Connection successful' };
 }
 
@@ -179,7 +189,7 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
   }, []);
 
   // Parse SAML metadata
-  const handleMetadataUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMetadataUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 

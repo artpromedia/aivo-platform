@@ -116,21 +116,38 @@ async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  // Merge headers if provided
+  if (options.headers) {
+    const optHeaders = options.headers;
+    if (optHeaders instanceof Headers) {
+      optHeaders.forEach((value, key) => {
+        (headers as Record<string, string>)[key] = value;
+      });
+    } else if (Array.isArray(optHeaders)) {
+      for (const [key, value] of optHeaders) {
+        (headers as Record<string, string>)[key] = value;
+      }
+    } else {
+      Object.assign(headers, optHeaders);
+    }
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     credentials: 'include',
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `Request failed: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ error: 'Request failed' })) as { error?: string };
+    throw new Error(errorData.error ?? `Request failed: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 // ============================================================================
@@ -164,7 +181,7 @@ export async function saveIdpConfig(
  * Delete IdP configuration.
  */
 export async function deleteIdpConfig(): Promise<void> {
-  await apiRequest<void>('/api/sso/config', {
+  await apiRequest<Record<string, never>>('/api/sso/config', {
     method: 'DELETE',
   });
 }
