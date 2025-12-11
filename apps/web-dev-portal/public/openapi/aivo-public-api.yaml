@@ -1,0 +1,684 @@
+openapi: 3.1.0
+info:
+  title: Aivo Public API
+  description: |
+    The Aivo Public API provides access to learner progress, session data, and analytics 
+    for partner integrations. This API is available through the developer sandbox for testing 
+    and in production for approved partners.
+    
+    ## Authentication
+    
+    All API requests require an API key passed in the `X-API-Key` header:
+    
+    ```
+    X-API-Key: aivo_sk_live_xxx...
+    ```
+    
+    ## Rate Limits
+    
+    | Tier       | Requests/min | Requests/day |
+    |------------|--------------|--------------|
+    | Free       | 60           | 1,000        |
+    | Standard   | 300          | 10,000       |
+    | Enterprise | 1,000        | Unlimited    |
+    
+    ## Pagination
+    
+    List endpoints support pagination via `limit` and `offset` query parameters.
+    
+  version: 1.0.0
+  contact:
+    name: Aivo Developer Support
+    email: developers@aivo.dev
+    url: https://developers.aivo.dev
+
+servers:
+  - url: https://api.aivo.dev/v1
+    description: Production API
+  - url: https://sandbox.api.aivo.dev/v1
+    description: Sandbox API for testing
+
+tags:
+  - name: Learners
+    description: Access learner data and progress
+  - name: Classes
+    description: Class rosters and analytics
+  - name: Sessions
+    description: Learning session data
+  - name: Webhooks
+    description: Webhook configuration
+
+paths:
+  /learners:
+    get:
+      summary: List learners
+      description: Returns a paginated list of learners in your tenant.
+      operationId: listLearners
+      tags:
+        - Learners
+      security:
+        - ApiKey: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of learners to return
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of learners to skip
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          description: Search by name or external ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of learners
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Learner'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /learners/{learnerId}:
+    get:
+      summary: Get learner details
+      description: Returns detailed information about a specific learner.
+      operationId: getLearner
+      tags:
+        - Learners
+      security:
+        - ApiKey: []
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          description: Learner ID or external ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Learner details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearnerDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learners/{learnerId}/progress:
+    get:
+      summary: Get learner progress
+      description: Returns skill mastery and progress data for a learner.
+      operationId: getLearnerProgress
+      tags:
+        - Learners
+      security:
+        - ApiKey: []
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          description: Filter progress from this date (ISO 8601)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter progress until this date (ISO 8601)
+          schema:
+            type: string
+            format: date
+        - name: skillDomain
+          in: query
+          description: Filter by skill domain (e.g., math.algebra)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Learner progress data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  learnerId:
+                    type: string
+                  progress:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProgressRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learners/{learnerId}/sessions:
+    get:
+      summary: List learner sessions
+      description: Returns a paginated list of learning sessions for a learner.
+      operationId: getLearnerSessions
+      tags:
+        - Sessions
+      security:
+        - ApiKey: []
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /sessions/{sessionId}:
+    get:
+      summary: Get session details
+      description: Returns detailed information about a specific learning session.
+      operationId: getSession
+      tags:
+        - Sessions
+      security:
+        - ApiKey: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /classes:
+    get:
+      summary: List classes
+      description: Returns a paginated list of classes in your tenant.
+      operationId: listClasses
+      tags:
+        - Classes
+      security:
+        - ApiKey: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of classes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Class'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /classes/{classId}:
+    get:
+      summary: Get class details
+      description: Returns detailed information about a class including roster.
+      operationId: getClass
+      tags:
+        - Classes
+      security:
+        - ApiKey: []
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Class details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /classes/{classId}/analytics:
+    get:
+      summary: Get class analytics
+      description: Returns aggregated analytics for a class.
+      operationId: getClassAnalytics
+      tags:
+        - Classes
+      security:
+        - ApiKey: []
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Class analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassAnalytics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+  schemas:
+    Learner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Aivo internal learner ID
+        externalId:
+          type: string
+          description: Your system's learner ID
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        gradeLevel:
+          type: integer
+          minimum: 1
+          maximum: 12
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - externalId
+        - firstName
+        - lastName
+
+    LearnerDetail:
+      allOf:
+        - $ref: '#/components/schemas/Learner'
+        - type: object
+          properties:
+            enrollments:
+              type: array
+              items:
+                type: object
+                properties:
+                  classId:
+                    type: string
+                  classExternalId:
+                    type: string
+                  className:
+                    type: string
+                  role:
+                    type: string
+                  enrolledAt:
+                    type: string
+                    format: date-time
+
+    ProgressRecord:
+      type: object
+      properties:
+        skillDomain:
+          type: string
+          example: math.algebra
+        skillId:
+          type: string
+          example: math.algebra.linear_equations
+        masteryLevel:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Mastery level from 0 to 1
+        progressPct:
+          type: integer
+          minimum: 0
+          maximum: 100
+        lastPracticed:
+          type: string
+          format: date-time
+        recordedAt:
+          type: string
+          format: date-time
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionType:
+          type: string
+          enum: [practice, assessment, baseline, review]
+        skillDomain:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+        questionsAttempted:
+          type: integer
+        questionsCorrect:
+          type: integer
+        accuracyPct:
+          type: integer
+          minimum: 0
+          maximum: 100
+        xpEarned:
+          type: integer
+
+    SessionDetail:
+      allOf:
+        - $ref: '#/components/schemas/Session'
+        - type: object
+          properties:
+            learner:
+              type: object
+              properties:
+                id:
+                  type: string
+                externalId:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+            eventsJson:
+              type: array
+              items:
+                type: object
+              description: Raw session events (practice mode only)
+
+    Class:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+        name:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: integer
+        teacher:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        studentCount:
+          type: integer
+
+    ClassDetail:
+      allOf:
+        - $ref: '#/components/schemas/Class'
+        - type: object
+          properties:
+            teacher:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+            students:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  externalId:
+                    type: string
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+                  enrolledAt:
+                    type: string
+                    format: date-time
+
+    ClassAnalytics:
+      type: object
+      properties:
+        classId:
+          type: string
+        className:
+          type: string
+        period:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+        metrics:
+          type: object
+          properties:
+            totalStudents:
+              type: integer
+            totalSessions:
+              type: integer
+            totalMinutesPracticed:
+              type: integer
+            avgMinutesPerStudent:
+              type: integer
+            totalQuestionsAttempted:
+              type: integer
+            totalQuestionsCorrect:
+              type: integer
+            avgAccuracy:
+              type: integer
+        skillDomainProgress:
+          type: array
+          items:
+            type: object
+            properties:
+              skillDomain:
+                type: string
+              avgProgress:
+                type: integer
+        studentSummaries:
+          type: array
+          items:
+            type: object
+            properties:
+              learnerId:
+                type: string
+              firstName:
+                type: string
+              lastName:
+                type: string
+              sessions:
+                type: integer
+              minutesPracticed:
+                type: integer
+              questionsAttempted:
+                type: integer
+              accuracy:
+                type: integer
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        hasMore:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: unauthorized
+            message: Missing X-API-Key header
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: not_found
+            message: Resource not found
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: rate_limited
+            message: Rate limit exceeded. Try again in 60 seconds.
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per minute
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix timestamp when rate limit resets

@@ -1,0 +1,530 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// DISTRICT CONTRACT MODEL - PRISMA SCHEMA EXTENSION
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// This schema defines the B2B contract data model for district customers.
+// It provides:
+//   - Price books for standardized pricing
+//   - Contracts with negotiated terms
+//   - Line-item tracking for entitlements
+//   - Clear separation of tenant (usage) vs billing account (who pays)
+//
+// NOTE: This file is a reference/extension schema. Models should be merged
+// into the main schema.prisma for migration generation.
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Billing period for price book entries and contract line items
+enum ContractBillingPeriod {
+  ANNUAL      // Billed yearly
+  MULTI_YEAR  // Upfront multi-year (e.g., 3-year deal)
+  ONE_TIME    // One-time charge (setup fees, etc.)
+}
+
+/// Contract status lifecycle
+enum ContractStatus {
+  DRAFT       // Being negotiated, not yet active
+  PENDING     // Signed but awaiting start date
+  ACTIVE      // Currently in effect
+  SUSPENDED   // Temporarily suspended (e.g., payment issues)
+  EXPIRED     // Past end date, naturally ended
+  CANCELLED   // Terminated before end date
+  RENEWED     // Replaced by a new contract
+}
+
+/// Payment type for contracts
+enum ContractPaymentType {
+  INVOICE     // Net terms invoice (typical for districts)
+  CARD        // Credit card payment
+  HYBRID      // Mix of invoice and card
+  PO          // Purchase order based
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRODUCTS / SKUs
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Products represent purchasable items in the catalog. SKUs are modeled as
+// database rows for flexibility, but core SKUs are seeded on deployment.
+//
+
+model Product {
+  id              String        @id @default(uuid()) @db.Uuid
+  
+  /// Unique SKU identifier (e.g., "SEAT_K5", "ADDON_SEL")
+  sku             String        @unique
+  
+  /// Human-readable product name
+  name            String
+  
+  /// Product description
+  description     String?
+  
+  /// Product category for filtering/grouping
+  category        String        // e.g., "BASE", "SEAT", "ADDON"
+  
+  /// Whether this product is currently available
+  isActive        Boolean       @default(true)
+  
+  /// Unit of measure (e.g., "seat", "tenant", "module")
+  unitOfMeasure   String        @default("seat")
+  
+  /// Sort order for display
+  sortOrder       Int           @default(0)
+  
+  /// Metadata: features included, grade bands, module details
+  /// Example: { "gradeBands": ["K-5"], "modules": ["ELA", "MATH"] }
+  metadataJson    Json?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  priceBookEntries  PriceBookEntry[]
+  contractLineItems ContractLineItem[]
+  
+  @@index([category, isActive])
+  @@map("products")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRICE BOOKS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Price books define standard pricing for products. Multiple price books
+// support regional pricing, customer segments, or promotional pricing.
+//
+
+model PriceBook {
+  id            String        @id @default(uuid()) @db.Uuid
+  
+  /// Price book name (e.g., "US K-12 Standard 2025", "Texas State Contract")
+  name          String
+  
+  /// Description of this price book
+  description   String?
+  
+  /// Currency for all entries in this price book
+  currency      String        @default("USD") @db.VarChar(3)
+  
+  /// Whether this is the default price book for new contracts
+  isDefault     Boolean       @default(false)
+  
+  /// Whether this price book is currently active
+  isActive      Boolean       @default(true)
+  
+  /// Effective date - when this price book becomes valid
+  effectiveFrom DateTime      @default(now()) @db.Date
+  
+  /// Expiration date - when this price book expires (null = no expiry)
+  effectiveUntil DateTime?    @db.Date
+  
+  /// Metadata: region restrictions, customer segment, notes
+  metadataJson  Json?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  entries       PriceBookEntry[]
+  contracts     Contract[]
+  
+  @@index([isDefault, isActive])
+  @@map("price_books")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRICE BOOK ENTRIES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Individual pricing entries within a price book. Each entry defines the
+// list price for a specific SKU at a specific billing period.
+//
+
+model PriceBookEntry {
+  id              String                @id @default(uuid()) @db.Uuid
+  
+  /// Parent price book
+  priceBookId     String                @db.Uuid
+  
+  /// Product this entry prices
+  productId       String                @db.Uuid
+  
+  /// SKU (denormalized for query convenience)
+  sku             String
+  
+  /// Unit price (in major currency units, e.g., dollars not cents)
+  unitPrice       Decimal               @db.Decimal(12, 2)
+  
+  /// Billing period this price applies to
+  billingPeriod   ContractBillingPeriod @default(ANNUAL)
+  
+  /// Minimum quantity for this price (for tiered pricing)
+  minQuantity     Int                   @default(1)
+  
+  /// Maximum quantity for this price tier (null = unlimited)
+  maxQuantity     Int?
+  
+  /// Metadata: volume discounts, bundling rules, etc.
+  /// Example: { "volumeTiers": [{ "minSeats": 1000, "discountPct": 5 }] }
+  metadataJson    Json?
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  
+  // Relations
+  priceBook       PriceBook             @relation(fields: [priceBookId], references: [id], onDelete: Cascade)
+  product         Product               @relation(fields: [productId], references: [id])
+  
+  @@unique([priceBookId, sku, billingPeriod, minQuantity])
+  @@index([priceBookId])
+  @@index([sku])
+  @@map("price_book_entries")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DISTRICT BILLING ACCOUNTS (Extension)
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Extended billing account information specific to district customers.
+// Links to the existing BillingAccount model.
+//
+
+model DistrictBillingProfile {
+  id                    String        @id @default(uuid()) @db.Uuid
+  
+  /// Link to the base billing account
+  billingAccountId      String        @unique @db.Uuid
+  
+  /// Primary tenant this billing account serves
+  tenantId              String        @db.Uuid
+  
+  /// Billing contact name
+  billingContactName    String
+  
+  /// Billing contact email
+  billingContactEmail   String
+  
+  /// Billing contact phone
+  billingContactPhone   String?
+  
+  /// Billing address as structured JSON
+  /// { "line1": "...", "line2": "...", "city": "...", "state": "...", "zip": "...", "country": "..." }
+  billingAddressJson    Json
+  
+  /// Payment terms in days (e.g., Net 30 = 30)
+  paymentTermsDays      Int           @default(30)
+  
+  /// Tax exempt status
+  isTaxExempt           Boolean       @default(true)
+  
+  /// Tax exemption certificate number
+  taxExemptionNumber    String?
+  
+  /// Purchase order requirements
+  requiresPO            Boolean       @default(true)
+  
+  /// Credit limit in cents (for invoice-based billing)
+  creditLimitCents      Int?
+  
+  /// Metadata: additional district info, state contracts, etc.
+  metadataJson          Json?
+  
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  
+  // Relations
+  contracts             Contract[]
+  
+  @@index([tenantId])
+  @@map("district_billing_profiles")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACTS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Contracts represent formal agreements with district customers. They define
+// what products/seats are licensed, pricing terms, and contract duration.
+//
+
+model Contract {
+  id                    String                @id @default(uuid()) @db.Uuid
+  
+  /// District billing profile this contract belongs to
+  billingProfileId      String                @db.Uuid
+  
+  /// Tenant receiving entitlements from this contract
+  tenantId              String                @db.Uuid
+  
+  /// Human-readable contract number (e.g., "DST-2025-00042")
+  contractNumber        String                @unique
+  
+  /// Contract name/title
+  name                  String?
+  
+  /// Contract start date
+  startDate             DateTime              @db.Date
+  
+  /// Contract end date
+  endDate               DateTime              @db.Date
+  
+  /// Current contract status
+  status                ContractStatus        @default(DRAFT)
+  
+  /// Price book used for this contract
+  priceBookId           String                @db.Uuid
+  
+  /// Customer's purchase order number
+  poNumber              String?
+  
+  /// Payment type
+  paymentType           ContractPaymentType   @default(INVOICE)
+  
+  /// Total contract value in cents (calculated from line items)
+  totalValueCents       BigInt                @default(0)
+  
+  /// Currency
+  currency              String                @default("USD") @db.VarChar(3)
+  
+  /// Signed date
+  signedAt              DateTime?             @db.Timestamptz
+  
+  /// User who created the contract
+  createdBy             String?               @db.Uuid
+  
+  /// Auto-renewal settings
+  autoRenewal           Boolean               @default(false)
+  
+  /// Renewal notice days (days before end date to send renewal notice)
+  renewalNoticeDays     Int                   @default(90)
+  
+  /// Parent contract (for renewals/amendments)
+  parentContractId      String?               @db.Uuid
+  
+  /// Metadata: custom terms, legal notes, amendment history
+  /// Example: { "legalTerms": "...", "specialConditions": [...] }
+  metadataJson          Json?
+  
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  
+  // Relations
+  billingProfile        DistrictBillingProfile @relation(fields: [billingProfileId], references: [id])
+  priceBook             PriceBook              @relation(fields: [priceBookId], references: [id])
+  parentContract        Contract?              @relation("ContractRenewals", fields: [parentContractId], references: [id])
+  renewedContracts      Contract[]             @relation("ContractRenewals")
+  lineItems             ContractLineItem[]
+  invoiceSchedules      ContractInvoiceSchedule[]
+  entitlements          ContractEntitlement[]
+  
+  @@index([billingProfileId, status])
+  @@index([tenantId, status])
+  @@index([status, endDate])
+  @@index([contractNumber])
+  @@map("contracts")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT LINE ITEMS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Individual line items within a contract. Each line item represents a
+// specific product (SKU) with quantity, pricing, and any negotiated discounts.
+//
+
+model ContractLineItem {
+  id                  String                @id @default(uuid()) @db.Uuid
+  
+  /// Parent contract
+  contractId          String                @db.Uuid
+  
+  /// Product being purchased
+  productId           String                @db.Uuid
+  
+  /// SKU (denormalized)
+  sku                 String
+  
+  /// Line item description (can override product description)
+  description         String
+  
+  /// Billing period for this line item
+  billingPeriod       ContractBillingPeriod @default(ANNUAL)
+  
+  /// Committed quantity (seats, units, etc.)
+  quantityCommitted   Int
+  
+  /// Minimum quantity (for use-based billing)
+  quantityMinimum     Int?
+  
+  /// Maximum quantity (cap)
+  quantityMaximum     Int?
+  
+  /// List price per unit (from price book)
+  listPricePerUnit    Decimal               @db.Decimal(12, 2)
+  
+  /// Final negotiated price per unit
+  unitPrice           Decimal               @db.Decimal(12, 2)
+  
+  /// Discount percentage applied
+  discountPercent     Decimal?              @db.Decimal(5, 2)
+  
+  /// Discount reason (for audit trail)
+  discountReason      String?
+  
+  /// Total line item value in cents
+  totalValueCents     BigInt                @default(0)
+  
+  /// Start date (if different from contract start)
+  startDate           DateTime?             @db.Date
+  
+  /// End date (if different from contract end)
+  endDate             DateTime?             @db.Date
+  
+  /// Metadata: grade bands, school allocations, etc.
+  /// Example: { "gradeBands": ["K-5"], "schoolAllocations": { "school-uuid": 500 } }
+  metadataJson        Json?
+  
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  
+  // Relations
+  contract            Contract              @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  product             Product               @relation(fields: [productId], references: [id])
+  allocations         ContractAllocation[]
+  
+  @@index([contractId, sku])
+  @@index([sku])
+  @@map("contract_line_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT ALLOCATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Allocations distribute contract line items across schools within a district.
+// This enables tracking seat usage and entitlements at the school level.
+//
+
+model ContractAllocation {
+  id                String              @id @default(uuid()) @db.Uuid
+  
+  /// Parent line item
+  lineItemId        String              @db.Uuid
+  
+  /// School receiving the allocation
+  schoolId          String              @db.Uuid
+  
+  /// Quantity allocated to this school
+  quantityAllocated Int
+  
+  /// Quantity currently used
+  quantityUsed      Int                 @default(0)
+  
+  /// Metadata: additional allocation details
+  metadataJson      Json?
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Relations
+  lineItem          ContractLineItem    @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+  
+  @@unique([lineItemId, schoolId])
+  @@index([schoolId])
+  @@map("contract_allocations")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT ENTITLEMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Entitlements represent the actual features/access granted by a contract.
+// These are the runtime permissions checked by the product.
+//
+
+model ContractEntitlement {
+  id              String        @id @default(uuid()) @db.Uuid
+  
+  /// Parent contract
+  contractId      String        @db.Uuid
+  
+  /// Tenant receiving the entitlement
+  tenantId        String        @db.Uuid
+  
+  /// Feature/module being entitled (e.g., "MODULE_SEL", "GRADE_K5")
+  featureKey      String
+  
+  /// Whether this entitlement is currently active
+  isActive        Boolean       @default(true)
+  
+  /// Quantity/limit (e.g., seat count)
+  quantity        Int?
+  
+  /// Effective start date
+  startDate       DateTime      @db.Date
+  
+  /// Effective end date
+  endDate         DateTime      @db.Date
+  
+  /// Metadata: feature-specific config
+  metadataJson    Json?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  contract        Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  
+  @@unique([contractId, featureKey])
+  @@index([tenantId, featureKey, isActive])
+  @@index([tenantId, endDate])
+  @@map("contract_entitlements")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT INVOICE SCHEDULE
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Defines the invoicing schedule for a contract. Supports various billing
+// patterns (annual upfront, quarterly, milestone-based, etc.).
+//
+
+model ContractInvoiceSchedule {
+  id                String          @id @default(uuid()) @db.Uuid
+  
+  /// Parent contract
+  contractId        String          @db.Uuid
+  
+  /// Scheduled invoice date
+  scheduledDate     DateTime        @db.Date
+  
+  /// Invoice amount in cents
+  amountCents       BigInt
+  
+  /// Description/milestone name
+  description       String?
+  
+  /// Invoice ID (once generated)
+  invoiceId         String?         @db.Uuid
+  
+  /// Status of this schedule item
+  status            String          @default("PENDING") // PENDING, INVOICED, PAID, CANCELLED
+  
+  /// Metadata: period covered, line item breakdown, etc.
+  metadataJson      Json?
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  // Relations
+  contract          Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  
+  @@index([contractId, status])
+  @@index([scheduledDate, status])
+  @@map("contract_invoice_schedules")
+}

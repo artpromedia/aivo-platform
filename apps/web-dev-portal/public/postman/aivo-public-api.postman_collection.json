@@ -1,0 +1,366 @@
+{
+  "info": {
+    "_postman_id": "aivo-public-api-collection",
+    "name": "Aivo Public API",
+    "description": "Collection for testing Aivo Public API endpoints in sandbox environment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://sandbox.api.aivo.dev/v1",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "aivo_sk_test_YOUR_KEY_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Learners",
+      "item": [
+        {
+          "name": "List Learners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/learners?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["learners"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns a paginated list of learners in your tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Learner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/learners/:learnerId",
+              "host": ["{{base_url}}"],
+              "path": ["learners", ":learnerId"],
+              "variable": [
+                {
+                  "key": "learnerId",
+                  "value": "student-1"
+                }
+              ]
+            },
+            "description": "Returns detailed information about a specific learner."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Learner Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/learners/:learnerId/progress",
+              "host": ["{{base_url}}"],
+              "path": ["learners", ":learnerId", "progress"],
+              "variable": [
+                {
+                  "key": "learnerId",
+                  "value": "student-1"
+                }
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                },
+                {
+                  "key": "skillDomain",
+                  "value": "math.algebra",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns skill mastery and progress data for a learner."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Learner Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/learners/:learnerId/sessions?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["learners", ":learnerId", "sessions"],
+              "variable": [
+                {
+                  "key": "learnerId",
+                  "value": "student-1"
+                }
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns a paginated list of learning sessions for a learner."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Classes",
+      "item": [
+        {
+          "name": "List Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/classes?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["classes"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Returns a paginated list of classes in your tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Class",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/classes/:classId",
+              "host": ["{{base_url}}"],
+              "path": ["classes", ":classId"],
+              "variable": [
+                {
+                  "key": "classId",
+                  "value": "class-1"
+                }
+              ]
+            },
+            "description": "Returns detailed information about a class including roster."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Class Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/classes/:classId/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["classes", ":classId", "analytics"],
+              "variable": [
+                {
+                  "key": "classId",
+                  "value": "class-1"
+                }
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns aggregated analytics for a class."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Get Session Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sessions/:sessionId",
+              "host": ["{{base_url}}"],
+              "path": ["sessions", ":sessionId"],
+              "variable": [
+                {
+                  "key": "sessionId",
+                  "value": "session-123"
+                }
+              ]
+            },
+            "description": "Returns detailed information about a specific learning session."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Send Test Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantCode\": \"{{tenant_code}}\",\n  \"eventType\": \"SESSION_COMPLETED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/../webhooks/test",
+              "host": ["{{base_url}}"],
+              "path": ["..", "webhooks", "test"]
+            },
+            "description": "Sends a test webhook to your configured endpoints."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sample Payloads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/../webhooks/samples",
+              "host": ["{{base_url}}"],
+              "path": ["..", "webhooks", "samples"]
+            },
+            "description": "Returns sample webhook payloads for all event types."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Webhook Signature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": \"{\\\"test\\\":true}\",\n  \"signature\": \"t=1234567890,v1=abc123...\",\n  \"secret\": \"whsec_your_webhook_secret\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/../webhooks/verify",
+              "host": ["{{base_url}}"],
+              "path": ["..", "webhooks", "verify"]
+            },
+            "description": "Test webhook signature verification."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Response status is successful\", function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+          "});",
+          "",
+          "pm.test(\"Response is JSON\", function () {",
+          "    pm.response.to.have.header(\"Content-Type\", /application\\/json/);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

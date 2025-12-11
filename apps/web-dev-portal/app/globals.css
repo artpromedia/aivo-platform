@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 23, 23, 23;
+  --background-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+/* Syntax highlighting overrides */
+.code-block {
+  @apply rounded-lg overflow-hidden;
+}
+
+.code-block pre {
+  @apply !m-0 !rounded-none;
+}
+
+/* Swagger UI customizations */
+.swagger-ui .topbar {
+  @apply hidden;
+}
+
+.swagger-ui .info {
+  @apply mb-8;
+}
+
+/* Sidebar navigation */
+.nav-link {
+  @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors;
+}
+
+.nav-link.active {
+  @apply bg-portal-primary/10 text-portal-primary font-medium;
+}
+
+/* API endpoint badges */
+.method-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase;
+}
+
+.method-get {
+  @apply bg-emerald-100 text-emerald-800;
+}
+
+.method-post {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.method-put {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.method-delete {
+  @apply bg-red-100 text-red-800;
+}
+
+.method-patch {
+  @apply bg-purple-100 text-purple-800;
+}

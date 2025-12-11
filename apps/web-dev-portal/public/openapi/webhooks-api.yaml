@@ -1,0 +1,451 @@
+openapi: 3.1.0
+info:
+  title: Aivo Webhooks API
+  description: |
+    Aivo sends webhook notifications to your configured endpoints when events occur 
+    in the platform. This document describes the webhook payload formats and 
+    verification procedures.
+    
+    ## Webhook Security
+    
+    All webhooks are signed using HMAC-SHA256. Verify the signature using your 
+    webhook secret:
+    
+    ```javascript
+    const crypto = require('crypto');
+    
+    function verifyWebhook(payload, signature, secret) {
+      const parts = signature.split(',');
+      const timestamp = parts.find(p => p.startsWith('t=')).split('=')[1];
+      const providedSig = parts.find(p => p.startsWith('v1=')).split('=')[1];
+      
+      const expectedSig = crypto
+        .createHmac('sha256', secret)
+        .update(`${timestamp}.${payload}`)
+        .digest('hex');
+      
+      return crypto.timingSafeEqual(
+        Buffer.from(providedSig),
+        Buffer.from(expectedSig)
+      );
+    }
+    ```
+    
+    ## Retry Policy
+    
+    Failed webhook deliveries are retried with exponential backoff:
+    - Attempt 1: Immediate
+    - Attempt 2: 1 minute
+    - Attempt 3: 5 minutes
+    - Attempt 4: 30 minutes
+    - Attempt 5: 2 hours
+    
+    After 5 failed attempts, the delivery is marked as permanently failed.
+    
+  version: 1.0.0
+  contact:
+    name: Aivo Developer Support
+    email: developers@aivo.dev
+
+webhooks:
+  session_completed:
+    post:
+      summary: Session Completed
+      description: Fired when a learner completes a practice session.
+      operationId: sessionCompleted
+      tags:
+        - Learning Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCompletedEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+
+  baseline_completed:
+    post:
+      summary: Baseline Assessment Completed
+      description: Fired when a learner completes their initial baseline assessment.
+      operationId: baselineCompleted
+      tags:
+        - Assessment Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaselineCompletedEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+
+  skill_mastered:
+    post:
+      summary: Skill Mastered
+      description: Fired when a learner achieves mastery (>90%) on a skill.
+      operationId: skillMastered
+      tags:
+        - Learning Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillMasteredEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+
+  recommendation_created:
+    post:
+      summary: Recommendation Created
+      description: Fired when the AI creates a new learning recommendation.
+      operationId: recommendationCreated
+      tags:
+        - AI Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationCreatedEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+
+  goal_achieved:
+    post:
+      summary: Goal Achieved
+      description: Fired when a learner achieves a learning goal.
+      operationId: goalAchieved
+      tags:
+        - Learning Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalAchievedEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+
+  assignment_completed:
+    post:
+      summary: Assignment Completed
+      description: Fired when a learner completes a teacher-assigned task.
+      operationId: assignmentCompleted
+      tags:
+        - Assignment Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCompletedEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+
+components:
+  schemas:
+    WebhookBase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique webhook delivery ID
+        type:
+          type: string
+          description: Event type
+        timestamp:
+          type: string
+          format: date-time
+          description: When the event occurred
+        tenantCode:
+          type: string
+          description: Your tenant identifier
+      required:
+        - id
+        - type
+        - timestamp
+        - tenantCode
+
+    SessionCompletedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [SESSION_COMPLETED]
+            data:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                learnerExternalId:
+                  type: string
+                  description: Your system's learner ID
+                sessionType:
+                  type: string
+                  enum: [practice, assessment, baseline, review]
+                skillDomain:
+                  type: string
+                  example: math.algebra
+                startedAt:
+                  type: string
+                  format: date-time
+                completedAt:
+                  type: string
+                  format: date-time
+                durationSeconds:
+                  type: integer
+                questionsAttempted:
+                  type: integer
+                questionsCorrect:
+                  type: integer
+                accuracyPct:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                xpEarned:
+                  type: integer
+              required:
+                - sessionId
+                - learnerId
+                - sessionType
+                - completedAt
+
+    BaselineCompletedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [BASELINE_COMPLETED]
+            data:
+              type: object
+              properties:
+                baselineId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                learnerExternalId:
+                  type: string
+                subject:
+                  type: string
+                  enum: [math, reading, science]
+                gradeLevel:
+                  type: integer
+                completedAt:
+                  type: string
+                  format: date-time
+                results:
+                  type: object
+                  properties:
+                    overallScore:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                    domainScores:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          domain:
+                            type: string
+                          score:
+                            type: integer
+                    recommendedStartingLevel:
+                      type: string
+              required:
+                - baselineId
+                - learnerId
+                - subject
+                - completedAt
+                - results
+
+    SkillMasteredEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [SKILL_MASTERED]
+            data:
+              type: object
+              properties:
+                learnerId:
+                  type: string
+                  format: uuid
+                learnerExternalId:
+                  type: string
+                skillId:
+                  type: string
+                  example: math.algebra.linear_equations
+                skillName:
+                  type: string
+                masteredAt:
+                  type: string
+                  format: date-time
+                masteryLevel:
+                  type: number
+                  format: float
+                  minimum: 0.9
+                  maximum: 1
+                timeToMastery:
+                  type: object
+                  properties:
+                    sessions:
+                      type: integer
+                    totalMinutes:
+                      type: integer
+                    questionsAnswered:
+                      type: integer
+              required:
+                - learnerId
+                - skillId
+                - masteredAt
+
+    RecommendationCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [RECOMMENDATION_CREATED]
+            data:
+              type: object
+              properties:
+                recommendationId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                learnerExternalId:
+                  type: string
+                recommendationType:
+                  type: string
+                  enum: [skill_practice, review, enrichment]
+                createdAt:
+                  type: string
+                  format: date-time
+                recommendation:
+                  type: object
+                  properties:
+                    skillId:
+                      type: string
+                    skillName:
+                      type: string
+                    reason:
+                      type: string
+                    suggestedMinutes:
+                      type: integer
+                    priority:
+                      type: string
+                      enum: [low, medium, high]
+              required:
+                - recommendationId
+                - learnerId
+                - recommendationType
+                - recommendation
+
+    GoalAchievedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [GOAL_ACHIEVED]
+            data:
+              type: object
+              properties:
+                goalId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                learnerExternalId:
+                  type: string
+                goalType:
+                  type: string
+                  enum: [weekly_minutes, daily_streak, skill_mastery, accuracy_target]
+                targetValue:
+                  type: number
+                achievedValue:
+                  type: number
+                achievedAt:
+                  type: string
+                  format: date-time
+                streak:
+                  type: integer
+                  description: Current streak count if applicable
+              required:
+                - goalId
+                - learnerId
+                - goalType
+                - achievedAt
+
+    AssignmentCompletedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [ASSIGNMENT_COMPLETED]
+            data:
+              type: object
+              properties:
+                assignmentId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                learnerExternalId:
+                  type: string
+                classId:
+                  type: string
+                  format: uuid
+                assignmentName:
+                  type: string
+                assignedBy:
+                  type: string
+                  description: Teacher email or ID
+                completedAt:
+                  type: string
+                  format: date-time
+                results:
+                  type: object
+                  properties:
+                    questionsAttempted:
+                      type: integer
+                    questionsCorrect:
+                      type: integer
+                    scorePct:
+                      type: integer
+                    timeSpentMinutes:
+                      type: integer
+              required:
+                - assignmentId
+                - learnerId
+                - completedAt
+                - results

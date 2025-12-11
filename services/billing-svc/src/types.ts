@@ -395,3 +395,9 @@ export function isParentPlan(planType: PlanType): boolean {
 export function isDistrictPlan(planType: PlanType): boolean {
   return planType === PlanType.DISTRICT_BASE || planType === PlanType.DISTRICT_ADDON;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DISTRICT CONTRACT TYPES (re-export from types/)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export * from './types/contract.types';

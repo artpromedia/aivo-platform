@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Partner & Organization Models
+// ============================================================================
+
+model Partner {
+  id              String          @id @default(uuid())
+  name            String
+  website         String?
+  contactName     String
+  contactEmail    String          @unique
+  contactRole     String?
+  status          PartnerStatus   @default(PENDING)
+  tier            String          @default("free") // 'free', 'standard', 'enterprise'
+  approvedAt      DateTime?
+  approvedBy      String?
+  approvalNotes   String?
+  rejectionReason String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relationships
+  applications    PartnerApplication[]
+  sandboxTenants  SandboxTenant[]
+
+  @@index([status])
+  @@index([contactEmail])
+  @@map("partners")
+}
+
+enum PartnerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model PartnerApplication {
+  id                String   @id @default(uuid())
+  partnerId         String
+  partner           Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  integrationType   String[] // ['api', 'webhooks', 'lti', 'sis', 'sso']
+  useCase           String
+  expectedVolume    String?
+  timeline          String?
+  reviewNotes       String?
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([partnerId])
+  @@map("partner_applications")
+}
+
+// ============================================================================
+// Sandbox Tenant Models
+// ============================================================================
+
+model SandboxTenant {
+  id              String   @id @default(uuid())
+  partnerId       String
+  partner         Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  name            String
+  tenantCode      String   @unique
+  webhookSecret   String
+  isActive        Boolean  @default(true)
+  lastResetAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  apiKeys           SandboxApiKey[]
+  webhookEndpoints  SandboxWebhookEndpoint[]
+  syntheticLearners SandboxSyntheticLearner[]
+  syntheticTeachers SandboxSyntheticTeacher[]
+  syntheticClasses  SandboxSyntheticClass[]
+  apiUsageLogs      SandboxApiUsageLog[]
+
+  @@index([partnerId])
+  @@index([tenantCode])
+  @@map("sandbox_tenants")
+}
+
+model SandboxApiKey {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          SandboxTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  keyHash         String   @unique
+  keyPrefix       String   // First 12 chars for display
+  scopes          String[] // ['read:learner_progress', 'read:session_data', etc.]
+  status          ApiKeyStatus @default(ACTIVE)
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+  revokedBy       String?
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  // Relationships
+  usageLogs       SandboxApiUsageLog[]
+
+  @@index([tenantId])
+  @@index([keyHash])
+  @@index([status])
+  @@map("sandbox_api_keys")
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+model SandboxWebhookEndpoint {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          SandboxTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  url             String
+  eventTypes      String[] // ['SESSION_COMPLETED', 'BASELINE_COMPLETED', etc.]
+  isEnabled       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  deliveries      SandboxWebhookDelivery[]
+
+  @@index([tenantId])
+  @@map("sandbox_webhook_endpoints")
+}
+
+model SandboxWebhookDelivery {
+  id              String   @id @default(uuid())
+  endpointId      String
+  endpoint        SandboxWebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  eventType       String
+  payloadJson     Json
+  status          DeliveryStatus @default(PENDING)
+  attempts        Int      @default(0)
+  lastAttemptAt   DateTime?
+  responseStatus  Int?
+  responseBody    String?
+  deliveredAt     DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([endpointId])
+  @@index([status])
+  @@map("sandbox_webhook_deliveries")
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  PERMANENT_FAILURE
+}
+
+// ============================================================================
+// Synthetic Data Models
+// ============================================================================
+
+model SandboxSyntheticLearner {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          SandboxTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  externalId      String
+  firstName       String
+  lastName        String
+  email           String
+  gradeLevel      Int
+  metadataJson    Json?
+
+  // Relationships
+  progress        SandboxSyntheticLearnerProgress[]
+  sessions        SandboxSyntheticSession[]
+  enrollments     SandboxSyntheticEnrollment[]
+
+  @@unique([tenantId, externalId])
+  @@index([tenantId])
+  @@map("sandbox_synthetic_learners")
+}
+
+model SandboxSyntheticTeacher {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          SandboxTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  externalId      String
+  firstName       String
+  lastName        String
+  email           String
+  role            String   @default("teacher")
+
+  // Relationships
+  classes         SandboxSyntheticClass[]
+
+  @@unique([tenantId, externalId])
+  @@index([tenantId])
+  @@map("sandbox_synthetic_teachers")
+}
+
+model SandboxSyntheticClass {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          SandboxTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  externalId      String
+  name            String
+  subject         String
+  gradeLevel      Int
+  teacherId       String?
+  teacher         SandboxSyntheticTeacher? @relation(fields: [teacherId], references: [id])
+
+  // Relationships
+  enrollments     SandboxSyntheticEnrollment[]
+
+  @@unique([tenantId, externalId])
+  @@index([tenantId])
+  @@map("sandbox_synthetic_classes")
+}
+
+model SandboxSyntheticEnrollment {
+  id              String   @id @default(uuid())
+  learnerId       String
+  learner         SandboxSyntheticLearner @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  classId         String
+  class           SandboxSyntheticClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  role            String   @default("student")
+  createdAt       DateTime @default(now())
+
+  @@unique([learnerId, classId])
+  @@index([learnerId])
+  @@index([classId])
+  @@map("sandbox_synthetic_enrollments")
+}
+
+model SandboxSyntheticLearnerProgress {
+  id              String   @id @default(uuid())
+  learnerId       String
+  learner         SandboxSyntheticLearner @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  skillDomain     String
+  skillId         String
+  masteryLevel    Float    @default(0)
+  progressPct     Int      @default(0)
+  lastPracticed   DateTime?
+  recordedAt      DateTime @default(now())
+
+  @@unique([learnerId, skillId])
+  @@index([learnerId])
+  @@map("sandbox_synthetic_learner_progress")
+}
+
+model SandboxSyntheticSession {
+  id                String   @id @default(uuid())
+  learnerId         String
+  learner           SandboxSyntheticLearner @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  sessionType       String
+  skillDomain       String
+  startedAt         DateTime
+  completedAt       DateTime?
+  durationSeconds   Int?
+  questionsAttempted Int     @default(0)
+  questionsCorrect  Int      @default(0)
+  accuracyPct       Int?
+  xpEarned          Int      @default(0)
+  eventsJson        Json?
+
+  @@index([learnerId])
+  @@index([startedAt])
+  @@map("sandbox_synthetic_sessions")
+}
+
+// ============================================================================
+// Usage & Analytics Models
+// ============================================================================
+
+model SandboxApiUsageLog {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          SandboxTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apiKeyId        String?
+  apiKey          SandboxApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  endpoint        String
+  method          String
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([apiKeyId])
+  @@index([createdAt])
+  @@index([endpoint])
+  @@map("sandbox_api_usage_logs")
+}

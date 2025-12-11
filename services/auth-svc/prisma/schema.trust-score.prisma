@@ -1,0 +1,198 @@
+// Trust Score Models - Append to main schema.prisma
+// This file documents the trust score schema additions
+
+// ============================================================================
+// Trust Score Enums
+// ============================================================================
+
+enum TrustTier {
+  EMERGING       // 0-39: New or low activity
+  ESTABLISHED    // 40-59: Building reputation
+  TRUSTED        // 60-79: Solid track record
+  HIGHLY_TRUSTED // 80-94: Excellent reputation
+  ELITE          // 95-100: Top performers
+}
+
+enum TrustTrend {
+  RISING
+  STABLE
+  DECLINING
+}
+
+enum ComplianceEventType {
+  DATA_TRANSFER_ATTEMPT    // Tried to copy data
+  UNAUTHORIZED_APP         // Ran unauthorized application
+  POLICY_VIOLATION         // General policy violation
+  SESSION_ANOMALY          // Unusual session behavior
+  SCREENSHOT_ATTEMPT       // Screenshot blocked
+  SCREEN_SHARE_ATTEMPT     // Unauthorized screen share
+}
+
+enum ComplianceSeverity {
+  LOW       // Minor, educational
+  MEDIUM    // Concerning, warning
+  HIGH      // Serious, investigation needed
+  CRITICAL  // Immediate action required
+}
+
+enum ThresholdContextType {
+  JOB           // Specific job requirement
+  TENANT        // Tenant-wide requirement
+  POD_TEMPLATE  // SkillPod template requirement
+  GLOBAL        // Platform-wide minimum
+}
+
+enum VerificationLevel {
+  NONE
+  EMAIL
+  BASIC
+  ENHANCED
+  PREMIUM
+}
+
+// ============================================================================
+// Trust Score Models
+// ============================================================================
+
+model TrustScore {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @unique @map("user_id") @db.Uuid
+  
+  // Overall score (0-100)
+  overallScore       Int      @map("overall_score")
+  
+  // Component scores (0-100 each)
+  reviewScore        Int      @map("review_score")
+  complianceScore    Int      @map("compliance_score")
+  verificationScore  Int      @map("verification_score")
+  tenureScore        Int      @map("tenure_score")
+  activityScore      Int      @map("activity_score")
+  
+  // Component weights (should sum to 100)
+  reviewWeight       Int      @default(40) @map("review_weight")
+  complianceWeight   Int      @default(25) @map("compliance_weight")
+  verificationWeight Int      @default(20) @map("verification_weight")
+  tenureWeight       Int      @default(10) @map("tenure_weight")
+  activityWeight     Int      @default(5) @map("activity_weight")
+  
+  // Trust tier
+  tier               TrustTier
+  
+  // Trend
+  trend              TrustTrend @default(STABLE)
+  previousScore      Int?       @map("previous_score")
+  scoreChangeAmount  Int?       @map("score_change_amount")
+  
+  // Calculation metadata
+  lastCalculatedAt   DateTime @map("last_calculated_at")
+  calculationVersion Int      @default(1) @map("calculation_version")
+  
+  // Factors contributing to score
+  factors            Json     @default("{}") // Detailed breakdown
+  
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  history            TrustScoreHistory[]
+  
+  @@map("trust_scores")
+  @@index([tier])
+  @@index([overallScore])
+}
+
+model TrustScoreHistory {
+  id                 String   @id @default(uuid()) @db.Uuid
+  trustScoreId       String   @map("trust_score_id") @db.Uuid
+  
+  // Snapshot
+  overallScore       Int      @map("overall_score")
+  reviewScore        Int      @map("review_score")
+  complianceScore    Int      @map("compliance_score")
+  verificationScore  Int      @map("verification_score")
+  tenureScore        Int      @map("tenure_score")
+  activityScore      Int      @map("activity_score")
+  
+  tier               TrustTier
+  
+  // What triggered the recalculation
+  triggerEvent       String   @map("trigger_event")
+  
+  createdAt          DateTime @default(now()) @map("created_at")
+  
+  trustScore         TrustScore @relation(fields: [trustScoreId], references: [id], onDelete: Cascade)
+  
+  @@map("trust_score_history")
+  @@index([trustScoreId])
+  @@index([createdAt])
+}
+
+model SkillPodComplianceRecord {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  
+  // Session reference
+  sessionId         String   @map("session_id") @db.Uuid
+  
+  // Compliance event
+  eventType         ComplianceEventType @map("event_type")
+  severity          ComplianceSeverity
+  
+  // Details
+  description       String
+  metadata          Json     @default("{}")
+  
+  // Resolution
+  isResolved        Boolean  @default(false) @map("is_resolved")
+  resolvedAt        DateTime? @map("resolved_at")
+  resolvedBy        String?  @map("resolved_by") @db.Uuid
+  resolutionNotes   String?  @map("resolution_notes")
+  
+  // Impact on score
+  scoreImpact       Int      @map("score_impact") // Negative value
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("skillpod_compliance_records")
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([isResolved])
+}
+
+model TrustScoreThreshold {
+  id                       String   @id @default(uuid()) @db.Uuid
+  
+  // Context
+  contextType              ThresholdContextType @map("context_type")
+  contextId                String?   @map("context_id") // Job ID, Tenant ID, etc.
+  
+  // Threshold
+  minimumScore             Int      @map("minimum_score")
+  minimumTier              TrustTier?  @map("minimum_tier")
+  
+  // Required verifications
+  requireVerification      Boolean @default(false) @map("require_verification")
+  minimumVerificationLevel VerificationLevel?  @map("minimum_verification_level")
+  
+  // Additional requirements
+  requireMfa               Boolean  @default(false) @map("require_mfa")
+  minimumReviews           Int?      @map("minimum_reviews")
+  minimumCompletedJobs     Int?  @map("minimum_completed_jobs")
+  
+  // Metadata
+  name                     String?
+  description              String?
+  isActive                 Boolean  @default(true) @map("is_active")
+  createdBy                String   @map("created_by") @db.Uuid
+  
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  
+  @@map("trust_score_thresholds")
+  @@index([contextType, contextId])
+  @@index([isActive])
+}
