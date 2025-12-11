@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { prismaPlugin } from './plugins/prisma.js';
 import { deviceRoutes } from './routes/devices.js';
 import { poolRoutes } from './routes/pools.js';
+import { policyRoutes } from './routes/policies.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -17,6 +18,7 @@ export async function buildApp() {
   // Register routes
   await app.register(deviceRoutes, { prefix: '/devices' });
   await app.register(poolRoutes, { prefix: '/pools' });
+  await app.register(policyRoutes, { prefix: '/policies' });
 
   return app;
 }
