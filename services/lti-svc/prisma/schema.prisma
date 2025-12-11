@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Supported LMS platforms for LTI integration
+enum LtiPlatformType {
+  CANVAS
+  SCHOOLOGY
+  GOOGLE_CLASSROOM
+  BLACKBOARD
+  BRIGHTSPACE
+  MOODLE
+  GENERIC  // Generic LTI 1.3 platform
+
+  @@map("lti_platform_type")
+}
+
+/// User role in LTI context
+enum LtiUserRole {
+  INSTRUCTOR
+  LEARNER
+  TEACHING_ASSISTANT
+  CONTENT_DEVELOPER
+  ADMINISTRATOR
+  MENTOR
+
+  @@map("lti_user_role")
+}
+
+/// Status of an LTI launch
+enum LtiLaunchStatus {
+  PENDING      // Launch initiated, awaiting validation
+  ACTIVE       // Successfully validated, session active
+  COMPLETED    // Activity completed
+  EXPIRED      // Launch expired (nonce timeout)
+  FAILED       // Validation failed
+
+  @@map("lti_launch_status")
+}
+
+/// Status of grade passback
+enum LtiGradeStatus {
+  PENDING
+  SENT
+  FAILED
+  NOT_APPLICABLE
+
+  @@map("lti_grade_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// LTI Tool configuration - represents Aivo's registration with an LMS platform.
+/// This stores the OAuth 2.0 credentials and endpoints needed for LTI 1.3 communication.
+///
+/// Each tenant can have multiple LTI tool registrations (one per LMS platform).
+/// The tool_private_key_ref points to KMS/Vault for secure key storage.
+model LtiTool {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @map("tenant_id") @db.Uuid
+  platformType        LtiPlatformType @map("platform_type")
+  platformName        String          @map("platform_name")  // Display name, e.g., "Springfield District Canvas"
+  
+  // LTI 1.3 Core Configuration
+  clientId            String          @map("client_id")       // OAuth 2.0 client_id assigned by LMS
+  deploymentId        String          @map("deployment_id")   // LTI deployment ID within platform
+  issuer              String                                   // Platform issuer URL (iss claim)
+  
+  // OAuth 2.0 / OIDC Endpoints
+  authLoginUrl        String          @map("auth_login_url")  // OIDC authorization endpoint
+  authTokenUrl        String          @map("auth_token_url")  // Token endpoint for access tokens
+  jwksUrl             String          @map("jwks_url")        // Platform's JWKS endpoint for signature verification
+  
+  // Tool's Key Pair (for signing messages to platform)
+  toolPrivateKeyRef   String          @map("tool_private_key_ref")  // Reference to KMS/Vault key
+  toolPublicKeyId     String?         @map("tool_public_key_id")    // Key ID in tool's JWKS
+  
+  // Optional Endpoints for LTI Advantage services
+  // Assignment and Grade Services (AGS)
+  lineItemsUrl        String?         @map("line_items_url")
+  // Names and Roles Provisioning Services (NRPS)  
+  membershipsUrl      String?         @map("memberships_url")
+  // Deep Linking Service
+  deepLinkingUrl      String?         @map("deep_linking_url")
+  
+  // Configuration
+  enabled             Boolean         @default(true)
+  configJson          Json            @default("{}") @map("config_json") @db.JsonB  // Platform-specific settings
+  
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  links               LtiLink[]
+  launches            LtiLaunch[]
+  nonces              LtiNonce[]
+
+  @@unique([tenantId, issuer, clientId, deploymentId])
+  @@index([tenantId])
+  @@index([issuer, clientId])
+  @@map("lti_tools")
+}
+
+/// LTI Link - represents a deep link from LMS to a specific Aivo activity.
+/// Teachers create these when setting up assignments in their LMS.
+/// 
+/// A link can target:
+/// - A specific LearningObjectVersion (lo_version_id)
+/// - An activity template (activity_template_id)  
+/// - Dynamic content based on subject/grade (for flexible assignments)
+model LtiLink {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  ltiToolId            String    @map("lti_tool_id") @db.Uuid
+  
+  // LMS Context
+  lmsContextId         String?   @map("lms_context_id")         // LMS course/class ID
+  lmsResourceLinkId    String?   @map("lms_resource_link_id")   // LMS assignment ID
+  
+  // Aivo Target (one of these should be set)
+  classroomId          String?   @map("classroom_id") @db.Uuid  // Optional: specific Aivo classroom
+  loVersionId          String?   @map("lo_version_id") @db.Uuid // Specific learning object version
+  activityTemplateId   String?   @map("activity_template_id") @db.Uuid // Activity template
+  subject              String?                                    // Dynamic: filter by subject
+  gradeBand            String?   @map("grade_band")              // Dynamic: filter by grade band
+  
+  // Display Info
+  title                String
+  description          String?
+  
+  // Grading Configuration
+  maxPoints            Decimal?  @map("max_points") @db.Decimal(10, 2)
+  gradingEnabled       Boolean   @default(false) @map("grading_enabled")
+  lineItemId           String?   @map("line_item_id")  // AGS line item for grade passback
+  
+  // Metadata
+  configJson           Json      @default("{}") @map("config_json") @db.JsonB
+  
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdByUserId      String    @map("created_by_user_id") @db.Uuid
+
+  // Relations
+  tool                 LtiTool   @relation(fields: [ltiToolId], references: [id], onDelete: Cascade)
+  launches             LtiLaunch[]
+
+  @@index([tenantId])
+  @@index([ltiToolId])
+  @@index([lmsContextId, lmsResourceLinkId])
+  @@map("lti_links")
+}
+
+/// LTI Launch - records each launch from LMS to Aivo.
+/// Used for:
+/// - Audit trail of all launches
+/// - Mapping LMS users to Aivo users
+/// - Supporting grade passback
+/// - Session correlation
+model LtiLaunch {
+  id                 String           @id @default(uuid()) @db.Uuid
+  tenantId           String           @map("tenant_id") @db.Uuid
+  ltiToolId          String           @map("lti_tool_id") @db.Uuid
+  ltiLinkId          String?          @map("lti_link_id") @db.Uuid
+  
+  // User Context
+  lmsUserId          String           @map("lms_user_id")         // User ID from LMS
+  lmsUserEmail       String?          @map("lms_user_email")
+  lmsUserName        String?          @map("lms_user_name")
+  userRole           LtiUserRole      @map("user_role")
+  
+  // Mapped Aivo User (resolved after launch)
+  aivoUserId         String?          @map("aivo_user_id") @db.Uuid
+  aivoLearnerId      String?          @map("aivo_learner_id") @db.Uuid  // If role is LEARNER
+  
+  // LMS Context
+  lmsContextId       String?          @map("lms_context_id")      // Course/class ID
+  lmsContextTitle    String?          @map("lms_context_title")
+  lmsResourceLinkId  String?          @map("lms_resource_link_id")
+  
+  // Launch State
+  status             LtiLaunchStatus  @default(PENDING)
+  nonce              String           @unique                      // Replay protection
+  state              String?                                       // OIDC state parameter
+  
+  // Session Linking
+  aivoSessionId      String?          @map("aivo_session_id") @db.Uuid  // Created session
+  
+  // Grade Passback State
+  gradeStatus        LtiGradeStatus   @default(NOT_APPLICABLE) @map("grade_status")
+  scoreGiven         Decimal?         @map("score_given") @db.Decimal(10, 4)
+  scoreMaximum       Decimal?         @map("score_maximum") @db.Decimal(10, 4)
+  gradeSentAt        DateTime?        @map("grade_sent_at") @db.Timestamptz
+  gradeError         String?          @map("grade_error")
+  
+  // Full Launch Payload (for debugging/audit)
+  launchParamsJson   Json             @map("launch_params_json") @db.JsonB
+  
+  // Timestamps
+  launchedAt         DateTime         @default(now()) @map("launched_at") @db.Timestamptz
+  expiresAt          DateTime         @map("expires_at") @db.Timestamptz
+  completedAt        DateTime?        @map("completed_at") @db.Timestamptz
+
+  // Relations
+  tool               LtiTool          @relation(fields: [ltiToolId], references: [id], onDelete: Cascade)
+  link               LtiLink?         @relation(fields: [ltiLinkId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([ltiToolId])
+  @@index([ltiLinkId])
+  @@index([lmsUserId])
+  @@index([aivoUserId])
+  @@index([aivoSessionId])
+  @@index([status, expiresAt])
+  @@map("lti_launches")
+}
+
+/// LTI Nonce - for replay attack protection.
+/// Nonces are single-use tokens that prevent replay of launch requests.
+/// Expired nonces are periodically cleaned up.
+model LtiNonce {
+  id          String   @id @default(uuid()) @db.Uuid
+  ltiToolId   String   @map("lti_tool_id") @db.Uuid
+  nonce       String
+  usedAt      DateTime @default(now()) @map("used_at") @db.Timestamptz
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+
+  // Relations
+  tool        LtiTool  @relation(fields: [ltiToolId], references: [id], onDelete: Cascade)
+
+  @@unique([ltiToolId, nonce])
+  @@index([expiresAt])
+  @@map("lti_nonces")
+}
+
+/// LTI User Mapping - links LMS users to Aivo users.
+/// Cached to avoid repeated lookups and enable offline resolution.
+model LtiUserMapping {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  ltiToolId      String   @map("lti_tool_id") @db.Uuid
+  lmsUserId      String   @map("lms_user_id")
+  aivoUserId     String   @map("aivo_user_id") @db.Uuid
+  lmsEmail       String?  @map("lms_email")
+  lmsName        String?  @map("lms_name")
+  lastSeenAt     DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([ltiToolId, lmsUserId])
+  @@index([tenantId])
+  @@index([aivoUserId])
+  @@map("lti_user_mappings")
+}

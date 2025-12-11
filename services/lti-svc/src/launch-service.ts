@@ -1,0 +1,511 @@
+/**
+ * LTI Launch Service
+ *
+ * Handles the complete LTI launch flow:
+ * 1. OIDC login initiation
+ * 2. Token validation
+ * 3. User mapping
+ * 4. Session creation
+ * 5. Deep linking to activity
+ */
+
+import type { PrismaClient } from '@prisma/client';
+
+import type { LtiToolRecord } from './lti-auth.js';
+import {
+  validateIdToken,
+  processLaunchPayload,
+  createOidcAuthRequest,
+  LtiError,
+} from './lti-auth.js';
+import type { LtiIdTokenPayload } from './types.js';
+import { LtiUserRole, LtiLaunchStatus, LTI_CLAIMS } from './types.js';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface LaunchServiceConfig {
+  /** Base URL for the LTI service */
+  baseUrl: string;
+  /** Launch session expiry in seconds */
+  launchExpirySeconds?: number;
+  /** Nonce expiry in seconds */
+  nonceExpirySeconds?: number;
+}
+
+export interface OidcState {
+  toolId: string;
+  nonce: string;
+  targetLinkUri: string;
+  createdAt: Date;
+}
+
+export interface LaunchResult {
+  launchId: string;
+  status: LtiLaunchStatus;
+  redirectUrl: string;
+  aivoSessionId?: string;
+  userRole: LtiUserRole;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IN-MEMORY STATE STORE (replace with Redis in production)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const stateStore = new Map<string, OidcState>();
+const STATE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function cleanExpiredStates() {
+  const now = Date.now();
+  for (const [state, data] of stateStore.entries()) {
+    if (now - data.createdAt.getTime() > STATE_TTL) {
+      stateStore.delete(state);
+    }
+  }
+}
+
+// Clean up every 5 minutes
+setInterval(cleanExpiredStates, 5 * 60 * 1000);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LAUNCH SERVICE
+// ══════════════════════════════════════════════════════════════════════════════
+
+export class LaunchService {
+  private prisma: PrismaClient;
+  private config: LaunchServiceConfig;
+
+  constructor(prisma: PrismaClient, config: LaunchServiceConfig) {
+    this.prisma = prisma;
+    this.config = {
+      launchExpirySeconds: 3600, // 1 hour default
+      nonceExpirySeconds: 600, // 10 minutes default
+      ...config,
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // OIDC LOGIN INITIATION
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Handle OIDC login initiation from LMS
+   * Returns redirect URL to platform's authorization endpoint
+   */
+  async handleOidcLogin(params: {
+    iss: string;
+    login_hint: string;
+    target_link_uri: string;
+    lti_message_hint?: string;
+    client_id?: string;
+    lti_deployment_id?: string;
+  }): Promise<{ redirectUrl: string }> {
+    // Find matching tool registration
+    const tool = await this.findTool(params.iss, params.client_id, params.lti_deployment_id);
+
+    if (!tool) {
+      throw new LtiError(
+        `No tool registration found for issuer: ${params.iss}`,
+        'TOOL_NOT_FOUND',
+        404
+      );
+    }
+
+    if (!tool.enabled) {
+      throw new LtiError('LTI tool is disabled', 'TOOL_DISABLED', 403);
+    }
+
+    // Create OIDC auth request
+    const redirectUri = `${this.config.baseUrl}/lti/launch`;
+    const { authUrl, state, nonce } = createOidcAuthRequest(
+      {
+        iss: params.iss,
+        login_hint: params.login_hint,
+        target_link_uri: params.target_link_uri,
+        lti_message_hint: params.lti_message_hint,
+      },
+      tool as LtiToolRecord,
+      redirectUri
+    );
+
+    // Store state for validation on callback
+    stateStore.set(state, {
+      toolId: tool.id,
+      nonce,
+      targetLinkUri: params.target_link_uri,
+      createdAt: new Date(),
+    });
+
+    return { redirectUrl: authUrl };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // LAUNCH HANDLING
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Handle LTI launch callback (id_token from LMS)
+   */
+  async handleLaunch(params: { id_token: string; state?: string }): Promise<LaunchResult> {
+    // Validate state if provided
+    let storedState: OidcState | undefined;
+    if (params.state) {
+      storedState = stateStore.get(params.state);
+      if (!storedState) {
+        throw new LtiError('Invalid or expired state', 'INVALID_STATE', 401);
+      }
+      stateStore.delete(params.state);
+    }
+
+    // Decode token header to get issuer (for tool lookup)
+    const tokenParts = params.id_token.split('.');
+    if (tokenParts.length !== 3) {
+      throw new LtiError('Invalid JWT format', 'INVALID_TOKEN', 400);
+    }
+
+    const payloadJson = Buffer.from(tokenParts[1], 'base64url').toString('utf8');
+    const unverifiedPayload = JSON.parse(payloadJson) as LtiIdTokenPayload;
+
+    // Find tool registration
+    let tool: Awaited<ReturnType<typeof this.findTool>>;
+    if (storedState) {
+      tool = await this.prisma.ltiTool.findUnique({
+        where: { id: storedState.toolId },
+      });
+    } else {
+      const deploymentId = unverifiedPayload[LTI_CLAIMS.DEPLOYMENT_ID];
+      const aud = Array.isArray(unverifiedPayload.aud)
+        ? unverifiedPayload.aud[0]
+        : unverifiedPayload.aud;
+      tool = await this.findTool(unverifiedPayload.iss, aud, deploymentId);
+    }
+
+    if (!tool) {
+      throw new LtiError('Tool registration not found', 'TOOL_NOT_FOUND', 404);
+    }
+
+    // Validate the id_token
+    const payload = await validateIdToken(params.id_token, tool as LtiToolRecord, {
+      expectedNonce: storedState?.nonce,
+      checkNonceUsed: (nonce) => this.checkNonceUsed(tool.id, nonce),
+      markNonceUsed: (nonce, expiresAt) => this.markNonceUsed(tool.id, nonce, expiresAt),
+    });
+
+    // Process launch payload
+    const launchData = processLaunchPayload(payload, tool as LtiToolRecord);
+
+    // Resolve LTI link (if resource link provided)
+    let ltiLink: Awaited<ReturnType<typeof this.findOrCreateLink>> | null = null;
+    const resourceLink = payload[LTI_CLAIMS.RESOURCE_LINK];
+    if (resourceLink?.id) {
+      ltiLink = await this.findOrCreateLink(
+        tool.id,
+        tool.tenantId,
+        launchData.lmsContextId,
+        resourceLink.id,
+        resourceLink.title
+      );
+    }
+
+    // Map LMS user to Aivo user
+    const userMapping = await this.mapUser(
+      tool.tenantId,
+      tool.id,
+      launchData.lmsUserId,
+      launchData.lmsUserEmail,
+      launchData.lmsUserName,
+      launchData.userRole
+    );
+
+    // Create launch record
+    const launch = await this.createLaunchRecord(tool, ltiLink, launchData, userMapping, payload);
+
+    // Determine redirect URL based on role
+    const redirectUrl = this.buildRedirectUrl(launch.id, launchData.userRole, ltiLink);
+
+    return {
+      launchId: launch.id,
+      status: launch.status as LtiLaunchStatus,
+      redirectUrl,
+      aivoSessionId: launch.aivoSessionId || undefined,
+      userRole: launchData.userRole,
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // HELPER METHODS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Find tool registration by issuer and optional client_id/deployment_id
+   */
+  private async findTool(issuer: string, clientId?: string, deploymentId?: string) {
+    const where: Record<string, unknown> = { issuer, enabled: true };
+    if (clientId) where.clientId = clientId;
+    if (deploymentId) where.deploymentId = deploymentId;
+
+    return this.prisma.ltiTool.findFirst({ where });
+  }
+
+  /**
+   * Check if nonce was already used
+   */
+  private async checkNonceUsed(toolId: string, nonce: string): Promise<boolean> {
+    const existing = await this.prisma.ltiNonce.findUnique({
+      where: {
+        ltiToolId_nonce: {
+          ltiToolId: toolId,
+          nonce,
+        },
+      },
+    });
+    return !!existing;
+  }
+
+  /**
+   * Mark nonce as used
+   */
+  private async markNonceUsed(toolId: string, nonce: string, expiresAt: Date): Promise<void> {
+    await this.prisma.ltiNonce.create({
+      data: {
+        ltiToolId: toolId,
+        nonce,
+        expiresAt,
+      },
+    });
+  }
+
+  /**
+   * Find or create LTI link for resource
+   */
+  private async findOrCreateLink(
+    toolId: string,
+    tenantId: string,
+    lmsContextId: string | undefined,
+    lmsResourceLinkId: string,
+    title?: string
+  ) {
+    // Try to find existing link
+    let link = await this.prisma.ltiLink.findFirst({
+      where: {
+        ltiToolId: toolId,
+        lmsContextId: lmsContextId || null,
+        lmsResourceLinkId,
+      },
+    });
+
+    if (!link) {
+      // Create a new link (will be configured later by teacher)
+      link = await this.prisma.ltiLink.create({
+        data: {
+          tenantId,
+          ltiToolId: toolId,
+          lmsContextId,
+          lmsResourceLinkId,
+          title: title || 'Untitled Activity',
+          createdByUserId: '00000000-0000-0000-0000-000000000000', // System user
+        },
+      });
+    }
+
+    return link;
+  }
+
+  /**
+   * Map LMS user to Aivo user
+   */
+  private async mapUser(
+    tenantId: string,
+    toolId: string,
+    lmsUserId: string,
+    lmsEmail?: string,
+    lmsName?: string,
+    _role?: LtiUserRole
+  ): Promise<{ aivoUserId?: string; aivoLearnerId?: string }> {
+    // Check for existing mapping
+    const existing = await this.prisma.ltiUserMapping.findUnique({
+      where: {
+        ltiToolId_lmsUserId: {
+          ltiToolId: toolId,
+          lmsUserId,
+        },
+      },
+    });
+
+    if (existing) {
+      // Update last seen
+      await this.prisma.ltiUserMapping.update({
+        where: { id: existing.id },
+        data: { lastSeenAt: new Date() },
+      });
+
+      return {
+        aivoUserId: existing.aivoUserId,
+        aivoLearnerId: undefined, // TODO: Look up learner from user
+      };
+    }
+
+    // Try to find Aivo user by email
+    // TODO: Call auth-svc to find/create user
+    // For now, store mapping without Aivo user ID
+    if (lmsEmail || lmsName) {
+      await this.prisma.ltiUserMapping.create({
+        data: {
+          tenantId,
+          ltiToolId: toolId,
+          lmsUserId,
+          lmsEmail,
+          lmsName,
+          aivoUserId: '00000000-0000-0000-0000-000000000000', // Placeholder
+        },
+      });
+    }
+
+    return {};
+  }
+
+  /**
+   * Create launch record
+   */
+  private async createLaunchRecord(
+    tool: { id: string; tenantId: string },
+    link: { id: string } | null,
+    launchData: ReturnType<typeof processLaunchPayload>,
+    userMapping: { aivoUserId?: string; aivoLearnerId?: string },
+    payload: LtiIdTokenPayload
+  ) {
+    const expirySeconds = this.config.launchExpirySeconds ?? 7200;
+    const expiresAt = new Date(Date.now() + expirySeconds * 1000);
+
+    return this.prisma.ltiLaunch.create({
+      data: {
+        tenantId: tool.tenantId,
+        ltiToolId: tool.id,
+        ltiLinkId: link?.id,
+        lmsUserId: launchData.lmsUserId,
+        lmsUserEmail: launchData.lmsUserEmail,
+        lmsUserName: launchData.lmsUserName,
+        userRole: launchData.userRole,
+        aivoUserId: userMapping.aivoUserId,
+        aivoLearnerId: userMapping.aivoLearnerId,
+        lmsContextId: launchData.lmsContextId,
+        lmsContextTitle: launchData.lmsContextTitle,
+        lmsResourceLinkId: launchData.lmsResourceLinkId,
+        status: LtiLaunchStatus.ACTIVE,
+        nonce: payload.nonce,
+        expiresAt,
+        launchParamsJson: payload as unknown as Record<string, unknown>,
+      },
+    });
+  }
+
+  /**
+   * Build redirect URL after successful launch
+   */
+  private buildRedirectUrl(
+    launchId: string,
+    role: LtiUserRole,
+    link: { loVersionId?: string | null; activityTemplateId?: string | null } | null
+  ): string {
+    // Base URL for LTI session
+    let url = `${this.config.baseUrl}/lti/session/${launchId}`;
+
+    // Add activity target if known
+    if (link?.loVersionId) {
+      url += `?activity=${link.loVersionId}`;
+    } else if (link?.activityTemplateId) {
+      url += `?template=${link.activityTemplateId}`;
+    }
+
+    // Role-based routing
+    if (
+      role === LtiUserRole.INSTRUCTOR ||
+      role === LtiUserRole.TEACHING_ASSISTANT ||
+      role === LtiUserRole.ADMINISTRATOR
+    ) {
+      url += url.includes('?') ? '&' : '?';
+      url += 'view=teacher';
+    }
+
+    return url;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SESSION MANAGEMENT
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get launch details for session page
+   */
+  async getLaunch(launchId: string) {
+    const launch = await this.prisma.ltiLaunch.findUnique({
+      where: { id: launchId },
+      include: {
+        tool: true,
+        link: true,
+      },
+    });
+
+    if (!launch) {
+      throw new LtiError('Launch not found', 'LAUNCH_NOT_FOUND', 404);
+    }
+
+    // Check expiration
+    if (new Date() > launch.expiresAt) {
+      throw new LtiError('Launch session expired', 'LAUNCH_EXPIRED', 401);
+    }
+
+    return launch;
+  }
+
+  /**
+   * Mark launch as completed
+   */
+  async completeLaunch(launchId: string, sessionId?: string) {
+    await this.prisma.ltiLaunch.update({
+      where: { id: launchId },
+      data: {
+        status: LtiLaunchStatus.COMPLETED,
+        completedAt: new Date(),
+        aivoSessionId: sessionId,
+      },
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // CLEANUP
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Clean up expired nonces
+   */
+  async cleanupExpiredNonces() {
+    const result = await this.prisma.ltiNonce.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    });
+    return result.count;
+  }
+
+  /**
+   * Clean up expired launches
+   */
+  async cleanupExpiredLaunches() {
+    const result = await this.prisma.ltiLaunch.updateMany({
+      where: {
+        status: LtiLaunchStatus.ACTIVE,
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+      data: {
+        status: LtiLaunchStatus.EXPIRED,
+      },
+    });
+    return result.count;
+  }
+}
