@@ -186,3 +186,107 @@ ThemeData themeForBand(AivoGradeBand band) {
 // Future codegen: map token JSON -> Dart so this stays in sync with design tokens.
 // A build_runner step could read libs/design-tokens/aivo-tokens.json and emit a Dart map
 // consumed here to avoid manual duplication.
+
+/// Theme extension providing Aivo color tokens to widgets.
+///
+/// Access via `Theme.of(context).extension<AivoColors>()`
+class AivoColors extends ThemeExtension<AivoColors> {
+  const AivoColors({
+    required this.primary,
+    required this.secondary,
+    required this.background,
+    required this.surface,
+    required this.surfaceVariant,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.error,
+    required this.outline,
+    required this.primaryContainer,
+    required this.onPrimaryContainer,
+    required this.errorContainer,
+    required this.onErrorContainer,
+  });
+
+  final Color primary;
+  final Color secondary;
+  final Color background;
+  final Color surface;
+  final Color surfaceVariant;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color error;
+  final Color outline;
+  final Color primaryContainer;
+  final Color onPrimaryContainer;
+  final Color errorContainer;
+  final Color onErrorContainer;
+
+  static const AivoColors light = AivoColors(
+    primary: Color(0xFF2D6BFF),
+    secondary: Color(0xFFFF9C32),
+    background: Color(0xFFF8FBFF),
+    surface: Colors.white,
+    surfaceVariant: Color(0xFFEEF5FF),
+    textPrimary: Color(0xFF102445),
+    textSecondary: Color(0xFF3E5575),
+    error: Color(0xFFE64B58),
+    outline: Color(0xFFD0D7E2),
+    primaryContainer: Color(0xFFE3EDFF),
+    onPrimaryContainer: Color(0xFF1A4199),
+    errorContainer: Color(0xFFFFE9EA),
+    onErrorContainer: Color(0xFFB02E3A),
+  );
+
+  @override
+  AivoColors copyWith({
+    Color? primary,
+    Color? secondary,
+    Color? background,
+    Color? surface,
+    Color? surfaceVariant,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? error,
+    Color? outline,
+    Color? primaryContainer,
+    Color? onPrimaryContainer,
+    Color? errorContainer,
+    Color? onErrorContainer,
+  }) {
+    return AivoColors(
+      primary: primary ?? this.primary,
+      secondary: secondary ?? this.secondary,
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      surfaceVariant: surfaceVariant ?? this.surfaceVariant,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      error: error ?? this.error,
+      outline: outline ?? this.outline,
+      primaryContainer: primaryContainer ?? this.primaryContainer,
+      onPrimaryContainer: onPrimaryContainer ?? this.onPrimaryContainer,
+      errorContainer: errorContainer ?? this.errorContainer,
+      onErrorContainer: onErrorContainer ?? this.onErrorContainer,
+    );
+  }
+
+  @override
+  AivoColors lerp(ThemeExtension<AivoColors>? other, double t) {
+    if (other is! AivoColors) return this;
+    return AivoColors(
+      primary: Color.lerp(primary, other.primary, t)!,
+      secondary: Color.lerp(secondary, other.secondary, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      surfaceVariant: Color.lerp(surfaceVariant, other.surfaceVariant, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      error: Color.lerp(error, other.error, t)!,
+      outline: Color.lerp(outline, other.outline, t)!,
+      primaryContainer: Color.lerp(primaryContainer, other.primaryContainer, t)!,
+      onPrimaryContainer: Color.lerp(onPrimaryContainer, other.onPrimaryContainer, t)!,
+      errorContainer: Color.lerp(errorContainer, other.errorContainer, t)!,
+      onErrorContainer: Color.lerp(onErrorContainer, other.onErrorContainer, t)!,
+    );
+  }
+}

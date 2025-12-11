@@ -49,7 +49,59 @@ model Classroom {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school       School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  sessionCodes ClassroomSessionCode[]
+  learners     ClassroomLearner[]
 
   @@index([schoolId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Classroom Session Codes (for shared device login)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Privacy display mode for roster on shared devices
+enum RosterDisplayMode {
+  FIRST_NAME_LAST_INITIAL  // "John S."
+  PSEUDONYM                 // "Blue Tiger 7"
+  FIRST_NAME_ONLY           // "John"
+}
+
+/// Session code for shared device class login
+model ClassroomSessionCode {
+  id          String   @id @default(uuid()) @db.Uuid
+  classroomId String   @db.Uuid
+  code        String   @unique  // e.g., "ABC123"
+  teacherId   String   @db.Uuid
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@index([classroomId])
+  @@index([code])
+  @@index([expiresAt])
+}
+
+/// Learners enrolled in a classroom (for roster display)
+model ClassroomLearner {
+  id          String   @id @default(uuid()) @db.Uuid
+  classroomId String   @db.Uuid
+  learnerId   String   @db.Uuid
+  displayName String   // "John S." or pseudonym depending on privacy
+  pseudonym   String?  // Optional fun name: "Blue Tiger 7"
+  avatarUrl   String?
+  gradeBand   String?  // K_2, G3_5, G6_8, G9_12
+  pinHash     String?  // bcrypt hash of learner's PIN
+  pinAttempts Int      @default(0)
+  pinLockedUntil DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@unique([classroomId, learnerId])
+  @@index([classroomId])
+  @@index([learnerId])
 }

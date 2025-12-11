@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { registerClassroomRoutes } from './routes/classrooms.js';
 import { registerResolveRoutes } from './routes/resolve.js';
 import { registerSchoolRoutes } from './routes/schools.js';
 import { registerTenantRoutes } from './routes/tenants.js';
@@ -12,6 +13,7 @@ export function createApp() {
   app.register(registerResolveRoutes);
   app.register(registerTenantRoutes);
   app.register(registerSchoolRoutes);
+  app.register(registerClassroomRoutes);
 
   return app;
 }
