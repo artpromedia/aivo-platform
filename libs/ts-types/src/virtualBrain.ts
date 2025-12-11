@@ -127,9 +127,10 @@ export interface DifficultyRecommendationResponse {
 // ── Learning Object ──────────────────────────────────────────────────────────
 
 /**
- * Learning object from the content catalog.
+ * Learning object from the content catalog (Virtual Brain simplified view).
+ * For the full learning object type, use LearningObject from learningObject.ts
  */
-export interface LearningObject {
+export interface VirtualBrainLearningObject {
   id: string;
   skillCode: string;
   domain: SkillDomain;

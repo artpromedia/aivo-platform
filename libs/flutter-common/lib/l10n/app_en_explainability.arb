@@ -1,0 +1,189 @@
+{
+  "@@locale": "en",
+  "@@context": "Explainability features - neurodiversity-aware, strength-based copy",
+
+  "whyThisTitleActivity": "Why Aivo chose this activity",
+  "@whyThisTitleActivity": {
+    "description": "Title for the 'why this' explanation modal for activities"
+  },
+
+  "whyThisTitleRecommendation": "Why we suggest this",
+  "@whyThisTitleRecommendation": {
+    "description": "Title for recommendation explanations"
+  },
+
+  "whyThisTitleDifficultyChange": "About this adjustment",
+  "@whyThisTitleDifficultyChange": {
+    "description": "Title for difficulty change explanations"
+  },
+
+  "whyThisTitlePlanChange": "About today's learning plan",
+  "@whyThisTitlePlanChange": {
+    "description": "Title for plan change explanations"
+  },
+
+  "whyThisFallbackNoDetails": "Aivo used your child's recent work and learning goals to choose this activity. Detailed explanations aren't available for this one yet.",
+  "@whyThisFallbackNoDetails": {
+    "description": "Fallback text when no detailed explanation is available"
+  },
+
+  "whyThisFallbackNoExplanation": "We don't have a detailed explanation for this yet. Aivo used recent activity and goals to make this choice.",
+  "@whyThisFallbackNoExplanation": {
+    "description": "Fallback when explanation is completely unavailable"
+  },
+
+  "whyThisFallbackStillLearning": "We're still getting to know your learner. After a few sessions, we'll show more detailed insights here.",
+  "@whyThisFallbackStillLearning": {
+    "description": "Shown when there's not enough data yet"
+  },
+
+  "whyThisIntroContentSelection": "We chose this activity because",
+  "@whyThisIntroContentSelection": {
+    "description": "Intro phrase for content selection explanations"
+  },
+
+  "whyThisIntroDifficultyAdjustment": "We adjusted the difficulty because",
+  "@whyThisIntroDifficultyAdjustment": {
+    "description": "Intro phrase for difficulty change explanations"
+  },
+
+  "whyThisIntroPlanUpdate": "We updated today's plan because",
+  "@whyThisIntroPlanUpdate": {
+    "description": "Intro phrase for plan update explanations"
+  },
+
+  "whyThisIntroFocusBreak": "We suggested a break because",
+  "@whyThisIntroFocusBreak": {
+    "description": "Intro phrase for focus break explanations"
+  },
+
+  "disclaimerAiLimits": "Aivo uses AI to support learning. It can make mistakes and is not a medical or diagnostic tool.",
+  "@disclaimerAiLimits": {
+    "description": "General AI limitations disclaimer"
+  },
+
+  "disclaimerSuggestions": "Aivo's suggestions are based on patterns in your child's recent work. They may not always be perfect.",
+  "@disclaimerSuggestions": {
+    "description": "Disclaimer about suggestion accuracy"
+  },
+
+  "disclaimerPartnership": "You know your child best. These suggestions work best when combined with your own observations.",
+  "@disclaimerPartnership": {
+    "description": "Disclaimer emphasizing parent partnership"
+  },
+
+  "disclaimerNotDiagnostic": "Aivo is an educational tool, not a diagnostic system. It cannot identify or diagnose learning differences.",
+  "@disclaimerNotDiagnostic": {
+    "description": "Disclaimer about not being diagnostic"
+  },
+
+  "emptyStateNoActivity": "We're still getting to know your learner. After a few sessions, we'll show more detailed insights here.",
+  "@emptyStateNoActivity": {
+    "description": "Empty state when no activity data exists"
+  },
+
+  "emptyStateNoProgress": "Progress data will appear here after your child completes some activities. Every bit of practice helps build skills!",
+  "@emptyStateNoProgress": {
+    "description": "Empty state when no progress data exists"
+  },
+
+  "emptyStateNoInsights": "We're gathering information to provide helpful insights. Check back soon!",
+  "@emptyStateNoInsights": {
+    "description": "Empty state when insights aren't ready"
+  },
+
+  "errorLoadFailed": "We couldn't load the explanation right now. The activity will still work normally. Please try again later.",
+  "@errorLoadFailed": {
+    "description": "Error message when loading explanation fails"
+  },
+
+  "errorGeneric": "Something went wrong on our end. Please try again in a moment.",
+  "@errorGeneric": {
+    "description": "Generic error message"
+  },
+
+  "errorOffline": "It looks like you're offline. Please check your connection and try again.",
+  "@errorOffline": {
+    "description": "Error message for offline state"
+  },
+
+  "encouragementProgress": "Keep up the great work!",
+  "@encouragementProgress": {
+    "description": "Encouragement message for progress"
+  },
+
+  "encouragementPractice": "Every bit of practice helps build skills.",
+  "@encouragementPractice": {
+    "description": "Encouragement about practice"
+  },
+
+  "encouragementPatience": "Learning takes time, and that's okay.",
+  "@encouragementPatience": {
+    "description": "Encouragement about patience"
+  },
+
+  "encouragementJourney": "Progress isn't always a straight line, and that's perfectly normal.",
+  "@encouragementJourney": {
+    "description": "Encouragement about learning journey"
+  },
+
+  "encouragementEffort": "Effort and practice are what matter most.",
+  "@encouragementEffort": {
+    "description": "Encouragement about effort"
+  },
+
+  "difficultyIncreased": "Building on recent success, we're introducing more challenging content.",
+  "@difficultyIncreased": {
+    "description": "Explanation for difficulty increase"
+  },
+
+  "difficultyDecreased": "Taking time to strengthen foundational skills before moving forward.",
+  "@difficultyDecreased": {
+    "description": "Explanation for difficulty decrease"
+  },
+
+  "difficultyMaintained": "Continuing practice at the current level to build confidence.",
+  "@difficultyMaintained": {
+    "description": "Explanation for difficulty maintained"
+  },
+
+  "actionTypeContentSelection": "Activity Selection",
+  "@actionTypeContentSelection": {
+    "description": "Human-readable name for content selection action"
+  },
+
+  "actionTypeDifficultyChange": "Difficulty Adjustment",
+  "@actionTypeDifficultyChange": {
+    "description": "Human-readable name for difficulty change action"
+  },
+
+  "actionTypeFocusBreak": "Break Suggestion",
+  "@actionTypeFocusBreak": {
+    "description": "Human-readable name for focus break action"
+  },
+
+  "actionTypePlanUpdate": "Plan Update",
+  "@actionTypePlanUpdate": {
+    "description": "Human-readable name for plan update action"
+  },
+
+  "viewExplanation": "View Explanation",
+  "@viewExplanation": {
+    "description": "Button text to view explanation"
+  },
+
+  "learnMore": "Learn More",
+  "@learnMore": {
+    "description": "Button text to learn more"
+  },
+
+  "tryAgain": "Try Again",
+  "@tryAgain": {
+    "description": "Button text to retry"
+  },
+
+  "close": "Close",
+  "@close": {
+    "description": "Button text to close"
+  }
+}

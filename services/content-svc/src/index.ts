@@ -12,6 +12,11 @@
  * - Search by subject, grade, skills, tags, text
  * - Content selection for lesson planning
  * - Render for learner sessions
+ *
+ * Content Packaging & Distribution:
+ * - Bulk content package generation for device preloading
+ * - Delta updates for efficient sync
+ * - Pre-signed URL management for content delivery
  */
 
 import cors from '@fastify/cors';
@@ -21,6 +26,7 @@ import { learningObjectRoutes } from './routes/learningObjects.js';
 import { renderRoutes } from './routes/render.js';
 import { searchRoutes } from './routes/search.js';
 import { versionRoutes } from './routes/versions.js';
+import { contentPackageRoutes } from './routes/packages.js';
 
 const PORT = parseInt(process.env.PORT ?? '4020', 10);
 
@@ -44,6 +50,7 @@ async function main() {
   await fastify.register(versionRoutes, { prefix: '/api' });
   await fastify.register(searchRoutes, { prefix: '/api' });
   await fastify.register(renderRoutes, { prefix: '/api' });
+  await fastify.register(contentPackageRoutes, { prefix: '/api' });
 
   // Start server
   try {

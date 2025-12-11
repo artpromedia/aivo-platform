@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum DeviceType {
+  IOS_TABLET
+  ANDROID_TABLET
+  CHROMEBOOK
+  WINDOWS_LAPTOP
+  MAC_LAPTOP
+  WEB_BROWSER
+  OTHER
+}
+
+enum GradeBand {
+  K_2       // Kindergarten - 2nd grade
+  G3_5      // 3rd - 5th grade
+  G6_8      // 6th - 8th grade
+  G9_12     // 9th - 12th grade
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEVICES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Registered devices running the Aivo app
+model Device {
+  id                String      @id @default(uuid()) @db.Uuid
+  tenantId          String      @db.Uuid
+  schoolId          String?     @db.Uuid
+  
+  /// Hashed hardware ID or MDM-assigned identifier
+  deviceIdentifier  String
+  
+  /// Type of device
+  deviceType        DeviceType
+  
+  /// Current app version installed
+  appVersion        String
+  
+  /// Operating system version
+  osVersion         String
+  
+  /// Last successful check-in timestamp
+  lastCheckInAt     DateTime    @default(now())
+  
+  /// Last known IP address (for diagnostics)
+  lastIpAddress     String?
+  
+  /// Friendly name (optional, e.g., "Lab A - iPad 5")
+  displayName       String?
+  
+  /// Whether the device is currently active/enabled
+  isActive          Boolean     @default(true)
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  /// Pool memberships
+  poolMemberships   DevicePoolMembership[]
+
+  @@unique([tenantId, deviceIdentifier])
+  @@index([tenantId])
+  @@index([tenantId, schoolId])
+  @@index([lastCheckInAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEVICE POOLS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Groups of devices (e.g., "Lab A iPads", "Grade 3 Chromebooks")
+model DevicePool {
+  id          String      @id @default(uuid()) @db.Uuid
+  tenantId    String      @db.Uuid
+  schoolId    String?     @db.Uuid
+  
+  /// Human-readable name
+  name        String
+  
+  /// Optional description
+  description String?
+  
+  /// Optional grade band for theming
+  gradeBand   GradeBand?
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  /// Devices in this pool
+  memberships DevicePoolMembership[]
+  
+  /// Policy applied to this pool
+  policy      DevicePolicy?
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([tenantId, schoolId])
+}
+
+/// Many-to-many relationship between devices and pools
+model DevicePoolMembership {
+  id            String      @id @default(uuid()) @db.Uuid
+  deviceId      String      @db.Uuid
+  devicePoolId  String      @db.Uuid
+  
+  /// When the device was added to the pool
+  createdAt     DateTime    @default(now())
+
+  device        Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  pool          DevicePool  @relation(fields: [devicePoolId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, devicePoolId])
+  @@index([deviceId])
+  @@index([devicePoolId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEVICE POLICIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Policy configuration for a device pool
+model DevicePolicy {
+  id            String      @id @default(uuid()) @db.Uuid
+  devicePoolId  String      @unique @db.Uuid
+  
+  /// JSON policy configuration
+  /// Example:
+  /// {
+  ///   "kioskMode": true,
+  ///   "maxOfflineDays": 7,
+  ///   "gradeBand": "G3_5",
+  ///   "allowedApps": ["learner"],
+  ///   "restrictParentSwitching": true
+  /// }
+  policyJson    Json
+  
+  /// Human-readable notes about this policy
+  notes         String?
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  pool          DevicePool  @relation(fields: [devicePoolId], references: [id], onDelete: Cascade)
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEVICE EVENTS (Audit Log)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Audit log of device events
+model DeviceEvent {
+  id          String      @id @default(uuid()) @db.Uuid
+  deviceId    String      @db.Uuid
+  
+  /// Event type: REGISTERED, CHECK_IN, POLICY_APPLIED, OFFLINE_LIMIT_EXCEEDED, etc.
+  eventType   String
+  
+  /// Additional event data
+  eventData   Json?
+  
+  /// IP address at time of event
+  ipAddress   String?
+  
+  createdAt   DateTime    @default(now())
+
+  @@index([deviceId])
+  @@index([deviceId, eventType])
+  @@index([createdAt])
+}

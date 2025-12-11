@@ -264,9 +264,21 @@ export class PolicyEngine {
   }
 
   /**
-   * Check if a feature is enabled for a tenant
+   * Check if a feature is enabled for a tenant.
+   * Only works with boolean feature flags.
    */
-  async isFeatureEnabled(tenantId: string | null, feature: keyof FeaturePolicy): Promise<boolean> {
+  async isFeatureEnabled(
+    tenantId: string | null,
+    feature:
+      | 'ai_homework_helper_enabled'
+      | 'ai_lesson_planning_enabled'
+      | 'ai_assessment_builder_enabled'
+      | 'ai_tutor_enabled'
+      | 'baseline_assessments_enabled'
+      | 'progress_tracking_enabled'
+      | 'parent_portal_enabled'
+      | 'experimentation_enabled'
+  ): Promise<boolean> {
     const policy = await this.getEffectivePolicy(tenantId);
     return policy.features[feature];
   }

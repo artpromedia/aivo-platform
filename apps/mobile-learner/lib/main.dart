@@ -5,6 +5,7 @@ import 'package:flutter_common/flutter_common.dart';
 
 import 'baseline/baseline_controller.dart';
 import 'focus/focus_service.dart';
+import 'offline/offline.dart';
 import 'pin/pin_controller.dart';
 import 'pin/pin_state.dart';
 import 'screens/baseline_break_screen.dart';
@@ -125,7 +126,12 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize offline services (database, connectivity monitoring)
+  await initializeOfflineServices();
+  
   runApp(const ProviderScope(child: LearnerApp()));
 }
 
@@ -139,6 +145,7 @@ class LearnerApp extends ConsumerStatefulWidget {
 class _LearnerAppState extends ConsumerState<LearnerApp> {
   bool _themeLoaded = false;
   bool _baselineChecked = false;
+  bool _offlinePreloaded = false;
 
   @override
   void initState() {
@@ -148,10 +155,11 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
       if (!next.isAuthenticated) {
         _themeLoaded = false;
         _baselineChecked = false;
+        _offlinePreloaded = false;
         return;
       }
 
-      // On authentication, load theme and check baseline
+      // On authentication, load theme, check baseline, and preload offline data
       if (next.isAuthenticated && next.learnerId != null) {
         if (!_themeLoaded) {
           _themeLoaded = true;
@@ -163,7 +171,24 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
           ref.read(learnerBaselineControllerProvider.notifier)
               .checkBaselineStatus(next.learnerId!);
         }
+
+        // Preload offline data for today's plan
+        if (!_offlinePreloaded) {
+          _offlinePreloaded = true;
+          _preloadOfflineData(next.learnerId!);
+        }
       }
+    });
+  }
+
+  Future<void> _preloadOfflineData(String learnerId) async {
+    final syncManager = ref.read(syncManagerProvider);
+    
+    // Preload today's plan and related content in background
+    // This is fire-and-forget - errors are logged but don't block the app
+    syncManager.preloadForToday(learnerId).catchError((error) {
+      debugPrint('Offline preload failed: $error');
+      return PreloadResult.failure(error.toString());
     });
   }
 
@@ -172,6 +197,7 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
     final pinState = ref.watch(pinControllerProvider);
     final router = ref.watch(_routerProvider);
     final theme = ref.watch(gradeThemeProvider);
+    final connectivityState = ref.watch(connectivityStateProvider);
 
     if (pinState.status == PinStatus.loading) {
       return MaterialApp(
@@ -197,6 +223,15 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
       locale: const Locale('en'),
       supportedLocales: const [Locale('en')],
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        return Column(
+          children: [
+            // Show offline banner when not connected
+            OfflineStatusBanner(connectivityState: connectivityState),
+            Expanded(child: child ?? const SizedBox.shrink()),
+          ],
+        );
+      },
     );
   }
 }

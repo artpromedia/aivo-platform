@@ -417,6 +417,9 @@ importers:
       '@aivo/ts-policy-engine':
         specifier: workspace:*
         version: link:../../libs/ts-policy-engine
+      '@aivo/ts-types':
+        specifier: workspace:*
+        version: link:../../libs/ts-types
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1

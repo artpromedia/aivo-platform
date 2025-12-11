@@ -150,3 +150,74 @@ model LearningObjectVersionTransition {
   @@index([versionId, transitionedAt(sort: Desc)])
   @@map("learning_object_version_transitions")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENT PACKAGING
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ContentPackageStatus {
+  PENDING
+  BUILDING
+  READY
+  EXPIRED
+  FAILED
+
+  @@map("content_package_status")
+}
+
+enum ContentLocale {
+  en
+  es
+  fr
+  zh
+  ar
+
+  @@map("content_locale")
+}
+
+/// Content package for bulk device preloading and delta updates.
+model ContentPackage {
+  id                 String                @id @default(uuid()) @db.Uuid
+  tenantId           String                @map("tenant_id") @db.Uuid
+  gradeBands         LearningObjectGradeBand[] @map("grade_bands")
+  subjects           LearningObjectSubject[]   @map("subjects")
+  locales            ContentLocale[]       @default([en])
+  status             ContentPackageStatus  @default(PENDING)
+  manifestUrl        String?               @map("manifest_url")
+  bundleUrl          String?               @map("bundle_url")
+  totalItems         Int                   @default(0) @map("total_items")
+  totalSizeBytes     BigInt                @default(0) @map("total_size_bytes")
+  requestedAt        DateTime              @default(now()) @map("requested_at") @db.Timestamptz
+  completedAt        DateTime?             @map("completed_at") @db.Timestamptz
+  expiresAt          DateTime?             @map("expires_at") @db.Timestamptz
+  requestedByUserId  String                @map("requested_by_user_id") @db.Uuid
+  errorMessage       String?               @map("error_message")
+  urlExpirationHours Int                   @default(24) @map("url_expiration_hours")
+  updatedSince       DateTime?             @map("updated_since") @db.Timestamptz
+  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, status])
+  @@index([tenantId, requestedAt(sort: Desc)])
+  @@map("content_packages")
+}
+
+/// Track content version changes for delta updates.
+model ContentVersionChange {
+  id                String                   @id @default(uuid()) @db.Uuid
+  loVersionId       String                   @map("lo_version_id") @db.Uuid
+  learningObjectId  String                   @map("learning_object_id") @db.Uuid
+  tenantId          String?                  @map("tenant_id") @db.Uuid
+  subject           LearningObjectSubject
+  gradeBand         LearningObjectGradeBand  @map("grade_band")
+  versionNumber     Int                      @map("version_number")
+  changeType        String                   @map("change_type") // ADDED, UPDATED, REMOVED
+  checksum          String?
+  sizeBytes         BigInt?                  @map("size_bytes")
+  locale            ContentLocale            @default(en)
+  changedAt         DateTime                 @default(now()) @map("changed_at") @db.Timestamptz
+
+  @@index([tenantId, changedAt(sort: Desc)])
+  @@index([tenantId, subject, gradeBand, changedAt(sort: Desc)])
+  @@map("content_version_changes")
+}

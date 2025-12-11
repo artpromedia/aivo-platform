@@ -193,3 +193,200 @@ model HomeworkStepResponse {
   @@index([stepId])
   @@map("homework_step_responses")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPLAINABILITY MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ExplanationSourceType {
+  LESSON_PLANNER
+  VIRTUAL_BRAIN
+  FOCUS_AGENT
+  RECOMMENDER
+  SYSTEM_POLICY
+  BASELINE_AGENT
+  HOMEWORK_HELPER
+
+  @@map("explanation_source_type")
+}
+
+enum ExplanationActionType {
+  CONTENT_SELECTION
+  DIFFICULTY_CHANGE
+  FOCUS_BREAK_TRIGGER
+  FOCUS_INTERVENTION
+  MODULE_RECOMMENDATION
+  LEARNING_PATH_ADJUSTMENT
+  SKILL_PROGRESSION
+  SCAFFOLDING_DECISION
+  POLICY_ENFORCEMENT
+
+  @@map("explanation_action_type")
+}
+
+/// Explanation events - structured justifications for platform decisions
+model ExplanationEvent {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String                @map("tenant_id") @db.Uuid
+  learnerId           String?               @map("learner_id") @db.Uuid
+  userId              String?               @map("user_id") @db.Uuid
+  sessionId           String?               @map("session_id") @db.Uuid
+  sourceType          ExplanationSourceType @map("source_type")
+  actionType          ExplanationActionType @map("action_type")
+  relatedEntityType   String                @map("related_entity_type")
+  relatedEntityId     String                @map("related_entity_id")
+  summaryText         String                @map("summary_text")
+  detailsJson         Json                  @default("{}") @map("details_json") @db.JsonB
+  aiCallLogId         String?               @map("ai_call_log_id") @db.Uuid
+  templateId          String?               @map("template_id") @db.Uuid
+  confidence          Decimal?              @db.Decimal(4, 3)
+  generatorVersion    String                @default("1.0.0") @map("generator_version")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  template            ExplanationTemplate?  @relation(fields: [templateId], references: [id])
+
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, actionType, createdAt(sort: Desc)])
+  @@index([tenantId, sourceType, createdAt(sort: Desc)])
+  @@index([relatedEntityType, relatedEntityId])
+  @@index([sessionId, createdAt])
+  @@index([aiCallLogId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("explanation_events")
+}
+
+/// Explanation templates - vetted language patterns for consistent explanations
+model ExplanationTemplate {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceType          ExplanationSourceType @map("source_type")
+  actionType          ExplanationActionType @map("action_type")
+  templateKey         String                @unique @map("template_key")
+  displayName         String                @map("display_name")
+  templateText        String                @map("template_text")
+  placeholdersSchema  Json                  @default("{}") @map("placeholders_schema") @db.JsonB
+  isActive            Boolean               @default(true) @map("is_active")
+  createdBy           String?               @map("created_by") @db.Uuid
+  updatedBy           String?               @map("updated_by") @db.Uuid
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  events              ExplanationEvent[]
+
+  @@index([templateKey])
+  @@index([sourceType, actionType])
+  @@map("explanation_templates")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODEL CARDS & AI TRANSPARENCY
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ModelProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  INTERNAL
+  META
+  MISTRAL
+  COHERE
+
+  @@map("model_provider")
+}
+
+/// Model cards - AI model documentation for transparency and governance
+model ModelCard {
+  id                    String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  modelKey              String        @unique @map("model_key")
+  provider              ModelProvider
+  displayName           String        @map("display_name")
+  description           String
+  intendedUseCases      String        @map("intended_use_cases")
+  limitations           String
+  safetyConsiderations  String        @map("safety_considerations")
+  inputTypes            String        @map("input_types")
+  outputTypes           String        @map("output_types")
+  dataSourcesSummary    String        @map("data_sources_summary")
+  lastReviewedAt        DateTime      @map("last_reviewed_at") @db.Timestamptz
+  lastReviewedBy        String?       @map("last_reviewed_by") @db.Uuid
+  metadataJson          Json          @default("{}") @map("metadata_json") @db.JsonB
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenantAssignments     TenantModelAssignment[]
+
+  @@index([provider])
+  @@index([modelKey])
+  @@index([lastReviewedAt(sort: Desc)])
+  @@map("model_cards")
+}
+
+/// Tenant model assignments - maps which models are available to each tenant
+model TenantModelAssignment {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  modelCardId String    @map("model_card_id") @db.Uuid
+  featureKey  String    @map("feature_key")
+  isActive    Boolean   @default(true) @map("is_active")
+  assignedAt  DateTime  @default(now()) @map("assigned_at") @db.Timestamptz
+  assignedBy  String?   @map("assigned_by") @db.Uuid
+
+  modelCard   ModelCard @relation(fields: [modelCardId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, modelCardId, featureKey])
+  @@index([tenantId])
+  @@index([modelCardId])
+  @@index([tenantId, isActive])
+  @@map("tenant_model_assignments")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIT EVENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  AGENT
+
+  @@map("audit_actor_type")
+}
+
+enum AuditActionType {
+  CREATED
+  UPDATED
+  DELETED
+  ACTIVATED
+  DEACTIVATED
+
+  @@map("audit_action_type")
+}
+
+/// Audit events - unified audit trail for tracking changes
+model AuditEvent {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String          @map("tenant_id") @db.Uuid
+  actorType             AuditActorType  @map("actor_type")
+  actorId               String?         @map("actor_id")
+  actorDisplayName      String?         @map("actor_display_name")
+  entityType            String          @map("entity_type")
+  entityId              String          @map("entity_id")
+  entityDisplayName     String?         @map("entity_display_name")
+  action                AuditActionType
+  changeJson            Json            @default("{}") @map("change_json") @db.JsonB
+  summary               String
+  reason                String?
+  relatedExplanationId  String?         @map("related_explanation_id") @db.Uuid
+  sessionId             String?         @map("session_id") @db.Uuid
+  learnerId             String?         @map("learner_id") @db.Uuid
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, entityType, entityId, createdAt(sort: Desc)])
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@index([tenantId, actorType, actorId, createdAt(sort: Desc)])
+  @@index([sessionId, createdAt(sort: Desc)])
+  @@index([entityType, tenantId, createdAt(sort: Desc)])
+  @@index([relatedExplanationId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_events")
+}

@@ -3,9 +3,12 @@ import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
+import { auditRoutes } from './routes/auditRoutes.js';
 import { classroomAnalyticsRoutes } from './routes/classroomAnalytics.js';
 import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
+import { explanationRoutes } from './routes/explanationRoutes.js';
 import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
+import { modelCardsRoutes } from './routes/modelCardsRoutes.js';
 import { parentAnalyticsRoutes } from './routes/parentAnalytics.js';
 import { teacherAnalyticsRoutes } from './routes/teacherAnalytics.js';
 import { tenantAnalyticsRoutes } from './routes/tenantAnalytics.js';
@@ -37,6 +40,13 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(classroomAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(tenantAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(experimentAnalyticsRoutes, { prefix: '/analytics' });
+  await app.register(explanationRoutes, { prefix: '/analytics' });
+
+  // Register model cards routes under /models prefix
+  await app.register(modelCardsRoutes, { prefix: '/models' });
+
+  // Register audit routes under /audit prefix
+  await app.register(auditRoutes, { prefix: '/audit' });
 
   return app;
 }

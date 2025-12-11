@@ -1,12 +1,17 @@
 name: mobile_teacher
 version: 0.0.0
 publish_to: "none"
-description: Flutter app for teachers and therapists. Placeholder.
+description: Flutter app for teachers and therapists.
 environment:
   sdk: ">=3.3.0 <4.0.0"
 dependencies:
   flutter:
     sdk: flutter
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.2.0
+  dio: ^5.7.0
+  flutter_common:
+    path: ../../libs/flutter-common
 
 dev_dependencies:
   flutter_test:

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@aivo/ts-policy-engine": "workspace:*",
+    "@aivo/ts-types": "workspace:*",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "pg": "^8.13.1",
