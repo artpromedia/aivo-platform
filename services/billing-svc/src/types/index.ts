@@ -7,3 +7,6 @@ export * from './contract.types';
 
 // Re-export all licensing types
 export * from './licensing.types';
+
+// Re-export all procurement types
+export * from './procurement.types';

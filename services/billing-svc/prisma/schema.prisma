@@ -636,6 +636,7 @@ model PriceBook {
   // Relations
   entries       PriceBookEntry[]
   contracts     Contract[]
+  quotes        Quote[]
   
   @@index([isDefault, isActive])
   @@map("price_books")
@@ -827,6 +828,9 @@ model Contract {
   invoiceSchedules      ContractInvoiceSchedule[]
   entitlements          ContractEntitlement[]
   seatEntitlements      SeatEntitlement[]
+  purchaseOrders        PurchaseOrder[]
+  districtInvoices      DistrictInvoice[]
+  renewalTask           RenewalTask?
   
   @@index([billingProfileId, status])
   @@index([tenantId, status])
@@ -1229,6 +1233,385 @@ model LicenseEvent {
   @@index([assignmentId])
   @@index([learnerId])
   @@map("license_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QUOTES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Quotes represent pricing proposals sent to district prospects/customers.
+// Created by Aivo sales team, shared with districts, can be accepted to
+// trigger PO/contract creation.
+//
+
+/// Status of a quote in the sales pipeline
+enum QuoteStatus {
+  DRAFT     // Being prepared, not yet shared
+  SENT      // Shared with district, awaiting response
+  ACCEPTED  // District accepted, ready for PO/contract
+  REJECTED  // District declined
+  EXPIRED   // Past validity date without response
+  CONVERTED // Successfully converted to contract
+}
+
+model Quote {
+  id                  String        @id @default(uuid()) @db.Uuid
+  
+  /// Billing account this quote is for
+  billingAccountId    String        @db.Uuid
+  
+  /// Tenant this quote is for
+  tenantId            String        @db.Uuid
+  
+  /// Human-readable quote number (e.g., "Q-2025-00042")
+  quoteNumber         String        @unique
+  
+  /// Quote name/title
+  name                String?
+  
+  /// Current quote status
+  status              QuoteStatus   @default(DRAFT)
+  
+  /// Quote validity end date
+  validUntil          DateTime      @db.Date
+  
+  /// Currency
+  currency            String        @default("USD") @db.VarChar(3)
+  
+  /// Total quote amount in cents
+  totalAmountCents    BigInt        @default(0)
+  
+  /// Price book used for this quote
+  priceBookId         String?       @db.Uuid
+  
+  /// Contract term start (proposed)
+  proposedStartDate   DateTime?     @db.Date
+  
+  /// Contract term end (proposed)
+  proposedEndDate     DateTime?     @db.Date
+  
+  /// Payment terms in days (e.g., Net 30)
+  paymentTermsDays    Int           @default(30)
+  
+  /// When the quote was sent to the district
+  sentAt              DateTime?     @db.Timestamptz
+  
+  /// When the district accepted the quote
+  acceptedAt          DateTime?     @db.Timestamptz
+  
+  /// User who created the quote (Aivo internal)
+  createdBy           String?       @db.Uuid
+  
+  /// Contract created from this quote (after conversion)
+  convertedContractId String?       @db.Uuid
+  
+  /// Metadata: notes, internal comments, revision history
+  /// Example: { "internalNotes": "...", "districtContact": "...", "revision": 2 }
+  metadataJson        Json?
+  
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  
+  // Relations
+  lineItems           QuoteLineItem[]
+  purchaseOrders      PurchaseOrder[]
+  priceBook           PriceBook?     @relation(fields: [priceBookId], references: [id])
+  
+  @@index([billingAccountId, status])
+  @@index([tenantId, status])
+  @@index([status, validUntil])
+  @@index([quoteNumber])
+  @@map("quotes")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QUOTE LINE ITEMS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Individual line items within a quote. Each represents a product/service
+// being proposed with quantity and pricing.
+//
+
+model QuoteLineItem {
+  id                String    @id @default(uuid()) @db.Uuid
+  
+  /// Parent quote
+  quoteId           String    @db.Uuid
+  
+  /// Product SKU
+  sku               String
+  
+  /// Line item description
+  description       String
+  
+  /// Quantity
+  quantity          Int       @default(1)
+  
+  /// List price per unit in cents (from price book)
+  listPriceCents    BigInt
+  
+  /// Unit price after discounts in cents
+  unitPriceCents    BigInt
+  
+  /// Discount percentage applied (0-100)
+  discountPercent   Decimal?  @db.Decimal(5, 2)
+  
+  /// Total line amount in cents (unitPriceCents * quantity)
+  totalAmountCents  BigInt    @default(0)
+  
+  /// Sort order for display
+  sortOrder         Int       @default(0)
+  
+  /// Metadata: product details, notes
+  metadataJson      Json?
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  quote             Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  @@index([quoteId])
+  @@map("quote_line_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PURCHASE ORDERS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Purchase orders received from districts. POs are required for most district
+// contracts and link quotes to contracts.
+//
+
+/// Status of a purchase order
+enum POStatus {
+  PENDING   // Received, awaiting Aivo approval
+  APPROVED  // Approved, ready for contract activation
+  REJECTED  // Rejected (e.g., amount mismatch, invalid)
+  CLOSED    // Fully processed, contract activated
+  CANCELLED // Cancelled by district
+}
+
+model PurchaseOrder {
+  id                  String      @id @default(uuid()) @db.Uuid
+  
+  /// Billing account this PO belongs to
+  billingAccountId    String      @db.Uuid
+  
+  /// Tenant this PO is for
+  tenantId            String      @db.Uuid
+  
+  /// District's PO number (from their system)
+  poNumber            String
+  
+  /// Quote this PO references (if from a quote)
+  quoteId             String?     @db.Uuid
+  
+  /// Current PO status
+  status              POStatus    @default(PENDING)
+  
+  /// PO amount in cents
+  amountCents         BigInt
+  
+  /// Currency
+  currency            String      @default("USD") @db.VarChar(3)
+  
+  /// PO validity start date
+  validFrom           DateTime    @db.Date
+  
+  /// PO validity end date
+  validTo             DateTime    @db.Date
+  
+  /// Uploaded PO document references
+  /// Example: [{ "fileName": "PO-2025.pdf", "url": "...", "uploadedAt": "..." }]
+  attachmentsJson     Json?
+  
+  /// Aivo user who approved/rejected
+  reviewedBy          String?     @db.Uuid
+  
+  /// When the PO was reviewed
+  reviewedAt          DateTime?   @db.Timestamptz
+  
+  /// Review notes/reason for rejection
+  reviewNotes         String?
+  
+  /// Contract created from this PO
+  contractId          String?     @db.Uuid
+  
+  /// Metadata: additional PO details
+  metadataJson        Json?
+  
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  
+  // Relations
+  quote               Quote?      @relation(fields: [quoteId], references: [id])
+  contract            Contract?   @relation(fields: [contractId], references: [id])
+  
+  @@unique([tenantId, poNumber])
+  @@index([billingAccountId, status])
+  @@index([tenantId, status])
+  @@index([status])
+  @@index([poNumber])
+  @@map("purchase_orders")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DISTRICT INVOICES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Invoices for district contracts. Extends the base Invoice model with
+// district-specific features like PO references and external ERP integration.
+//
+
+/// Status of a district invoice
+enum DistrictInvoiceStatus {
+  DRAFT     // Being prepared
+  SENT      // Sent to district
+  PAID      // Payment received
+  OVERDUE   // Past due date
+  VOID      // Cancelled/voided
+  DISPUTED  // District has raised a dispute
+}
+
+model DistrictInvoice {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  
+  /// Billing account this invoice belongs to
+  billingAccountId    String                  @db.Uuid
+  
+  /// Contract this invoice is for
+  contractId          String                  @db.Uuid
+  
+  /// Human-readable invoice number (e.g., "INV-2025-00042")
+  invoiceNumber       String                  @unique
+  
+  /// Current invoice status
+  status              DistrictInvoiceStatus   @default(DRAFT)
+  
+  /// Invoice issue date
+  issueDate           DateTime                @db.Date
+  
+  /// Payment due date
+  dueDate             DateTime                @db.Date
+  
+  /// Total amount due in cents
+  amountDueCents      BigInt
+  
+  /// Amount paid in cents
+  amountPaidCents     BigInt                  @default(0)
+  
+  /// Currency
+  currency            String                  @default("USD") @db.VarChar(3)
+  
+  /// PO number for reference (from district's PO)
+  poNumber            String?
+  
+  /// External system ID (Stripe, ERP, etc.)
+  externalSystemId    String?
+  
+  /// External system name (e.g., "STRIPE", "QUICKBOOKS", "NETSUITE")
+  externalSystemName  String?
+  
+  /// When the invoice was sent to the district
+  sentAt              DateTime?               @db.Timestamptz
+  
+  /// When payment was received
+  paidAt              DateTime?               @db.Timestamptz
+  
+  /// Payment reference (check number, wire reference, etc.)
+  paymentReference    String?
+  
+  /// PDF URL or path
+  pdfUrl              String?
+  
+  /// Metadata: line item breakdown, notes, reminders sent
+  /// Example: { "lineItems": [...], "remindersSent": 2 }
+  metadataJson        Json?
+  
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  
+  // Relations
+  contract            Contract                @relation(fields: [contractId], references: [id])
+  
+  @@index([billingAccountId, status])
+  @@index([contractId, status])
+  @@index([status, dueDate])
+  @@index([invoiceNumber])
+  @@index([externalSystemId])
+  @@map("district_invoices")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENEWAL TASKS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Scheduled renewal tasks for contracts approaching end date.
+// Used by the renewal scheduler to track and manage upcoming renewals.
+//
+
+/// Status of a renewal task
+enum RenewalTaskStatus {
+  SCHEDULED     // Upcoming, not yet actionable
+  DUE           // Ready for action
+  IN_PROGRESS   // Being worked on
+  COMPLETED     // Successfully renewed
+  NOT_RENEWING  // Customer decided not to renew
+  CHURNED       // Contract ended without renewal
+}
+
+model RenewalTask {
+  id                  String            @id @default(uuid()) @db.Uuid
+  
+  /// Contract being renewed
+  contractId          String            @db.Uuid
+  
+  /// Tenant
+  tenantId            String            @db.Uuid
+  
+  /// Task status
+  status              RenewalTaskStatus @default(SCHEDULED)
+  
+  /// Scheduled due date (when to start renewal process)
+  dueDate             DateTime          @db.Date
+  
+  /// Contract end date (for reference)
+  contractEndDate     DateTime          @db.Date
+  
+  /// Draft renewal quote (if created)
+  renewalQuoteId      String?           @db.Uuid
+  
+  /// Renewal contract (if created)
+  renewalContractId   String?           @db.Uuid
+  
+  /// Assigned account manager
+  assignedTo          String?           @db.Uuid
+  
+  /// Notes and activity log
+  /// Example: { "activities": [{ "date": "...", "action": "...", "by": "..." }] }
+  notesJson           Json?
+  
+  /// Last reminder sent date
+  lastReminderAt      DateTime?         @db.Timestamptz
+  
+  /// Number of reminders sent
+  reminderCount       Int               @default(0)
+  
+  /// Churn reason (if not renewing)
+  churnReason         String?
+  
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  
+  // Relations
+  contract            Contract          @relation(fields: [contractId], references: [id])
+  
+  @@unique([contractId])
+  @@index([status, dueDate])
+  @@index([tenantId, status])
+  @@index([assignedTo, status])
+  @@map("renewal_tasks")
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
