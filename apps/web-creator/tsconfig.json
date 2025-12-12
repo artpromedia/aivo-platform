@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".next",
+    "jsx": "preserve",
+    "noEmit": true,
+    "moduleResolution": "Bundler",
+    "module": "esnext",
+    "baseUrl": ".",
+    "paths": {},
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": ["vitest/globals"]
+  },
+  "include": ["app/**/*", "components/**/*", "lib/**/*", "__tests__/**/*", "next-env.d.ts", ".next/types/**/*.ts", "vitest.config.ts", "vitest.setup.ts"],
+  "exclude": ["node_modules", ".next", "dist", "build"]
+}
