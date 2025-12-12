@@ -1,0 +1,390 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// EMBEDDED TOOLS SERVICE - PRISMA SCHEMA
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// This schema defines the Embed Framework for safely launching third-party tools.
+// Key principles:
+//   - COPPA/FERPA-aware data minimization
+//   - Strict sandboxing with controlled message passing
+//   - Short-lived launch tokens with scoped access
+//   - Complete audit trail of tool sessions and events
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Status of a tool session
+enum ToolSessionStatus {
+  ACTIVE       // Session is active and tool can communicate
+  COMPLETED    // Session ended normally (user or tool initiated)
+  EXPIRED      // Session timed out
+  REVOKED      // Session was forcibly terminated (e.g., by admin)
+
+  @@map("tool_session_status")
+}
+
+/// Type of session event
+enum SessionEventType {
+  // Lifecycle events
+  SESSION_STARTED       // Tool acknowledged session start
+  SESSION_ENDED         // Tool or user ended session
+  
+  // Learning events (from tool)
+  ACTIVITY_STARTED      // Learner started an activity
+  ACTIVITY_COMPLETED    // Learner completed an activity
+  ACTIVITY_PROGRESS     // Progress update during activity
+  SCORE_RECORDED        // Score or assessment result
+  TIME_SPENT            // Time tracking event
+  BADGE_EARNED          // Achievement/badge earned
+  
+  // Engagement events
+  INTERACTION           // Generic user interaction
+  HINT_REQUESTED        // Learner requested help
+  HINT_VIEWED           // Learner viewed hint
+  
+  // Error events
+  TOOL_ERROR            // Tool reported an error
+  VALIDATION_ERROR      // Event validation failed
+  
+  // System events
+  TOKEN_REFRESHED       // Session token was refreshed
+  SCOPE_VIOLATION       // Tool attempted unauthorized action
+
+  @@map("session_event_type")
+}
+
+/// Scope for data access (COPPA/FERPA compliant)
+enum ToolScope {
+  // Learner data scopes (minimized)
+  LEARNER_PROFILE_MIN      // First name initial, grade band only
+  LEARNER_PROFILE_EXTENDED // + subject preferences (requires explicit consent)
+  LEARNER_PSEUDONYM        // Pseudonymous ID only (hash-based)
+  
+  // Context scopes
+  CLASSROOM_CONTEXT        // Classroom name, grade level
+  ASSIGNMENT_CONTEXT       // Assignment details if launched from assignment
+  
+  // Event scopes
+  SESSION_EVENTS_WRITE     // Can send events back to Aivo
+  SESSION_EVENTS_READ      // Can query own session's events
+  
+  // Progress scopes
+  PROGRESS_READ            // Can read learner progress (in this tool)
+  PROGRESS_WRITE           // Can write progress markers
+  
+  // Theme/presentation scopes
+  THEME_READ               // Can read current theme/styling
+  
+  // Advanced scopes (require elevated approval)
+  LEARNER_NAME_FULL        // Full first name (requires COPPA consent)
+  LEARNER_GRADE_EXACT      // Exact grade level
+  TEACHER_CONTEXT          // Teacher name and contact
+
+  @@map("tool_scope")
+}
+
+/// Actor type for audit
+enum ActorType {
+  LEARNER
+  TEACHER
+  PARENT
+  ADMIN
+  SYSTEM
+
+  @@map("actor_type")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOOL SESSIONS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// A tool session represents a single launch of an embedded tool.
+// Sessions are short-lived and scoped to specific learner/context.
+//
+
+/// Tool session for embedded tool launch
+model ToolSession {
+  id                        String            @id @default(uuid()) @db.Uuid
+  
+  /// Tenant where this session was created
+  tenantId                  String            @map("tenant_id") @db.Uuid
+  
+  /// The marketplace item being used (cross-service ref)
+  marketplaceItemId         String            @map("marketplace_item_id") @db.Uuid
+  
+  /// Specific version of the item (cross-service ref)
+  marketplaceItemVersionId  String            @map("marketplace_item_version_id") @db.Uuid
+  
+  /// Installation record (cross-service ref)
+  installationId            String            @map("installation_id") @db.Uuid
+  
+  /// Learner using the tool (null if teacher-only tool)
+  learnerId                 String?           @map("learner_id") @db.Uuid
+  
+  /// Pseudonymous learner ID (hash of learnerId + tenant secret)
+  /// This is what gets passed to the tool instead of real ID
+  pseudonymousLearnerId     String?           @map("pseudonymous_learner_id")
+  
+  /// Classroom context (optional)
+  classroomId               String?           @map("classroom_id") @db.Uuid
+  
+  /// Assignment context (optional, if launched from assignment)
+  assignmentId              String?           @map("assignment_id") @db.Uuid
+  
+  /// User who initiated the session (teacher, parent, or learner)
+  createdByUserId           String            @map("created_by_user_id") @db.Uuid
+  
+  /// Type of user who created the session
+  createdByActorType        ActorType         @map("created_by_actor_type")
+  
+  /// Granted scopes (intersection of tool requirements and tenant policy)
+  grantedScopes             ToolScope[]       @map("granted_scopes")
+  
+  /// Session status
+  status                    ToolSessionStatus @default(ACTIVE)
+  
+  /// Tool-specific launch configuration (from installation settings)
+  launchConfigJson          Json?             @map("launch_config_json")
+  
+  /// Minimal learner context passed to tool (based on scopes)
+  /// Example: { "initials": "J.S.", "gradeBand": "G3_5", "subject": "MATH" }
+  learnerContextJson        Json?             @map("learner_context_json")
+  
+  /// JWT ID (jti) of the launch token for this session
+  tokenJti                  String?           @map("token_jti")
+  
+  /// Token expiration time
+  tokenExpiresAt            DateTime?         @map("token_expires_at") @db.Timestamptz
+  
+  /// Number of times token was refreshed
+  tokenRefreshCount         Int               @default(0) @map("token_refresh_count")
+  
+  /// Session creation time
+  createdAt                 DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  
+  /// Session expiration time (hard limit)
+  expiresAt                 DateTime          @map("expires_at") @db.Timestamptz
+  
+  /// When session ended (status changed from ACTIVE)
+  endedAt                   DateTime?         @map("ended_at") @db.Timestamptz
+  
+  /// Last activity timestamp (for idle timeout)
+  lastActivityAt            DateTime          @default(now()) @map("last_activity_at") @db.Timestamptz
+  
+  /// Updated timestamp
+  updatedAt                 DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  events            SessionEvent[]
+  tokenAuditLogs    TokenAuditLog[]
+
+  @@index([tenantId, status])
+  @@index([learnerId, status])
+  @@index([marketplaceItemId, tenantId])
+  @@index([installationId])
+  @@index([createdByUserId])
+  @@index([status, expiresAt])
+  @@index([tokenJti])
+  @@map("tool_sessions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SESSION EVENTS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Events sent from tools or generated by the system during a session.
+// These feed into the analytics and learner model services.
+//
+
+/// Event within a tool session
+model SessionEvent {
+  id              String            @id @default(uuid()) @db.Uuid
+  
+  /// Parent session
+  toolSessionId   String            @map("tool_session_id") @db.Uuid
+  
+  /// Event type
+  eventType       SessionEventType  @map("event_type")
+  
+  /// Event timestamp (from tool, may differ from receivedAt)
+  eventTimestamp  DateTime          @map("event_timestamp") @db.Timestamptz
+  
+  /// When Aivo received this event
+  receivedAt      DateTime          @default(now()) @map("received_at") @db.Timestamptz
+  
+  /// Event-specific payload
+  /// Structure varies by event type, validated against schema
+  payloadJson     Json              @map("payload_json")
+  
+  /// Activity ID within the tool (tool-defined)
+  activityId      String?           @map("activity_id")
+  
+  /// Score if applicable (normalized 0-100)
+  scoreValue      Decimal?          @map("score_value") @db.Decimal(5, 2)
+  
+  /// Duration in seconds if applicable
+  durationSeconds Int?              @map("duration_seconds")
+  
+  /// Whether event was successfully processed
+  isProcessed     Boolean           @default(false) @map("is_processed")
+  
+  /// Processing error if any
+  processingError String?           @map("processing_error")
+  
+  /// Whether event was forwarded to analytics
+  isForwarded     Boolean           @default(false) @map("is_forwarded")
+
+  // Relations
+  session ToolSession @relation(fields: [toolSessionId], references: [id], onDelete: Cascade)
+
+  @@index([toolSessionId, eventTimestamp(sort: Desc)])
+  @@index([eventType, receivedAt])
+  @@index([isProcessed, isForwarded])
+  @@map("session_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOKEN AUDIT
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Audit log for token operations (creation, refresh, validation, revocation).
+//
+
+/// Audit log for token operations
+model TokenAuditLog {
+  id              String      @id @default(uuid()) @db.Uuid
+  
+  /// Parent session
+  toolSessionId   String      @map("tool_session_id") @db.Uuid
+  
+  /// Operation performed
+  operation       String      // CREATED, REFRESHED, VALIDATED, REVOKED, EXPIRED
+  
+  /// JWT ID (jti) of the token
+  tokenJti        String      @map("token_jti")
+  
+  /// IP address of the request
+  ipAddress       String?     @map("ip_address")
+  
+  /// User agent of the request
+  userAgent       String?     @map("user_agent")
+  
+  /// Whether operation succeeded
+  success         Boolean     @default(true)
+  
+  /// Error message if failed
+  errorMessage    String?     @map("error_message")
+  
+  /// Additional context
+  metadataJson    Json?       @map("metadata_json")
+  
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  session ToolSession @relation(fields: [toolSessionId], references: [id], onDelete: Cascade)
+
+  @@index([toolSessionId, createdAt(sort: Desc)])
+  @@index([tokenJti])
+  @@map("token_audit_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TENANT TOOL POLICIES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Per-tenant configuration for tool embedding policies.
+// Controls what scopes are allowed, session limits, etc.
+//
+
+/// Tenant-level tool embedding policy
+model TenantToolPolicy {
+  id                    String      @id @default(uuid()) @db.Uuid
+  
+  /// Tenant this policy applies to
+  tenantId              String      @unique @map("tenant_id") @db.Uuid
+  
+  /// Maximum allowed scopes (superset limit)
+  /// Tools can only get intersection of their required scopes and this
+  allowedScopes         ToolScope[] @map("allowed_scopes")
+  
+  /// Scopes that are explicitly denied (overrides allowedScopes)
+  deniedScopes          ToolScope[] @default([]) @map("denied_scopes")
+  
+  /// Whether to require parental consent for learner data scopes
+  requireParentalConsent Boolean    @default(true) @map("require_parental_consent")
+  
+  /// Maximum session duration in minutes
+  maxSessionDurationMin Int         @default(60) @map("max_session_duration_min")
+  
+  /// Session idle timeout in minutes
+  idleTimeoutMin        Int         @default(15) @map("idle_timeout_min")
+  
+  /// Maximum concurrent sessions per learner
+  maxConcurrentSessions Int         @default(1) @map("max_concurrent_sessions")
+  
+  /// Whether to allow token refresh
+  allowTokenRefresh     Boolean     @default(true) @map("allow_token_refresh")
+  
+  /// Maximum token refresh count per session
+  maxTokenRefreshes     Int         @default(3) @map("max_token_refreshes")
+  
+  /// Allowed launch types
+  allowedLaunchTypes    String[]    @default([]) @map("allowed_launch_types")
+  
+  /// Custom Content Security Policy additions
+  customCspDirectives   String?     @map("custom_csp_directives")
+  
+  /// Additional policy metadata
+  metadataJson          Json?       @map("metadata_json")
+  
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("tenant_tool_policies")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOOL ALLOW/BLOCK LISTS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Per-tenant allowlist or blocklist for specific tools.
+//
+
+/// Tenant-specific tool allow/block entry
+model TenantToolListEntry {
+  id                  String   @id @default(uuid()) @db.Uuid
+  
+  /// Tenant this entry applies to
+  tenantId            String   @map("tenant_id") @db.Uuid
+  
+  /// The marketplace item
+  marketplaceItemId   String   @map("marketplace_item_id") @db.Uuid
+  
+  /// Whether this is an allow or block entry
+  isAllowed           Boolean  @map("is_allowed")
+  
+  /// Reason for the allow/block
+  reason              String?
+  
+  /// User who created this entry
+  createdByUserId     String   @map("created_by_user_id") @db.Uuid
+  
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, marketplaceItemId])
+  @@index([tenantId, isAllowed])
+  @@map("tenant_tool_list_entries")
+}
