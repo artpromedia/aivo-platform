@@ -174,12 +174,20 @@ export default function BillingDashboardPage() {
           <h1 className="text-2xl font-bold">District Billing</h1>
           <p className="text-slate-600">Manage quotes, purchase orders, and renewals</p>
         </div>
-        <Link
-          href="/billing/quotes/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Create Quote
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/billing/finops"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            FinOps Dashboard
+          </Link>
+          <Link
+            href="/billing/quotes/new"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Create Quote
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}

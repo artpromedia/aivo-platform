@@ -2,6 +2,7 @@
  * Billing Services - Index
  */
 
+export * from './audit.service.js';
 export * from './billing-reconciliation.job.js';
 export * from './contract.service.js';
 export * from './coverage-profile.service.js';

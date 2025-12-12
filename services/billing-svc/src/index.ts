@@ -7,6 +7,8 @@ import Fastify from 'fastify';
 import { config } from './config.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { coverageRoutes } from './routes/coverage.routes.js';
+import { finopsRoutes } from './routes/finops.routes.js';
+import { webhookRoutes } from './routes/webhook.routes.js';
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
@@ -31,11 +33,12 @@ async function main() {
 
   // Register routes
   await app.register(coverageRoutes, { prefix: '/api/v1' });
+  await app.register(webhookRoutes, { prefix: '/billing/webhooks' });
+  await app.register(finopsRoutes, { prefix: '/api/v1/finops' });
   // TODO: Register additional routes
   // app.register(billingAccountRoutes, { prefix: '/billing' });
   // app.register(subscriptionRoutes, { prefix: '/subscriptions' });
   // app.register(invoiceRoutes, { prefix: '/invoices' });
-  // app.register(webhookRoutes, { prefix: '/webhooks' });
 
   // Graceful shutdown
   const shutdown = async () => {
