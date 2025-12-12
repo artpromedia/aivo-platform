@@ -10,3 +10,6 @@ export * from './licensing.types';
 
 // Re-export all procurement types
 export * from './procurement.types';
+
+// Re-export all usage analytics types
+export * from './usage-analytics.types';

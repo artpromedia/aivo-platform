@@ -7,3 +7,4 @@ export * from './licensing.service.js';
 export * from './enforcement.hooks.js';
 export * from './procurement.service.js';
 export * from './renewal.scheduler.js';
+export * from './usage-analytics.service.js';

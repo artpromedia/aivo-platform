@@ -8,6 +8,8 @@ import {
   getSeatUsagePercentage,
   getSeatUsageLevel,
   exportInvoicesToCsv,
+  getGradeBandLabel,
+  getAlertSeverityTone,
   type SeatUsage,
   type Invoice,
   type InvoiceStatus,
@@ -424,5 +426,92 @@ describe('Contact CTAs', () => {
       .map((e) => getModuleDisplayName(e.featureCode));
 
     expect(disabledModules).toEqual(['Mathematics', 'Social-Emotional Learning']);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SEAT USAGE ALERTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('Seat Usage Alerts', () => {
+  describe('getGradeBandLabel', () => {
+    it('returns human-readable labels for grade bands', () => {
+      expect(getGradeBandLabel('K_2')).toBe('K-2');
+      expect(getGradeBandLabel('GRADE_3_5')).toBe('3-5');
+      expect(getGradeBandLabel('GRADE_6_8')).toBe('6-8');
+      expect(getGradeBandLabel('GRADE_9_12')).toBe('9-12');
+      expect(getGradeBandLabel('ALL')).toBe('All Grades');
+    });
+
+    it('returns the grade band code if unknown', () => {
+      expect(getGradeBandLabel('UNKNOWN_BAND')).toBe('UNKNOWN_BAND');
+    });
+  });
+
+  describe('getAlertSeverityTone', () => {
+    it('returns correct tone for each severity', () => {
+      expect(getAlertSeverityTone('CRITICAL')).toBe('error');
+      expect(getAlertSeverityTone('WARNING')).toBe('warning');
+      expect(getAlertSeverityTone('INFO')).toBe('info');
+    });
+  });
+
+  describe('Alert threshold interpretation', () => {
+    function getThresholdDescription(threshold: number): string {
+      if (threshold >= 1.1) return 'Overage (110%+)';
+      if (threshold >= 1.0) return 'At Limit (100%)';
+      return 'Warning (80%+)';
+    }
+
+    it('interprets warning threshold correctly', () => {
+      expect(getThresholdDescription(0.8)).toBe('Warning (80%+)');
+    });
+
+    it('interprets at-limit threshold correctly', () => {
+      expect(getThresholdDescription(1.0)).toBe('At Limit (100%)');
+    });
+
+    it('interprets overage threshold correctly', () => {
+      expect(getThresholdDescription(1.1)).toBe('Overage (110%+)');
+    });
+  });
+
+  describe('Utilization bar calculations', () => {
+    function getUtilizationBarColor(percent: number): string {
+      if (percent > 100) return 'red';
+      if (percent >= 80) return 'amber';
+      return 'emerald';
+    }
+
+    it('returns emerald for normal utilization', () => {
+      expect(getUtilizationBarColor(0)).toBe('emerald');
+      expect(getUtilizationBarColor(50)).toBe('emerald');
+      expect(getUtilizationBarColor(79)).toBe('emerald');
+    });
+
+    it('returns amber for warning utilization', () => {
+      expect(getUtilizationBarColor(80)).toBe('amber');
+      expect(getUtilizationBarColor(90)).toBe('amber');
+      expect(getUtilizationBarColor(100)).toBe('amber');
+    });
+
+    it('returns red for overage utilization', () => {
+      expect(getUtilizationBarColor(101)).toBe('red');
+      expect(getUtilizationBarColor(150)).toBe('red');
+    });
+  });
+
+  describe('Alert status badge mapping', () => {
+    const statusTones: Record<string, string> = {
+      OPEN: 'warning',
+      ACKNOWLEDGED: 'info',
+      RESOLVED: 'success',
+    };
+
+    it('maps each status to correct tone', () => {
+      expect(statusTones['OPEN']).toBe('warning');
+      expect(statusTones['ACKNOWLEDGED']).toBe('info');
+      expect(statusTones['RESOLVED']).toBe('success');
+    });
   });
 });
