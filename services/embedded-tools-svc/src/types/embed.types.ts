@@ -5,6 +5,8 @@
  * Includes scopes, session models, and postMessage protocol.
  */
 
+/* eslint-disable no-redeclare */
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ENUMS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -93,7 +95,8 @@ export const EmbeddedToolLaunchType = {
   NATIVE_DEEPLINK: 'NATIVE_DEEPLINK',
   LTI_LIKE: 'LTI_LIKE',
 } as const;
-export type EmbeddedToolLaunchType = (typeof EmbeddedToolLaunchType)[keyof typeof EmbeddedToolLaunchType];
+export type EmbeddedToolLaunchType =
+  (typeof EmbeddedToolLaunchType)[keyof typeof EmbeddedToolLaunchType];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LAUNCH TOKEN TYPES
@@ -275,7 +278,10 @@ export type EndSessionRequestMessage = EmbedMessage<
 /**
  * Tool → Aivo: Request token refresh
  */
-export type TokenRefreshRequestMessage = EmbedMessage<'TOKEN_REFRESH_REQUEST', Record<string, never>>;
+export type TokenRefreshRequestMessage = EmbedMessage<
+  'TOKEN_REFRESH_REQUEST',
+  Record<string, never>
+>;
 
 /**
  * Tool → Aivo: Error report
@@ -484,7 +490,10 @@ export interface SessionSummary {
 // SCOPE DESCRIPTIONS (for documentation)
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const SCOPE_DESCRIPTIONS: Record<ToolScope, { name: string; description: string; dataFields: string[] }> = {
+export const SCOPE_DESCRIPTIONS: Record<
+  ToolScope,
+  { name: string; description: string; dataFields: string[] }
+> = {
   LEARNER_PROFILE_MIN: {
     name: 'Minimal Learner Profile',
     description: 'First name initial, grade band, and subject only',
@@ -567,12 +576,17 @@ export function isToolScope(value: unknown): value is ToolScope {
  * Check if a value is a valid SessionEventType
  */
 export function isSessionEventType(value: unknown): value is SessionEventType {
-  return typeof value === 'string' && Object.values(SessionEventType).includes(value as SessionEventType);
+  return (
+    typeof value === 'string' && Object.values(SessionEventType).includes(value as SessionEventType)
+  );
 }
 
 /**
  * Check if a value is a valid ToolSessionStatus
  */
 export function isToolSessionStatus(value: unknown): value is ToolSessionStatus {
-  return typeof value === 'string' && Object.values(ToolSessionStatus).includes(value as ToolSessionStatus);
+  return (
+    typeof value === 'string' &&
+    Object.values(ToolSessionStatus).includes(value as ToolSessionStatus)
+  );
 }

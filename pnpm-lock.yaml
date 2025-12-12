@@ -965,6 +965,49 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@22.19.1)(jsdom@26.1.0)
 
+  services/embedded-tools-svc:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^9.0.1
+        version: 9.0.1
+      '@fastify/helmet':
+        specifier: ^11.1.1
+        version: 11.1.1
+      '@prisma/client':
+        specifier: ^6.9.0
+        version: 6.19.0(prisma@6.19.0(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
+      fastify:
+        specifier: ^4.29.1
+        version: 4.29.1
+      fastify-plugin:
+        specifier: ^4.5.1
+        version: 4.5.1
+      jose:
+        specifier: ^5.9.0
+        version: 5.10.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.1
+        version: 22.19.1
+      pino-pretty:
+        specifier: ^11.3.0
+        version: 11.3.0
+      prisma:
+        specifier: ^6.9.0
+        version: 6.19.0(magicast@0.3.5)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.1)(jsdom@26.1.0)
+
   services/experimentation-svc:
     dependencies:
       '@aivo/ts-policy-engine':
@@ -1312,6 +1355,40 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.4
+        version: 2.1.9(@types/node@22.19.1)(jsdom@26.1.0)
+
+  services/marketplace-svc:
+    dependencies:
+      '@prisma/client':
+        specifier: ^6.9.0
+        version: 6.19.0(prisma@6.19.0(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
+      fastify:
+        specifier: ^4.29.1
+        version: 4.29.1
+      fastify-plugin:
+        specifier: ^4.5.1
+        version: 4.5.1
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.1
+        version: 22.19.1
+      pino-pretty:
+        specifier: ^11.3.0
+        version: 11.3.0
+      prisma:
+        specifier: ^6.9.0
+        version: 6.19.0(magicast@0.3.5)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
         version: 2.1.9(@types/node@22.19.1)(jsdom@26.1.0)
 
   services/payments-svc:
@@ -2329,6 +2406,9 @@ packages:
 
   '@fastify/fast-json-stringify-compiler@4.3.0':
     resolution: {integrity: sha512-aZAXGYo6m22Fk1zZzEUKBvut/CIIQe/BapEORnxiD5Qr0kPHqqI69NtEMCme74h+at72sPhbkb4ZrLd1W3KRLA==}
+
+  '@fastify/helmet@11.1.1':
+    resolution: {integrity: sha512-pjJxjk6SLEimITWadtYIXt6wBMfFC1I6OQyH/jYVCqSAn36sgAIFjeNiibHtifjCd+e25442pObis3Rjtame6A==}
 
   '@fastify/merge-json-schemas@0.1.1':
     resolution: {integrity: sha512-fERDVz7topgNjtXsJTTW1JKLy0rhuLRcquYqNR9rF7OcVpCa2OVW49ZPDIhaRRCaUuvVxI+N416xUoF76HNSXA==}
@@ -4993,6 +5073,10 @@ packages:
 
   hastscript@9.0.1:
     resolution: {integrity: sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w==}
+
+  helmet@7.2.0:
+    resolution: {integrity: sha512-ZRiwvN089JfMXokizgqEPXsl2Guk094yExfoDXR0cBYWxtBbaSww/w+vT4WEJsBW2iTUi1GgZ6swmoug3Oy4Xw==}
+    engines: {node: '>=16.0.0'}
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
@@ -8188,6 +8272,11 @@ snapshots:
   '@fastify/fast-json-stringify-compiler@4.3.0':
     dependencies:
       fast-json-stringify: 5.16.1
+
+  '@fastify/helmet@11.1.1':
+    dependencies:
+      fastify-plugin: 4.5.1
+      helmet: 7.2.0
 
   '@fastify/merge-json-schemas@0.1.1':
     dependencies:
@@ -11450,6 +11539,8 @@ snapshots:
       hast-util-parse-selector: 4.0.0
       property-information: 7.1.0
       space-separated-tokens: 2.0.2
+
+  helmet@7.2.0: {}
 
   help-me@5.0.0: {}
 

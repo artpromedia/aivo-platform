@@ -18,22 +18,31 @@ export default function HomePage() {
           </Link>
         </Card>
 
+        <Card title="My Library" subtitle="Content & tools from marketplace">
+          <p className="text-muted text-sm mb-4">
+            Browse approved content packs and tools to use in your classrooms.
+          </p>
+          <Link href="/library">
+            <Button variant="primary">Browse Library</Button>
+          </Link>
+        </Card>
+
+        <Card title="Lesson Planning" subtitle="Build engaging lessons">
+          <p className="text-muted text-sm mb-4">
+            Create lessons with content from your library integrated in.
+          </p>
+          <Link href="/planning">
+            <Button variant="secondary">Create Lesson</Button>
+          </Link>
+        </Card>
+
         <Card title="Analytics" subtitle="Track student engagement">
           <p className="text-muted text-sm mb-4">
             See how your students are progressing and identify who needs support.
           </p>
           <Link href="/classrooms">
-            <Button variant="secondary">View Analytics</Button>
+            <Button variant="ghost">View Analytics</Button>
           </Link>
-        </Card>
-
-        <Card title="Planning" subtitle="Lesson planning tools">
-          <p className="text-muted text-sm mb-4">
-            Create and organize lessons aligned with learning goals.
-          </p>
-          <Button variant="ghost" disabled>
-            Coming Soon
-          </Button>
         </Card>
       </div>
     </section>
