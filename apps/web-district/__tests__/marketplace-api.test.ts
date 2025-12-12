@@ -250,3 +250,172 @@ describe('API Function Mocking', () => {
     );
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETPLACE BILLING HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('Marketplace Billing Helpers', () => {
+  describe('getBillingModelLabel', () => {
+    it('returns correct labels for billing models', async () => {
+      const { getBillingModelLabel } = await import('../lib/marketplace-api');
+      
+      expect(getBillingModelLabel('FREE')).toBe('Free');
+      expect(getBillingModelLabel('TENANT_FLAT')).toBe('Flat Rate');
+      expect(getBillingModelLabel('PER_SEAT')).toBe('Per Seat');
+    });
+
+    it('returns Unknown for null', async () => {
+      const { getBillingModelLabel } = await import('../lib/marketplace-api');
+      expect(getBillingModelLabel(null)).toBe('Unknown');
+    });
+  });
+
+  describe('getBillingStatusLabel', () => {
+    it('returns correct labels for billing statuses', async () => {
+      const { getBillingStatusLabel } = await import('../lib/marketplace-api');
+      
+      expect(getBillingStatusLabel('PENDING')).toBe('Pending Setup');
+      expect(getBillingStatusLabel('ACTIVE')).toBe('Active');
+      expect(getBillingStatusLabel('CANCELED')).toBe('Canceled');
+      expect(getBillingStatusLabel('EXPIRED')).toBe('Expired');
+    });
+
+    it('returns Not Billed for null', async () => {
+      const { getBillingStatusLabel } = await import('../lib/marketplace-api');
+      expect(getBillingStatusLabel(null)).toBe('Not Billed');
+    });
+  });
+
+  describe('getBillingStatusColor', () => {
+    it('returns correct colors for billing statuses', async () => {
+      const { getBillingStatusColor } = await import('../lib/marketplace-api');
+      
+      expect(getBillingStatusColor('PENDING')).toBe('yellow');
+      expect(getBillingStatusColor('ACTIVE')).toBe('green');
+      expect(getBillingStatusColor('CANCELED')).toBe('gray');
+      expect(getBillingStatusColor('EXPIRED')).toBe('red');
+    });
+
+    it('returns gray for null', async () => {
+      const { getBillingStatusColor } = await import('../lib/marketplace-api');
+      expect(getBillingStatusColor(null)).toBe('gray');
+    });
+  });
+
+  describe('formatBillingPeriod', () => {
+    it('returns correct period labels', async () => {
+      const { formatBillingPeriod } = await import('../lib/marketplace-api');
+      
+      expect(formatBillingPeriod('MONTHLY')).toBe('Monthly');
+      expect(formatBillingPeriod('ANNUAL')).toBe('Annual');
+      expect(formatBillingPeriod(undefined)).toBe('');
+    });
+  });
+});
+
+describe('Marketplace Billing API Functions', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    global.fetch = vi.fn();
+  });
+
+  it('getItemBillingInfo fetches billing config', async () => {
+    const mockBillingInfo = {
+      itemId: 'item-123',
+      title: 'Test Content Pack',
+      vendorId: 'vendor-1',
+      vendorName: 'Test Vendor',
+      isFree: false,
+      billingModel: 'TENANT_FLAT',
+      billingSku: 'MPK_TEST_PACK',
+    };
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockBillingInfo),
+    });
+
+    const { getItemBillingInfo } = await import('../lib/marketplace-api');
+
+    const result = await getItemBillingInfo('item-123');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/billing/items/item-123'),
+      expect.any(Object)
+    );
+    expect(result.billingSku).toBe('MPK_TEST_PACK');
+  });
+
+  it('listInstallationsWithBilling includes billing parameter', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({ data: [], pagination: { page: 1, limit: 20, total: 0 } }),
+    });
+
+    const { listInstallationsWithBilling } = await import('../lib/marketplace-api');
+
+    await listInstallationsWithBilling('tenant-123', { status: 'ACTIVE' });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('includeBilling=true'),
+      expect.any(Object)
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('status=ACTIVE'),
+      expect.any(Object)
+    );
+  });
+
+  it('activateInstallationBilling posts to correct endpoint', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          installationId: 'install-123',
+          billingStatus: 'ACTIVE',
+          contractLineItemId: 'line-item-1',
+        }),
+    });
+
+    const { activateInstallationBilling } = await import('../lib/marketplace-api');
+
+    const result = await activateInstallationBilling('tenant-123', 'install-123', {
+      seatQuantity: 50,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/tenants/tenant-123/installations/install-123/activate-billing'),
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it('deactivateInstallationBilling posts with reason', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          installationId: 'install-123',
+          billingStatus: 'CANCELED',
+        }),
+    });
+
+    const { deactivateInstallationBilling } = await import('../lib/marketplace-api');
+
+    await deactivateInstallationBilling('tenant-123', 'install-123', 'No longer needed');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/deactivate-billing'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('No longer needed'),
+      })
+    );
+  });
+});

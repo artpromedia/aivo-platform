@@ -2,6 +2,7 @@ export { BillingHeader } from './billing-header';
 export { ContractInvoicesSection } from './contract-invoices-section';
 export { ContractOverview } from './contract-overview';
 export { InvoicesSection } from './invoices-section';
+export { MarketplaceBillingSection } from './marketplace-billing-section';
 export { ModulesTable } from './modules-table';
 export { SeatCommitmentsCard } from './seat-commitments-card';
 export { SeatUsageCard } from './seat-usage-card';

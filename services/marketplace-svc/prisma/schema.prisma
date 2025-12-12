@@ -118,7 +118,7 @@ enum EmbeddedToolLaunchType {
   @@map("embedded_tool_launch_type")
 }
 
-/// Pricing model for marketplace items
+/// Pricing model for marketplace items (display/marketing)
 enum PricingModel {
   FREE              // Completely free
   FREE_TRIAL        // Free trial, then paid
@@ -130,6 +130,25 @@ enum PricingModel {
   @@map("pricing_model")
 }
 
+/// Billing model for marketplace items (actual billing logic)
+enum MarketplaceBillingModel {
+  FREE              // No charge, included with core license
+  TENANT_FLAT       // Flat fee per tenant/organization
+  PER_SEAT          // Per-seat/per-learner pricing
+
+  @@map("marketplace_billing_model")
+}
+
+/// Billing status for marketplace installations
+enum MarketplaceBillingStatus {
+  PENDING           // Awaiting billing setup
+  ACTIVE            // Billing active
+  CANCELED          // Billing canceled
+  EXPIRED           // Billing expired (contract ended)
+
+  @@map("marketplace_billing_status")
+}
+
 /// Safety certification level
 enum SafetyCertification {
   AIVO_CERTIFIED    // Fully vetted by Aivo safety team
@@ -138,6 +157,38 @@ enum SafetyCertification {
   NOT_REVIEWED      // No safety review yet
 
   @@map("safety_certification")
+}
+
+/// Safety rating for marketplace item versions
+enum SafetyRating {
+  PENDING           // Awaiting safety review
+  APPROVED_K12      // Approved for K-12 use
+  RESTRICTED        // Approved with restrictions
+  REJECTED          // Not approved for use
+
+  @@map("safety_rating")
+}
+
+/// Data access profile for embedded tools
+enum DataAccessProfile {
+  MINIMAL           // Pseudonymous learner ID only
+  MODERATE          // Pseudonymous ID + progress data
+  HIGH              // Extended profile access (with consent)
+
+  @@map("data_access_profile")
+}
+
+/// Safety review action types
+enum SafetyReviewAction {
+  SUBMITTED         // Version submitted for safety review
+  STARTED           // Safety review started
+  DATA_TAGGED       // Data access categories tagged
+  CHECKS_COMPLETED  // Automated checks completed
+  APPROVED          // Safety reviewer approved
+  REJECTED          // Safety reviewer rejected
+  ESCALATED         // Escalated for further review
+
+  @@map("safety_review_action")
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -186,11 +237,58 @@ model Vendor {
   updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  marketplaceItems MarketplaceItem[]
+  marketplaceItems    MarketplaceItem[]
+  revenueShares       VendorRevenueShare[]
+  allowedDomains      EmbeddedToolDomainAllowlist[]
 
   @@index([type, isActive])
   @@index([isVerified])
   @@map("vendors")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VENDOR REVENUE SHARES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Revenue sharing configuration for third-party vendors.
+// Tracks what percentage of revenue goes to the vendor for each SKU.
+//
+
+/// Revenue share configuration for a vendor's SKU
+model VendorRevenueShare {
+  id                  String    @id @default(uuid()) @db.Uuid
+  
+  /// Vendor receiving the revenue share
+  vendorId            String    @map("vendor_id") @db.Uuid
+  
+  /// SKU this share agreement applies to
+  sku                 String
+  
+  /// Vendor's share percentage (e.g., 30.00 = 30%)
+  sharePercent        Decimal   @map("share_percent") @db.Decimal(5, 2)
+  
+  /// When this share agreement becomes effective
+  effectiveStartDate  DateTime  @default(now()) @map("effective_start_date") @db.Date
+  
+  /// When this share agreement ends (null = ongoing)
+  effectiveEndDate    DateTime? @map("effective_end_date") @db.Date
+  
+  /// User who created this agreement
+  createdByUserId     String?   @map("created_by_user_id") @db.Uuid
+  
+  /// Notes about this agreement
+  notes               String?
+  
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([sku])
+  @@index([effectiveStartDate, effectiveEndDate])
+  @@map("vendor_revenue_shares")
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -244,11 +342,29 @@ model MarketplaceItem {
   /// Whether item is featured/promoted
   isFeatured       Boolean               @default(false) @map("is_featured")
   
-  /// Pricing model
+  /// Pricing model (display/marketing)
   pricingModel     PricingModel          @default(FREE) @map("pricing_model")
   
   /// Price in cents (for simple pricing; null if complex/custom)
   priceCents       Int?                  @map("price_cents")
+  
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Billing Configuration
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  /// Whether the item is free (no billing required)
+  isFree           Boolean               @default(true) @map("is_free")
+  
+  /// Billing model for actual billing logic
+  billingModel     MarketplaceBillingModel @default(FREE) @map("billing_model")
+  
+  /// Reference to billing SKU in billing-svc (e.g., MPK_FRACTIONS_G3_5)
+  billingSku       String?               @map("sku")
+  
+  /// Additional billing config: { "trialDays": 30, "minSeats": 10, "pricePerSeatCents": 500 }
+  billingMetadataJson Json?              @map("billing_metadata_json")
+  
+  // ─────────────────────────────────────────────────────────────────────────────
   
   /// Safety certification level
   safetyCert       SafetyCertification   @default(NOT_REVIEWED) @map("safety_cert")
@@ -282,6 +398,8 @@ model MarketplaceItem {
   @@index([gradeBands])
   @@index([pricingModel])
   @@index([safetyCert])
+  @@index([isFree, billingModel])
+  @@index([billingSku])
   @@map("marketplace_items")
 }
 
@@ -333,6 +451,39 @@ model MarketplaceItemVersion {
   /// Timestamp when deprecated
   deprecatedAt         DateTime?                 @map("deprecated_at") @db.Timestamptz
   
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Safety & Moderation Fields
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  /// Safety rating classification
+  safetyRating               SafetyRating              @default(PENDING) @map("safety_rating")
+  
+  /// Data access level categorization
+  dataAccessProfile          DataAccessProfile         @default(MINIMAL) @map("data_access_profile")
+  
+  /// Safety reviewer's notes
+  safetyNotes                String?                   @map("safety_notes")
+  
+  /// Policy tags (e.g., ["NO_CHAT", "NO_VIDEO", "NO_USER_GENERATED_CONTENT"])
+  policyTags                 String[]                  @default([]) @map("policy_tags")
+  
+  /// Data categories accessed (e.g., ["pseudonymous_learner_id", "progress_data"])
+  dataCategoriesAccessed     String[]                  @default([]) @map("data_categories_accessed")
+  
+  /// User who performed safety review
+  safetyReviewedByUserId     String?                   @map("safety_reviewed_by_user_id") @db.Uuid
+  
+  /// Timestamp when safety review completed
+  safetyReviewedAt           DateTime?                 @map("safety_reviewed_at") @db.Timestamptz
+  
+  /// Results from automated safety checks
+  automatedChecksJson        Json?                     @map("automated_checks_json")
+  
+  /// Whether automated checks passed
+  automatedChecksPassed      Boolean?                  @map("automated_checks_passed")
+  
+  // ─────────────────────────────────────────────────────────────────────────────
+  
   createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -342,10 +493,13 @@ model MarketplaceItemVersion {
   embeddedToolConfig    EmbeddedToolConfig?
   installations         MarketplaceInstallation[]
   statusTransitions     VersionStatusTransition[]
+  safetyReviewLogs      SafetyReviewLog[]
 
   @@unique([marketplaceItemId, version])
   @@index([marketplaceItemId, status])
   @@index([status, publishedAt(sort: Desc)])
+  @@index([safetyRating])
+  @@index([policyTags])
   @@map("marketplace_item_versions")
 }
 
@@ -535,6 +689,30 @@ model MarketplaceInstallation {
   /// When installation was disabled/revoked
   disabledAt                DateTime?           @map("disabled_at") @db.Timestamptz
   
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Billing Linkage
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  /// FK to billing-svc contract_line_items (cross-service reference)
+  contractLineItemId        String?             @map("contract_line_item_id") @db.Uuid
+  
+  /// Billing status for this installation
+  billingStatus             MarketplaceBillingStatus @default(PENDING) @map("billing_status")
+  
+  /// When billing started for this installation
+  billingStartedAt          DateTime?           @map("billing_started_at") @db.Timestamptz
+  
+  /// When billing ended (cancellation/expiry)
+  billingEndedAt            DateTime?           @map("billing_ended_at") @db.Timestamptz
+  
+  /// Number of seats for PER_SEAT billing model
+  seatQuantity              Int?                @map("seat_quantity")
+  
+  /// Additional billing info: { "priceAtInstall": 1000, "contractId": "..." }
+  billingMetadataJson       Json?               @map("billing_metadata_json")
+  
+  // ─────────────────────────────────────────────────────────────────────────────
+  
   updatedAt                 DateTime            @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
@@ -549,6 +727,8 @@ model MarketplaceInstallation {
   @@index([classroomId, status])
   @@index([marketplaceItemId, status])
   @@index([installedByUserId])
+  @@index([billingStatus, billingStartedAt])
+  @@index([contractLineItemId])
   @@map("marketplace_installations")
 }
 
@@ -699,4 +879,226 @@ model MarketplaceCollectionItem {
   @@unique([collectionId, marketplaceItemId])
   @@index([collectionId, position])
   @@map("marketplace_collection_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SAFETY & MODERATION
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Safety review audit trails, tenant policies, and tool launch logging.
+//
+
+/// Audit trail for safety review actions
+model SafetyReviewLog {
+  id                        String              @id @default(uuid()) @db.Uuid
+  
+  /// Version being reviewed
+  marketplaceItemVersionId  String              @map("marketplace_item_version_id") @db.Uuid
+  
+  /// Review action performed
+  action                    SafetyReviewAction
+  
+  /// User who performed the action
+  performedByUserId         String              @map("performed_by_user_id") @db.Uuid
+  
+  /// Previous rating (for rating changes)
+  previousRating            SafetyRating?       @map("previous_rating")
+  
+  /// New rating (for rating changes)
+  newRating                 SafetyRating?       @map("new_rating")
+  
+  /// Notes/comments from reviewer
+  notes                     String?
+  
+  /// Detailed metadata (e.g., automated check results)
+  metadataJson              Json?               @map("metadata_json")
+  
+  performedAt               DateTime            @default(now()) @map("performed_at") @db.Timestamptz
+
+  // Relations
+  version MarketplaceItemVersion @relation(fields: [marketplaceItemVersionId], references: [id], onDelete: Cascade)
+
+  @@index([marketplaceItemVersionId, performedAt(sort: Desc)])
+  @@index([action, performedAt(sort: Desc)])
+  @@map("safety_review_logs")
+}
+
+/// Per-tenant marketplace policy configuration
+model TenantMarketplacePolicy {
+  id                          String    @id @default(uuid()) @db.Uuid
+  
+  /// Tenant this policy applies to
+  tenantId                    String    @unique @map("tenant_id") @db.Uuid
+  
+  /// Allowed safety ratings (e.g., ["APPROVED_K12"])
+  allowedSafetyRatings        String[]  @default(["APPROVED_K12"]) @map("allowed_safety_ratings")
+  
+  /// Allowed data access profiles (e.g., ["MINIMAL", "MODERATE"])
+  allowedDataAccessProfiles   String[]  @default(["MINIMAL", "MODERATE"]) @map("allowed_data_access_profiles")
+  
+  /// Policy tags that are blocked (e.g., ["NO_CHAT", "NO_VIDEO"])
+  blockedPolicyTags           String[]  @default([]) @map("blocked_policy_tags")
+  
+  /// Policy tags that are required (e.g., ["COPPA_VERIFIED"])
+  requiredPolicyTags          String[]  @default([]) @map("required_policy_tags")
+  
+  /// Blocked vendors (by vendor ID)
+  blockedVendors              String[]  @default([]) @map("blocked_vendors") @db.Uuid
+  
+  /// Blocked specific items (by marketplace_item ID)
+  blockedItemIds              String[]  @default([]) @map("blocked_item_ids") @db.Uuid
+  
+  /// Allowed domains for embedded tools (empty = use global allowlist)
+  allowedToolDomains          String[]  @default([]) @map("allowed_tool_domains")
+  
+  /// Blocked scopes for embedded tools
+  blockedToolScopes           String[]  @default([]) @map("blocked_tool_scopes")
+  
+  /// Whether to require approval for all marketplace installs
+  requireInstallApproval      Boolean   @default(true) @map("require_install_approval")
+  
+  /// Whether to allow third-party vendors
+  allowThirdPartyVendors      Boolean   @default(true) @map("allow_third_party_vendors")
+  
+  /// Who created this policy
+  createdByUserId             String?   @map("created_by_user_id") @db.Uuid
+  
+  /// Who last updated this policy
+  updatedByUserId             String?   @map("updated_by_user_id") @db.Uuid
+  
+  createdAt                   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@map("tenant_marketplace_policies")
+}
+
+/// Global allowlist of approved domains for embedded tools
+model EmbeddedToolDomainAllowlist {
+  id                  String    @id @default(uuid()) @db.Uuid
+  
+  /// Domain pattern (e.g., "mathgames.com", "*.trusted-vendor.edu")
+  domainPattern       String    @unique @map("domain_pattern")
+  
+  /// Whether this domain is currently allowed
+  isActive            Boolean   @default(true) @map("is_active")
+  
+  /// Vendor this domain belongs to (optional)
+  vendorId            String?   @map("vendor_id") @db.Uuid
+  
+  /// Notes about this domain
+  notes               String?
+  
+  /// Who approved this domain
+  approvedByUserId    String?   @map("approved_by_user_id") @db.Uuid
+  
+  /// When domain was approved
+  approvedAt          DateTime? @map("approved_at") @db.Timestamptz
+  
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  vendor Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([isActive, domainPattern])
+  @@map("embedded_tool_domain_allowlist")
+}
+
+/// Configuration and metadata for embedded tool data scopes
+model EmbeddedToolScopeConfig {
+  id                      String            @id @default(uuid()) @db.Uuid
+  
+  /// Scope identifier (e.g., "LEARNER_PROFILE_MIN")
+  scope                   String            @unique
+  
+  /// Human-readable name
+  displayName             String            @map("display_name")
+  
+  /// Description of what this scope allows
+  description             String?
+  
+  /// Data access level this scope implies
+  dataAccessLevel         DataAccessProfile @default(MINIMAL) @map("data_access_level")
+  
+  /// Whether this scope is allowed globally
+  isAllowed               Boolean           @default(true) @map("is_allowed")
+  
+  /// Whether this scope requires explicit tenant approval
+  requiresTenantApproval  Boolean           @default(false) @map("requires_tenant_approval")
+  
+  /// Whether this scope is considered PII-sensitive
+  isPiiSensitive          Boolean           @default(false) @map("is_pii_sensitive")
+  
+  /// Category for grouping (e.g., "learner_data", "analytics")
+  category                String?
+  
+  createdAt               DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("embedded_tool_scope_config")
+}
+
+/// Audit log of embedded tool launches
+model EmbeddedToolLaunchLog {
+  id                        String        @id @default(uuid()) @db.Uuid
+  
+  /// Session identifier for this tool launch
+  toolSessionId             String        @map("tool_session_id") @db.Uuid
+  
+  /// Tenant where launch occurred
+  tenantId                  String        @map("tenant_id") @db.Uuid
+  
+  /// Marketplace item launched
+  marketplaceItemId         String        @map("marketplace_item_id") @db.Uuid
+  
+  /// Specific version launched
+  marketplaceItemVersionId  String        @map("marketplace_item_version_id") @db.Uuid
+  
+  /// Installation record
+  installationId            String        @map("installation_id") @db.Uuid
+  
+  /// User who initiated the launch
+  launchedByUserId          String        @map("launched_by_user_id") @db.Uuid
+  
+  /// Learner ID if in learner context
+  learnerId                 String?       @map("learner_id") @db.Uuid
+  
+  /// Scopes granted for this launch
+  scopesGranted             String[]      @default([]) @map("scopes_granted")
+  
+  /// School context (if applicable)
+  schoolId                  String?       @map("school_id") @db.Uuid
+  
+  /// Classroom context (if applicable)
+  classroomId               String?       @map("classroom_id") @db.Uuid
+  
+  /// Learning session (if applicable)
+  sessionId                 String?       @map("session_id") @db.Uuid
+  
+  /// Safety rating at time of launch
+  safetyRatingAtLaunch      SafetyRating  @map("safety_rating_at_launch")
+  
+  /// Whether launch was successful
+  launchSuccessful          Boolean       @default(true) @map("launch_successful")
+  
+  /// Error message if launch failed
+  launchError               String?       @map("launch_error")
+  
+  /// The launch URL used
+  launchUrl                 String?       @map("launch_url")
+  
+  /// Client user agent
+  userAgent                 String?       @map("user_agent")
+  
+  /// Client IP address
+  ipAddress                 String?       @map("ip_address")
+  
+  launchedAt                DateTime      @default(now()) @map("launched_at") @db.Timestamptz
+
+  @@index([tenantId, launchedAt(sort: Desc)])
+  @@index([marketplaceItemId, launchedAt(sort: Desc)])
+  @@index([toolSessionId])
+  @@index([learnerId, launchedAt(sort: Desc)])
+  @@map("embedded_tool_launch_logs")
 }

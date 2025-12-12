@@ -831,6 +831,7 @@ model Contract {
   purchaseOrders        PurchaseOrder[]
   districtInvoices      DistrictInvoice[]
   renewalTask           RenewalTask?
+  marketplaceEntitlements MarketplaceEntitlement[]
   
   @@index([billingProfileId, status])
   @@index([tenantId, status])
@@ -906,6 +907,7 @@ model ContractLineItem {
   contract            Contract              @relation(fields: [contractId], references: [id], onDelete: Cascade)
   product             Product               @relation(fields: [productId], references: [id])
   allocations         ContractAllocation[]
+  marketplaceEntitlements MarketplaceEntitlement[]
   
   @@index([contractId, sku])
   @@index([sku])
@@ -1753,6 +1755,7 @@ model SeatUsageNotification {
   /// When the notification was read
   readAt        DateTime?         @db.Timestamptz
   
+  
   createdAt     DateTime          @default(now())
   
   // Relations
@@ -1761,4 +1764,178 @@ model SeatUsageNotification {
   @@index([tenantId, userId, isRead])
   @@index([alertId])
   @@map("seat_usage_notifications")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETPLACE ENTITLEMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Entitlements specific to marketplace items. Tracks what marketplace items
+// a tenant has access to based on their contract.
+//
+
+/// Payout status for vendor revenue sharing
+enum VendorPayoutStatus {
+  PENDING   // Calculated, awaiting approval
+  APPROVED  // Approved for payment
+  PAID      // Payment completed
+  DISPUTED  // Under dispute/review
+}
+
+/// Marketplace item entitlement linked to a contract
+model MarketplaceEntitlement {
+  id                        String    @id @default(uuid()) @db.Uuid
+  
+  /// Tenant receiving the entitlement
+  tenantId                  String    @map("tenant_id") @db.Uuid
+  
+  /// Parent contract (if contract-based)
+  contractId                String?   @map("contract_id") @db.Uuid
+  
+  /// Contract line item this was derived from
+  lineItemId                String?   @map("line_item_id") @db.Uuid
+  
+  /// Marketplace item ID (cross-service FK to marketplace-svc)
+  marketplaceItemId         String    @map("marketplace_item_id") @db.Uuid
+  
+  /// Marketplace installation ID (cross-service FK)
+  marketplaceInstallationId String    @map("marketplace_installation_id") @db.Uuid
+  
+  /// SKU for billing
+  sku                       String
+  
+  /// Feature key (e.g., "MARKETPLACE_ITEM:{item_id}")
+  featureKey                String    @map("feature_key")
+  
+  /// Whether entitlement is active
+  isActive                  Boolean   @default(true) @map("is_active")
+  
+  /// Quantity (for PER_SEAT: seat count)
+  quantity                  Int?
+  
+  /// Effective start date
+  startDate                 DateTime  @map("start_date") @db.Date
+  
+  /// Effective end date
+  endDate                   DateTime  @map("end_date") @db.Date
+  
+  /// Metadata: installation config, etc.
+  metadataJson              Json?     @map("metadata_json")
+  
+  createdAt                 DateTime  @default(now()) @map("created_at")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  contract                  Contract? @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  lineItem                  ContractLineItem? @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, marketplaceItemId, contractId])
+  @@index([tenantId, isActive])
+  @@index([contractId])
+  @@index([marketplaceItemId, tenantId])
+  @@index([sku])
+  @@map("marketplace_entitlements")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VENDOR REVENUE SHARE CACHE
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Cached vendor revenue share data from marketplace-svc.
+// Used for revenue reporting and vendor payouts.
+//
+
+/// Cached vendor revenue share configuration (synced from marketplace-svc)
+model VendorRevenueShareCache {
+  id                  String    @id @db.Uuid
+  
+  /// Vendor ID (from marketplace-svc)
+  vendorId            String    @map("vendor_id") @db.Uuid
+  
+  /// Vendor name (denormalized)
+  vendorName          String    @map("vendor_name")
+  
+  /// SKU this share applies to
+  sku                 String
+  
+  /// Vendor share percentage (e.g., 30.00 = 30%)
+  sharePercent        Decimal   @map("share_percent") @db.Decimal(5, 2)
+  
+  /// Effective start date
+  effectiveStartDate  DateTime  @map("effective_start_date") @db.Date
+  
+  /// Effective end date (null = ongoing)
+  effectiveEndDate    DateTime? @map("effective_end_date") @db.Date
+  
+  /// When this data was synced
+  syncedAt            DateTime  @default(now()) @map("synced_at") @db.Timestamptz
+
+  @@index([sku, effectiveStartDate, effectiveEndDate])
+  @@index([vendorId])
+  @@map("vendor_revenue_share_cache")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VENDOR PAYOUTS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Tracks vendor payout records for revenue sharing reconciliation and audit.
+//
+
+/// Vendor payout record for revenue sharing
+model VendorPayout {
+  id                  String              @id @default(uuid()) @db.Uuid
+  
+  /// Vendor ID (from marketplace-svc)
+  vendorId            String              @map("vendor_id") @db.Uuid
+  
+  /// Vendor name (denormalized)
+  vendorName          String              @map("vendor_name")
+  
+  /// Payout period start
+  periodStart         DateTime            @map("period_start") @db.Date
+  
+  /// Payout period end
+  periodEnd           DateTime            @map("period_end") @db.Date
+  
+  /// Gross revenue in cents
+  grossRevenueCents   BigInt              @map("gross_revenue_cents")
+  
+  /// Vendor share percentage applied
+  vendorSharePercent  Decimal             @map("vendor_share_percent") @db.Decimal(5, 2)
+  
+  /// Vendor amount in cents
+  vendorAmountCents   BigInt              @map("vendor_amount_cents")
+  
+  /// Payout status
+  status              VendorPayoutStatus  @default(PENDING)
+  
+  /// When payout was calculated
+  calculatedAt        DateTime            @default(now()) @map("calculated_at") @db.Timestamptz
+  
+  /// When payout was approved
+  approvedAt          DateTime?           @map("approved_at") @db.Timestamptz
+  
+  /// User who approved
+  approvedBy          String?             @map("approved_by") @db.Uuid
+  
+  /// When payout was sent
+  paidAt              DateTime?           @map("paid_at") @db.Timestamptz
+  
+  /// External payment reference
+  paymentReference    String?             @map("payment_reference")
+  
+  /// Breakdown by SKU
+  lineItemsJson       Json?               @map("line_items_json")
+  
+  /// Notes
+  notes               String?
+  
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  @@index([vendorId, status])
+  @@index([periodStart, periodEnd])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("vendor_payouts")
 }

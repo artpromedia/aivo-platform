@@ -8,3 +8,4 @@ export { installationRoutes } from './installation.routes.js';
 export { adminRoutes } from './admin.routes.js';
 export { creatorRoutes } from './creator.routes.js';
 export { reviewRoutes } from './review.routes.js';
+export { safetyRoutes } from './safety.routes.js';

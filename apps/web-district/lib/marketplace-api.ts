@@ -458,3 +458,172 @@ export function getInstallationStatusColor(status: string): string {
   };
   return colors[status] || 'gray';
 }
+
+// ============================================================================
+// Billing Types
+// ============================================================================
+
+export type MarketplaceBillingModel = 'FREE' | 'TENANT_FLAT' | 'PER_SEAT';
+export type MarketplaceBillingStatus = 'PENDING' | 'ACTIVE' | 'CANCELED' | 'EXPIRED';
+
+export interface MarketplaceItemBillingInfo {
+  itemId: string;
+  title: string;
+  vendorId: string;
+  vendorName: string;
+  vendorType: string;
+  pricingModel: string;
+  priceCents: number | null;
+  isFree: boolean;
+  billingModel: MarketplaceBillingModel | null;
+  billingSku: string | null;
+  billingMetadata: {
+    trialDays?: number;
+    minSeats?: number;
+    pricePerSeatCents?: number;
+    flatPriceCents?: number;
+    billingPeriod?: 'MONTHLY' | 'ANNUAL';
+  } | null;
+}
+
+export interface InstallationBillingDetails {
+  installationId: string;
+  contractLineItemId: string | null;
+  billingStatus: MarketplaceBillingStatus | null;
+  billingStartedAt: string | null;
+  billingEndedAt: string | null;
+  seatQuantity: number | null;
+  billingMetadata: {
+    contractId?: string;
+    activatedAt?: string;
+    activatedByUserId?: string;
+  } | null;
+}
+
+export interface MarketplaceInstallationWithBilling extends MarketplaceInstallation {
+  isFree: boolean;
+  billingModel: MarketplaceBillingModel | null;
+  billingSku: string | null;
+  contractLineItemId: string | null;
+  billingStatus: MarketplaceBillingStatus | null;
+  billingStartedAt: string | null;
+  seatQuantity: number | null;
+}
+
+// ============================================================================
+// Billing API Functions
+// ============================================================================
+
+/**
+ * Get billing information for a marketplace item
+ */
+export async function getItemBillingInfo(itemId: string): Promise<MarketplaceItemBillingInfo> {
+  return fetchApi<MarketplaceItemBillingInfo>(`/billing/items/${itemId}`);
+}
+
+/**
+ * List installations with billing information
+ */
+export async function listInstallationsWithBilling(
+  tenantId: string,
+  options?: {
+    status?: 'PENDING_APPROVAL' | 'ACTIVE' | 'DISABLED' | 'REVOKED';
+    billingStatus?: MarketplaceBillingStatus;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<{
+  data: MarketplaceInstallationWithBilling[];
+  pagination: { total: number; limit: number; offset: number };
+}> {
+  const params = new URLSearchParams();
+  if (options?.status) params.set('status', options.status);
+  if (options?.billingStatus) params.set('billingStatus', options.billingStatus);
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
+
+  return fetchApi(`/tenants/${tenantId}/installations?includeBilling=true&${params.toString()}`);
+}
+
+/**
+ * Activate billing for a marketplace installation
+ */
+export async function activateInstallationBilling(
+  tenantId: string,
+  installationId: string,
+  options?: {
+    contractId?: string;
+    seatQuantity?: number;
+  }
+): Promise<{
+  success: boolean;
+  installationId: string;
+  billingStatus: MarketplaceBillingStatus;
+  contractLineItemId?: string;
+  error?: string;
+}> {
+  return fetchApi(`/tenants/${tenantId}/installations/${installationId}/activate-billing`, {
+    method: 'POST',
+    body: JSON.stringify(options ?? {}),
+  });
+}
+
+/**
+ * Deactivate billing for a marketplace installation
+ */
+export async function deactivateInstallationBilling(
+  tenantId: string,
+  installationId: string,
+  reason?: string
+): Promise<{
+  success: boolean;
+  installationId: string;
+  billingStatus: MarketplaceBillingStatus;
+  error?: string;
+}> {
+  return fetchApi(`/tenants/${tenantId}/installations/${installationId}/deactivate-billing`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// ============================================================================
+// Billing Helper Functions
+// ============================================================================
+
+export function getBillingModelLabel(model: MarketplaceBillingModel | null): string {
+  if (!model) return 'Unknown';
+  const labels: Record<MarketplaceBillingModel, string> = {
+    FREE: 'Free',
+    TENANT_FLAT: 'Flat Rate',
+    PER_SEAT: 'Per Seat',
+  };
+  return labels[model] || model;
+}
+
+export function getBillingStatusLabel(status: MarketplaceBillingStatus | null): string {
+  if (!status) return 'Not Billed';
+  const labels: Record<MarketplaceBillingStatus, string> = {
+    PENDING: 'Pending Setup',
+    ACTIVE: 'Active',
+    CANCELED: 'Canceled',
+    EXPIRED: 'Expired',
+  };
+  return labels[status] || status;
+}
+
+export function getBillingStatusColor(status: MarketplaceBillingStatus | null): string {
+  if (!status) return 'gray';
+  const colors: Record<MarketplaceBillingStatus, string> = {
+    PENDING: 'yellow',
+    ACTIVE: 'green',
+    CANCELED: 'gray',
+    EXPIRED: 'red',
+  };
+  return colors[status] || 'gray';
+}
+
+export function formatBillingPeriod(period: 'MONTHLY' | 'ANNUAL' | undefined): string {
+  if (!period) return '';
+  return period === 'MONTHLY' ? 'Monthly' : 'Annual';
+}

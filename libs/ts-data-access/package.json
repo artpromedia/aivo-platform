@@ -10,6 +10,18 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./tenant": {
+      "import": "./dist/tenant-scoped-client.js",
+      "types": "./dist/tenant-scoped-client.d.ts"
+    },
+    "./context": {
+      "import": "./dist/tenant-context.js",
+      "types": "./dist/tenant-context.d.ts"
+    },
+    "./middleware": {
+      "import": "./dist/tenant-scope-middleware.js",
+      "types": "./dist/tenant-scope-middleware.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -22,12 +34,24 @@
     "prepare": "pnpm build"
   },
   "dependencies": {
-    "@aivo/ts-rbac": "workspace:*"
+    "@aivo/ts-rbac": "workspace:*",
+    "fastify-plugin": "^5.0.1"
   },
   "devDependencies": {
+    "@prisma/client": "^6.0.0",
     "@types/node": "^22.7.5",
     "eslint": "^9.12.0",
+    "fastify": "^5.0.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
+  },
+  "peerDependencies": {
+    "@prisma/client": ">=5.0.0",
+    "fastify": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "fastify": {
+      "optional": true
+    }
   }
 }
