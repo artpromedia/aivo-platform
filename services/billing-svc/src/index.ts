@@ -6,6 +6,7 @@ import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
+import { coverageRoutes } from './routes/coverage.routes.js';
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
@@ -28,7 +29,9 @@ async function main() {
     return { status: 'ready' };
   });
 
-  // TODO: Register routes
+  // Register routes
+  await app.register(coverageRoutes, { prefix: '/api/v1' });
+  // TODO: Register additional routes
   // app.register(billingAccountRoutes, { prefix: '/billing' });
   // app.register(subscriptionRoutes, { prefix: '/subscriptions' });
   // app.register(invoiceRoutes, { prefix: '/invoices' });

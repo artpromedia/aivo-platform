@@ -184,6 +184,7 @@ class GracefulDegradationService {
     timestamp: DateTime.now(),
   );
 
+  // ignore: unused_field
   SharedPreferences? _prefs;
   Timer? _healthCheckTimer;
 

@@ -83,7 +83,6 @@ class RosterLearner {
       case RosterDisplayMode.firstNameOnly:
         return displayName.split(' ').first;
       case RosterDisplayMode.firstNameLastInitial:
-      default:
         return displayName;
     }
   }

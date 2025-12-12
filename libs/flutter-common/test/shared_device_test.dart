@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -200,6 +199,7 @@ void main() {
         'fetchedAt': DateTime.now().toIso8601String(),
       };
 
+      // ignore: unused_local_variable
       var requestCount = 0;
       mockHttpClient = MockClient((request) async {
         requestCount++;

@@ -61,6 +61,7 @@ class _ClassCodeEntryScreenState extends State<ClassCodeEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final strings = LocalStrings.en;
     final theme = Theme.of(context);
     final colors = theme.extension<AivoColors>() ?? AivoColors.light;

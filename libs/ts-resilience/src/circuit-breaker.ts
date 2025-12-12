@@ -388,7 +388,7 @@ export function getCircuitBreaker<TArgs extends unknown[], TResult>(
   let breaker = circuitRegistry.get(name);
 
   if (!breaker && factory) {
-    breaker = factory() as CircuitBreaker<unknown[], unknown>;
+    breaker = factory() as unknown as CircuitBreaker<unknown[], unknown>;
     circuitRegistry.set(name, breaker);
   }
 
@@ -402,7 +402,7 @@ export function registerCircuitBreaker<TArgs extends unknown[], TResult>(
   name: string,
   breaker: CircuitBreaker<TArgs, TResult>
 ): void {
-  circuitRegistry.set(name, breaker as CircuitBreaker<unknown[], unknown>);
+  circuitRegistry.set(name, breaker as unknown as CircuitBreaker<unknown[], unknown>);
 }
 
 /**

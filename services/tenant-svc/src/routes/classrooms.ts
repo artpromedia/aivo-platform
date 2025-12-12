@@ -1,7 +1,8 @@
+import { randomBytes } from 'crypto';
+
+import bcrypt from 'bcryptjs';
 import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { randomBytes } from 'crypto';
-import bcrypt from 'bcrypt';
 
 import { prisma } from '../prisma.js';
 
@@ -18,7 +19,8 @@ function generateSessionCode(): string {
   let code = '';
   const bytes = randomBytes(6);
   for (let i = 0; i < 6; i++) {
-    code += chars[bytes[i] % chars.length];
+    const byte = bytes[i] ?? 0;
+    code += chars[byte % chars.length] ?? '';
   }
   return code;
 }
@@ -137,14 +139,23 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
       teacherName: 'Teacher', // TODO: Fetch from teacher service
       gradeBand: sessionCode.classroom.grade,
       displayMode: 'FIRST_NAME_LAST_INITIAL',
-      learners: sessionCode.classroom.learners.map((l) => ({
-        learnerId: l.learnerId,
-        displayName: l.displayName,
-        avatarUrl: l.avatarUrl,
-        pseudonym: l.pseudonym,
-        gradeBand: l.gradeBand,
-        hasPin: !!l.pinHash,
-      })),
+      learners: sessionCode.classroom.learners.map(
+        (l: {
+          learnerId: string;
+          displayName: string;
+          avatarUrl: string | null;
+          pseudonym: string | null;
+          gradeBand: string | null;
+          pinHash: string | null;
+        }) => ({
+          learnerId: l.learnerId,
+          displayName: l.displayName,
+          avatarUrl: l.avatarUrl,
+          pseudonym: l.pseudonym,
+          gradeBand: l.gradeBand,
+          hasPin: !!l.pinHash,
+        })
+      ),
       fetchedAt: new Date().toISOString(),
     };
 
@@ -204,9 +215,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
 
     // Check if locked out
     if (learner.pinLockedUntil && new Date() < learner.pinLockedUntil) {
-      const minutesLeft = Math.ceil(
-        (learner.pinLockedUntil.getTime() - Date.now()) / 1000 / 60
-      );
+      const minutesLeft = Math.ceil((learner.pinLockedUntil.getTime() - Date.now()) / 1000 / 60);
       return reply.status(423).send({
         error: 'Too many attempts',
         lockedUntil: learner.pinLockedUntil.toISOString(),
@@ -393,16 +402,16 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
         classroomId: params.data.classroomId,
         learnerId: body.data.learnerId,
         displayName: body.data.displayName,
-        pseudonym: body.data.pseudonym,
-        avatarUrl: body.data.avatarUrl,
-        gradeBand: body.data.gradeBand,
+        pseudonym: body.data.pseudonym ?? null,
+        avatarUrl: body.data.avatarUrl ?? null,
+        gradeBand: body.data.gradeBand ?? null,
         pinHash,
       },
       update: {
         displayName: body.data.displayName,
-        pseudonym: body.data.pseudonym,
-        avatarUrl: body.data.avatarUrl,
-        gradeBand: body.data.gradeBand,
+        pseudonym: body.data.pseudonym ?? null,
+        avatarUrl: body.data.avatarUrl ?? null,
+        gradeBand: body.data.gradeBand ?? null,
         ...(pinHash && { pinHash }),
       },
     });
@@ -436,7 +445,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
     });
 
     // Add hasPin flag
-    const result = learners.map((l) => ({
+    const result = learners.map((l: Record<string, unknown>) => ({
       ...l,
       hasPin: false, // Can't determine from select, but safe default
     }));

@@ -5,6 +5,9 @@
 // Re-export all contract types
 export * from './contract.types';
 
+// Re-export all coverage profile types (hybrid billing)
+export * from './coverage-profile.types';
+
 // Re-export all licensing types
 export * from './licensing.types';
 
