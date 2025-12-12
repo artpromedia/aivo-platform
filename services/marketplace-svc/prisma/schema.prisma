@@ -1,0 +1,702 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETPLACE SERVICE - PRISMA SCHEMA
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// This schema defines the Marketplace & Catalog domain model for the Aivo platform.
+// It supports:
+//   - Vendors (Aivo internal or third-party publishers)
+//   - Marketplace Items (content packs, embedded tools)
+//   - Versioned releases with review workflow
+//   - Tenant/school/classroom-level installations
+//   - Approval governance for both items and installations
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Vendor type - Aivo internal or external third-party
+enum VendorType {
+  AIVO         // Aivo-authored content
+  THIRD_PARTY  // External publisher/developer
+
+  @@map("vendor_type")
+}
+
+/// Type of marketplace item
+enum MarketplaceItemType {
+  CONTENT_PACK   // Set of Learning Objects (LOs) or LO families
+  EMBEDDED_TOOL  // Third-party app/tool integration
+
+  @@map("marketplace_item_type")
+}
+
+/// Subject areas (aligned with LearningObjectSubject)
+enum MarketplaceSubject {
+  ELA
+  MATH
+  SCIENCE
+  SEL
+  SPEECH
+  STEM
+  SOCIAL_STUDIES
+  ARTS
+  FOREIGN_LANGUAGE
+  OTHER
+
+  @@map("marketplace_subject")
+}
+
+/// Grade bands (aligned with LearningObjectGradeBand)
+enum MarketplaceGradeBand {
+  PRE_K
+  K_2
+  G3_5
+  G6_8
+  G9_12
+  ALL_GRADES
+
+  @@map("marketplace_grade_band")
+}
+
+/// Content/tool modalities
+enum MarketplaceModality {
+  GAME           // Interactive game-based learning
+  DRILL          // Practice/drill activities
+  PROJECT        // Project-based learning
+  SEL_ACTIVITY   // Social-emotional learning
+  ASSESSMENT     // Formative/summative assessment
+  SIMULATION     // Interactive simulation
+  VIDEO          // Video-based content
+  READING        // Reading/text-based content
+  AUDIO          // Audio/podcast content
+  MIXED          // Multiple modalities
+
+  @@map("marketplace_modality")
+}
+
+/// Version review status for Aivo internal review
+enum MarketplaceVersionStatus {
+  DRAFT           // Being prepared by vendor
+  PENDING_REVIEW  // Submitted for Aivo review
+  IN_REVIEW       // Being reviewed by Aivo team
+  APPROVED        // Approved and ready for publishing
+  REJECTED        // Rejected with feedback
+  PUBLISHED       // Live in marketplace
+  DEPRECATED      // No longer available for new installs
+
+  @@map("marketplace_version_status")
+}
+
+/// Installation status for tenant/school/classroom
+enum InstallationStatus {
+  PENDING_APPROVAL  // Awaiting admin approval
+  ACTIVE            // Installed and enabled
+  DISABLED          // Temporarily disabled by admin
+  REVOKED           // Permanently removed
+
+  @@map("installation_status")
+}
+
+/// Launch type for embedded tools
+enum EmbeddedToolLaunchType {
+  IFRAME_WEB       // Web iframe embed
+  NATIVE_DEEPLINK  // Mobile deep link
+  LTI_LIKE         // LTI-style launch with signed params
+
+  @@map("embedded_tool_launch_type")
+}
+
+/// Pricing model for marketplace items
+enum PricingModel {
+  FREE              // Completely free
+  FREE_TRIAL        // Free trial, then paid
+  PAID_PER_SEAT     // Per-student pricing
+  PAID_FLAT_RATE    // Flat rate per tenant/school
+  FREEMIUM          // Free with premium features
+  CUSTOM            // Contact for pricing
+
+  @@map("pricing_model")
+}
+
+/// Safety certification level
+enum SafetyCertification {
+  AIVO_CERTIFIED    // Fully vetted by Aivo safety team
+  VENDOR_ATTESTED   // Vendor self-certification
+  PENDING_REVIEW    // Under safety review
+  NOT_REVIEWED      // No safety review yet
+
+  @@map("safety_certification")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VENDORS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Publishers and developers who provide content or tools in the marketplace.
+// Aivo is also a vendor for first-party content packs.
+//
+
+/// Vendor entity - content/tool publisher
+model Vendor {
+  id            String      @id @default(uuid()) @db.Uuid
+  
+  /// Unique slug identifier (e.g., "aivo", "math-blasters-inc")
+  slug          String      @unique
+  
+  /// Display name
+  name          String
+  
+  /// Vendor type
+  type          VendorType
+  
+  /// Primary contact email
+  contactEmail  String      @map("contact_email")
+  
+  /// Public website URL
+  websiteUrl    String?     @map("website_url")
+  
+  /// Logo image URL
+  logoUrl       String?     @map("logo_url")
+  
+  /// Short description/tagline
+  description   String?
+  
+  /// Whether vendor is verified/approved by Aivo
+  isVerified    Boolean     @default(false) @map("is_verified")
+  
+  /// Whether vendor is active (can publish items)
+  isActive      Boolean     @default(true) @map("is_active")
+  
+  /// Metadata: legal info, compliance certs, etc.
+  metadataJson  Json?       @map("metadata_json")
+  
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  marketplaceItems MarketplaceItem[]
+
+  @@index([type, isActive])
+  @@index([isVerified])
+  @@map("vendors")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETPLACE ITEMS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// The catalog listing for a content pack or embedded tool.
+// This is the discoverable entity in the marketplace.
+//
+
+/// Marketplace item (content pack or embedded tool)
+model MarketplaceItem {
+  id               String                @id @default(uuid()) @db.Uuid
+  
+  /// Reference to the vendor
+  vendorId         String                @map("vendor_id") @db.Uuid
+  
+  /// Unique URL-friendly identifier
+  slug             String                @unique
+  
+  /// Type of item
+  itemType         MarketplaceItemType   @map("item_type")
+  
+  /// Display title
+  title            String
+  
+  /// Short description (for cards/lists)
+  shortDescription String                @map("short_description")
+  
+  /// Full marketing description (supports markdown)
+  longDescription  String                @map("long_description")
+  
+  /// Applicable subjects
+  subjects         MarketplaceSubject[]
+  
+  /// Applicable grade bands
+  gradeBands       MarketplaceGradeBand[] @map("grade_bands")
+  
+  /// Content modalities
+  modalities       MarketplaceModality[]
+  
+  /// Icon/thumbnail URL
+  iconUrl          String?               @map("icon_url")
+  
+  /// Screenshot gallery (array of {url, caption, order})
+  screenshotsJson  Json?                 @map("screenshots_json")
+  
+  /// Whether item is active in marketplace
+  isActive         Boolean               @default(true) @map("is_active")
+  
+  /// Whether item is featured/promoted
+  isFeatured       Boolean               @default(false) @map("is_featured")
+  
+  /// Pricing model
+  pricingModel     PricingModel          @default(FREE) @map("pricing_model")
+  
+  /// Price in cents (for simple pricing; null if complex/custom)
+  priceCents       Int?                  @map("price_cents")
+  
+  /// Safety certification level
+  safetyCert       SafetyCertification   @default(NOT_REVIEWED) @map("safety_cert")
+  
+  /// Additional metadata (alignment standards, languages, etc.)
+  /// Example: { "standards": ["CCSS.MATH.K.OA"], "languages": ["en", "es"] }
+  metadataJson     Json?                 @map("metadata_json")
+  
+  /// Search optimization keywords
+  searchKeywords   String[]              @default([]) @map("search_keywords")
+  
+  /// Average rating (0-5, updated by trigger/job)
+  avgRating        Decimal?              @map("avg_rating") @db.Decimal(3, 2)
+  
+  /// Total number of installations
+  totalInstalls    Int                   @default(0) @map("total_installs")
+  
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  vendor       Vendor                     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  versions     MarketplaceItemVersion[]
+  installations MarketplaceInstallation[]
+  reviews      MarketplaceReview[]
+
+  @@index([vendorId])
+  @@index([itemType, isActive])
+  @@index([isActive, isFeatured])
+  @@index([subjects])
+  @@index([gradeBands])
+  @@index([pricingModel])
+  @@index([safetyCert])
+  @@map("marketplace_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETPLACE ITEM VERSIONS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Versioned releases of marketplace items with review workflow.
+// Each version goes through approval before publishing.
+//
+
+/// Versioned release of a marketplace item
+model MarketplaceItemVersion {
+  id                   String                    @id @default(uuid()) @db.Uuid
+  
+  /// Parent marketplace item
+  marketplaceItemId    String                    @map("marketplace_item_id") @db.Uuid
+  
+  /// Semantic version string (e.g., "1.0.0", "2.1.3")
+  version              String
+  
+  /// Version status in review workflow
+  status               MarketplaceVersionStatus  @default(DRAFT)
+  
+  /// Changelog/release notes for this version
+  changelog            String?
+  
+  /// Internal review notes (from Aivo reviewers)
+  reviewNotes          String?                   @map("review_notes")
+  
+  /// User who submitted this version
+  submittedByUserId    String?                   @map("submitted_by_user_id") @db.Uuid
+  
+  /// User who reviewed this version
+  reviewedByUserId     String?                   @map("reviewed_by_user_id") @db.Uuid
+  
+  /// User who approved/rejected this version
+  approvedByUserId     String?                   @map("approved_by_user_id") @db.Uuid
+  
+  /// Timestamp when submitted for review
+  submittedAt          DateTime?                 @map("submitted_at") @db.Timestamptz
+  
+  /// Timestamp when review completed
+  reviewedAt           DateTime?                 @map("reviewed_at") @db.Timestamptz
+  
+  /// Timestamp when published
+  publishedAt          DateTime?                 @map("published_at") @db.Timestamptz
+  
+  /// Timestamp when deprecated
+  deprecatedAt         DateTime?                 @map("deprecated_at") @db.Timestamptz
+  
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  marketplaceItem       MarketplaceItem           @relation(fields: [marketplaceItemId], references: [id], onDelete: Cascade)
+  contentPackItems      ContentPackItem[]
+  embeddedToolConfig    EmbeddedToolConfig?
+  installations         MarketplaceInstallation[]
+  statusTransitions     VersionStatusTransition[]
+
+  @@unique([marketplaceItemId, version])
+  @@index([marketplaceItemId, status])
+  @@index([status, publishedAt(sort: Desc)])
+  @@map("marketplace_item_versions")
+}
+
+/// Audit trail for version status changes
+model VersionStatusTransition {
+  id                   String                    @id @default(uuid()) @db.Uuid
+  
+  /// Version that transitioned
+  versionId            String                    @map("version_id") @db.Uuid
+  
+  /// Previous status
+  fromStatus           MarketplaceVersionStatus  @map("from_status")
+  
+  /// New status
+  toStatus             MarketplaceVersionStatus  @map("to_status")
+  
+  /// User who performed the transition
+  transitionedByUserId String                    @map("transitioned_by_user_id") @db.Uuid
+  
+  /// Reason/notes for transition
+  reason               String?
+  
+  transitionedAt       DateTime                  @default(now()) @map("transitioned_at") @db.Timestamptz
+
+  // Relations
+  version MarketplaceItemVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId, transitionedAt(sort: Desc)])
+  @@map("version_status_transitions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENT PACK SPECIFICS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Content packs contain references to Learning Object versions.
+// This links the marketplace to the content-svc domain.
+//
+
+/// Learning Object reference within a content pack version
+model ContentPackItem {
+  id                        String   @id @default(uuid()) @db.Uuid
+  
+  /// Parent version
+  marketplaceItemVersionId  String   @map("marketplace_item_version_id") @db.Uuid
+  
+  /// Reference to LO version in content-svc (cross-service FK)
+  loVersionId               String   @map("lo_version_id") @db.Uuid
+  
+  /// Optional: Reference to the LO family/parent
+  loId                      String?  @map("lo_id") @db.Uuid
+  
+  /// Display order within the pack
+  position                  Int      @default(0)
+  
+  /// Whether this is a "highlight" or featured item in the pack
+  isHighlight               Boolean  @default(false) @map("is_highlight")
+  
+  /// Optional metadata for this specific item in the pack
+  metadataJson              Json?    @map("metadata_json")
+  
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  version MarketplaceItemVersion @relation(fields: [marketplaceItemVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([marketplaceItemVersionId, loVersionId])
+  @@index([marketplaceItemVersionId, position])
+  @@index([loVersionId])
+  @@map("content_pack_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EMBEDDED TOOL SPECIFICS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Configuration for third-party tool integrations.
+// Defines how tools are launched and what data they can access.
+//
+
+/// Configuration for an embedded tool version
+model EmbeddedToolConfig {
+  id                        String                  @id @default(uuid()) @db.Uuid
+  
+  /// Parent version (1:1 relationship)
+  marketplaceItemVersionId  String                  @unique @map("marketplace_item_version_id") @db.Uuid
+  
+  /// Launch URL template (may include placeholders)
+  launchUrl                 String                  @map("launch_url")
+  
+  /// How the tool is launched
+  launchType                EmbeddedToolLaunchType  @map("launch_type")
+  
+  /// Required data scopes for this tool
+  /// Example: ["LEARNER_PROFILE_MIN", "SESSION_EVENTS_WRITE", "PROGRESS_READ"]
+  requiredScopes            String[]                @default([]) @map("required_scopes")
+  
+  /// Optional scopes that enhance functionality
+  optionalScopes            String[]                @default([]) @map("optional_scopes")
+  
+  /// JSON Schema for tool-specific configuration
+  /// Defines what settings tenants can customize
+  configSchemaJson          Json?                   @map("config_schema_json")
+  
+  /// Default configuration values
+  defaultConfigJson         Json?                   @map("default_config_json")
+  
+  /// Webhook URL for receiving events from Aivo
+  webhookUrl                String?                 @map("webhook_url")
+  
+  /// Shared secret for webhook signing
+  webhookSecret             String?                 @map("webhook_secret")
+  
+  /// OAuth client ID (if tool uses OAuth)
+  oauthClientId             String?                 @map("oauth_client_id")
+  
+  /// OAuth callback URL
+  oauthCallbackUrl          String?                 @map("oauth_callback_url")
+  
+  /// Content Security Policy additions for iframe
+  cspDirectives             String?                 @map("csp_directives")
+  
+  /// Sandbox attributes for iframe
+  sandboxAttributes         String[]                @default([]) @map("sandbox_attributes")
+  
+  createdAt                 DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  version MarketplaceItemVersion @relation(fields: [marketplaceItemVersionId], references: [id], onDelete: Cascade)
+
+  @@map("embedded_tool_configs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INSTALLATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Records of items installed at tenant/school/classroom level.
+// Supports hierarchical enablement with admin approval workflow.
+//
+
+/// Installation of a marketplace item for a tenant/school/classroom
+model MarketplaceInstallation {
+  id                        String              @id @default(uuid()) @db.Uuid
+  
+  /// The installed item
+  marketplaceItemId         String              @map("marketplace_item_id") @db.Uuid
+  
+  /// Specific version installed
+  marketplaceItemVersionId  String              @map("marketplace_item_version_id") @db.Uuid
+  
+  /// Tenant where installed (always required)
+  tenantId                  String              @map("tenant_id") @db.Uuid
+  
+  /// Optional: Specific school (null = tenant-wide)
+  schoolId                  String?             @map("school_id") @db.Uuid
+  
+  /// Optional: Specific classroom (null = school-wide or tenant-wide)
+  classroomId               String?             @map("classroom_id") @db.Uuid
+  
+  /// User who initiated the installation
+  installedByUserId         String              @map("installed_by_user_id") @db.Uuid
+  
+  /// User who approved (if different from installer)
+  approvedByUserId          String?             @map("approved_by_user_id") @db.Uuid
+  
+  /// Installation status
+  status                    InstallationStatus  @default(PENDING_APPROVAL)
+  
+  /// Tenant/school/classroom-specific configuration
+  /// Merged with tool's default config on launch
+  configJson                Json?               @map("config_json")
+  
+  /// Why this item was installed (for auditing)
+  installReason             String?             @map("install_reason")
+  
+  /// Notes from approver (e.g., "Approved for pilot program")
+  approvalNotes             String?             @map("approval_notes")
+  
+  /// When installation was requested
+  installedAt               DateTime            @default(now()) @map("installed_at") @db.Timestamptz
+  
+  /// When installation was approved
+  approvedAt                DateTime?           @map("approved_at") @db.Timestamptz
+  
+  /// When installation was disabled/revoked
+  disabledAt                DateTime?           @map("disabled_at") @db.Timestamptz
+  
+  updatedAt                 DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  marketplaceItem    MarketplaceItem        @relation(fields: [marketplaceItemId], references: [id], onDelete: Restrict)
+  version            MarketplaceItemVersion @relation(fields: [marketplaceItemVersionId], references: [id], onDelete: Restrict)
+  statusTransitions  InstallationStatusTransition[]
+
+  // Ensure unique installation per scope level
+  @@unique([marketplaceItemId, tenantId, schoolId, classroomId])
+  @@index([tenantId, status])
+  @@index([schoolId, status])
+  @@index([classroomId, status])
+  @@index([marketplaceItemId, status])
+  @@index([installedByUserId])
+  @@map("marketplace_installations")
+}
+
+/// Audit trail for installation status changes
+model InstallationStatusTransition {
+  id                   String              @id @default(uuid()) @db.Uuid
+  
+  /// Installation that transitioned
+  installationId       String              @map("installation_id") @db.Uuid
+  
+  /// Previous status
+  fromStatus           InstallationStatus  @map("from_status")
+  
+  /// New status
+  toStatus             InstallationStatus  @map("to_status")
+  
+  /// User who performed the transition
+  transitionedByUserId String              @map("transitioned_by_user_id") @db.Uuid
+  
+  /// Reason/notes for transition
+  reason               String?
+  
+  transitionedAt       DateTime            @default(now()) @map("transitioned_at") @db.Timestamptz
+
+  // Relations
+  installation MarketplaceInstallation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@index([installationId, transitionedAt(sort: Desc)])
+  @@map("installation_status_transitions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REVIEWS & RATINGS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// User reviews and ratings for marketplace items.
+//
+
+/// User review of a marketplace item
+model MarketplaceReview {
+  id                  String   @id @default(uuid()) @db.Uuid
+  
+  /// Item being reviewed
+  marketplaceItemId   String   @map("marketplace_item_id") @db.Uuid
+  
+  /// User who wrote the review
+  reviewerUserId      String   @map("reviewer_user_id") @db.Uuid
+  
+  /// Reviewer's tenant (for filtering reviews by similar tenants)
+  reviewerTenantId    String   @map("reviewer_tenant_id") @db.Uuid
+  
+  /// Rating (1-5 stars)
+  rating              Int
+  
+  /// Review title
+  title               String?
+  
+  /// Review body (markdown supported)
+  body                String?
+  
+  /// Whether review is from verified installation
+  isVerifiedInstall   Boolean  @default(false) @map("is_verified_install")
+  
+  /// Whether review is approved for public display
+  isApproved          Boolean  @default(true) @map("is_approved")
+  
+  /// Whether review is flagged for moderation
+  isFlagged           Boolean  @default(false) @map("is_flagged")
+  
+  /// Helpful vote count
+  helpfulCount        Int      @default(0) @map("helpful_count")
+  
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  marketplaceItem MarketplaceItem @relation(fields: [marketplaceItemId], references: [id], onDelete: Cascade)
+
+  @@unique([marketplaceItemId, reviewerUserId])
+  @@index([marketplaceItemId, isApproved, rating])
+  @@index([reviewerTenantId])
+  @@map("marketplace_reviews")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEATURED COLLECTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Curated collections of marketplace items for discovery.
+//
+
+/// Curated collection of marketplace items
+model MarketplaceCollection {
+  id            String   @id @default(uuid()) @db.Uuid
+  
+  /// URL-friendly identifier
+  slug          String   @unique
+  
+  /// Collection title
+  title         String
+  
+  /// Collection description
+  description   String?
+  
+  /// Cover image URL
+  coverImageUrl String?  @map("cover_image_url")
+  
+  /// Whether collection is active/visible
+  isActive      Boolean  @default(true) @map("is_active")
+  
+  /// Display order (lower = higher priority)
+  displayOrder  Int      @default(0) @map("display_order")
+  
+  /// Target audience (e.g., "teachers", "district_admins")
+  targetAudience String[] @default([]) @map("target_audience")
+  
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  items MarketplaceCollectionItem[]
+
+  @@index([isActive, displayOrder])
+  @@map("marketplace_collections")
+}
+
+/// Item within a collection
+model MarketplaceCollectionItem {
+  id                  String   @id @default(uuid()) @db.Uuid
+  
+  /// Parent collection
+  collectionId        String   @map("collection_id") @db.Uuid
+  
+  /// Marketplace item
+  marketplaceItemId   String   @map("marketplace_item_id") @db.Uuid
+  
+  /// Display order within collection
+  position            Int      @default(0)
+  
+  /// Optional custom headline for this item in this collection
+  customHeadline      String?  @map("custom_headline")
+  
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  collection MarketplaceCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, marketplaceItemId])
+  @@index([collectionId, position])
+  @@map("marketplace_collection_items")
+}
