@@ -155,11 +155,15 @@ export abstract class BaseConsumer {
     try {
       return await this.jsm.consumers.add(this.consumerOptions.stream, config);
     } catch (err) {
-      // Consumer might already exist
-      return await this.jsm.consumers.info(
-        this.consumerOptions.stream,
-        this.consumerOptions.durableName
-      );
+      // Consumer might already exist - check if it's an expected error
+      if (err instanceof Error && err.message.includes('consumer name already in use')) {
+        return await this.jsm.consumers.info(
+          this.consumerOptions.stream,
+          this.consumerOptions.durableName
+        );
+      }
+      // Re-throw unexpected errors
+      throw err;
     }
   }
 

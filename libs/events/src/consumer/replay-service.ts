@@ -100,7 +100,7 @@ export class EventReplayService {
   private nc: NatsConnection | null = null;
   private js: JetStreamClient | null = null;
   private jsm: JetStreamManager | null = null;
-  private sc = StringCodec();
+  private readonly sc = StringCodec();
 
   constructor(private readonly config: ReplayServiceConfig) {}
 
@@ -272,6 +272,69 @@ export class EventReplayService {
   // Event Replay
   // ---------------------------------------------------------------------------
 
+  private buildReplayConsumerConfig(options: ReplayOptions): Partial<ConsumerConfig> {
+    const config: Partial<ConsumerConfig> = {
+      ack_policy: AckPolicy.None,
+      max_deliver: 1,
+      inactive_threshold: 30_000_000_000, // 30 seconds
+    };
+
+    if (options.filterSubject) {
+      config.filter_subject = options.filterSubject;
+    }
+
+    if (options.startSequence) {
+      config.deliver_policy = DeliverPolicy.StartSequence;
+      config.opt_start_seq = options.startSequence;
+    } else if (options.startTime) {
+      config.deliver_policy = DeliverPolicy.StartTime;
+      config.opt_start_time = options.startTime.toISOString();
+    } else {
+      config.deliver_policy = DeliverPolicy.All;
+    }
+
+    return config;
+  }
+
+  private shouldStopReplay(
+    msg: { seq: number; info: { timestampNanos: number } },
+    options: ReplayOptions,
+    eventsReplayed: number
+  ): boolean {
+    if (options.endSequence && msg.seq > options.endSequence) {
+      return true;
+    }
+    const msgTime = new Date(msg.info.timestampNanos / 1_000_000);
+    if (options.endTime && msgTime > options.endTime) {
+      return true;
+    }
+    const maxEvents = options.maxEvents ?? Infinity;
+    return eventsReplayed >= maxEvents;
+  }
+
+  private shouldSkipEvent(event: BaseEvent, options: ReplayOptions): boolean {
+    if (options.tenantId && event.tenantId !== options.tenantId) {
+      return true;
+    }
+    if (options.eventType && event.eventType !== options.eventType) {
+      return true;
+    }
+    return false;
+  }
+
+  private async applySpeedMultiplier(
+    msgTime: Date,
+    prevTimestamp: number | undefined,
+    speedMultiplier?: number
+  ): Promise<void> {
+    if (speedMultiplier && speedMultiplier > 0 && prevTimestamp) {
+      const delay = (msgTime.getTime() - prevTimestamp) / speedMultiplier;
+      if (delay > 0 && delay < 60000) {
+        await this.sleep(delay);
+      }
+    }
+  }
+
   async replay(
     options: ReplayOptions,
     handler: (event: BaseEvent, sequence: number) => Promise<void>
@@ -284,48 +347,17 @@ export class EventReplayService {
     let firstSequence = 0;
     let lastSequence = 0;
 
-    // Build consumer config based on options
-    const consumerConfig: Partial<ConsumerConfig> = {
-      ack_policy: AckPolicy.None,
-      max_deliver: 1,
-      inactive_threshold: 30_000_000_000, // 30 seconds
-    };
-
-    if (options.filterSubject) {
-      consumerConfig.filter_subject = options.filterSubject;
-    }
-
-    if (options.startSequence) {
-      consumerConfig.deliver_policy = DeliverPolicy.StartSequence;
-      consumerConfig.opt_start_seq = options.startSequence;
-    } else if (options.startTime) {
-      consumerConfig.deliver_policy = DeliverPolicy.StartTime;
-      consumerConfig.opt_start_time = options.startTime.toISOString();
-    } else {
-      consumerConfig.deliver_policy = DeliverPolicy.All;
-    }
-
+    const consumerConfig = this.buildReplayConsumerConfig(options);
     const consumer = await this.jsm!.consumers.add(options.stream, consumerConfig);
     const sub = await this.js!.consumers.get(options.stream, consumer.name);
 
     try {
       const maxEvents = options.maxEvents ?? Infinity;
       const iter = await sub.consume({ max_messages: Math.min(maxEvents, 10000) });
-
       let prevTimestamp: number | undefined;
 
       for await (const msg of iter) {
-        // Check end conditions
-        if (options.endSequence && msg.seq > options.endSequence) {
-          break;
-        }
-
-        const msgTime = new Date(msg.info.timestampNanos / 1_000_000);
-        if (options.endTime && msgTime > options.endTime) {
-          break;
-        }
-
-        if (eventsReplayed >= maxEvents) {
+        if (this.shouldStopReplay(msg, options, eventsReplayed)) {
           break;
         }
 
@@ -333,29 +365,16 @@ export class EventReplayService {
           const data = this.sc.decode(msg.data);
           const event = JSON.parse(data) as BaseEvent;
 
-          // Filter by tenant if specified
-          if (options.tenantId && event.tenantId !== options.tenantId) {
+          if (this.shouldSkipEvent(event, options)) {
             continue;
           }
 
-          // Filter by event type if specified
-          if (options.eventType && event.eventType !== options.eventType) {
-            continue;
-          }
-
-          // Apply speed multiplier for real-time replay
-          if (options.speedMultiplier && options.speedMultiplier > 0 && prevTimestamp) {
-            const delay = (msgTime.getTime() - prevTimestamp) / options.speedMultiplier;
-            if (delay > 0 && delay < 60000) {
-              await this.sleep(delay);
-            }
-          }
+          const msgTime = new Date(msg.info.timestampNanos / 1_000_000);
+          await this.applySpeedMultiplier(msgTime, prevTimestamp, options.speedMultiplier);
           prevTimestamp = msgTime.getTime();
 
-          // Handle event
           await handler(event, msg.seq);
 
-          // Track progress
           if (firstSequence === 0) {
             firstSequence = msg.seq;
           }

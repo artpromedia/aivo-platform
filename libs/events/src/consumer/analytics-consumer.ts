@@ -116,8 +116,8 @@ interface AggregationBuffer {
 export class AnalyticsConsumer extends BaseConsumer {
   private buffer: AggregationBuffer;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
-  private writers: AnalyticsConsumerConfig['writers'];
-  private windowMs: number;
+  private readonly writers: AnalyticsConsumerConfig['writers'];
+  private readonly windowMs: number;
 
   constructor(config: AnalyticsConsumerConfig) {
     super(config.connection, {

@@ -106,10 +106,10 @@ export class NatsTransport {
   private nc: NatsConnection | null = null;
   private js: JetStreamClient | null = null;
   private jsm: JetStreamManager | null = null;
-  private sc = StringCodec();
+  private readonly sc = StringCodec();
   private isConnecting = false;
   private connectionPromise: Promise<void> | null = null;
-  private retryConfig: RetryConfig;
+  private readonly retryConfig: RetryConfig;
 
   constructor(
     private readonly config: NatsTransportConfig,
@@ -381,8 +381,8 @@ export class NatsTransport {
     try {
       const data = this.sc.encode(JSON.stringify(dlqEvent));
       await this.js.publish(dlqSubject, data);
-    } catch (dlqErr) {
-      console.error('[NatsTransport] Failed to publish to DLQ:', dlqErr);
+    } catch (error_) {
+      console.error('[NatsTransport] Failed to publish to DLQ:', error_);
     }
   }
 

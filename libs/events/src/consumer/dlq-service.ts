@@ -89,8 +89,8 @@ export class DLQService {
   private nc: NatsConnection | null = null;
   private js: JetStreamClient | null = null;
   private jsm: JetStreamManager | null = null;
-  private sc = StringCodec();
-  private dlqStream: string;
+  private readonly sc = StringCodec();
+  private readonly dlqStream: string;
 
   constructor(private readonly config: DLQServiceConfig) {
     this.dlqStream = config.dlqStream ?? 'DLQ';
@@ -143,77 +143,106 @@ export class DLQService {
   // Stats
   // ---------------------------------------------------------------------------
 
+  private parseMessageForStats(
+    msg: { data: Uint8Array; subject: string },
+    accumulator: {
+      byStream: Record<string, number>;
+      byError: Record<string, number>;
+      oldestMessage?: Date;
+      newestMessage?: Date;
+    }
+  ): void {
+    try {
+      const data = this.sc.decode(msg.data);
+      const dlqMsg = JSON.parse(data) as {
+        originalSubject?: string;
+        error?: string;
+        failedAt?: string;
+      };
+
+      this.updateStreamCount(accumulator.byStream, dlqMsg.originalSubject ?? msg.subject);
+      this.updateErrorCount(accumulator.byError, dlqMsg.error);
+      this.updateTimestamps(accumulator, dlqMsg.failedAt);
+    } catch {
+      // Skip malformed messages in stats
+    }
+  }
+
+  private updateStreamCount(byStream: Record<string, number>, subject: string): void {
+    const firstPart = subject.split('.')[0];
+    const streamPrefix = firstPart ? firstPart.replace('dlq.', '') : 'unknown';
+    byStream[streamPrefix] = (byStream[streamPrefix] ?? 0) + 1;
+  }
+
+  private updateErrorCount(byError: Record<string, number>, error?: string): void {
+    const errorKey = (error ?? 'unknown').substring(0, 50);
+    byError[errorKey] = (byError[errorKey] ?? 0) + 1;
+  }
+
+  private updateTimestamps(
+    accumulator: { oldestMessage?: Date; newestMessage?: Date },
+    failedAt?: string
+  ): void {
+    if (!failedAt) return;
+    const timestamp = new Date(failedAt);
+    if (!accumulator.oldestMessage || timestamp < accumulator.oldestMessage) {
+      accumulator.oldestMessage = timestamp;
+    }
+    if (!accumulator.newestMessage || timestamp > accumulator.newestMessage) {
+      accumulator.newestMessage = timestamp;
+    }
+  }
+
+  private async sampleMessagesForStats(maxSample: number): Promise<{
+    byStream: Record<string, number>;
+    byError: Record<string, number>;
+    oldestMessage?: Date;
+    newestMessage?: Date;
+  }> {
+    const accumulator: {
+      byStream: Record<string, number>;
+      byError: Record<string, number>;
+      oldestMessage?: Date;
+      newestMessage?: Date;
+    } = { byStream: {}, byError: {} };
+
+    const consumerConfig: Partial<ConsumerConfig> = {
+      ack_policy: AckPolicy.None,
+      deliver_policy: DeliverPolicy.All,
+      max_deliver: 1,
+      inactive_threshold: 10_000_000_000,
+    };
+
+    const consumer = await this.jsm!.consumers.add(this.dlqStream, consumerConfig);
+    const sub = await this.js!.consumers.get(this.dlqStream, consumer.name);
+
+    try {
+      const iter = await sub.consume({ max_messages: maxSample });
+      let count = 0;
+
+      for await (const msg of iter) {
+        if (count >= maxSample) break;
+        this.parseMessageForStats(msg, accumulator);
+        count++;
+      }
+    } finally {
+      await this.jsm!.consumers.delete(this.dlqStream, consumer.name);
+    }
+
+    return accumulator;
+  }
+
   async getStats(): Promise<DLQStats> {
     await this.connect();
 
     try {
       const streamInfo = await this.jsm!.streams.info(this.dlqStream);
-
-      // Get message breakdown by iterating (expensive for large DLQs)
-      const byStream: Record<string, number> = {};
-      const byError: Record<string, number> = {};
-      let oldestMessage: Date | undefined;
-      let newestMessage: Date | undefined;
-
-      // Sample messages to build stats (limit to avoid memory issues)
       const maxSample = Math.min(streamInfo.state.messages, 1000);
 
-      if (maxSample > 0) {
-        const consumerConfig: Partial<ConsumerConfig> = {
-          ack_policy: AckPolicy.None,
-          deliver_policy: DeliverPolicy.All,
-          max_deliver: 1,
-          inactive_threshold: 10_000_000_000,
-        };
-
-        const consumer = await this.jsm!.consumers.add(this.dlqStream, consumerConfig);
-        const sub = await this.js!.consumers.get(this.dlqStream, consumer.name);
-
-        try {
-          const iter = await sub.consume({ max_messages: maxSample });
-          let count = 0;
-
-          for await (const msg of iter) {
-            if (count >= maxSample) break;
-
-            try {
-              const data = this.sc.decode(msg.data);
-              const dlqMsg = JSON.parse(data) as {
-                originalSubject?: string;
-                error?: string;
-                failedAt?: string;
-              };
-
-              // Count by original stream
-              const subject = dlqMsg.originalSubject ?? msg.subject;
-              const firstPart = subject.split('.')[0];
-              const streamPrefix = firstPart ? firstPart.replace('dlq.', '') : 'unknown';
-              byStream[streamPrefix] = (byStream[streamPrefix] ?? 0) + 1;
-
-              // Count by error type (first 50 chars)
-              const errorKey = (dlqMsg.error ?? 'unknown').substring(0, 50);
-              byError[errorKey] = (byError[errorKey] ?? 0) + 1;
-
-              // Track timestamps
-              if (dlqMsg.failedAt) {
-                const timestamp = new Date(dlqMsg.failedAt);
-                if (!oldestMessage || timestamp < oldestMessage) {
-                  oldestMessage = timestamp;
-                }
-                if (!newestMessage || timestamp > newestMessage) {
-                  newestMessage = timestamp;
-                }
-              }
-            } catch {
-              // Skip malformed messages in stats
-            }
-
-            count++;
-          }
-        } finally {
-          await this.jsm!.consumers.delete(this.dlqStream, consumer.name);
-        }
-      }
+      const { byStream, byError, oldestMessage, newestMessage } =
+        maxSample > 0
+          ? await this.sampleMessagesForStats(maxSample)
+          : { byStream: {}, byError: {} };
 
       const stats: DLQStats = {
         totalMessages: streamInfo.state.messages,
@@ -228,7 +257,8 @@ export class DLQService {
       }
       return stats;
     } catch (err) {
-      // DLQ stream might not exist
+      // DLQ stream might not exist - return empty stats
+      console.debug('[DLQService] Could not get stats, stream may not exist:', err);
       return {
         totalMessages: 0,
         byStream: {},
@@ -386,6 +416,16 @@ export class DLQService {
     }
   }
 
+  private async retrySequence(seq: number, result: RetryResult): Promise<void> {
+    const success = await this.retryMessage(seq);
+    if (success) {
+      result.retried++;
+    } else {
+      result.failed++;
+      result.errors.push({ sequence: seq, error: 'Failed to retry' });
+    }
+  }
+
   async retryMessages(
     options: {
       sequences?: number[];
@@ -401,18 +441,10 @@ export class DLQService {
     };
 
     if (sequences) {
-      // Retry specific sequences
       for (const seq of sequences.slice(0, maxMessages)) {
-        const success = await this.retryMessage(seq);
-        if (success) {
-          result.retried++;
-        } else {
-          result.failed++;
-          result.errors.push({ sequence: seq, error: 'Failed to retry' });
-        }
+        await this.retrySequence(seq, result);
       }
     } else {
-      // Retry by filter
       const listOpts: { limit: number; filterSubject?: string } = {
         limit: maxMessages,
       };
@@ -422,13 +454,7 @@ export class DLQService {
       const messages = await this.listMessages(listOpts);
 
       for (const msg of messages) {
-        const success = await this.retryMessage(msg.sequence);
-        if (success) {
-          result.retried++;
-        } else {
-          result.failed++;
-          result.errors.push({ sequence: msg.sequence, error: 'Failed to retry' });
-        }
+        await this.retrySequence(msg.sequence, result);
       }
     }
 
@@ -471,7 +497,7 @@ export class DLQService {
         // Purge messages older than timestamp
         // Note: NATS doesn't support direct time-based purge,
         // so we find the sequence and purge up to it
-        const streamInfo = await this.jsm!.streams.info(this.dlqStream);
+        await this.jsm!.streams.info(this.dlqStream);
 
         // Binary search for the sequence at the cutoff time
         // For simplicity, purge by count based on estimated position

@@ -69,11 +69,11 @@ export interface IndexedEvent {
 // -----------------------------------------------------------------------------
 
 export class IndexingConsumer extends BaseConsumer {
-  private buffer: IndexedEvent[] = [];
+  private readonly buffer: IndexedEvent[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
-  private writeEvent: (event: IndexedEvent) => Promise<void>;
-  private batchSize: number;
-  private flushIntervalMs: number;
+  private readonly writeEvent: (event: IndexedEvent) => Promise<void>;
+  private readonly batchSize: number;
+  private readonly flushIntervalMs: number;
 
   constructor(config: IndexingConsumerConfig) {
     super(config.connection, {

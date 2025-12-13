@@ -58,8 +58,8 @@ export interface EventPublisherConfig extends NatsTransportConfig {
 // -----------------------------------------------------------------------------
 
 export class EventPublisher {
-  private transport: NatsTransport;
-  private defaultTenantId: string | undefined;
+  private readonly transport: NatsTransport;
+  private readonly defaultTenantId: string | undefined;
 
   constructor(config: EventPublisherConfig) {
     this.transport = new NatsTransport(config);
