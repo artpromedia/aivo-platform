@@ -33,12 +33,13 @@ function extractLearnerId(request: FastifyRequest): string | null {
   const params = request.params as Record<string, unknown> | undefined;
   const query = request.query as Record<string, unknown> | undefined;
 
-  return (
-    (body?.learnerId as string) ??
-    (params?.learnerId as string) ??
-    (query?.learnerId as string) ??
-    null
-  );
+  // Try each source in priority order
+  const learnerId =
+    (body?.learnerId as string | undefined) ||
+    (params?.learnerId as string | undefined) ||
+    (query?.learnerId as string | undefined);
+
+  return learnerId ?? null;
 }
 
 /**
@@ -73,11 +74,11 @@ function buildConsentRequiredResponse(
 
 /**
  * Create a consent gate middleware factory
- * 
+ *
  * @example
  * ```ts
  * const consentGate = createConsentGate({ pool, consentBaseUrl: 'https://app.aivo.com' });
- * 
+ *
  * fastify.post('/baseline/start', {
  *   preHandler: [
  *     requireRole([Role.PARENT, Role.LEARNER]),
@@ -92,10 +93,7 @@ export function createConsentGate(options: ConsentGateOptions) {
   return function consentGate(config: ConsentGateConfig) {
     const { requiredConsents, requireAll = true } = config;
 
-    return async function middleware(
-      request: FastifyRequest,
-      reply: FastifyReply
-    ): Promise<void> {
+    return async function middleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
       const tenantId = extractTenantId(request);
       const learnerId = extractLearnerId(request);
 
@@ -109,12 +107,16 @@ export function createConsentGate(options: ConsentGateOptions) {
 
       // Fast path: single consent check
       if (requiredConsents.length === 1) {
-        const hasConsent = await hasActiveConsent(pool, tenantId, learnerId, requiredConsents[0]!);
-        if (!hasConsent) {
-          reply.code(451).send(
-            buildConsentRequiredResponse(tenantId, learnerId, requiredConsents, consentBaseUrl)
-          );
-          return;
+        const consentType = requiredConsents[0];
+        if (consentType) {
+          const hasConsent = await hasActiveConsent(pool, tenantId, learnerId, consentType);
+          if (!hasConsent) {
+            reply
+              .code(451)
+              .send(
+                buildConsentRequiredResponse(tenantId, learnerId, requiredConsents, consentBaseUrl)
+              );
+          }
         }
         return;
       }
@@ -128,9 +130,7 @@ export function createConsentGate(options: ConsentGateOptions) {
       for (const consentType of requiredConsents) {
         const cached = consentMap.get(consentType);
         const isActive =
-          cached &&
-          cached.status === 'GRANTED' &&
-          (!cached.expires_at || cached.expires_at > now);
+          cached?.status === 'GRANTED' && (!cached.expires_at || cached.expires_at > now);
 
         if (!isActive) {
           missingConsents.push(consentType);
@@ -139,22 +139,20 @@ export function createConsentGate(options: ConsentGateOptions) {
 
       // Check based on requireAll setting
       if (requireAll && missingConsents.length > 0) {
-        reply.code(451).send(
-          buildConsentRequiredResponse(tenantId, learnerId, missingConsents, consentBaseUrl)
-        );
+        reply
+          .code(451)
+          .send(buildConsentRequiredResponse(tenantId, learnerId, missingConsents, consentBaseUrl));
         return;
       }
 
       if (!requireAll && missingConsents.length === requiredConsents.length) {
         // None of the required consents are present
-        reply.code(451).send(
-          buildConsentRequiredResponse(tenantId, learnerId, missingConsents, consentBaseUrl)
-        );
-        return;
+        reply
+          .code(451)
+          .send(buildConsentRequiredResponse(tenantId, learnerId, missingConsents, consentBaseUrl));
       }
 
       // Consent check passed
-      return;
     };
   };
 }
@@ -230,9 +228,7 @@ export async function checkConsentsNonBlocking(
   for (const consentType of requiredConsents) {
     const cached = consentMap.get(consentType);
     const isActive =
-      cached &&
-      cached.status === 'GRANTED' &&
-      (!cached.expires_at || cached.expires_at > now);
+      cached?.status === 'GRANTED' && (!cached.expires_at || cached.expires_at > now);
 
     if (isActive) {
       grantedConsents.push(consentType);

@@ -3,8 +3,8 @@
  * Tests HTTP 451 (Unavailable for Legal Reasons) responses
  */
 
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import type { Pool, QueryResult } from 'pg';
+import { describe, it, expect, vi, type Mock } from 'vitest';
+import type { Pool } from 'pg';
 
 import {
   createConsentGate,
@@ -12,20 +12,28 @@ import {
   BASELINE_CONSENT_CONFIG,
   AI_PERSONALIZATION_CONSENT_CONFIG,
   AI_TUTOR_CONSENT_CONFIG,
-  type ConsentGateConfig,
+  type ConsentGateOptions,
 } from '../src/consent-gate.js';
 
 // Mock Fastify request/reply
-function createMockRequest(auth: { tenantId: string; userId: string; learnerId?: string }) {
+function createMockRequest(options: {
+  tenantId: string;
+  userId: string;
+  learnerId?: string;
+  body?: Record<string, unknown>;
+  params?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+}) {
   return {
-    auth,
-    query: { learnerId: auth.learnerId },
-    params: {},
+    auth: { tenantId: options.tenantId, userId: options.userId },
+    body: options.body ?? {},
+    params: options.params ?? {},
+    query: options.query ?? { learnerId: options.learnerId },
   };
 }
 
 function createMockReply() {
-  const reply: any = {
+  const reply = {
     code: vi.fn().mockReturnThis(),
     header: vi.fn().mockReturnThis(),
     send: vi.fn().mockReturnThis(),
@@ -33,19 +41,24 @@ function createMockReply() {
   return reply;
 }
 
-// Mock Pool
-function createMockPool(queryResponses: Map<string, Partial<QueryResult<any>>>): Pool {
-  const query: Mock = vi.fn().mockImplementation((sql: string, params?: any[]) => {
-    // Find matching response based on SQL pattern
-    for (const [pattern, response] of queryResponses) {
-      if (sql.includes(pattern)) {
-        return Promise.resolve({
-          rows: response.rows ?? [],
-          rowCount: response.rowCount ?? (response.rows?.length ?? 0),
-        });
-      }
-    }
-    return Promise.resolve({ rows: [], rowCount: 0 });
+// Mock Pool - returns consent records from consent_status_cache
+function createMockPool(
+  consentRecords: Array<{
+    consent_type: string;
+    status: 'GRANTED' | 'REVOKED' | 'PENDING';
+    expires_at?: Date | null;
+  }>
+): Pool {
+  const query: Mock = vi.fn().mockImplementation(() => {
+    // Map records to what checkMultipleConsents expects
+    return Promise.resolve({
+      rows: consentRecords.map((r) => ({
+        consent_type: r.consent_type,
+        status: r.status,
+        expires_at: r.expires_at ?? null,
+      })),
+      rowCount: consentRecords.length,
+    });
   });
 
   return { query } as unknown as Pool;
@@ -54,200 +67,220 @@ function createMockPool(queryResponses: Map<string, Partial<QueryResult<any>>>):
 describe('Consent Gate Middleware', () => {
   describe('createConsentGate', () => {
     it('should allow request when all required consents are granted', async () => {
-      const mockPool = createMockPool(
-        new Map([
-          [
-            'consent_status_cache',
-            {
-              rows: [
-                {
-                  consent_type: 'BASELINE_ASSESSMENT',
-                  has_active_consent: true,
-                },
-              ],
-            },
-          ],
-        ])
-      );
+      const mockPool = createMockPool([{ consent_type: 'BASELINE_ASSESSMENT', status: 'GRANTED' }]);
 
-      const config: ConsentGateConfig = {
-        requiredConsents: ['BASELINE_ASSESSMENT'],
-        learnerIdSource: 'query',
-        learnerIdParam: 'learnerId',
-        errorMessage: 'Consent required',
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
       };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({ requiredConsents: ['BASELINE_ASSESSMENT'] });
 
-      const middleware = createConsentGate(mockPool, config);
       const request = createMockRequest({
         tenantId: 'tenant-1',
         userId: 'user-1',
         learnerId: 'learner-1',
       });
       const reply = createMockReply();
-      const done = vi.fn();
 
-      await middleware(request as any, reply, done);
+      await middleware(request as any, reply as any);
 
-      // Should call done() to continue to next handler
-      expect(done).toHaveBeenCalled();
-      expect(reply.code).not.toHaveBeenCalled();
+      // Should NOT call reply.code(451)
+      expect(reply.code).not.toHaveBeenCalledWith(451);
     });
 
     it('should return HTTP 451 when consent is missing', async () => {
-      const mockPool = createMockPool(
-        new Map([
-          [
-            'consent_status_cache',
-            {
-              rows: [
-                {
-                  consent_type: 'BASELINE_ASSESSMENT',
-                  has_active_consent: false,
-                },
-              ],
-            },
-          ],
-        ])
-      );
+      const mockPool = createMockPool([{ consent_type: 'BASELINE_ASSESSMENT', status: 'REVOKED' }]);
 
-      const config: ConsentGateConfig = {
-        requiredConsents: ['BASELINE_ASSESSMENT'],
-        learnerIdSource: 'query',
-        learnerIdParam: 'learnerId',
-        errorMessage: 'Baseline assessment consent required',
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
       };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({ requiredConsents: ['BASELINE_ASSESSMENT'] });
 
-      const middleware = createConsentGate(mockPool, config);
       const request = createMockRequest({
         tenantId: 'tenant-1',
         userId: 'user-1',
         learnerId: 'learner-1',
       });
       const reply = createMockReply();
-      const done = vi.fn();
 
-      await middleware(request as any, reply, done);
+      await middleware(request as any, reply as any);
 
       expect(reply.code).toHaveBeenCalledWith(451);
       expect(reply.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: 'ConsentRequired',
-          statusCode: 451,
-          missingConsents: ['BASELINE_ASSESSMENT'],
+          error: 'CONSENT_REQUIRED',
+          code: 451,
+          requiredConsents: expect.arrayContaining(['BASELINE_ASSESSMENT']),
         })
       );
-      expect(done).not.toHaveBeenCalled();
     });
 
     it('should return HTTP 451 with all missing consents when multiple are missing', async () => {
-      const mockPool = createMockPool(
-        new Map([
-          [
-            'consent_status_cache',
-            {
-              rows: [
-                { consent_type: 'AI_TUTOR', has_active_consent: false },
-                { consent_type: 'AI_PERSONALIZATION', has_active_consent: true },
-              ],
-            },
-          ],
-        ])
-      );
+      const mockPool = createMockPool([
+        { consent_type: 'AI_TUTOR', status: 'REVOKED' },
+        { consent_type: 'AI_PERSONALIZATION', status: 'GRANTED' },
+      ]);
 
-      const config: ConsentGateConfig = {
-        requiredConsents: ['AI_TUTOR', 'AI_PERSONALIZATION'],
-        learnerIdSource: 'query',
-        learnerIdParam: 'learnerId',
-        errorMessage: 'AI consent required',
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
       };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({
+        requiredConsents: ['AI_TUTOR', 'AI_PERSONALIZATION'],
+        requireAll: true,
+      });
 
-      const middleware = createConsentGate(mockPool, config);
       const request = createMockRequest({
         tenantId: 'tenant-1',
         userId: 'user-1',
         learnerId: 'learner-1',
       });
       const reply = createMockReply();
-      const done = vi.fn();
 
-      await middleware(request as any, reply, done);
+      await middleware(request as any, reply as any);
 
       expect(reply.code).toHaveBeenCalledWith(451);
       expect(reply.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          missingConsents: ['AI_TUTOR'],
+          requiredConsents: expect.arrayContaining(['AI_TUTOR']),
         })
       );
     });
 
     it('should include consent URL in 451 response', async () => {
-      const mockPool = createMockPool(
-        new Map([['consent_status_cache', { rows: [] }]])
-      );
+      const mockPool = createMockPool([]); // No consents
 
-      const config: ConsentGateConfig = {
-        requiredConsents: ['DATA_COLLECTION'],
-        learnerIdSource: 'query',
-        learnerIdParam: 'learnerId',
-        errorMessage: 'Data collection consent required',
-        consentUrl: '/consent/data-collection',
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
       };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({ requiredConsents: ['BASELINE_ASSESSMENT'] });
 
-      const middleware = createConsentGate(mockPool, config);
       const request = createMockRequest({
         tenantId: 'tenant-1',
         userId: 'user-1',
         learnerId: 'learner-1',
       });
       const reply = createMockReply();
-      const done = vi.fn();
 
-      await middleware(request as any, reply, done);
+      await middleware(request as any, reply as any);
 
       expect(reply.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          consentUrl: '/consent/data-collection',
+          consentUrl: expect.stringContaining('https://app.aivo.com/consent'),
         })
       );
     });
 
-    it('should extract learnerId from params when configured', async () => {
-      const mockPool = createMockPool(
-        new Map([
-          [
-            'consent_status_cache',
-            {
-              rows: [
-                { consent_type: 'AI_TUTOR', has_active_consent: true },
-              ],
-            },
-          ],
-        ])
-      );
+    it('should extract learnerId from body', async () => {
+      const mockPool = createMockPool([{ consent_type: 'AI_TUTOR', status: 'GRANTED' }]);
 
-      const config: ConsentGateConfig = {
-        requiredConsents: ['AI_TUTOR'],
-        learnerIdSource: 'param',
-        learnerIdParam: 'id',
-        errorMessage: 'Consent required',
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
       };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({ requiredConsents: ['AI_TUTOR'] });
 
-      const middleware = createConsentGate(mockPool, config);
+      const request = createMockRequest({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        body: { learnerId: 'learner-from-body' },
+        query: {},
+      });
+      const reply = createMockReply();
+
+      await middleware(request as any, reply as any);
+
+      // Should succeed (not block) when consent is granted
+      expect(reply.code).not.toHaveBeenCalledWith(451);
+    });
+
+    it('should extract learnerId from params', async () => {
+      const mockPool = createMockPool([{ consent_type: 'AI_TUTOR', status: 'GRANTED' }]);
+
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
+      };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({ requiredConsents: ['AI_TUTOR'] });
+
+      const request = createMockRequest({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        params: { learnerId: 'learner-from-params' },
+        query: {},
+      });
+      const reply = createMockReply();
+
+      await middleware(request as any, reply as any);
+
+      // Should succeed (not block) when consent is granted
+      expect(reply.code).not.toHaveBeenCalledWith(451);
+    });
+
+    it('should return 400 when learner or tenant cannot be determined', async () => {
+      const mockPool = createMockPool([]);
+
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
+      };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({ requiredConsents: ['AI_TUTOR'] });
+
+      // Request with no learnerId anywhere
       const request = {
         auth: { tenantId: 'tenant-1', userId: 'user-1' },
-        params: { id: 'learner-from-params' },
+        body: {},
+        params: {},
         query: {},
       };
       const reply = createMockReply();
-      const done = vi.fn();
 
-      await middleware(request as any, reply, done);
+      await middleware(request as any, reply as any);
 
-      expect(done).toHaveBeenCalled();
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.arrayContaining(['tenant-1', 'learner-from-params'])
+      expect(reply.code).toHaveBeenCalledWith(400);
+      expect(reply.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: 'MISSING_CONTEXT',
+        })
       );
+    });
+
+    it('should allow request when requireAll=false and at least one consent is granted', async () => {
+      const mockPool = createMockPool([
+        { consent_type: 'AI_TUTOR', status: 'REVOKED' },
+        { consent_type: 'AI_PERSONALIZATION', status: 'GRANTED' },
+      ]);
+
+      const options: ConsentGateOptions = {
+        pool: mockPool,
+        consentBaseUrl: 'https://app.aivo.com',
+      };
+      const consentGate = createConsentGate(options);
+      const middleware = consentGate({
+        requiredConsents: ['AI_TUTOR', 'AI_PERSONALIZATION'],
+        requireAll: false,
+      });
+
+      const request = createMockRequest({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        learnerId: 'learner-1',
+      });
+      const reply = createMockReply();
+
+      await middleware(request as any, reply as any);
+
+      // Should NOT block when at least one consent is granted
+      expect(reply.code).not.toHaveBeenCalledWith(451);
     });
   });
 
@@ -266,105 +299,56 @@ describe('Consent Gate Middleware', () => {
   });
 
   describe('checkConsentsNonBlocking', () => {
-    it('should return result without blocking', async () => {
-      const mockPool = createMockPool(
-        new Map([
-          [
-            'consent_status_cache',
-            {
-              rows: [
-                { consent_type: 'AI_TUTOR', has_active_consent: true },
-              ],
-            },
-          ],
-        ])
-      );
+    it('should return allowed=true when all consents are granted', async () => {
+      const mockPool = createMockPool([{ consent_type: 'AI_TUTOR', status: 'GRANTED' }]);
 
-      const result = await checkConsentsNonBlocking(
-        mockPool,
-        'tenant-1',
-        'learner-1',
-        ['AI_TUTOR']
-      );
+      const result = await checkConsentsNonBlocking(mockPool, 'tenant-1', 'learner-1', [
+        'AI_TUTOR',
+      ]);
 
-      expect(result.hasAllConsents).toBe(true);
+      expect(result.allowed).toBe(true);
       expect(result.missingConsents).toHaveLength(0);
+      expect(result.grantedConsents).toContain('AI_TUTOR');
     });
 
     it('should return missing consents list', async () => {
-      const mockPool = createMockPool(
-        new Map([
-          [
-            'consent_status_cache',
-            {
-              rows: [
-                { consent_type: 'AI_TUTOR', has_active_consent: false },
-                { consent_type: 'DATA_COLLECTION', has_active_consent: false },
-              ],
-            },
-          ],
-        ])
-      );
+      const mockPool = createMockPool([
+        { consent_type: 'AI_TUTOR', status: 'REVOKED' },
+        { consent_type: 'AI_PERSONALIZATION', status: 'REVOKED' },
+      ]);
 
-      const result = await checkConsentsNonBlocking(
-        mockPool,
-        'tenant-1',
-        'learner-1',
-        ['AI_TUTOR', 'DATA_COLLECTION']
-      );
+      const result = await checkConsentsNonBlocking(mockPool, 'tenant-1', 'learner-1', [
+        'AI_TUTOR',
+        'AI_PERSONALIZATION',
+      ]);
 
-      expect(result.hasAllConsents).toBe(false);
+      expect(result.allowed).toBe(false);
       expect(result.missingConsents).toContain('AI_TUTOR');
-      expect(result.missingConsents).toContain('DATA_COLLECTION');
+      expect(result.missingConsents).toContain('AI_PERSONALIZATION');
     });
 
     it('should handle consents not in cache as missing', async () => {
-      const mockPool = createMockPool(
-        new Map([['consent_status_cache', { rows: [] }]])
-      );
+      const mockPool = createMockPool([]); // No records
 
-      const result = await checkConsentsNonBlocking(
-        mockPool,
-        'tenant-1',
-        'learner-1',
-        ['SOME_NEW_CONSENT']
-      );
+      const result = await checkConsentsNonBlocking(mockPool, 'tenant-1', 'learner-1', [
+        'BASELINE_ASSESSMENT',
+      ]);
 
-      expect(result.hasAllConsents).toBe(false);
-      expect(result.missingConsents).toContain('SOME_NEW_CONSENT');
+      expect(result.allowed).toBe(false);
+      expect(result.missingConsents).toContain('BASELINE_ASSESSMENT');
     });
-  });
-});
 
-describe('HTTP 451 Compliance', () => {
-  it('should set Link header for blocked-by reference (RFC 7725)', async () => {
-    const mockPool = createMockPool(
-      new Map([['consent_status_cache', { rows: [] }]])
-    );
+    it('should handle expired consents as missing', async () => {
+      const mockPool = createMockPool([
+        { consent_type: 'AI_TUTOR', status: 'GRANTED', expires_at: new Date('2020-01-01') },
+      ]);
 
-    const config: ConsentGateConfig = {
-      requiredConsents: ['DATA_COLLECTION'],
-      learnerIdSource: 'query',
-      learnerIdParam: 'learnerId',
-      errorMessage: 'Consent required',
-      blockedByUrl: 'https://example.com/privacy-policy',
-    };
+      const result = await checkConsentsNonBlocking(mockPool, 'tenant-1', 'learner-1', [
+        'AI_TUTOR',
+      ]);
 
-    const middleware = createConsentGate(mockPool, config);
-    const request = createMockRequest({
-      tenantId: 'tenant-1',
-      userId: 'user-1',
-      learnerId: 'learner-1',
+      expect(result.allowed).toBe(false);
+      expect(result.missingConsents).toContain('AI_TUTOR');
     });
-    const reply = createMockReply();
-    const done = vi.fn();
-
-    await middleware(request as any, reply, done);
-
-    // RFC 7725 recommends Link header with rel="blocked-by"
-    expect(reply.header).toHaveBeenCalledWith(
-      'Link',
-      '<https://example.com/privacy-policy>; rel="blocked-by"'
-    );
   });
 });

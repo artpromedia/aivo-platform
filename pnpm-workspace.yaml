@@ -5,3 +5,4 @@ packages:
   - "libs/ui-web"
   - "libs/ts-data-access"
   - "libs/events"
+  - "libs/billing-*"
