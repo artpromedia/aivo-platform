@@ -163,8 +163,14 @@ export default function NewQuotePage() {
             <h2 className="mb-4 text-lg font-semibold">Quote Information</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="mb-1 block text-sm font-medium text-slate-700">District *</label>
+                <label
+                  htmlFor="district-select"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  District *
+                </label>
                 <select
+                  id="district-select"
                   value={selectedTenantId}
                   onChange={(e) => {
                     setSelectedTenantId(e.target.value);
@@ -180,8 +186,14 @@ export default function NewQuotePage() {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="mb-1 block text-sm font-medium text-slate-700">Quote Name</label>
+                <label
+                  htmlFor="quote-name"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  Quote Name
+                </label>
                 <input
+                  id="quote-name"
                   type="text"
                   value={quoteName}
                   onChange={(e) => {
@@ -192,10 +204,14 @@ export default function NewQuotePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="valid-until"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Valid Until *
                 </label>
                 <input
+                  id="valid-until"
                   type="date"
                   value={validUntil}
                   onChange={(e) => {
@@ -205,10 +221,14 @@ export default function NewQuotePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="payment-terms"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Payment Terms
                 </label>
                 <select
+                  id="payment-terms"
                   value={paymentTerms}
                   onChange={(e) => {
                     setPaymentTerms(Number(e.target.value));
@@ -222,10 +242,14 @@ export default function NewQuotePage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="start-date"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Contract Start
                 </label>
                 <input
+                  id="start-date"
                   type="date"
                   value={startDate}
                   onChange={(e) => {
@@ -235,10 +259,11 @@ export default function NewQuotePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label htmlFor="end-date" className="mb-1 block text-sm font-medium text-slate-700">
                   Contract End
                 </label>
                 <input
+                  id="end-date"
                   type="date"
                   value={endDate}
                   onChange={(e) => {
@@ -409,8 +434,11 @@ export default function NewQuotePage() {
             <h3 className="mb-4 text-lg font-semibold">Add Line Item</h3>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Product</label>
+                <label htmlFor="product-select" className="mb-1 block text-sm font-medium">
+                  Product
+                </label>
                 <select
+                  id="product-select"
                   value={selectedSku}
                   onChange={(e) => {
                     setSelectedSku(e.target.value);
@@ -426,8 +454,11 @@ export default function NewQuotePage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Quantity</label>
+                <label htmlFor="item-quantity" className="mb-1 block text-sm font-medium">
+                  Quantity
+                </label>
                 <input
+                  id="item-quantity"
                   type="number"
                   min="1"
                   value={itemQuantity}
@@ -438,8 +469,11 @@ export default function NewQuotePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Discount %</label>
+                <label htmlFor="item-discount" className="mb-1 block text-sm font-medium">
+                  Discount %
+                </label>
                 <input
+                  id="item-discount"
                   type="number"
                   min="0"
                   max="100"

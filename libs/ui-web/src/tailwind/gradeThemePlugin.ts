@@ -30,14 +30,14 @@ interface ThemeOptions {
 }
 
 function kebab(input: string): string {
-  return input.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+  return input.replaceAll(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 function hexToRgbChannels(hex: string): string {
   const normalized = hex.replace('#', '');
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
   return `${r} ${g} ${b}`;
 }
 

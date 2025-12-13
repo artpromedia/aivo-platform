@@ -139,10 +139,10 @@ class JwtClaims {
         email: claims['email']?.toString(),
       );
     } catch (_) {
-      return const JwtClaims(
+      return JwtClaims(
         sub: '',
         tenantId: '',
-        roles: [],
+        roles: const [],
         exp: DateTime(1970),
       );
     }
