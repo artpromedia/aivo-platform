@@ -8,11 +8,6 @@
  * - Soft delete with lifecycle management
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import multipart from '@fastify/multipart';
-import { z } from 'zod';
-import { prisma } from '../prisma.js';
-import { type FileCategory, type VirusScanStatus } from '@prisma/client';
 import {
   StorageService,
   createVirusScanner,
@@ -21,6 +16,12 @@ import {
   type UploadOptions,
   type FileCategory as StorageFileCategory,
 } from '@aivo/ts-storage';
+import multipart from '@fastify/multipart';
+import { type FileCategory, type VirusScanStatus } from '@prisma/client';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
+
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -35,7 +36,7 @@ if (process.env.CLAMAV_HOST) {
   virusScannerConfig.clamavHost = process.env.CLAMAV_HOST;
 }
 if (process.env.CLAMAV_PORT) {
-  virusScannerConfig.clamavPort = parseInt(process.env.CLAMAV_PORT, 10);
+  virusScannerConfig.clamavPort = Number.parseInt(process.env.CLAMAV_PORT, 10);
 }
 if (process.env.VIRUSTOTAL_API_KEY) {
   virusScannerConfig.virustotalApiKey = process.env.VIRUSTOTAL_API_KEY;
@@ -82,7 +83,11 @@ const GetPresignedUploadUrlSchema = z.object({
   filename: z.string().min(1).max(255),
   mimeType: z.string().min(1).max(100),
   category: FileCategoryEnum,
-  contentLength: z.number().int().positive().max(100 * 1024 * 1024), // Max 100MB
+  contentLength: z
+    .number()
+    .int()
+    .positive()
+    .max(100 * 1024 * 1024), // Max 100MB
   metadata: z.record(z.string()).optional(),
 });
 
@@ -178,7 +183,12 @@ function mapPrismaToStoredFile(file: {
     sizeBytes: Number(file.sizeBytes),
     s3Bucket: file.s3Bucket,
     s3Key: file.s3Key,
-    virusScanStatus: file.virusScanStatus as 'PENDING' | 'SCANNING' | 'CLEAN' | 'INFECTED' | 'ERROR',
+    virusScanStatus: file.virusScanStatus as
+      | 'PENDING'
+      | 'SCANNING'
+      | 'CLEAN'
+      | 'INFECTED'
+      | 'ERROR',
     virusScannedAt: file.virusScannedAt ?? undefined,
     virusScanResult: file.virusScanResult ? JSON.stringify(file.virusScanResult) : undefined,
     isDeleted: file.isDeleted,
@@ -205,259 +215,247 @@ export async function fileRoutes(fastify: FastifyInstance) {
    * POST /files/presigned-upload
    * Get a presigned URL for client-side upload
    */
-  fastify.post(
-    '/files/presigned-upload',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = getUserFromRequest(request);
-      if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
+  fastify.post('/files/presigned-upload', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
 
-      const tenantId = getUserTenantId(user);
-      if (!tenantId) {
-        return reply.status(400).send({ error: 'Tenant context required' });
-      }
+    const tenantId = getUserTenantId(user);
+    if (!tenantId) {
+      return reply.status(400).send({ error: 'Tenant context required' });
+    }
 
-      const parseResult = GetPresignedUploadUrlSchema.safeParse(request.body);
-      if (!parseResult.success) {
-        return reply.status(400).send({
-          error: 'Invalid request body',
-          details: parseResult.error.flatten(),
-        });
-      }
-
-      const { filename, mimeType, category, contentLength, metadata } = parseResult.data;
-
-      // Check upload permission
-      const context = createAccessContext(user.sub, tenantId, getUserRoles(user));
-      const canCreate = accessControl.canCreateInCategory(
-        mapToStorageCategory(category),
-        context
-      );
-
-      if (!canCreate.allowed) {
-        return reply.status(403).send({
-          error: 'Permission denied',
-          reason: canCreate.reason,
-          requiredRoles: canCreate.requiredRoles,
-        });
-      }
-
-      // Generate presigned upload URL
-      const uploadOptions: UploadOptions = {
-        tenantId,
-        ownerId: user.sub,
-        ownerType: 'user',
-        category: mapToStorageCategory(category),
-        filename,
-        mimeType,
-        contentLength,
-        metadata,
-      };
-
-      const result = await storageService.getPresignedUploadUrl(uploadOptions, {
-        expiresInSeconds: 3600, // 1 hour
-      });
-
-      return reply.send({
-        uploadUrl: result.uploadUrl,
-        s3Key: result.s3Key,
-        expiresAt: result.expiresAt.toISOString(),
+    const parseResult = GetPresignedUploadUrlSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Invalid request body',
+        details: parseResult.error.flatten(),
       });
     }
-  );
+
+    const { filename, mimeType, category, contentLength, metadata } = parseResult.data;
+
+    // Check upload permission
+    const context = createAccessContext(user.sub, tenantId, getUserRoles(user));
+    const canCreate = accessControl.canCreateInCategory(mapToStorageCategory(category), context);
+
+    if (!canCreate.allowed) {
+      return reply.status(403).send({
+        error: 'Permission denied',
+        reason: canCreate.reason,
+        requiredRoles: canCreate.requiredRoles,
+      });
+    }
+
+    // Generate presigned upload URL
+    const uploadOptions: UploadOptions = {
+      tenantId,
+      ownerId: user.sub,
+      ownerType: 'user',
+      category: mapToStorageCategory(category),
+      filename,
+      mimeType,
+      contentLength,
+      metadata,
+    };
+
+    const result = await storageService.getPresignedUploadUrl(uploadOptions, {
+      expiresInSeconds: 3600, // 1 hour
+    });
+
+    return reply.send({
+      uploadUrl: result.uploadUrl,
+      s3Key: result.s3Key,
+      expiresAt: result.expiresAt.toISOString(),
+    });
+  });
 
   /**
    * POST /files/finalize
    * Finalize a client-side upload (verify and scan)
    */
-  fastify.post(
-    '/files/finalize',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = getUserFromRequest(request);
-      if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
+  fastify.post('/files/finalize', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
 
-      const tenantId = getUserTenantId(user);
-      if (!tenantId) {
-        return reply.status(400).send({ error: 'Tenant context required' });
-      }
+    const tenantId = getUserTenantId(user);
+    if (!tenantId) {
+      return reply.status(400).send({ error: 'Tenant context required' });
+    }
 
-      const parseResult = FinalizeUploadSchema.safeParse(request.body);
-      if (!parseResult.success) {
-        return reply.status(400).send({
-          error: 'Invalid request body',
-          details: parseResult.error.flatten(),
-        });
-      }
-
-      const { s3Key, filename, mimeType, category, metadata } = parseResult.data;
-
-      // Validate the S3 key belongs to this tenant
-      if (!storageService.validateTenantKey(s3Key, tenantId)) {
-        return reply.status(403).send({ error: 'Cross-tenant access denied' });
-      }
-
-      // Finalize upload (verify exists and run virus scan)
-      const uploadOptions: UploadOptions = {
-        tenantId,
-        ownerId: user.sub,
-        ownerType: 'user',
-        category: mapToStorageCategory(category),
-        filename,
-        mimeType,
-        metadata,
-      };
-
-      const result = await storageService.finalizeUpload(s3Key, tenantId, uploadOptions);
-
-      if (!result.scanPassed) {
-        return reply.status(422).send({
-          error: 'File rejected',
-          reason: 'Virus detected',
-          scanResult: result.scanResult,
-        });
-      }
-
-      // Save file record to database
-      const dbFile = await prisma.storedFile.create({
-        data: {
-          id: result.file.id,
-          tenantId,
-          ownerId: user.sub,
-          ownerType: 'USER',
-          category: mapToPrismaCategory(category),
-          filename,
-          mimeType,
-          sizeBytes: result.file.sizeBytes,
-          s3Bucket: result.file.s3Bucket,
-          s3Key: result.file.s3Key,
-          virusScanStatus: result.file.virusScanStatus as VirusScanStatus,
-          virusScannedAt: result.file.virusScannedAt,
-          virusScanResult: result.scanResult ? JSON.parse(JSON.stringify(result.scanResult)) : undefined,
-          metadataJson: metadata ?? {},
-        },
-      });
-
-      return reply.status(201).send({
-        file: {
-          id: dbFile.id,
-          filename: dbFile.filename,
-          mimeType: dbFile.mimeType,
-          sizeBytes: Number(dbFile.sizeBytes),
-          category: dbFile.category,
-          virusScanStatus: dbFile.virusScanStatus,
-          createdAt: dbFile.createdAt.toISOString(),
-        },
+    const parseResult = FinalizeUploadSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Invalid request body',
+        details: parseResult.error.flatten(),
       });
     }
-  );
+
+    const { s3Key, filename, mimeType, category, metadata } = parseResult.data;
+
+    // Validate the S3 key belongs to this tenant
+    if (!storageService.validateTenantKey(s3Key, tenantId)) {
+      return reply.status(403).send({ error: 'Cross-tenant access denied' });
+    }
+
+    // Finalize upload (verify exists and run virus scan)
+    const uploadOptions: UploadOptions = {
+      tenantId,
+      ownerId: user.sub,
+      ownerType: 'user',
+      category: mapToStorageCategory(category),
+      filename,
+      mimeType,
+      metadata,
+    };
+
+    const result = await storageService.finalizeUpload(s3Key, tenantId, uploadOptions);
+
+    if (!result.scanPassed) {
+      return reply.status(422).send({
+        error: 'File rejected',
+        reason: 'Virus detected',
+        scanResult: result.scanResult,
+      });
+    }
+
+    // Save file record to database
+    const dbFile = await prisma.storedFile.create({
+      data: {
+        id: result.file.id,
+        tenantId,
+        ownerId: user.sub,
+        ownerType: 'USER',
+        category: mapToPrismaCategory(category),
+        filename,
+        mimeType,
+        sizeBytes: result.file.sizeBytes,
+        s3Bucket: result.file.s3Bucket,
+        s3Key: result.file.s3Key,
+        virusScanStatus: result.file.virusScanStatus as VirusScanStatus,
+        virusScannedAt: result.file.virusScannedAt,
+        virusScanResult: result.scanResult ? structuredClone(result.scanResult) : undefined,
+        metadataJson: metadata ?? {},
+      },
+    });
+
+    return reply.status(201).send({
+      file: {
+        id: dbFile.id,
+        filename: dbFile.filename,
+        mimeType: dbFile.mimeType,
+        sizeBytes: Number(dbFile.sizeBytes),
+        category: dbFile.category,
+        virusScanStatus: dbFile.virusScanStatus,
+        createdAt: dbFile.createdAt.toISOString(),
+      },
+    });
+  });
 
   /**
    * POST /files/upload
    * Direct server-side upload (for smaller files or server-generated content)
    */
-  fastify.post(
-    '/files/upload',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = getUserFromRequest(request);
-      if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
+  fastify.post('/files/upload', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
 
-      const tenantId = getUserTenantId(user);
-      if (!tenantId) {
-        return reply.status(400).send({ error: 'Tenant context required' });
-      }
+    const tenantId = getUserTenantId(user);
+    if (!tenantId) {
+      return reply.status(400).send({ error: 'Tenant context required' });
+    }
 
-      // Parse multipart form data
-      const data = await request.file();
-      if (!data) {
-        return reply.status(400).send({ error: 'No file provided' });
-      }
+    // Parse multipart form data
+    const data = await request.file();
+    if (!data) {
+      return reply.status(400).send({ error: 'No file provided' });
+    }
 
-      const category = (data.fields['category'] as { value?: string })?.value ?? 'OTHER';
-      const categoryParsed = FileCategoryEnum.safeParse(category);
-      if (!categoryParsed.success) {
-        return reply.status(400).send({ error: 'Invalid file category' });
-      }
+    const category = (data.fields.category as { value?: string })?.value ?? 'OTHER';
+    const categoryParsed = FileCategoryEnum.safeParse(category);
+    if (!categoryParsed.success) {
+      return reply.status(400).send({ error: 'Invalid file category' });
+    }
 
-      // Check upload permission
-      const context = createAccessContext(user.sub, tenantId, getUserRoles(user));
-      const canCreate = accessControl.canCreateInCategory(
-        mapToStorageCategory(categoryParsed.data),
-        context
-      );
+    // Check upload permission
+    const context = createAccessContext(user.sub, tenantId, getUserRoles(user));
+    const canCreate = accessControl.canCreateInCategory(
+      mapToStorageCategory(categoryParsed.data),
+      context
+    );
 
-      if (!canCreate.allowed) {
-        return reply.status(403).send({
-          error: 'Permission denied',
-          reason: canCreate.reason,
-        });
-      }
-
-      // Read file content
-      const chunks: Buffer[] = [];
-      for await (const chunk of data.file) {
-        chunks.push(chunk);
-      }
-      const content = Buffer.concat(chunks);
-
-      // Upload file
-      const uploadOptions: UploadOptions = {
-        tenantId,
-        ownerId: user.sub,
-        ownerType: 'user',
-        category: mapToStorageCategory(categoryParsed.data),
-        filename: data.filename,
-        mimeType: data.mimetype,
-        contentLength: content.length,
-      };
-
-      const result = await storageService.uploadFile(content, uploadOptions);
-
-      if (!result.scanPassed) {
-        return reply.status(422).send({
-          error: 'File rejected',
-          reason: 'Virus detected',
-          scanResult: result.scanResult,
-        });
-      }
-
-      // Save file record to database
-      const dbFile = await prisma.storedFile.create({
-        data: {
-          id: result.file.id,
-          tenantId,
-          ownerId: user.sub,
-          ownerType: 'USER',
-          category: mapToPrismaCategory(categoryParsed.data),
-          filename: data.filename,
-          mimeType: data.mimetype,
-          sizeBytes: content.length,
-          s3Bucket: result.file.s3Bucket,
-          s3Key: result.file.s3Key,
-          virusScanStatus: result.file.virusScanStatus as VirusScanStatus,
-          virusScannedAt: result.file.virusScannedAt,
-          virusScanResult: result.scanResult ? JSON.parse(JSON.stringify(result.scanResult)) : undefined,
-          metadataJson: {},
-        },
-      });
-
-      return reply.status(201).send({
-        file: {
-          id: dbFile.id,
-          filename: dbFile.filename,
-          mimeType: dbFile.mimeType,
-          sizeBytes: Number(dbFile.sizeBytes),
-          category: dbFile.category,
-          virusScanStatus: dbFile.virusScanStatus,
-          createdAt: dbFile.createdAt.toISOString(),
-        },
+    if (!canCreate.allowed) {
+      return reply.status(403).send({
+        error: 'Permission denied',
+        reason: canCreate.reason,
       });
     }
-  );
+
+    // Read file content
+    const chunks: Buffer[] = [];
+    for await (const chunk of data.file) {
+      chunks.push(chunk);
+    }
+    const content = Buffer.concat(chunks);
+
+    // Upload file
+    const uploadOptions: UploadOptions = {
+      tenantId,
+      ownerId: user.sub,
+      ownerType: 'user',
+      category: mapToStorageCategory(categoryParsed.data),
+      filename: data.filename,
+      mimeType: data.mimetype,
+      contentLength: content.length,
+    };
+
+    const result = await storageService.uploadFile(content, uploadOptions);
+
+    if (!result.scanPassed) {
+      return reply.status(422).send({
+        error: 'File rejected',
+        reason: 'Virus detected',
+        scanResult: result.scanResult,
+      });
+    }
+
+    // Save file record to database
+    const dbFile = await prisma.storedFile.create({
+      data: {
+        id: result.file.id,
+        tenantId,
+        ownerId: user.sub,
+        ownerType: 'USER',
+        category: mapToPrismaCategory(categoryParsed.data),
+        filename: data.filename,
+        mimeType: data.mimetype,
+        sizeBytes: content.length,
+        s3Bucket: result.file.s3Bucket,
+        s3Key: result.file.s3Key,
+        virusScanStatus: result.file.virusScanStatus as VirusScanStatus,
+        virusScannedAt: result.file.virusScannedAt,
+        virusScanResult: result.scanResult ? structuredClone(result.scanResult) : undefined,
+        metadataJson: {},
+      },
+    });
+
+    return reply.status(201).send({
+      file: {
+        id: dbFile.id,
+        filename: dbFile.filename,
+        mimeType: dbFile.mimeType,
+        sizeBytes: Number(dbFile.sizeBytes),
+        category: dbFile.category,
+        virusScanStatus: dbFile.virusScanStatus,
+        createdAt: dbFile.createdAt.toISOString(),
+      },
+    });
+  });
 
   /**
    * GET /files/:id
@@ -587,93 +585,94 @@ export async function fileRoutes(fastify: FastifyInstance) {
    * GET /files
    * List files for the current user/tenant
    */
-  fastify.get(
-    '/files',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = getUserFromRequest(request);
-      if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
+  fastify.get('/files', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
 
-      const tenantId = getUserTenantId(user);
-      if (!tenantId) {
-        return reply.status(400).send({ error: 'Tenant context required' });
-      }
+    const tenantId = getUserTenantId(user);
+    if (!tenantId) {
+      return reply.status(400).send({ error: 'Tenant context required' });
+    }
 
-      const parseResult = ListFilesQuerySchema.safeParse(request.query);
-      if (!parseResult.success) {
-        return reply.status(400).send({
-          error: 'Invalid query parameters',
-          details: parseResult.error.flatten(),
-        });
-      }
-
-      const { category, ownerId, includeDeleted, page, pageSize } = parseResult.data;
-      const skip = (page - 1) * pageSize;
-
-      // Build where clause
-      const where: Parameters<typeof prisma.storedFile.findMany>[0]['where'] = {
-        tenantId,
-      };
-
-      if (category) {
-        where.category = mapToPrismaCategory(category);
-      }
-
-      if (ownerId) {
-        where.ownerId = ownerId;
-      } else {
-        // Default to current user's files unless they have admin role
-        const roles = getUserRoles(user);
-        if (!roles.includes('admin') && !roles.includes('platform_admin') && !roles.includes('district_admin')) {
-          where.ownerId = user.sub;
-        }
-      }
-
-      if (!includeDeleted) {
-        where.isDeleted = false;
-      }
-
-      const [files, total] = await Promise.all([
-        prisma.storedFile.findMany({
-          where,
-          skip,
-          take: pageSize,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            filename: true,
-            mimeType: true,
-            sizeBytes: true,
-            category: true,
-            virusScanStatus: true,
-            isDeleted: true,
-            createdAt: true,
-          },
-        }),
-        prisma.storedFile.count({ where }),
-      ]);
-
-      return reply.send({
-        files: files.map((f) => ({
-          id: f.id,
-          filename: f.filename,
-          mimeType: f.mimeType,
-          sizeBytes: Number(f.sizeBytes),
-          category: f.category,
-          virusScanStatus: f.virusScanStatus,
-          isDeleted: f.isDeleted,
-          createdAt: f.createdAt.toISOString(),
-        })),
-        pagination: {
-          page,
-          pageSize,
-          total,
-          totalPages: Math.ceil(total / pageSize),
-        },
+    const parseResult = ListFilesQuerySchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'Invalid query parameters',
+        details: parseResult.error.flatten(),
       });
     }
-  );
+
+    const { category, ownerId, includeDeleted, page, pageSize } = parseResult.data;
+    const skip = (page - 1) * pageSize;
+
+    // Build where clause
+    const where: Parameters<typeof prisma.storedFile.findMany>[0]['where'] = {
+      tenantId,
+    };
+
+    if (category) {
+      where.category = mapToPrismaCategory(category);
+    }
+
+    if (ownerId) {
+      where.ownerId = ownerId;
+    } else {
+      // Default to current user's files unless they have admin role
+      const roles = getUserRoles(user);
+      if (
+        !roles.includes('admin') &&
+        !roles.includes('platform_admin') &&
+        !roles.includes('district_admin')
+      ) {
+        where.ownerId = user.sub;
+      }
+    }
+
+    if (!includeDeleted) {
+      where.isDeleted = false;
+    }
+
+    const [files, total] = await Promise.all([
+      prisma.storedFile.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          filename: true,
+          mimeType: true,
+          sizeBytes: true,
+          category: true,
+          virusScanStatus: true,
+          isDeleted: true,
+          createdAt: true,
+        },
+      }),
+      prisma.storedFile.count({ where }),
+    ]);
+
+    return reply.send({
+      files: files.map((f) => ({
+        id: f.id,
+        filename: f.filename,
+        mimeType: f.mimeType,
+        sizeBytes: Number(f.sizeBytes),
+        category: f.category,
+        virusScanStatus: f.virusScanStatus,
+        isDeleted: f.isDeleted,
+        createdAt: f.createdAt.toISOString(),
+      })),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
+  });
 
   /**
    * DELETE /files/:id
@@ -750,7 +749,11 @@ export async function fileRoutes(fastify: FastifyInstance) {
 
       // Check if user has admin role
       const roles = getUserRoles(user);
-      if (!roles.includes('admin') && !roles.includes('platform_admin') && !roles.includes('district_admin')) {
+      if (
+        !roles.includes('admin') &&
+        !roles.includes('platform_admin') &&
+        !roles.includes('district_admin')
+      ) {
         return reply.status(403).send({ error: 'Admin role required to restore files' });
       }
 
@@ -808,7 +811,9 @@ export async function fileRoutes(fastify: FastifyInstance) {
       // Check if user has admin role
       const roles = getUserRoles(user);
       if (!roles.includes('platform_admin') && !roles.includes('platform_super_admin')) {
-        return reply.status(403).send({ error: 'Platform admin role required for permanent deletion' });
+        return reply
+          .status(403)
+          .send({ error: 'Platform admin role required for permanent deletion' });
       }
 
       const file = await prisma.storedFile.findFirst({
@@ -843,62 +848,63 @@ export async function fileRoutes(fastify: FastifyInstance) {
    * GET /files/storage-usage
    * Get storage usage statistics for the tenant
    */
-  fastify.get(
-    '/files/storage-usage',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = getUserFromRequest(request);
-      if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
-
-      const tenantId = getUserTenantId(user);
-      if (!tenantId) {
-        return reply.status(400).send({ error: 'Tenant context required' });
-      }
-
-      // Check if user has admin role
-      const roles = getUserRoles(user);
-      if (!roles.includes('admin') && !roles.includes('platform_admin') && !roles.includes('district_admin')) {
-        return reply.status(403).send({ error: 'Admin role required to view storage usage' });
-      }
-
-      // Get storage usage from database (more accurate than S3 listing)
-      const usage = await prisma.storedFile.groupBy({
-        by: ['category'],
-        where: {
-          tenantId,
-          isDeleted: false,
-        },
-        _sum: {
-          sizeBytes: true,
-        },
-        _count: {
-          id: true,
-        },
-      });
-
-      const totalBytes = usage.reduce(
-        (sum, cat) => sum + (cat._sum.sizeBytes ? Number(cat._sum.sizeBytes) : 0),
-        0
-      );
-      const totalFiles = usage.reduce((sum, cat) => sum + cat._count.id, 0);
-
-      const byCategory: Record<string, { bytes: number; count: number }> = {};
-      for (const cat of usage) {
-        byCategory[cat.category] = {
-          bytes: cat._sum.sizeBytes ? Number(cat._sum.sizeBytes) : 0,
-          count: cat._count.id,
-        };
-      }
-
-      return reply.send({
-        totalBytes,
-        totalFiles,
-        byCategory,
-        formattedTotal: formatBytes(totalBytes),
-      });
+  fastify.get('/files/storage-usage', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return reply.status(401).send({ error: 'Unauthorized' });
     }
-  );
+
+    const tenantId = getUserTenantId(user);
+    if (!tenantId) {
+      return reply.status(400).send({ error: 'Tenant context required' });
+    }
+
+    // Check if user has admin role
+    const roles = getUserRoles(user);
+    if (
+      !roles.includes('admin') &&
+      !roles.includes('platform_admin') &&
+      !roles.includes('district_admin')
+    ) {
+      return reply.status(403).send({ error: 'Admin role required to view storage usage' });
+    }
+
+    // Get storage usage from database (more accurate than S3 listing)
+    const usage = await prisma.storedFile.groupBy({
+      by: ['category'],
+      where: {
+        tenantId,
+        isDeleted: false,
+      },
+      _sum: {
+        sizeBytes: true,
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    const totalBytes = usage.reduce(
+      (sum, cat) => sum + (cat._sum.sizeBytes ? Number(cat._sum.sizeBytes) : 0),
+      0
+    );
+    const totalFiles = usage.reduce((sum, cat) => sum + cat._count.id, 0);
+
+    const byCategory: Record<string, { bytes: number; count: number }> = {};
+    for (const cat of usage) {
+      byCategory[cat.category] = {
+        bytes: cat._sum.sizeBytes ? Number(cat._sum.sizeBytes) : 0,
+        count: cat._count.id,
+      };
+    }
+
+    return reply.send({
+      totalBytes,
+      totalFiles,
+      byCategory,
+      formattedTotal: formatBytes(totalBytes),
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -910,5 +916,5 @@ function formatBytes(bytes: number): string {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
