@@ -28,4 +28,8 @@ export const config = {
     user: process.env.NATS_USER,
     pass: process.env.NATS_PASS,
   },
+
+  // Billing service configuration
+  billingServiceUrl: process.env.BILLING_SERVICE_URL ?? 'http://localhost:4060',
+  billingCheckDisabled: process.env.BILLING_CHECK_DISABLED === 'true',
 } as const;

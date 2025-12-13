@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { SessionType, SessionOrigin, SessionEventType, type SessionWithEvents } from '../types.js';
 import { sessionEventPublisher } from '../services/event-publisher.js';
+import { billingAccessPreHandler, checkAddonAccess } from '../middleware/billingAccess.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -120,8 +121,12 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   /**
    * POST /sessions
    * Create a new session. Automatically emits SESSION_STARTED event.
+   * Requires active subscription - returns 402 if subscription is missing or past due.
    */
-  fastify.post('/sessions', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post(
+    '/sessions',
+    { preHandler: [billingAccessPreHandler] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
       return reply.status(401).send({ error: 'Unauthorized' });
@@ -139,6 +144,19 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
 
     if (!canAccessTenant(user, tenantId)) {
       return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+    }
+
+    // Check add-on access for SEL sessions
+    if (sessionType === SessionType.SEL) {
+      const addonAccess = await checkAddonAccess(tenantId, learnerId, 'ADDON_SEL');
+      if (!addonAccess.hasAccess) {
+        return reply.status(402).send({
+          error: 'ADDON_REQUIRED',
+          message: 'SEL sessions require the Social-Emotional Learning add-on. Please upgrade your subscription.',
+          code: 'BILLING_ADDON_REQUIRED',
+          requiredAddon: 'ADDON_SEL',
+        });
+      }
     }
 
     const now = new Date();
@@ -176,7 +194,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
       origin,
       startedAt: now,
       metadata: metadata as Record<string, unknown> | undefined,
-    }).catch(err => {
+    }).catch((err: unknown) => {
       console.error('[sessions] Failed to publish session.started event:', err);
     });
 
@@ -450,7 +468,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         hintsUsed: 0,
       },
       endedAt: endTime,
-    }).catch(err => {
+    }).catch((err: unknown) => {
       console.error('[sessions] Failed to publish session.ended event:', err);
     });
 
@@ -883,7 +901,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
       const progressNotes = session.events.filter(
         (e) =>
           e.eventType === SessionEventType.ACTIVITY_RESPONSE_SUBMITTED &&
-          (e.metadataJson as Record<string, unknown>)?.type === 'progress_note'
+          (e.metadataJson as Record<string, unknown> | null)?.type === 'progress_note'
       );
 
       const durationMs = session.durationMs || 
