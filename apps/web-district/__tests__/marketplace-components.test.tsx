@@ -2,15 +2,26 @@
  * @vitest-environment jsdom
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, renderHook, act } from '@testing-library/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 
-// Static imports with type assertions
 import { CatalogFilters } from '../app/marketplace/filters';
 import { InstallationsFilters } from '../app/marketplace/installations/filters';
 import { InstallModal } from '../app/marketplace/items/[slug]/install-modal';
+import {
+  SafetyRatingBadge,
+  SafetyIndicator,
+  DataAccessIndicator,
+  SafetySummary,
+  PolicyTagBadge,
+} from '../app/marketplace/safety-badge';
+import { SafetyDetailsModal, useSafetyDetailsModal } from '../app/marketplace/safety-details-modal';
 import { MarketplaceSearch } from '../app/marketplace/search';
+
+/** No-operation function for test callbacks */
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = () => {};
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -194,14 +205,6 @@ describe('Install Modal', () => {
 // SAFETY BADGE COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-import {
-  SafetyRatingBadge,
-  SafetyIndicator,
-  DataAccessIndicator,
-  SafetySummary,
-  PolicyTagBadge,
-} from '../app/marketplace/safety-badge';
-
 describe('Safety Badge Components', () => {
   describe('SafetyRatingBadge', () => {
     it('renders APPROVED_K12 badge with correct styling', () => {
@@ -313,12 +316,7 @@ describe('Safety Badge Components', () => {
 
   describe('SafetySummary', () => {
     it('renders combined safety rating and data access', () => {
-      render(
-        <SafetySummary
-          safetyRating="APPROVED_K12"
-          dataAccessProfile="MODERATE"
-        />
-      );
+      render(<SafetySummary safetyRating="APPROVED_K12" dataAccessProfile="MODERATE" />);
 
       expect(screen.getByText('K-12 Approved')).toBeDefined();
       expect(screen.getByText('Moderate Data')).toBeDefined();
@@ -361,24 +359,15 @@ describe('Safety Badge Components', () => {
 // SAFETY DETAILS MODAL
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { SafetyDetailsModal, useSafetyDetailsModal } from '../app/marketplace/safety-details-modal';
-import { renderHook, act } from '@testing-library/react';
-
 describe('Safety Details Modal', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     // Mock fetch for API calls
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   it('does not render when closed', () => {
-    render(
-      <SafetyDetailsModal
-        versionId="version-123"
-        isOpen={false}
-        onClose={() => {}}
-      />
-    );
+    render(<SafetyDetailsModal versionId="version-123" isOpen={false} onClose={noop} />);
 
     expect(screen.queryByText('Safety Details')).toBeNull();
   });
@@ -407,18 +396,12 @@ describe('Safety Details Modal', () => {
       },
     };
 
-    (global.fetch as Mock).mockResolvedValueOnce({
+    (globalThis.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockResponse),
     });
 
-    render(
-      <SafetyDetailsModal
-        versionId="version-123"
-        isOpen={true}
-        onClose={() => {}}
-      />
-    );
+    render(<SafetyDetailsModal versionId="version-123" isOpen={true} onClose={noop} />);
 
     // Wait for data to load
     await waitFor(() => {
@@ -431,33 +414,19 @@ describe('Safety Details Modal', () => {
   });
 
   it('shows loading state while fetching', () => {
-    // Never resolve the fetch
-    (global.fetch as Mock).mockImplementation(
-      () => new Promise(() => {})
-    );
+    // Never resolve the fetch - using a pending promise to keep loading state
+    (globalThis.fetch as Mock).mockImplementation(() => new Promise(noop));
 
-    render(
-      <SafetyDetailsModal
-        versionId="version-123"
-        isOpen={true}
-        onClose={() => {}}
-      />
-    );
+    render(<SafetyDetailsModal versionId="version-123" isOpen={true} onClose={noop} />);
 
     // Should show some loading state
     expect(screen.getByText('Safety Details')).toBeDefined();
   });
 
   it('shows error state on fetch failure', async () => {
-    (global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
+    (globalThis.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
 
-    render(
-      <SafetyDetailsModal
-        versionId="version-123"
-        isOpen={true}
-        onClose={() => {}}
-      />
-    );
+    render(<SafetyDetailsModal versionId="version-123" isOpen={true} onClose={noop} />);
 
     await waitFor(() => {
       expect(screen.getByText(/failed to load/i)).toBeDefined();
@@ -467,18 +436,12 @@ describe('Safety Details Modal', () => {
   it('closes on escape key', async () => {
     const handleClose = vi.fn();
 
-    (global.fetch as Mock).mockResolvedValueOnce({
+    (globalThis.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ versionId: 'v1' }),
     });
 
-    render(
-      <SafetyDetailsModal
-        versionId="version-123"
-        isOpen={true}
-        onClose={handleClose}
-      />
-    );
+    render(<SafetyDetailsModal versionId="version-123" isOpen={true} onClose={handleClose} />);
 
     // Simulate escape key
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -489,21 +452,17 @@ describe('Safety Details Modal', () => {
   it('closes on backdrop click', async () => {
     const handleClose = vi.fn();
 
-    (global.fetch as Mock).mockResolvedValueOnce({
+    (globalThis.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ versionId: 'v1' }),
     });
 
     const { container } = render(
-      <SafetyDetailsModal
-        versionId="version-123"
-        isOpen={true}
-        onClose={handleClose}
-      />
+      <SafetyDetailsModal versionId="version-123" isOpen={true} onClose={handleClose} />
     );
 
     // Click the backdrop (first div with bg-black/50)
-    const backdrop = container.querySelector('.bg-black\\/50');
+    const backdrop = container.querySelector(String.raw`.bg-black\/50`);
     if (backdrop) {
       fireEvent.click(backdrop);
       expect(handleClose).toHaveBeenCalled();
