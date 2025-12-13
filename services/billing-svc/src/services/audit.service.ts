@@ -48,6 +48,9 @@ export enum AuditEventType {
   MANUAL_ADJUSTMENT = 'MANUAL_ADJUSTMENT',
 }
 
+/** Source of the audit event */
+export type AuditSource = 'WEBHOOK' | 'API' | 'SYSTEM' | 'MANUAL';
+
 export interface AuditLogEntry {
   eventType: AuditEventType;
   billingAccountId?: string;
@@ -57,7 +60,7 @@ export interface AuditLogEntry {
   previousValue?: unknown;
   newValue?: unknown;
   metadata?: Record<string, unknown>;
-  source: 'WEBHOOK' | 'API' | 'SYSTEM' | 'MANUAL';
+  source: AuditSource;
 }
 
 // ============================================================================

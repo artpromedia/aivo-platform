@@ -91,8 +91,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/activity/:sessionId',
         builder: (context, state) {
           final sessionId = state.pathParameters['sessionId']!;
-          final subject = state.uri.queryParameters['subject'] ?? 'ELA';
-          return ActivityScreen(sessionId: sessionId, subject: subject);
+          // Subject is extracted from query params but not used by ActivityScreen
+          // as it loads subject from the session itself
+          return ActivityScreen(sessionId: sessionId);
         },
       ),
       // Session feedback route
