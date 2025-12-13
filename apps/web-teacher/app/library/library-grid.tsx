@@ -79,7 +79,7 @@ export function LibraryGrid() {
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted">
-        {items.length} item{items.length !== 1 ? 's' : ''} available
+        {items.length} item{items.length === 1 ? '' : 's'} available
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -91,7 +91,7 @@ export function LibraryGrid() {
   );
 }
 
-function LibraryItemCard({ item }: { item: MarketplaceLibraryItem }) {
+function LibraryItemCard({ item }: Readonly<{ item: MarketplaceLibraryItem }>) {
   return (
     <Link
       href={`/library/${item.slug}`}

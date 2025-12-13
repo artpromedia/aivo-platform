@@ -1,16 +1,13 @@
-/* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-unsafe-call, import/no-unresolved */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+
+import type { SeatUsageAlert } from '../../../lib/billing-api';
+import { fetchSeatUsageAlerts, acknowledgeAlert, resolveAlert } from '../../../lib/billing-api';
 
 import { AlertsList } from './components/alerts-list';
-import type { SeatUsageAlert } from '../../../lib/billing-api';
-import {
-  fetchSeatUsageAlerts,
-  acknowledgeAlert,
-  resolveAlert,
-} from '../../../lib/billing-api';
 
 export default function BillingAlertsPage() {
   const [alerts, setAlerts] = useState<SeatUsageAlert[]>([]);
@@ -41,7 +38,11 @@ export default function BillingAlertsPage() {
       setAlerts((prev) =>
         prev.map((alert) =>
           alert.id === alertId
-            ? { ...alert, status: 'ACKNOWLEDGED' as const, acknowledgedAt: new Date().toISOString() }
+            ? {
+                ...alert,
+                status: 'ACKNOWLEDGED' as const,
+                acknowledgedAt: new Date().toISOString(),
+              }
             : alert
         )
       );
@@ -96,8 +97,8 @@ export default function BillingAlertsPage() {
             )}
           </div>
           <p className="mt-2 text-sm text-slate-600">
-            Monitor and manage seat utilization alerts. Alerts are generated when seat usage
-            exceeds 80%, 100%, or 110% of committed capacity.
+            Monitor and manage seat utilization alerts. Alerts are generated when seat usage exceeds
+            80%, 100%, or 110% of committed capacity.
           </p>
         </div>
 
@@ -110,7 +111,7 @@ export default function BillingAlertsPage() {
           />
           <SummaryCard
             title="At Limit (100%)"
-            count={alerts.filter((a) => a.threshold === 1.0 && a.status !== 'RESOLVED').length}
+            count={alerts.filter((a) => a.threshold === 1 && a.status !== 'RESOLVED').length}
             color="orange"
           />
           <SummaryCard
@@ -165,11 +166,11 @@ function SummaryCard({
   title,
   count,
   color,
-}: {
+}: Readonly<{
   title: string;
   count: number;
   color: 'amber' | 'orange' | 'red';
-}) {
+}>) {
   const colors = {
     amber: 'bg-amber-50 border-amber-200',
     orange: 'bg-orange-50 border-orange-200',

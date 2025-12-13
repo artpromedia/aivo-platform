@@ -197,7 +197,7 @@ export function downloadCsv(content: string, filename: string): void {
   link.download = filename;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
+  link.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -253,7 +253,7 @@ export function getModuleDisplayName(featureCode: string): string {
     MODULE_CODING: 'Coding & Computational Thinking',
     MODULE_WRITING: 'Creative Writing',
   };
-  return names[featureCode] || featureCode.replace('MODULE_', '').replace(/_/g, ' ');
+  return names[featureCode] || featureCode.replace('MODULE_', '').replaceAll('_', ' ');
 }
 
 export function getSeatUsagePercentage(usage: SeatUsage): number {
@@ -270,7 +270,7 @@ export function getSeatUsageLevel(usage: SeatUsage): 'normal' | 'warning' | 'cri
 
 function escapeCSV(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
+    return `"${value.replaceAll('"', '""')}"`;
   }
   return value;
 }
@@ -1119,9 +1119,7 @@ export function getUsageStatusTone(
   }
 }
 
-export function getAlertSeverityTone(
-  severity: AlertSeverity
-): 'info' | 'warning' | 'error' {
+export function getAlertSeverityTone(severity: AlertSeverity): 'info' | 'warning' | 'error' {
   switch (severity) {
     case 'CRITICAL':
       return 'error';
@@ -1340,4 +1338,3 @@ function mockNotifications(tenantId: string): NotificationsResponse {
     unread: 2,
   };
 }
-

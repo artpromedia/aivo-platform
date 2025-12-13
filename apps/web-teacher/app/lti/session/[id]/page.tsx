@@ -66,7 +66,7 @@ function LtiLoadingSkeleton() {
   );
 }
 
-function LtiError({ error, message }: { error: string; message?: string }) {
+function LtiError({ error, message }: Readonly<{ error: string; message?: string }>) {
   const errorMessages: Record<string, { title: string; description: string }> = {
     session_not_found: {
       title: 'Session Not Found',
@@ -137,7 +137,7 @@ function LtiError({ error, message }: { error: string; message?: string }) {
   );
 }
 
-async function LtiSessionContent({ sessionId }: { sessionId: string }) {
+async function LtiSessionContent({ sessionId }: Readonly<{ sessionId: string }>) {
   const session = await getLtiSession(sessionId);
 
   if (session.error) {
@@ -214,7 +214,10 @@ async function LtiSessionContent({ sessionId }: { sessionId: string }) {
   );
 }
 
-export default async function LtiSessionPage({ params, searchParams }: LtiSessionPageProps) {
+export default async function LtiSessionPage({
+  params,
+  searchParams,
+}: Readonly<LtiSessionPageProps>) {
   const { id } = await params;
   const { error, message } = await searchParams;
 

@@ -73,8 +73,8 @@ setInterval(cleanExpiredStates, 5 * 60 * 1000);
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class LaunchService {
-  private prisma: PrismaClient;
-  private config: LaunchServiceConfig;
+  private readonly prisma: PrismaClient;
+  private readonly config: LaunchServiceConfig;
 
   constructor(prisma: PrismaClient, config: LaunchServiceConfig) {
     this.prisma = prisma;
@@ -196,8 +196,11 @@ export class LaunchService {
     const launchData = processLaunchPayload(payload, tool as LtiToolRecord);
 
     // Resolve LTI link (if resource link provided)
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     let ltiLink: Awaited<ReturnType<typeof this.findOrCreateLink>> | null = null;
-    const resourceLink = payload[LTI_CLAIMS.RESOURCE_LINK];
+    const resourceLink = payload[LTI_CLAIMS.RESOURCE_LINK] as
+      | { id?: string; title?: string }
+      | undefined;
     if (resourceLink?.id) {
       ltiLink = await this.findOrCreateLink(
         tool.id,
