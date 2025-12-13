@@ -16,8 +16,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
+
 import {
-  TenantResolverService,
+  type TenantResolverService,
   createTenantResolverService,
   type TenantResolution,
 } from '../services/tenant-resolver.service.js';
@@ -36,11 +37,9 @@ export interface TenantContext {
 export interface TenantResolverPluginOptions {
   /**
    * Redis client for caching (optional - caching disabled if not provided)
-  /**
-   * Redis client for caching (optional - caching disabled if not provided)
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  redis?: any | null;
+  redis?: any;
 
   /**
    * Prisma client for database queries
@@ -117,6 +116,7 @@ const tenantResolverPluginImpl: FastifyPluginAsync<TenantResolverPluginOptions> 
   fastify,
   options
 ) => {
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment */
   const {
     redis,
     prisma,
@@ -136,6 +136,7 @@ const tenantResolverPluginImpl: FastifyPluginAsync<TenantResolverPluginOptions> 
     cacheTtlSeconds,
     defaultTenantId,
   });
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
   // Decorate fastify instance with resolver service
   fastify.decorate('tenantResolver', resolverService);
@@ -205,10 +206,13 @@ const tenantResolverPluginImpl: FastifyPluginAsync<TenantResolverPluginOptions> 
 // Export
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const tenantResolverPlugin = fp(tenantResolverPluginImpl, {
+// Export with type cast to resolve fp() type inference issue
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
+export const tenantResolverPlugin = fp(tenantResolverPluginImpl as any, {
   fastify: '4.x',
   name: 'tenant-resolver',
 });
+/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Utilities
@@ -221,12 +225,11 @@ export async function requireTenantContext(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
-  if (!request.tenantContext?.resolved || !request.tenantContext.tenantId) {
+  if (!request.tenantContext.resolved || !request.tenantContext.tenantId) {
     reply.code(404).send({
       error: 'Tenant required',
       message: 'This endpoint requires a valid tenant context',
     });
-    return;
   }
 }
 
@@ -234,7 +237,7 @@ export async function requireTenantContext(
  * Helper to get tenant ID or throw
  */
 export function getTenantIdOrThrow(request: FastifyRequest): string {
-  const tenantId = request.tenantContext?.tenantId;
+  const tenantId = request.tenantContext.tenantId;
   if (!tenantId) {
     throw new Error('Tenant context not available');
   }

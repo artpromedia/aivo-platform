@@ -8,6 +8,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+
 import { prisma } from '../../prisma.js';
 import {
   getTenantResolverService,
@@ -19,6 +20,7 @@ import {
 // Schemas
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Zod schemas for validation
 const TenantIdParamsSchema = z.object({
   tenantId: z.string().uuid(),
 });
@@ -50,6 +52,15 @@ const VerifyDomainQuerySchema = z.object({
   domain: z.string(),
 });
 
+// JSON Schema equivalents for Fastify route schema validation
+const tenantIdParamsJsonSchema = {
+  type: 'object' as const,
+  required: ['tenantId'],
+  properties: {
+    tenantId: { type: 'string', format: 'uuid' },
+  },
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Response Types
 // ══════════════════════════════════════════════════════════════════════════════
@@ -79,12 +90,12 @@ interface TenantDomainInfo {
   customDomain: string | null;
   domainVerified: boolean;
   domainVerifiedAt: string | null;
-  pendingVerifications: Array<{
+  pendingVerifications: {
     domain: string;
     status: string;
     expiresAt: string;
     createdAt: string;
-  }>;
+  }[];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -105,9 +116,7 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
     '/tenants/:tenantId/domains',
     {
       schema: {
-        description: 'Get domain configuration for a tenant',
-        tags: ['tenant-domains'],
-        params: TenantIdParamsSchema,
+        params: tenantIdParamsJsonSchema,
         response: {
           200: {
             type: 'object',
@@ -149,13 +158,20 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
       // Get pending verifications
       const pendingVerifications = await resolver.getPendingVerifications(tenantId);
 
+      interface PendingVerification {
+        domain: string;
+        status: string;
+        expiresAt: Date;
+        createdAt: Date;
+      }
+
       const response: TenantDomainInfo = {
         tenantId: tenant.id,
         subdomain: tenant.subdomain,
         customDomain: tenant.customDomain,
         domainVerified: tenant.domainVerified,
         domainVerifiedAt: tenant.domainVerifiedAt?.toISOString() ?? null,
-        pendingVerifications: pendingVerifications.map((v) => ({
+        pendingVerifications: (pendingVerifications as PendingVerification[]).map((v) => ({
           domain: v.domain,
           status: v.status,
           expiresAt: v.expiresAt.toISOString(),
@@ -178,9 +194,7 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
     '/tenants/:tenantId/subdomain',
     {
       schema: {
-        description: 'Update tenant subdomain',
-        tags: ['tenant-domains'],
-        params: TenantIdParamsSchema,
+        params: tenantIdParamsJsonSchema,
         body: {
           type: 'object',
           properties: {
@@ -204,7 +218,10 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
       const { subdomain } = UpdateSubdomainSchema.parse(request.body);
 
       try {
-        const updated = await resolver.updateSubdomain(tenantId, subdomain);
+        const updated = await resolver.updateSubdomain(tenantId, subdomain) as {
+          id: string;
+          subdomain: string | null;
+        };
 
         const response: SubdomainResponse = {
           tenantId: updated.id,
@@ -246,9 +263,7 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
     '/tenants/:tenantId/domains',
     {
       schema: {
-        description: 'Add custom domain and initiate verification',
-        tags: ['tenant-domains'],
-        params: TenantIdParamsSchema,
+        params: tenantIdParamsJsonSchema,
         body: {
           type: 'object',
           required: ['domain'],
@@ -336,9 +351,7 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
     '/tenants/:tenantId/domains/verify',
     {
       schema: {
-        description: 'Verify custom domain ownership via DNS',
-        tags: ['tenant-domains'],
-        params: TenantIdParamsSchema,
+        params: tenantIdParamsJsonSchema,
         querystring: {
           type: 'object',
           required: ['domain'],
@@ -364,9 +377,9 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
         },
       },
     },
-    async (request, reply) => {
-      const { tenantId } = TenantIdParamsSchema.parse(request.params);
-      const { domain } = VerifyDomainQuerySchema.parse(request.query);
+    async (_request) => {
+      const { tenantId } = TenantIdParamsSchema.parse(_request.params);
+      const { domain } = VerifyDomainQuerySchema.parse(_request.query);
 
       const result = await resolver.verifyCustomDomain(tenantId, domain);
 
@@ -391,9 +404,7 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
     '/tenants/:tenantId/domains',
     {
       schema: {
-        description: 'Remove custom domain from tenant',
-        tags: ['tenant-domains'],
-        params: TenantIdParamsSchema,
+        params: tenantIdParamsJsonSchema,
         querystring: {
           type: 'object',
           required: ['domain'],
@@ -428,9 +439,7 @@ export const tenantDomainsRoutes: FastifyPluginAsync = async (fastify) => {
     '/tenants/:tenantId/cache/invalidate',
     {
       schema: {
-        description: 'Manually invalidate tenant resolution cache',
-        tags: ['tenant-domains'],
-        params: TenantIdParamsSchema,
+        params: tenantIdParamsJsonSchema,
         response: {
           200: {
             type: 'object',

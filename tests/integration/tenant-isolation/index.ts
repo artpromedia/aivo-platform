@@ -38,3 +38,9 @@ export {
   type IsolationReport,
   TenantIsolationReporter,
 } from './reporter';
+
+// Test file exports (for running specific test suites)
+// - api-endpoints.test.ts: API-level tenant isolation tests
+// - database-isolation.test.ts: Database-level isolation tests
+// - injection-attempts.test.ts: Attack vector tests
+// - event-and-storage.test.ts: Event publishing and file storage isolation tests

@@ -128,6 +128,27 @@ async function createTestApp(
     };
   });
 
+  // Health check route (skip path)
+  app.get('/health', async () => {
+    return { status: 'ok' };
+  });
+
+  // Public API route (skip path)
+  app.get('/api/public/info', async (request) => ({
+    resolved: request.tenantContext?.resolved,
+  }));
+
+  // Routes for getTenantIdOrThrow tests
+  app.get('/get-tenant-id', async (request) => {
+    const tenantId = getTenantIdOrThrow(request);
+    return { tenantId };
+  });
+
+  app.get('/get-tenant-id-fail', async (request) => {
+    const tenantId = getTenantIdOrThrow(request);
+    return { tenantId };
+  });
+
   await app.ready();
   return app;
 }
@@ -260,11 +281,6 @@ describe('tenantResolverPlugin', () => {
         skipPaths: ['/api/public', '/health'],
       });
 
-      // Add a test route for the skip path
-      app.get('/api/public/info', async (request) => ({
-        resolved: request.tenantContext?.resolved,
-      }));
-
       const response = await app.inject({
         method: 'GET',
         url: '/api/public/info',
@@ -385,11 +401,6 @@ describe('tenantResolverPlugin', () => {
     it('returns tenant ID when available', async () => {
       app = await createTestApp();
 
-      app.get('/get-tenant-id', async (request) => {
-        const tenantId = getTenantIdOrThrow(request);
-        return { tenantId };
-      });
-
       const response = await app.inject({
         method: 'GET',
         url: '/get-tenant-id',
@@ -404,11 +415,6 @@ describe('tenantResolverPlugin', () => {
 
     it('throws when tenant not available', async () => {
       app = await createTestApp();
-
-      app.get('/get-tenant-id-fail', async (request) => {
-        const tenantId = getTenantIdOrThrow(request);
-        return { tenantId };
-      });
 
       const response = await app.inject({
         method: 'GET',

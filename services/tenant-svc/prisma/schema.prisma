@@ -14,6 +14,14 @@ enum TenantType {
   CLINIC
 }
 
+/// Tenant lifecycle status for soft delete support
+enum TenantStatus {
+  ACTIVE          // Normal operation
+  SUSPENDED       // Temporarily disabled (e.g., billing issue)
+  PENDING_DELETE  // Soft-deleted, in 90-day grace period
+  DELETED         // Hard-deleted (data purged)
+}
+
 model Tenant {
   id              String    @id @default(uuid()) @db.Uuid
   type            TenantType
@@ -32,6 +40,12 @@ model Tenant {
   region          String    @default("us-east-1")
   isActive        Boolean   @default(true) @map("is_active")
   
+  // Lifecycle status for soft delete
+  status          TenantStatus @default(ACTIVE)
+  deletedAt       DateTime?    @map("deleted_at")
+  deleteGraceEndsAt DateTime?  @map("delete_grace_ends_at")
+  deletedByUserId String?      @map("deleted_by_user_id") @db.Uuid
+  
   // Branding
   logoUrl         String?   @map("logo_url")
   primaryColor    String?   @map("primary_color")
@@ -41,10 +55,15 @@ model Tenant {
   
   schools         School[]
   domainVerifications TenantDomainVerification[]
+  config          TenantConfig?
+  usageRecords    TenantUsage[]
+  auditEvents     TenantAuditEvent[]
   
   @@index([subdomain])
   @@index([customDomain])
   @@index([isActive])
+  @@index([status])
+  @@index([deleteGraceEndsAt])
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -170,4 +189,156 @@ model ClassroomLearner {
   @@unique([classroomId, learnerId])
   @@index([classroomId])
   @@index([learnerId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tenant Configuration
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// AI provider allowed for this tenant
+enum AllowedAIProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  AZURE_OPENAI
+  LOCAL
+}
+
+/// Tenant-specific configuration for features, AI, and data governance
+model TenantConfig {
+  id                    String   @id @default(uuid()) @db.Uuid
+  tenantId              String   @unique @map("tenant_id") @db.Uuid
+  
+  // AI Configuration
+  allowedAIProviders    AllowedAIProvider[] @default([OPENAI, ANTHROPIC])
+  defaultAIProvider     AllowedAIProvider   @default(OPENAI)
+  aiModelOverrides      Json?               @map("ai_model_overrides") // {"homework": "gpt-4o", "focus": "claude-3"}
+  
+  // Data Residency
+  dataResidencyRegion   String   @default("us-east-1") @map("data_residency_region")
+  backupRegion          String?  @map("backup_region")
+  
+  // Curriculum Configuration
+  enabledModules        String[] @default(["ELA", "MATH"]) @map("enabled_modules")
+  curriculumStandards   String[] @default(["COMMON_CORE"]) @map("curriculum_standards")
+  gradeLevels           String[] @default(["K", "1", "2", "3", "4", "5", "6", "7", "8"]) @map("grade_levels")
+  
+  // Feature Flags
+  enableHomeworkHelper  Boolean  @default(true)  @map("enable_homework_helper")
+  enableFocusMode       Boolean  @default(true)  @map("enable_focus_mode")
+  enableParentPortal    Boolean  @default(true)  @map("enable_parent_portal")
+  enableTeacherDashboard Boolean @default(true) @map("enable_teacher_dashboard")
+  
+  // Usage Limits (0 = unlimited)
+  dailyLLMCallLimit     Int      @default(10000) @map("daily_llm_call_limit")
+  dailyTutorTurnLimit   Int      @default(50000) @map("daily_tutor_turn_limit")
+  maxLearnersPerTenant  Int      @default(0)     @map("max_learners_per_tenant")
+  storageQuotaGB        Int      @default(100)   @map("storage_quota_gb")
+  
+  // Safety & Compliance
+  contentFilterLevel    String   @default("STANDARD") @map("content_filter_level") // STRICT, STANDARD, MINIMAL
+  enablePIIRedaction    Boolean  @default(true)  @map("enable_pii_redaction")
+  retentionDays         Int      @default(2555)  @map("retention_days") // 7 years FERPA
+  
+  // Custom JSON settings for extensibility
+  customSettings        Json?    @map("custom_settings")
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("tenant_configs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tenant Usage Tracking
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Daily usage aggregates for quota tracking
+model TenantUsage {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  usageDate       DateTime @map("usage_date") @db.Date
+  
+  // LLM Usage
+  llmCallCount    Int      @default(0) @map("llm_call_count")
+  llmTokensUsed   BigInt   @default(0) @map("llm_tokens_used")
+  llmCostCents    Int      @default(0) @map("llm_cost_cents")
+  
+  // Tutor Usage
+  tutorTurnCount  Int      @default(0) @map("tutor_turn_count")
+  sessionCount    Int      @default(0) @map("session_count")
+  activeUsers     Int      @default(0) @map("active_users")
+  
+  // Storage Usage (in MB)
+  storageUsedMB   Int      @default(0) @map("storage_used_mb")
+  filesUploaded   Int      @default(0) @map("files_uploaded")
+  
+  // Quota Status
+  llmQuotaReached     Boolean @default(false) @map("llm_quota_reached")
+  tutorQuotaReached   Boolean @default(false) @map("tutor_quota_reached")
+  quotaWarningAt      DateTime? @map("quota_warning_at")
+  quotaBlockedAt      DateTime? @map("quota_blocked_at")
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, usageDate])
+  @@index([tenantId, usageDate])
+  @@index([llmQuotaReached])
+  @@index([tutorQuotaReached])
+  @@map("tenant_usage")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tenant Audit Events
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of tenant audit event
+enum TenantAuditEventType {
+  TENANT_CREATED
+  TENANT_UPDATED
+  TENANT_SUSPENDED
+  TENANT_REACTIVATED
+  TENANT_DELETE_INITIATED
+  TENANT_DELETE_CANCELLED
+  TENANT_DELETED
+  CONFIG_UPDATED
+  DOMAIN_VERIFIED
+  DOMAIN_REMOVED
+  QUOTA_WARNING
+  QUOTA_EXCEEDED
+  QUOTA_RESET
+  ADMIN_ACCESS
+}
+
+/// Audit log for tenant lifecycle events
+model TenantAuditEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  eventType     TenantAuditEventType @map("event_type")
+  
+  // Actor information
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  actorEmail    String?  @map("actor_email")
+  actorRole     String?  @map("actor_role")
+  actorIp       String?  @map("actor_ip")
+  
+  // Event details
+  description   String
+  beforeState   Json?    @map("before_state")
+  afterState    Json?    @map("after_state")
+  metadata      Json?
+  
+  createdAt     DateTime @default(now())
+  
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId, createdAt])
+  @@index([eventType])
+  @@index([actorUserId])
+  @@map("tenant_audit_events")
 }

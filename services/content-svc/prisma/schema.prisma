@@ -221,3 +221,90 @@ model ContentVersionChange {
   @@index([tenantId, subject, gradeBand, changedAt(sort: Desc)])
   @@map("content_version_changes")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FILE STORAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// File category for access control and lifecycle policies.
+enum FileCategory {
+  IEP_DOCUMENT        // Individualized Education Program documents
+  HOMEWORK_IMAGE      // Student-uploaded homework photos
+  ASSESSMENT_AUDIO    // Recorded audio responses
+  ASSESSMENT_VIDEO    // Recorded video responses
+  AVATAR_IMAGE        // User profile images
+  EXPORTED_REPORT     // Generated PDF/CSV reports
+  ATTACHMENT          // General file attachments
+  OTHER               // Uncategorized files
+
+  @@map("file_category")
+}
+
+/// Owner type for files - user or system.
+enum FileOwnerType {
+  USER                // Owned by a specific user
+  SYSTEM              // System-generated file
+  TENANT              // Tenant-level shared resource
+
+  @@map("file_owner_type")
+}
+
+/// Virus scan status for uploaded files.
+enum VirusScanStatus {
+  PENDING             // Not yet scanned
+  SCANNING            // Currently being scanned
+  CLEAN               // No threats detected
+  INFECTED            // Threat detected and file quarantined
+  ERROR               // Scan failed
+
+  @@map("virus_scan_status")
+}
+
+/// Tenant-scoped file storage with virus scanning and access control.
+/// S3 key format: {tenantId}/{ownerType}/{ownerId}/{category}/{fileId}/{filename}
+model StoredFile {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  ownerId           String           @map("owner_id") @db.Uuid
+  ownerType         FileOwnerType    @default(USER) @map("owner_type")
+  category          FileCategory     @default(OTHER)
+  
+  // File metadata
+  filename          String
+  mimeType          String           @map("mime_type")
+  sizeBytes         BigInt           @map("size_bytes")
+  checksum          String?          // SHA-256 hash for integrity
+  
+  // S3 storage location
+  s3Bucket          String           @map("s3_bucket")
+  s3Key             String           @map("s3_key")
+  s3Region          String?          @map("s3_region")
+  
+  // Virus scanning
+  virusScanStatus   VirusScanStatus  @default(PENDING) @map("virus_scan_status")
+  virusScannedAt    DateTime?        @map("virus_scanned_at") @db.Timestamptz
+  virusScanResult   Json?            @map("virus_scan_result")
+  
+  // Soft delete
+  isDeleted         Boolean          @default(false) @map("is_deleted")
+  deletedAt         DateTime?        @map("deleted_at") @db.Timestamptz
+  deletedByUserId   String?          @map("deleted_by_user_id") @db.Uuid
+  
+  // Extended metadata (tags, description, etc.)
+  metadataJson      Json             @default("{}") @map("metadata_json")
+  
+  // Timestamps
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Lifecycle
+  expiresAt         DateTime?        @map("expires_at") @db.Timestamptz
+
+  // Indexes for efficient tenant-scoped queries
+  @@index([tenantId, ownerId, category])
+  @@index([tenantId, category, createdAt(sort: Desc)])
+  @@index([tenantId, virusScanStatus])
+  @@index([s3Key], type: Hash)
+  @@index([tenantId, isDeleted, expiresAt])
+  @@map("stored_files")
+}

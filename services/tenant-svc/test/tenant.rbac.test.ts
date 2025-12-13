@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
 import { SignJWT } from 'jose';
 
@@ -11,23 +11,68 @@ const sampleTenant = {
   type: 'DISTRICT',
   name: 'District X',
   primaryDomain: 'districtx.aivo.app',
+  subdomain: null,
+  customDomain: null,
+  domainVerified: false,
+  domainVerifiedAt: null,
+  region: 'us-east-1',
+  isActive: true,
+  status: 'ACTIVE',
+  deletedAt: null,
+  deleteGraceEndsAt: null,
+  deletedByUserId: null,
+  logoUrl: null,
+  primaryColor: null,
+  billingPlanId: null,
   settingsJson: {},
   createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+// Create a mock transaction function that executes the callback with the same mock
+const createMockTransaction = (mockPrisma: any) => {
+  return async (callback: any) => {
+    return callback(mockPrisma);
+  };
 };
 
 // Mock prisma before importing app
-vi.mock('../src/prisma', () => ({
-  prisma: {
+vi.mock('../src/prisma', () => {
+  const mockPrisma = {
     tenant: {
       create: vi.fn(async ({ data }: any) => ({
         ...sampleTenant,
+        id: `tenant-${Date.now()}`,
         type: data.type,
         name: data.name,
         primaryDomain: data.primaryDomain,
+        subdomain: data.subdomain ?? null,
+        customDomain: data.customDomain ?? null,
+        region: data.region ?? 'us-east-1',
+        logoUrl: data.logoUrl ?? null,
+        primaryColor: data.primaryColor ?? null,
+        billingPlanId: data.billingPlanId ?? null,
+        settingsJson: data.settingsJson ?? {},
+        status: data.status ?? 'ACTIVE',
+        isActive: data.isActive ?? true,
       })),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
-  },
-}));
+    tenantConfig: {
+      create: vi.fn().mockResolvedValue({ id: 'config-1', tenantId: 'tenant-xyz' }),
+    },
+    tenantAuditEvent: {
+      create: vi.fn().mockResolvedValue({ id: 'audit-1' }),
+    },
+    $transaction: vi.fn(),
+  };
+  
+  // Set up $transaction to call the callback with mockPrisma
+  mockPrisma.$transaction = vi.fn(async (callback: any) => callback(mockPrisma));
+  
+  return { prisma: mockPrisma };
+});
 
 async function loadApp() {
   const mod = await import('../src/app');
@@ -41,11 +86,18 @@ function signToken(roles: string[]) {
 }
 
 describe('RBAC for /tenants', () => {
-  let app: ReturnType<Awaited<ReturnType<typeof loadApp>>>;
+  let app: Awaited<ReturnType<Awaited<ReturnType<typeof loadApp>>>>;
 
   beforeAll(async () => {
     const createApp = await loadApp();
     app = createApp();
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
   });
 
   it('rejects unauthenticated request', async () => {

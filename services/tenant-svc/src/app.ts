@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import type { Redis as RedisType } from 'ioredis';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerClassroomRoutes } from './routes/classrooms.js';
@@ -11,11 +12,13 @@ import { prisma } from './prisma.js';
 import { config } from './config.js';
 
 // Optional Redis import - gracefully degrade if not available
-let redis: import('ioredis').Redis | undefined;
+let redis: RedisType | undefined;
 try {
   if (config.redisUrl) {
-    const { default: Redis } = await import('ioredis');
-    redis = new Redis(config.redisUrl);
+    const ioredis = await import('ioredis');
+    // Access the default export and create new instance
+    const RedisClass = ioredis.default as unknown as new (url: string) => RedisType;
+    redis = new RedisClass(config.redisUrl);
   }
 } catch {
   // Redis not configured - caching will be disabled
@@ -34,7 +37,8 @@ export function createApp() {
     skipPaths: ['/health', '/healthz', '/metrics', '/tenant/resolve'],
   });
 
-  app.register(authMiddleware);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  app.register(authMiddleware as any);
   app.register(registerResolveRoutes);
   app.register(registerTenantRoutes);
   app.register(registerSchoolRoutes);
