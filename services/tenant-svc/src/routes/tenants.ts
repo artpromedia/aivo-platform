@@ -12,12 +12,15 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import {
+  TenantConfigService,
+  type UpdateTenantConfigInput,
+} from '../services/tenant-config.service.js';
+import {
   TenantLifecycleService,
   type ActorContext,
   type TenantType,
   type TenantStatus,
 } from '../services/tenant-lifecycle.service.js';
-import { TenantConfigService, type UpdateTenantConfigInput } from '../services/tenant-config.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -31,7 +34,10 @@ const tenantCreateSchema = z.object({
   custom_domain: z.string().optional(),
   region: z.string().optional(),
   logo_url: z.string().url().optional(),
-  primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  primary_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   billing_plan_id: z.string().uuid().optional(),
   settings: z.record(z.unknown()).optional(),
 });
@@ -44,14 +50,22 @@ const tenantUpdateSchema = z.object({
   custom_domain: z.string().optional().nullable(),
   region: z.string().optional(),
   logo_url: z.string().url().optional().nullable(),
-  primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+  primary_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional()
+    .nullable(),
   billing_plan_id: z.string().uuid().optional().nullable(),
   settings: z.record(z.unknown()).optional().nullable(),
 });
 
 const tenantConfigUpdateSchema = z.object({
-  allowed_ai_providers: z.array(z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'AZURE_OPENAI', 'LOCAL'])).optional(),
-  default_ai_provider: z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'AZURE_OPENAI', 'LOCAL']).optional(),
+  allowed_ai_providers: z
+    .array(z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'AZURE_OPENAI', 'LOCAL']))
+    .optional(),
+  default_ai_provider: z
+    .enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'AZURE_OPENAI', 'LOCAL'])
+    .optional(),
   ai_model_overrides: z.record(z.string()).optional().nullable(),
   data_residency_region: z.string().optional(),
   backup_region: z.string().optional().nullable(),
@@ -76,25 +90,21 @@ const tenantConfigUpdateSchema = z.object({
 // Platform Admin Role Check
 // ══════════════════════════════════════════════════════════════════════════════
 
-const PLATFORM_ADMIN_ROLES = ['PLATFORM_ADMIN', 'SUPER_ADMIN'];
+const PLATFORM_ADMIN_ROLES = new Set(['PLATFORM_ADMIN', 'SUPER_ADMIN']);
 
 /**
  * Middleware to require Platform Admin role
  */
-async function requirePlatformAdmin(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<void> {
+async function requirePlatformAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // Get auth context from request (set by auth middleware)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const auth = (request as any).auth;
 
-  if (!auth?.roles || !auth.roles.some((r: string) => PLATFORM_ADMIN_ROLES.includes(r))) {
+  if (!auth?.roles?.some((r: string) => PLATFORM_ADMIN_ROLES.has(r))) {
     reply.code(403).send({
       error: 'Forbidden',
       message: 'Platform Admin role required to manage tenants',
     });
-    return;
   }
 }
 
@@ -135,7 +145,18 @@ export async function registerTenantRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid payload', details: parsed.error.issues });
     }
 
-    const { type, name, primary_domain, subdomain, custom_domain, region, logo_url, primary_color, billing_plan_id, settings } = parsed.data;
+    const {
+      type,
+      name,
+      primary_domain,
+      subdomain,
+      custom_domain,
+      region,
+      logo_url,
+      primary_color,
+      billing_plan_id,
+      settings,
+    } = parsed.data;
 
     try {
       const tenant = await lifecycleService.createTenant(
@@ -250,13 +271,19 @@ export async function registerTenantRoutes(app: FastifyInstance) {
         {
           ...(body.data.type !== undefined && { type: body.data.type as TenantType }),
           ...(body.data.name !== undefined && { name: body.data.name }),
-          ...(body.data.primary_domain !== undefined && { primaryDomain: body.data.primary_domain }),
-          ...(body.data.subdomain !== undefined && body.data.subdomain !== null && { subdomain: body.data.subdomain }),
-          ...(body.data.custom_domain !== undefined && body.data.custom_domain !== null && { customDomain: body.data.custom_domain }),
+          ...(body.data.primary_domain !== undefined && {
+            primaryDomain: body.data.primary_domain,
+          }),
+          ...(body.data.subdomain !== undefined &&
+            body.data.subdomain !== null && { subdomain: body.data.subdomain }),
+          ...(body.data.custom_domain !== undefined &&
+            body.data.custom_domain !== null && { customDomain: body.data.custom_domain }),
           ...(body.data.region !== undefined && { region: body.data.region }),
           ...(body.data.logo_url !== undefined && { logoUrl: body.data.logo_url }),
           ...(body.data.primary_color !== undefined && { primaryColor: body.data.primary_color }),
-          ...(body.data.billing_plan_id !== undefined && { billingPlanId: body.data.billing_plan_id }),
+          ...(body.data.billing_plan_id !== undefined && {
+            billingPlanId: body.data.billing_plan_id,
+          }),
           ...(body.data.settings !== undefined && { settingsJson: body.data.settings }),
         },
         getActorContext(request)
@@ -342,62 +369,70 @@ export async function registerTenantRoutes(app: FastifyInstance) {
    * POST /tenants/:id/reactivate - Reactivate a suspended/pending-delete tenant
    * Requires: Platform Admin
    */
-  app.post('/tenants/:id/reactivate', { preHandler: requirePlatformAdmin }, async (request, reply) => {
-    const params = z.object({ id: z.string().uuid() }).safeParse(request.params);
-    if (!params.success) {
-      return reply.status(400).send({ error: 'Invalid id' });
-    }
+  app.post(
+    '/tenants/:id/reactivate',
+    { preHandler: requirePlatformAdmin },
+    async (request, reply) => {
+      const params = z.object({ id: z.string().uuid() }).safeParse(request.params);
+      if (!params.success) {
+        return reply.status(400).send({ error: 'Invalid id' });
+      }
 
-    try {
-      const tenant = await lifecycleService.reactivateTenant(
-        params.data.id,
-        getActorContext(request)
-      );
+      try {
+        const tenant = await lifecycleService.reactivateTenant(
+          params.data.id,
+          getActorContext(request)
+        );
 
-      return reply.send({ message: 'Tenant reactivated', tenant });
-    } catch (error) {
-      request.log.error(error, 'Failed to reactivate tenant');
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      return reply.status(400).send({ error: 'Failed to reactivate tenant', message });
+        return reply.send({ message: 'Tenant reactivated', tenant });
+      } catch (error) {
+        request.log.error(error, 'Failed to reactivate tenant');
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return reply.status(400).send({ error: 'Failed to reactivate tenant', message });
+      }
     }
-  });
+  );
 
   /**
    * POST /tenants/:id/hard-delete - Permanently delete tenant (after grace period)
    * Requires: Platform Admin + confirmation
    */
-  app.post('/tenants/:id/hard-delete', { preHandler: requirePlatformAdmin }, async (request, reply) => {
-    const params = z.object({ id: z.string().uuid() }).safeParse(request.params);
-    if (!params.success) {
-      return reply.status(400).send({ error: 'Invalid id' });
+  app.post(
+    '/tenants/:id/hard-delete',
+    { preHandler: requirePlatformAdmin },
+    async (request, reply) => {
+      const params = z.object({ id: z.string().uuid() }).safeParse(request.params);
+      if (!params.success) {
+        return reply.status(400).send({ error: 'Invalid id' });
+      }
+
+      const body = z
+        .object({
+          confirm: z.literal(true),
+          force: z.boolean().optional(),
+        })
+        .safeParse(request.body);
+
+      if (!body.success || !body.data.confirm) {
+        return reply.status(400).send({
+          error: 'Confirmation required',
+          message: 'Set confirm: true in request body to permanently delete tenant',
+        });
+      }
+
+      try {
+        await lifecycleService.hardDelete(params.data.id, getActorContext(request), {
+          forceDelete: body.data.force ?? false,
+        });
+
+        return reply.send({ message: 'Tenant permanently deleted' });
+      } catch (error) {
+        request.log.error(error, 'Failed to hard delete tenant');
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return reply.status(400).send({ error: 'Failed to delete tenant', message });
+      }
     }
-
-    const body = z.object({
-      confirm: z.literal(true),
-      force: z.boolean().optional(),
-    }).safeParse(request.body);
-
-    if (!body.success || !body.data.confirm) {
-      return reply.status(400).send({
-        error: 'Confirmation required',
-        message: 'Set confirm: true in request body to permanently delete tenant',
-      });
-    }
-
-    try {
-      await lifecycleService.hardDelete(
-        params.data.id,
-        getActorContext(request),
-        { forceDelete: body.data.force ?? false }
-      );
-
-      return reply.send({ message: 'Tenant permanently deleted' });
-    } catch (error) {
-      request.log.error(error, 'Failed to hard delete tenant');
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      return reply.status(400).send({ error: 'Failed to delete tenant', message });
-    }
-  });
+  );
 
   // ──────────────────────────────────────────────────────────────────────────
   // Tenant Configuration

@@ -178,22 +178,22 @@ class Histogram {
  */
 export class ResilienceTelemetry {
   // Counters
-  private httpErrorsTotal = new Map<string, Counter>();
-  private retryAttemptsTotal = new Counter('retry_attempts_total');
-  private circuitBreakerOpensTotal = new Counter('circuit_breaker_opens_total');
-  private fallbacksUsedTotal = new Counter('fallbacks_used_total');
-  private timeoutsTotal = new Counter('timeouts_total');
+  private readonly httpErrorsTotal = new Map<string, Counter>();
+  private readonly retryAttemptsTotal = new Counter('retry_attempts_total');
+  private readonly circuitBreakerOpensTotal = new Counter('circuit_breaker_opens_total');
+  private readonly fallbacksUsedTotal = new Counter('fallbacks_used_total');
+  private readonly timeoutsTotal = new Counter('timeouts_total');
 
   // Gauges
-  private activeRequests = new Gauge('active_requests');
-  private openCircuits = new Gauge('open_circuits');
+  private readonly activeRequests = new Gauge('active_requests');
+  private readonly openCircuits = new Gauge('open_circuits');
 
   // Histograms
-  private requestLatency = new Histogram('request_latency_ms');
-  private endpointLatencies = new Map<string, Histogram>();
+  private readonly requestLatency = new Histogram('request_latency_ms');
+  private readonly endpointLatencies = new Map<string, Histogram>();
 
   // Listeners
-  private reportListeners: ((report: TelemetryReport) => void)[] = [];
+  private readonly reportListeners: ((report: TelemetryReport) => void)[] = [];
 
   private static _instance: ResilienceTelemetry | undefined;
 
@@ -202,9 +202,7 @@ export class ResilienceTelemetry {
   }
 
   static getInstance(): ResilienceTelemetry {
-    if (!ResilienceTelemetry._instance) {
-      ResilienceTelemetry._instance = new ResilienceTelemetry();
-    }
+    ResilienceTelemetry._instance ??= new ResilienceTelemetry();
     return ResilienceTelemetry._instance;
   }
 
@@ -278,17 +276,17 @@ export class ResilienceTelemetry {
     for (const counter of this.httpErrorsTotal.values()) {
       metrics.push(counter.toMetric());
     }
-    metrics.push(this.retryAttemptsTotal.toMetric());
-    metrics.push(this.circuitBreakerOpensTotal.toMetric());
-    metrics.push(this.fallbacksUsedTotal.toMetric());
-    metrics.push(this.timeoutsTotal.toMetric());
-
-    // Add gauges
-    metrics.push(this.activeRequests.toMetric());
-    metrics.push(this.openCircuits.toMetric());
-
-    // Add histograms
-    metrics.push(this.requestLatency.toMetric());
+    metrics.push(
+      this.retryAttemptsTotal.toMetric(),
+      this.circuitBreakerOpensTotal.toMetric(),
+      this.fallbacksUsedTotal.toMetric(),
+      this.timeoutsTotal.toMetric(),
+      // Gauges
+      this.activeRequests.toMetric(),
+      this.openCircuits.toMetric(),
+      // Histograms
+      this.requestLatency.toMetric()
+    );
     for (const histogram of this.endpointLatencies.values()) {
       metrics.push(histogram.toMetric());
     }
@@ -340,11 +338,11 @@ export class ResilienceTelemetry {
 
   private normalizeEndpoint(endpoint: string): string {
     // Remove query params
-    const withoutQuery = endpoint.split('?')[0];
+    const withoutQuery = endpoint.split('?')[0] ?? endpoint;
     // Replace UUIDs with :id
     return withoutQuery
-      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, ':id')
-      .replace(/\/\d+/g, '/:id');
+      .replaceAll(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, ':id')
+      .replaceAll(/\/\d+/g, '/:id');
   }
 
   // Listener management

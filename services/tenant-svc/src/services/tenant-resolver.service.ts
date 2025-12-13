@@ -14,8 +14,8 @@
  * - Cache invalidation on tenant/domain updates
  */
 
-import { resolveTxt, resolveCname } from 'node:dns/promises';
 import { randomBytes } from 'node:crypto';
+import { resolveTxt, resolveCname } from 'node:dns/promises';
 
 // Types will be properly typed after prisma generate is run
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,7 +56,7 @@ export interface TenantResolution {
 type AnyPrismaClient = any;
 
 export interface TenantResolverConfig {
-  redis: Redis | null;
+  redis: Redis;
   prisma: AnyPrismaClient;
   cacheTtlSeconds?: number; // Default: 300 (5 minutes)
   baseDomain: string; // e.g., "aivo.ai"
@@ -238,9 +238,7 @@ export class TenantResolverService {
 
     if (!tenant) return;
 
-    const keysToDelete: string[] = [
-      `${CACHE_PREFIX.ID}${tenantId}`,
-    ];
+    const keysToDelete: string[] = [`${CACHE_PREFIX.ID}${tenantId}`];
 
     if (tenant.subdomain) {
       keysToDelete.push(`${CACHE_PREFIX.SUBDOMAIN}${tenant.subdomain}`);
@@ -344,10 +342,7 @@ export class TenantResolverService {
   /**
    * Verify custom domain ownership via DNS
    */
-  async verifyCustomDomain(
-    tenantId: string,
-    domain: string
-  ): Promise<DomainVerificationResult> {
+  async verifyCustomDomain(tenantId: string, domain: string): Promise<DomainVerificationResult> {
     const normalizedDomain = domain.toLowerCase().trim();
 
     // Get verification record
@@ -476,7 +471,9 @@ export class TenantResolverService {
 
     // Validate subdomain format if provided
     if (normalizedSubdomain && !this.isValidSubdomain(normalizedSubdomain)) {
-      throw new Error('Invalid subdomain format. Use lowercase letters, numbers, and hyphens only.');
+      throw new Error(
+        'Invalid subdomain format. Use lowercase letters, numbers, and hyphens only.'
+      );
     }
 
     // Check subdomain isn't already in use
@@ -518,9 +515,7 @@ export class TenantResolverService {
   /**
    * Get pending domain verifications for a tenant
    */
-  async getPendingVerifications(
-    tenantId: string
-  ): Promise<TenantDomainVerification[]> {
+  async getPendingVerifications(tenantId: string): Promise<TenantDomainVerification[]> {
     return this.prisma.tenantDomainVerification.findMany({
       where: {
         tenantId,
@@ -573,11 +568,7 @@ export class TenantResolverService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildResolution(
-    tenant: any,
-    source: TenantResolutionSource
-  ): TenantResolution {
+  private buildResolution(tenant: any, source: TenantResolutionSource): TenantResolution {
     return {
       tenantId: tenant.id,
       tenant: this.mapTenantToResolved(tenant),
@@ -619,16 +610,11 @@ export class TenantResolverService {
     return null;
   }
 
-  private async setCache<T>(key: string, value: T): Promise<void> {
+  private async setCache(key: string, value: unknown): Promise<void> {
     if (!this.redis) return;
 
     try {
-      await this.redis.set(
-        key,
-        JSON.stringify(value),
-        'EX',
-        this.cacheTtlSeconds
-      );
+      await this.redis.set(key, JSON.stringify(value), 'EX', this.cacheTtlSeconds);
     } catch {
       // Ignore cache errors
     }
@@ -660,9 +646,7 @@ export class TenantResolverService {
         const records = await resolveTxt(recordHost);
         const flatRecords = records.flat();
 
-        const found = flatRecords.some(
-          (record) => record === verification.verificationValue
-        );
+        const found = flatRecords.includes(verification.verificationValue);
 
         if (found) {
           return { verified: true };
@@ -674,9 +658,7 @@ export class TenantResolverService {
         }
       } else if (verification.verificationType === 'CNAME') {
         const records = await resolveCname(recordHost);
-        const found = records.some(
-          (record) => record === verification.verificationValue
-        );
+        const found = records.includes(verification.verificationValue);
 
         if (found) {
           return { verified: true };
@@ -714,16 +696,16 @@ export class TenantResolverService {
 
 let instance: TenantResolverService | null = null;
 
-export function createTenantResolverService(
-  config: TenantResolverConfig
-): TenantResolverService {
+export function createTenantResolverService(config: TenantResolverConfig): TenantResolverService {
   instance = new TenantResolverService(config);
   return instance;
 }
 
 export function getTenantResolverService(): TenantResolverService {
   if (!instance) {
-    throw new Error('TenantResolverService not initialized. Call createTenantResolverService first.');
+    throw new Error(
+      'TenantResolverService not initialized. Call createTenantResolverService first.'
+    );
   }
   return instance;
 }

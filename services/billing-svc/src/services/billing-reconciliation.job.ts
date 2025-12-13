@@ -91,7 +91,7 @@ const DEFAULT_CONFIG: Required<ReconciliationConfig> = {
 
 export class BillingReconciliationJob {
   private readonly prisma: PrismaClient;
-  private config: Required<ReconciliationConfig>;
+  private readonly config: Required<ReconciliationConfig>;
 
   constructor(config: ReconciliationConfig = {}, client: PrismaClient = prisma) {
     this.config = { ...DEFAULT_CONFIG, ...config };

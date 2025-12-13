@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion */
 /**
  * Procurement Service
  *
@@ -28,16 +28,14 @@ import type {
   ContractActivationResult,
   DistrictBillingOverview,
   QuoteSummary,
-} from '../types';
+} from '../types.js';
 import {
   QuoteStatus,
   POStatus,
   DistrictInvoiceStatus,
   RenewalTaskStatus,
-  CreateDistrictInvoiceInput,
-  formatCents,
   daysUntilRenewal,
-} from '../types';
+} from '../types.js';
 
 // ============================================================================
 // Errors
@@ -59,13 +57,13 @@ export class ProcurementError extends Error {
 // ============================================================================
 
 export class ProcurementService {
-  private quoteRepo: QuoteRepository;
-  private lineItemRepo: QuoteLineItemRepository;
-  private poRepo: PurchaseOrderRepository;
-  private invoiceRepo: DistrictInvoiceRepository;
-  private renewalRepo: RenewalTaskRepository;
+  private readonly quoteRepo: QuoteRepository;
+  private readonly lineItemRepo: QuoteLineItemRepository;
+  private readonly poRepo: PurchaseOrderRepository;
+  private readonly invoiceRepo: DistrictInvoiceRepository;
+  private readonly renewalRepo: RenewalTaskRepository;
 
-  constructor(private prisma: PrismaClient) {
+  constructor(private readonly prisma: PrismaClient) {
     this.quoteRepo = new QuoteRepository(prisma);
     this.lineItemRepo = new QuoteLineItemRepository(prisma);
     this.poRepo = new PurchaseOrderRepository(prisma);

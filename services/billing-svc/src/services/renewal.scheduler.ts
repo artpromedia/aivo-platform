@@ -79,10 +79,10 @@ export interface SchedulerMetrics {
 // ============================================================================
 
 export class RenewalScheduler {
-  private procurementService: ProcurementService;
-  private renewalRepo: RenewalTaskRepository;
-  private invoiceRepo: DistrictInvoiceRepository;
-  private quoteRepo: QuoteRepository;
+  private readonly procurementService: ProcurementService;
+  private readonly renewalRepo: RenewalTaskRepository;
+  private readonly invoiceRepo: DistrictInvoiceRepository;
+  private readonly quoteRepo: QuoteRepository;
 
   private renewalTimer: NodeJS.Timeout | null = null;
   private overdueTimer: NodeJS.Timeout | null = null;
@@ -99,8 +99,8 @@ export class RenewalScheduler {
   };
 
   constructor(
-    private prisma: PrismaClient,
-    private config: SchedulerConfig = {}
+    private readonly prisma: PrismaClient,
+    private readonly config: SchedulerConfig = {}
   ) {
     this.procurementService = new ProcurementService(prisma);
     this.renewalRepo = new RenewalTaskRepository(prisma);

@@ -1,28 +1,29 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unsafe-argument, import/no-unresolved */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, import/no-unresolved */
 /**
  * Usage Analytics Repository
  *
  * Data access layer for seat usage views, alerts, and notifications.
  */
 
-import { PrismaClient, Prisma } from '../generated/prisma-client';
-import {
+import type { PrismaClient } from '../generated/prisma-client';
+import { Prisma } from '../generated/prisma-client';
+import type {
   SeatUsageEntry,
   SeatUsageAlert,
   SeatUsageNotification,
-  SeatUsageAlertStatus,
   SeatUsageAlertContext,
   CreateSeatUsageAlertInput,
   CreateNotificationInput,
   GradeBand,
 } from '../types';
+import { SeatUsageAlertStatus } from '../types';
 
 // ============================================================================
 // Seat Usage View Repository
 // ============================================================================
 
 export class SeatUsageRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   /**
    * Get seat usage for a tenant.
@@ -127,12 +128,14 @@ export class SeatUsageRepository {
     totalOverage: number;
     overallUtilization: number;
   }> {
-    const result = await this.prisma.$queryRaw<Array<{
-      totalCommitted: bigint;
-      totalAllocated: bigint;
-      totalOverage: bigint;
-      overallUtilization: number;
-    }>>`
+    const result = await this.prisma.$queryRaw<
+      {
+        totalCommitted: bigint;
+        totalAllocated: bigint;
+        totalOverage: bigint;
+        overallUtilization: number;
+      }[]
+    >`
       SELECT 
         COALESCE(SUM(committed_seats), 0) as "totalCommitted",
         COALESCE(SUM(allocated_seats), 0) as "totalAllocated",
@@ -160,7 +163,7 @@ export class SeatUsageRepository {
 // ============================================================================
 
 export class SeatUsageAlertRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   /**
    * Create a new alert.
@@ -211,10 +214,7 @@ export class SeatUsageAlertRepository {
   /**
    * List alerts for a tenant.
    */
-  async listByTenant(
-    tenantId: string,
-    status?: SeatUsageAlertStatus
-  ): Promise<SeatUsageAlert[]> {
+  async listByTenant(tenantId: string, status?: SeatUsageAlertStatus): Promise<SeatUsageAlert[]> {
     const alerts = await this.prisma.seatUsageAlert.findMany({
       where: {
         tenantId,
@@ -349,7 +349,7 @@ export class SeatUsageAlertRepository {
       gradeBand: alert.gradeBand as GradeBand,
       threshold: Number(alert.threshold),
       status: alert.status as SeatUsageAlertStatus,
-      contextJson: alert.contextJson as SeatUsageAlertContext | null,
+      contextJson: alert.contextJson,
       acknowledgedAt: alert.acknowledgedAt,
       acknowledgedBy: alert.acknowledgedBy,
       resolvedAt: alert.resolvedAt,
@@ -365,7 +365,7 @@ export class SeatUsageAlertRepository {
 // ============================================================================
 
 export class SeatUsageNotificationRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   /**
    * Create a notification.

@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcryptjs';
 import { type FastifyInstance } from 'fastify';
@@ -258,7 +258,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
       const remaining = MAX_PIN_ATTEMPTS - newAttempts;
       return reply.status(401).send({
         error: 'Incorrect PIN',
-        remainingAttempts: remaining > 0 ? remaining : 0,
+        remainingAttempts: Math.max(remaining, 0),
       });
     }
 

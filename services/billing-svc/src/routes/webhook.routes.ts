@@ -10,7 +10,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
@@ -412,7 +412,7 @@ function verifyStripeSignature(
     if (key && value) signatureMap[key] = value;
   }
 
-  const timestamp = parseInt(signatureMap.t || '0', 10);
+  const timestamp = Number.parseInt(signatureMap.t || '0', 10);
   const expectedSignature = signatureMap.v1;
 
   if (!timestamp || !expectedSignature) {

@@ -290,13 +290,15 @@ export class CircuitBreaker<TArgs extends unknown[], TResult> {
 
     const totalRequests = this._successes + this._failures;
 
-    if (this._state === CircuitState.HALF_OPEN) {
-      this.transitionTo(CircuitState.OPEN);
-    } else if (
-      this._state === CircuitState.CLOSED &&
-      totalRequests >= this.volumeThreshold &&
-      this._consecutiveFailures >= this.failureThreshold
-    ) {
+    // Open circuit if in half-open and failure occurs,
+    // or if in closed state and thresholds are exceeded
+    const shouldOpen =
+      this._state === CircuitState.HALF_OPEN ||
+      (this._state === CircuitState.CLOSED &&
+        totalRequests >= this.volumeThreshold &&
+        this._consecutiveFailures >= this.failureThreshold);
+
+    if (shouldOpen) {
       this.transitionTo(CircuitState.OPEN);
     }
   }
@@ -409,21 +411,28 @@ export function registerCircuitBreaker<TArgs extends unknown[], TResult>(
  * Get all circuit breaker stats.
  */
 export function getAllCircuitStats(): CircuitBreakerStats[] {
-  return Array.from(circuitRegistry.entries()).map(([name, breaker]) => ({
-    name,
-    state: breaker.opened
-      ? CircuitState.OPEN
-      : breaker.halfOpen
-        ? CircuitState.HALF_OPEN
-        : CircuitState.CLOSED,
-    failures: breaker.stats.failures,
-    successes: breaker.stats.successes,
-    rejects: breaker.stats.rejects,
-    timeouts: breaker.stats.timeouts,
-    fallbacks: breaker.stats.fallbacks,
-    latencyMean: breaker.stats.latencyMean,
-    latencyP99: breaker.stats.percentiles['99'],
-  }));
+  return Array.from(circuitRegistry.entries()).map(([name, breaker]) => {
+    let state: CircuitState;
+    if (breaker.opened) {
+      state = CircuitState.OPEN;
+    } else if (breaker.halfOpen) {
+      state = CircuitState.HALF_OPEN;
+    } else {
+      state = CircuitState.CLOSED;
+    }
+
+    return {
+      name,
+      state,
+      failures: breaker.stats.failures,
+      successes: breaker.stats.successes,
+      rejects: breaker.stats.rejects,
+      timeouts: breaker.stats.timeouts,
+      fallbacks: breaker.stats.fallbacks,
+      latencyMean: breaker.stats.latencyMean,
+      latencyP99: breaker.stats.percentiles['99'],
+    };
+  });
 }
 
 /**
