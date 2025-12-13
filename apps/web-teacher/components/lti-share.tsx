@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 // SIMPLE ICON COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function CopyIcon({ className }: { className?: string }) {
+function CopyIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
@@ -23,7 +23,7 @@ function CopyIcon({ className }: { className?: string }) {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function CheckIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
@@ -39,7 +39,7 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-function ExternalLinkIcon({ className }: { className?: string }) {
+function ExternalLinkIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
@@ -57,7 +57,7 @@ function ExternalLinkIcon({ className }: { className?: string }) {
   );
 }
 
-function Share2Icon({ className }: { className?: string }) {
+function Share2Icon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
@@ -77,7 +77,7 @@ function Share2Icon({ className }: { className?: string }) {
   );
 }
 
-function SettingsIcon({ className }: { className?: string }) {
+function SettingsIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
@@ -94,7 +94,7 @@ function SettingsIcon({ className }: { className?: string }) {
   );
 }
 
-function PlusIcon({ className }: { className?: string }) {
+function PlusIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
@@ -179,11 +179,11 @@ async function createLtiLink(data: Partial<LtiLink>): Promise<LtiLink> {
 // ══════════════════════════════════════════════════════════════════════════════
 
 interface ShareToLmsButtonProps {
-  activity: Activity;
-  onShare?: (link: LtiLink) => void;
+  readonly activity: Activity;
+  readonly onShare?: (link: LtiLink) => void;
 }
 
-export function ShareToLmsButton({ activity, onShare }: ShareToLmsButtonProps) {
+export function ShareToLmsButton({ activity, onShare }: Readonly<ShareToLmsButtonProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [tools, setTools] = useState<LtiTool[]>([]);
   const [existingLinks, setExistingLinks] = useState<LtiLink[]>([]);
@@ -250,7 +250,7 @@ export function ShareToLmsButton({ activity, onShare }: ShareToLmsButtonProps) {
   };
 
   const getLaunchUrl = (linkId: string) => {
-    return `${window.location.origin}/lti/deep-link/${linkId}`;
+    return `${globalThis.location.origin}/lti/deep-link/${linkId}`;
   };
 
   if (!isOpen) {
@@ -266,6 +266,179 @@ export function ShareToLmsButton({ activity, onShare }: ShareToLmsButtonProps) {
       </button>
     );
   }
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex h-40 items-center justify-center">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      );
+    }
+
+    if (tools.length === 0) {
+      return (
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <p className="text-sm text-yellow-800">
+            No LMS integrations configured. Contact your administrator to set up LTI integration
+            with your learning management system.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Activity Info */}
+        <div className="rounded-lg bg-gray-50 p-4">
+          <h3 className="font-medium text-gray-900">{activity.title}</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {activity.subject} • {activity.gradeBand.replace('_', '-')}
+          </p>
+        </div>
+
+        {/* Existing Links */}
+        {existingLinks.length > 0 && (
+          <div>
+            <h4 className="mb-3 text-sm font-medium text-gray-700">Existing LTI Links</h4>
+            <div className="space-y-2">
+              {existingLinks.map((link) => (
+                <div
+                  key={link.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{link.title}</p>
+                    <p className="text-xs text-gray-500">
+                      {link.tool?.platformName || 'Unknown LMS'}
+                      {link.gradingEnabled && ` • ${link.maxPoints} points`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => void copyToClipboard(getLaunchUrl(link.id), link.id)}
+                    className="flex items-center gap-1 rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+                  >
+                    {copiedId === link.id ? (
+                      <>
+                        <CheckIcon className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <CopyIcon className="h-4 w-4" />
+                        Copy URL
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Create New Link */}
+        <div className="rounded-lg border p-4">
+          <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+            <PlusIcon className="h-4 w-4" />
+            Create New LTI Link
+          </h4>
+
+          <div className="space-y-4">
+            {/* LMS Selection */}
+            <div>
+              <label htmlFor="lti-tool-select" className="mb-1 block text-sm text-gray-600">
+                Learning Management System
+              </label>
+              <select
+                id="lti-tool-select"
+                value={selectedTool}
+                onChange={(e) => {
+                  setSelectedTool(e.target.value);
+                }}
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              >
+                {tools.map((tool) => (
+                  <option key={tool.id} value={tool.id}>
+                    {tool.platformName} ({tool.platformType})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label htmlFor="lti-title-input" className="mb-1 block text-sm text-gray-600">
+                Assignment Title
+              </label>
+              <input
+                id="lti-title-input"
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                }}
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+
+            {/* Grading Options */}
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={gradingEnabled}
+                  onChange={(e) => {
+                    setGradingEnabled(e.target.checked);
+                  }}
+                  className="rounded border-gray-300"
+                />{' '}
+                Enable grade passback
+              </label>
+
+              {gradingEnabled && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="lti-max-points" className="text-sm text-gray-600">
+                    Max points:
+                  </label>
+                  <input
+                    id="lti-max-points"
+                    type="number"
+                    value={maxPoints}
+                    onChange={(e) => {
+                      setMaxPoints(Number(e.target.value));
+                    }}
+                    min={1}
+                    max={1000}
+                    className="w-20 rounded-md border px-2 py-1 text-sm"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Create Button */}
+            <button
+              onClick={handleCreateLink}
+              disabled={creating || !selectedTool || !title}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {creating ? 'Creating...' : 'Create LTI Link'}
+            </button>
+          </div>
+        </div>
+
+        {/* Help Text */}
+        <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+          <p className="font-medium text-gray-700">How to use:</p>
+          <ol className="mt-2 list-inside list-decimal space-y-1">
+            <li>Copy the launch URL for your LMS</li>
+            <li>In your LMS, create an assignment or external tool link</li>
+            <li>Paste the URL as the tool launch URL</li>
+            <li>Students will be directed to this activity when they click the link</li>
+          </ol>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -284,163 +457,7 @@ export function ShareToLmsButton({ activity, onShare }: ShareToLmsButtonProps) {
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4">
-          {loading ? (
-            <div className="flex h-40 items-center justify-center">
-              <div className="text-gray-500">Loading...</div>
-            </div>
-          ) : tools.length === 0 ? (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <p className="text-sm text-yellow-800">
-                No LMS integrations configured. Contact your administrator to set up LTI integration
-                with your learning management system.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Activity Info */}
-              <div className="rounded-lg bg-gray-50 p-4">
-                <h3 className="font-medium text-gray-900">{activity.title}</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {activity.subject} • {activity.gradeBand.replace('_', '-')}
-                </p>
-              </div>
-
-              {/* Existing Links */}
-              {existingLinks.length > 0 && (
-                <div>
-                  <h4 className="mb-3 text-sm font-medium text-gray-700">Existing LTI Links</h4>
-                  <div className="space-y-2">
-                    {existingLinks.map((link) => (
-                      <div
-                        key={link.id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{link.title}</p>
-                          <p className="text-xs text-gray-500">
-                            {link.tool?.platformName || 'Unknown LMS'}
-                            {link.gradingEnabled && ` • ${link.maxPoints} points`}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => void copyToClipboard(getLaunchUrl(link.id), link.id)}
-                          className="flex items-center gap-1 rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
-                        >
-                          {copiedId === link.id ? (
-                            <>
-                              <CheckIcon className="h-4 w-4" />
-                              Copied!
-                            </>
-                          ) : (
-                            <>
-                              <CopyIcon className="h-4 w-4" />
-                              Copy URL
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Create New Link */}
-              <div className="rounded-lg border p-4">
-                <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <PlusIcon className="h-4 w-4" />
-                  Create New LTI Link
-                </h4>
-
-                <div className="space-y-4">
-                  {/* LMS Selection */}
-                  <div>
-                    <label className="mb-1 block text-sm text-gray-600">
-                      Learning Management System
-                    </label>
-                    <select
-                      value={selectedTool}
-                      onChange={(e) => {
-                        setSelectedTool(e.target.value);
-                      }}
-                      className="w-full rounded-md border px-3 py-2 text-sm"
-                    >
-                      {tools.map((tool) => (
-                        <option key={tool.id} value={tool.id}>
-                          {tool.platformName} ({tool.platformType})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <label className="mb-1 block text-sm text-gray-600">Assignment Title</label>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(e) => {
-                        setTitle(e.target.value);
-                      }}
-                      className="w-full rounded-md border px-3 py-2 text-sm"
-                    />
-                  </div>
-
-                  {/* Grading Options */}
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={gradingEnabled}
-                        onChange={(e) => {
-                          setGradingEnabled(e.target.checked);
-                        }}
-                        className="rounded border-gray-300"
-                      />
-                      Enable grade passback
-                    </label>
-
-                    {gradingEnabled && (
-                      <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600">Max points:</label>
-                        <input
-                          type="number"
-                          value={maxPoints}
-                          onChange={(e) => {
-                            setMaxPoints(Number(e.target.value));
-                          }}
-                          min={1}
-                          max={1000}
-                          className="w-20 rounded-md border px-2 py-1 text-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Create Button */}
-                  <button
-                    onClick={handleCreateLink}
-                    disabled={creating || !selectedTool || !title}
-                    className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {creating ? 'Creating...' : 'Create LTI Link'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Help Text */}
-              <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                <p className="font-medium text-gray-700">How to use:</p>
-                <ol className="mt-2 list-inside list-decimal space-y-1">
-                  <li>Copy the launch URL for your LMS</li>
-                  <li>In your LMS, create an assignment or external tool link</li>
-                  <li>Paste the URL as the tool launch URL</li>
-                  <li>Students will be directed to this activity when they click the link</li>
-                </ol>
-              </div>
-            </div>
-          )}
-        </div>
+        <div className="px-6 py-4">{renderContent()}</div>
 
         {/* Footer */}
         <div className="flex justify-end border-t px-6 py-4">
@@ -463,10 +480,10 @@ export function ShareToLmsButton({ activity, onShare }: ShareToLmsButtonProps) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 interface LtiConfigPanelProps {
-  classroomId?: string;
+  readonly classroomId?: string;
 }
 
-export function LtiConfigPanel({ classroomId }: LtiConfigPanelProps) {
+export function LtiConfigPanel({ classroomId }: Readonly<LtiConfigPanelProps>) {
   const [tools, setTools] = useState<LtiTool[]>([]);
   const [links, setLinks] = useState<LtiLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -566,4 +583,4 @@ export function LtiConfigPanel({ classroomId }: LtiConfigPanelProps) {
 // EXPORTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export { ShareToLmsButton as default };
+export default ShareToLmsButton;
