@@ -68,8 +68,8 @@ const tokenCache = new Map<string, CachedToken>();
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class GradeService {
-  private prisma: PrismaClient;
-  private getPrivateKey: (keyRef: string) => Promise<string>;
+  private readonly prisma: PrismaClient;
+  private readonly getPrivateKey: (keyRef: string) => Promise<string>;
 
   constructor(prisma: PrismaClient, getPrivateKey: (keyRef: string) => Promise<string>) {
     this.prisma = prisma;
