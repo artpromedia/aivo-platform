@@ -55,7 +55,7 @@ interface TenantSsoSettings {
 }
 
 interface SsoConfigPageProps {
-  tenantId: string;
+  readonly tenantId: string;
 }
 
 // ============================================================================
@@ -80,11 +80,16 @@ async function saveIdpConfig(_tenantId: string, config: Partial<IdpConfig>): Pro
   return config as IdpConfig;
 }
 
-async function saveTenantSsoSettings(_tenantId: string, _settings: TenantSsoSettings): Promise<void> {
+async function saveTenantSsoSettings(
+  _tenantId: string,
+  _settings: TenantSsoSettings
+): Promise<void> {
   // Mock implementation
 }
 
-async function testSsoConnection(_tenantId: string): Promise<{ success: boolean; message: string }> {
+async function testSsoConnection(
+  _tenantId: string
+): Promise<{ success: boolean; message: string }> {
   return { success: true, message: 'Connection successful' };
 }
 
@@ -189,21 +194,17 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
   }, []);
 
   // Parse SAML metadata
-  const handleMetadataUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+  const handleMetadataUpload = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const xml = e.target?.result as string;
-      setConfig((c) => ({
-        ...c,
-        metadataXml: xml,
-        // Try to parse metadata (basic extraction)
-        // In production, parse properly on the backend
-      }));
-    };
-    reader.readAsText(file);
+    const xml = await file.text();
+    setConfig((c) => ({
+      ...c,
+      metadataXml: xml,
+      // Try to parse metadata (basic extraction)
+      // In production, parse properly on the backend
+    }));
   }, []);
 
   if (loading) {
@@ -231,9 +232,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
           <div>
             <h3 className="font-medium text-amber-800">Configuration Warning</h3>
             <p className="mt-1 text-sm text-amber-700">
-              Misconfigured SSO settings can lock users out of their accounts. Always maintain at least
-              one fallback admin account that can sign in with a password, and test the configuration
-              thoroughly before enabling SSO for all users.
+              Misconfigured SSO settings can lock users out of their accounts. Always maintain at
+              least one fallback admin account that can sign in with a password, and test the
+              configuration thoroughly before enabling SSO for all users.
             </p>
           </div>
         </div>
@@ -248,7 +249,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
             <input
               type="checkbox"
               checked={settings.ssoEnabled}
-              onChange={(e) => setSettings((s) => ({ ...s, ssoEnabled: e.target.checked }))}
+              onChange={(e) => {
+                setSettings((s) => ({ ...s, ssoEnabled: e.target.checked }));
+              }}
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm font-medium text-slate-700">Enable SSO</span>
@@ -258,7 +261,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
             <input
               type="checkbox"
               checked={settings.ssoRequired}
-              onChange={(e) => setSettings((s) => ({ ...s, ssoRequired: e.target.checked }))}
+              onChange={(e) => {
+                setSettings((s) => ({ ...s, ssoRequired: e.target.checked }));
+              }}
               disabled={!settings.ssoEnabled}
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
             />
@@ -279,7 +284,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
             <input
               type="email"
               value={newFallbackEmail}
-              onChange={(e) => setNewFallbackEmail(e.target.value)}
+              onChange={(e) => {
+                setNewFallbackEmail(e.target.value);
+              }}
               placeholder="admin@district.edu"
               className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
             />
@@ -300,7 +307,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
                 >
                   <span className="text-sm text-slate-700">{email}</span>
                   <button
-                    onClick={() => removeFallbackEmail(email)}
+                    onClick={() => {
+                      removeFallbackEmail(email);
+                    }}
                     className="text-slate-400 hover:text-red-500"
                   >
                     <X className="h-4 w-4" />
@@ -318,10 +327,15 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Protocol</label>
+            <label htmlFor="sso-protocol" className="block text-sm font-medium text-slate-700 mb-1">
+              Protocol
+            </label>
             <select
+              id="sso-protocol"
               value={config.protocol}
-              onChange={(e) => setConfig((c) => ({ ...c, protocol: e.target.value as 'SAML' | 'OIDC' }))}
+              onChange={(e) => {
+                setConfig((c) => ({ ...c, protocol: e.target.value as 'SAML' | 'OIDC' }));
+              }}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="OIDC">OpenID Connect (OIDC)</option>
@@ -330,11 +344,19 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Display Name</label>
+            <label
+              htmlFor="sso-display-name"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Display Name
+            </label>
             <input
+              id="sso-display-name"
               type="text"
               value={config.name}
-              onChange={(e) => setConfig((c) => ({ ...c, name: e.target.value }))}
+              onChange={(e) => {
+                setConfig((c) => ({ ...c, name: e.target.value }));
+              }}
               placeholder="e.g., District Google Workspace"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
             />
@@ -348,39 +370,65 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Issuer URL</label>
+                <label
+                  htmlFor="sso-issuer-url"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  Issuer URL
+                </label>
                 <input
+                  id="sso-issuer-url"
                   type="url"
                   value={config.issuer}
-                  onChange={(e) => setConfig((c) => ({ ...c, issuer: e.target.value }))}
+                  onChange={(e) => {
+                    setConfig((c) => ({ ...c, issuer: e.target.value }));
+                  }}
                   placeholder="https://accounts.google.com"
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Client ID</label>
+                <label
+                  htmlFor="sso-client-id"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  Client ID
+                </label>
                 <input
+                  id="sso-client-id"
                   type="text"
                   value={config.clientId ?? ''}
-                  onChange={(e) => setConfig((c) => ({ ...c, clientId: e.target.value }))}
+                  onChange={(e) => {
+                    setConfig((c) => ({ ...c, clientId: e.target.value }));
+                  }}
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Client Secret</label>
+                <label
+                  htmlFor="sso-client-secret"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  Client Secret
+                </label>
                 <div className="relative">
                   <input
+                    id="sso-client-secret"
                     type={showSecret ? 'text' : 'password'}
                     value={config.clientSecretRef ?? ''}
-                    onChange={(e) => setConfig((c) => ({ ...c, clientSecretRef: e.target.value }))}
+                    onChange={(e) => {
+                      setConfig((c) => ({ ...c, clientSecretRef: e.target.value }));
+                    }}
                     placeholder="Enter client secret (will be stored securely)"
                     className="w-full rounded-md border border-slate-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowSecret(!showSecret)}
+                    onClick={() => {
+                      setShowSecret(!showSecret);
+                    }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -389,48 +437,76 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label
+                  htmlFor="sso-auth-endpoint"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
                   Authorization Endpoint
                 </label>
                 <input
+                  id="sso-auth-endpoint"
                   type="url"
                   value={config.authorizationEndpoint ?? ''}
-                  onChange={(e) => setConfig((c) => ({ ...c, authorizationEndpoint: e.target.value }))}
+                  onChange={(e) => {
+                    setConfig((c) => ({ ...c, authorizationEndpoint: e.target.value }));
+                  }}
                   placeholder="https://..."
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Token Endpoint</label>
+                <label
+                  htmlFor="sso-token-endpoint"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  Token Endpoint
+                </label>
                 <input
+                  id="sso-token-endpoint"
                   type="url"
                   value={config.tokenEndpoint ?? ''}
-                  onChange={(e) => setConfig((c) => ({ ...c, tokenEndpoint: e.target.value }))}
+                  onChange={(e) => {
+                    setConfig((c) => ({ ...c, tokenEndpoint: e.target.value }));
+                  }}
                   placeholder="https://..."
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">JWKS URI</label>
+                <label
+                  htmlFor="sso-jwks-uri"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  JWKS URI
+                </label>
                 <input
+                  id="sso-jwks-uri"
                   type="url"
                   value={config.jwksUri ?? ''}
-                  onChange={(e) => setConfig((c) => ({ ...c, jwksUri: e.target.value }))}
+                  onChange={(e) => {
+                    setConfig((c) => ({ ...c, jwksUri: e.target.value }));
+                  }}
                   placeholder="https://..."
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label
+                  htmlFor="sso-userinfo-endpoint"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
                   UserInfo Endpoint (optional)
                 </label>
                 <input
+                  id="sso-userinfo-endpoint"
                   type="url"
                   value={config.userinfoEndpoint ?? ''}
-                  onChange={(e) => setConfig((c) => ({ ...c, userinfoEndpoint: e.target.value }))}
+                  onChange={(e) => {
+                    setConfig((c) => ({ ...c, userinfoEndpoint: e.target.value }));
+                  }}
                   placeholder="https://..."
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
@@ -439,9 +515,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
 
             <div className="p-3 bg-slate-50 rounded-md">
               <p className="text-xs text-slate-600">
-                <strong>Tip:</strong> For Google Workspace, Azure AD, Okta, and other major providers,
-                you can use OIDC Discovery to auto-fill these fields. Enter the issuer URL and click
-                &quot;Discover&quot;.
+                <strong>Tip:</strong> For Google Workspace, Azure AD, Okta, and other major
+                providers, you can use OIDC Discovery to auto-fill these fields. Enter the issuer
+                URL and click &quot;Discover&quot;.
               </p>
             </div>
           </div>
@@ -454,9 +530,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <span className="block text-sm font-medium text-slate-700 mb-1">
                   Upload IdP Metadata (XML)
-                </label>
+                </span>
                 <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
                   <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
                   <input
@@ -472,42 +548,60 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
                   >
                     Click to upload metadata file
                   </label>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Or configure manually below
-                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Or configure manually below</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="sso-saml-entity-id"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     IdP Entity ID (Issuer)
                   </label>
                   <input
+                    id="sso-saml-entity-id"
                     type="text"
                     value={config.issuer}
-                    onChange={(e) => setConfig((c) => ({ ...c, issuer: e.target.value }))}
+                    onChange={(e) => {
+                      setConfig((c) => ({ ...c, issuer: e.target.value }));
+                    }}
                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">SSO URL</label>
+                  <label
+                    htmlFor="sso-saml-url"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
+                    SSO URL
+                  </label>
                   <input
+                    id="sso-saml-url"
                     type="url"
                     value={config.ssoUrl ?? ''}
-                    onChange={(e) => setConfig((c) => ({ ...c, ssoUrl: e.target.value }))}
+                    onChange={(e) => {
+                      setConfig((c) => ({ ...c, ssoUrl: e.target.value }));
+                    }}
                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="sso-x509-cert"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     X.509 Certificate
                   </label>
                   <textarea
+                    id="sso-x509-cert"
                     value={config.x509Certificate ?? ''}
-                    onChange={(e) => setConfig((c) => ({ ...c, x509Certificate: e.target.value }))}
+                    onChange={(e) => {
+                      setConfig((c) => ({ ...c, x509Certificate: e.target.value }));
+                    }}
                     rows={4}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:ring-blue-500"
@@ -539,31 +633,55 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email Claim</label>
+            <label
+              htmlFor="sso-email-claim"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Email Claim
+            </label>
             <input
+              id="sso-email-claim"
               type="text"
               value={config.emailClaim}
-              onChange={(e) => setConfig((c) => ({ ...c, emailClaim: e.target.value }))}
+              onChange={(e) => {
+                setConfig((c) => ({ ...c, emailClaim: e.target.value }));
+              }}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Name Claim</label>
+            <label
+              htmlFor="sso-name-claim"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Name Claim
+            </label>
             <input
+              id="sso-name-claim"
               type="text"
               value={config.nameClaim}
-              onChange={(e) => setConfig((c) => ({ ...c, nameClaim: e.target.value }))}
+              onChange={(e) => {
+                setConfig((c) => ({ ...c, nameClaim: e.target.value }));
+              }}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role Claim</label>
+            <label
+              htmlFor="sso-role-claim"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Role Claim
+            </label>
             <input
+              id="sso-role-claim"
               type="text"
               value={config.roleClaim}
-              onChange={(e) => setConfig((c) => ({ ...c, roleClaim: e.target.value }))}
+              onChange={(e) => {
+                setConfig((c) => ({ ...c, roleClaim: e.target.value }));
+              }}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
@@ -587,12 +705,12 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
                 <span className="text-slate-400">→</span>
                 <select
                   value={aivoRole}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setConfig((c) => ({
                       ...c,
                       roleMapping: { ...c.roleMapping, [idpRole]: e.target.value },
-                    }))
-                  }
+                    }));
+                  }}
                   className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="TEACHER">Teacher</option>
@@ -600,12 +718,12 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
                   <option value="DISTRICT_ADMIN">District Admin</option>
                 </select>
                 <button
-                  onClick={() =>
+                  onClick={() => {
                     setConfig((c) => {
                       const { [idpRole]: _, ...rest } = c.roleMapping ?? {};
                       return { ...c, roleMapping: rest };
-                    })
-                  }
+                    });
+                  }}
                   className="p-2 text-slate-400 hover:text-red-500"
                 >
                   <X className="h-4 w-4" />
@@ -614,12 +732,12 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
             ))}
 
             <RoleMappingAdder
-              onAdd={(idpRole, aivoRole) =>
+              onAdd={(idpRole, aivoRole) => {
                 setConfig((c) => ({
                   ...c,
                   roleMapping: { ...c.roleMapping, [idpRole]: aivoRole },
-                }))
-              }
+                }));
+              }}
             />
           </div>
         </div>
@@ -633,7 +751,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
           <input
             type="checkbox"
             checked={config.autoProvisionUsers}
-            onChange={(e) => setConfig((c) => ({ ...c, autoProvisionUsers: e.target.checked }))}
+            onChange={(e) => {
+              setConfig((c) => ({ ...c, autoProvisionUsers: e.target.checked }));
+            }}
             className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
           />
           <span className="text-sm font-medium text-slate-700">
@@ -642,10 +762,18 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
         </label>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Default Role</label>
+          <label
+            htmlFor="sso-default-role"
+            className="block text-sm font-medium text-slate-700 mb-1"
+          >
+            Default Role
+          </label>
           <select
+            id="sso-default-role"
             value={config.defaultRole}
-            onChange={(e) => setConfig((c) => ({ ...c, defaultRole: e.target.value }))}
+            onChange={(e) => {
+              setConfig((c) => ({ ...c, defaultRole: e.target.value }));
+            }}
             className="w-full max-w-xs rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
           >
             <option value="TEACHER">Teacher</option>
@@ -696,7 +824,11 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
             disabled={saving}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            {saving ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
             Save Configuration
           </button>
         </div>
@@ -711,9 +843,9 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
 
 function RoleMappingAdder({
   onAdd,
-}: {
+}: Readonly<{
   onAdd: (idpRole: string, aivoRole: string) => void;
-}) {
+}>) {
   const [idpRole, setIdpRole] = useState('');
   const [aivoRole, setAivoRole] = useState('TEACHER');
 
@@ -729,14 +861,18 @@ function RoleMappingAdder({
       <input
         type="text"
         value={idpRole}
-        onChange={(e) => setIdpRole(e.target.value)}
+        onChange={(e) => {
+          setIdpRole(e.target.value);
+        }}
         placeholder="IdP role value"
         className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
       />
       <span className="text-slate-400">→</span>
       <select
         value={aivoRole}
-        onChange={(e) => setAivoRole(e.target.value)}
+        onChange={(e) => {
+          setAivoRole(e.target.value);
+        }}
         className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
       >
         <option value="TEACHER">Teacher</option>
