@@ -1,0 +1,180 @@
+# Apollo Router Configuration
+# See: https://www.apollographql.com/docs/router/configuration/overview
+#
+# This configuration defines how Apollo Router handles GraphQL requests
+# for the AIVO federated supergraph.
+
+# =============================================================================
+# Supergraph Configuration
+# =============================================================================
+supergraph:
+  # Path to the composed supergraph schema
+  path: /apollo/supergraph.graphql
+  # Introspection enabled for development, disable in production
+  introspection: true
+
+# =============================================================================
+# Listen Configuration
+# =============================================================================
+listen:
+  - 0.0.0.0:4000
+
+# =============================================================================
+# Headers - Propagate context headers from Kong
+# =============================================================================
+headers:
+  all:
+    request:
+      # Propagate context headers from Kong (dash_context plugin)
+      - propagate:
+          named: X-Tenant-ID
+      - propagate:
+          named: X-User-ID
+      - propagate:
+          named: X-Roles
+      - propagate:
+          named: X-Learner-ID
+      - propagate:
+          named: X-Request-ID
+      # Add router-specific header for tracing
+      - insert:
+          name: X-Apollo-Router
+          value: "true"
+
+# =============================================================================
+# CORS Configuration
+# =============================================================================
+cors:
+  # Origins allowed in development (restrict in production)
+  origins:
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://localhost:3002
+    - http://localhost:8080
+  allow_credentials: true
+  methods:
+    - GET
+    - POST
+    - OPTIONS
+
+# =============================================================================
+# Limits - Query complexity and depth limits
+# =============================================================================
+limits:
+  # Maximum query depth (prevents deeply nested queries)
+  max_depth: 15
+  # Maximum query height
+  max_height: 200
+  # Maximum number of aliases in a query
+  max_aliases: 30
+  # Maximum number of root fields
+  max_root_fields: 20
+
+# =============================================================================
+# Traffic Shaping
+# =============================================================================
+traffic_shaping:
+  all:
+    # Global timeout for subgraph requests
+    timeout: 30s
+  router:
+    # Router-level timeout
+    timeout: 60s
+  subgraphs:
+    # Per-subgraph overrides
+    auth:
+      timeout: 10s
+    ai-orchestrator:
+      timeout: 120s  # AI requests may take longer
+    reports:
+      timeout: 60s   # Report generation may take time
+
+# =============================================================================
+# Telemetry
+# =============================================================================
+telemetry:
+  # Apollo Studio reporting (disabled for local dev)
+  apollo:
+    field_level_instrumentation_sampler: deferred
+  
+  # OpenTelemetry export for distributed tracing
+  exporters:
+    tracing:
+      otlp:
+        enabled: false  # Enable when OTLP collector is available
+        endpoint: http://otel-collector:4317
+  
+  # Instrument subgraph requests
+  instrumentation:
+    spans:
+      mode: spec_compliant
+      default_attribute_requirement_level: recommended
+      subgraph:
+        attributes:
+          subgraph.name: true
+          subgraph.graphql.operation.name: true
+
+# =============================================================================
+# Include Support (Rhai Scripts)
+# =============================================================================
+include_subgraph_errors:
+  all: true
+
+# =============================================================================
+# Rhai Scripts for Custom Logic (RBAC)
+# =============================================================================
+rhai:
+  scripts: /apollo/rhai
+  main: rbac.rhai
+
+# =============================================================================
+# Coprocessor for External RBAC (Alternative to Rhai)
+# =============================================================================
+# coprocessor:
+#   url: http://rbac-coprocessor:8080
+#   timeout: 1s
+#   router:
+#     request:
+#       headers: true
+#       body: true
+#   subgraph:
+#     all:
+#       request:
+#         headers: true
+
+# =============================================================================
+# Sandbox (GraphQL Playground)
+# =============================================================================
+sandbox:
+  enabled: true
+
+# =============================================================================
+# Homepage
+# =============================================================================
+homepage:
+  enabled: true
+
+# =============================================================================
+# Health Check
+# =============================================================================
+health_check:
+  listen: 0.0.0.0:8088
+  enabled: true
+  path: /health
+
+# =============================================================================
+# Query Planning
+# =============================================================================
+query_planning:
+  # Enable query plan caching
+  cache:
+    in_memory:
+      limit: 1000
+  
+  # Experimental features
+  experimental_paths_limit: 1000
+
+# =============================================================================
+# Preview Features (for @defer directive support)
+# =============================================================================
+preview_defer_support: true

@@ -1,0 +1,131 @@
+# Kong + Apollo Router Local Development Setup
+#
+# Usage:
+#   docker-compose up -d
+#
+# Services:
+#   kong:          http://localhost:8000 (proxy), http://localhost:8001 (admin)
+#   apollo-router: http://localhost:4000 (graphql)
+#   postgres:      localhost:5432 (for Kong if DB mode needed)
+#   redis:         localhost:6379 (for rate limiting)
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Kong Gateway
+  # ==========================================================================
+  kong:
+    image: kong:3.6-ubuntu
+    container_name: aivo-kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000, 0.0.0.0:8443 ssl"
+      KONG_ADMIN_LISTEN: "127.0.0.1:8001"
+      KONG_ADMIN_GUI_LISTEN: "0.0.0.0:8002"
+      KONG_PLUGINS: "bundled,dash_context,learner_scope,consent_gate"
+      KONG_LUA_PACKAGE_PATH: "/kong/plugins/?.lua;/kong/plugins/?/init.lua;;"
+      KONG_LOG_LEVEL: debug
+      # JWT validation
+      KONG_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:-}
+      # Service discovery for plugins
+      AUTH_SVC_URL: http://host.docker.internal:3010
+      CONSENT_SVC_URL: http://host.docker.internal:3020
+    ports:
+      - "8000:8000"   # Proxy (HTTP)
+      - "8443:8443"   # Proxy (HTTPS)
+      - "8001:8001"   # Admin API
+      - "8002:8002"   # Kong Manager (GUI)
+    volumes:
+      - ./kong.yml:/kong/kong.yml:ro
+      - ./plugins:/kong/plugins:ro
+      - ./certs:/kong/certs:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ==========================================================================
+  # Apollo Router (GraphQL Federation)
+  # ==========================================================================
+  apollo-router:
+    image: ghcr.io/apollographql/router:v1.45.0
+    container_name: aivo-apollo-router
+    environment:
+      APOLLO_ROUTER_SUPERGRAPH_PATH: /apollo/supergraph.graphql
+      APOLLO_ROUTER_CONFIG_PATH: /apollo/router.yaml
+      APOLLO_TELEMETRY_DISABLED: "true"
+      # Pass through from Kong
+      RUST_LOG: info
+    ports:
+      - "4000:4000"  # GraphQL endpoint
+    volumes:
+      - ../apollo/router.yaml:/apollo/router.yaml:ro
+      - ../apollo/supergraph.graphql:/apollo/supergraph.graphql:ro
+      - ../apollo/rhai:/apollo/rhai:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ==========================================================================
+  # Redis (for rate limiting state)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: aivo-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+
+  # ==========================================================================
+  # PostgreSQL (optional - for Kong DB mode or development)
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: aivo-postgres
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong
+      POSTGRES_DB: kong
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+    profiles:
+      - db  # Only starts with --profile db
+
+networks:
+  aivo-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:

@@ -1,0 +1,410 @@
+# Learner Model Service Subgraph Schema (Apollo Federation)
+#
+# This subgraph provides learner data, virtual brain state, and learning plans.
+# It's the source of truth for learner entities in the federation.
+
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.5", import: ["@key", "@shareable", "@external", "@requires", "@provides", "@tag"])
+
+# =============================================================================
+# Custom Directives
+# =============================================================================
+
+directive @rbac(roles: [Role!]!) on FIELD_DEFINITION
+directive @auth on FIELD_DEFINITION
+directive @consent(type: ConsentType!) on FIELD_DEFINITION
+
+enum Role {
+  PARENT
+  LEARNER
+  TEACHER
+  THERAPIST
+  DISTRICT_ADMIN
+  PLATFORM_ADMIN
+  SUPPORT
+  CURRICULUM_AUTHOR
+  CURRICULUM_REVIEWER
+  DISTRICT_CONTENT_ADMIN
+}
+
+enum ConsentType {
+  BASELINE_ASSESSMENT
+  AI_TUTOR
+  RESEARCH_ANALYTICS
+}
+
+# =============================================================================
+# Types
+# =============================================================================
+
+"""A learner in the system"""
+type Learner @key(fields: "id") {
+  """Unique learner identifier"""
+  id: ID!
+  """Associated user account ID"""
+  userId: ID!
+  """Display name"""
+  displayName: String!
+  """Current grade level (1-12)"""
+  gradeLevel: Int
+  """Tenant ID"""
+  tenantId: ID!
+  """Classrooms the learner belongs to"""
+  classrooms: [Classroom!]!
+  """Virtual brain - AI learning model (requires consent)"""
+  virtualBrain: VirtualBrain @consent(type: AI_TUTOR)
+  """Current learning plan"""
+  learningPlan: LearningPlan
+  """Mastery levels by subject/skill"""
+  masteryLevels: [MasteryLevel!]!
+  """Record creation timestamp"""
+  createdAt: String!
+  """Last update timestamp"""
+  updatedAt: String!
+}
+
+"""Classroom entity"""
+type Classroom @key(fields: "id") {
+  """Unique classroom identifier"""
+  id: ID!
+  """Classroom name"""
+  name: String!
+  """Teacher user ID"""
+  teacherId: ID!
+  """Grade level of the classroom"""
+  gradeLevel: Int
+  """Subject if subject-specific"""
+  subject: String
+  """Learners in this classroom"""
+  learners(first: Int, after: String): LearnerConnection!
+  """Tenant ID"""
+  tenantId: ID!
+  """Creation timestamp"""
+  createdAt: String!
+}
+
+"""Virtual brain - the AI model of a learner's knowledge state"""
+type VirtualBrain {
+  """Learner this virtual brain belongs to"""
+  learnerId: ID!
+  """Knowledge state (skill mastery levels)"""
+  knowledgeState: KnowledgeState!
+  """Learning preferences and style"""
+  preferences: LearningPreferences!
+  """Predicted optimal learning paths"""
+  predictedPaths: [LearningPath!]!
+  """Last time the model was updated"""
+  lastUpdated: String!
+  """Model version"""
+  modelVersion: String!
+}
+
+"""Knowledge state representing skill mastery"""
+type KnowledgeState {
+  """Overall mastery score (0-100)"""
+  overallMastery: Float!
+  """Mastery by subject"""
+  subjectMastery: [SubjectMastery!]!
+  """Skills that need attention"""
+  weakAreas: [SkillArea!]!
+  """Strong skill areas"""
+  strongAreas: [SkillArea!]!
+}
+
+"""Subject-level mastery"""
+type SubjectMastery {
+  """Subject name"""
+  subject: String!
+  """Mastery score (0-100)"""
+  mastery: Float!
+  """Number of skills assessed"""
+  skillsAssessed: Int!
+  """Skills in this subject"""
+  skills: [SkillMastery!]!
+}
+
+"""Skill-level mastery"""
+type SkillMastery {
+  """Skill identifier"""
+  skillId: String!
+  """Skill name"""
+  skillName: String!
+  """Mastery score (0-100)"""
+  mastery: Float!
+  """Number of practices"""
+  practiceCount: Int!
+  """Last practiced timestamp"""
+  lastPracticed: String
+}
+
+"""Skill area for weak/strong classification"""
+type SkillArea {
+  """Skill identifier"""
+  skillId: String!
+  """Skill name"""
+  skillName: String!
+  """Subject this skill belongs to"""
+  subject: String!
+  """Current mastery level"""
+  mastery: Float!
+}
+
+"""Learning preferences derived from behavior"""
+type LearningPreferences {
+  """Preferred content modality (visual, auditory, kinesthetic)"""
+  preferredModality: String
+  """Optimal session duration in minutes"""
+  optimalSessionDuration: Int
+  """Best time of day for learning"""
+  bestTimeOfDay: String
+  """Preferred difficulty level"""
+  preferredDifficulty: String
+  """Engagement patterns"""
+  engagementPatterns: [EngagementPattern!]!
+}
+
+"""Engagement pattern"""
+type EngagementPattern {
+  """Pattern type"""
+  type: String!
+  """Pattern value"""
+  value: String!
+  """Confidence score"""
+  confidence: Float!
+}
+
+"""Predicted learning path"""
+type LearningPath {
+  """Path identifier"""
+  id: ID!
+  """Path name"""
+  name: String!
+  """Skills covered by this path"""
+  skills: [String!]!
+  """Estimated time to complete (minutes)"""
+  estimatedDuration: Int!
+  """Predicted mastery gain"""
+  predictedMasteryGain: Float!
+  """Priority score"""
+  priority: Float!
+}
+
+"""Current learning plan for a learner"""
+type LearningPlan {
+  """Plan identifier"""
+  id: ID!
+  """Learner ID"""
+  learnerId: ID!
+  """Goals in this plan"""
+  goals: [LearningGoal!]!
+  """Current focus areas"""
+  focusAreas: [String!]!
+  """Plan creation timestamp"""
+  createdAt: String!
+  """Plan last updated"""
+  updatedAt: String!
+}
+
+"""Learning goal"""
+type LearningGoal {
+  """Goal identifier"""
+  id: ID!
+  """Goal description"""
+  description: String!
+  """Target skill"""
+  targetSkillId: String
+  """Target mastery level"""
+  targetMastery: Float
+  """Current progress (0-100)"""
+  progress: Float!
+  """Due date if set"""
+  dueDate: String
+  """Goal status"""
+  status: GoalStatus!
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+"""Mastery level for a specific skill"""
+type MasteryLevel {
+  """Skill ID"""
+  skillId: String!
+  """Skill name"""
+  skillName: String!
+  """Subject"""
+  subject: String!
+  """Mastery level (0-100)"""
+  level: Float!
+  """Last updated"""
+  lastUpdated: String!
+}
+
+# =============================================================================
+# Queries
+# =============================================================================
+
+type Query {
+  """Get learner by ID"""
+  learner(id: ID!): Learner @auth
+  
+  """List learners (filtered by access rights)"""
+  learners(
+    classroomId: ID
+    gradeLevel: Int
+    first: Int
+    after: String
+  ): LearnerConnection @auth @rbac(roles: [TEACHER, THERAPIST, PARENT, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Get classroom by ID"""
+  classroom(id: ID!): Classroom @auth @rbac(roles: [TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """List classrooms"""
+  classrooms(
+    teacherId: ID
+    first: Int
+    after: String
+  ): ClassroomConnection @auth @rbac(roles: [TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Get virtual brain for a learner (requires consent)"""
+  virtualBrain(learnerId: ID!): VirtualBrain @auth @consent(type: AI_TUTOR)
+  
+  """Get learning plan for a learner"""
+  learningPlan(learnerId: ID!): LearningPlan @auth
+  
+  """Get mastery levels for a learner"""
+  masteryLevels(
+    learnerId: ID!
+    subject: String
+  ): [MasteryLevel!]! @auth
+}
+
+# =============================================================================
+# Mutations
+# =============================================================================
+
+type Mutation {
+  """Create a new learner"""
+  createLearner(input: CreateLearnerInput!): Learner @auth @rbac(roles: [TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Update learner information"""
+  updateLearner(id: ID!, input: UpdateLearnerInput!): Learner @auth
+  
+  """Add learner to classroom"""
+  addLearnerToClassroom(
+    learnerId: ID!
+    classroomId: ID!
+  ): Learner @auth @rbac(roles: [TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Remove learner from classroom"""
+  removeLearnerFromClassroom(
+    learnerId: ID!
+    classroomId: ID!
+  ): Learner @auth @rbac(roles: [TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Create a learning goal"""
+  createLearningGoal(input: CreateLearningGoalInput!): LearningGoal @auth @rbac(roles: [TEACHER, THERAPIST, PARENT])
+  
+  """Update learning goal"""
+  updateLearningGoal(id: ID!, input: UpdateLearningGoalInput!): LearningGoal @auth @rbac(roles: [TEACHER, THERAPIST, PARENT])
+  
+  """Record mastery assessment"""
+  recordMasteryAssessment(input: RecordMasteryInput!): MasteryLevel @auth @rbac(roles: [TEACHER, THERAPIST])
+  
+  """Refresh virtual brain model"""
+  refreshVirtualBrain(learnerId: ID!): VirtualBrain @auth @consent(type: AI_TUTOR) @rbac(roles: [TEACHER, THERAPIST, PLATFORM_ADMIN])
+}
+
+# =============================================================================
+# Input Types
+# =============================================================================
+
+input CreateLearnerInput {
+  """User ID to associate"""
+  userId: ID!
+  """Display name"""
+  displayName: String!
+  """Grade level"""
+  gradeLevel: Int
+}
+
+input UpdateLearnerInput {
+  """Display name"""
+  displayName: String
+  """Grade level"""
+  gradeLevel: Int
+}
+
+input CreateLearningGoalInput {
+  """Learner ID"""
+  learnerId: ID!
+  """Goal description"""
+  description: String!
+  """Target skill ID"""
+  targetSkillId: String
+  """Target mastery level"""
+  targetMastery: Float
+  """Due date"""
+  dueDate: String
+}
+
+input UpdateLearningGoalInput {
+  """Goal description"""
+  description: String
+  """Target mastery"""
+  targetMastery: Float
+  """Progress update"""
+  progress: Float
+  """Status update"""
+  status: GoalStatus
+  """Due date"""
+  dueDate: String
+}
+
+input RecordMasteryInput {
+  """Learner ID"""
+  learnerId: ID!
+  """Skill ID"""
+  skillId: String!
+  """New mastery level"""
+  masteryLevel: Float!
+  """Assessment source"""
+  source: String!
+}
+
+# =============================================================================
+# Connections
+# =============================================================================
+
+type LearnerConnection {
+  edges: [LearnerEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type LearnerEdge {
+  node: Learner!
+  cursor: String!
+}
+
+type ClassroomConnection {
+  edges: [ClassroomEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ClassroomEdge {
+  node: Classroom!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}

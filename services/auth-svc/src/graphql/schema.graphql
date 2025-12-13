@@ -1,0 +1,205 @@
+# Auth Service Subgraph Schema (Apollo Federation)
+#
+# This subgraph provides user authentication and authorization data.
+# It exposes the User entity and auth-related queries/mutations.
+
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.5", import: ["@key", "@shareable", "@external", "@requires", "@provides", "@tag"])
+
+# =============================================================================
+# Custom Directives (inherited from supergraph)
+# =============================================================================
+
+directive @rbac(roles: [Role!]!) on FIELD_DEFINITION
+directive @auth on FIELD_DEFINITION
+
+enum Role {
+  PARENT
+  LEARNER
+  TEACHER
+  THERAPIST
+  DISTRICT_ADMIN
+  PLATFORM_ADMIN
+  SUPPORT
+  CURRICULUM_AUTHOR
+  CURRICULUM_REVIEWER
+  DISTRICT_CONTENT_ADMIN
+}
+
+# =============================================================================
+# Types
+# =============================================================================
+
+"""User account in the system"""
+type User @key(fields: "id") {
+  """Unique user identifier"""
+  id: ID!
+  """User's email address"""
+  email: String!
+  """Display name (may differ from email)"""
+  displayName: String
+  """Assigned roles determining permissions"""
+  roles: [Role!]!
+  """Tenant this user belongs to"""
+  tenantId: ID!
+  """Account creation timestamp"""
+  createdAt: String!
+  """Last update timestamp"""
+  updatedAt: String!
+  """Whether email is verified"""
+  emailVerified: Boolean!
+  """Last login timestamp"""
+  lastLoginAt: String
+  """MFA enabled status"""
+  mfaEnabled: Boolean!
+}
+
+"""Authentication tokens returned after login"""
+type AuthTokens {
+  """JWT access token"""
+  accessToken: String!
+  """Refresh token for obtaining new access tokens"""
+  refreshToken: String!
+  """Token expiration time in seconds"""
+  expiresIn: Int!
+  """Token type (always "Bearer")"""
+  tokenType: String!
+}
+
+"""Result of learner scope verification"""
+type ScopeVerificationResult {
+  """Whether access is authorized"""
+  authorized: Boolean!
+  """Relationship type if authorized"""
+  relationship: String
+  """Reason if not authorized"""
+  reason: String
+}
+
+# =============================================================================
+# Queries
+# =============================================================================
+
+type Query {
+  """Get the currently authenticated user"""
+  me: User @auth
+  
+  """Get user by ID (admin only)"""
+  user(id: ID!): User @auth @rbac(roles: [PLATFORM_ADMIN, SUPPORT])
+  
+  """List users in tenant (admin only)"""
+  users(
+    tenantId: ID
+    role: Role
+    first: Int
+    after: String
+  ): UserConnection @auth @rbac(roles: [DISTRICT_ADMIN, PLATFORM_ADMIN, SUPPORT])
+  
+  """Verify if user has access to a learner's data"""
+  verifyLearnerScope(
+    userId: ID!
+    learnerId: ID!
+  ): ScopeVerificationResult @auth
+}
+
+# =============================================================================
+# Mutations
+# =============================================================================
+
+type Mutation {
+  """User login"""
+  login(input: LoginInput!): AuthTokens
+  
+  """User registration"""
+  register(input: RegisterInput!): AuthTokens
+  
+  """Refresh access token"""
+  refreshToken(refreshToken: String!): AuthTokens
+  
+  """User logout (invalidates refresh token)"""
+  logout: Boolean @auth
+  
+  """Update user profile"""
+  updateProfile(input: UpdateProfileInput!): User @auth
+  
+  """Change password"""
+  changePassword(input: ChangePasswordInput!): Boolean @auth
+  
+  """Request password reset"""
+  requestPasswordReset(email: String!): Boolean
+  
+  """Reset password with token"""
+  resetPassword(input: ResetPasswordInput!): Boolean
+  
+  """Enable MFA"""
+  enableMfa: MfaSetup @auth
+  
+  """Verify MFA setup"""
+  verifyMfaSetup(code: String!): Boolean @auth
+  
+  """Disable MFA"""
+  disableMfa(code: String!): Boolean @auth
+}
+
+# =============================================================================
+# Input Types
+# =============================================================================
+
+input LoginInput {
+  email: String!
+  password: String!
+  mfaCode: String
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  displayName: String
+  tenantSlug: String!
+}
+
+input UpdateProfileInput {
+  displayName: String
+  email: String
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+}
+
+input ResetPasswordInput {
+  token: String!
+  newPassword: String!
+}
+
+# =============================================================================
+# Other Types
+# =============================================================================
+
+type MfaSetup {
+  """Secret for TOTP setup"""
+  secret: String!
+  """QR code data URL"""
+  qrCode: String!
+  """Backup codes"""
+  backupCodes: [String!]!
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  node: User!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}

@@ -1,0 +1,246 @@
+# Consent Service Subgraph Schema (Apollo Federation)
+#
+# This subgraph manages consent records for learners.
+# It exposes consent queries, mutations, and the Consent entity.
+
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.5", import: ["@key", "@shareable", "@external", "@requires", "@provides", "@tag"])
+
+# =============================================================================
+# Custom Directives
+# =============================================================================
+
+directive @rbac(roles: [Role!]!) on FIELD_DEFINITION
+directive @auth on FIELD_DEFINITION
+
+enum Role {
+  PARENT
+  LEARNER
+  TEACHER
+  THERAPIST
+  DISTRICT_ADMIN
+  PLATFORM_ADMIN
+  SUPPORT
+  CURRICULUM_AUTHOR
+  CURRICULUM_REVIEWER
+  DISTRICT_CONTENT_ADMIN
+}
+
+# =============================================================================
+# Enums
+# =============================================================================
+
+"""Types of consent that can be requested"""
+enum ConsentType {
+  """Consent for baseline/diagnostic assessments"""
+  BASELINE_ASSESSMENT
+  """Consent for AI-powered tutoring features"""
+  AI_TUTOR
+  """Consent for anonymized research analytics"""
+  RESEARCH_ANALYTICS
+}
+
+"""Current status of a consent record"""
+enum ConsentStatus {
+  """Consent requested but not yet acted upon"""
+  PENDING
+  """Consent has been granted by parent/guardian"""
+  GRANTED
+  """Consent was previously granted but has been revoked"""
+  REVOKED
+  """Consent has passed its expiration date"""
+  EXPIRED
+}
+
+# =============================================================================
+# Types
+# =============================================================================
+
+"""A consent record for a learner"""
+type Consent @key(fields: "id") {
+  """Unique consent identifier"""
+  id: ID!
+  """ID of the learner this consent applies to"""
+  learnerId: ID!
+  """Type of consent"""
+  consentType: ConsentType!
+  """Current status"""
+  status: ConsentStatus!
+  """ID of the parent who granted consent (if granted)"""
+  grantedByParentId: ID
+  """When consent was granted"""
+  grantedAt: String
+  """When consent was revoked (if revoked)"""
+  revokedAt: String
+  """When consent expires (optional)"""
+  expiresAt: String
+  """Tenant ID"""
+  tenantId: ID!
+  """Reason for current status"""
+  reason: String
+  """Additional metadata"""
+  metadata: ConsentMetadata
+  """Record creation timestamp"""
+  createdAt: String!
+  """Last update timestamp"""
+  updatedAt: String!
+}
+
+"""Metadata associated with a consent record"""
+type ConsentMetadata {
+  """IP address when consent was granted"""
+  ipAddress: String
+  """User agent when consent was granted"""
+  userAgent: String
+  """Version of consent form presented"""
+  consentFormVersion: String
+}
+
+"""Summary of consent status for a learner"""
+type ConsentSummary {
+  """Learner ID"""
+  learnerId: ID!
+  """Status of baseline assessment consent"""
+  baselineAssessment: ConsentStatus!
+  """Status of AI tutor consent"""
+  aiTutor: ConsentStatus!
+  """Status of research analytics consent"""
+  researchAnalytics: ConsentStatus!
+}
+
+"""Result of a consent status check"""
+type ConsentStatusResult {
+  """The consent type checked"""
+  consentType: ConsentType!
+  """Whether consent is granted"""
+  granted: Boolean!
+  """The consent status"""
+  status: ConsentStatus!
+  """Expiration date if applicable"""
+  expiresAt: String
+}
+
+# =============================================================================
+# Queries
+# =============================================================================
+
+type Query {
+  """Get a specific consent record by ID"""
+  consent(id: ID!): Consent @auth @rbac(roles: [PARENT, TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN, SUPPORT])
+  
+  """Get all consents for a learner"""
+  consents(
+    learnerId: ID!
+    consentType: ConsentType
+  ): [Consent!]! @auth @rbac(roles: [PARENT, TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN, SUPPORT])
+  
+  """Get consent summary for a learner"""
+  consentSummary(learnerId: ID!): ConsentSummary @auth @rbac(roles: [PARENT, TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN, SUPPORT])
+  
+  """Check if a specific consent is granted (for service-to-service calls)"""
+  checkConsentStatus(
+    learnerId: ID!
+    consentType: ConsentType!
+  ): ConsentStatusResult @auth
+  
+  """List learners with pending consent requests (for parents)"""
+  pendingConsents: [Consent!]! @auth @rbac(roles: [PARENT])
+}
+
+# =============================================================================
+# Mutations
+# =============================================================================
+
+type Mutation {
+  """Request consent from a parent (creates PENDING consent)"""
+  requestConsent(input: RequestConsentInput!): Consent @auth @rbac(roles: [TEACHER, DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Grant consent (parents only)"""
+  grantConsent(input: GrantConsentInput!): Consent @auth @rbac(roles: [PARENT])
+  
+  """Revoke consent (parents only)"""
+  revokeConsent(input: RevokeConsentInput!): Consent @auth @rbac(roles: [PARENT])
+  
+  """Update consent expiration (admin only)"""
+  updateConsentExpiration(input: UpdateConsentExpirationInput!): Consent @auth @rbac(roles: [DISTRICT_ADMIN, PLATFORM_ADMIN])
+  
+  """Bulk grant consents for multiple learners (parents only)"""
+  bulkGrantConsent(input: BulkGrantConsentInput!): [Consent!]! @auth @rbac(roles: [PARENT])
+  
+  """Bulk revoke consents (parents only)"""
+  bulkRevokeConsent(input: BulkRevokeConsentInput!): [Consent!]! @auth @rbac(roles: [PARENT])
+}
+
+# =============================================================================
+# Input Types
+# =============================================================================
+
+input RequestConsentInput {
+  """Learner ID"""
+  learnerId: ID!
+  """Type of consent being requested"""
+  consentType: ConsentType!
+  """Optional message to parent"""
+  message: String
+  """Optional expiration date"""
+  expiresAt: String
+}
+
+input GrantConsentInput {
+  """Learner ID"""
+  learnerId: ID!
+  """Type of consent to grant"""
+  consentType: ConsentType!
+  """Optional expiration date"""
+  expiresAt: String
+  """Optional consent form version acknowledged"""
+  consentFormVersion: String
+}
+
+input RevokeConsentInput {
+  """ID of the consent record to revoke"""
+  consentId: ID!
+  """Reason for revocation"""
+  reason: String!
+}
+
+input UpdateConsentExpirationInput {
+  """Consent ID"""
+  consentId: ID!
+  """New expiration date (null to remove expiration)"""
+  expiresAt: String
+  """Reason for update"""
+  reason: String!
+}
+
+input BulkGrantConsentInput {
+  """Learner IDs"""
+  learnerIds: [ID!]!
+  """Type of consent to grant"""
+  consentType: ConsentType!
+  """Optional expiration date"""
+  expiresAt: String
+}
+
+input BulkRevokeConsentInput {
+  """Consent IDs to revoke"""
+  consentIds: [ID!]!
+  """Reason for revocation"""
+  reason: String!
+}
+
+# =============================================================================
+# Federation Entity Extension
+# =============================================================================
+
+"""Extend Learner type from learner-model-svc"""
+type Learner @key(fields: "id", resolvable: false) {
+  id: ID!
+}
+
+extend type Learner {
+  """Consent records for this learner"""
+  consents: [Consent!]! @auth
+  """Consent summary for this learner"""
+  consentSummary: ConsentSummary @auth
+}

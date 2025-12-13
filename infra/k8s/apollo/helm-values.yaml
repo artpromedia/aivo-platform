@@ -1,0 +1,249 @@
+# Apollo Router Helm Values for AIVO Platform
+#
+# Install with:
+#   helm repo add apollo https://charts.apollographql.com/
+#   helm install apollo-router apollo/router -f helm-values.yaml -n aivo-gateway
+#
+# See: https://www.apollographql.com/docs/router/containerization/kubernetes
+
+# =============================================================================
+# Global Configuration
+# =============================================================================
+replicaCount: 2
+
+image:
+  repository: ghcr.io/apollographql/router
+  tag: "v1.45.0"
+  pullPolicy: IfNotPresent
+
+# =============================================================================
+# Router Configuration
+# =============================================================================
+router:
+  configuration:
+    # Supergraph configuration
+    supergraph:
+      path: /apollo/supergraph.graphql
+      introspection: false  # Disable in production
+    
+    # Listen configuration
+    listen:
+      - 0.0.0.0:4000
+    
+    # Headers propagation
+    headers:
+      all:
+        request:
+          - propagate:
+              named: X-Tenant-ID
+          - propagate:
+              named: X-User-ID
+          - propagate:
+              named: X-Roles
+          - propagate:
+              named: X-Learner-ID
+          - propagate:
+              named: X-Request-ID
+    
+    # CORS
+    cors:
+      origins:
+        - https://*.aivo.com
+      allow_credentials: true
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+    
+    # Query limits
+    limits:
+      max_depth: 15
+      max_height: 200
+      max_aliases: 30
+      max_root_fields: 20
+    
+    # Traffic shaping
+    traffic_shaping:
+      all:
+        timeout: 30s
+      router:
+        timeout: 60s
+      subgraphs:
+        auth:
+          timeout: 10s
+        ai-orchestrator:
+          timeout: 120s
+        reports:
+          timeout: 60s
+    
+    # Telemetry
+    telemetry:
+      apollo:
+        field_level_instrumentation_sampler: deferred
+      exporters:
+        tracing:
+          otlp:
+            enabled: true
+            endpoint: http://otel-collector.monitoring.svc.cluster.local:4317
+    
+    # Health check
+    health_check:
+      listen: 0.0.0.0:8088
+      enabled: true
+      path: /health
+
+# =============================================================================
+# Supergraph Schema ConfigMap
+# =============================================================================
+supergraphConfigMap:
+  name: apollo-supergraph
+  key: supergraph.graphql
+
+# =============================================================================
+# Rhai Scripts ConfigMap
+# =============================================================================
+rhaiConfigMap:
+  name: apollo-rhai-scripts
+
+# =============================================================================
+# Service Configuration
+# =============================================================================
+service:
+  type: ClusterIP  # Kong routes to this internally
+  port: 4000
+  
+  annotations: {}
+
+# =============================================================================
+# Resources
+# =============================================================================
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+# =============================================================================
+# Autoscaling
+# =============================================================================
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+# =============================================================================
+# Pod Disruption Budget
+# =============================================================================
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
+# =============================================================================
+# Probes
+# =============================================================================
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8088
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8088
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+# =============================================================================
+# Service Account
+# =============================================================================
+serviceAccount:
+  create: true
+  name: apollo-router
+
+# =============================================================================
+# Pod Security Context
+# =============================================================================
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# =============================================================================
+# Extra Volumes for Supergraph and Rhai
+# =============================================================================
+extraVolumes:
+  - name: supergraph
+    configMap:
+      name: apollo-supergraph
+  - name: rhai-scripts
+    configMap:
+      name: apollo-rhai-scripts
+
+extraVolumeMounts:
+  - name: supergraph
+    mountPath: /apollo/supergraph.graphql
+    subPath: supergraph.graphql
+    readOnly: true
+  - name: rhai-scripts
+    mountPath: /apollo/rhai
+    readOnly: true
+
+# =============================================================================
+# Node Affinity / Anti-Affinity
+# =============================================================================
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - apollo-router
+          topologyKey: kubernetes.io/hostname
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+env:
+  - name: APOLLO_TELEMETRY_DISABLED
+    value: "false"
+  - name: RUST_LOG
+    value: "info"
+
+# =============================================================================
+# Apollo Graph Ref (for managed federation)
+# =============================================================================
+# managedFederation:
+#   graphRef: "aivo@production"
+#   apiKeySecret:
+#     name: apollo-api-key
+#     key: key
+
+# =============================================================================
+# Service Monitor for Prometheus
+# =============================================================================
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s
+  labels:
+    release: prometheus

@@ -1,0 +1,614 @@
+# Kong Declarative Configuration
+# See: https://docs.konghq.com/gateway/latest/reference/db-less-and-declarative-config/
+#
+# This file defines all routes, services, plugins, and consumers for the AIVO platform.
+
+_format_version: "3.0"
+_transform: true
+
+# =============================================================================
+# SERVICES - Upstream service definitions
+# =============================================================================
+services:
+  # ---------------------------------------------------------------------------
+  # Auth Service
+  # ---------------------------------------------------------------------------
+  - name: auth-svc
+    url: http://host.docker.internal:3010
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - core
+
+  # ---------------------------------------------------------------------------
+  # Consent Service
+  # ---------------------------------------------------------------------------
+  - name: consent-svc
+    url: http://host.docker.internal:3020
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    retries: 2
+    tags:
+      - core
+
+  # ---------------------------------------------------------------------------
+  # Tenant Service
+  # ---------------------------------------------------------------------------
+  - name: tenant-svc
+    url: http://host.docker.internal:3030
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    retries: 2
+    tags:
+      - core
+
+  # ---------------------------------------------------------------------------
+  # Learner Model Service
+  # ---------------------------------------------------------------------------
+  - name: learner-model-svc
+    url: http://host.docker.internal:3040
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - learning
+
+  # ---------------------------------------------------------------------------
+  # Session Service
+  # ---------------------------------------------------------------------------
+  - name: session-svc
+    url: http://host.docker.internal:3050
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - learning
+
+  # ---------------------------------------------------------------------------
+  # Content Service
+  # ---------------------------------------------------------------------------
+  - name: content-svc
+    url: http://host.docker.internal:3060
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - content
+
+  # ---------------------------------------------------------------------------
+  # AI Orchestrator Service (Primary)
+  # ---------------------------------------------------------------------------
+  - name: ai-orchestrator-svc
+    url: http://host.docker.internal:3100
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 120000  # AI requests may take longer
+    retries: 1
+    tags:
+      - ai
+
+  # ---------------------------------------------------------------------------
+  # AI Orchestrator Service (Fallback)
+  # ---------------------------------------------------------------------------
+  - name: ai-orchestrator-svc-fallback
+    url: http://host.docker.internal:3101
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 120000
+    retries: 1
+    tags:
+      - ai
+      - fallback
+
+  # ---------------------------------------------------------------------------
+  # Reports Service
+  # ---------------------------------------------------------------------------
+  - name: reports-svc
+    url: http://host.docker.internal:3110
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 60000  # Reports may take time to generate
+    retries: 2
+    tags:
+      - analytics
+
+  # ---------------------------------------------------------------------------
+  # Analytics Service
+  # ---------------------------------------------------------------------------
+  - name: analytics-svc
+    url: http://host.docker.internal:3120
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - analytics
+
+  # ---------------------------------------------------------------------------
+  # Assessment Service
+  # ---------------------------------------------------------------------------
+  - name: assessment-svc
+    url: http://host.docker.internal:3130
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - assessment
+
+  # ---------------------------------------------------------------------------
+  # Baseline Service
+  # ---------------------------------------------------------------------------
+  - name: baseline-svc
+    url: http://host.docker.internal:3140
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - assessment
+
+  # ---------------------------------------------------------------------------
+  # Apollo Router (GraphQL)
+  # ---------------------------------------------------------------------------
+  - name: apollo-router
+    url: http://apollo-router:4000
+    connect_timeout: 5000
+    write_timeout: 30000
+    read_timeout: 60000
+    retries: 1
+    tags:
+      - graphql
+
+# =============================================================================
+# UPSTREAMS - Load balancing and health checks
+# =============================================================================
+upstreams:
+  # ---------------------------------------------------------------------------
+  # AI Orchestrator with Failover
+  # ---------------------------------------------------------------------------
+  - name: ai-orchestrator-upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 2
+          tcp_failures: 2
+          timeouts: 2
+        http_path: /health
+        timeout: 5
+        type: http
+      passive:
+        healthy:
+          successes: 2
+        unhealthy:
+          http_failures: 2
+          tcp_failures: 2
+          timeouts: 2
+        type: http
+    targets:
+      - target: host.docker.internal:3100
+        weight: 100
+        tags:
+          - primary
+      - target: host.docker.internal:3101
+        weight: 0  # Only used on failover
+        tags:
+          - fallback
+
+# =============================================================================
+# ROUTES - Request routing rules
+# =============================================================================
+routes:
+  # ---------------------------------------------------------------------------
+  # Health Check (no auth required)
+  # ---------------------------------------------------------------------------
+  - name: health-check
+    paths:
+      - /health
+    methods:
+      - GET
+    strip_path: false
+    service: auth-svc  # Any service can respond to health
+    plugins:
+      - name: request-termination
+        config:
+          status_code: 200
+          message: '{"status":"ok","gateway":"kong"}'
+          content_type: application/json
+
+  # ---------------------------------------------------------------------------
+  # Auth Routes (public)
+  # ---------------------------------------------------------------------------
+  - name: auth-public
+    paths:
+      - /api/v1/auth/login
+      - /api/v1/auth/register
+      - /api/v1/auth/refresh
+      - /api/v1/auth/sso
+      - /api/v1/auth/saml
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: auth-svc
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Auth Routes (authenticated)
+  # ---------------------------------------------------------------------------
+  - name: auth-protected
+    paths:
+      - /api/v1/auth
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: auth-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Tenant Routes
+  # ---------------------------------------------------------------------------
+  - name: tenant-routes
+    paths:
+      - /api/v1/tenants
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+    strip_path: false
+    service: tenant-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Consent Routes
+  # ---------------------------------------------------------------------------
+  - name: consent-routes
+    paths:
+      - /api/v1/consents
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: consent-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Learner Model Routes (requires learner scope check)
+  # ---------------------------------------------------------------------------
+  - name: learner-model-routes
+    paths:
+      - /api/v1/learners
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+    strip_path: false
+    service: learner-model-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: learner_scope
+        config:
+          auth_service_url: http://host.docker.internal:3010
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Session Routes
+  # ---------------------------------------------------------------------------
+  - name: session-routes
+    paths:
+      - /api/v1/sessions
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+    strip_path: false
+    service: session-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 300
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Content Routes
+  # ---------------------------------------------------------------------------
+  - name: content-routes
+    paths:
+      - /api/v1/content
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: content-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 500
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # AI Routes (requires consent gate + failover)
+  # ---------------------------------------------------------------------------
+  - name: ai-routes
+    paths:
+      - /api/v1/ai
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: ai-orchestrator-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: consent_gate
+        config:
+          consent_service_url: http://host.docker.internal:3020
+          required_consent_type: AI_TUTOR
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+          # Rate limit by consumer (tenant tier)
+          limit_by: consumer
+
+  # ---------------------------------------------------------------------------
+  # Assessment Routes
+  # ---------------------------------------------------------------------------
+  - name: assessment-routes
+    paths:
+      - /api/v1/assessments
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+    strip_path: false
+    service: assessment-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Baseline Assessment Routes (requires consent gate)
+  # ---------------------------------------------------------------------------
+  - name: baseline-routes
+    paths:
+      - /api/v1/baseline
+    methods:
+      - GET
+      - POST
+      - PUT
+    strip_path: false
+    service: baseline-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: consent_gate
+        config:
+          consent_service_url: http://host.docker.internal:3020
+          required_consent_type: BASELINE_ASSESSMENT
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Reports Routes
+  # ---------------------------------------------------------------------------
+  - name: reports-routes
+    paths:
+      - /api/v1/reports
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: reports-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 50
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Analytics Routes (requires consent gate for research analytics)
+  # ---------------------------------------------------------------------------
+  - name: analytics-research-routes
+    paths:
+      - /api/v1/analytics/research
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: analytics-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: consent_gate
+        config:
+          consent_service_url: http://host.docker.internal:3020
+          required_consent_type: RESEARCH_ANALYTICS
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  - name: analytics-routes
+    paths:
+      - /api/v1/analytics
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: analytics-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # GraphQL Route (Apollo Router)
+  # ---------------------------------------------------------------------------
+  - name: graphql-route
+    paths:
+      - /graphql
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: apollo-router
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 500
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+          limit_by: consumer
+
+# =============================================================================
+# CONSUMERS - API consumers (tenants/users with rate limit tiers)
+# =============================================================================
+consumers:
+  # Default consumer for authenticated requests
+  - username: default
+    custom_id: default
+    tags:
+      - tier:free
+
+# =============================================================================
+# PLUGINS - Global plugins applied to all routes
+# =============================================================================
+plugins:
+  # ---------------------------------------------------------------------------
+  # Correlation ID (global)
+  # ---------------------------------------------------------------------------
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid#counter
+      echo_downstream: true
+
+  # ---------------------------------------------------------------------------
+  # Prometheus Metrics (global)
+  # ---------------------------------------------------------------------------
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+
+  # ---------------------------------------------------------------------------
+  # Response Transformer - Add security headers (global)
+  # ---------------------------------------------------------------------------
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Content-Type-Options: nosniff"
+          - "X-Frame-Options: DENY"
+          - "X-XSS-Protection: 1; mode=block"
+          - "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+
+  # ---------------------------------------------------------------------------
+  # Request Size Limiting (global)
+  # ---------------------------------------------------------------------------
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10  # MB
+      size_unit: megabytes

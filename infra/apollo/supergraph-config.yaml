@@ -1,0 +1,81 @@
+# Supergraph Composition Configuration
+#
+# This file defines how to compose the supergraph from individual subgraphs.
+# Use with: rover supergraph compose --config ./supergraph-config.yaml
+#
+# See: https://www.apollographql.com/docs/federation/quickstart/setup
+
+federation_version: =2.5
+
+subgraphs:
+  # ==========================================================================
+  # Auth Service
+  # ==========================================================================
+  auth:
+    routing_url: http://auth-svc:3010/graphql
+    schema:
+      file: ../../services/auth-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Consent Service
+  # ==========================================================================
+  consent:
+    routing_url: http://consent-svc:3020/graphql
+    schema:
+      file: ../../services/consent-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Learner Model Service
+  # ==========================================================================
+  learner-model:
+    routing_url: http://learner-model-svc:3040/graphql
+    schema:
+      file: ../../services/learner-model-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Session Service (to be added)
+  # ==========================================================================
+  # session:
+  #   routing_url: http://session-svc:3050/graphql
+  #   schema:
+  #     file: ../../services/session-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Content Service (to be added)
+  # ==========================================================================
+  # content:
+  #   routing_url: http://content-svc:3060/graphql
+  #   schema:
+  #     file: ../../services/content-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # AI Orchestrator (to be added)
+  # ==========================================================================
+  # ai-orchestrator:
+  #   routing_url: http://ai-orchestrator-svc:3100/graphql
+  #   schema:
+  #     file: ../../services/ai-orchestrator/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Assessment Service (to be added)
+  # ==========================================================================
+  # assessment:
+  #   routing_url: http://assessment-svc:3130/graphql
+  #   schema:
+  #     file: ../../services/assessment-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Reports Service (to be added)
+  # ==========================================================================
+  # reports:
+  #   routing_url: http://reports-svc:3110/graphql
+  #   schema:
+  #     file: ../../services/reports-svc/src/graphql/schema.graphql
+  
+  # ==========================================================================
+  # Analytics Service (to be added)
+  # ==========================================================================
+  # analytics:
+  #   routing_url: http://analytics-svc:3120/graphql
+  #   schema:
+  #     file: ../../services/analytics-svc/src/graphql/schema.graphql

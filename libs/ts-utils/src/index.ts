@@ -18,3 +18,10 @@ export {
   type PublishResult,
   type BatchPublishResult,
 } from './event-publisher.js';
+
+export {
+  correlationIdMiddleware,
+  createCorrelatedHeaders,
+  createCorrelatedLogger,
+  type CorrelationIdOptions,
+} from './correlation-id.js';
