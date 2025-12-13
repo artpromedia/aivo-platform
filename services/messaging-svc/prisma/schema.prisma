@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Conversation type
+enum ConversationType {
+  DIRECT          // 1-to-1 conversation
+  GROUP           // Multi-participant group
+  CHANNEL         // Public/semi-public channel
+
+  @@map("conversation_type")
+}
+
+/// Participant role in conversation
+enum ParticipantRole {
+  OWNER           // Creator/owner
+  ADMIN           // Admin privileges
+  MEMBER          // Regular member
+
+  @@map("participant_role")
+}
+
+/// Message type
+enum MessageType {
+  TEXT            // Plain text message
+  IMAGE           // Image attachment
+  FILE            // File attachment
+  SYSTEM          // System message (user joined, etc.)
+  REPLY           // Reply to another message
+
+  @@map("message_type")
+}
+
+/// Message status
+enum MessageStatus {
+  SENDING         // Message being sent
+  SENT            // Message sent to server
+  DELIVERED       // Delivered to recipient
+  READ            // Read by recipient
+  FAILED          // Failed to send
+
+  @@map("message_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Conversation/Chat room
+model Conversation {
+  id                String              @id @default(uuid()) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  
+  // Metadata
+  type              ConversationType    @default(DIRECT)
+  name              String?             // Group/channel name
+  description       String?
+  avatarUrl         String?             @map("avatar_url")
+  
+  // Settings
+  isArchived        Boolean             @default(false) @map("is_archived")
+  isMuted           Boolean             @default(false) @map("is_muted")
+  
+  // Context linking
+  contextType       String?             @map("context_type") // 'session', 'goal', 'class', etc.
+  contextId         String?             @map("context_id") @db.Uuid
+  
+  // Stats
+  messageCount      Int                 @default(0) @map("message_count")
+  lastMessageAt     DateTime?           @map("last_message_at") @db.Timestamptz
+  lastMessagePreview String?            @map("last_message_preview")
+  
+  // Timestamps
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String              @map("created_by") @db.Uuid
+  
+  // Relations
+  participants      Participant[]
+  messages          Message[]
+
+  @@index([tenantId])
+  @@index([tenantId, contextType, contextId])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+/// Conversation participant
+model Participant {
+  id                String              @id @default(uuid()) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  conversationId    String              @map("conversation_id") @db.Uuid
+  userId            String              @map("user_id") @db.Uuid
+  
+  // Role and status
+  role              ParticipantRole     @default(MEMBER)
+  isActive          Boolean             @default(true) @map("is_active")
+  
+  // Preferences
+  isMuted           Boolean             @default(false) @map("is_muted")
+  isPinned          Boolean             @default(false) @map("is_pinned")
+  notificationsEnabled Boolean          @default(true) @map("notifications_enabled")
+  
+  // Read tracking
+  lastReadAt        DateTime?           @map("last_read_at") @db.Timestamptz
+  lastReadMessageId String?             @map("last_read_message_id") @db.Uuid
+  unreadCount       Int                 @default(0) @map("unread_count")
+  
+  // Timestamps
+  joinedAt          DateTime            @default(now()) @map("joined_at") @db.Timestamptz
+  leftAt            DateTime?           @map("left_at") @db.Timestamptz
+
+  // Relations
+  conversation      Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([tenantId, userId])
+  @@index([conversationId])
+  @@map("participants")
+}
+
+/// Message
+model Message {
+  id                String              @id @default(uuid()) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  conversationId    String              @map("conversation_id") @db.Uuid
+  senderId          String              @map("sender_id") @db.Uuid
+  
+  // Content
+  type              MessageType         @default(TEXT)
+  content           String
+  metadata          Json?               // Additional data (file info, etc.)
+  
+  // Reply context
+  replyToId         String?             @map("reply_to_id") @db.Uuid
+  
+  // Status
+  status            MessageStatus       @default(SENT)
+  
+  // Edit history
+  isEdited          Boolean             @default(false) @map("is_edited")
+  editedAt          DateTime?           @map("edited_at") @db.Timestamptz
+  originalContent   String?             @map("original_content")
+  
+  // Deletion
+  isDeleted         Boolean             @default(false) @map("is_deleted")
+  deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz
+  deletedBy         String?             @map("deleted_by") @db.Uuid
+  
+  // Timestamps
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  
+  // Relations
+  conversation      Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  replyTo           Message?            @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies           Message[]           @relation("MessageReplies")
+  readReceipts      ReadReceipt[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([tenantId])
+  @@map("messages")
+}
+
+/// Read receipt for message delivery confirmation
+model ReadReceipt {
+  id                String              @id @default(uuid()) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  messageId         String              @map("message_id") @db.Uuid
+  userId            String              @map("user_id") @db.Uuid
+  
+  // Timestamps
+  deliveredAt       DateTime?           @map("delivered_at") @db.Timestamptz
+  readAt            DateTime?           @map("read_at") @db.Timestamptz
+
+  // Relations
+  message           Message             @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("read_receipts")
+}

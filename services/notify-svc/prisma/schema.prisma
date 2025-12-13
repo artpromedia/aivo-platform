@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of notification
+enum NotificationType {
+  SYSTEM           // Platform system notifications
+  ACHIEVEMENT      // Learning achievements
+  REMINDER         // Session/homework reminders
+  GOAL_UPDATE      // Goal progress updates
+  SESSION_SUMMARY  // Session completion summaries
+  CONSENT_REQUEST  // Parental consent requests
+  MESSAGE          // In-app message notifications
+  ALERT            // Important alerts
+
+  @@map("notification_type")
+}
+
+/// Notification delivery channel
+enum DeliveryChannel {
+  IN_APP          // In-app notification
+  PUSH            // Mobile push (FCM/APNs)
+  EMAIL           // Email delivery
+  SMS             // SMS (for critical alerts)
+
+  @@map("delivery_channel")
+}
+
+/// Delivery status
+enum DeliveryStatus {
+  PENDING         // Queued for delivery
+  SENT            // Sent to provider
+  DELIVERED       // Confirmed delivered
+  FAILED          // Delivery failed
+  BOUNCED         // Email/SMS bounced
+
+  @@map("delivery_status")
+}
+
+/// Notification priority
+enum NotificationPriority {
+  LOW             // Can be batched/delayed
+  NORMAL          // Standard delivery
+  HIGH            // Prioritized delivery
+  URGENT          // Immediate delivery required
+
+  @@map("notification_priority")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// User notification preferences
+model NotificationPreference {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  userId            String            @unique @map("user_id") @db.Uuid
+  
+  // Channel preferences
+  inAppEnabled      Boolean           @default(true) @map("in_app_enabled")
+  pushEnabled       Boolean           @default(true) @map("push_enabled")
+  emailEnabled      Boolean           @default(true) @map("email_enabled")
+  smsEnabled        Boolean           @default(false) @map("sms_enabled")
+  
+  // Type preferences (JSON map of NotificationType -> enabled)
+  typePreferences   Json              @default("{}") @map("type_preferences")
+  
+  // Quiet hours (time strings like "22:00")
+  quietHoursStart   String?           @map("quiet_hours_start")
+  quietHoursEnd     String?           @map("quiet_hours_end")
+  quietHoursTimezone String?          @map("quiet_hours_timezone")
+  
+  // Digest preferences
+  digestEnabled     Boolean           @default(false) @map("digest_enabled")
+  digestFrequency   String?           @map("digest_frequency") // 'daily', 'weekly'
+  digestTime        String?           @map("digest_time") // "09:00"
+  
+  // Timestamps
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, userId])
+  @@map("notification_preferences")
+}
+
+/// Push notification device tokens
+model DeviceToken {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  
+  // Token details
+  token             String    @unique
+  platform          String    // 'ios', 'android', 'web'
+  deviceId          String?   @map("device_id")
+  appVersion        String?   @map("app_version")
+  
+  // Status
+  isActive          Boolean   @default(true) @map("is_active")
+  lastUsedAt        DateTime? @map("last_used_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, userId])
+  @@index([token])
+  @@map("device_tokens")
+}
+
+/// Notification record
+model Notification {
+  id                String               @id @default(uuid()) @db.Uuid
+  tenantId          String               @map("tenant_id") @db.Uuid
+  recipientId       String               @map("recipient_id") @db.Uuid
+  
+  // Notification content
+  type              NotificationType
+  title             String
+  body              String
+  imageUrl          String?              @map("image_url")
+  actionUrl         String?              @map("action_url")
+  actionData        Json?                @map("action_data")
+  
+  // Priority and expiry
+  priority          NotificationPriority @default(NORMAL)
+  expiresAt         DateTime?            @map("expires_at") @db.Timestamptz
+  
+  // Grouping
+  groupKey          String?              @map("group_key")
+  collapseKey       String?              @map("collapse_key")
+  
+  // Source context
+  sourceType        String?              @map("source_type") // 'session', 'goal', 'message', etc.
+  sourceId          String?              @map("source_id") @db.Uuid
+  
+  // Status
+  isRead            Boolean              @default(false) @map("is_read")
+  readAt            DateTime?            @map("read_at") @db.Timestamptz
+  isDismissed       Boolean              @default(false) @map("is_dismissed")
+  dismissedAt       DateTime?            @map("dismissed_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  deliveries        DeliveryLog[]
+
+  @@index([tenantId, recipientId, createdAt(sort: Desc)])
+  @@index([recipientId, isRead, createdAt(sort: Desc)])
+  @@index([groupKey])
+  @@index([expiresAt])
+  @@map("notifications")
+}
+
+/// Delivery attempt log
+model DeliveryLog {
+  id                String         @id @default(uuid()) @db.Uuid
+  notificationId    String         @map("notification_id") @db.Uuid
+  
+  // Delivery details
+  channel           DeliveryChannel
+  status            DeliveryStatus @default(PENDING)
+  
+  // Provider details
+  providerName      String?        @map("provider_name") // 'fcm', 'apns', 'sendgrid', 'twilio'
+  providerMessageId String?        @map("provider_message_id")
+  
+  // Timestamps
+  attemptedAt       DateTime       @default(now()) @map("attempted_at") @db.Timestamptz
+  sentAt            DateTime?      @map("sent_at") @db.Timestamptz
+  deliveredAt       DateTime?      @map("delivered_at") @db.Timestamptz
+  
+  // Error details
+  errorCode         String?        @map("error_code")
+  errorMessage      String?        @map("error_message")
+  
+  // Retry info
+  retryCount        Int            @default(0) @map("retry_count")
+  nextRetryAt       DateTime?      @map("next_retry_at") @db.Timestamptz
+
+  // Relations
+  notification      Notification   @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
+  @@index([channel, status])
+  @@index([status, nextRetryAt])
+  @@map("delivery_logs")
+}
+
+/// Notification template
+model NotificationTemplate {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @map("tenant_id") @db.Uuid // null = global template
+  
+  // Template identity
+  templateKey       String           @map("template_key") // e.g., 'session.completed'
+  type              NotificationType
+  channel           DeliveryChannel
+  locale            String           @default("en")
+  
+  // Content templates (supports variable interpolation)
+  titleTemplate     String           @map("title_template")
+  bodyTemplate      String           @map("body_template")
+  imageUrlTemplate  String?          @map("image_url_template")
+  actionUrlTemplate String?          @map("action_url_template")
+  
+  // Email-specific
+  emailSubject      String?          @map("email_subject")
+  emailHtmlTemplate String?          @map("email_html_template")
+  
+  // Status
+  isActive          Boolean          @default(true) @map("is_active")
+  
+  // Timestamps
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, templateKey, channel, locale])
+  @@index([templateKey, channel])
+  @@map("notification_templates")
+}
+
+/// Scheduled/queued notifications
+model NotificationQueue {
+  id                String               @id @default(uuid()) @db.Uuid
+  tenantId          String               @map("tenant_id") @db.Uuid
+  recipientId       String               @map("recipient_id") @db.Uuid
+  
+  // Notification content
+  type              NotificationType
+  priority          NotificationPriority @default(NORMAL)
+  templateKey       String?              @map("template_key")
+  templateData      Json?                @map("template_data")
+  
+  // Or direct content
+  title             String?
+  body              String?
+  
+  // Scheduling
+  scheduledFor      DateTime             @map("scheduled_for") @db.Timestamptz
+  channels          DeliveryChannel[]
+  
+  // Status
+  processedAt       DateTime?            @map("processed_at") @db.Timestamptz
+  notificationId    String?              @map("notification_id") @db.Uuid
+  
+  // Timestamps
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([scheduledFor, processedAt])
+  @@index([tenantId, recipientId])
+  @@map("notification_queue")
+}

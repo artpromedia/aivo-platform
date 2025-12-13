@@ -1,6 +1,6 @@
 export default {
   "*.{ts,tsx,js,jsx}": [
-    "eslint --fix",
+    "eslint --fix --no-warn-ignored",
     "prettier --write"
   ],
   "*.{json,md,mdx,css,scss,html}": [

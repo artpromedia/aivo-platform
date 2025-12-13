@@ -1,7 +1,5 @@
 /**
- * Goal Service Entry Point
- *
- * Starts the Fastify server with all routes registered.
+ * Messaging Service Entry Point
  */
 
 import { config } from './config.js';
@@ -11,7 +9,6 @@ import { prisma } from './prisma.js';
 async function start() {
   const app = await buildApp();
 
-  // Graceful shutdown
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, 'Received shutdown signal');
     await app.close();
@@ -24,7 +21,7 @@ async function start() {
 
   try {
     await app.listen({ port: config.port, host: config.host });
-    console.log(`🎯 Goal Service running on http://${config.host}:${config.port}`);
+    console.log(`💬 Messaging Service running on http://${config.host}:${config.port}`);
   } catch (err) {
     app.log.error(err);
     await prisma.$disconnect();

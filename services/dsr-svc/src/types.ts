@@ -1,8 +1,26 @@
 export type DsrRequestType = 'EXPORT' | 'DELETE';
 
-export type DsrRequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED' | 'FAILED';
+export type DsrRequestStatus = 
+  | 'PENDING'           // Initial state, awaiting review or processing
+  | 'APPROVED'          // Approved for processing (delete requests)
+  | 'IN_PROGRESS'       // Currently being processed
+  | 'GRACE_PERIOD'      // Deletion scheduled, within cancellation window
+  | 'COMPLETED'         // Successfully completed
+  | 'REJECTED'          // Rejected by admin
+  | 'CANCELLED'         // Cancelled during grace period
+  | 'FAILED';           // Processing failed
 
 export type DsrJobStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export type DsrAuditAction =
+  | 'CREATED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'STARTED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'DOWNLOADED';
 
 export interface DsrRequest {
   id: string;
@@ -21,6 +39,32 @@ export interface DsrRequest {
   created_at: Date;
   updated_at: Date;
   completed_at: Date | null;
+  // Grace period fields for DELETE requests
+  grace_period_ends_at: Date | null;
+  scheduled_deletion_at: Date | null;
+  cancelled_at: Date | null;
+  cancelled_by_user_id: string | null;
+  cancellation_reason: string | null;
+}
+
+export interface DsrAuditLogEntry {
+  id: string;
+  dsr_request_id: string;
+  action: DsrAuditAction;
+  performed_by_user_id: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  details_json: Record<string, unknown> | null;
+  created_at: Date;
+}
+
+export interface DsrRateLimit {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  request_type: DsrRequestType;
+  request_date: Date;
+  request_count: number;
 }
 
 export interface DsrJob {
@@ -156,8 +200,49 @@ export interface ConsentLogExport {
   created_at: string;
 }
 
+// ════════════════════════════════════════════════════════════════════════════════
+// CONSENT DATA EXPORT (COPPA COMPLIANCE)
+// ════════════════════════════════════════════════════════════════════════════════
+
+export interface ConsentRecordExport {
+  id: string;
+  learner_id: string;
+  consent_type: string;
+  status: string;
+  granted_at: string | null;
+  revoked_at: string | null;
+  expires_at: string | null;
+  granted_by_user_id: string | null;
+  text_version: string | null;
+  last_updated_at: string;
+}
+
+export interface ParentalConsentExport {
+  parent_id: string;
+  learner_id: string;
+  consent_link_token_hash: string;
+  status: string;
+  created_at: string;
+  used_at: string | null;
+  verification_method: string | null;
+  verification_status: string | null;
+  verification_completed_at: string | null;
+}
+
 export interface ExportBundle {
+  /** Export metadata */
+  export_info: {
+    generated_at: string;
+    request_id: string;
+    learner_id: string;
+    export_version: '2.0';
+    includes_consent_data: boolean;
+  };
   learner: LearnerProfileExport;
+  /** All consent records for this learner */
+  consent_records: ConsentRecordExport[];
+  /** Parental consent verification history */
+  parental_consents: ParentalConsentExport[];
   assessments: AssessmentExport[];
   sessions: SessionExport[];
   events: EventExport[];
@@ -166,3 +251,67 @@ export interface ExportBundle {
   ai_call_logs: AiCallLogExport[];
   consent_logs: ConsentLogExport[];
 }
+
+// ════════════════════════════════════════════════════════════════════════════════
+// DSR API RESPONSES
+// ════════════════════════════════════════════════════════════════════════════════
+
+export interface DsrRequestSummary {
+  id: string;
+  request_type: DsrRequestType;
+  status: DsrRequestStatus;
+  learner_id: string;
+  learner_name: string | null;
+  created_at: Date;
+  /** For DELETE requests - when grace period ends */
+  grace_period_ends_at: Date | null;
+  /** For DELETE requests - when deletion will occur */
+  scheduled_deletion_at: Date | null;
+  /** Days remaining in grace period (null if not in grace period) */
+  grace_period_days_remaining: number | null;
+  /** Can this request be cancelled? */
+  can_cancel: boolean;
+  /** For EXPORT requests - download URL if ready */
+  download_url: string | null;
+  /** Download expiration if available */
+  download_expires_at: Date | null;
+}
+
+export interface DsrCreateResponse {
+  request_id: string;
+  request_type: DsrRequestType;
+  status: DsrRequestStatus;
+  message: string;
+  /** For DELETE requests - confirmation of grace period */
+  grace_period_info?: {
+    grace_period_ends_at: Date;
+    scheduled_deletion_at: Date;
+    cancellation_deadline: Date;
+  };
+  /** For EXPORT requests - estimated completion time */
+  estimated_completion?: Date;
+}
+
+export interface RateLimitInfo {
+  allowed: boolean;
+  requests_today: number;
+  max_requests_per_day: number;
+  next_allowed_at: Date | null;
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ════════════════════════════════════════════════════════════════════════════════
+
+export const DSR_CONFIG = {
+  /** Grace period for deletion requests in days */
+  GRACE_PERIOD_DAYS: 30,
+  /** Maximum export requests per user per day */
+  MAX_EXPORT_REQUESTS_PER_DAY: 1,
+  /** Maximum delete requests per user per day */
+  MAX_DELETE_REQUESTS_PER_DAY: 1,
+  /** How long export files are available for download */
+  EXPORT_RETENTION_DAYS: 7,
+  /** Export file format version */
+  EXPORT_VERSION: '2.0' as const,
+} as const;

@@ -4,12 +4,18 @@ import type {
   CreateDsrJobInput,
   CreateDsrRequestInput,
   CreateExportArtifactInput,
+  DsrAuditAction,
+  DsrAuditLogEntry,
   DsrExportArtifact,
   DsrJob,
   DsrJobStatus,
+  DsrRateLimit,
   DsrRequest,
   DsrRequestStatus,
+  DsrRequestType,
+  RateLimitInfo,
 } from './types.js';
+import { DSR_CONFIG } from './types.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // MAPPERS
@@ -33,6 +39,36 @@ function mapRequest(row: Record<string, unknown>): DsrRequest {
     created_at: row.created_at as Date,
     updated_at: row.updated_at as Date,
     completed_at: row.completed_at as Date | null,
+    // Grace period fields
+    grace_period_ends_at: row.grace_period_ends_at as Date | null,
+    scheduled_deletion_at: row.scheduled_deletion_at as Date | null,
+    cancelled_at: row.cancelled_at as Date | null,
+    cancelled_by_user_id: row.cancelled_by_user_id as string | null,
+    cancellation_reason: row.cancellation_reason as string | null,
+  };
+}
+
+function mapAuditEntry(row: Record<string, unknown>): DsrAuditLogEntry {
+  return {
+    id: row.id as string,
+    dsr_request_id: row.dsr_request_id as string,
+    action: row.action as DsrAuditAction,
+    performed_by_user_id: row.performed_by_user_id as string | null,
+    ip_address: row.ip_address as string | null,
+    user_agent: row.user_agent as string | null,
+    details_json: row.details_json as Record<string, unknown> | null,
+    created_at: row.created_at as Date,
+  };
+}
+
+function mapRateLimit(row: Record<string, unknown>): DsrRateLimit {
+  return {
+    id: row.id as string,
+    tenant_id: row.tenant_id as string,
+    user_id: row.user_id as string,
+    request_type: row.request_type as DsrRequestType,
+    request_date: row.request_date as Date,
+    request_count: row.request_count as number,
   };
 }
 
@@ -544,4 +580,271 @@ export async function markDeclined(
   reason: string
 ): Promise<DsrRequest> {
   return updateRequestStatus(pool, id, tenantId, 'REJECTED', { reason, completed: true });
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// GRACE PERIOD (30-DAY DELETION CANCELLATION WINDOW)
+// ════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Create a DELETE request with 30-day grace period
+ * During grace period, the request can be cancelled by the parent
+ */
+export async function createDeleteRequestWithGracePeriod(
+  pool: Pool,
+  input: CreateDsrRequestInput,
+  gracePeriodDays: number = DSR_CONFIG.GRACE_PERIOD_DAYS
+): Promise<DsrRequest> {
+  if (input.requestType !== 'DELETE') {
+    throw new Error('Grace period only applies to DELETE requests');
+  }
+
+  const { rows } = await pool.query(
+    `INSERT INTO dsr_requests (
+      tenant_id, requested_by_user_id, learner_id, request_type, status, 
+      reason, metadata_json, grace_period_ends_at, scheduled_deletion_at
+    )
+    VALUES (
+      $1, $2, $3, $4, 'GRACE_PERIOD', $5, $6,
+      now() + ($7 || ' days')::INTERVAL,
+      now() + ($7 || ' days')::INTERVAL + '1 day'::INTERVAL
+    )
+    RETURNING *`,
+    [
+      input.tenantId,
+      input.requestedByUserId,
+      input.learnerId,
+      input.requestType,
+      input.reason ?? null,
+      input.metadata ? JSON.stringify(input.metadata) : null,
+      gracePeriodDays,
+    ]
+  );
+  return mapRequest(rows[0]);
+}
+
+/**
+ * Cancel a deletion request during grace period
+ */
+export async function cancelDeletionRequest(
+  pool: Pool,
+  id: string,
+  tenantId: string,
+  cancelledByUserId: string,
+  reason?: string
+): Promise<DsrRequest> {
+  const { rows } = await pool.query(
+    `UPDATE dsr_requests
+     SET status = 'CANCELLED',
+         cancelled_at = now(),
+         cancelled_by_user_id = $1,
+         cancellation_reason = $2,
+         completed_at = now(),
+         updated_at = now()
+     WHERE id = $3 
+       AND tenant_id = $4
+       AND status = 'GRACE_PERIOD'
+       AND grace_period_ends_at > now()
+     RETURNING *`,
+    [cancelledByUserId, reason ?? null, id, tenantId]
+  );
+
+  if (rows.length === 0) {
+    throw new Error(
+      'Cannot cancel: Request not found, not in grace period, or grace period has ended'
+    );
+  }
+
+  return mapRequest(rows[0]);
+}
+
+/**
+ * Get deletion requests whose grace period has ended and are ready for processing
+ */
+export async function getDeletionRequestsReadyForProcessing(
+  pool: Pool
+): Promise<DsrRequest[]> {
+  const { rows } = await pool.query(
+    `SELECT * FROM dsr_requests
+     WHERE request_type = 'DELETE'
+       AND status = 'GRACE_PERIOD'
+       AND grace_period_ends_at <= now()
+     ORDER BY grace_period_ends_at ASC`
+  );
+  return rows.map(mapRequest);
+}
+
+/**
+ * Calculate remaining days in grace period
+ */
+export function calculateGracePeriodDaysRemaining(request: DsrRequest): number | null {
+  if (!request.grace_period_ends_at) return null;
+  if (request.status !== 'GRACE_PERIOD') return null;
+
+  const now = new Date();
+  const endDate = new Date(request.grace_period_ends_at);
+  const diffMs = endDate.getTime() - now.getTime();
+
+  if (diffMs <= 0) return 0;
+
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// RATE LIMITING
+// ════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Check if user can make a DSR request (rate limit check)
+ */
+export async function checkRateLimit(
+  pool: Pool,
+  tenantId: string,
+  userId: string,
+  requestType: DsrRequestType
+): Promise<RateLimitInfo> {
+  const maxRequests =
+    requestType === 'EXPORT'
+      ? DSR_CONFIG.MAX_EXPORT_REQUESTS_PER_DAY
+      : DSR_CONFIG.MAX_DELETE_REQUESTS_PER_DAY;
+
+  const { rows } = await pool.query(
+    `SELECT request_count FROM dsr_rate_limits
+     WHERE tenant_id = $1 AND user_id = $2 AND request_type = $3 AND request_date = CURRENT_DATE`,
+    [tenantId, userId, requestType]
+  );
+
+  const currentCount = rows.length > 0 ? (rows[0].request_count as number) : 0;
+
+  // Calculate next allowed time (tomorrow midnight)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  return {
+    allowed: currentCount < maxRequests,
+    requests_today: currentCount,
+    max_requests_per_day: maxRequests,
+    next_allowed_at: currentCount >= maxRequests ? tomorrow : null,
+  };
+}
+
+/**
+ * Record a DSR request for rate limiting
+ */
+export async function recordRateLimitedRequest(
+  pool: Pool,
+  tenantId: string,
+  userId: string,
+  requestType: DsrRequestType
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO dsr_rate_limits (tenant_id, user_id, request_type, request_date, request_count)
+     VALUES ($1, $2, $3, CURRENT_DATE, 1)
+     ON CONFLICT (tenant_id, user_id, request_type, request_date)
+     DO UPDATE SET request_count = dsr_rate_limits.request_count + 1`,
+    [tenantId, userId, requestType]
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// AUDIT LOGGING
+// ════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Create an audit log entry for a DSR action
+ */
+export async function createAuditEntry(
+  pool: Pool,
+  dsrRequestId: string,
+  action: DsrAuditAction,
+  opts: {
+    performedByUserId?: string | null;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+    details?: Record<string, unknown> | null;
+  } = {}
+): Promise<DsrAuditLogEntry> {
+  const { rows } = await pool.query(
+    `INSERT INTO dsr_audit_log (
+      dsr_request_id, action, performed_by_user_id, ip_address, user_agent, details_json
+    )
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *`,
+    [
+      dsrRequestId,
+      action,
+      opts.performedByUserId ?? null,
+      opts.ipAddress ?? null,
+      opts.userAgent ?? null,
+      opts.details ? JSON.stringify(opts.details) : null,
+    ]
+  );
+  return mapAuditEntry(rows[0]);
+}
+
+/**
+ * Get audit trail for a DSR request
+ */
+export async function getAuditTrail(
+  pool: Pool,
+  dsrRequestId: string
+): Promise<DsrAuditLogEntry[]> {
+  const { rows } = await pool.query(
+    `SELECT * FROM dsr_audit_log 
+     WHERE dsr_request_id = $1 
+     ORDER BY created_at ASC`,
+    [dsrRequestId]
+  );
+  return rows.map(mapAuditEntry);
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════════════════════════════════
+
+export type NotificationType =
+  | 'CONFIRMATION'
+  | 'GRACE_PERIOD_REMINDER'
+  | 'COMPLETION'
+  | 'CANCELLATION';
+
+/**
+ * Record a notification sent for a DSR request
+ */
+export async function recordNotification(
+  pool: Pool,
+  dsrRequestId: string,
+  notificationType: NotificationType,
+  emailTo: string,
+  emailSubject: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO dsr_notifications (dsr_request_id, notification_type, email_to, email_subject, metadata_json)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [dsrRequestId, notificationType, emailTo, emailSubject, metadata ? JSON.stringify(metadata) : null]
+  );
+}
+
+/**
+ * Get requests needing grace period reminders (e.g., 7 days before deletion)
+ */
+export async function getRequestsNeedingGracePeriodReminder(
+  pool: Pool,
+  daysBeforeDeletion: number = 7
+): Promise<DsrRequest[]> {
+  const { rows } = await pool.query(
+    `SELECT r.* FROM dsr_requests r
+     WHERE r.request_type = 'DELETE'
+       AND r.status = 'GRACE_PERIOD'
+       AND r.scheduled_deletion_at <= now() + ($1 || ' days')::INTERVAL
+       AND NOT EXISTS (
+         SELECT 1 FROM dsr_notifications n
+         WHERE n.dsr_request_id = r.id AND n.notification_type = 'GRACE_PERIOD_REMINDER'
+       )
+     ORDER BY r.scheduled_deletion_at ASC`,
+    [daysBeforeDeletion]
+  );
+  return rows.map(mapRequest);
 }

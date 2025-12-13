@@ -1,19 +1,34 @@
 import type { Pool } from 'pg';
 
 import { config } from './config.js';
-import type { ExportBundle } from './types.js';
+import type { 
+  ExportBundle, 
+  ConsentRecordExport, 
+  ParentalConsentExport 
+} from './types.js';
+import { DSR_CONFIG } from './types.js';
 
 export class ExportError extends Error {}
 
 /**
  * Build a GDPR/COPPA-compliant export bundle for a learner.
  * Includes all personal data, AI interactions, and consent history.
+ *
+ * Export bundle version 2.0 includes:
+ * - All consent records (required for GDPR Article 15)
+ * - Parental consent verification history (required for COPPA)
+ * - Sanitized AI interaction logs
  */
 export async function buildExportBundle(
   pool: Pool,
-  params: { tenantId: string; parentId: string; learnerId: string }
+  params: { 
+    tenantId: string; 
+    parentId: string; 
+    learnerId: string;
+    requestId: string;
+  }
 ): Promise<ExportBundle> {
-  const { tenantId, parentId, learnerId } = params;
+  const { tenantId, parentId, learnerId, requestId } = params;
 
   const learnerResult = await pool.query(
     `SELECT id, tenant_id, parent_id, first_name, last_name, grade_level, status, created_at, deleted_at
@@ -116,8 +131,80 @@ export async function buildExportBundle(
     [tenantId, parentId]
   );
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // CONSENT RECORDS (GDPR Article 15 / COPPA compliance)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // Fetch all consent records for this learner
+  const consentRecordsResult = await pool.query(
+    `SELECT 
+       id, learner_id, consent_type, status, granted_at, revoked_at,
+       expires_at, granted_by_user_id, text_version, updated_at as last_updated_at
+     FROM consents
+     WHERE tenant_id = $1 AND learner_id = $2
+     ORDER BY updated_at DESC`,
+    [tenantId, learnerId]
+  );
+
+  const consentRecords: ConsentRecordExport[] = consentRecordsResult.rows.map((row) => ({
+    id: row.id,
+    learner_id: row.learner_id,
+    consent_type: row.consent_type,
+    status: row.status,
+    granted_at: row.granted_at ? new Date(row.granted_at).toISOString() : null,
+    revoked_at: row.revoked_at ? new Date(row.revoked_at).toISOString() : null,
+    expires_at: row.expires_at ? new Date(row.expires_at).toISOString() : null,
+    granted_by_user_id: row.granted_by_user_id,
+    text_version: row.text_version,
+    last_updated_at: new Date(row.last_updated_at).toISOString(),
+  }));
+
+  // Fetch parental consent link/verification history for COPPA compliance
+  // Note: token_hash is included for audit trail (not the actual token)
+  const parentalConsentsResult = await pool.query(
+    `SELECT 
+       pcl.parent_id,
+       pcl.learner_id,
+       pcl.token_hash as consent_link_token_hash,
+       pcl.status,
+       pcl.created_at,
+       pcl.used_at,
+       vm.method_type as verification_method,
+       vm.status as verification_status,
+       vm.completed_at as verification_completed_at
+     FROM parental_consent_links pcl
+     LEFT JOIN consent_verification_methods vm 
+       ON vm.consent_id = pcl.consent_id AND vm.tenant_id = pcl.tenant_id
+     WHERE pcl.tenant_id = $1 AND pcl.learner_id = $2
+     ORDER BY pcl.created_at DESC`,
+    [tenantId, learnerId]
+  );
+
+  const parentalConsents: ParentalConsentExport[] = parentalConsentsResult.rows.map((row) => ({
+    parent_id: row.parent_id,
+    learner_id: row.learner_id,
+    consent_link_token_hash: row.consent_link_token_hash,
+    status: row.status,
+    created_at: new Date(row.created_at).toISOString(),
+    used_at: row.used_at ? new Date(row.used_at).toISOString() : null,
+    verification_method: row.verification_method,
+    verification_status: row.verification_status,
+    verification_completed_at: row.verification_completed_at 
+      ? new Date(row.verification_completed_at).toISOString() 
+      : null,
+  }));
+
   return {
+    export_info: {
+      generated_at: new Date().toISOString(),
+      request_id: requestId,
+      learner_id: learnerId,
+      export_version: DSR_CONFIG.EXPORT_VERSION,
+      includes_consent_data: consentRecords.length > 0 || parentalConsents.length > 0,
+    },
     learner,
+    consent_records: consentRecords,
+    parental_consents: parentalConsents,
     assessments: assessmentsResult.rows.map((row) => ({
       id: row.id,
       baseline_score: row.baseline_score,

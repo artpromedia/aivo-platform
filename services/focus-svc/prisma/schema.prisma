@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Current focus state of a learner
+enum FocusState {
+  FOCUSED        // Learner is engaged and on-task
+  DISTRACTED     // Mild distraction detected
+  DISENGAGED     // Significant disengagement
+  ON_BREAK       // In a scheduled or regulation break
+  AWAY           // App backgrounded or inactive
+
+  @@map("focus_state")
+}
+
+/// Type of focus intervention
+enum InterventionType {
+  NONE              // No intervention needed
+  GENTLE_NUDGE      // Soft reminder
+  BREAK_SUGGESTION  // Suggest taking a break
+  REGULATION_BREAK  // Mandatory regulation activity
+  CONTENT_SWITCH    // Switch to different content type
+  DIFFICULTY_ADJUST // Adjust difficulty level
+
+  @@map("intervention_type")
+}
+
+/// Reason for focus loss detection
+enum FocusLossReason {
+  EXTENDED_IDLE     // No interaction for extended period
+  RAPID_SWITCHING   // Too much context switching
+  APP_BACKGROUNDED  // App went to background
+  MOOD_DECLINE      // Self-reported or detected mood decline
+  ERROR_FRUSTRATION // Multiple errors suggesting frustration
+  TIME_LIMIT        // Session time limit approaching
+
+  @@map("focus_loss_reason")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Current focus state snapshot for a learner (one per learner, upserted)
+model LearnerFocusState {
+  id                    String        @id @default(uuid()) @db.Uuid
+  tenantId              String        @map("tenant_id") @db.Uuid
+  learnerId             String        @unique @map("learner_id") @db.Uuid
+  
+  // Current state
+  currentState          FocusState    @default(FOCUSED) @map("current_state")
+  sessionId             String?       @map("session_id") @db.Uuid
+  
+  // Metrics (rolling window)
+  focusScore            Float         @default(1.0) @map("focus_score") // 0.0 - 1.0
+  consecutiveFocusedPings Int         @default(0) @map("consecutive_focused_pings")
+  consecutiveDistractedPings Int      @default(0) @map("consecutive_distracted_pings")
+  
+  // Break tracking
+  lastBreakAt           DateTime?     @map("last_break_at") @db.Timestamptz
+  breaksTakenToday      Int           @default(0) @map("breaks_taken_today")
+  
+  // Last activity
+  lastPingAt            DateTime      @map("last_ping_at") @db.Timestamptz
+  lastInteractionAt     DateTime      @map("last_interaction_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([sessionId])
+  @@map("learner_focus_states")
+}
+
+/// Historical log of focus pings for analytics
+model FocusPingLog {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  learnerId         String            @map("learner_id") @db.Uuid
+  sessionId         String            @map("session_id") @db.Uuid
+  
+  // Ping data
+  focusScore        Float             @map("focus_score")
+  isOnTask          Boolean           @map("is_on_task")
+  activityId        String?           @map("activity_id") @db.Uuid
+  
+  // Detection results
+  focusLossDetected Boolean           @default(false) @map("focus_loss_detected")
+  lossReasons       FocusLossReason[] @map("loss_reasons")
+  
+  // Context
+  idleTimeMs        Int?              @map("idle_time_ms")
+  interactionCount  Int               @default(0) @map("interaction_count")
+  errorCount        Int               @default(0) @map("error_count")
+  
+  // Timestamp
+  recordedAt        DateTime          @default(now()) @map("recorded_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, recordedAt])
+  @@index([sessionId, recordedAt])
+  @@index([recordedAt])
+  @@map("focus_ping_logs")
+}
+
+/// Interventions triggered and their outcomes
+model FocusIntervention {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  learnerId         String           @map("learner_id") @db.Uuid
+  sessionId         String           @map("session_id") @db.Uuid
+  
+  // Intervention details
+  interventionType  InterventionType @map("intervention_type")
+  triggerReasons    FocusLossReason[] @map("trigger_reasons")
+  
+  // Timing
+  triggeredAt       DateTime         @default(now()) @map("triggered_at") @db.Timestamptz
+  acknowledgedAt    DateTime?        @map("acknowledged_at") @db.Timestamptz
+  completedAt       DateTime?        @map("completed_at") @db.Timestamptz
+  
+  // Outcome
+  wasAccepted       Boolean?         @map("was_accepted")
+  focusScoreBefore  Float?           @map("focus_score_before")
+  focusScoreAfter   Float?           @map("focus_score_after")
+  
+  // Regulation activity details (if applicable)
+  regulationActivityId String?       @map("regulation_activity_id")
+  regulationDurationMs Int?          @map("regulation_duration_ms")
+  
+  // Metadata
+  metadataJson      Json?            @default("{}") @map("metadata_json")
+
+  @@index([tenantId, learnerId, triggeredAt])
+  @@index([sessionId])
+  @@map("focus_interventions")
+}
+
+/// Break sessions (scheduled or regulation)
+model BreakSession {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  learnerId         String    @map("learner_id") @db.Uuid
+  sessionId         String    @map("session_id") @db.Uuid
+  
+  // Break details
+  breakType         String    @map("break_type") // 'scheduled', 'regulation', 'user_initiated'
+  suggestedActivityId String? @map("suggested_activity_id")
+  
+  // Timing
+  startedAt         DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  endedAt           DateTime? @map("ended_at") @db.Timestamptz
+  durationMs        Int?      @map("duration_ms")
+  
+  // Effectiveness
+  preFocusScore     Float?    @map("pre_focus_score")
+  postFocusScore    Float?    @map("post_focus_score")
+  wasEffective      Boolean?  @map("was_effective") // Calculated: postScore > preScore
+  
+  // Activity completed during break
+  activityCompleted Boolean   @default(false) @map("activity_completed")
+
+  @@index([tenantId, learnerId, startedAt])
+  @@index([sessionId])
+  @@map("break_sessions")
+}
+
+/// Daily focus summary for analytics/reporting
+model DailyFocusSummary {
+  id                    String   @id @default(uuid()) @db.Uuid
+  tenantId              String   @map("tenant_id") @db.Uuid
+  learnerId             String   @map("learner_id") @db.Uuid
+  date                  DateTime @map("date") @db.Date
+  
+  // Session metrics
+  totalSessionsCount    Int      @default(0) @map("total_sessions_count")
+  totalSessionDurationMs BigInt  @default(0) @map("total_session_duration_ms")
+  
+  // Focus metrics
+  avgFocusScore         Float?   @map("avg_focus_score")
+  focusedTimeMs         BigInt   @default(0) @map("focused_time_ms")
+  distractedTimeMs      BigInt   @default(0) @map("distracted_time_ms")
+  
+  // Intervention metrics
+  interventionCount     Int      @default(0) @map("intervention_count")
+  breaksCount           Int      @default(0) @map("breaks_count")
+  regulationActivitiesCount Int  @default(0) @map("regulation_activities_count")
+  
+  // Ping statistics
+  totalPings            Int      @default(0) @map("total_pings")
+  focusLossEvents       Int      @default(0) @map("focus_loss_events")
+  
+  // Computed at end of day
+  focusRatio            Float?   @map("focus_ratio") // focusedTime / totalTime
+  
+  // Timestamps
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, date])
+  @@index([tenantId, learnerId, date])
+  @@index([date])
+  @@map("daily_focus_summaries")
+}
