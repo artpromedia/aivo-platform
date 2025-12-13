@@ -200,11 +200,11 @@ describe('Mock Data Helpers', () => {
 describe('API Function Mocking', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   it('searchCatalog builds correct query params', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } }),
@@ -219,22 +219,22 @@ describe('API Function Mocking', () => {
       gradeBands: ['GRADES_6_8'],
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('q=math'),
       expect.any(Object)
     );
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('type=CONTENT_PACK'),
       expect.any(Object)
     );
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('subjects=MATHEMATICS'),
       expect.any(Object)
     );
   });
 
   it('listInstallations includes tenant ID', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } }),
@@ -244,7 +244,7 @@ describe('API Function Mocking', () => {
 
     await listInstallations('tenant-123');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('tenants/tenant-123/installations'),
       expect.any(Object)
     );
@@ -259,7 +259,7 @@ describe('Marketplace Billing Helpers', () => {
   describe('getBillingModelLabel', () => {
     it('returns correct labels for billing models', async () => {
       const { getBillingModelLabel } = await import('../lib/marketplace-api');
-      
+
       expect(getBillingModelLabel('FREE')).toBe('Free');
       expect(getBillingModelLabel('TENANT_FLAT')).toBe('Flat Rate');
       expect(getBillingModelLabel('PER_SEAT')).toBe('Per Seat');
@@ -274,7 +274,7 @@ describe('Marketplace Billing Helpers', () => {
   describe('getBillingStatusLabel', () => {
     it('returns correct labels for billing statuses', async () => {
       const { getBillingStatusLabel } = await import('../lib/marketplace-api');
-      
+
       expect(getBillingStatusLabel('PENDING')).toBe('Pending Setup');
       expect(getBillingStatusLabel('ACTIVE')).toBe('Active');
       expect(getBillingStatusLabel('CANCELED')).toBe('Canceled');
@@ -290,7 +290,7 @@ describe('Marketplace Billing Helpers', () => {
   describe('getBillingStatusColor', () => {
     it('returns correct colors for billing statuses', async () => {
       const { getBillingStatusColor } = await import('../lib/marketplace-api');
-      
+
       expect(getBillingStatusColor('PENDING')).toBe('yellow');
       expect(getBillingStatusColor('ACTIVE')).toBe('green');
       expect(getBillingStatusColor('CANCELED')).toBe('gray');
@@ -306,7 +306,7 @@ describe('Marketplace Billing Helpers', () => {
   describe('formatBillingPeriod', () => {
     it('returns correct period labels', async () => {
       const { formatBillingPeriod } = await import('../lib/marketplace-api');
-      
+
       expect(formatBillingPeriod('MONTHLY')).toBe('Monthly');
       expect(formatBillingPeriod('ANNUAL')).toBe('Annual');
       expect(formatBillingPeriod(undefined)).toBe('');
@@ -317,7 +317,7 @@ describe('Marketplace Billing Helpers', () => {
 describe('Marketplace Billing API Functions', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   it('getItemBillingInfo fetches billing config', async () => {
@@ -331,7 +331,7 @@ describe('Marketplace Billing API Functions', () => {
       billingSku: 'MPK_TEST_PACK',
     };
 
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockBillingInfo),
     });
@@ -340,7 +340,7 @@ describe('Marketplace Billing API Functions', () => {
 
     const result = await getItemBillingInfo('item-123');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/billing/items/item-123'),
       expect.any(Object)
     );
@@ -348,28 +348,27 @@ describe('Marketplace Billing API Functions', () => {
   });
 
   it('listInstallationsWithBilling includes billing parameter', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () =>
-        Promise.resolve({ data: [], pagination: { page: 1, limit: 20, total: 0 } }),
+      json: () => Promise.resolve({ data: [], pagination: { page: 1, limit: 20, total: 0 } }),
     });
 
     const { listInstallationsWithBilling } = await import('../lib/marketplace-api');
 
     await listInstallationsWithBilling('tenant-123', { status: 'ACTIVE' });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('includeBilling=true'),
       expect.any(Object)
     );
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('status=ACTIVE'),
       expect.any(Object)
     );
   });
 
   it('activateInstallationBilling posts to correct endpoint', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -386,7 +385,7 @@ describe('Marketplace Billing API Functions', () => {
       seatQuantity: 50,
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/tenants/tenant-123/installations/install-123/activate-billing'),
       expect.objectContaining({
         method: 'POST',
@@ -396,7 +395,7 @@ describe('Marketplace Billing API Functions', () => {
   });
 
   it('deactivateInstallationBilling posts with reason', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -410,7 +409,7 @@ describe('Marketplace Billing API Functions', () => {
 
     await deactivateInstallationBilling('tenant-123', 'install-123', 'No longer needed');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/deactivate-billing'),
       expect.objectContaining({
         method: 'POST',
