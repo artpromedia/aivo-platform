@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 function loadPublicKey(): string | undefined {
   const keyPath = process.env.JWT_PUBLIC_KEY_PATH;
@@ -14,12 +14,12 @@ function loadPublicKey(): string | undefined {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '4020', 10),
+  port: Number.parseInt(process.env.PORT ?? '4020', 10),
   logLevel: process.env.LOG_LEVEL ?? 'info',
   jwtPublicKey: loadPublicKey(),
   isDev: process.env.NODE_ENV !== 'production',
   nodeEnv: process.env.NODE_ENV ?? 'development',
-  
+
   // NATS configuration for event publishing
   nats: {
     servers: process.env.NATS_SERVERS ?? 'nats://localhost:4222',

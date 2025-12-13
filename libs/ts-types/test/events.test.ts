@@ -1,12 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import {
   // Base schemas and types
   BaseEventSchema,
   EventSourceSchema,
   createEventSchema,
-  type BaseEvent,
-  type EventSource,
 
   // Learning events
   ActivityCompletedEventSchema,
@@ -36,7 +34,6 @@ import {
   type HomeworkTaskCreatedEvent,
 
   // Validation utilities
-  validateEvent,
   safeValidateEvent,
   createEvent,
   requireTenantId,

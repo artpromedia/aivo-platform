@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api.dart';
 import '../data/learner.dart';
-import 'auth_providers.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CHILD SELECTION (FOR PARENTS)

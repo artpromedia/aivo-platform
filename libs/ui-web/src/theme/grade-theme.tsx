@@ -17,10 +17,10 @@ const GradeThemeContext = createContext<GradeThemeContextValue | null>(null);
 export function GradeThemeProvider({
   children,
   initialGrade = 'G6_8',
-}: {
+}: Readonly<{
   children: ReactNode;
   initialGrade?: GradeBand;
-}) {
+}>) {
   const [grade, setGrade] = useState<GradeBand>(initialGrade);
 
   useEffect(() => {

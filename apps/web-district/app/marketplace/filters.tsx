@@ -64,12 +64,10 @@ export function CatalogFilters() {
         } else {
           params.append(key, value);
         }
+      } else if (params.get(key) === value) {
+        params.delete(key);
       } else {
-        if (params.get(key) === value) {
-          params.delete(key);
-        } else {
-          params.set(key, value);
-        }
+        params.set(key, value);
       }
 
       router.push(`?${params.toString()}`);
@@ -165,7 +163,10 @@ export function CatalogFilters() {
   );
 }
 
-function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterSection({
+  title,
+  children,
+}: Readonly<{ title: string; children: React.ReactNode }>) {
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-muted">{title}</h3>
@@ -179,12 +180,12 @@ function FilterCheckbox({
   label,
   checked,
   onChange,
-}: {
+}: Readonly<{
   value: string;
   label: string;
   checked: boolean;
   onChange: () => void;
-}) {
+}>) {
   return (
     <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted">
       <input
@@ -205,13 +206,13 @@ function FilterRadio({
   label,
   checked,
   onChange,
-}: {
+}: Readonly<{
   name: string;
   value: string;
   label: string;
   checked: boolean;
   onChange: () => void;
-}) {
+}>) {
   return (
     <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted">
       <input
