@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { gradeBandLabels, gradeBands, type GradeBand } from './tokens.js';
+import { gradeBandLabels, gradeBands, type GradeBand } from './tokens';
 
 interface GradeThemeContextValue {
   grade: GradeBand;

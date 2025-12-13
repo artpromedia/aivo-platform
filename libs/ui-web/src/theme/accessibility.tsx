@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { tokens } from './tokens.js';
+import { tokens } from './tokens';
 
 interface AccessibilityPreferences {
   highContrast: boolean;

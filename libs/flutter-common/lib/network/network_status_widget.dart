@@ -8,7 +8,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'circuit_breaker.dart';
 import 'graceful_degradation.dart';
 import 'network_telemetry.dart';
 

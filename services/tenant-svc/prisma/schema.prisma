@@ -21,9 +21,75 @@ model Tenant {
   primaryDomain   String    @unique
   billingPlanId   String?
   settingsJson    Json?
+  
+  // Domain configuration for multi-tenant access
+  subdomain       String?   @unique  // e.g., "springfield-schools"
+  customDomain    String?   @unique  // e.g., "learning.springfield.edu"
+  domainVerified  Boolean   @default(false) @map("domain_verified")
+  domainVerifiedAt DateTime? @map("domain_verified_at")
+  
+  // Region for data residency
+  region          String    @default("us-east-1")
+  isActive        Boolean   @default(true) @map("is_active")
+  
+  // Branding
+  logoUrl         String?   @map("logo_url")
+  primaryColor    String?   @map("primary_color")
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  
   schools         School[]
+  domainVerifications TenantDomainVerification[]
+  
+  @@index([subdomain])
+  @@index([customDomain])
+  @@index([isActive])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Domain Verification for Custom Domains
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum DomainVerificationType {
+  TXT
+  CNAME
+}
+
+enum DomainVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  EXPIRED
+}
+
+/// Domain verification records for custom domain setup
+model TenantDomainVerification {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  domain            String
+  
+  // DNS verification
+  verificationToken String   @map("verification_token")
+  verificationType  DomainVerificationType @map("verification_type")
+  verificationValue String   @map("verification_value")
+  
+  // Status tracking
+  status            DomainVerificationStatus @default(PENDING)
+  lastChecked       DateTime? @map("last_checked")
+  failureReason     String?   @map("failure_reason")
+  verifiedAt        DateTime? @map("verified_at")
+  
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime @map("expires_at")
+  
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, domain])
+  @@index([domain])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("tenant_domain_verifications")
 }
 
 model School {

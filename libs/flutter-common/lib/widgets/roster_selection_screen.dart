@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/local_strings.dart';
 import '../theme/aivo_theme.dart';
 import '../shared_device/shared_device.dart';
 

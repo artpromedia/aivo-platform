@@ -1,7 +1,7 @@
 import plugin from 'tailwindcss/plugin';
 
-import type { GradeBand } from '../theme/tokens.js';
-import { tokens } from '../theme/tokens.js';
+import type { GradeBand } from '../theme/tokens';
+import { tokens } from '../theme/tokens';
 
 const colorEntries = [
   { token: 'background', name: 'background' },

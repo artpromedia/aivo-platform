@@ -9,12 +9,19 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./events": {
+      "types": "./dist/events/index.d.ts",
+      "import": "./dist/events/index.js"
     }
   },
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
     "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
