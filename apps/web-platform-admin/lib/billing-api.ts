@@ -93,7 +93,7 @@ export function formatCurrency(cents: number): string {
 
 export function getThresholdLabel(threshold: number): string {
   if (threshold >= 1.1) return 'Overage';
-  if (threshold >= 1.0) return 'At Limit';
+  if (threshold >= 1) return 'At Limit';
   return 'Warning';
 }
 
@@ -113,7 +113,7 @@ async function apiFetch<T>(path: string, options?: FetchOptions): Promise<T> {
   };
 
   const res = await fetch(url, {
-    ...(options ?? {}),
+    ...options,
     headers,
     cache: 'no-store',
   });
@@ -142,7 +142,7 @@ export async function fetchAllAlerts(
   // return apiFetch<SeatUsageAlert[]>(`/admin/seat-usage/alerts?${params}`, { accessToken });
 
   // Mock data for development
-  return Promise.resolve(getMockAlerts().filter((a) => !status || a.status === status));
+  return getMockAlerts().filter((a) => !status || a.status === status);
 }
 
 /**
@@ -155,7 +155,7 @@ export async function fetchAllTenantUsageSummaries(
   // return apiFetch<TenantSeatUsageSummary[]>('/admin/seat-usage/summaries', { accessToken });
 
   // Mock data for development
-  return Promise.resolve(getMockTenantSummaries());
+  return getMockTenantSummaries();
 }
 
 /**
@@ -166,7 +166,7 @@ export async function fetchPlatformMetrics(accessToken?: string): Promise<Platfo
   // return apiFetch<PlatformUsageMetrics>('/admin/seat-usage/metrics', { accessToken });
 
   // Mock data for development
-  return Promise.resolve(getMockPlatformMetrics());
+  return getMockPlatformMetrics();
 }
 
 /**
@@ -181,7 +181,6 @@ export async function acknowledgeAlert(alertId: string, accessToken?: string): P
 
   // Mock implementation
   console.log(`Acknowledging alert ${alertId}`);
-  return Promise.resolve();
 }
 
 /**
@@ -201,7 +200,6 @@ export async function resolveAlert(
 
   // Mock implementation
   console.log(`Resolving alert ${alertId}: ${resolution}`);
-  return Promise.resolve();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -234,7 +232,7 @@ function getMockAlerts(): SeatUsageAlert[] {
       tenantName: 'Metro ISD',
       sku: 'AIVO_CORE',
       gradeBand: 'GRADE_6_8',
-      threshold: 1.0,
+      threshold: 1,
       status: 'OPEN',
       createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
       contextJson: {
