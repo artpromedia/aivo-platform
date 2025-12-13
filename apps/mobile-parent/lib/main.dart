@@ -7,13 +7,16 @@ import 'auth/auth_state.dart';
 import 'screens/accessibility_settings_screen.dart';
 import 'screens/add_child_screen.dart';
 import 'screens/baseline_result_screen.dart';
+import 'screens/consent_screen.dart';
 import 'screens/homework_focus_detail_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/messages_screen.dart';
 import 'screens/module_selection_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/payment_setup_screen.dart';
 import 'screens/progress_report_screen.dart';
 import 'screens/subscription_management_screen.dart';
+import 'screens/virtual_brain_screen.dart';
 import 'theme/parent_theme.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
@@ -96,6 +99,35 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/accessibility',
         builder: (context, state) => const AccessibilitySettingsScreen(),
+      ),
+      // Consent management
+      GoRoute(
+        path: '/consent/:learnerId',
+        builder: (context, state) {
+          final learnerId = state.pathParameters['learnerId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return ConsentScreen(
+            learnerId: learnerId,
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
+          );
+        },
+      ),
+      // Virtual Brain dashboard
+      GoRoute(
+        path: '/virtual-brain/:learnerId',
+        builder: (context, state) {
+          final learnerId = state.pathParameters['learnerId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return VirtualBrainScreen(
+            learnerId: learnerId,
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
+          );
+        },
+      ),
+      // Messages
+      GoRoute(
+        path: '/messages',
+        builder: (context, state) => const MessagesScreen(),
       ),
     ],
     redirect: (context, state) {

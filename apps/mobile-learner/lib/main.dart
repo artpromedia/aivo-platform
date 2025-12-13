@@ -20,6 +20,8 @@ import 'screens/pin_entry_screen.dart';
 import 'screens/today_plan_screen.dart';
 import 'screens/session_complete_screen.dart';
 import 'screens/design_system_gallery_screen.dart';
+import 'screens/activity_screen.dart';
+import 'screens/session_feedback_screen.dart';
 import 'learner/theme_loader.dart';
 
 const bool _enableDesignSystemGallery = bool.fromEnvironment('AIVO_DESIGN_GALLERY', defaultValue: false);
@@ -82,6 +84,23 @@ final _routerProvider = Provider<GoRouter>((ref) {
                 durationSeconds: 60,
               );
           return FocusBreakScreen(learnerId: learnerId, activity: activity);
+        },
+      ),
+      // Activity flow route
+      GoRoute(
+        path: '/activity/:sessionId',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId']!;
+          final subject = state.uri.queryParameters['subject'] ?? 'ELA';
+          return ActivityScreen(sessionId: sessionId, subject: subject);
+        },
+      ),
+      // Session feedback route
+      GoRoute(
+        path: '/feedback/:sessionId',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId']!;
+          return SessionFeedbackScreen(sessionId: sessionId);
         },
       ),
       if (_enableDesignSystemGallery)
