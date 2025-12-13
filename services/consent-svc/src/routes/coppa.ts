@@ -1,14 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import { Role, requireRole, type AuthContext } from '@aivo/ts-rbac';
-import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
 import { z } from 'zod';
 
 import { CoppaConsentService, type EmailParams } from '../coppa-service.js';
 import { consentDefinitions } from '../privacyConfig.js';
-import {
-  getTenantCoppaSettings,
-  upsertTenantCoppaSettings,
-} from '../repository.js';
+import { getTenantCoppaSettings, upsertTenantCoppaSettings } from '../repository.js';
 import type { ConsentType, ParentConsentSummary } from '../types.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -110,10 +112,31 @@ interface CoppaRoutesOptions {
 // HELPER: Extract client info for audit
 // ════════════════════════════════════════════════════════════════════════════════
 
-function getClientInfo(request: { ip?: string; headers: Record<string, string | string[] | undefined> }) {
+/** Interface for augmented Fastify request with auth context */
+interface AuthenticatedRequest extends FastifyRequest {
+  auth?: AuthContext;
+}
+
+/** Type-safe auth extraction from Fastify request */
+function getAuthFromRequest(request: FastifyRequest): AuthContext {
+  const auth = (request as AuthenticatedRequest).auth;
+  if (!auth?.userId || !auth?.tenantId) {
+    throw new Error('Missing auth context');
+  }
+  return auth;
+}
+
+function getClientInfo(request: FastifyRequest): {
+  ipAddress: string | undefined;
+  userAgent: string | undefined;
+} {
+  const forwardedFor = request.headers['x-forwarded-for'];
+  const forwardedIp =
+    typeof forwardedFor === 'string' ? forwardedFor.split(',')[0]?.trim() : undefined;
+  const userAgentHeader = request.headers['user-agent'];
   return {
-    ipAddress: request.ip ?? (request.headers['x-forwarded-for'] as string) ?? null,
-    userAgent: (request.headers['user-agent'] as string) ?? null,
+    ipAddress: forwardedIp || request.ip || undefined,
+    userAgent: userAgentHeader || undefined,
   };
 }
 
@@ -140,11 +163,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
   fastify.post(
     '/coppa/initiate',
     {
-      preHandler: requireRole([
-        Role.DISTRICT_ADMIN,
-        Role.PLATFORM_ADMIN,
-        Role.SUPPORT,
-      ]),
+      preHandler: requireRole([Role.DISTRICT_ADMIN, Role.PLATFORM_ADMIN, Role.SUPPORT]),
     },
     async (request, reply) => {
       const parsed = initiateConsentSchema.safeParse(request.body);
@@ -152,7 +171,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const { ipAddress, userAgent } = getClientInfo(request);
 
       try {
@@ -163,8 +182,8 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
           consentType: parsed.data.consentType,
           learnerName: parsed.data.learnerName,
           source: 'API',
-          requestedByIp: ipAddress ?? undefined,
-          requestedByUserAgent: userAgent ?? undefined,
+          ...(ipAddress && { requestedByIp: ipAddress }),
+          ...(userAgent && { requestedByUserAgent: userAgent }),
         });
 
         return reply.code(201).send({
@@ -200,7 +219,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const { ipAddress, userAgent } = getClientInfo(request);
 
       const result = await coppaService.resendConsentEmail({
@@ -208,8 +227,8 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         tenantId: auth.tenantId,
         parentEmail: parsed.data.parentEmail,
         learnerName: parsed.data.learnerName,
-        requestedByIp: ipAddress ?? undefined,
-        requestedByUserAgent: userAgent ?? undefined,
+        ...(ipAddress && { requestedByIp: ipAddress }),
+        ...(userAgent && { requestedByUserAgent: userAgent }),
       });
 
       if (!result.success) {
@@ -275,7 +294,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const { ipAddress, userAgent } = getClientInfo(request);
 
       try {
@@ -285,8 +304,8 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
           parentUserId: auth.userId,
           cardToken: parsed.data.cardToken,
           last4: parsed.data.last4,
-          ipAddress: ipAddress ?? undefined,
-          userAgent: userAgent ?? undefined,
+          ...(ipAddress && { ipAddress }),
+          ...(userAgent && { userAgent }),
         });
 
         return reply.code(201).send({
@@ -315,7 +334,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
 
       try {
         const completionParams: {
@@ -359,7 +378,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const { ipAddress, userAgent } = getClientInfo(request);
 
       try {
@@ -371,8 +390,8 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
           storageUri: parsed.data.storageUri,
           fileName: parsed.data.fileName,
           mimeType: parsed.data.mimeType,
-          ipAddress: ipAddress ?? undefined,
-          userAgent: userAgent ?? undefined,
+          ...(ipAddress && { ipAddress }),
+          ...(userAgent && { userAgent }),
         });
 
         return reply.code(201).send({
@@ -400,7 +419,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
 
       try {
         const verification = await coppaService.completeSignedFormVerification({
@@ -439,7 +458,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const { ipAddress, userAgent } = getClientInfo(request);
 
       try {
@@ -447,8 +466,8 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
           token: parsed.data.token,
           verificationId: parsed.data.verificationId,
           parentUserId: auth.userId,
-          ipAddress: ipAddress ?? undefined,
-          userAgent: userAgent ?? undefined,
+          ...(ipAddress && { ipAddress }),
+          ...(userAgent && { userAgent }),
         });
 
         return reply.code(200).send({
@@ -480,7 +499,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
     '/coppa/dashboard',
     { preHandler: requireRole([Role.PARENT]) },
     async (request, reply) => {
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const query = request.query as { learnerIds?: string };
 
       if (!query.learnerIds) {
@@ -535,7 +554,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
       const { ipAddress, userAgent } = getClientInfo(request);
 
       try {
@@ -544,8 +563,8 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
           tenantId: auth.tenantId,
           revokedByUserId: auth.userId,
           reason: parsed.data.reason,
-          ipAddress: ipAddress ?? undefined,
-          userAgent: userAgent ?? undefined,
+          ...(ipAddress && { ipAddress }),
+          ...(userAgent && { userAgent }),
         });
 
         return reply.code(200).send({
@@ -571,7 +590,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
     '/coppa/settings',
     { preHandler: requireRole([Role.DISTRICT_ADMIN, Role.PLATFORM_ADMIN]) },
     async (request, reply) => {
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
 
       const settings = await getTenantCoppaSettings(pool, auth.tenantId);
 
@@ -592,7 +611,7 @@ export const registerCoppaRoutes: FastifyPluginAsync<CoppaRoutesOptions> = async
         return reply.code(400).send({ error: 'Invalid payload', details: parsed.error.issues });
       }
 
-      const auth = (request as typeof request & { auth: AuthContext }).auth;
+      const auth = getAuthFromRequest(request);
 
       // Build update object with only provided fields
       const updateData: Parameters<typeof upsertTenantCoppaSettings>[1] = {
