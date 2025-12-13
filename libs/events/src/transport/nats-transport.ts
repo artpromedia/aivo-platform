@@ -9,20 +9,19 @@
 // - Schema validation before publish
 // - Dead-letter queue routing for failures
 
-import {
-  connect,
+import { connect, StringCodec, NatsError, ErrorCode } from 'nats';
+import type {
   NatsConnection,
   JetStreamClient,
   JetStreamManager,
   JetStreamPublishOptions,
   PubAck,
-  StringCodec,
-  NatsError,
-  ErrorCode,
+  ConnectionOptions,
 } from 'nats';
 import { v4 as uuidv4 } from 'uuid';
-import type { BaseEvent } from '../schemas';
-import { validateEvent, BaseEventSchema, getStreamForEventType } from '../schemas';
+
+import type { BaseEvent } from '../schemas/index.js';
+import { validateEvent, BaseEventSchema, getStreamForEventType } from '../schemas/index.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -137,7 +136,7 @@ export class NatsTransport {
 
     this.isConnecting = true;
     this.connectionPromise = this.doConnect();
-    
+
     try {
       await this.connectionPromise;
     } finally {
@@ -149,19 +148,30 @@ export class NatsTransport {
   private async doConnect(): Promise<void> {
     const servers = Array.isArray(this.config.servers)
       ? this.config.servers
-      : this.config.servers.split(',').map(s => s.trim());
+      : this.config.servers.split(',').map((s) => s.trim());
 
-    this.nc = await connect({
+    const opts: ConnectionOptions = {
       servers,
       name: this.config.name ?? `${this.config.serviceName}-publisher`,
       maxReconnectAttempts: this.config.maxReconnectAttempts ?? -1,
       reconnectTimeWait: this.config.reconnectTimeWait ?? 2000,
       timeout: this.config.timeout ?? 10000,
-      tls: this.config.tls ? {} : undefined,
-      token: this.config.token,
-      user: this.config.user,
-      pass: this.config.pass,
-    });
+    };
+
+    if (this.config.tls) {
+      opts.tls = {};
+    }
+    if (this.config.token) {
+      opts.token = this.config.token;
+    }
+    if (this.config.user) {
+      opts.user = this.config.user;
+    }
+    if (this.config.pass) {
+      opts.pass = this.config.pass;
+    }
+
+    this.nc = await connect(opts);
 
     this.js = this.nc.jetstream();
     this.jsm = await this.nc.jetstreamManager();
@@ -174,10 +184,11 @@ export class NatsTransport {
     if (!this.nc) return;
 
     // Handle disconnection
-    (async () => {
+    void (async () => {
       if (!this.nc) return;
       for await (const status of this.nc.status()) {
-        switch (status.type) {
+        const statusType = status.type as string;
+        switch (statusType) {
           case 'disconnect':
             console.warn('[NatsTransport] Disconnected from NATS');
             break;
@@ -228,7 +239,7 @@ export class NatsTransport {
   ): Promise<PublishResult> {
     const eventId = options.msgId ?? uuidv4();
     const timestamp = new Date().toISOString();
-    
+
     // Build complete event
     const fullEvent: T = {
       ...event,
@@ -251,7 +262,7 @@ export class NatsTransport {
         eventId,
         attempts: 0,
         error: new Error(
-          `Event validation failed: ${validation.errors?.format()}`
+          `Event validation failed: ${JSON.stringify(validation.errors?.format() ?? 'Unknown error')}`
         ),
       };
     }
@@ -266,18 +277,18 @@ export class NatsTransport {
     return this.publishWithRetry(fullEvent, subject, options, eventId);
   }
 
-  private async publishWithRetry<T extends BaseEvent>(
-    event: T,
+  private async publishWithRetry(
+    event: BaseEvent,
     subject: string,
     options: PublishOptions,
     eventId: string
   ): Promise<PublishResult> {
-    let lastError: Error | undefined;
+    let lastError: Error = new Error('Unknown error');
     let attempts = 0;
 
     for (let i = 0; i < this.retryConfig.maxAttempts; i++) {
       attempts++;
-      
+
       try {
         const result = await this.doPublish(event, subject, options);
         return {
@@ -289,7 +300,7 @@ export class NatsTransport {
         };
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        
+
         // Don't retry on validation errors
         if (this.isNonRetryableError(err)) {
           break;
@@ -317,8 +328,8 @@ export class NatsTransport {
     };
   }
 
-  private async doPublish<T extends BaseEvent>(
-    event: T,
+  private async doPublish(
+    event: BaseEvent,
     subject: string,
     options: PublishOptions
   ): Promise<PubAck> {
@@ -327,11 +338,11 @@ export class NatsTransport {
     }
 
     const publishOpts: Partial<JetStreamPublishOptions> = {};
-    
+
     if (options.msgId) {
       publishOpts.msgID = options.msgId;
     }
-    
+
     if (options.expectedLastMsgId) {
       publishOpts.expect = {
         lastMsgID: options.expectedLastMsgId,
@@ -345,16 +356,14 @@ export class NatsTransport {
   private isNonRetryableError(err: unknown): boolean {
     if (err instanceof NatsError) {
       // Don't retry on duplicate message or bad request
-      return (
-        err.code === ErrorCode.JetStreamInvalidAck ||
-        err.code === ErrorCode.BadPayload
-      );
+      const nonRetryableCodes: string[] = [ErrorCode.JetStreamInvalidAck, ErrorCode.BadPayload];
+      return err.code !== undefined && nonRetryableCodes.includes(err.code);
     }
     return false;
   }
 
-  private async publishToDLQ<T extends BaseEvent>(
-    event: T,
+  private async publishToDLQ(
+    event: BaseEvent,
     originalSubject: string,
     error?: Error
   ): Promise<void> {
@@ -378,7 +387,7 @@ export class NatsTransport {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // ---------------------------------------------------------------------------
@@ -399,9 +408,15 @@ export class NatsTransport {
       await this.connect();
     }
 
+    // After connect, jsm should be set
+    const jsm = this.jsm;
+    if (!jsm) {
+      return null;
+    }
+
     try {
       const streamName = getStreamForEventType(eventType);
-      const info = await this.jsm!.streams.info(streamName);
+      const info = await jsm.streams.info(streamName);
       return {
         name: info.config.name,
         messages: info.state.messages,

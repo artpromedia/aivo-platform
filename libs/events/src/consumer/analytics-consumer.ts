@@ -11,21 +11,22 @@
 //   - engagement_metrics_hourly: Engagement aggregations
 //   - focus_metrics_hourly: Focus score aggregations
 
-import {
-  BaseConsumer,
-  ConsumerConnectionConfig,
-  ConsumerOptions,
-  ProcessedMessage,
-} from './base-consumer';
-import type { BaseEvent } from '../schemas';
 import type {
+  BaseEvent,
   LearningSessionStarted,
   LearningSessionEnded,
   ActivityCompleted,
   EngagementMetric,
   FocusSample,
   FocusSessionSummary,
-} from '../schemas';
+} from '../schemas/index.js';
+
+import { BaseConsumer } from './base-consumer.js';
+import type {
+  ConsumerConnectionConfig,
+  ConsumerOptions,
+  ProcessedMessage,
+} from './base-consumer.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -114,7 +115,7 @@ interface AggregationBuffer {
 
 export class AnalyticsConsumer extends BaseConsumer {
   private buffer: AggregationBuffer;
-  private flushTimer: NodeJS.Timeout | null = null;
+  private flushTimer: ReturnType<typeof setInterval> | null = null;
   private writers: AnalyticsConsumerConfig['writers'];
   private windowMs: number;
 
@@ -123,7 +124,7 @@ export class AnalyticsConsumer extends BaseConsumer {
       ...config.consumer,
       durableName: `${config.consumer.stream.toLowerCase()}-analytics`,
     });
-    
+
     this.writers = config.writers;
     this.windowMs = config.windowMs ?? 60000;
     this.buffer = this.createEmptyBuffer();
@@ -138,10 +139,10 @@ export class AnalyticsConsumer extends BaseConsumer {
     };
   }
 
-  async start(): Promise<void> {
+  override async start(): Promise<void> {
     // Start aggregation flush timer
     this.flushTimer = setInterval(() => {
-      this.flush().catch(err => {
+      this.flush().catch((err: unknown) => {
         console.error('[AnalyticsConsumer] Flush error:', err);
       });
     }, this.windowMs);
@@ -149,23 +150,23 @@ export class AnalyticsConsumer extends BaseConsumer {
     await super.start();
   }
 
-  async close(): Promise<void> {
+  override async close(): Promise<void> {
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
       this.flushTimer = null;
     }
-    
+
     await this.flush();
     await super.close();
   }
 
-  protected async handleMessage(message: ProcessedMessage<BaseEvent>): Promise<void> {
+  protected override async handleMessage(message: ProcessedMessage<BaseEvent>): Promise<void> {
     const event = message.event;
     const hourBucket = this.getHourBucket(new Date(event.timestamp));
-    
+
     // Always count events
     this.aggregateEventCount(event, hourBucket);
-    
+
     // Type-specific aggregations
     switch (event.eventType) {
       case 'learning.session.started':
@@ -204,11 +205,7 @@ export class AnalyticsConsumer extends BaseConsumer {
   // ---------------------------------------------------------------------------
 
   private aggregateEventCount(event: BaseEvent, hourBucket: Date): void {
-    const key = this.getAggregationKey(
-      event.tenantId,
-      event.eventType,
-      hourBucket.toISOString()
-    );
+    const key = this.getAggregationKey(event.tenantId, event.eventType, hourBucket.toISOString());
 
     const existing = this.buffer.eventCounts.get(key);
     if (existing) {
@@ -229,10 +226,7 @@ export class AnalyticsConsumer extends BaseConsumer {
   // Session Metrics Aggregation
   // ---------------------------------------------------------------------------
 
-  private aggregateSessionStarted(
-    event: LearningSessionStarted,
-    hourBucket: Date
-  ): void {
+  private aggregateSessionStarted(event: LearningSessionStarted, hourBucket: Date): void {
     const key = this.getAggregationKey(
       event.tenantId,
       event.payload.sessionType,
@@ -260,19 +254,12 @@ export class AnalyticsConsumer extends BaseConsumer {
     }
   }
 
-  private aggregateSessionEnded(
-    event: LearningSessionEnded,
-    hourBucket: Date
-  ): void {
+  private aggregateSessionEnded(event: LearningSessionEnded, hourBucket: Date): void {
     // Try to find matching session type from existing data
     // In production, we'd look this up from the session
     const sessionType = 'LEARNING'; // Default
-    
-    const key = this.getAggregationKey(
-      event.tenantId,
-      sessionType,
-      hourBucket.toISOString()
-    );
+
+    const key = this.getAggregationKey(event.tenantId, sessionType, hourBucket.toISOString());
 
     const existing = this.buffer.sessionMetrics.get(key);
     if (existing) {
@@ -300,10 +287,7 @@ export class AnalyticsConsumer extends BaseConsumer {
     }
   }
 
-  private aggregateActivityCompleted(
-    event: ActivityCompleted,
-    hourBucket: Date
-  ): void {
+  private aggregateActivityCompleted(event: ActivityCompleted, hourBucket: Date): void {
     // Activities contribute to the nearest session metrics bucket
     // This is a simplified aggregation
   }
@@ -312,27 +296,31 @@ export class AnalyticsConsumer extends BaseConsumer {
   // Engagement Metrics Aggregation
   // ---------------------------------------------------------------------------
 
-  private aggregateEngagement(
-    event: EngagementMetric,
-    hourBucket: Date
-  ): void {
-    const key = this.getAggregationKey(
-      event.tenantId,
-      hourBucket.toISOString()
-    );
+  private aggregateEngagement(event: EngagementMetric, hourBucket: Date): void {
+    const key = this.getAggregationKey(event.tenantId, hourBucket.toISOString());
 
     const existing = this.buffer.engagementMetrics.get(key);
     if (existing) {
       // Running average calculation
       const newCount = existing.sampleCount + 1;
-      existing.avgEngagementScore = 
-        (existing.avgEngagementScore * existing.sampleCount + event.payload.engagementScore) / newCount;
-      existing.minEngagementScore = Math.min(existing.minEngagementScore, event.payload.engagementScore);
-      existing.maxEngagementScore = Math.max(existing.maxEngagementScore, event.payload.engagementScore);
-      existing.avgInteractionRate = 
-        (existing.avgInteractionRate * existing.sampleCount + event.payload.components.interactionRate) / newCount;
-      existing.avgOnTaskRatio = 
-        (existing.avgOnTaskRatio * existing.sampleCount + event.payload.components.onTaskRatio) / newCount;
+      existing.avgEngagementScore =
+        (existing.avgEngagementScore * existing.sampleCount + event.payload.engagementScore) /
+        newCount;
+      existing.minEngagementScore = Math.min(
+        existing.minEngagementScore,
+        event.payload.engagementScore
+      );
+      existing.maxEngagementScore = Math.max(
+        existing.maxEngagementScore,
+        event.payload.engagementScore
+      );
+      existing.avgInteractionRate =
+        (existing.avgInteractionRate * existing.sampleCount +
+          event.payload.components.interactionRate) /
+        newCount;
+      existing.avgOnTaskRatio =
+        (existing.avgOnTaskRatio * existing.sampleCount + event.payload.components.onTaskRatio) /
+        newCount;
       existing.sampleCount = newCount;
       existing.updatedAt = new Date();
     } else {
@@ -354,25 +342,18 @@ export class AnalyticsConsumer extends BaseConsumer {
   // Focus Metrics Aggregation
   // ---------------------------------------------------------------------------
 
-  private aggregateFocusSample(
-    event: FocusSample,
-    hourBucket: Date
-  ): void {
+  private aggregateFocusSample(event: FocusSample, hourBucket: Date): void {
     const gradeBand = event.payload.gradeBand ?? 'unknown';
-    const key = this.getAggregationKey(
-      event.tenantId,
-      gradeBand,
-      hourBucket.toISOString()
-    );
+    const key = this.getAggregationKey(event.tenantId, gradeBand, hourBucket.toISOString());
 
     const existing = this.buffer.focusMetrics.get(key);
     if (existing) {
       const newCount = existing.sampleCount + 1;
-      existing.avgFocusScore = 
+      existing.avgFocusScore =
         (existing.avgFocusScore * existing.sampleCount + event.payload.focusScore) / newCount;
       existing.minFocusScore = Math.min(existing.minFocusScore, event.payload.focusScore);
       existing.maxFocusScore = Math.max(existing.maxFocusScore, event.payload.focusScore);
-      existing.avgIdleMs = 
+      existing.avgIdleMs =
         (existing.avgIdleMs * existing.sampleCount + event.payload.avgIdleMs) / newCount;
       existing.totalBackgroundMs += event.payload.backgroundMs;
       existing.sampleCount = newCount;
@@ -394,16 +375,9 @@ export class AnalyticsConsumer extends BaseConsumer {
     }
   }
 
-  private aggregateFocusSummary(
-    event: FocusSessionSummary,
-    hourBucket: Date
-  ): void {
+  private aggregateFocusSummary(event: FocusSessionSummary, hourBucket: Date): void {
     const gradeBand = event.payload.gradeBand ?? 'unknown';
-    const key = this.getAggregationKey(
-      event.tenantId,
-      gradeBand,
-      hourBucket.toISOString()
-    );
+    const key = this.getAggregationKey(event.tenantId, gradeBand, hourBucket.toISOString());
 
     const existing = this.buffer.focusMetrics.get(key);
     if (existing) {
@@ -463,15 +437,18 @@ export function createAnalyticsConsumers(
 ): AnalyticsConsumer[] {
   // Only consume LEARNING and FOCUS for analytics
   const streams = ['LEARNING', 'FOCUS'];
-  
-  return streams.map(stream =>
-    new AnalyticsConsumer({
+
+  return streams.map((stream) => {
+    const config: AnalyticsConsumerConfig = {
       connection,
       consumer: { stream },
       writers,
-      windowMs: options?.windowMs,
-    })
-  );
+    };
+    if (options?.windowMs !== undefined) {
+      config.windowMs = options.windowMs;
+    }
+    return new AnalyticsConsumer(config);
+  });
 }
 
 // -----------------------------------------------------------------------------

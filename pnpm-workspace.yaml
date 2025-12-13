@@ -4,3 +4,4 @@ packages:
   - "libs/ts-*"
   - "libs/ui-web"
   - "libs/ts-data-access"
+  - "libs/events"

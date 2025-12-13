@@ -5,13 +5,6 @@
 // High-level publisher with typed methods for each event domain.
 // Wraps NatsTransport with convenience methods and type safety.
 
-import { v4 as uuidv4 } from 'uuid';
-import {
-  NatsTransport,
-  NatsTransportConfig,
-  PublishOptions,
-  PublishResult,
-} from './nats-transport';
 import type {
   // Learning events
   LearningSessionStarted,
@@ -40,13 +33,16 @@ import type {
   RecommendationDismissed,
   RecommendationFeedback,
   RecommendationOutcome,
-} from '../schemas';
+} from '../schemas/index.js';
 import {
   LEARNING_EVENT_TYPES,
   FOCUS_EVENT_TYPES,
   HOMEWORK_EVENT_TYPES,
   RECOMMENDATION_EVENT_TYPES,
-} from '../schemas';
+} from '../schemas/index.js';
+
+import { NatsTransport } from './nats-transport.js';
+import type { NatsTransportConfig, PublishOptions, PublishResult } from './nats-transport.js';
 
 // -----------------------------------------------------------------------------
 // Publisher Configuration
@@ -58,18 +54,12 @@ export interface EventPublisherConfig extends NatsTransportConfig {
 }
 
 // -----------------------------------------------------------------------------
-// Payload Types (event minus base fields)
-// -----------------------------------------------------------------------------
-
-type EventPayload<T> = Omit<T, 'eventId' | 'tenantId' | 'eventType' | 'eventVersion' | 'timestamp' | 'source' | 'correlationId' | 'causationId' | 'metadata'>;
-
-// -----------------------------------------------------------------------------
 // Event Publisher Class
 // -----------------------------------------------------------------------------
 
 export class EventPublisher {
   private transport: NatsTransport;
-  private defaultTenantId?: string;
+  private defaultTenantId: string | undefined;
 
   constructor(config: EventPublisherConfig) {
     this.transport = new NatsTransport(config);
@@ -483,8 +473,19 @@ export class EventPublisher {
   /**
    * Publish a raw event (for custom event types).
    */
-  async publishRaw<T extends { eventType: string; tenantId: string }>(
-    event: Omit<T, 'eventId' | 'timestamp' | 'source'>,
+  async publishRaw(
+    event: Omit<
+      {
+        eventId: string;
+        tenantId: string;
+        eventType: string;
+        eventVersion: string;
+        timestamp: string;
+        source: { service: string; version: string };
+        payload: Record<string, unknown>;
+      },
+      'eventId' | 'timestamp' | 'source'
+    >,
     options?: PublishOptions
   ): Promise<PublishResult> {
     return this.transport.publish(event, options);

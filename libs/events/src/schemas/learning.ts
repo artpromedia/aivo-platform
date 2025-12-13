@@ -6,12 +6,13 @@
 // skill mastery, and engagement metrics.
 
 import { z } from 'zod';
+
 import {
   BaseEventSchema,
   GradeBandSchema,
   SessionOriginSchema,
   SessionTypeSchema,
-} from './base';
+} from './base.js';
 
 // -----------------------------------------------------------------------------
 // Learning Session Events
@@ -92,15 +93,7 @@ export const ActivityStartedSchema = BaseEventSchema.extend({
     sessionId: z.string().uuid(),
     learnerId: z.string().uuid(),
     activityId: z.string().uuid(),
-    activityType: z.enum([
-      'lesson',
-      'quiz',
-      'practice',
-      'game',
-      'video',
-      'reading',
-      'interactive',
-    ]),
+    activityType: z.enum(['lesson', 'quiz', 'practice', 'game', 'video', 'reading', 'interactive']),
     /** Content item being worked on */
     contentId: z.string().uuid(),
     /** Skill being practiced */

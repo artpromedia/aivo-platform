@@ -23,13 +23,14 @@
 //     indexed_at TIMESTAMPTZ DEFAULT NOW()
 //   );
 
-import {
-  BaseConsumer,
+import type { BaseEvent } from '../schemas/index.js';
+
+import { BaseConsumer } from './base-consumer.js';
+import type {
   ConsumerConnectionConfig,
   ConsumerOptions,
   ProcessedMessage,
-} from './base-consumer';
-import type { BaseEvent } from '../schemas';
+} from './base-consumer.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -69,7 +70,7 @@ export interface IndexedEvent {
 
 export class IndexingConsumer extends BaseConsumer {
   private buffer: IndexedEvent[] = [];
-  private flushTimer: NodeJS.Timeout | null = null;
+  private flushTimer: ReturnType<typeof setInterval> | null = null;
   private writeEvent: (event: IndexedEvent) => Promise<void>;
   private batchSize: number;
   private flushIntervalMs: number;
@@ -79,16 +80,16 @@ export class IndexingConsumer extends BaseConsumer {
       ...config.consumer,
       durableName: `${config.consumer.stream.toLowerCase()}-indexer`,
     });
-    
+
     this.writeEvent = config.writeEvent;
     this.batchSize = config.batchSize ?? 100;
     this.flushIntervalMs = config.flushIntervalMs ?? 1000;
   }
 
-  async start(): Promise<void> {
+  override async start(): Promise<void> {
     // Start flush timer
     this.flushTimer = setInterval(() => {
-      this.flush().catch(err => {
+      this.flush().catch((err: unknown) => {
         console.error('[IndexingConsumer] Flush error:', err);
       });
     }, this.flushIntervalMs);
@@ -96,21 +97,21 @@ export class IndexingConsumer extends BaseConsumer {
     await super.start();
   }
 
-  async close(): Promise<void> {
+  override async close(): Promise<void> {
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
       this.flushTimer = null;
     }
-    
+
     // Final flush
     await this.flush();
-    
+
     await super.close();
   }
 
-  protected async handleMessage(message: ProcessedMessage<BaseEvent>): Promise<void> {
+  protected override async handleMessage(message: ProcessedMessage<BaseEvent>): Promise<void> {
     const event = message.event;
-    
+
     const indexedEvent: IndexedEvent = {
       id: event.eventId,
       tenantId: event.tenantId,
@@ -119,14 +120,22 @@ export class IndexingConsumer extends BaseConsumer {
       timestamp: new Date(event.timestamp),
       sourceService: event.source.service,
       sourceVersion: event.source.version,
-      correlationId: event.correlationId,
-      causationId: event.causationId,
       payload: (event as any).payload ?? {},
-      metadata: event.metadata as Record<string, unknown>,
       stream: this.consumerOptions.stream,
       sequence: message.sequence,
       indexedAt: new Date(),
     };
+
+    // Add optional fields only if they exist
+    if (event.correlationId) {
+      indexedEvent.correlationId = event.correlationId;
+    }
+    if (event.causationId) {
+      indexedEvent.causationId = event.causationId;
+    }
+    if (event.metadata) {
+      indexedEvent.metadata = event.metadata;
+    }
 
     this.buffer.push(indexedEvent);
 
@@ -141,11 +150,11 @@ export class IndexingConsumer extends BaseConsumer {
     }
 
     const batch = this.buffer.splice(0, this.batchSize);
-    
+
     try {
       // Write events in parallel (within batch)
-      await Promise.all(batch.map(event => this.writeEvent(event)));
-      
+      await Promise.all(batch.map((event) => this.writeEvent(event)));
+
       console.log(
         `[IndexingConsumer:${this.consumerOptions.stream}] Indexed ${batch.length} events`
       );
@@ -173,16 +182,21 @@ export function createIndexingConsumers(
   }
 ): IndexingConsumer[] {
   const streams = ['LEARNING', 'FOCUS', 'HOMEWORK', 'RECOMMENDATION'];
-  
-  return streams.map(stream => 
-    new IndexingConsumer({
+
+  return streams.map((stream) => {
+    const config: IndexingConsumerConfig = {
       connection,
       consumer: { stream },
       writeEvent,
-      batchSize: options?.batchSize,
-      flushIntervalMs: options?.flushIntervalMs,
-    })
-  );
+    };
+    if (options?.batchSize !== undefined) {
+      config.batchSize = options.batchSize;
+    }
+    if (options?.flushIntervalMs !== undefined) {
+      config.flushIntervalMs = options.flushIntervalMs;
+    }
+    return new IndexingConsumer(config);
+  });
 }
 
 // -----------------------------------------------------------------------------

@@ -6,19 +6,14 @@
 // High-volume events with strict size constraints.
 
 import { z } from 'zod';
-import { BaseEventSchema, GradeBandSchema } from './base';
+
+import { BaseEventSchema, GradeBandSchema } from './base.js';
 
 // -----------------------------------------------------------------------------
 // Self-Reported Mood
 // -----------------------------------------------------------------------------
 
-export const SelfReportedMoodSchema = z.enum([
-  'great',
-  'good',
-  'okay',
-  'frustrated',
-  'tired',
-]);
+export const SelfReportedMoodSchema = z.enum(['great', 'good', 'okay', 'frustrated', 'tired']);
 
 export type SelfReportedMood = z.infer<typeof SelfReportedMoodSchema>;
 
@@ -129,13 +124,9 @@ export const FocusLossSchema = BaseEventSchema.extend({
     /** How long focus has been low (ms) */
     lowFocusDurationMs: z.number().int().min(0),
     /** Intervention recommended */
-    interventionSuggested: z.enum([
-      'break_prompt',
-      'activity_switch',
-      'difficulty_adjust',
-      'encouragement',
-      'none',
-    ]).optional(),
+    interventionSuggested: z
+      .enum(['break_prompt', 'activity_switch', 'difficulty_adjust', 'encouragement', 'none'])
+      .optional(),
     detectedAt: z.string().datetime({ offset: true }),
   }),
 });

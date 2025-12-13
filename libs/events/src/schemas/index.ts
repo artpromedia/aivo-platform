@@ -18,7 +18,7 @@ export {
   type SessionOrigin,
   type SessionType,
   type ValidationResult,
-} from './base';
+} from './base.js';
 
 // Learning events
 export {
@@ -37,7 +37,7 @@ export {
   type SkillMasteryUpdated,
   type EngagementMetric,
   type LearningEvent,
-} from './learning';
+} from './learning.js';
 
 // Focus events
 export {
@@ -56,7 +56,7 @@ export {
   type FocusLoss,
   type FocusSessionSummary,
   type FocusEvent,
-} from './focus';
+} from './focus.js';
 
 // Homework events
 export {
@@ -81,7 +81,7 @@ export {
   type HomeworkSolutionAttempted,
   type HomeworkQuestionCompleted,
   type HomeworkEvent,
-} from './homework';
+} from './homework.js';
 
 // Recommendation events
 export {
@@ -104,17 +104,18 @@ export {
   type RecommendationFeedback,
   type RecommendationOutcome,
   type RecommendationEvent,
-} from './recommendation';
+} from './recommendation.js';
 
 // -----------------------------------------------------------------------------
 // All Events Union
 // -----------------------------------------------------------------------------
 
 import { z } from 'zod';
-import { LearningEventSchema } from './learning';
-import { FocusEventSchema } from './focus';
-import { HomeworkEventSchema } from './homework';
-import { RecommendationEventSchema } from './recommendation';
+
+import { FocusEventSchema } from './focus.js';
+import { HomeworkEventSchema } from './homework.js';
+import { LearningEventSchema } from './learning.js';
+import { RecommendationEventSchema } from './recommendation.js';
 
 /**
  * Union of all AIVO event types.
@@ -136,10 +137,10 @@ export type AivoEvent = z.infer<typeof AivoEventSchema>;
  * Maps event type prefixes to JetStream stream names.
  */
 export const EVENT_STREAM_MAP: Record<string, string> = {
-  'learning': 'LEARNING',
-  'focus': 'FOCUS',
-  'homework': 'HOMEWORK',
-  'recommendation': 'RECOMMENDATION',
+  learning: 'LEARNING',
+  focus: 'FOCUS',
+  homework: 'HOMEWORK',
+  recommendation: 'RECOMMENDATION',
 };
 
 /**
@@ -147,6 +148,9 @@ export const EVENT_STREAM_MAP: Record<string, string> = {
  */
 export function getStreamForEventType(eventType: string): string {
   const prefix = eventType.split('.')[0];
+  if (!prefix) {
+    throw new Error(`Invalid event type: ${eventType}`);
+  }
   const stream = EVENT_STREAM_MAP[prefix];
   if (!stream) {
     throw new Error(`Unknown event type prefix: ${prefix}`);

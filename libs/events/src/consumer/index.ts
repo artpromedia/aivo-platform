@@ -8,7 +8,7 @@ export {
   type ConsumerOptions,
   type ProcessedMessage,
   type MessageHandler,
-} from './base-consumer';
+} from './base-consumer.js';
 
 export {
   IndexingConsumer,
@@ -17,7 +17,7 @@ export {
   INSERT_EVENT_SQL,
   type IndexingConsumerConfig,
   type IndexedEvent,
-} from './indexing-consumer';
+} from './indexing-consumer.js';
 
 export {
   AnalyticsConsumer,
@@ -28,7 +28,7 @@ export {
   type SessionMetricsAggregation,
   type EngagementMetricsAggregation,
   type FocusMetricsAggregation,
-} from './analytics-consumer';
+} from './analytics-consumer.js';
 
 export {
   EventReplayService,
@@ -38,7 +38,7 @@ export {
   type ReplayResult,
   type StreamInfo,
   type MessageInfo,
-} from './replay-service';
+} from './replay-service.js';
 
 export {
   DLQService,
@@ -47,4 +47,4 @@ export {
   type DLQMessage,
   type DLQStats,
   type RetryResult,
-} from './dlq-service';
+} from './dlq-service.js';

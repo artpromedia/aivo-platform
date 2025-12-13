@@ -5,20 +5,18 @@
 // Abstract base class for NATS JetStream consumers.
 // Provides connection management, message processing, and error handling.
 
-import {
-  connect,
+import { connect, StringCodec, AckPolicy, DeliverPolicy, ReplayPolicy } from 'nats';
+import type {
   NatsConnection,
   JetStreamClient,
   JetStreamManager,
   ConsumerConfig,
   ConsumerInfo,
   JsMsg,
-  StringCodec,
-  AckPolicy,
-  DeliverPolicy,
-  ReplayPolicy,
+  ConnectionOptions,
 } from 'nats';
-import type { BaseEvent } from '../schemas';
+
+import type { BaseEvent } from '../schemas/index.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -66,9 +64,7 @@ export interface ProcessedMessage<T = unknown> {
   timestamp: Date;
 }
 
-export type MessageHandler<T = unknown> = (
-  message: ProcessedMessage<T>
-) => Promise<void>;
+export type MessageHandler<T = unknown> = (message: ProcessedMessage<T>) => Promise<void>;
 
 // -----------------------------------------------------------------------------
 // Base Consumer Class
@@ -98,17 +94,28 @@ export abstract class BaseConsumer {
 
     const servers = Array.isArray(this.connectionConfig.servers)
       ? this.connectionConfig.servers
-      : this.connectionConfig.servers.split(',').map(s => s.trim());
+      : this.connectionConfig.servers.split(',').map((s) => s.trim());
 
-    this.nc = await connect({
+    const opts: ConnectionOptions = {
       servers,
       name: this.connectionConfig.name ?? `${this.consumerOptions.durableName}-consumer`,
       maxReconnectAttempts: this.connectionConfig.maxReconnectAttempts ?? -1,
-      tls: this.connectionConfig.tls ? {} : undefined,
-      token: this.connectionConfig.token,
-      user: this.connectionConfig.user,
-      pass: this.connectionConfig.pass,
-    });
+    };
+
+    if (this.connectionConfig.tls) {
+      opts.tls = {};
+    }
+    if (this.connectionConfig.token) {
+      opts.token = this.connectionConfig.token;
+    }
+    if (this.connectionConfig.user) {
+      opts.user = this.connectionConfig.user;
+    }
+    if (this.connectionConfig.pass) {
+      opts.pass = this.connectionConfig.pass;
+    }
+
+    this.nc = await connect(opts);
 
     this.js = this.nc.jetstream();
     this.jsm = await this.nc.jetstreamManager();
@@ -146,10 +153,7 @@ export abstract class BaseConsumer {
     }
 
     try {
-      return await this.jsm.consumers.add(
-        this.consumerOptions.stream,
-        config
-      );
+      return await this.jsm.consumers.add(this.consumerOptions.stream, config);
     } catch (err) {
       // Consumer might already exist
       return await this.jsm.consumers.info(
@@ -162,7 +166,7 @@ export abstract class BaseConsumer {
   async close(): Promise<void> {
     this.isRunning = false;
     this.abortController?.abort();
-    
+
     if (this.nc) {
       await this.nc.drain();
       await this.nc.close();
@@ -185,7 +189,7 @@ export abstract class BaseConsumer {
     }
 
     await this.connect();
-    
+
     if (!this.js) {
       throw new Error('JetStream client not initialized');
     }
@@ -233,7 +237,7 @@ export abstract class BaseConsumer {
 
   protected async processMessage(msg: JsMsg): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       const data = this.sc.decode(msg.data);
       const event = JSON.parse(data) as BaseEvent;
@@ -242,12 +246,12 @@ export abstract class BaseConsumer {
         event,
         subject: msg.subject,
         sequence: msg.seq,
-        deliveryCount: msg.info.redeliveryCount + 1,
+        deliveryCount: msg.info.deliveryCount,
         timestamp: new Date(),
       };
 
       await this.handleMessage(processed);
-      
+
       msg.ack();
 
       const latency = Date.now() - startTime;
@@ -263,25 +267,25 @@ export abstract class BaseConsumer {
       );
 
       // Check if max deliveries reached
-      if (msg.info.redeliveryCount >= (this.consumerOptions.maxDeliveries ?? 5) - 1) {
+      if (msg.info.deliveryCount >= (this.consumerOptions.maxDeliveries ?? 5)) {
         // This will be the last delivery - move to DLQ
         await this.handleDeadLetter(msg, err);
         msg.ack(); // Ack to prevent further redelivery
       } else {
         // NAK for redelivery with backoff
-        msg.nak(this.calculateBackoff(msg.info.redeliveryCount));
+        msg.nak(this.calculateBackoff(msg.info.deliveryCount));
       }
     }
   }
 
-  protected calculateBackoff(redeliveryCount: number): number {
+  protected calculateBackoff(deliveryCount: number): number {
     // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-    return Math.min(1000 * Math.pow(2, redeliveryCount), 16000);
+    return Math.min(1000 * Math.pow(2, deliveryCount - 1), 16000);
   }
 
-  protected async handleDeadLetter(msg: JsMsg, error: unknown): Promise<void> {
+  protected async handleDeadLetter(msg: JsMsg, _error: unknown): Promise<void> {
     console.error(
-      `[Consumer:${this.consumerOptions.durableName}] Message moved to DLQ after ${msg.info.redeliveryCount + 1} attempts`
+      `[Consumer:${this.consumerOptions.durableName}] Message moved to DLQ after ${msg.info.deliveryCount} attempts`
     );
     // Subclasses can override to publish to DLQ stream
   }

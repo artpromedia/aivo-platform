@@ -6,7 +6,8 @@
 // Used for analytics, explainability, and A/B testing.
 
 import { z } from 'zod';
-import { BaseEventSchema, GradeBandSchema, SessionTypeSchema } from './base';
+
+import { BaseEventSchema, GradeBandSchema } from './base.js';
 
 // -----------------------------------------------------------------------------
 // Recommendation Type
@@ -165,25 +166,21 @@ export const RecommendationDismissedSchema = BaseEventSchema.extend({
     learnerId: z.string().uuid(),
     sessionId: z.string().uuid().optional(),
     /** How it was dismissed */
-    dismissMethod: z.enum([
-      'swipe',
-      'skip_button',
-      'back_navigation',
-      'timeout',
-      'replaced',
-    ]),
+    dismissMethod: z.enum(['swipe', 'skip_button', 'back_navigation', 'timeout', 'replaced']),
     /** Time from serve to dismiss (ms) */
     dwellTimeMs: z.number().int().min(0),
     /** User provided reason */
-    reason: z.enum([
-      'not_interested',
-      'too_easy',
-      'too_hard',
-      'already_know',
-      'wrong_subject',
-      'not_now',
-      'none_given',
-    ]).optional(),
+    reason: z
+      .enum([
+        'not_interested',
+        'too_easy',
+        'too_hard',
+        'already_know',
+        'wrong_subject',
+        'not_now',
+        'none_given',
+      ])
+      .optional(),
     dismissedAt: z.string().datetime({ offset: true }),
   }),
 });
@@ -202,22 +199,13 @@ export const RecommendationFeedbackSchema = BaseEventSchema.extend({
     learnerId: z.string().uuid(),
     sessionId: z.string().uuid().optional(),
     /** Explicit feedback type */
-    feedbackType: z.enum([
-      'thumbs_up',
-      'thumbs_down',
-      'star_rating',
-      'completion_rating',
-    ]),
+    feedbackType: z.enum(['thumbs_up', 'thumbs_down', 'star_rating', 'completion_rating']),
     /** Rating value (1-5 for stars, 0-1 for binary) */
     ratingValue: z.number().min(0).max(5),
     /** Time since activity started (ms) */
     timeSinceStartMs: z.number().int().min(0),
     /** Activity outcome at feedback time */
-    activityOutcome: z.enum([
-      'completed',
-      'in_progress',
-      'abandoned',
-    ]).optional(),
+    activityOutcome: z.enum(['completed', 'in_progress', 'abandoned']).optional(),
     /** Score if completed */
     activityScore: z.number().min(0).max(100).optional(),
     feedbackAt: z.string().datetime({ offset: true }),
@@ -240,12 +228,7 @@ export const RecommendationOutcomeSchema = BaseEventSchema.extend({
     /** Whether recommendation was accepted */
     wasAccepted: z.boolean(),
     /** Activity completion status */
-    completionStatus: z.enum([
-      'not_started',
-      'in_progress',
-      'completed',
-      'abandoned',
-    ]),
+    completionStatus: z.enum(['not_started', 'in_progress', 'completed', 'abandoned']),
     /** Time spent on activity (ms) */
     timeSpentMs: z.number().int().min(0).optional(),
     /** Score achieved */

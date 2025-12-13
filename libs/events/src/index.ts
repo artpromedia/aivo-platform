@@ -25,10 +25,10 @@
 //   await publisher.close();
 
 // Schemas
-export * from './schemas';
+export * from './schemas/index.js';
 
 // Transport
-export * from './transport';
+export * from './transport/index.js';
 
 // Consumer utilities
-export * from './consumer';
+export * from './consumer/index.js';

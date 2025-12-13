@@ -5,17 +5,16 @@
 // Internal API for replaying events from JetStream streams.
 // Used for debugging, backfilling, and recovery.
 
-import {
-  connect,
+import { connect, StringCodec, DeliverPolicy, AckPolicy } from 'nats';
+import type {
   NatsConnection,
   JetStreamClient,
   JetStreamManager,
-  StringCodec,
-  DeliverPolicy,
   ConsumerConfig,
-  AckPolicy,
+  ConnectionOptions,
 } from 'nats';
-import type { BaseEvent } from '../schemas';
+
+import type { BaseEvent } from '../schemas/index.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -69,10 +68,10 @@ export interface ReplayResult {
   /** Replay duration in ms */
   durationMs: number;
   /** Errors encountered */
-  errors: Array<{
+  errors: {
     sequence: number;
     error: string;
-  }>;
+  }[];
 }
 
 export interface StreamInfo {
@@ -112,16 +111,27 @@ export class EventReplayService {
 
     const servers = Array.isArray(this.config.servers)
       ? this.config.servers
-      : this.config.servers.split(',').map(s => s.trim());
+      : this.config.servers.split(',').map((s) => s.trim());
 
-    this.nc = await connect({
+    const opts: ConnectionOptions = {
       servers,
       name: this.config.name ?? 'event-replay-service',
-      tls: this.config.tls ? {} : undefined,
-      token: this.config.token,
-      user: this.config.user,
-      pass: this.config.pass,
-    });
+    };
+
+    if (this.config.tls) {
+      opts.tls = {};
+    }
+    if (this.config.token) {
+      opts.token = this.config.token;
+    }
+    if (this.config.user) {
+      opts.user = this.config.user;
+    }
+    if (this.config.pass) {
+      opts.pass = this.config.pass;
+    }
+
+    this.nc = await connect(opts);
 
     this.js = this.nc.jetstream();
     this.jsm = await this.nc.jetstreamManager();
@@ -143,41 +153,51 @@ export class EventReplayService {
 
   async listStreams(): Promise<StreamInfo[]> {
     await this.connect();
-    
+
     const streams: StreamInfo[] = [];
     const lister = this.jsm!.streams.list();
-    
+
     for await (const si of lister) {
-      streams.push({
+      const info: StreamInfo = {
         name: si.config.name,
         subjects: si.config.subjects ?? [],
         messages: si.state.messages,
         bytes: si.state.bytes,
         firstSeq: si.state.first_seq,
         lastSeq: si.state.last_seq,
-        firstTime: si.state.first_ts ? new Date(si.state.first_ts) : undefined,
-        lastTime: si.state.last_ts ? new Date(si.state.last_ts) : undefined,
-      });
+      };
+      if (si.state.first_ts) {
+        info.firstTime = new Date(si.state.first_ts);
+      }
+      if (si.state.last_ts) {
+        info.lastTime = new Date(si.state.last_ts);
+      }
+      streams.push(info);
     }
-    
+
     return streams;
   }
 
   async getStreamInfo(streamName: string): Promise<StreamInfo | null> {
     await this.connect();
-    
+
     try {
       const si = await this.jsm!.streams.info(streamName);
-      return {
+      const info: StreamInfo = {
         name: si.config.name,
         subjects: si.config.subjects ?? [],
         messages: si.state.messages,
         bytes: si.state.bytes,
         firstSeq: si.state.first_seq,
         lastSeq: si.state.last_seq,
-        firstTime: si.state.first_ts ? new Date(si.state.first_ts) : undefined,
-        lastTime: si.state.last_ts ? new Date(si.state.last_ts) : undefined,
       };
+      if (si.state.first_ts) {
+        info.firstTime = new Date(si.state.first_ts);
+      }
+      if (si.state.last_ts) {
+        info.lastTime = new Date(si.state.last_ts);
+      }
+      return info;
     } catch {
       return null;
     }
@@ -189,12 +209,12 @@ export class EventReplayService {
 
   async getMessage(stream: string, sequence: number): Promise<MessageInfo | null> {
     await this.connect();
-    
+
     try {
       const sm = await this.jsm!.streams.getMessage(stream, { seq: sequence });
       const data = this.sc.decode(sm.data);
       const event = JSON.parse(data) as BaseEvent;
-      
+
       return {
         sequence: sm.seq,
         subject: sm.subject,
@@ -206,15 +226,11 @@ export class EventReplayService {
     }
   }
 
-  async getMessages(
-    stream: string,
-    startSeq: number,
-    count: number
-  ): Promise<MessageInfo[]> {
+  async getMessages(stream: string, startSeq: number, count: number): Promise<MessageInfo[]> {
     await this.connect();
-    
+
     const messages: MessageInfo[] = [];
-    
+
     // Create ephemeral consumer starting at sequence
     const consumerConfig: Partial<ConsumerConfig> = {
       ack_policy: AckPolicy.None,
@@ -226,21 +242,21 @@ export class EventReplayService {
 
     const consumer = await this.jsm!.consumers.add(stream, consumerConfig);
     const sub = await this.js!.consumers.get(stream, consumer.name);
-    
+
     try {
       const iter = await sub.consume({ max_messages: count });
-      
+
       for await (const msg of iter) {
         const data = this.sc.decode(msg.data);
         const event = JSON.parse(data) as BaseEvent;
-        
+
         messages.push({
           sequence: msg.seq,
           subject: msg.subject,
           timestamp: new Date(msg.info.timestampNanos / 1_000_000),
           event,
         });
-        
+
         if (messages.length >= count) {
           break;
         }
@@ -248,7 +264,7 @@ export class EventReplayService {
     } finally {
       await this.jsm!.consumers.delete(stream, consumer.name);
     }
-    
+
     return messages;
   }
 
@@ -261,7 +277,7 @@ export class EventReplayService {
     handler: (event: BaseEvent, sequence: number) => Promise<void>
   ): Promise<ReplayResult> {
     await this.connect();
-    
+
     const startTime = Date.now();
     const errors: ReplayResult['errors'] = [];
     let eventsReplayed = 0;
@@ -295,7 +311,7 @@ export class EventReplayService {
     try {
       const maxEvents = options.maxEvents ?? Infinity;
       const iter = await sub.consume({ max_messages: Math.min(maxEvents, 10000) });
-      
+
       let prevTimestamp: number | undefined;
 
       for await (const msg of iter) {
@@ -345,7 +361,6 @@ export class EventReplayService {
           }
           lastSequence = msg.seq;
           eventsReplayed++;
-
         } catch (err) {
           errors.push({
             sequence: msg.seq,
@@ -367,22 +382,19 @@ export class EventReplayService {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // ---------------------------------------------------------------------------
   // Republish (for backfilling new consumers)
   // ---------------------------------------------------------------------------
 
-  async republish(
-    options: ReplayOptions,
-    targetSubject: string
-  ): Promise<ReplayResult> {
+  async republish(options: ReplayOptions, targetSubject: string): Promise<ReplayResult> {
     return this.replay(options, async (event, _sequence) => {
       if (!this.js) {
         throw new Error('JetStream not connected');
       }
-      
+
       const data = this.sc.encode(JSON.stringify(event));
       await this.js.publish(targetSubject, data);
     });

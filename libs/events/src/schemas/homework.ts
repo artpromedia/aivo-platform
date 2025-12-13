@@ -5,7 +5,8 @@
 // Events for homework helper interactions: sessions, questions, hints, solutions.
 
 import { z } from 'zod';
-import { BaseEventSchema, GradeBandSchema, SessionOriginSchema } from './base';
+
+import { BaseEventSchema, GradeBandSchema, SessionOriginSchema } from './base.js';
 
 // -----------------------------------------------------------------------------
 // Homework Question Type
@@ -78,12 +79,7 @@ export const HomeworkSessionEndedSchema = BaseEventSchema.extend({
     /** Duration in milliseconds */
     durationMs: z.number().int().min(0),
     /** Session outcome */
-    outcome: z.enum([
-      'completed',
-      'partial',
-      'abandoned',
-      'timeout',
-    ]),
+    outcome: z.enum(['completed', 'partial', 'abandoned', 'timeout']),
     /** Summary statistics */
     summary: z.object({
       questionsAsked: z.number().int().min(0),
@@ -171,13 +167,7 @@ export const HomeworkHintDeliveredSchema = BaseEventSchema.extend({
     /** Hint level delivered */
     hintLevel: z.number().int().min(1).max(3),
     /** Hint type */
-    hintType: z.enum([
-      'conceptual',
-      'procedural',
-      'example',
-      'partial_answer',
-      'error_correction',
-    ]),
+    hintType: z.enum(['conceptual', 'procedural', 'example', 'partial_answer', 'error_correction']),
     /** Latency to generate hint (ms) */
     generationLatencyMs: z.number().int().min(0),
     deliveredAt: z.string().datetime({ offset: true }),
@@ -207,14 +197,9 @@ export const HomeworkSolutionAttemptedSchema = BaseEventSchema.extend({
     /** Number of hints used before this attempt */
     hintsUsed: z.number().int().min(0),
     /** Error type if incorrect */
-    errorType: z.enum([
-      'conceptual',
-      'computational',
-      'careless',
-      'incomplete',
-      'formatting',
-      'unknown',
-    ]).optional(),
+    errorType: z
+      .enum(['conceptual', 'computational', 'careless', 'incomplete', 'formatting', 'unknown'])
+      .optional(),
     attemptedAt: z.string().datetime({ offset: true }),
   }),
 });
@@ -239,13 +224,7 @@ export const HomeworkQuestionCompletedSchema = BaseEventSchema.extend({
     /** Total hints used */
     totalHints: z.number().int().min(0),
     /** Final outcome */
-    outcome: z.enum([
-      'correct',
-      'partially_correct',
-      'gave_up',
-      'skipped',
-      'timed_out',
-    ]),
+    outcome: z.enum(['correct', 'partially_correct', 'gave_up', 'skipped', 'timed_out']),
     /** Whether solution was viewed */
     solutionViewed: z.boolean(),
     /** Mastery demonstrated (0-1) */

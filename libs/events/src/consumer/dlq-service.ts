@@ -5,15 +5,13 @@
 // Admin service for managing dead-letter queue events.
 // Provides inspection, retry, and purge capabilities.
 
-import {
-  connect,
+import { connect, StringCodec, DeliverPolicy, AckPolicy } from 'nats';
+import type {
   NatsConnection,
   JetStreamClient,
   JetStreamManager,
-  StringCodec,
-  DeliverPolicy,
-  AckPolicy,
   ConsumerConfig,
+  ConnectionOptions,
 } from 'nats';
 
 // -----------------------------------------------------------------------------
@@ -77,10 +75,10 @@ export interface RetryResult {
   /** Number of messages failed */
   failed: number;
   /** Error details for failures */
-  errors: Array<{
+  errors: {
     sequence: number;
     error: string;
-  }>;
+  }[];
 }
 
 // -----------------------------------------------------------------------------
@@ -105,16 +103,27 @@ export class DLQService {
 
     const servers = Array.isArray(this.config.servers)
       ? this.config.servers
-      : this.config.servers.split(',').map(s => s.trim());
+      : this.config.servers.split(',').map((s) => s.trim());
 
-    this.nc = await connect({
+    const opts: ConnectionOptions = {
       servers,
       name: this.config.name ?? 'dlq-service',
-      tls: this.config.tls ? {} : undefined,
-      token: this.config.token,
-      user: this.config.user,
-      pass: this.config.pass,
-    });
+    };
+
+    if (this.config.tls) {
+      opts.tls = {};
+    }
+    if (this.config.token) {
+      opts.token = this.config.token;
+    }
+    if (this.config.user) {
+      opts.user = this.config.user;
+    }
+    if (this.config.pass) {
+      opts.pass = this.config.pass;
+    }
+
+    this.nc = await connect(opts);
 
     this.js = this.nc.jetstream();
     this.jsm = await this.nc.jetstreamManager();
@@ -139,7 +148,7 @@ export class DLQService {
 
     try {
       const streamInfo = await this.jsm!.streams.info(this.dlqStream);
-      
+
       // Get message breakdown by iterating (expensive for large DLQs)
       const byStream: Record<string, number> = {};
       const byError: Record<string, number> = {};
@@ -148,7 +157,7 @@ export class DLQService {
 
       // Sample messages to build stats (limit to avoid memory issues)
       const maxSample = Math.min(streamInfo.state.messages, 1000);
-      
+
       if (maxSample > 0) {
         const consumerConfig: Partial<ConsumerConfig> = {
           ack_policy: AckPolicy.None,
@@ -177,7 +186,8 @@ export class DLQService {
 
               // Count by original stream
               const subject = dlqMsg.originalSubject ?? msg.subject;
-              const streamPrefix = subject.split('.')[0].replace('dlq.', '');
+              const firstPart = subject.split('.')[0];
+              const streamPrefix = firstPart ? firstPart.replace('dlq.', '') : 'unknown';
               byStream[streamPrefix] = (byStream[streamPrefix] ?? 0) + 1;
 
               // Count by error type (first 50 chars)
@@ -205,13 +215,18 @@ export class DLQService {
         }
       }
 
-      return {
+      const stats: DLQStats = {
         totalMessages: streamInfo.state.messages,
         byStream,
         byError,
-        oldestMessage,
-        newestMessage,
       };
+      if (oldestMessage) {
+        stats.oldestMessage = oldestMessage;
+      }
+      if (newestMessage) {
+        stats.newestMessage = newestMessage;
+      }
+      return stats;
     } catch (err) {
       // DLQ stream might not exist
       return {
@@ -354,7 +369,7 @@ export class DLQService {
 
     try {
       const msg = await this.getMessage(sequence);
-      if (!msg || !msg.originalEvent) {
+      if (!msg?.originalEvent) {
         return false;
       }
 
@@ -398,10 +413,13 @@ export class DLQService {
       }
     } else {
       // Retry by filter
-      const messages = await this.listMessages({
+      const listOpts: { limit: number; filterSubject?: string } = {
         limit: maxMessages,
-        filterSubject,
-      });
+      };
+      if (filterSubject) {
+        listOpts.filterSubject = filterSubject;
+      }
+      const messages = await this.listMessages(listOpts);
 
       for (const msg of messages) {
         const success = await this.retryMessage(msg.sequence);
@@ -454,7 +472,7 @@ export class DLQService {
         // Note: NATS doesn't support direct time-based purge,
         // so we find the sequence and purge up to it
         const streamInfo = await this.jsm!.streams.info(this.dlqStream);
-        
+
         // Binary search for the sequence at the cutoff time
         // For simplicity, purge by count based on estimated position
         const result = await this.jsm!.streams.purge(this.dlqStream, {
