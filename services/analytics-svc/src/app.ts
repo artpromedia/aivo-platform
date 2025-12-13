@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
 import { auditRoutes } from './routes/auditRoutes.js';
 import { classroomAnalyticsRoutes } from './routes/classroomAnalytics.js';
+import { eventsAdminRoutes } from './routes/events-admin.js';
 import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
 import { explanationRoutes } from './routes/explanationRoutes.js';
 import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
@@ -47,6 +48,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register audit routes under /audit prefix
   await app.register(auditRoutes, { prefix: '/audit' });
+
+  // Register internal events admin routes (for replay, DLQ management)
+  await app.register(eventsAdminRoutes, { prefix: '/internal/events' });
 
   return app;
 }

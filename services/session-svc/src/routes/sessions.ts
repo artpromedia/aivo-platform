@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import { SessionType, SessionOrigin, SessionEventType, type SessionWithEvents } from '../types.js';
+import { sessionEventPublisher } from '../services/event-publisher.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -164,6 +165,19 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
       include: {
         events: true,
       },
+    });
+
+    // Publish event to NATS (non-blocking)
+    sessionEventPublisher.publishSessionStarted({
+      id: session.id,
+      tenantId,
+      learnerId,
+      sessionType,
+      origin,
+      startedAt: now,
+      metadata: metadata as Record<string, unknown> | undefined,
+    }).catch(err => {
+      console.error('[sessions] Failed to publish session.started event:', err);
     });
 
     return reply.status(201).send(session);
@@ -412,6 +426,33 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         },
       }),
     ]);
+
+    // Count activities from events
+    const activityEvents = updatedSession.events.filter(e => 
+      e.eventType === SessionEventType.ACTIVITY_STARTED ||
+      e.eventType === SessionEventType.ACTIVITY_COMPLETED
+    );
+    const activitiesStarted = activityEvents.filter(e => e.eventType === SessionEventType.ACTIVITY_STARTED).length;
+    const activitiesCompleted = activityEvents.filter(e => e.eventType === SessionEventType.ACTIVITY_COMPLETED).length;
+
+    // Publish event to NATS (non-blocking)
+    sessionEventPublisher.publishSessionEnded({
+      sessionId: session.id,
+      tenantId: session.tenantId,
+      learnerId: session.learnerId,
+      durationMs,
+      endReason: 'completed',
+      summary: {
+        activitiesStarted,
+        activitiesCompleted,
+        correctAnswers: 0, // Would need to track this in events
+        incorrectAnswers: 0,
+        hintsUsed: 0,
+      },
+      endedAt: endTime,
+    }).catch(err => {
+      console.error('[sessions] Failed to publish session.ended event:', err);
+    });
 
     return reply.send(updatedSession);
   });

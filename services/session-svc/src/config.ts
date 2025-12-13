@@ -19,4 +19,13 @@ export const config = {
   jwtPublicKey: loadPublicKey(),
   isDev: process.env.NODE_ENV !== 'production',
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  
+  // NATS configuration for event publishing
+  nats: {
+    servers: process.env.NATS_SERVERS ?? 'nats://localhost:4222',
+    enabled: process.env.NATS_ENABLED !== 'false',
+    token: process.env.NATS_TOKEN,
+    user: process.env.NATS_USER,
+    pass: process.env.NATS_PASS,
+  },
 } as const;

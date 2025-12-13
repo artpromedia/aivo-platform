@@ -1,0 +1,141 @@
+# NATS JetStream Cluster - Local Development
+#
+# A 3-node NATS cluster with JetStream enabled for event streaming.
+#
+# Usage:
+#   docker-compose up -d          # Start cluster
+#   docker-compose logs -f        # View logs
+#   docker-compose down           # Stop cluster
+#   docker-compose down -v        # Stop and remove volumes
+#
+# Access:
+#   NATS:      nats://localhost:4222 (or 4223, 4224 for other nodes)
+#   Monitor:   http://localhost:8222  (node1 monitoring)
+#
+# Note: For local dev, connecting to any node works.
+# JetStream streams are replicated across nodes.
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # NATS Node 1 (Seed Node)
+  # ==========================================================================
+  nats1:
+    image: nats:2.10-alpine
+    container_name: aivo-nats-1
+    command:
+      - "--name=nats1"
+      - "--cluster_name=aivo-nats"
+      - "--cluster=nats://0.0.0.0:6222"
+      - "--routes=nats://nats2:6222,nats://nats3:6222"
+      - "--http_port=8222"
+      - "--js"
+      - "--sd=/data"
+      - "--config=/etc/nats/nats.conf"
+    ports:
+      - "4222:4222"   # Client connections
+      - "6222:6222"   # Cluster routing
+      - "8222:8222"   # HTTP monitoring
+    volumes:
+      - nats1-data:/data
+      - ./nats.conf:/etc/nats/nats.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nats-cluster
+    restart: unless-stopped
+
+  # ==========================================================================
+  # NATS Node 2
+  # ==========================================================================
+  nats2:
+    image: nats:2.10-alpine
+    container_name: aivo-nats-2
+    command:
+      - "--name=nats2"
+      - "--cluster_name=aivo-nats"
+      - "--cluster=nats://0.0.0.0:6222"
+      - "--routes=nats://nats1:6222,nats://nats3:6222"
+      - "--http_port=8222"
+      - "--js"
+      - "--sd=/data"
+      - "--config=/etc/nats/nats.conf"
+    ports:
+      - "4223:4222"
+      - "6223:6222"
+      - "8223:8222"
+    volumes:
+      - nats2-data:/data
+      - ./nats.conf:/etc/nats/nats.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nats-cluster
+    depends_on:
+      - nats1
+    restart: unless-stopped
+
+  # ==========================================================================
+  # NATS Node 3
+  # ==========================================================================
+  nats3:
+    image: nats:2.10-alpine
+    container_name: aivo-nats-3
+    command:
+      - "--name=nats3"
+      - "--cluster_name=aivo-nats"
+      - "--cluster=nats://0.0.0.0:6222"
+      - "--routes=nats://nats1:6222,nats://nats2:6222"
+      - "--http_port=8222"
+      - "--js"
+      - "--sd=/data"
+      - "--config=/etc/nats/nats.conf"
+    ports:
+      - "4224:4222"
+      - "6224:6222"
+      - "8224:8222"
+    volumes:
+      - nats3-data:/data
+      - ./nats.conf:/etc/nats/nats.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nats-cluster
+    depends_on:
+      - nats1
+    restart: unless-stopped
+
+  # ==========================================================================
+  # NATS Box (CLI tools for debugging)
+  # ==========================================================================
+  nats-box:
+    image: natsio/nats-box:latest
+    container_name: aivo-nats-box
+    command: ["tail", "-f", "/dev/null"]
+    networks:
+      - nats-cluster
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
+    profiles:
+      - tools  # Only starts with --profile tools
+
+networks:
+  nats-cluster:
+    driver: bridge
+
+volumes:
+  nats1-data:
+  nats2-data:
+  nats3-data:
