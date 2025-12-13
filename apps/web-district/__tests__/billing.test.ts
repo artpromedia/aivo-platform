@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 import {
   formatCurrency,
@@ -241,12 +241,12 @@ describe('exportInvoicesToCsv', () => {
 // SEAT WARNING BANNER BEHAVIOR (Integration Tests)
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Seat Warning Banner Logic', () => {
-  function shouldShowBanner(seatUsage: SeatUsage): boolean {
-    const level = getSeatUsageLevel(seatUsage);
-    return level !== 'normal';
-  }
+function shouldShowBanner(seatUsage: SeatUsage): boolean {
+  const level = getSeatUsageLevel(seatUsage);
+  return level !== 'normal';
+}
 
+describe('Seat Warning Banner Logic', () => {
   it('shows banner when usage is at 90%+', () => {
     expect(shouldShowBanner(createSeatUsage(90, 100))).toBe(true);
     expect(shouldShowBanner(createSeatUsage(95, 100))).toBe(true);
@@ -270,20 +270,20 @@ describe('Seat Warning Banner Logic', () => {
 // INVOICES CTA WIRING
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Invoice Actions Logic', () => {
-  function getActionForInvoice(invoice: Invoice): string | null {
-    if (invoice.status === 'PAID' && invoice.hostedInvoiceUrl) {
-      return 'view-receipt';
-    }
-    if (invoice.status === 'OPEN') {
-      return 'view-invoice';
-    }
-    if (invoice.status === 'PAST_DUE') {
-      return 'pay-now';
-    }
-    return null;
+function getActionForInvoice(invoice: Invoice): string | null {
+  if (invoice.status === 'PAID' && invoice.hostedInvoiceUrl) {
+    return 'view-receipt';
   }
+  if (invoice.status === 'OPEN') {
+    return 'view-invoice';
+  }
+  if (invoice.status === 'PAST_DUE') {
+    return 'pay-now';
+  }
+  return null;
+}
 
+describe('Invoice Actions Logic', () => {
   it('returns view-receipt for paid invoices with hosted URL', () => {
     const invoice: Invoice = {
       id: 'inv-1',
@@ -416,9 +416,30 @@ describe('Contact CTAs', () => {
 
   it('request modules CTA includes disabled modules list', () => {
     const entitlements: ModuleEntitlement[] = [
-      { id: '1', tenantId: 't1', featureCode: 'MODULE_ELA', featureName: 'ELA', isEnabled: true, source: 'DISTRICT_PREMIUM' },
-      { id: '2', tenantId: 't1', featureCode: 'MODULE_MATH', featureName: 'Math', isEnabled: false, source: 'ADD_ON' },
-      { id: '3', tenantId: 't1', featureCode: 'MODULE_SEL', featureName: 'SEL', isEnabled: false, source: 'ADD_ON' },
+      {
+        id: '1',
+        tenantId: 't1',
+        featureCode: 'MODULE_ELA',
+        featureName: 'ELA',
+        isEnabled: true,
+        source: 'DISTRICT_PREMIUM',
+      },
+      {
+        id: '2',
+        tenantId: 't1',
+        featureCode: 'MODULE_MATH',
+        featureName: 'Math',
+        isEnabled: false,
+        source: 'ADD_ON',
+      },
+      {
+        id: '3',
+        tenantId: 't1',
+        featureCode: 'MODULE_SEL',
+        featureName: 'SEL',
+        isEnabled: false,
+        source: 'ADD_ON',
+      },
     ];
 
     const disabledModules = entitlements
@@ -432,6 +453,18 @@ describe('Contact CTAs', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 // SEAT USAGE ALERTS
 // ══════════════════════════════════════════════════════════════════════════════
+
+function getThresholdDescription(threshold: number): string {
+  if (threshold >= 1.1) return 'Overage (110%+)';
+  if (threshold >= 1) return 'At Limit (100%)';
+  return 'Warning (80%+)';
+}
+
+function getUtilizationBarColor(percent: number): string {
+  if (percent > 100) return 'red';
+  if (percent >= 80) return 'amber';
+  return 'emerald';
+}
 
 describe('Seat Usage Alerts', () => {
   describe('getGradeBandLabel', () => {
@@ -457,18 +490,12 @@ describe('Seat Usage Alerts', () => {
   });
 
   describe('Alert threshold interpretation', () => {
-    function getThresholdDescription(threshold: number): string {
-      if (threshold >= 1.1) return 'Overage (110%+)';
-      if (threshold >= 1.0) return 'At Limit (100%)';
-      return 'Warning (80%+)';
-    }
-
     it('interprets warning threshold correctly', () => {
       expect(getThresholdDescription(0.8)).toBe('Warning (80%+)');
     });
 
     it('interprets at-limit threshold correctly', () => {
-      expect(getThresholdDescription(1.0)).toBe('At Limit (100%)');
+      expect(getThresholdDescription(1)).toBe('At Limit (100%)');
     });
 
     it('interprets overage threshold correctly', () => {
@@ -477,12 +504,6 @@ describe('Seat Usage Alerts', () => {
   });
 
   describe('Utilization bar calculations', () => {
-    function getUtilizationBarColor(percent: number): string {
-      if (percent > 100) return 'red';
-      if (percent >= 80) return 'amber';
-      return 'emerald';
-    }
-
     it('returns emerald for normal utilization', () => {
       expect(getUtilizationBarColor(0)).toBe('emerald');
       expect(getUtilizationBarColor(50)).toBe('emerald');

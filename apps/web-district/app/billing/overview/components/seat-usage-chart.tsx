@@ -1,13 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-floating-promises, import/no-unresolved */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands, import/no-unresolved */
 'use client';
 
 import { useState, useEffect } from 'react';
 
 import type { DetailedSeatUsage } from '../../../lib/billing-api';
-import {
-  fetchDetailedSeatUsage,
-  getGradeBandLabel,
-} from '../../../lib/billing-api';
+import { fetchDetailedSeatUsage, getGradeBandLabel } from '../../../lib/billing-api';
 
 interface SeatUsageChartProps {
   className?: string;
@@ -18,14 +15,13 @@ function UtilizationBar({
   committed,
   allocated,
   overageUsed,
-}: {
+}: Readonly<{
   label: string;
   committed: number;
   allocated: number;
   overageUsed: number;
-}) {
+}>) {
   const utilization = committed > 0 ? (allocated / committed) * 100 : 0;
-  const maxWidth = Math.max(100, utilization);
 
   const getBarColor = () => {
     if (utilization > 100) return 'bg-red-500';
@@ -40,12 +36,6 @@ function UtilizationBar({
     return 'Normal';
   };
 
-  const getStatusColor = () => {
-    if (utilization > 100) return 'text-red-600';
-    if (utilization >= 80) return 'text-amber-600';
-    return 'text-emerald-600';
-  };
-
   return (
     <div className="py-3">
       <div className="flex items-center justify-between mb-2">
@@ -54,7 +44,7 @@ function UtilizationBar({
           <span className="text-slate-500">
             {allocated} / {committed} seats
           </span>
-          <span className={`font-medium ${getStatusColor()}`}>
+          <span className={`font-medium ${getUtilizationColorClass(utilization)}`}>
             {utilization.toFixed(0)}% • {getStatusText()}
           </span>
         </div>
@@ -76,23 +66,21 @@ function UtilizationBar({
           />
         )}
         {/* 80% marker */}
-        <div
-          className="absolute top-0 h-full w-px bg-amber-400"
-          style={{ left: '80%' }}
-        />
+        <div className="absolute top-0 h-full w-px bg-amber-400" style={{ left: '80%' }} />
         {/* 100% marker */}
-        <div
-          className="absolute top-0 h-full w-px bg-slate-400"
-          style={{ left: '100%' }}
-        />
+        <div className="absolute top-0 h-full w-px bg-slate-400" style={{ left: '100%' }} />
       </div>
       {overageUsed > 0 && (
-        <p className="mt-1 text-xs text-red-600">
-          {overageUsed} overage seats used
-        </p>
+        <p className="mt-1 text-xs text-red-600">{overageUsed} overage seats used</p>
       )}
     </div>
   );
+}
+
+function getUtilizationColorClass(utilization: number): string {
+  if (utilization > 100) return 'text-red-600';
+  if (utilization >= 80) return 'text-amber-600';
+  return 'text-emerald-600';
 }
 
 function UsageLegend() {
@@ -114,7 +102,7 @@ function UsageLegend() {
   );
 }
 
-export function SeatUsageChart({ className = '' }: SeatUsageChartProps) {
+export function SeatUsageChart({ className = '' }: Readonly<SeatUsageChartProps>) {
   const [usageData, setUsageData] = useState<DetailedSeatUsage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,8 +134,7 @@ export function SeatUsageChart({ className = '' }: SeatUsageChartProps) {
     { committed: 0, allocated: 0, overage: 0 }
   );
 
-  const overallUtilization =
-    totals.committed > 0 ? (totals.allocated / totals.committed) * 100 : 0;
+  const overallUtilization = totals.committed > 0 ? (totals.allocated / totals.committed) * 100 : 0;
 
   if (isLoading) {
     return (
@@ -168,10 +155,7 @@ export function SeatUsageChart({ className = '' }: SeatUsageChartProps) {
     return (
       <div className={`rounded-lg border border-red-200 bg-red-50 p-6 ${className}`}>
         <p className="text-sm text-red-700">{error}</p>
-        <button
-          onClick={loadUsageData}
-          className="mt-2 text-sm font-medium text-red-700 underline"
-        >
+        <button onClick={loadUsageData} className="mt-2 text-sm font-medium text-red-700 underline">
           Try again
         </button>
       </div>
@@ -208,15 +192,7 @@ export function SeatUsageChart({ className = '' }: SeatUsageChartProps) {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase">Overall Utilization</p>
-            <p
-              className={`mt-1 text-xl font-bold ${
-                overallUtilization > 100
-                  ? 'text-red-600'
-                  : overallUtilization >= 80
-                    ? 'text-amber-600'
-                    : 'text-emerald-600'
-              }`}
-            >
+            <p className={`mt-1 text-xl font-bold ${getUtilizationColorClass(overallUtilization)}`}>
               {overallUtilization.toFixed(0)}%
             </p>
           </div>

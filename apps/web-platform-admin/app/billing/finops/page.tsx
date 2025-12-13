@@ -85,12 +85,12 @@ function StatCard({
   value,
   subValue,
   variant = 'default',
-}: {
+}: Readonly<{
   label: string;
   value: string | number;
   subValue?: string;
   variant?: 'default' | 'success' | 'warning' | 'danger';
-}) {
+}>) {
   const variantClasses = {
     default: 'bg-white border-slate-200',
     success: 'bg-green-50 border-green-200',
@@ -107,7 +107,7 @@ function StatCard({
   );
 }
 
-function HealthBadge({ status }: { status: string }) {
+function HealthBadge({ status }: Readonly<{ status: string }>) {
   const statusStyles: Record<string, string> = {
     HEALTHY: 'bg-green-100 text-green-800',
     AT_RISK: 'bg-red-100 text-red-800',
@@ -128,10 +128,10 @@ function HealthBadge({ status }: { status: string }) {
 function AccountsTable({
   accounts,
   isLoading,
-}: {
+}: Readonly<{
   accounts: BillingAccount[];
   isLoading: boolean;
-}) {
+}>) {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center text-slate-500">
@@ -224,7 +224,16 @@ function AccountsTable({
   );
 }
 
-function PaymentEventsTable({ events, isLoading }: { events: PaymentEvent[]; isLoading: boolean }) {
+function getEventStatusDisplay(event: PaymentEvent): { text: string; colorClass: string } {
+  if (event.error) return { text: 'Failed', colorClass: 'text-red-600' };
+  if (event.processedAt) return { text: 'Processed', colorClass: 'text-green-600' };
+  return { text: 'Pending', colorClass: 'text-yellow-600' };
+}
+
+function PaymentEventsTable({
+  events,
+  isLoading,
+}: Readonly<{ events: PaymentEvent[]; isLoading: boolean }>) {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center text-slate-500">Loading events...</div>
@@ -268,13 +277,10 @@ function PaymentEventsTable({ events, isLoading }: { events: PaymentEvent[]; isL
                 {event.provider}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-sm">
-                {event.error ? (
-                  <span className="text-red-600">Failed</span>
-                ) : event.processedAt ? (
-                  <span className="text-green-600">Processed</span>
-                ) : (
-                  <span className="text-yellow-600">Pending</span>
-                )}
+                {(() => {
+                  const status = getEventStatusDisplay(event);
+                  return <span className={status.colorClass}>{status.text}</span>;
+                })()}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
                 {new Date(event.createdAt).toLocaleString()}
@@ -296,7 +302,7 @@ export default function FinOpsPage() {
   const [summary, setSummary] = useState<SummaryStats | null>(null);
   const [accounts, setAccounts] = useState<BillingAccount[]>([]);
   const [events, setEvents] = useState<PaymentEvent[]>([]);
-  const [_isLoadingSummary, setIsLoadingSummary] = useState(true);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('ALL');
@@ -434,38 +440,44 @@ export default function FinOpsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-        <StatCard
-          label="Total MRR"
-          value={displaySummary.formatted.totalMrr}
-          subValue={`${displaySummary.activeSubscriptions} active subs`}
-          variant="success"
-        />
-        <StatCard
-          label="Outstanding"
-          value={displaySummary.formatted.outstandingBalance}
-          subValue={`${displaySummary.overdueAccounts} overdue`}
-          variant={displaySummary.outstandingBalanceCents > 0 ? 'warning' : 'default'}
-        />
-        <StatCard
-          label="Healthy"
-          value={displaySummary.healthyAccounts}
-          subValue="accounts"
-          variant="success"
-        />
-        <StatCard
-          label="At Risk"
-          value={displaySummary.atRiskAccounts}
-          subValue="past due subs"
-          variant={displaySummary.atRiskAccounts > 0 ? 'danger' : 'default'}
-        />
-        <StatCard label="In Trial" value={displaySummary.trialAccounts} subValue="accounts" />
-        <StatCard
-          label="Total Collected"
-          value={displaySummary.formatted.totalCollected}
-          subValue="all time"
-        />
-      </div>
+      {isLoadingSummary ? (
+        <div className="flex h-32 items-center justify-center text-slate-500">
+          Loading summary...
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+          <StatCard
+            label="Total MRR"
+            value={displaySummary.formatted.totalMrr}
+            subValue={`${displaySummary.activeSubscriptions} active subs`}
+            variant="success"
+          />
+          <StatCard
+            label="Outstanding"
+            value={displaySummary.formatted.outstandingBalance}
+            subValue={`${displaySummary.overdueAccounts} overdue`}
+            variant={displaySummary.outstandingBalanceCents > 0 ? 'warning' : 'default'}
+          />
+          <StatCard
+            label="Healthy"
+            value={displaySummary.healthyAccounts}
+            subValue="accounts"
+            variant="success"
+          />
+          <StatCard
+            label="At Risk"
+            value={displaySummary.atRiskAccounts}
+            subValue="past due subs"
+            variant={displaySummary.atRiskAccounts > 0 ? 'danger' : 'default'}
+          />
+          <StatCard label="In Trial" value={displaySummary.trialAccounts} subValue="accounts" />
+          <StatCard
+            label="Total Collected"
+            value={displaySummary.formatted.totalCollected}
+            subValue="all time"
+          />
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-slate-200">
@@ -502,8 +514,11 @@ export default function FinOpsPage() {
         <div className="space-y-4">
           {/* Filters */}
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-slate-700">Health Status:</label>
+            <label htmlFor="health-filter" className="text-sm font-medium text-slate-700">
+              Health Status:
+            </label>
             <select
+              id="health-filter"
               value={healthFilter}
               onChange={(e) => {
                 setHealthFilter(e.target.value as HealthFilter);
