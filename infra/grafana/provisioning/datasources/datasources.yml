@@ -1,0 +1,72 @@
+# =============================================================================
+# Grafana Datasource Provisioning for Aivo Platform
+# =============================================================================
+
+apiVersion: 1
+
+datasources:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Prometheus - Metrics
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: "2.47.0"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Loki - Logs
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        # Link traces from logs
+        - datasourceUid: jaeger
+          matcherRegex: '"traceId":"([a-f0-9]+)"'
+          name: TraceID
+          url: '$${__value.raw}'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Jaeger - Traces
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    uid: jaeger
+    editable: false
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki
+        filterByTraceID: true
+        filterBySpanID: false
+        mapTagNamesEnabled: true
+        mappedTags:
+          - key: service.name
+            value: service
+          - key: tenant.id
+            value: tenantId
+        spanStartTimeShift: '-1h'
+        spanEndTimeShift: '1h'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Alertmanager
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    editable: false
+    jsonData:
+      implementation: prometheus

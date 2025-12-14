@@ -1,0 +1,104 @@
+# =============================================================================
+# Prometheus Configuration for Aivo Platform
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'development'
+    cluster: 'local'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load alerting rules
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# Scrape configurations
+scrape_configs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Prometheus self-monitoring
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Aivo Services - Direct scraping
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'aivo-services'
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+        # AI Orchestrator
+        - 'host.docker.internal:4000'
+        # Auth Service
+        - 'host.docker.internal:4001'
+        # Session Service
+        - 'host.docker.internal:4002'
+        # Focus Service
+        - 'host.docker.internal:4003'
+        # Baseline Service
+        - 'host.docker.internal:4004'
+        # Content Service
+        - 'host.docker.internal:4005'
+        # Learner Model Service
+        - 'host.docker.internal:4006'
+        # Personalization Service
+        - 'host.docker.internal:4007'
+        # Analytics Service
+        - 'host.docker.internal:4008'
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '.*:(\d+)'
+        target_label: port
+      - source_labels: [__address__]
+        target_label: instance
+    metrics_path: /metrics
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Kong Gateway metrics
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['host.docker.internal:8001']
+    metrics_path: /metrics
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Apollo Router metrics (GraphQL)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'apollo-router'
+    static_configs:
+      - targets: ['host.docker.internal:4100']
+    metrics_path: /metrics
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # NATS JetStream metrics
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['host.docker.internal:8222']
+    metrics_path: /metrics
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Node.js application metrics (via discovery)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'nodejs-apps'
+    file_sd_configs:
+      - files:
+        - /etc/prometheus/targets/*.json
+        refresh_interval: 30s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Docker container metrics (via cAdvisor if available)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: /metrics

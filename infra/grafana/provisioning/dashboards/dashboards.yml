@@ -1,0 +1,17 @@
+# =============================================================================
+# Grafana Dashboard Provisioning for Aivo Platform
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'Aivo Dashboards'
+    orgId: 1
+    folder: 'Aivo'
+    folderUid: 'aivo'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

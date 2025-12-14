@@ -1,0 +1,436 @@
+# Aivo Platform - Prometheus Alerting Rules
+# Generated from SLO definitions in @aivo/observability
+#
+# This file contains:
+# - SLO burn-rate alerts for key user journeys
+# - Error rate alerts for all services
+# - Infrastructure health alerts
+#
+# To use:
+# 1. Copy to your Prometheus rules directory
+# 2. Reload Prometheus configuration
+# 3. Configure Alertmanager routing (see alertmanager.yml)
+
+groups:
+  # ════════════════════════════════════════════════════════════════════════════
+  # SLO RECORDING RULES
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: slo_recording_rules
+    interval: 30s
+    rules:
+      # Auth API error rate
+      - record: slo:auth_api_availability:error_rate_1h
+        expr: |
+          1 - (
+            sum(rate(aivo_http_requests_total{service="auth-svc",status_code!~"5.."}[1h]))
+            /
+            sum(rate(aivo_http_requests_total{service="auth-svc"}[1h]))
+          )
+
+      - record: slo:auth_api_availability:error_rate_6h
+        expr: |
+          1 - (
+            sum(rate(aivo_http_requests_total{service="auth-svc",status_code!~"5.."}[6h]))
+            /
+            sum(rate(aivo_http_requests_total{service="auth-svc"}[6h]))
+          )
+
+      - record: slo:auth_api_availability:error_rate_30d
+        expr: |
+          1 - (
+            sum(rate(aivo_http_requests_total{service="auth-svc",status_code!~"5.."}[30d]))
+            /
+            sum(rate(aivo_http_requests_total{service="auth-svc"}[30d]))
+          )
+
+      # Auth API latency (p95 < 300ms)
+      - record: slo:auth_api_latency:error_rate_1h
+        expr: |
+          1 - (
+            sum(rate(aivo_http_request_duration_seconds_bucket{service="auth-svc",le="0.3"}[1h]))
+            /
+            sum(rate(aivo_http_request_duration_seconds_count{service="auth-svc"}[1h]))
+          )
+
+      - record: slo:auth_api_latency:error_rate_6h
+        expr: |
+          1 - (
+            sum(rate(aivo_http_request_duration_seconds_bucket{service="auth-svc",le="0.3"}[6h]))
+            /
+            sum(rate(aivo_http_request_duration_seconds_count{service="auth-svc"}[6h]))
+          )
+
+      # AI Tutor error rate
+      - record: slo:ai_tutor_error_rate:error_rate_1h
+        expr: |
+          1 - (
+            sum(rate(aivo_ai_requests_total{agent_type="TUTOR",status_code="200"}[1h]))
+            /
+            sum(rate(aivo_ai_requests_total{agent_type="TUTOR"}[1h]))
+          )
+
+      - record: slo:ai_tutor_error_rate:error_rate_6h
+        expr: |
+          1 - (
+            sum(rate(aivo_ai_requests_total{agent_type="TUTOR",status_code="200"}[6h]))
+            /
+            sum(rate(aivo_ai_requests_total{agent_type="TUTOR"}[6h]))
+          )
+
+      # AI Tutor latency (p95 < 4s)
+      - record: slo:ai_tutor_latency:error_rate_1h
+        expr: |
+          1 - (
+            sum(rate(aivo_ai_request_duration_seconds_bucket{agent_type="TUTOR",le="4"}[1h]))
+            /
+            sum(rate(aivo_ai_request_duration_seconds_count{agent_type="TUTOR"}[1h]))
+          )
+
+      - record: slo:ai_tutor_latency:error_rate_6h
+        expr: |
+          1 - (
+            sum(rate(aivo_ai_request_duration_seconds_bucket{agent_type="TUTOR",le="4"}[6h]))
+            /
+            sum(rate(aivo_ai_request_duration_seconds_count{agent_type="TUTOR"}[6h]))
+          )
+
+      # Gateway availability
+      - record: slo:gateway_availability:error_rate_15m
+        expr: |
+          1 - (
+            sum(rate(aivo_http_requests_total{service="kong-gateway",status_code!~"5.."}[15m]))
+            /
+            sum(rate(aivo_http_requests_total{service="kong-gateway"}[15m]))
+          )
+
+      - record: slo:gateway_availability:error_rate_1h
+        expr: |
+          1 - (
+            sum(rate(aivo_http_requests_total{service="kong-gateway",status_code!~"5.."}[1h]))
+            /
+            sum(rate(aivo_http_requests_total{service="kong-gateway"}[1h]))
+          )
+
+      - record: slo:gateway_availability:error_rate_6h
+        expr: |
+          1 - (
+            sum(rate(aivo_http_requests_total{service="kong-gateway",status_code!~"5.."}[6h]))
+            /
+            sum(rate(aivo_http_requests_total{service="kong-gateway"}[6h]))
+          )
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SLO BURN-RATE ALERTS
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: slo_burn_rate_alerts
+    rules:
+      # ──────────────────────────────────────────────────────────────────────────
+      # Auth API Availability - 99.5% target
+      # Error budget: 0.5% over 30 days = 216 minutes
+      # ──────────────────────────────────────────────────────────────────────────
+      - alert: AuthApiAvailabilityBurnRateCritical
+        expr: |
+          (
+            slo:auth_api_availability:error_rate_1h > (14.4 * 0.005)
+            and
+            slo:auth_api_availability:error_rate_5m > (14.4 * 0.005)
+          )
+        for: 2m
+        labels:
+          severity: critical
+          slo: auth-api-availability
+          journey: authentication
+        annotations:
+          summary: "Auth API burning error budget at critical rate"
+          description: "Auth API error rate is {{ $value | humanizePercentage }} over the last hour, consuming 2% of monthly budget per hour."
+          runbook_url: "https://docs.aivo.dev/runbooks/auth-api-availability"
+          dashboard_url: "https://grafana.aivo.dev/d/gateway-health"
+
+      - alert: AuthApiAvailabilityBurnRateWarning
+        expr: |
+          (
+            slo:auth_api_availability:error_rate_6h > (6 * 0.005)
+            and
+            slo:auth_api_availability:error_rate_30m > (6 * 0.005)
+          )
+        for: 5m
+        labels:
+          severity: warning
+          slo: auth-api-availability
+          journey: authentication
+        annotations:
+          summary: "Auth API burning error budget at elevated rate"
+          description: "Auth API error rate is elevated, consuming 5% of monthly budget in 6 hours."
+          runbook_url: "https://docs.aivo.dev/runbooks/auth-api-availability"
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # Auth API Latency - 99.5% of requests < 300ms
+      # ──────────────────────────────────────────────────────────────────────────
+      - alert: AuthApiLatencyBurnRateCritical
+        expr: |
+          (
+            slo:auth_api_latency:error_rate_1h > (14.4 * 0.005)
+            and
+            slo:auth_api_latency:error_rate_5m > (14.4 * 0.005)
+          )
+        for: 2m
+        labels:
+          severity: critical
+          slo: auth-api-latency
+          journey: authentication
+        annotations:
+          summary: "Auth API latency SLO burning at critical rate"
+          description: "More than {{ $value | humanizePercentage }} of Auth API requests exceed 300ms latency threshold."
+          runbook_url: "https://docs.aivo.dev/runbooks/auth-api-latency"
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # AI Tutor - 98% success rate, 95% < 4s
+      # Error budget: 2% over 30 days
+      # ──────────────────────────────────────────────────────────────────────────
+      - alert: AiTutorErrorRateBurnRateCritical
+        expr: |
+          (
+            slo:ai_tutor_error_rate:error_rate_1h > (14.4 * 0.02)
+            and
+            slo:ai_tutor_error_rate:error_rate_5m > (14.4 * 0.02)
+          )
+        for: 2m
+        labels:
+          severity: critical
+          slo: ai-tutor-error-rate
+          journey: tutoring
+        annotations:
+          summary: "AI Tutor error rate burning budget at critical rate"
+          description: "AI Tutor is experiencing {{ $value | humanizePercentage }} error rate, rapidly consuming error budget."
+          runbook_url: "https://docs.aivo.dev/runbooks/ai-tutor-errors"
+          dashboard_url: "https://grafana.aivo.dev/d/ai-latency-cost"
+
+      - alert: AiTutorLatencyBurnRateCritical
+        expr: |
+          (
+            slo:ai_tutor_latency:error_rate_1h > (14.4 * 0.05)
+            and
+            slo:ai_tutor_latency:error_rate_5m > (14.4 * 0.05)
+          )
+        for: 2m
+        labels:
+          severity: critical
+          slo: ai-tutor-latency
+          journey: tutoring
+        annotations:
+          summary: "AI Tutor latency SLO burning at critical rate"
+          description: "AI Tutor p95 latency exceeds 4s target. Check provider health and rate limits."
+          runbook_url: "https://docs.aivo.dev/runbooks/ai-tutor-latency"
+          dashboard_url: "https://grafana.aivo.dev/d/ai-latency-cost"
+
+      - alert: AiTutorLatencyBurnRateWarning
+        expr: |
+          (
+            slo:ai_tutor_latency:error_rate_6h > (6 * 0.05)
+            and
+            slo:ai_tutor_latency:error_rate_30m > (6 * 0.05)
+          )
+        for: 5m
+        labels:
+          severity: warning
+          slo: ai-tutor-latency
+          journey: tutoring
+        annotations:
+          summary: "AI Tutor latency SLO burning at elevated rate"
+          description: "AI Tutor latency is degraded. Investigate provider performance."
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # Gateway Availability - 99.5% target
+      # ──────────────────────────────────────────────────────────────────────────
+      - alert: GatewayAvailabilityBurnRateCritical
+        expr: |
+          (
+            slo:gateway_availability:error_rate_15m > (14.4 * 0.005)
+            and
+            slo:gateway_availability:error_rate_2m > (14.4 * 0.005)
+          )
+        for: 1m
+        labels:
+          severity: critical
+          slo: gateway-availability
+          journey: infrastructure
+        annotations:
+          summary: "API Gateway availability burning at critical rate"
+          description: "Gateway is returning 5xx errors at {{ $value | humanizePercentage }} rate. Immediate investigation required."
+          runbook_url: "https://docs.aivo.dev/runbooks/gateway-availability"
+          dashboard_url: "https://grafana.aivo.dev/d/gateway-health"
+
+      - alert: GatewayAvailabilityBurnRateHigh
+        expr: |
+          (
+            slo:gateway_availability:error_rate_1h > (6 * 0.005)
+            and
+            slo:gateway_availability:error_rate_15m > (6 * 0.005)
+          )
+        for: 5m
+        labels:
+          severity: critical
+          slo: gateway-availability
+          journey: infrastructure
+        annotations:
+          summary: "API Gateway availability burning at high rate"
+          description: "Gateway error rate is consuming error budget rapidly."
+
+      - alert: GatewayAvailabilityBurnRateWarning
+        expr: |
+          (
+            slo:gateway_availability:error_rate_6h > (3 * 0.005)
+            and
+            slo:gateway_availability:error_rate_1h > (3 * 0.005)
+          )
+        for: 10m
+        labels:
+          severity: warning
+          slo: gateway-availability
+          journey: infrastructure
+        annotations:
+          summary: "API Gateway availability burning at elevated rate"
+          description: "Gateway error rate is elevated. Monitor closely."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE ERROR RATE ALERTS (Non-SLO)
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: service_error_alerts
+    rules:
+      - alert: ServiceHighErrorRate
+        expr: |
+          (
+            sum by (service) (rate(aivo_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum by (service) (rate(aivo_http_requests_total[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} has high error rate"
+          description: "{{ $labels.service }} has {{ $value | humanizePercentage }} 5xx error rate over the last 5 minutes."
+
+      - alert: ServiceCriticalErrorRate
+        expr: |
+          (
+            sum by (service) (rate(aivo_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum by (service) (rate(aivo_http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.service }} has critical error rate"
+          description: "{{ $labels.service }} has {{ $value | humanizePercentage }} 5xx error rate. Immediate investigation required."
+
+      - alert: ServiceDown
+        expr: up{job=~"aivo-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} is not responding to scrapes."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # AI PROVIDER ALERTS
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: ai_provider_alerts
+    rules:
+      - alert: AiProviderHighFailoverRate
+        expr: |
+          (
+            sum by (agent_type) (rate(aivo_ai_failover_total[10m]))
+            /
+            sum by (agent_type) (rate(aivo_ai_requests_total[10m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI provider failover rate is high for {{ $labels.agent_type }}"
+          description: "{{ $value | humanizePercentage }} of {{ $labels.agent_type }} requests are failing over to backup providers."
+
+      - alert: AiProviderErrors
+        expr: |
+          sum by (provider, model) (rate(aivo_ai_errors_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI provider {{ $labels.provider }}/{{ $labels.model }} has errors"
+          description: "Provider {{ $labels.provider }} model {{ $labels.model }} is experiencing errors."
+
+      - alert: AiSafetyBlocksHigh
+        expr: |
+          sum by (safety_reason) (rate(aivo_ai_safety_blocks_total[1h])) > 10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of AI safety blocks for {{ $labels.safety_reason }}"
+          description: "More than 10 safety blocks per hour for reason: {{ $labels.safety_reason }}. Review incident logs."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # EVENT PIPELINE ALERTS
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: event_pipeline_alerts
+    rules:
+      - alert: EventDlqDepthWarning
+        expr: aivo_events_dlq_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event DLQ depth is elevated"
+          description: "Dead letter queue has {{ $value }} messages. Investigate failed event processing."
+
+      - alert: EventDlqDepthCritical
+        expr: aivo_events_dlq_depth > 500
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Event DLQ depth is critical"
+          description: "Dead letter queue has {{ $value }} messages. Event processing may be failing systematically."
+
+      - alert: EventProcessingLag
+        expr: |
+          (
+            sum(rate(aivo_events_published_total[5m]))
+            -
+            sum(rate(aivo_events_processed_total[5m]))
+          ) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event processing is lagging behind"
+          description: "Event consumers are processing slower than events are being published."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DATABASE ALERTS
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: database_alerts
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          aivo_db_connections_waiting > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool has waiting requests"
+          description: "{{ $value }} requests waiting for database connections. Consider increasing pool size."
+
+      - alert: DatabaseSlowQueries
+        expr: |
+          histogram_quantile(0.95, rate(aivo_db_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database p95 query latency is high"
+          description: "95th percentile database query latency is {{ $value | humanizeDuration }}."

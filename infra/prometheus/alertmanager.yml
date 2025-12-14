@@ -1,0 +1,210 @@
+# Aivo Platform - Alertmanager Configuration
+#
+# Routes alerts from Prometheus to appropriate channels:
+# - Critical alerts → PagerDuty (immediate page)
+# - Warning alerts → Slack channel
+# - Info alerts → Email digest
+#
+# To use:
+# 1. Replace placeholder values with actual integration keys
+# 2. Update receiver configurations for your organization
+# 3. Test with `amtool check-config alertmanager.yml`
+
+global:
+  # The smarthost and SMTP sender used for mail notifications
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alerts@aivo.dev'
+  smtp_auth_username: 'alerts@aivo.dev'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  
+  # ResolveTimeout is the time after which an alert is declared resolved if not updated
+  resolve_timeout: 5m
+
+  # PagerDuty routing key (global default)
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+  # Slack API URL
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+# Templates for notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Inhibition rules to suppress redundant alerts
+inhibit_rules:
+  # If a critical alert is firing, suppress the warning version
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal:
+      - alertname
+      - service
+
+  # If service is down, suppress other alerts for that service
+  - source_matchers:
+      - alertname="ServiceDown"
+    target_matchers:
+      - severity=~"warning|critical"
+    equal:
+      - service
+
+# Route tree for alert routing
+route:
+  # Default receiver for unmatched alerts
+  receiver: 'slack-warnings'
+  
+  # How long to wait before sending a notification for a group of alerts
+  group_wait: 30s
+  
+  # How long to wait before sending a notification about new alerts
+  # that are added to a group of alerts for which an initial notification has already been sent
+  group_interval: 5m
+  
+  # How long to wait before sending a notification again if it has already been sent
+  repeat_interval: 4h
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'service', 'slo']
+
+  routes:
+    # ──────────────────────────────────────────────────────────────────────────
+    # Critical SLO alerts → PagerDuty (immediate page)
+    # ──────────────────────────────────────────────────────────────────────────
+    - matchers:
+        - severity="critical"
+        - slo=~".+"
+      receiver: 'pagerduty-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true  # Also send to Slack for visibility
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # All critical alerts → PagerDuty
+    # ──────────────────────────────────────────────────────────────────────────
+    - matchers:
+        - severity="critical"
+      receiver: 'pagerduty-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Critical and warning alerts → Slack
+    # ──────────────────────────────────────────────────────────────────────────
+    - matchers:
+        - severity=~"critical|warning"
+      receiver: 'slack-oncall'
+      group_wait: 30s
+      repeat_interval: 2h
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # AI-specific alerts → AI team Slack channel
+    # ──────────────────────────────────────────────────────────────────────────
+    - matchers:
+        - journey="tutoring"
+      receiver: 'slack-ai-team'
+      group_wait: 1m
+      repeat_interval: 4h
+      continue: true
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Info alerts → Email digest
+    # ──────────────────────────────────────────────────────────────────────────
+    - matchers:
+        - severity="info"
+      receiver: 'email-digest'
+      group_wait: 10m
+      repeat_interval: 24h
+
+# Receivers define where notifications are sent
+receivers:
+  # ════════════════════════════════════════════════════════════════════════════
+  # PagerDuty for critical alerts
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        description: '{{ .GroupLabels.alertname }}: {{ .Annotations.summary }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+          resolved: '{{ template "pagerduty.default.instances" .Alerts.Resolved }}'
+          num_firing: '{{ .Alerts.Firing | len }}'
+          num_resolved: '{{ .Alerts.Resolved | len }}'
+        links:
+          - href: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+            text: 'Grafana Dashboard'
+          - href: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+            text: 'Runbook'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Slack for on-call visibility
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: 'slack-oncall'
+    slack_configs:
+      - channel: '#aivo-alerts'
+        username: 'Aivo Alerts'
+        icon_emoji: ':alert:'
+        send_resolved: true
+        title: '{{ if eq .Status "firing" }}🔥{{ else }}✅{{ end }} {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.service }}
+          *Severity:* {{ .Labels.severity }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
+          {{ end }}
+        actions:
+          - type: button
+            text: 'View in Grafana'
+            url: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+          - type: button
+            text: 'Runbook'
+            url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#aivo-alerts-low'
+        username: 'Aivo Alerts'
+        icon_emoji: ':warning:'
+        send_resolved: true
+        title: '{{ if eq .Status "firing" }}⚠️{{ else }}✅{{ end }} {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  - name: 'slack-ai-team'
+    slack_configs:
+      - channel: '#aivo-ai-alerts'
+        username: 'AI Orchestrator'
+        icon_emoji: ':robot_face:'
+        send_resolved: true
+        title: '{{ if eq .Status "firing" }}🤖{{ else }}✅{{ end }} AI Alert: {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Agent Type:* {{ .Labels.agent_type }}
+          *Provider:* {{ .Labels.provider }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Email for digests and low-priority
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: 'email-digest'
+    email_configs:
+      - to: 'oncall@aivo.dev'
+        send_resolved: true
+        html: '{{ template "email.default.html" . }}'
+        headers:
+          Subject: '[Aivo] {{ if eq .Status "firing" }}ALERT{{ else }}RESOLVED{{ end }}: {{ .GroupLabels.alertname }}'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Null receiver for suppressed alerts (testing/development)
+  # ════════════════════════════════════════════════════════════════════════════
+  - name: 'null'
