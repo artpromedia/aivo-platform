@@ -8,6 +8,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 
+// UI Constants
+const double _kLargeIconSize = 64.0;
+const double _kAvatarRadius = 16.0;
+
+/// Formats a DateTime to a readable time string (e.g., "2:30 PM").
+String _formatTime(DateTime time) {
+  final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+  final period = time.hour >= 12 ? 'PM' : 'AM';
+  return '$hour:${time.minute.toString().padLeft(2, '0')} $period';
+}
+
 /// Attendance status enum.
 enum AttendanceStatus {
   present('Present', Icons.check_circle, Colors.green),
@@ -204,8 +215,8 @@ class SessionLogNotifier extends StateNotifier<SessionLogState> {
           'status': status.name,
         },
       );
-    } catch (_) {
-      // Revert on error
+    } on Exception {
+      // Revert on error - silent fail as UI already shows current state
       state = state.copyWith(attendance: state.attendance);
     }
   }
@@ -241,8 +252,8 @@ class SessionLogNotifier extends StateNotifier<SessionLogState> {
           'content': content,
         },
       );
-    } catch (_) {
-      // Remove on error
+    } on Exception {
+      // Remove on error - silent fail with UI rollback
       state = state.copyWith(
         observations: state.observations.where((o) => o.id != tempId).toList(),
       );
@@ -261,7 +272,8 @@ class SessionLogNotifier extends StateNotifier<SessionLogState> {
 
       state = state.copyWith(isSaving: false);
       return true;
-    } catch (_) {
+    } on Exception {
+      // End session failed - return false to indicate failure
       state = state.copyWith(isSaving: false);
       return false;
     }
@@ -377,7 +389,7 @@ class _SessionLogScreenState extends ConsumerState<SessionLogScreen>
         children: [
           Icon(
             Icons.error_outline,
-            size: 64,
+            size: _kLargeIconSize,
             color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(height: 16),
@@ -391,12 +403,6 @@ class _SessionLogScreenState extends ConsumerState<SessionLogScreen>
         ],
       ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final hour = time.hour > 12 ? time.hour - 12 : time.hour;
-    final period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:${time.minute.toString().padLeft(2, '0')} $period';
   }
 
   Future<void> _endSession() async {
@@ -459,7 +465,7 @@ class _SessionLogScreenState extends ConsumerState<SessionLogScreen>
                       labelText: 'Student',
                       border: OutlineInputBorder(),
                     ),
-                    initialValue: selectedLearnerId,
+                    value: selectedLearnerId,
                     items: state.attendance.map((a) {
                       return DropdownMenuItem(
                         value: a.learnerId,
@@ -612,7 +618,7 @@ class _AttendanceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: record.status.color.withOpacity(0.2),
+        backgroundColor: record.status.color.withAlpha(51),
         child: Icon(
           record.status.icon,
           color: record.status.color,
@@ -661,7 +667,7 @@ class _ObservationsTab extends StatelessWidget {
           children: [
             Icon(
               Icons.note_alt_outlined,
-              size: 64,
+              size: _kLargeIconSize,
               color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(height: 16),
@@ -693,7 +699,7 @@ class _ObservationsTab extends StatelessWidget {
                 Row(
                   children: [
                     CircleAvatar(
-                      radius: 16,
+                      radius: _kAvatarRadius,
                       child: Text(
                         observation.learnerName.isNotEmpty
                             ? observation.learnerName[0]
@@ -732,11 +738,5 @@ class _ObservationsTab extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final hour = time.hour > 12 ? time.hour - 12 : time.hour;
-    final period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:${time.minute.toString().padLeft(2, '0')} $period';
   }
 }
