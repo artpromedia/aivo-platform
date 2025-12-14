@@ -142,12 +142,12 @@ export interface ProviderRouterEvents {
  */
 export interface ProviderInvocationResult {
   success: boolean;
-  response?: IAgentResponse<string>;
+  response?: IAgentResponse<string> | undefined;
   provider: AiProvider;
   model: string;
   failoverOccurred: boolean;
-  originalProvider?: AiProvider;
-  error?: Error;
+  originalProvider?: AiProvider | undefined;
+  error?: Error | undefined;
   latencyMs: number;
 }
 
@@ -155,9 +155,9 @@ export interface ProviderInvocationResult {
  * Provider Router - Manages provider selection and failover.
  */
 export class ProviderRouter extends EventEmitter {
-  private failoverRegistry: ProviderFailoverRegistry;
-  private tenantConfigs = new Map<string, TenantAiConfig>();
-  private providers = new Map<AiProvider, LLMProvider>();
+  private readonly failoverRegistry: ProviderFailoverRegistry;
+  private readonly tenantConfigs = new Map<string, TenantAiConfig>();
+  private readonly providers = new Map<AiProvider, LLMProvider>();
 
   constructor(failoverRegistry?: ProviderFailoverRegistry) {
     super();
@@ -227,6 +227,8 @@ export class ProviderRouter extends EventEmitter {
     // Find first healthy provider
     for (let i = 0; i < providerOrder.length; i++) {
       const providerType = providerOrder[i];
+      if (!providerType) continue;
+
       const health = this.failoverRegistry.getProviderHealth(providerType);
 
       if (
@@ -262,11 +264,13 @@ export class ProviderRouter extends EventEmitter {
       config.allowedProviders.includes(p)
     );
 
-    return providerOrder.map((providerType, index) => ({
-      provider: providerType,
-      model: DEFAULT_MODEL_MAPPING[providerType][request.agentType],
-      priority: index,
-    }));
+    return providerOrder
+      .filter((providerType): providerType is AiProvider => providerType !== undefined)
+      .map((providerType, index) => ({
+        provider: providerType,
+        model: DEFAULT_MODEL_MAPPING[providerType][request.agentType],
+        priority: index,
+      }));
   }
 
   /**
@@ -286,12 +290,26 @@ export class ProviderRouter extends EventEmitter {
     const fallbacks = this.getFallbackProviders(request);
     const primary = fallbacks[0];
 
+    // Ensure we have at least one provider
+    if (!primary) {
+      return {
+        success: false,
+        provider: 'MOCK',
+        model: 'mock-model',
+        failoverOccurred: false,
+        error: new Error('No providers configured'),
+        latencyMs: Date.now() - startTime,
+      };
+    }
+
     let lastError: Error | null = null;
     let originalProvider: AiProvider | undefined;
     let failoverOccurred = false;
 
     for (let i = 0; i < fallbacks.length; i++) {
       const selection = fallbacks[i];
+      if (!selection) continue;
+
       const provider = this.providers.get(selection.provider);
 
       if (!provider) {
@@ -302,13 +320,16 @@ export class ProviderRouter extends EventEmitter {
       if (i > 0) {
         failoverOccurred = true;
         originalProvider = primary.provider;
-        this.emit(
-          'failoverInitiated',
-          request.tenantId,
-          fallbacks[i - 1].provider,
-          selection.provider,
-          lastError?.message ?? 'Previous provider failed'
-        );
+        const prevSelection = fallbacks[i - 1];
+        if (prevSelection) {
+          this.emit(
+            'failoverInitiated',
+            request.tenantId,
+            prevSelection.provider,
+            selection.provider,
+            lastError?.message ?? 'Previous provider failed'
+          );
+        }
       }
 
       try {
@@ -435,9 +456,7 @@ let globalRouter: ProviderRouter | null = null;
  * Get or create the global provider router.
  */
 export function getProviderRouter(): ProviderRouter {
-  if (!globalRouter) {
-    globalRouter = new ProviderRouter();
-  }
+  globalRouter ??= new ProviderRouter();
   return globalRouter;
 }
 

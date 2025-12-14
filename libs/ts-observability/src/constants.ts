@@ -174,23 +174,23 @@ export const METRIC_LABELS = {
 
 export const HISTOGRAM_BUCKETS = {
   // HTTP request latency (in seconds)
-  HTTP_DURATION: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+  HTTP_DURATION: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10] as number[],
 
   // AI request latency (in seconds) - longer tail for LLM calls
-  AI_DURATION: [0.1, 0.25, 0.5, 1, 2, 4, 8, 15, 30, 60],
+  AI_DURATION: [0.1, 0.25, 0.5, 1, 2, 4, 8, 15, 30, 60] as number[],
 
   // Session duration (in seconds) - minutes to hours
-  SESSION_DURATION: [60, 300, 600, 900, 1800, 3600, 7200, 14400],
+  SESSION_DURATION: [60, 300, 600, 900, 1800, 3600, 7200, 14400] as number[],
 
   // Event processing duration (in seconds)
-  EVENT_DURATION: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 5],
+  EVENT_DURATION: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 5] as number[],
 
   // Database query duration (in seconds)
-  DB_DURATION: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5],
+  DB_DURATION: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5] as number[],
 
   // Request/response size (in bytes)
-  SIZE_BYTES: [100, 1000, 10000, 100000, 1000000, 10000000],
-} as const;
+  SIZE_BYTES: [100, 1000, 10000, 100000, 1000000, 10000000] as number[],
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SERVICE NAMES

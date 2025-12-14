@@ -109,7 +109,7 @@ describe('Provider Router: Fallback Providers', () => {
 
     // Check priorities are in order
     for (let i = 1; i < fallbacks.length; i++) {
-      expect(fallbacks[i].priority).toBeGreaterThan(fallbacks[i - 1].priority);
+      expect(fallbacks[i]!.priority).toBeGreaterThan(fallbacks[i - 1]!.priority);
     }
   });
 

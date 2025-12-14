@@ -94,10 +94,10 @@ export interface AiRequest {
   tenantId: string;
 
   /** User who triggered the request (parent, teacher, etc.) */
-  userId?: string;
+  userId?: string | undefined;
 
   /** Learner context if applicable */
-  learnerId?: string;
+  learnerId?: string | undefined;
 
   /** Agent type being invoked */
   agentType: AiAgentType;
@@ -109,13 +109,13 @@ export interface AiRequest {
   input: string;
 
   /** Session ID for context tracking */
-  sessionId?: string;
+  sessionId?: string | undefined;
 
   /** Request correlation ID for tracing */
-  correlationId?: string;
+  correlationId?: string | undefined;
 
   /** Additional metadata (subject, gradeBand, difficulty, etc.) */
-  meta?: AiRequestMeta;
+  meta?: AiRequestMeta | undefined;
 }
 
 /**
@@ -123,22 +123,22 @@ export interface AiRequest {
  */
 export interface AiRequestMeta {
   /** Academic subject (MATH, ELA, SCIENCE, etc.) */
-  subject?: string;
+  subject?: string | undefined;
 
   /** Grade band for age-appropriate responses (K5, G6_8, G9_12) */
-  gradeBand?: 'K5' | 'G6_8' | 'G9_12';
+  gradeBand?: 'K5' | 'G6_8' | 'G9_12' | undefined;
 
   /** Difficulty level (1-5) */
-  difficultyLevel?: number;
+  difficultyLevel?: number | undefined;
 
   /** Use case identifier for fine-grained tracking */
-  useCase?: string;
+  useCase?: string | undefined;
 
   /** Whether the input came from OCR/image */
-  isFromOCR?: boolean;
+  isFromOCR?: boolean | undefined;
 
   /** Previous conversation context */
-  conversationHistory?: ConversationTurn[];
+  conversationHistory?: ConversationTurn[] | undefined;
 
   /** Additional custom metadata */
   [key: string]: unknown;
@@ -150,7 +150,7 @@ export interface AiRequestMeta {
 export interface ConversationTurn {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp?: Date;
+  timestamp?: Date | undefined;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -165,7 +165,7 @@ export interface AiResponse {
   output: string;
 
   /** The original input after pre-filter redaction (if applicable) */
-  redactedInput?: string;
+  redactedInput?: string | undefined;
 
   /** Which provider handled the request */
   provider: AiProvider;
@@ -192,7 +192,7 @@ export interface AiResponse {
   failoverOccurred: boolean;
 
   /** Original provider if failover occurred */
-  originalProvider?: AiProvider;
+  originalProvider?: AiProvider | undefined;
 
   /** Request ID for correlation */
   requestId: string;
@@ -201,7 +201,7 @@ export interface AiResponse {
   latencyMs: number;
 
   /** Additional metadata from the pipeline */
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -224,10 +224,10 @@ export interface PreFilterResult {
   flags: SafetyFlag[];
 
   /** If BLOCK, the safe response to return */
-  safeResponse?: string;
+  safeResponse?: string | undefined;
 
   /** Incident to log (if any) */
-  incident?: IncidentInput;
+  incident?: IncidentInput | undefined;
 }
 
 /**
@@ -237,7 +237,7 @@ export interface SafetyFlag {
   category: IncidentCategory;
   severity: IncidentSeverity;
   confidence: number; // 0-1
-  matchedPattern?: string;
+  matchedPattern?: string | undefined;
 }
 
 export type PostFilterAction = 'PASS' | 'TRANSFORM' | 'BLOCK';
@@ -268,17 +268,17 @@ export interface PostFilterResult {
  */
 export interface IncidentInput {
   tenantId: string;
-  learnerId?: string;
-  userId?: string;
+  learnerId?: string | undefined;
+  userId?: string | undefined;
   agentType: AiAgentType;
   severity: IncidentSeverity;
   category: IncidentCategory;
   /** Short, redacted summary of what triggered the incident */
   inputSummary: string;
   /** Short, redacted summary of the response (if any) */
-  outputSummary?: string;
+  outputSummary?: string | undefined;
   /** Additional context */
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

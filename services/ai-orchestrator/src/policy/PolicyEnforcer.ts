@@ -5,7 +5,7 @@
  * on AI calls before they are executed.
  */
 
-import { PolicyEngine, type EffectivePolicy, type AIPolicy } from '@aivo/ts-policy-engine';
+import { PolicyEngine, type EffectivePolicy } from '@aivo/ts-policy-engine';
 import type { Pool } from 'pg';
 
 import type { SafetyLabel } from '../logging/index.js';
@@ -31,8 +31,8 @@ export interface PolicyEnforcementContext {
   tenantId: string;
   modelName: string;
   provider: ProviderType;
-  estimatedTokens?: number;
-  feature?: keyof EffectivePolicy['features'];
+  estimatedTokens?: number | undefined;
+  feature?: keyof EffectivePolicy['features'] | undefined;
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -40,7 +40,7 @@ export interface PolicyEnforcementContext {
 // ════════════════════════════════════════════════════════════════════════════════
 
 export class PolicyEnforcer {
-  private engine: PolicyEngine;
+  private readonly engine: PolicyEngine;
 
   constructor(pool: Pool) {
     this.engine = new PolicyEngine(pool, {
@@ -211,9 +211,7 @@ export class PolicyViolationError extends Error {
 let enforcerInstance: PolicyEnforcer | null = null;
 
 export function createPolicyEnforcer(pool: Pool): PolicyEnforcer {
-  if (!enforcerInstance) {
-    enforcerInstance = new PolicyEnforcer(pool);
-  }
+  enforcerInstance ??= new PolicyEnforcer(pool);
   return enforcerInstance;
 }
 

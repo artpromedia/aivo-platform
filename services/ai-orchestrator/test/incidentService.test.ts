@@ -1,19 +1,29 @@
-/**
+﻿/**
  * AI Incident Service Tests
  *
  * Tests incident logging, retrieval, and admin review workflow.
  */
 
+import type { Pool } from 'pg';
 import { describe, expect, it, vi } from 'vitest';
 
 import { IncidentService } from '../src/incidents/index.js';
 import type { IncidentInput } from '../src/types/aiRequest.js';
 
-// Mock database pool
-function createMockPool() {
-  const queries: Array<{ text: string; values: unknown[] }> = [];
+// Type for queries tracked by mock pool
+interface TrackedQuery {
+  text: string;
+  values: unknown[];
+}
 
-  return {
+// Extended mock pool type with query tracking
+type MockPoolWithTracking = Pool & { getQueries: () => TrackedQuery[] };
+
+// Mock database pool
+function createMockPool(): MockPoolWithTracking {
+  const queries: TrackedQuery[] = [];
+
+  const pool = {
     query: vi.fn(async (text: string, values: unknown[] = []) => {
       queries.push({ text, values });
 
@@ -56,19 +66,21 @@ function createMockPool() {
       }
       return { rows: [] };
     }),
-    getQueries: () => queries,
     end: vi.fn(),
-  };
+    getQueries: () => queries,
+  } as unknown as MockPoolWithTracking;
+
+  return pool;
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // INCIDENT LOGGING TESTS
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('Incident Service: Logging', () => {
   it('logs incident with all required fields', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const incident: IncidentInput = {
       tenantId: 'tenant-123',
@@ -95,7 +107,7 @@ describe('Incident Service: Logging', () => {
 
   it('logs homework answer blocked incident', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const incident: IncidentInput = {
       tenantId: 'tenant-123',
@@ -115,7 +127,7 @@ describe('Incident Service: Logging', () => {
 
   it('logs PII detection incident', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const incident: IncidentInput = {
       tenantId: 'tenant-123',
@@ -132,7 +144,7 @@ describe('Incident Service: Logging', () => {
 
   it('logs diagnosis attempt incident', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const incident: IncidentInput = {
       tenantId: 'tenant-123',
@@ -149,7 +161,7 @@ describe('Incident Service: Logging', () => {
 
   it('stores metadata in JSON field', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const incident: IncidentInput = {
       tenantId: 'tenant-123',
@@ -173,14 +185,14 @@ describe('Incident Service: Logging', () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // INCIDENT RETRIEVAL TESTS
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('Incident Service: Retrieval', () => {
   it('lists incidents with pagination', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async (text: string) => {
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async (text: string) => {
       if (text.includes('COUNT')) {
         return { rows: [{ total: '10' }] };
       }
@@ -211,7 +223,7 @@ describe('Incident Service: Retrieval', () => {
       return { rows: [] };
     });
 
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
     const result = await service.listIncidents({ tenantId: 'tenant-123' }, 1, 10);
 
     expect(result.incidents).toHaveLength(2);
@@ -222,7 +234,7 @@ describe('Incident Service: Retrieval', () => {
 
   it('filters incidents by severity', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     await service.listIncidents({ tenantId: 'tenant-123', severity: 'HIGH' });
 
@@ -235,7 +247,7 @@ describe('Incident Service: Retrieval', () => {
 
   it('filters incidents by category', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     await service.listIncidents({ tenantId: 'tenant-123', category: 'SELF_HARM' });
 
@@ -247,7 +259,7 @@ describe('Incident Service: Retrieval', () => {
 
   it('filters incidents by status', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     await service.listIncidents({ tenantId: 'tenant-123', status: 'OPEN' });
 
@@ -260,7 +272,7 @@ describe('Incident Service: Retrieval', () => {
 
   it('retrieves single incident by ID', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({
       rows: [
         {
           id: 'incident-123',
@@ -274,7 +286,7 @@ describe('Incident Service: Retrieval', () => {
       ],
     }));
 
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
     const incident = await service.getIncident('incident-123');
 
     expect(incident).toBeDefined();
@@ -283,23 +295,23 @@ describe('Incident Service: Retrieval', () => {
 
   it('returns null for non-existent incident', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({ rows: [] }));
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({ rows: [] }));
 
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
     const incident = await service.getIncident('non-existent');
 
     expect(incident).toBeNull();
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // INCIDENT REVIEW TESTS
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('Incident Service: Review', () => {
   it('marks incident as investigating', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const result = await service.reviewIncident({
       incidentId: 'incident-123',
@@ -319,7 +331,7 @@ describe('Incident Service: Review', () => {
 
   it('marks incident as resolved', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const result = await service.reviewIncident({
       incidentId: 'incident-123',
@@ -336,7 +348,7 @@ describe('Incident Service: Review', () => {
 
   it('marks incident as dismissed', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const result = await service.reviewIncident({
       incidentId: 'incident-123',
@@ -353,7 +365,7 @@ describe('Incident Service: Review', () => {
 
   it('includes review notes when provided', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     await service.reviewIncident({
       incidentId: 'incident-123',
@@ -368,14 +380,14 @@ describe('Incident Service: Review', () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // INCIDENT AGGREGATION TESTS
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('Incident Service: Aggregation', () => {
   it('finds similar open incident for aggregation', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({
       rows: [
         {
           id: 'existing-incident',
@@ -389,7 +401,7 @@ describe('Incident Service: Aggregation', () => {
       ],
     }));
 
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
     const incident = await service.findSimilarOpenIncident(
       'tenant-123',
       'SELF_HARM',
@@ -402,9 +414,9 @@ describe('Incident Service: Aggregation', () => {
 
   it('returns null when no similar incident exists', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({ rows: [] }));
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({ rows: [] }));
 
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
     const incident = await service.findSimilarOpenIncident(
       'tenant-123',
       'SELF_HARM',
@@ -416,7 +428,7 @@ describe('Incident Service: Aggregation', () => {
 
   it('increments occurrence count for existing incident', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     await service.incrementIncidentOccurrence('incident-123');
 
@@ -429,14 +441,14 @@ describe('Incident Service: Aggregation', () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // TENANT ISOLATION TESTS
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('Incident Service: Tenant Isolation', () => {
   it('always includes tenant ID in log queries', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     const incident: IncidentInput = {
       tenantId: 'tenant-123',
@@ -455,7 +467,7 @@ describe('Incident Service: Tenant Isolation', () => {
 
   it('filters list queries by tenant ID', async () => {
     const mockPool = createMockPool();
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
 
     await service.listIncidents({ tenantId: 'tenant-123' });
 
@@ -467,14 +479,14 @@ describe('Incident Service: Tenant Isolation', () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // STATISTICS TESTS
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('Incident Service: Statistics', () => {
   it('returns incident statistics', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async (text: string) => {
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async (text: string) => {
       if (text.includes('SELECT') && text.includes('COUNT')) {
         return {
           rows: [
@@ -496,7 +508,7 @@ describe('Incident Service: Statistics', () => {
       return { rows: [] };
     });
 
-    const service = new IncidentService(mockPool as never);
+    const service = new IncidentService(mockPool);
     const stats = await service.getIncidentStats('tenant-123');
 
     expect(stats).toBeDefined();

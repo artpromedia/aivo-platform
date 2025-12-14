@@ -24,7 +24,7 @@
  */
 
 export {
-  AiLoggingConfig,
+  type AiLoggingConfig,
   AiLoggingConfigSchema,
   DEFAULT_AI_LOGGING_CONFIG,
   parseAiLoggingConfigFromEnv,
@@ -70,9 +70,9 @@ import type { AiIncident, LogAiCallInput } from './types.js';
  * the logger and rules engine for you.
  */
 export class AiLoggingService {
-  private logger: AiCallLogger;
-  private rulesEngine: IncidentRulesEngine;
-  private config: AiLoggingConfig;
+  private readonly logger: AiCallLogger;
+  private readonly rulesEngine: IncidentRulesEngine;
+  private readonly config: AiLoggingConfig;
 
   constructor(pool: Pool, config: AiLoggingConfig) {
     this.logger = new AiCallLogger(pool, config);

@@ -8,15 +8,15 @@
  * - Prometheus metrics endpoint
  */
 
+import { SpanStatusCode } from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
 import type { FastifyPluginCallback, FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { trace, context, SpanStatusCode } from '@opentelemetry/api';
-import type { Span } from '@opentelemetry/api';
 
-import type { ObservabilityInstance } from '../init.js';
-import type { AivoLogger } from '../logger.js';
-import { extractContext, injectContext } from '../context.js';
 import { AIVO_ATTRIBUTES } from '../constants.js';
+import { extractContext } from '../context.js';
+import type { ObservabilityInstance } from '../init.js';
+import type { AivoLogger, LogContext } from '../logger.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -58,7 +58,7 @@ declare module 'fastify' {
     learnerId?: string;
     span?: Span;
     startTime?: [number, number];
-    log: AivoLogger;
+    aivoLog?: AivoLogger;
   }
 
   interface FastifyInstance {
@@ -141,9 +141,12 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
     const parentContext = extractContext(request.headers as Record<string, string>);
 
     // Extract Aivo context
-    request.tenantId = extractTenantId?.(request);
-    request.userId = extractUserId?.(request);
-    request.learnerId = extractLearnerId?.(request);
+    const tenantId = extractTenantId?.(request);
+    const userId = extractUserId?.(request);
+    const learnerId = extractLearnerId?.(request);
+    if (tenantId) request.tenantId = tenantId;
+    if (userId) request.userId = userId;
+    if (learnerId) request.learnerId = learnerId;
 
     // Generate/extract request ID
     const incomingRequestId = request.headers['x-request-id'];
@@ -152,8 +155,7 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
         ? incomingRequestId
         : request.id;
 
-    request.correlationId =
-      (request.headers['x-correlation-id'] as string) ?? request.requestId;
+    request.correlationId = (request.headers['x-correlation-id'] as string) ?? request.requestId;
 
     // Create span within parent context
     const tracer = obs.tracer.tracer;
@@ -175,22 +177,23 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
     );
     request.span = span;
 
-    // Create request-scoped logger
-    request.log = obs.logger.withContext({
+    // Create request-scoped logger with proper context
+    const logContext: LogContext = {
       requestId: request.requestId,
       correlationId: request.correlationId,
-      tenantId: request.tenantId,
-      userId: request.userId,
-      learnerId: request.learnerId,
       traceId: span.spanContext().traceId,
       spanId: span.spanContext().spanId,
-    });
+    };
+    if (request.tenantId) logContext.tenantId = request.tenantId;
+    if (request.userId) logContext.userId = request.userId;
+    if (request.learnerId) logContext.learnerId = request.learnerId;
+    request.aivoLog = obs.logger.withContext(logContext);
 
     // Increment active requests gauge
     obs.metrics.http.activeRequests.inc({ method: request.method });
 
     // Log request start
-    request.log.debug(
+    request.aivoLog?.debug(
       {
         method: request.method,
         url: request.url,
@@ -253,7 +256,7 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
     }
 
     // Log request completion
-    request.log.info(
+    request.aivoLog?.info(
       {
         method: request.method,
         url: request.url,
@@ -283,7 +286,7 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
     }
 
     // Log error
-    request.log.errorWithContext(error, 'Request error', {
+    request.aivoLog?.errorWithContext(error, 'Request error', {
       method: request.method,
       url: request.url,
       route: getRoutePattern(request),

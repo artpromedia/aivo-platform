@@ -4,13 +4,23 @@
  * Tests per-tenant token/cost tracking and aggregation.
  */
 
+import type { Pool } from 'pg';
 import { describe, expect, it, vi } from 'vitest';
 
 import { UsageTracker, type UsageRecord } from '../src/usage/index.js';
 
+// Type for queries tracked by mock pool
+interface TrackedQuery {
+  text: string;
+  values: unknown[];
+}
+
+// Extended mock pool type with query tracking
+type MockPoolWithTracking = Pool & { getQueries: () => TrackedQuery[] };
+
 // Mock database pool
-function createMockPool() {
-  const queries: Array<{ text: string; values: unknown[] }> = [];
+function createMockPool(): MockPoolWithTracking {
+  const queries: TrackedQuery[] = [];
 
   return {
     query: vi.fn(async (text: string, values: unknown[] = []) => {
@@ -28,7 +38,7 @@ function createMockPool() {
     }),
     getQueries: () => queries,
     end: vi.fn(),
-  };
+  } as unknown as MockPoolWithTracking;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -38,7 +48,7 @@ function createMockPool() {
 describe('Usage Tracker: Recording', () => {
   it('records usage with all required fields', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const record: UsageRecord = {
       tenantId: 'tenant-123',
@@ -67,7 +77,7 @@ describe('Usage Tracker: Recording', () => {
 
   it('includes estimated cost in the record', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const record: UsageRecord = {
       tenantId: 'tenant-123',
@@ -92,7 +102,7 @@ describe('Usage Tracker: Recording', () => {
 
   it('uses upsert to aggregate usage records', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const record: UsageRecord = {
       tenantId: 'tenant-123',
@@ -124,7 +134,7 @@ describe('Usage Tracker: Recording', () => {
 describe('Usage Tracker: Daily Usage', () => {
   it('retrieves daily usage by tenant and date', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async (text: string) => {
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async (text: string) => {
       if (text.includes('SELECT')) {
         return {
           rows: [
@@ -145,7 +155,7 @@ describe('Usage Tracker: Daily Usage', () => {
       return { rows: [] };
     });
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
     const dailyUsage = await tracker.getDailyUsage('tenant-123', '2025-01-15');
 
     expect(dailyUsage).toHaveLength(1);
@@ -159,9 +169,9 @@ describe('Usage Tracker: Daily Usage', () => {
 
   it('returns empty array for days with no usage', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({ rows: [] }));
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({ rows: [] }));
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
     const dailyUsage = await tracker.getDailyUsage('tenant-123', '2025-01-01');
 
     expect(dailyUsage).toHaveLength(0);
@@ -169,7 +179,7 @@ describe('Usage Tracker: Daily Usage', () => {
 
   it('returns multiple records for different providers', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async (text: string) => {
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async (text: string) => {
       if (text.includes('SELECT')) {
         return {
           rows: [
@@ -201,7 +211,7 @@ describe('Usage Tracker: Daily Usage', () => {
       return { rows: [] };
     });
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
     const dailyUsage = await tracker.getDailyUsage('tenant-123', '2025-01-15');
 
     expect(dailyUsage).toHaveLength(2);
@@ -217,7 +227,7 @@ describe('Usage Tracker: Daily Usage', () => {
 describe('Usage Tracker: Usage Summary', () => {
   it('returns summary for tenant with date filters', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async (text: string) => {
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async (text: string) => {
       if (text.includes('SELECT') && text.includes('GROUP BY')) {
         return {
           rows: [
@@ -245,7 +255,7 @@ describe('Usage Tracker: Usage Summary', () => {
       return { rows: [] };
     });
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const summary = await tracker.getUsageSummary({
       tenantId: 'tenant-123',
@@ -262,7 +272,7 @@ describe('Usage Tracker: Usage Summary', () => {
 
   it('breaks down usage by provider', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({
       rows: [
         {
           date: '2025-01-15',
@@ -285,7 +295,7 @@ describe('Usage Tracker: Usage Summary', () => {
       ],
     }));
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const summary = await tracker.getUsageSummary({
       tenantId: 'tenant-123',
@@ -293,13 +303,13 @@ describe('Usage Tracker: Usage Summary', () => {
 
     expect(summary.byProvider).toHaveProperty('OPENAI');
     expect(summary.byProvider).toHaveProperty('ANTHROPIC');
-    expect(summary.byProvider['OPENAI'].tokens).toBe(15000);
-    expect(summary.byProvider['ANTHROPIC'].tokens).toBe(12000);
+    expect(summary.byProvider['OPENAI']!.tokens).toBe(15000);
+    expect(summary.byProvider['ANTHROPIC']!.tokens).toBe(12000);
   });
 
   it('breaks down usage by agent type', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({
       rows: [
         {
           date: '2025-01-15',
@@ -322,7 +332,7 @@ describe('Usage Tracker: Usage Summary', () => {
       ],
     }));
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const summary = await tracker.getUsageSummary({
       tenantId: 'tenant-123',
@@ -330,13 +340,13 @@ describe('Usage Tracker: Usage Summary', () => {
 
     expect(summary.byAgent).toHaveProperty('HOMEWORK_HELPER');
     expect(summary.byAgent).toHaveProperty('TUTOR');
-    expect(summary.byAgent['HOMEWORK_HELPER'].calls).toBe(50);
-    expect(summary.byAgent['TUTOR'].calls).toBe(30);
+    expect(summary.byAgent['HOMEWORK_HELPER']!.calls).toBe(50);
+    expect(summary.byAgent['TUTOR']!.calls).toBe(30);
   });
 
   it('breaks down usage by date', async () => {
     const mockPool = createMockPool();
-    mockPool.query = vi.fn(async () => ({
+    (mockPool as unknown as { query: unknown }).query = vi.fn(async () => ({
       rows: [
         {
           date: '2025-01-15',
@@ -359,7 +369,7 @@ describe('Usage Tracker: Usage Summary', () => {
       ],
     }));
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const summary = await tracker.getUsageSummary({
       tenantId: 'tenant-123',
@@ -367,14 +377,14 @@ describe('Usage Tracker: Usage Summary', () => {
 
     expect(summary.byDate).toHaveProperty('2025-01-15');
     expect(summary.byDate).toHaveProperty('2025-01-16');
-    expect(summary.byDate['2025-01-15'].calls).toBe(50);
-    expect(summary.byDate['2025-01-16'].calls).toBe(60);
+    expect(summary.byDate['2025-01-15']!.calls).toBe(50);
+    expect(summary.byDate['2025-01-16']!.calls).toBe(60);
   });
 
   it('filters by provider when specified', async () => {
     const mockPool = createMockPool();
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     await tracker.getUsageSummary({
       tenantId: 'tenant-123',
@@ -393,7 +403,7 @@ describe('Usage Tracker: Usage Summary', () => {
   it('filters by agent type when specified', async () => {
     const mockPool = createMockPool();
 
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     await tracker.getUsageSummary({
       tenantId: 'tenant-123',
@@ -417,7 +427,7 @@ describe('Usage Tracker: Usage Summary', () => {
 describe('Usage Tracker: Tenant Isolation', () => {
   it('isolates usage records by tenant', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const record1: UsageRecord = {
       tenantId: 'tenant-A',
@@ -450,13 +460,13 @@ describe('Usage Tracker: Tenant Isolation', () => {
     const insertQueries = queries.filter((q) => q.text.includes('INSERT'));
 
     expect(insertQueries).toHaveLength(2);
-    expect(insertQueries[0].values).toContain('tenant-A');
-    expect(insertQueries[1].values).toContain('tenant-B');
+    expect(insertQueries[0]!.values).toContain('tenant-A');
+    expect(insertQueries[1]!.values).toContain('tenant-B');
   });
 
   it('queries only return data for specified tenant', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     await tracker.getDailyUsage('tenant-123', '2025-01-15');
 
@@ -477,7 +487,7 @@ describe('Usage Tracker: Tenant Isolation', () => {
 describe('Usage Tracker: Call Counting', () => {
   it('tracks call count per record', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const record: UsageRecord = {
       tenantId: 'tenant-123',
@@ -501,7 +511,7 @@ describe('Usage Tracker: Call Counting', () => {
 
   it('aggregates call counts in upsert', async () => {
     const mockPool = createMockPool();
-    const tracker = new UsageTracker(mockPool as never);
+    const tracker = new UsageTracker(mockPool as Pool);
 
     const record: UsageRecord = {
       tenantId: 'tenant-123',

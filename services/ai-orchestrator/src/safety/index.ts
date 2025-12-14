@@ -4,14 +4,26 @@
  * Centralizes all safety-related functionality for AI requests.
  */
 
-export { safetyPreFilter, type PreFilterResult } from './preFilter.js';
-export { safetyPostFilter, type PostFilterResult } from './postFilter.js';
+export { safetyPreFilter } from './preFilter.js';
+export { safetyPostFilter } from './postFilter.js';
 export {
   getSafeResponse,
-  getSafeResponseForSelfHarm,
-  getSafeResponseForAbuse,
+  getSelfHarmResponse,
+  getAbuseResponse,
   getDiagnosisResponse,
   getHomeworkScaffoldResponse,
 } from './safetyResponses.js';
 export { evaluateSafety, type SafetyResult } from './SafetyAgent.js';
-export { sendSafetyAlert, type AlertPayload } from './alerting.js';
+export {
+  type AlertConfig,
+  type AlertThreshold,
+  type AlertSeverity,
+  type TriggeredAlert,
+  DEFAULT_ALERT_CONFIG,
+  evaluateAlerts,
+  onAlert,
+  dispatchAlerts,
+} from './alerting.js';
+
+// Re-export types from aiRequest
+export type { PreFilterResult, PostFilterResult } from '../types/aiRequest.js';

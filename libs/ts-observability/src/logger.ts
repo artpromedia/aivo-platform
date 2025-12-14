@@ -122,10 +122,10 @@ export function createLogger(config: LoggerConfig): AivoLogger {
     },
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: {
-      level: (label) => ({ level: label }),
-      bindings: (bindings) => ({
-        service: bindings.service ?? serviceName,
-        env: bindings.env ?? environment,
+      level: (label: string) => ({ level: label }),
+      bindings: (bindings: Record<string, unknown>) => ({
+        service: (bindings.service as string) ?? serviceName,
+        env: (bindings.env as string) ?? environment,
         pid: bindings.pid,
         hostname: bindings.hostname,
       }),
@@ -213,7 +213,8 @@ export function createLogger(config: LoggerConfig): AivoLogger {
   };
 
   logger.safetyEvent = function (data: SafetyLogData): void {
-    const logMethod = data.severity === 'CRITICAL' || data.severity === 'HIGH' ? this.warn : this.info;
+    const logMethod =
+      data.severity === 'CRITICAL' || data.severity === 'HIGH' ? this.warn : this.info;
     logMethod.call(
       this,
       {
@@ -280,13 +281,16 @@ export function createRequestLogger(
     return typeof value === 'string' ? value : undefined;
   };
 
-  const context: LogContext = {
-    requestId: getHeader('x-request-id'),
-    correlationId: getHeader('x-correlation-id'),
-    traceId: getHeader('traceparent')?.split('-')[1],
-    tenantId,
-    userId,
-  };
+  const context: LogContext = {};
+  const requestId = getHeader('x-request-id');
+  const correlationId = getHeader('x-correlation-id');
+  const traceId = getHeader('traceparent')?.split('-')[1];
+
+  if (requestId) context.requestId = requestId;
+  if (correlationId) context.correlationId = correlationId;
+  if (traceId) context.traceId = traceId;
+  if (tenantId) context.tenantId = tenantId;
+  if (userId) context.userId = userId;
 
   return baseLogger.withContext(context);
 }

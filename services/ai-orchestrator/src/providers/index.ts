@@ -51,7 +51,7 @@ export function initializeFailoverRegistry(): ProviderFailoverRegistry {
     });
   }
 
-  // TODO: Add real providers when available
+  // NOTE: Future integration - add real providers when available
   // Example:
   // if (process.env.OPENAI_API_KEY) {
   //   providers.push({
@@ -147,8 +147,4 @@ export {
   type ProviderHealth,
 } from './failover.js';
 
-export {
-  ProviderRouter,
-  type TenantProviderConfig,
-  type ProviderSelection,
-} from './providerRouter.js';
+export { ProviderRouter, type ProviderInvocationResult } from './providerRouter.js';

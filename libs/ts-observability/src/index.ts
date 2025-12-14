@@ -36,7 +36,6 @@ export {
   type MetricsRegistry,
   type HttpMetrics,
   type AiMetrics,
-  type BusinessMetrics,
   type MetricLabels,
 } from './metrics/index.js';
 

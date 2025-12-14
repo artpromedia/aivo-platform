@@ -13,8 +13,7 @@ export type {
   PreFilterResult,
   PostFilterResult,
   IncidentInput,
-  ConversationMessage,
 } from './aiRequest.js';
 
-export type { Agent, LLMProvider } from './agent.js';
-export type { AgentConfig, AiPolicyConfig } from './agentConfig.js';
+export type { LLMProvider, IAgentRequest, IAgentResponse, GenerateParams } from './agent.js';
+export type { AgentConfig, AgentType, ProviderType } from './agentConfig.js';

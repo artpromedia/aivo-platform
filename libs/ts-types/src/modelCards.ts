@@ -159,7 +159,7 @@ export interface ParsedUseCases {
  */
 export interface ParsedSafety {
   measures: string[];
-  disclaimer?: string;
+  disclaimer?: string | undefined;
 }
 
 /**
@@ -190,7 +190,7 @@ export function parseUseCases(intendedUseCases: string, limitations: string): Pa
     for (const line of lines) {
       const trimmed = line.trim();
       if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
-        bullets.push(trimmed.replace(/^[•\-]\s*/, ''));
+        bullets.push(trimmed.replace(/^[•-]\s*/, ''));
       } else if (trimmed && !trimmed.includes(':') && bullets.length > 0) {
         // Stop at next section header
         break;
@@ -234,7 +234,7 @@ export function parseSafety(safetyConsiderations: string): ParsedSafety {
     }
 
     if (inMeasures && (trimmed.startsWith('•') || trimmed.startsWith('-'))) {
-      measures.push(trimmed.replace(/^[•\-]\s*/, ''));
+      measures.push(trimmed.replace(/^[•-]\s*/, ''));
     }
 
     if (inDisclaimer && trimmed && !trimmed.startsWith('•')) {

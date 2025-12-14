@@ -6,14 +6,22 @@
  */
 
 import { trace, context, propagation, SpanStatusCode } from '@opentelemetry/api';
-import type { Tracer, Span, SpanOptions, Context } from '@opentelemetry/api';
+import type { Tracer, Span, SpanOptions } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Resource } from '@opentelemetry/resources';
-import { BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import {
+  BatchSpanProcessor,
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_DEPLOYMENT_ENVIRONMENT } from '@opentelemetry/semantic-conventions';
+import {
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_VERSION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+} from '@opentelemetry/semantic-conventions';
 
 import { AIVO_ATTRIBUTES } from './constants.js';
 
@@ -28,6 +36,7 @@ export interface TracerConfig {
   enabled?: boolean;
 
   // Exporter configuration
+  /** @deprecated Use OTLP exporter instead - Jaeger supports OTLP natively */
   jaeger?: {
     endpoint?: string; // default: http://localhost:14268/api/traces
   };
@@ -49,7 +58,11 @@ export interface AivoTracer {
   /**
    * Execute a function within a new span
    */
-  withSpan<T>(name: string, fn: (span: Span) => T | Promise<T>, options?: AivoSpanOptions): Promise<T>;
+  withSpan<T>(
+    name: string,
+    fn: (span: Span) => T | Promise<T>,
+    options?: AivoSpanOptions
+  ): Promise<T>;
 
   /**
    * Get the current active span
@@ -101,45 +114,57 @@ export function createTracer(config: TracerConfig): AivoTracer {
 
   // Create resource with service info
   const resource = new Resource({
-    [ATTR_SERVICE_NAME]: serviceName,
-    [ATTR_SERVICE_VERSION]: serviceVersion,
-    [ATTR_DEPLOYMENT_ENVIRONMENT]: environment,
+    [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    [SEMRESATTRS_SERVICE_VERSION]: serviceVersion,
+    [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: environment,
   });
 
-  // Create provider
-  const provider = new NodeTracerProvider({ resource });
+  // Build span processors based on config
+  const spanProcessors: (BatchSpanProcessor | SimpleSpanProcessor)[] = [];
 
   if (enabled) {
     // Set up propagator for distributed tracing
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
 
     // Add exporters based on config
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     if (config.jaeger) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const jaegerExporter = new JaegerExporter({
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         endpoint: config.jaeger.endpoint ?? 'http://localhost:14268/api/traces',
       });
-      provider.addSpanProcessor(new BatchSpanProcessor(jaegerExporter));
+      spanProcessors.push(new BatchSpanProcessor(jaegerExporter));
     }
 
     if (config.otlp) {
       const otlpExporter = new OTLPTraceExporter({
         url: config.otlp.endpoint ?? 'http://localhost:4318/v1/traces',
       });
-      provider.addSpanProcessor(new BatchSpanProcessor(otlpExporter));
+      spanProcessors.push(new BatchSpanProcessor(otlpExporter));
     }
 
     if (config.console) {
-      provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+      spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
 
     // If no exporters configured, add a no-op or console for dev
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     if (!config.jaeger && !config.otlp && !config.console) {
       if (environment === 'development') {
         // In dev, log to console for visibility
-        provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+        spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()));
       }
     }
+  }
 
+  // Create provider with span processors
+  const provider = new NodeTracerProvider({
+    resource,
+    spanProcessors: spanProcessors.length > 0 ? spanProcessors : undefined,
+  });
+
+  if (enabled) {
     // Register as global provider
     provider.register();
     globalProvider = provider;
@@ -170,7 +195,11 @@ export function createTracer(config: TracerConfig): AivoTracer {
       return span;
     },
 
-    async withSpan<T>(name: string, fn: (span: Span) => T | Promise<T>, options?: AivoSpanOptions): Promise<T> {
+    async withSpan<T>(
+      name: string,
+      fn: (span: Span) => T | Promise<T>,
+      options?: AivoSpanOptions
+    ): Promise<T> {
       const span = this.startSpan(name, options);
       const ctx = trace.setSpan(context.active(), span);
 

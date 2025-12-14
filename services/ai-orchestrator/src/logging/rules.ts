@@ -23,11 +23,11 @@ import type {
  * - Custom rules can be injected via the constructor
  */
 export class IncidentRulesEngine {
-  private config: AiLoggingConfig;
-  private logger: AiCallLogger;
+  private readonly config: AiLoggingConfig;
+  private readonly logger: AiCallLogger;
 
   // Track consecutive slow calls per tenant for latency rule
-  private consecutiveSlowCalls = new Map<string, number>();
+  private readonly consecutiveSlowCalls = new Map<string, number>();
 
   constructor(config: AiLoggingConfig, logger: AiCallLogger) {
     this.config = config;
@@ -88,15 +88,15 @@ export class IncidentRulesEngine {
     const incidents: AiIncident[] = [];
 
     for (const rule of evaluation.triggeredRules) {
-      const incident = await this.logger.createOrUpdateIncident(
-        callLog.tenantId,
+      const incident = await this.logger.createOrUpdateIncident({
+        tenantId: callLog.tenantId,
         aiCallLogId,
-        rule.severity,
-        rule.category,
-        rule.title,
-        rule.description,
-        rule.metadata
-      );
+        severity: rule.severity,
+        category: rule.category,
+        title: rule.title,
+        description: rule.description,
+        metadata: rule.metadata,
+      });
 
       if (incident) {
         incidents.push(incident);

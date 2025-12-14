@@ -57,7 +57,7 @@ export interface UsageFilters {
  * AI Usage Tracker - Tracks per-tenant token usage and costs.
  */
 export class AiUsageTracker {
-  private pool: Pool;
+  private readonly pool: Pool;
 
   constructor(pool: Pool) {
     this.pool = pool;
@@ -173,10 +173,10 @@ export class AiUsageTracker {
     const byDate: Record<string, { tokens: number; costCents: number; calls: number }> = {};
 
     for (const row of result.rows) {
-      const tokensInput = parseInt(row.tokens_input, 10);
-      const tokensOutput = parseInt(row.tokens_output, 10);
-      const costCents = parseInt(row.cost_cents, 10);
-      const calls = parseInt(row.calls, 10);
+      const tokensInput = Number.parseInt(row.tokens_input, 10);
+      const tokensOutput = Number.parseInt(row.tokens_output, 10);
+      const costCents = Number.parseInt(row.cost_cents, 10);
+      const calls = Number.parseInt(row.calls, 10);
       const tokens = tokensInput + tokensOutput;
 
       totalTokensInput += tokensInput;
@@ -186,27 +186,21 @@ export class AiUsageTracker {
 
       // By provider
       const provider = row.provider as string;
-      if (!byProvider[provider]) {
-        byProvider[provider] = { tokens: 0, costCents: 0, calls: 0 };
-      }
+      byProvider[provider] ??= { tokens: 0, costCents: 0, calls: 0 };
       byProvider[provider].tokens += tokens;
       byProvider[provider].costCents += costCents;
       byProvider[provider].calls += calls;
 
       // By agent
       const agent = row.agent_type as string;
-      if (!byAgent[agent]) {
-        byAgent[agent] = { tokens: 0, costCents: 0, calls: 0 };
-      }
+      byAgent[agent] ??= { tokens: 0, costCents: 0, calls: 0 };
       byAgent[agent].tokens += tokens;
       byAgent[agent].costCents += costCents;
       byAgent[agent].calls += calls;
 
       // By date
       const date = row.date as string;
-      if (!byDate[date]) {
-        byDate[date] = { tokens: 0, costCents: 0, calls: 0 };
-      }
+      byDate[date] ??= { tokens: 0, costCents: 0, calls: 0 };
       byDate[date].tokens += tokens;
       byDate[date].costCents += costCents;
       byDate[date].calls += calls;
@@ -237,7 +231,7 @@ export class AiUsageTracker {
     `;
 
     const result = await this.pool.query(query, [tenantId, date]);
-    return parseInt(result.rows[0]?.total_tokens ?? '0', 10);
+    return Number.parseInt(result.rows[0]?.total_tokens ?? '0', 10);
   }
 
   /**
@@ -252,7 +246,8 @@ export class AiUsageTracker {
     limit: number;
     remainingTokens: number;
   }> {
-    const today = new Date().toISOString().split('T')[0];
+    const todayDate = new Date().toISOString().split('T')[0];
+    const today = todayDate ?? new Date().toISOString().slice(0, 10);
     const currentUsage = await this.getTotalDailyTokens(tenantId, today);
 
     return {
@@ -287,8 +282,8 @@ export class AiUsageTracker {
 
     return result.rows.map((row) => ({
       tenantId: row.tenant_id as string,
-      totalTokens: parseInt(row.total_tokens, 10),
-      totalCostCents: parseInt(row.total_cost_cents, 10),
+      totalTokens: Number.parseInt(row.total_tokens, 10),
+      totalCostCents: Number.parseInt(row.total_cost_cents, 10),
     }));
   }
 
@@ -329,9 +324,9 @@ export class AiUsageTracker {
 
     return result.rows.map((row) => ({
       period: row.period as string,
-      totalTokens: parseInt(row.total_tokens, 10),
-      totalCostCents: parseInt(row.total_cost_cents, 10),
-      calls: parseInt(row.calls, 10),
+      totalTokens: Number.parseInt(row.total_tokens, 10),
+      totalCostCents: Number.parseInt(row.total_cost_cents, 10),
+      calls: Number.parseInt(row.calls, 10),
     }));
   }
 }
@@ -350,10 +345,10 @@ function mapRowToUsageRecord(row: Record<string, unknown>): UsageRecord {
     provider: row.provider as AiProvider,
     model: row.model as string,
     agentType: row.agent_type as AiAgentType,
-    tokensInput: parseInt(row.tokens_input as string, 10),
-    tokensOutput: parseInt(row.tokens_output as string, 10),
-    estimatedCostCents: parseInt(row.estimated_cost_cents as string, 10),
-    callCount: parseInt(row.call_count as string, 10),
+    tokensInput: Number.parseInt(row.tokens_input as string, 10),
+    tokensOutput: Number.parseInt(row.tokens_output as string, 10),
+    estimatedCostCents: Number.parseInt(row.estimated_cost_cents as string, 10),
+    callCount: Number.parseInt(row.call_count as string, 10),
   };
 }
 

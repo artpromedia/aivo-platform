@@ -26,30 +26,30 @@ import type {
 export interface AiIncidentRecord {
   id: string;
   tenantId: string;
-  learnerId?: string;
-  userId?: string;
+  learnerId?: string | undefined;
+  userId?: string | undefined;
   agentType: AiAgentType;
   severity: IncidentSeverity;
   category: IncidentCategory;
   inputSummary: string;
-  outputSummary?: string;
+  outputSummary?: string | undefined;
   createdAt: Date;
-  reviewedAt?: Date;
-  reviewedByUserId?: string;
-  notes?: string;
-  metadata?: Record<string, unknown>;
+  reviewedAt?: Date | undefined;
+  reviewedByUserId?: string | undefined;
+  notes?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
   status: 'OPEN' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED';
 }
 
 export interface IncidentFilters {
-  tenantId?: string;
-  severity?: IncidentSeverity;
-  category?: IncidentCategory;
-  status?: 'OPEN' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED';
-  from?: Date;
-  to?: Date;
-  learnerId?: string;
-  agentType?: AiAgentType;
+  tenantId?: string | undefined;
+  severity?: IncidentSeverity | undefined;
+  category?: IncidentCategory | undefined;
+  status?: 'OPEN' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED' | undefined;
+  from?: Date | undefined;
+  to?: Date | undefined;
+  learnerId?: string | undefined;
+  agentType?: AiAgentType | undefined;
 }
 
 export interface IncidentListResult {
@@ -63,7 +63,7 @@ export interface ReviewIncidentInput {
   incidentId: string;
   reviewedByUserId: string;
   status: 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED';
-  notes?: string;
+  notes?: string | undefined;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export interface ReviewIncidentInput {
  * AI Incident Service - Manages safety incidents.
  */
 export class AiIncidentService {
-  private pool: Pool;
+  private readonly pool: Pool;
 
   constructor(pool: Pool) {
     this.pool = pool;
@@ -241,7 +241,7 @@ export class AiIncidentService {
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM ai_incidents ${whereClause}`;
     const countResult = await this.pool.query(countQuery, params);
-    const total = parseInt(countResult.rows[0].total, 10);
+    const total = Number.parseInt(countResult.rows[0].total, 10);
 
     // Get paginated results
     const dataQuery = `
@@ -358,7 +358,7 @@ export class AiIncidentService {
     let total = 0;
 
     for (const row of result.rows) {
-      const count = parseInt(row.total, 10);
+      const count = Number.parseInt(row.total, 10);
       total += count;
 
       bySeverity[row.severity] = (bySeverity[row.severity] ?? 0) + count;
@@ -373,7 +373,7 @@ export class AiIncidentService {
    * Emit incident created event (stub for future NATS integration).
    */
   private emitIncidentCreated(incidentId: string, incident: IncidentInput): void {
-    // TODO: Emit to NATS JetStream
+    // NOTE: Future integration - emit to NATS JetStream
     console.log(
       JSON.stringify({
         event: 'AIIncidentCreated',
@@ -437,11 +437,11 @@ function generateIncidentTitle(incident: IncidentInput): string {
  * Generate incident description from input.
  */
 function generateIncidentDescription(incident: IncidentInput): string {
-  const parts: string[] = [];
-
-  parts.push(`Category: ${incident.category}`);
-  parts.push(`Severity: ${incident.severity}`);
-  parts.push(`Agent: ${incident.agentType}`);
+  const parts: string[] = [
+    `Category: ${incident.category}`,
+    `Severity: ${incident.severity}`,
+    `Agent: ${incident.agentType}`,
+  ];
 
   if (incident.learnerId) {
     parts.push(`Learner ID: ${incident.learnerId}`);

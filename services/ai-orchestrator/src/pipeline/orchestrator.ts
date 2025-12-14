@@ -31,7 +31,7 @@ import { safetyPostFilter } from '../safety/postFilter.js';
 import { safetyPreFilter } from '../safety/preFilter.js';
 import { getSafeResponse } from '../safety/safetyResponses.js';
 import type { TelemetryStore } from '../telemetry/index.js';
-import type { AgentType, ProviderType } from '../types/agentConfig.js';
+import type { AgentType } from '../types/agentConfig.js';
 import type {
   AiRequest,
   AiResponse,
@@ -112,17 +112,22 @@ export interface UsageRecord {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Grade band type for grade-appropriate content.
+ */
+type GradeBand = 'K5' | 'G6_8' | 'G9_12';
+
+/**
  * Context gathered for building prompts.
  */
 interface PromptContext {
   tenantId: string;
-  learnerId?: string;
+  learnerId?: string | undefined;
   agentType: AiAgentType;
   locale: string;
-  gradeBand?: string;
-  subject?: string;
-  systemPrompt?: string;
-  conversationHistory?: { role: string; content: string }[];
+  gradeBand?: string | undefined;
+  subject?: string | undefined;
+  systemPrompt?: string | undefined;
+  conversationHistory?: { role: string; content: string }[] | undefined;
 }
 
 /**
@@ -226,6 +231,342 @@ Never provide medical diagnoses or crisis counseling.`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// PRE-FILTER HELPER
+// ────────────────────────────────────────────────────────────────────────────
+
+interface PreFilterState {
+  processedInput: string;
+  redactedInput?: string | undefined;
+  wasBlocked: boolean;
+  safeResponse?: string | undefined;
+  safetyActions: SafetyAction[];
+  incidents: IncidentInput[];
+}
+
+/**
+ * Apply safety pre-filter to request input.
+ */
+function applyPreFilter(request: AiRequest, enablePreFilter: boolean): PreFilterState {
+  const state: PreFilterState = {
+    processedInput: request.input,
+    wasBlocked: false,
+    safetyActions: [],
+    incidents: [],
+  };
+
+  if (!enablePreFilter) {
+    return state;
+  }
+
+  const preFilterResult = safetyPreFilter(request);
+
+  if (preFilterResult.action === 'BLOCK') {
+    state.wasBlocked = true;
+    state.safeResponse = preFilterResult.safeResponse;
+    addBlockSafetyAction(preFilterResult.flags[0], state.safetyActions);
+    if (preFilterResult.incident) {
+      state.incidents.push(preFilterResult.incident);
+    }
+  } else if (preFilterResult.action === 'REDACT') {
+    state.processedInput = preFilterResult.sanitizedInput;
+    state.redactedInput = preFilterResult.sanitizedInput;
+    state.safetyActions.push('REDACTED_PII');
+    if (preFilterResult.incident) {
+      state.incidents.push(preFilterResult.incident);
+    }
+  } else {
+    state.processedInput = preFilterResult.sanitizedInput;
+    if (preFilterResult.incident) {
+      state.incidents.push(preFilterResult.incident);
+    }
+  }
+
+  return state;
+}
+
+/**
+ * Map safety flag category to safety action.
+ */
+function addBlockSafetyAction(
+  blockFlag: { category: string } | undefined,
+  safetyActions: SafetyAction[]
+): void {
+  if (!blockFlag) return;
+
+  const actionMap: Record<string, SafetyAction> = {
+    SELF_HARM: 'BLOCKED_SELF_HARM',
+    ABUSE_DETECTED: 'BLOCKED_ABUSE',
+    VIOLENCE_DETECTED: 'BLOCKED_VIOLENCE',
+    EXPLICIT_CONTENT: 'BLOCKED_EXPLICIT_CONTENT',
+  };
+  const action = actionMap[blockFlag.category] ?? 'BLOCKED_DISALLOWED_CONTENT';
+  safetyActions.push(action);
+}
+
+/**
+ * Build response for blocked request.
+ */
+function buildBlockedResponse(
+  request: AiRequest,
+  preFilterState: PreFilterState,
+  requestId: string,
+  startTime: number
+): AiResponse {
+  return {
+    output: preFilterState.safeResponse ?? getSafeResponse('OTHER', request.locale),
+    redactedInput: '[BLOCKED]',
+    provider: 'MOCK',
+    model: 'safety-filter',
+    tokensInput: 0,
+    tokensOutput: 0,
+    costCents: 0,
+    safetyActions: preFilterState.safetyActions,
+    wasBlocked: true,
+    failoverOccurred: false,
+    requestId,
+    latencyMs: Date.now() - startTime,
+  };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// PROVIDER INVOCATION HELPERS
+// ────────────────────────────────────────────────────────────────────────────
+
+interface ProviderSelection {
+  provider: AiProvider;
+  model: string;
+}
+
+/**
+ * Build error response for provider failures.
+ */
+function buildProviderErrorResponse(
+  selection: ProviderSelection,
+  error: unknown,
+  requestId: string,
+  startTime: number,
+  failoverOccurred: boolean
+): AiResponse {
+  return {
+    output: "I'm sorry, I'm having trouble right now. Please try again in a moment.",
+    provider: selection.provider,
+    model: selection.model,
+    tokensInput: 0,
+    tokensOutput: 0,
+    costCents: 0,
+    safetyActions: [],
+    wasBlocked: false,
+    failoverOccurred,
+    requestId,
+    latencyMs: Date.now() - startTime,
+    metadata: {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    },
+  };
+}
+
+/**
+ * Create incident for provider failure.
+ */
+function createProviderFailureIncident(
+  request: AiRequest,
+  selection: ProviderSelection,
+  error: unknown
+): IncidentInput {
+  return {
+    tenantId: request.tenantId,
+    learnerId: request.learnerId,
+    userId: request.userId,
+    agentType: request.agentType,
+    severity: 'HIGH',
+    category: 'AI_FAILURE',
+    inputSummary: summarizeForLog(request.input, 100),
+    metadata: {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      provider: selection.provider,
+      model: selection.model,
+    },
+  };
+}
+
+/**
+ * Build error response for failed provider result (no throw).
+ */
+function buildFailedProviderResultResponse(
+  providerResult: ProviderInvocationResult,
+  requestId: string
+): AiResponse {
+  return {
+    output: "I'm sorry, I'm having trouble right now. Please try again in a moment.",
+    provider: providerResult.provider,
+    model: providerResult.model,
+    tokensInput: 0,
+    tokensOutput: 0,
+    costCents: 0,
+    safetyActions: [],
+    wasBlocked: false,
+    failoverOccurred: providerResult.failoverOccurred,
+    originalProvider: providerResult.originalProvider,
+    requestId,
+    latencyMs: providerResult.latencyMs,
+    metadata: {
+      error: providerResult.error?.message ?? 'Provider failed',
+    },
+  };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// POST-FILTER HELPER
+// ────────────────────────────────────────────────────────────────────────────
+
+interface PostFilterState {
+  finalOutput: string;
+  wasBlocked: boolean;
+  safetyActions: SafetyAction[];
+  incidents: IncidentInput[];
+}
+
+/**
+ * Apply safety post-filter to LLM response.
+ */
+function applyPostFilter(
+  request: AiRequest,
+  responseContent: string,
+  enablePostFilter: boolean,
+  existingSafetyActions: SafetyAction[],
+  existingIncidents: IncidentInput[]
+): PostFilterState {
+  const state: PostFilterState = {
+    finalOutput: responseContent,
+    wasBlocked: false,
+    safetyActions: [...existingSafetyActions],
+    incidents: [...existingIncidents],
+  };
+
+  if (!enablePostFilter) {
+    return state;
+  }
+
+  const postFilterResult = safetyPostFilter(request, responseContent);
+
+  if (postFilterResult.action === 'BLOCK' || postFilterResult.action === 'TRANSFORM') {
+    state.finalOutput = postFilterResult.finalOutput;
+    state.safetyActions.push(...postFilterResult.safetyActions);
+    state.incidents.push(...postFilterResult.incidents);
+
+    if (postFilterResult.action === 'BLOCK') {
+      state.wasBlocked = true;
+    }
+  }
+
+  return state;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// USAGE & LOGGING HELPERS
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Record usage to usage tracker.
+ */
+async function recordUsage(
+  deps: OrchestratorDependencies,
+  request: AiRequest,
+  providerResult: ProviderInvocationResult,
+  tokensInput: number,
+  tokensOutput: number,
+  costCents: number,
+  enableUsageLogging: boolean
+): Promise<void> {
+  if (!deps.usageTracker || !enableUsageLogging) {
+    return;
+  }
+
+  const todayDate = new Date().toISOString().split('T')[0];
+  const today = todayDate ?? new Date().toISOString().slice(0, 10);
+  await deps.usageTracker.recordUsage({
+    tenantId: request.tenantId,
+    date: today,
+    provider: providerResult.provider,
+    model: providerResult.model,
+    agentType: request.agentType,
+    tokensInput,
+    tokensOutput,
+    estimatedCostCents: costCents,
+    callCount: 1,
+  });
+}
+
+/**
+ * Options for logging AI calls.
+ */
+interface LogAiCallOptions {
+  deps: OrchestratorDependencies;
+  request: AiRequest;
+  providerResult: ProviderInvocationResult;
+  prompt: string;
+  finalOutput: string;
+  safetyActions: SafetyAction[];
+  tokensInput: number;
+  tokensOutput: number;
+  costCents: number;
+  requestId: string;
+  startTime: number;
+  enableUsageLogging: boolean;
+}
+
+/**
+ * Log AI call to logging service.
+ */
+function logAiCall(options: LogAiCallOptions): void {
+  const {
+    deps,
+    request,
+    providerResult,
+    prompt,
+    finalOutput,
+    safetyActions,
+    tokensInput,
+    tokensOutput,
+    costCents,
+    requestId,
+    startTime,
+    enableUsageLogging,
+  } = options;
+
+  if (!deps.loggingService || !enableUsageLogging) {
+    return;
+  }
+
+  const logInput: LogAiCallInput = {
+    tenantId: request.tenantId,
+    agentType: request.agentType as AgentType,
+    userId: request.userId,
+    learnerId: request.learnerId,
+    sessionId: request.sessionId,
+    useCase: request.meta?.useCase,
+    modelName: providerResult.model,
+    provider: providerResult.provider,
+    version: '1.0',
+    requestId,
+    startedAt: new Date(startTime),
+    completedAt: new Date(),
+    latencyMs: Date.now() - startTime,
+    inputTokens: tokensInput,
+    outputTokens: tokensOutput,
+    promptSummary: summarizeForLog(prompt, 200),
+    responseSummary: summarizeForLog(finalOutput, 200),
+    safetyLabel: getSafetyLabel(safetyActions),
+    safetyMetadata: safetyActions.length > 0 ? { actions: safetyActions } : undefined,
+    costCentsEstimate: costCents,
+    status: 'SUCCESS',
+  };
+
+  // Fire and forget
+  deps.loggingService.logAndEvaluateAsync(logInput);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // MAIN ORCHESTRATOR FUNCTION
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -249,83 +590,16 @@ export async function orchestrateAiRequest(
   const requestId = request.correlationId ?? randomUUID();
   const startTime = Date.now();
 
-  const safetyActions: SafetyAction[] = [];
-  const incidents: IncidentInput[] = [];
-
   // ─── Step 1: Build Prompt Context ────────────────────────────────────────
   const context = buildPromptContext(request);
 
   // ─── Step 2: Safety Pre-Filter ───────────────────────────────────────────
-  let processedInput = request.input;
-  let redactedInput: string | undefined;
-  let wasBlockedByPreFilter = false;
-  let preFilterSafeResponse: string | undefined;
+  const preFilterState = applyPreFilter(request, fullConfig.enablePreFilter);
 
-  if (fullConfig.enablePreFilter) {
-    const preFilterResult = safetyPreFilter(request);
-
-    if (preFilterResult.action === 'BLOCK') {
-      // Blocked by pre-filter - return safe response immediately
-      wasBlockedByPreFilter = true;
-      preFilterSafeResponse = preFilterResult.safeResponse;
-
-      // Determine which safety action was applied
-      const blockFlag = preFilterResult.flags[0];
-      if (blockFlag) {
-        const actionMap: Record<string, SafetyAction> = {
-          SELF_HARM: 'BLOCKED_SELF_HARM',
-          ABUSE_DETECTED: 'BLOCKED_ABUSE',
-          VIOLENCE_DETECTED: 'BLOCKED_VIOLENCE',
-          EXPLICIT_CONTENT: 'BLOCKED_EXPLICIT_CONTENT',
-        };
-        const action = actionMap[blockFlag.category] ?? 'BLOCKED_DISALLOWED_CONTENT';
-        safetyActions.push(action);
-      }
-
-      // Log incident
-      if (preFilterResult.incident) {
-        incidents.push(preFilterResult.incident);
-      }
-    } else if (preFilterResult.action === 'REDACT') {
-      // Input was redacted
-      processedInput = preFilterResult.sanitizedInput;
-      redactedInput = preFilterResult.sanitizedInput;
-      safetyActions.push('REDACTED_PII');
-
-      if (preFilterResult.incident) {
-        incidents.push(preFilterResult.incident);
-      }
-    } else {
-      // Allowed through
-      processedInput = preFilterResult.sanitizedInput;
-
-      // Check for low-severity flags that don't block
-      if (preFilterResult.incident) {
-        incidents.push(preFilterResult.incident);
-      }
-    }
-  }
-
-  // If blocked by pre-filter, return immediately with safe response
-  if (wasBlockedByPreFilter) {
-    const response: AiResponse = {
-      output: preFilterSafeResponse ?? getSafeResponse('OTHER', request.locale),
-      redactedInput: '[BLOCKED]',
-      provider: 'MOCK',
-      model: 'safety-filter',
-      tokensInput: 0,
-      tokensOutput: 0,
-      costCents: 0,
-      safetyActions,
-      wasBlocked: true,
-      failoverOccurred: false,
-      requestId,
-      latencyMs: Date.now() - startTime,
-    };
-
-    // Log incidents
-    await logIncidents(incidents, deps, requestId);
-
+  // If blocked by pre-filter, return immediately
+  if (preFilterState.wasBlocked) {
+    const response = buildBlockedResponse(request, preFilterState, requestId, startTime);
+    await logIncidents(preFilterState.incidents, deps, requestId);
     return response;
   }
 
@@ -334,9 +608,8 @@ export async function orchestrateAiRequest(
   const selection = providerRouter.selectProvider(request);
 
   // ─── Step 4: Render Prompt & Invoke Provider ─────────────────────────────
-  const prompt = renderPrompt(context, processedInput);
+  const prompt = renderPrompt(context, preFilterState.processedInput);
 
-  // Validate prompt length
   if (prompt.length > fullConfig.maxPromptLength) {
     throw new Error(
       `Prompt exceeds maximum length: ${prompt.length} > ${fullConfig.maxPromptLength}`
@@ -355,85 +628,24 @@ export async function orchestrateAiRequest(
       },
     });
   } catch (error) {
-    // All providers failed
-    const errorResponse: AiResponse = {
-      output: "I'm sorry, I'm having trouble right now. Please try again in a moment.",
-      provider: selection.provider,
-      model: selection.model,
-      tokensInput: 0,
-      tokensOutput: 0,
-      costCents: 0,
-      safetyActions: [],
-      wasBlocked: false,
-      failoverOccurred: true,
-      requestId,
-      latencyMs: Date.now() - startTime,
-      metadata: {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-    };
-
-    // Log AI failure incident
-    incidents.push({
-      tenantId: request.tenantId,
-      learnerId: request.learnerId,
-      userId: request.userId,
-      agentType: request.agentType,
-      severity: 'HIGH',
-      category: 'AI_FAILURE',
-      inputSummary: summarizeForLog(request.input, 100),
-      metadata: {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        provider: selection.provider,
-        model: selection.model,
-      },
-    });
-
-    await logIncidents(incidents, deps, requestId);
-
+    const errorResponse = buildProviderErrorResponse(selection, error, requestId, startTime, true);
+    const failureIncident = createProviderFailureIncident(request, selection, error);
+    await logIncidents([...preFilterState.incidents, failureIncident], deps, requestId);
     return errorResponse;
   }
 
   if (!providerResult.success || !providerResult.response) {
-    // Provider failed but didn't throw
-    const errorResponse: AiResponse = {
-      output: "I'm sorry, I'm having trouble right now. Please try again in a moment.",
-      provider: providerResult.provider,
-      model: providerResult.model,
-      tokensInput: 0,
-      tokensOutput: 0,
-      costCents: 0,
-      safetyActions: [],
-      wasBlocked: false,
-      failoverOccurred: providerResult.failoverOccurred,
-      originalProvider: providerResult.originalProvider,
-      requestId,
-      latencyMs: providerResult.latencyMs,
-      metadata: {
-        error: providerResult.error?.message ?? 'Provider failed',
-      },
-    };
-
-    return errorResponse;
+    return buildFailedProviderResultResponse(providerResult, requestId);
   }
 
   // ─── Step 5: Safety Post-Filter ──────────────────────────────────────────
-  let finalOutput = providerResult.response.content;
-  let wasBlockedByPostFilter = false;
-
-  if (fullConfig.enablePostFilter) {
-    const postFilterResult = safetyPostFilter(request, providerResult.response.content);
-
-    if (postFilterResult.action === 'BLOCK' || postFilterResult.action === 'TRANSFORM') {
-      finalOutput = postFilterResult.finalOutput;
-      safetyActions.push(...postFilterResult.safetyActions);
-      incidents.push(...postFilterResult.incidents);
-
-      if (postFilterResult.action === 'BLOCK') {
-        wasBlockedByPostFilter = true;
-      }
-    }
-  }
+  const postFilterState = applyPostFilter(
+    request,
+    providerResult.response.content,
+    fullConfig.enablePostFilter,
+    preFilterState.safetyActions,
+    preFilterState.incidents
+  );
 
   // ─── Step 6: Calculate Usage & Cost ──────────────────────────────────────
   const tokensInput = providerResult.response.tokensPrompt ?? 0;
@@ -445,68 +657,48 @@ export async function orchestrateAiRequest(
     tokensOutput
   );
 
-  // Record usage if tracker is available
-  if (deps.usageTracker && fullConfig.enableUsageLogging) {
-    const today = new Date().toISOString().split('T')[0];
-    await deps.usageTracker.recordUsage({
-      tenantId: request.tenantId,
-      date: today,
-      provider: providerResult.provider,
-      model: providerResult.model,
-      agentType: request.agentType,
-      tokensInput,
-      tokensOutput,
-      estimatedCostCents: costCents,
-      callCount: 1,
-    });
-  }
+  await recordUsage(
+    deps,
+    request,
+    providerResult,
+    tokensInput,
+    tokensOutput,
+    costCents,
+    fullConfig.enableUsageLogging
+  );
 
   // ─── Step 7: Log Incidents ───────────────────────────────────────────────
-  if (fullConfig.enableIncidentLogging && incidents.length > 0) {
-    await logIncidents(incidents, deps, requestId);
+  if (fullConfig.enableIncidentLogging && postFilterState.incidents.length > 0) {
+    await logIncidents(postFilterState.incidents, deps, requestId);
   }
 
   // ─── Step 8: Log to Telemetry/Logging Service ────────────────────────────
-  if (deps.loggingService && fullConfig.enableUsageLogging) {
-    const logInput: LogAiCallInput = {
-      tenantId: request.tenantId,
-      agentType: request.agentType as AgentType,
-      userId: request.userId,
-      learnerId: request.learnerId,
-      sessionId: request.sessionId,
-      useCase: request.meta?.useCase,
-      modelName: providerResult.model,
-      provider: providerResult.provider,
-      version: '1.0',
-      requestId,
-      startedAt: new Date(startTime),
-      completedAt: new Date(),
-      latencyMs: Date.now() - startTime,
-      inputTokens: tokensInput,
-      outputTokens: tokensOutput,
-      promptSummary: summarizeForLog(prompt, 200),
-      responseSummary: summarizeForLog(finalOutput, 200),
-      safetyLabel: getSafetyLabel(safetyActions),
-      safetyMetadata: safetyActions.length > 0 ? { actions: safetyActions } : undefined,
-      costCentsEstimate: costCents,
-      status: 'SUCCESS',
-    };
-
-    // Fire and forget
-    deps.loggingService.logAndEvaluateAsync(logInput);
-  }
+  logAiCall({
+    deps,
+    request,
+    providerResult,
+    prompt,
+    finalOutput: postFilterState.finalOutput,
+    safetyActions: postFilterState.safetyActions,
+    tokensInput,
+    tokensOutput,
+    costCents,
+    requestId,
+    startTime,
+    enableUsageLogging: fullConfig.enableUsageLogging,
+  });
 
   // ─── Build & Return Response ─────────────────────────────────────────────
-  const response: AiResponse = {
-    output: finalOutput,
-    redactedInput,
+  return {
+    output: postFilterState.finalOutput,
+    redactedInput: preFilterState.redactedInput,
     provider: providerResult.provider,
     model: providerResult.model,
     tokensInput,
     tokensOutput,
     costCents,
-    safetyActions,
-    wasBlocked: wasBlockedByPreFilter || wasBlockedByPostFilter,
+    safetyActions: postFilterState.safetyActions,
+    wasBlocked: preFilterState.wasBlocked || postFilterState.wasBlocked,
     failoverOccurred: providerResult.failoverOccurred,
     originalProvider: providerResult.originalProvider,
     requestId,
@@ -516,8 +708,6 @@ export async function orchestrateAiRequest(
       tenantId: request.tenantId,
     },
   };
-
-  return response;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -555,9 +745,10 @@ async function logIncidents(
 function summarizeForLog(text: string, maxLength: number): string {
   // Remove potential PII
   let summary = text;
-  summary = summary.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/gi, '[EMAIL]');
-  summary = summary.replace(
-    /\b(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
+  // Email regex - using case-insensitive flag so only need one case
+  summary = summary.replaceAll(/[\w.%+-]+@[\w.-]+\.[a-z]{2,}/gi, '[EMAIL]');
+  summary = summary.replaceAll(
+    /(?:\+?1[-\s.]?)?\(?[2-9]\d{2}\)?[-\s.]?\d{3}[-\s.]?\d{4}/g,
     '[PHONE]'
   );
 
@@ -579,25 +770,25 @@ function getSafetyLabel(actions: SafetyAction[]): 'SAFE' | 'LOW' | 'MEDIUM' | 'H
     return 'SAFE';
   }
 
-  const highSeverityActions: SafetyAction[] = [
+  const highSeverityActions = new Set<SafetyAction>([
     'BLOCKED_SELF_HARM',
     'BLOCKED_EXPLICIT_CONTENT',
     'BLOCKED_ABUSE',
     'BLOCKED_VIOLENCE',
-  ];
+  ]);
 
-  const mediumSeverityActions: SafetyAction[] = [
+  const mediumSeverityActions = new Set<SafetyAction>([
     'BLOCKED_HOMEWORK_ANSWER',
     'BLOCKED_DIAGNOSIS_ATTEMPT',
     'BLOCKED_MEDICAL_DIAGNOSIS',
     'MODIFIED_UNSAFE_RESPONSE',
-  ];
+  ]);
 
-  if (actions.some((a) => highSeverityActions.includes(a))) {
+  if (actions.some((a) => highSeverityActions.has(a))) {
     return 'HIGH';
   }
 
-  if (actions.some((a) => mediumSeverityActions.includes(a))) {
+  if (actions.some((a) => mediumSeverityActions.has(a))) {
     return 'MEDIUM';
   }
 
@@ -618,7 +809,7 @@ export async function orchestrateHomeworkHelper(
     learnerId?: string;
     userId?: string;
     subject?: string;
-    gradeBand?: 'K5' | 'G6_8' | 'G9_12';
+    gradeBand?: GradeBand;
     sessionId?: string;
     correlationId?: string;
   },
@@ -653,7 +844,7 @@ export async function orchestrateTutor(
     learnerId?: string;
     userId?: string;
     subject?: string;
-    gradeBand?: 'K5' | 'G6_8' | 'G9_12';
+    gradeBand?: GradeBand;
     sessionId?: string;
     correlationId?: string;
     conversationHistory?: { role: 'user' | 'assistant' | 'system'; content: string }[];
@@ -689,7 +880,7 @@ export async function orchestrateBaseline(
   meta: {
     learnerId?: string;
     subject?: string;
-    gradeBand?: 'K5' | 'G6_8' | 'G9_12';
+    gradeBand?: GradeBand;
     correlationId?: string;
   },
   deps: OrchestratorDependencies
@@ -723,4 +914,5 @@ export {
   getSafetyLabel,
 };
 
-export type { PromptContext, OrchestratorConfig, OrchestratorDependencies };
+// Export types without conflict (they're already exported via interface declarations above)
+export type { PromptContext };

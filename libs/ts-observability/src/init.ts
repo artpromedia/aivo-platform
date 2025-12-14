@@ -7,12 +7,12 @@
  * - Logger (Pino + Loki)
  */
 
-import type { AivoTracer, TracerConfig } from './tracer.js';
-import { createTracer } from './tracer.js';
-import type { MetricsRegistry } from './metrics/types.js';
-import { createMetricsRegistry } from './metrics/registry.js';
 import type { AivoLogger, LoggerConfig } from './logger.js';
 import { createLogger } from './logger.js';
+import { createMetricsRegistry } from './metrics/registry.js';
+import type { MetricsRegistry } from './metrics/types.js';
+import type { AivoTracer, TracerConfig } from './tracer.js';
+import { createTracer } from './tracer.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -116,10 +116,16 @@ export function initObservability(config: ObservabilityConfig): ObservabilityIns
     serviceVersion,
     environment,
     enabled: config.tracing?.enabled ?? true,
-    jaeger: config.tracing?.jaeger,
-    otlp: config.tracing?.otlp,
-    console: config.tracing?.console,
+    console: config.tracing?.console ?? false,
   };
+
+  if (config.tracing?.jaeger) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    tracerConfig.jaeger = config.tracing.jaeger;
+  }
+  if (config.tracing?.otlp) {
+    tracerConfig.otlp = config.tracing.otlp;
+  }
   const tracer = createTracer(tracerConfig);
 
   // Create metrics registry
@@ -134,10 +140,16 @@ export function initObservability(config: ObservabilityConfig): ObservabilityIns
   const loggerConfig: LoggerConfig = {
     serviceName,
     environment,
-    level: config.logging?.level,
-    prettyPrint: config.logging?.prettyPrint,
-    loki: config.logging?.loki,
   };
+  if (config.logging?.level) {
+    loggerConfig.level = config.logging.level;
+  }
+  if (config.logging?.prettyPrint !== undefined) {
+    loggerConfig.prettyPrint = config.logging.prettyPrint;
+  }
+  if (config.logging?.loki) {
+    loggerConfig.loki = config.logging.loki;
+  }
   const logger = createLogger(loggerConfig);
 
   // Log initialization
@@ -205,24 +217,47 @@ export function initObservabilityFromEnv(): ObservabilityInstance {
     throw new Error('AIVO_SERVICE_NAME environment variable is required');
   }
 
-  return initObservability({
+  const config: ObservabilityConfig = {
     serviceName,
-    serviceVersion: process.env.AIVO_SERVICE_VERSION,
-    environment: process.env.NODE_ENV,
     tracing: {
       enabled: process.env.OTEL_TRACING_ENABLED !== 'false',
-      jaeger: process.env.OTEL_EXPORTER_JAEGER_ENDPOINT
-        ? { endpoint: process.env.OTEL_EXPORTER_JAEGER_ENDPOINT }
-        : undefined,
-      otlp: process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-        ? { endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT }
-        : undefined,
     },
-    logging: {
-      level: process.env.LOG_LEVEL,
-      loki: process.env.LOKI_HOST
-        ? { host: process.env.LOKI_HOST }
-        : undefined,
-    },
-  });
+  };
+
+  // Add optional configs
+  if (process.env.AIVO_SERVICE_VERSION) {
+    config.serviceVersion = process.env.AIVO_SERVICE_VERSION;
+  }
+  if (process.env.NODE_ENV) {
+    config.environment = process.env.NODE_ENV;
+  }
+
+  // Add jaeger config if endpoint is set
+  if (process.env.OTEL_EXPORTER_JAEGER_ENDPOINT) {
+    config.tracing = {
+      ...config.tracing,
+      jaeger: { endpoint: process.env.OTEL_EXPORTER_JAEGER_ENDPOINT },
+    };
+  }
+
+  // Add otlp config if endpoint is set
+  if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
+    config.tracing = {
+      ...config.tracing,
+      otlp: { endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT },
+    };
+  }
+
+  // Add logging config
+  if (process.env.LOG_LEVEL || process.env.LOKI_HOST) {
+    config.logging = {};
+    if (process.env.LOG_LEVEL) {
+      config.logging.level = process.env.LOG_LEVEL;
+    }
+    if (process.env.LOKI_HOST) {
+      config.logging.loki = { host: process.env.LOKI_HOST };
+    }
+  }
+
+  return initObservability(config);
 }

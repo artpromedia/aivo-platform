@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach, vi, type MockInstance } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 
 import { AiLoggingConfigSchema } from '../src/logging/config.js';
 import { IncidentRulesEngine } from '../src/logging/rules.js';
 import { AiCallLogger } from '../src/logging/logger.js';
-import type { LogAiCallInput, AiIncident } from '../src/logging/types.js';
+import type { LogAiCallInput } from '../src/logging/types.js';
 
 /**
  * Mock pg Pool for testing without a real database.
@@ -342,8 +342,8 @@ describe('IncidentRulesEngine (stateful)', () => {
       const incidents = await engine.maybeCreateOrUpdateIncidentFromCallLog('call-1', highRiskCall);
 
       expect(incidents).toHaveLength(1);
-      expect(incidents[0].id).toBe('new-incident');
-      expect(incidents[0].occurrenceCount).toBe(1);
+      expect(incidents[0]!.id).toBe('new-incident');
+      expect(incidents[0]!.occurrenceCount).toBe(1);
     });
 
     it('updates existing incident when one exists', async () => {
@@ -401,8 +401,8 @@ describe('IncidentRulesEngine (stateful)', () => {
       const incidents = await engine.maybeCreateOrUpdateIncidentFromCallLog('call-2', highRiskCall);
 
       expect(incidents).toHaveLength(1);
-      expect(incidents[0].id).toBe('existing-incident');
-      expect(incidents[0].occurrenceCount).toBe(3);
+      expect(incidents[0]!.id).toBe('existing-incident');
+      expect(incidents[0]!.occurrenceCount).toBe(3);
     });
 
     it('returns empty array when no rules triggered', async () => {

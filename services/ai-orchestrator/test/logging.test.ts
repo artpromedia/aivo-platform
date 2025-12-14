@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 
 import {
   AiLoggingConfigSchema,
@@ -106,219 +106,212 @@ describe('AI Logging Config', () => {
 });
 
 describe('Incident Rules Engine', () => {
-  describe('evaluateIncidentRules', () => {
-    describe('Safety Rules', () => {
-      it('does not create incident for SAFE label', () => {
-        const callLog = createTestCallLog({ safetyLabel: 'SAFE' });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+  // Safety Rules
+  it('evaluateIncidentRules - does not create incident for SAFE label', () => {
+    const callLog = createTestCallLog({ safetyLabel: 'SAFE' });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-        expect(result.shouldCreateIncident).toBe(false);
-        expect(result.triggeredRules).toHaveLength(0);
-      });
+    expect(result.shouldCreateIncident).toBe(false);
+    expect(result.triggeredRules).toHaveLength(0);
+  });
 
-      it('does not create incident for LOW label', () => {
-        const callLog = createTestCallLog({ safetyLabel: 'LOW' });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+  it('evaluateIncidentRules - does not create incident for LOW label', () => {
+    const callLog = createTestCallLog({ safetyLabel: 'LOW' });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-        expect(result.shouldCreateIncident).toBe(false);
-        expect(result.triggeredRules).toHaveLength(0);
-      });
+    expect(result.shouldCreateIncident).toBe(false);
+    expect(result.triggeredRules).toHaveLength(0);
+  });
 
-      it('does not create incident for MEDIUM label by default', () => {
-        const callLog = createTestCallLog({ safetyLabel: 'MEDIUM' });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+  it('evaluateIncidentRules - does not create incident for MEDIUM label by default', () => {
+    const callLog = createTestCallLog({ safetyLabel: 'MEDIUM' });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+    expect(result.shouldCreateIncident).toBe(false);
+  });
 
-      it('creates incident for MEDIUM label when configured', () => {
-        const config = AiLoggingConfigSchema.parse({
-          safety: { createIncidentOnMedium: true },
-        });
-        const callLog = createTestCallLog({ safetyLabel: 'MEDIUM' });
-        const result = evaluateIncidentRules(config, callLog);
-
-        expect(result.shouldCreateIncident).toBe(true);
-        expect(result.triggeredRules).toHaveLength(1);
-        expect(result.triggeredRules[0].ruleName).toBe('SAFETY_MEDIUM');
-        expect(result.triggeredRules[0].severity).toBe('MEDIUM');
-        expect(result.triggeredRules[0].category).toBe('SAFETY');
-      });
-
-      it('creates HIGH severity incident for HIGH safety label', () => {
-        const callLog = createTestCallLog({ safetyLabel: 'HIGH' });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
-
-        expect(result.shouldCreateIncident).toBe(true);
-        expect(result.triggeredRules).toHaveLength(1);
-
-        const rule = result.triggeredRules[0];
-        expect(rule.ruleName).toBe('SAFETY_HIGH');
-        expect(rule.severity).toBe('HIGH');
-        expect(rule.category).toBe('SAFETY');
-        expect(rule.title).toContain('tenant-123');
-      });
-
-      it('does not create safety incident when disabled', () => {
-        const config = AiLoggingConfigSchema.parse({
-          safety: { createIncidentOnHigh: false },
-        });
-        const callLog = createTestCallLog({ safetyLabel: 'HIGH' });
-        const result = evaluateIncidentRules(config, callLog);
-
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+  it('evaluateIncidentRules - creates incident for MEDIUM label when configured', () => {
+    const config = AiLoggingConfigSchema.parse({
+      safety: { createIncidentOnMedium: true },
     });
+    const callLog = createTestCallLog({ safetyLabel: 'MEDIUM' });
+    const result = evaluateIncidentRules(config, callLog);
 
-    describe('Cost Rules', () => {
-      it('does not create incident for low cost', () => {
-        const callLog = createTestCallLog({ costCentsEstimate: 5 });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+    expect(result.shouldCreateIncident).toBe(true);
+    expect(result.triggeredRules).toHaveLength(1);
+    expect(result.triggeredRules[0]!.ruleName).toBe('SAFETY_MEDIUM');
+    expect(result.triggeredRules[0]!.severity).toBe('MEDIUM');
+    expect(result.triggeredRules[0]!.category).toBe('SAFETY');
+  });
 
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+  it('evaluateIncidentRules - creates HIGH severity incident for HIGH safety label', () => {
+    const callLog = createTestCallLog({ safetyLabel: 'HIGH' });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-      it('does not create incident for cost at threshold', () => {
-        const callLog = createTestCallLog({ costCentsEstimate: 100 });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+    expect(result.shouldCreateIncident).toBe(true);
+    expect(result.triggeredRules).toHaveLength(1);
 
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+    const rule = result.triggeredRules[0]!;
+    expect(rule.ruleName).toBe('SAFETY_HIGH');
+    expect(rule.severity).toBe('HIGH');
+    expect(rule.category).toBe('SAFETY');
+    expect(rule.title).toContain('tenant-123');
+  });
 
-      it('creates COST incident when exceeding threshold', () => {
-        const callLog = createTestCallLog({ costCentsEstimate: 150 });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
-
-        expect(result.shouldCreateIncident).toBe(true);
-        expect(result.triggeredRules).toHaveLength(1);
-
-        const rule = result.triggeredRules[0];
-        expect(rule.ruleName).toBe('COST_SINGLE_CALL_HIGH');
-        expect(rule.category).toBe('COST');
-        expect(rule.severity).toBe('HIGH'); // default
-        expect(rule.metadata).toMatchObject({
-          costCents: 150,
-          threshold: 100,
-        });
-      });
-
-      it('uses configured cost threshold', () => {
-        const config = AiLoggingConfigSchema.parse({
-          cost: { singleCallThresholdCents: 50 },
-        });
-        const callLog = createTestCallLog({ costCentsEstimate: 60 });
-        const result = evaluateIncidentRules(config, callLog);
-
-        expect(result.shouldCreateIncident).toBe(true);
-        expect(result.triggeredRules[0].metadata).toMatchObject({
-          costCents: 60,
-          threshold: 50,
-        });
-      });
-
-      it('uses configured severity for cost incidents', () => {
-        const config = AiLoggingConfigSchema.parse({
-          cost: {
-            singleCallThresholdCents: 10,
-            incidentSeverity: 'CRITICAL',
-          },
-        });
-        const callLog = createTestCallLog({ costCentsEstimate: 20 });
-        const result = evaluateIncidentRules(config, callLog);
-
-        expect(result.triggeredRules[0].severity).toBe('CRITICAL');
-      });
+  it('evaluateIncidentRules - does not create safety incident when disabled', () => {
+    const config = AiLoggingConfigSchema.parse({
+      safety: { createIncidentOnHigh: false },
     });
+    const callLog = createTestCallLog({ safetyLabel: 'HIGH' });
+    const result = evaluateIncidentRules(config, callLog);
 
-    describe('Latency Rules', () => {
-      it('does not create incident for fast calls', () => {
-        const callLog = createTestCallLog({ latencyMs: 500 });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+    expect(result.shouldCreateIncident).toBe(false);
+  });
 
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+  // Cost Rules
+  it('evaluateIncidentRules - does not create incident for low cost', () => {
+    const callLog = createTestCallLog({ costCentsEstimate: 5 });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-      it('does not create incident for latency at threshold', () => {
-        const callLog = createTestCallLog({ latencyMs: 10_000 });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+    expect(result.shouldCreateIncident).toBe(false);
+  });
 
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+  it('evaluateIncidentRules - does not create incident for cost at threshold', () => {
+    const callLog = createTestCallLog({ costCentsEstimate: 100 });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-      it('creates PERFORMANCE incident when exceeding threshold (consecutiveCallsBeforeIncident = 1)', () => {
-        const config = AiLoggingConfigSchema.parse({
-          latency: {
-            thresholdMs: 5000,
-            consecutiveCallsBeforeIncident: 1,
-          },
-        });
-        const callLog = createTestCallLog({ latencyMs: 6000 });
-        const result = evaluateIncidentRules(config, callLog);
+    expect(result.shouldCreateIncident).toBe(false);
+  });
 
-        expect(result.shouldCreateIncident).toBe(true);
-        expect(result.triggeredRules).toHaveLength(1);
+  it('evaluateIncidentRules - creates COST incident when exceeding threshold', () => {
+    const callLog = createTestCallLog({ costCentsEstimate: 150 });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
 
-        const rule = result.triggeredRules[0];
-        expect(rule.ruleName).toBe('LATENCY_HIGH');
-        expect(rule.category).toBe('PERFORMANCE');
-        expect(rule.severity).toBe('MEDIUM'); // default
-        expect(rule.metadata).toMatchObject({
-          latencyMs: 6000,
-          threshold: 5000,
-        });
-      });
+    expect(result.shouldCreateIncident).toBe(true);
+    expect(result.triggeredRules).toHaveLength(1);
 
-      it('does not create latency incident when consecutiveCallsBeforeIncident > 1 (stateless evaluation)', () => {
-        const config = AiLoggingConfigSchema.parse({
-          latency: {
-            thresholdMs: 5000,
-            consecutiveCallsBeforeIncident: 3, // Requires tracking state
-          },
-        });
-        const callLog = createTestCallLog({ latencyMs: 6000 });
-        const result = evaluateIncidentRules(config, callLog);
-
-        // Stateless function doesn't track consecutive calls
-        expect(result.shouldCreateIncident).toBe(false);
-      });
+    const rule = result.triggeredRules[0]!;
+    expect(rule.ruleName).toBe('COST_SINGLE_CALL_HIGH');
+    expect(rule.category).toBe('COST');
+    expect(rule.severity).toBe('HIGH');
+    expect(rule.metadata).toMatchObject({
+      costCents: 150,
+      threshold: 100,
     });
+  });
 
-    describe('Multiple Rules', () => {
-      it('can trigger multiple rules at once', () => {
-        const config = AiLoggingConfigSchema.parse({
-          latency: {
-            thresholdMs: 5000,
-            consecutiveCallsBeforeIncident: 1,
-          },
-        });
-        const callLog = createTestCallLog({
-          safetyLabel: 'HIGH',
-          costCentsEstimate: 200,
-          latencyMs: 6000,
-        });
-        const result = evaluateIncidentRules(config, callLog);
-
-        expect(result.shouldCreateIncident).toBe(true);
-        expect(result.triggeredRules).toHaveLength(3);
-
-        const ruleNames = result.triggeredRules.map((r) => r.ruleName);
-        expect(ruleNames).toContain('SAFETY_HIGH');
-        expect(ruleNames).toContain('COST_SINGLE_CALL_HIGH');
-        expect(ruleNames).toContain('LATENCY_HIGH');
-      });
-
-      it('safe call with low cost and fast latency triggers nothing', () => {
-        const callLog = createTestCallLog({
-          safetyLabel: 'SAFE',
-          costCentsEstimate: 5,
-          latencyMs: 500,
-        });
-        const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
-
-        expect(result.shouldCreateIncident).toBe(false);
-        expect(result.triggeredRules).toHaveLength(0);
-      });
+  it('evaluateIncidentRules - uses configured cost threshold', () => {
+    const config = AiLoggingConfigSchema.parse({
+      cost: { singleCallThresholdCents: 50 },
     });
+    const callLog = createTestCallLog({ costCentsEstimate: 60 });
+    const result = evaluateIncidentRules(config, callLog);
+
+    expect(result.shouldCreateIncident).toBe(true);
+    expect(result.triggeredRules[0]!.metadata).toMatchObject({
+      costCents: 60,
+      threshold: 50,
+    });
+  });
+
+  it('evaluateIncidentRules - uses configured severity for cost incidents', () => {
+    const config = AiLoggingConfigSchema.parse({
+      cost: {
+        singleCallThresholdCents: 10,
+        incidentSeverity: 'CRITICAL',
+      },
+    });
+    const callLog = createTestCallLog({ costCentsEstimate: 20 });
+    const result = evaluateIncidentRules(config, callLog);
+
+    expect(result.triggeredRules[0]!.severity).toBe('CRITICAL');
+  });
+
+  // Latency Rules
+  it('evaluateIncidentRules - does not create incident for fast calls', () => {
+    const callLog = createTestCallLog({ latencyMs: 500 });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+
+    expect(result.shouldCreateIncident).toBe(false);
+  });
+
+  it('evaluateIncidentRules - does not create incident for latency at threshold', () => {
+    const callLog = createTestCallLog({ latencyMs: 10_000 });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+
+    expect(result.shouldCreateIncident).toBe(false);
+  });
+
+  it('evaluateIncidentRules - creates PERFORMANCE incident when exceeding threshold', () => {
+    const config = AiLoggingConfigSchema.parse({
+      latency: {
+        thresholdMs: 5000,
+        consecutiveCallsBeforeIncident: 1,
+      },
+    });
+    const callLog = createTestCallLog({ latencyMs: 6000 });
+    const result = evaluateIncidentRules(config, callLog);
+
+    expect(result.shouldCreateIncident).toBe(true);
+    expect(result.triggeredRules).toHaveLength(1);
+
+    const rule = result.triggeredRules[0]!;
+    expect(rule.ruleName).toBe('LATENCY_HIGH');
+    expect(rule.category).toBe('PERFORMANCE');
+    expect(rule.severity).toBe('MEDIUM');
+    expect(rule.metadata).toMatchObject({
+      latencyMs: 6000,
+      threshold: 5000,
+    });
+  });
+
+  it('evaluateIncidentRules - does not create latency incident when consecutiveCallsBeforeIncident > 1', () => {
+    const config = AiLoggingConfigSchema.parse({
+      latency: {
+        thresholdMs: 5000,
+        consecutiveCallsBeforeIncident: 3,
+      },
+    });
+    const callLog = createTestCallLog({ latencyMs: 6000 });
+    const result = evaluateIncidentRules(config, callLog);
+
+    expect(result.shouldCreateIncident).toBe(false);
+  });
+
+  // Multiple Rules
+  it('evaluateIncidentRules - can trigger multiple rules at once', () => {
+    const config = AiLoggingConfigSchema.parse({
+      latency: {
+        thresholdMs: 5000,
+        consecutiveCallsBeforeIncident: 1,
+      },
+    });
+    const callLog = createTestCallLog({
+      safetyLabel: 'HIGH',
+      costCentsEstimate: 200,
+      latencyMs: 6000,
+    });
+    const result = evaluateIncidentRules(config, callLog);
+
+    expect(result.shouldCreateIncident).toBe(true);
+    expect(result.triggeredRules).toHaveLength(3);
+
+    const ruleNames = result.triggeredRules.map((r) => r.ruleName);
+    expect(ruleNames).toContain('SAFETY_HIGH');
+    expect(ruleNames).toContain('COST_SINGLE_CALL_HIGH');
+    expect(ruleNames).toContain('LATENCY_HIGH');
+  });
+
+  it('evaluateIncidentRules - safe call with low cost and fast latency triggers nothing', () => {
+    const callLog = createTestCallLog({
+      safetyLabel: 'SAFE',
+      costCentsEstimate: 5,
+      latencyMs: 500,
+    });
+    const result = evaluateIncidentRules(DEFAULT_AI_LOGGING_CONFIG, callLog);
+
+    expect(result.shouldCreateIncident).toBe(false);
+    expect(result.triggeredRules).toHaveLength(0);
   });
 });
 

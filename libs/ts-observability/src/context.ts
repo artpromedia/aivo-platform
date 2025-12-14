@@ -32,16 +32,16 @@ export interface CarrierHeaders {
 // ══════════════════════════════════════════════════════════════════════════════
 
 const headerGetter: TextMapGetter<CarrierHeaders> = {
-  get(carrier, key): string | undefined {
+  get(carrier: CarrierHeaders, key: string): string | undefined {
     return carrier[key.toLowerCase()];
   },
-  keys(carrier): string[] {
+  keys(carrier: CarrierHeaders): string[] {
     return Object.keys(carrier);
   },
 };
 
 const headerSetter: TextMapSetter<CarrierHeaders> = {
-  set(carrier, key, value): void {
+  set(carrier: CarrierHeaders, key: string, value: string): void {
     carrier[key.toLowerCase()] = value;
   },
 };
@@ -79,12 +79,17 @@ export function extractTraceInfo(headers: CarrierHeaders): TraceContext | null {
     return null;
   }
 
-  return {
+  const result: TraceContext = {
     traceId: parts[1]!,
     spanId: parts[2]!,
-    traceFlags: parseInt(parts[3]!, 16),
-    traceState: headers.tracestate,
+    traceFlags: Number.parseInt(parts[3]!, 16),
   };
+
+  if (headers.tracestate) {
+    result.traceState = headers.tracestate;
+  }
+
+  return result;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -98,10 +103,7 @@ export function extractTraceInfo(headers: CarrierHeaders): TraceContext | null {
  * @param ctx - Optional context to inject (defaults to active context)
  * @returns The modified headers with trace context
  */
-export function injectContext(
-  headers: CarrierHeaders = {},
-  ctx?: Context
-): CarrierHeaders {
+export function injectContext(headers: CarrierHeaders = {}, ctx?: Context): CarrierHeaders {
   const activeContext = ctx ?? context.active();
   propagation.inject(activeContext, headers, headerSetter);
   return headers;

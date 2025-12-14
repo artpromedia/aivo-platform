@@ -30,7 +30,7 @@ export 'widgets/why_this.dart';
 export 'offline/offline.dart';
 
 // Network resilience
-export 'network/network.dart';
+export 'network/network.dart' hide NetworkException;
 
 // Device management & policy enforcement
 export 'device/device.dart';

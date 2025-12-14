@@ -50,12 +50,12 @@ export interface LogAiCallInput {
   agentType: AgentType;
 
   // Optional context (nullable in DB)
-  userId?: string;
-  learnerId?: string;
-  sessionId?: string;
+  userId?: string | undefined;
+  learnerId?: string | undefined;
+  sessionId?: string | undefined;
 
   // Call metadata
-  useCase?: string;
+  useCase?: string | undefined;
   modelName: string;
   provider: ProviderType;
   version: string;
@@ -71,20 +71,20 @@ export interface LogAiCallInput {
   outputTokens: number;
 
   // Summaries (must be redacted - NO PII)
-  promptSummary?: string;
-  responseSummary?: string;
+  promptSummary?: string | undefined;
+  responseSummary?: string | undefined;
 
   // Safety classification
   safetyLabel: SafetyLabel;
-  safetyMetadata?: Record<string, unknown>;
+  safetyMetadata?: Record<string, unknown> | undefined;
 
   // Cost
   costCentsEstimate: number;
 
   // Status (for error tracking)
   status: 'SUCCESS' | 'ERROR';
-  errorCode?: string;
-  errorMessage?: string;
+  errorCode?: string | undefined;
+  errorMessage?: string | undefined;
 }
 
 /**
@@ -107,10 +107,10 @@ export interface CreateIncidentInput {
   severity: IncidentSeverity;
   category: IncidentCategory;
   title: string;
-  description?: string;
-  metadataJson?: Record<string, unknown>;
-  createdBySystem?: boolean;
-  createdByUserId?: string;
+  description?: string | undefined;
+  metadataJson?: Record<string, unknown> | undefined;
+  createdBySystem?: boolean | undefined;
+  createdByUserId?: string | undefined;
 }
 
 /**

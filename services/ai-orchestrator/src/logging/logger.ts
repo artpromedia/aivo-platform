@@ -27,8 +27,8 @@ import type {
  * - Connection pooling via PgBouncer
  */
 export class AiCallLogger {
-  private pool: Pool;
-  private config: AiLoggingConfig;
+  private readonly pool: Pool;
+  private readonly config: AiLoggingConfig;
 
   constructor(pool: Pool, config: AiLoggingConfig) {
     this.pool = pool;
@@ -147,7 +147,9 @@ export class AiCallLogger {
         ]
       );
 
-      return mapRowToIncident(result.rows[0]);
+      const row = result.rows[0];
+      if (!row) return null;
+      return mapRowToIncident(row);
     } catch (err) {
       console.error('[AiCallLogger] Failed to create incident:', err);
       return null;
@@ -193,7 +195,9 @@ export class AiCallLogger {
         return null;
       }
 
-      return mapRowToIncident(result.rows[0]);
+      const row = result.rows[0];
+      if (!row) return null;
+      return mapRowToIncident(row);
     } catch (err) {
       console.error('[AiCallLogger] Failed to find open incident:', err);
       return null;
@@ -222,7 +226,9 @@ export class AiCallLogger {
         return null;
       }
 
-      return mapRowToIncident(result.rows[0]);
+      const row = result.rows[0];
+      if (!row) return null;
+      return mapRowToIncident(row);
     } catch (err) {
       console.error('[AiCallLogger] Failed to update incident occurrence:', err);
       return null;
@@ -258,26 +264,30 @@ export class AiCallLogger {
    * This is the main entry point for auto-incident creation.
    * It handles aggregation logic (find existing vs. create new).
    *
-   * @param tenantId - Tenant ID
-   * @param aiCallLogId - The call log ID that triggered this
-   * @param severity - Incident severity
-   * @param category - Incident category
-   * @param title - Incident title (used for grouping similar incidents)
-   * @param description - Incident description
-   * @param metadata - Additional context
-   * @param linkReason - Why this call is linked (default: TRIGGER)
+   * @param options - Incident creation/update options
    * @returns The incident (created or updated), or null on error
    */
-  async createOrUpdateIncident(
-    tenantId: string,
-    aiCallLogId: string,
-    severity: IncidentSeverity,
-    category: IncidentCategory,
-    title: string,
-    description: string,
-    metadata: Record<string, unknown> = {},
-    linkReason: LinkReason = 'TRIGGER'
-  ): Promise<AiIncident | null> {
+  async createOrUpdateIncident(options: {
+    tenantId: string;
+    aiCallLogId: string;
+    severity: IncidentSeverity;
+    category: IncidentCategory;
+    title: string;
+    description: string;
+    metadata?: Record<string, unknown>;
+    linkReason?: LinkReason;
+  }): Promise<AiIncident | null> {
+    const {
+      tenantId,
+      aiCallLogId,
+      severity,
+      category,
+      title,
+      description,
+      metadata = {},
+      linkReason = 'TRIGGER',
+    } = options;
+
     // Try to find an existing open incident for this tenant/category
     const existingIncident = await this.findOpenIncident(tenantId, category, title);
 

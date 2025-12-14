@@ -25,7 +25,7 @@ const DEFAULT_CACHE_TTL_MS = 30_000;
 const warnedRolloutTotals = new Set<string>();
 
 export class AgentConfigRegistry {
-  private cache: Map<AgentType, CachedEntry> = new Map<AgentType, CachedEntry>();
+  private readonly cache: Map<AgentType, CachedEntry> = new Map<AgentType, CachedEntry>();
   private readonly cacheTtlMs: number;
 
   constructor(
@@ -106,7 +106,7 @@ function selectConfigForKey(configs: AgentConfig[], key: string): AgentConfig {
   });
 
   const total = sorted.reduce((acc, c) => acc + c.rolloutPercentage, 0);
-  const normalizedTotal = total > 0 ? total : 0;
+  const normalizedTotal = Math.max(total, 0);
   const bucket = hashToBucket(key);
 
   // Normalize if over 100 to keep deterministic weighting
