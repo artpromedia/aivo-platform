@@ -1,0 +1,346 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// Profile Service Prisma Schema
+//
+// Neurodiversity profiles and accommodations for learners.
+// Non-diagnostic, preference-based storage aligned with IEP/504 workflows.
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Origin of how the profile was created/updated
+enum ProfileOrigin {
+  PARENT_REPORTED       // Parent/guardian provided the information
+  TEACHER_REPORTED      // Teacher/therapist provided the information
+  JOINT                 // Collaborative input from parent + teacher
+  IMPORTED              // Imported from SIS/OneRoster or IEP system
+  SYSTEM_INFERRED       // Inferred from learner behavior (with consent)
+
+  @@map("profile_origin")
+}
+
+/// Category of accommodation
+enum AccommodationCategory {
+  INSTRUCTIONAL         // How instruction is delivered
+  SENSORY               // Sensory environment adjustments
+  ASSESSMENT            // Testing and assessment modifications
+  ENVIRONMENTAL         // Physical environment changes
+  COMMUNICATION         // Communication method preferences
+  BEHAVIORAL            // Behavioral supports
+  TECHNOLOGY            // Assistive technology needs
+  OTHER                 // Other accommodations
+
+  @@map("accommodation_category")
+}
+
+/// Source of the accommodation requirement
+enum AccommodationSource {
+  IEP                   // From Individualized Education Program
+  PLAN_504              // From 504 Accommodation Plan
+  TEAM_DECISION         // Team-based decision without formal plan
+  PARENT_PREFERENCE     // Parent/guardian preference
+  LEARNER_PREFERENCE    // Self-advocated by learner
+  TEACHER_OBSERVATION   // Teacher professional observation
+
+  @@map("accommodation_source")
+}
+
+/// Access scope for IEP documents
+enum DocumentAccessScope {
+  PARENTS_AND_ASSIGNED_STAFF    // Parents + assigned teachers/therapists
+  STAFF_ONLY                     // Staff only (district decision)
+  DISTRICT_ADMIN_ONLY            // District admins only
+
+  @@map("document_access_scope")
+}
+
+/// Noise sensitivity level
+enum SensitivityLevel {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("sensitivity_level")
+}
+
+/// Font preference for accessibility
+enum FontPreference {
+  SYSTEM_DEFAULT
+  DYSLEXIA_FRIENDLY    // OpenDyslexic or similar
+  SANS_SERIF           // Clean sans-serif (e.g., Arial)
+  SERIF                // Traditional serif
+  MONOSPACE            // Fixed-width
+
+  @@map("font_preference")
+}
+
+/// Text size preference
+enum TextSizePreference {
+  SMALL
+  MEDIUM
+  LARGE
+  EXTRA_LARGE
+
+  @@map("text_size_preference")
+}
+
+/// Check-in frequency preference
+enum CheckFrequency {
+  LOW                  // Rarely check for understanding
+  MEDIUM               // Occasionally check
+  HIGH                 // Frequently check
+
+  @@map("check_frequency")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Core neurodiversity-aligned learner profile.
+/// Stores learning preferences, sensory needs, and UI accessibility settings.
+/// Phrased as "Learner benefits from..." not "Learner has condition X".
+model LearnerProfile {
+  id                         String        @id @default(uuid()) @db.Uuid
+  tenantId                   String        @map("tenant_id") @db.Uuid
+  learnerId                  String        @map("learner_id") @db.Uuid
+  
+  // ── Versioning ──────────────────────────────────────────────────────────────
+  profileVersion             Int           @default(1) @map("profile_version")
+  
+  // ── Summary ─────────────────────────────────────────────────────────────────
+  /// Human-readable summary of learner's needs
+  /// Example: "Learner benefits from visual supports, slower pacing, and read-aloud."
+  summary                    String?
+  
+  // ── Learning Style Preferences ──────────────────────────────────────────────
+  /// Structured learning preferences
+  learningStyleJson          Json          @default("{}") @map("learning_style_json")
+  // Shape: { 
+  //   prefersVisual: boolean,
+  //   prefersAudio: boolean, 
+  //   prefersText: boolean,
+  //   prefersKinesthetic: boolean,
+  //   needsChunking: boolean,
+  //   benefitsFromRepetition: boolean
+  // }
+  
+  // ── Sensory Profile ─────────────────────────────────────────────────────────
+  /// Sensory needs and preferences
+  sensoryProfileJson         Json          @default("{}") @map("sensory_profile_json")
+  // Shape: {
+  //   noiseSensitivity: 'LOW' | 'MEDIUM' | 'HIGH',
+  //   lightSensitivity: 'LOW' | 'MEDIUM' | 'HIGH',
+  //   prefersLowContrast: boolean,
+  //   prefersWarmColors: boolean,
+  //   benefitsFromMovementBreaks: boolean,
+  //   preferredBreakDurationMinutes: number
+  // }
+  
+  // ── Communication Preferences ───────────────────────────────────────────────
+  /// How the learner prefers to receive and give information
+  communicationPreferencesJson Json        @default("{}") @map("communication_preferences_json")
+  // Shape: {
+  //   prefersShortPrompts: boolean,
+  //   prefersSingleStepInstructions: boolean,
+  //   visualSchedules: boolean,
+  //   checkForUnderstandingFrequency: 'LOW' | 'MEDIUM' | 'HIGH',
+  //   benefitsFromWaitTime: boolean,
+  //   preferredResponseFormat: 'verbal' | 'written' | 'pointing' | 'any'
+  // }
+  
+  // ── Interaction Constraints ─────────────────────────────────────────────────
+  /// What to avoid or limit in learning interactions
+  interactionConstraintsJson Json          @default("{}") @map("interaction_constraints_json")
+  // Shape: {
+  //   limitQuestionsPerScreen: number | null,
+  //   avoidTimers: boolean,
+  //   avoidRedText: boolean,
+  //   avoidFlashingContent: boolean,
+  //   avoidLoudSounds: boolean,
+  //   requiresPredictableFlow: boolean
+  // }
+  
+  // ── UI Accessibility ────────────────────────────────────────────────────────
+  /// Theme and display preferences
+  uiAccessibilityJson        Json          @default("{}") @map("ui_accessibility_json")
+  // Shape: {
+  //   font: FontPreference,
+  //   textSize: TextSizePreference,
+  //   reduceMotion: boolean,
+  //   highContrast: boolean,
+  //   useWarmColors: boolean,
+  //   showReadAloudButton: boolean,
+  //   autoReadAloud: boolean
+  // }
+  
+  // ── Origin & Audit ──────────────────────────────────────────────────────────
+  origin                     ProfileOrigin @default(PARENT_REPORTED)
+  createdByUserId            String        @map("created_by_user_id") @db.Uuid
+  updatedByUserId            String?       @map("updated_by_user_id") @db.Uuid
+  
+  // ── Timestamps ──────────────────────────────────────────────────────────────
+  createdAt                  DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                  DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // ── Relations ───────────────────────────────────────────────────────────────
+  accommodations             LearnerAccommodation[]
+  goalLinks                  LearnerGoalLink[]
+  changeHistory              ProfileChangeLog[]
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@map("learner_profiles")
+}
+
+/// Explicit accommodations list for a learner.
+/// Non-diagnostic phrasing: describes what helps, not conditions.
+model LearnerAccommodation {
+  id                  String                @id @default(uuid()) @db.Uuid
+  tenantId            String                @map("tenant_id") @db.Uuid
+  learnerId           String                @map("learner_id") @db.Uuid
+  profileId           String?               @map("profile_id") @db.Uuid
+  
+  // ── Accommodation Details ───────────────────────────────────────────────────
+  category            AccommodationCategory
+  
+  /// Non-diagnostic description of the accommodation
+  /// Example: "Break tasks into smaller steps" NOT "Due to ADHD, needs..."
+  description         String
+  
+  /// Academic domains this applies to
+  appliesToDomains    String[]              @default([]) @map("applies_to_domains")
+  
+  /// Source of the accommodation requirement
+  source              AccommodationSource   @default(PARENT_PREFERENCE)
+  
+  /// Critical accommodations must always be respected
+  isCritical          Boolean               @default(false) @map("is_critical")
+  
+  // ── Validity Period ─────────────────────────────────────────────────────────
+  effectiveFrom       DateTime              @default(now()) @map("effective_from") @db.Date
+  effectiveTo         DateTime?             @map("effective_to") @db.Date
+  
+  /// Whether this accommodation is currently active
+  isActive            Boolean               @default(true) @map("is_active")
+  
+  // ── Audit ───────────────────────────────────────────────────────────────────
+  createdByUserId     String                @map("created_by_user_id") @db.Uuid
+  updatedByUserId     String?               @map("updated_by_user_id") @db.Uuid
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // ── Relations ───────────────────────────────────────────────────────────────
+  profile             LearnerProfile?       @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, learnerId])
+  @@index([profileId])
+  @@index([category])
+  @@index([isActive, effectiveFrom, effectiveTo])
+  @@map("learner_accommodations")
+}
+
+/// Links goals (from goal-svc) to neurodiversity profile for context.
+model LearnerGoalLink {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @map("tenant_id") @db.Uuid
+  learnerId           String          @map("learner_id") @db.Uuid
+  profileId           String?         @map("profile_id") @db.Uuid
+  
+  /// Reference to goal in goal-svc
+  goalId              String          @map("goal_id") @db.Uuid
+  
+  /// How the profile/accommodations relate to this goal
+  notes               String?
+  
+  // ── Audit ───────────────────────────────────────────────────────────────────
+  createdByUserId     String          @map("created_by_user_id") @db.Uuid
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // ── Relations ───────────────────────────────────────────────────────────────
+  profile             LearnerProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, learnerId, goalId])
+  @@index([tenantId, learnerId])
+  @@index([goalId])
+  @@map("learner_goal_links")
+}
+
+/// Reference to IEP/504 document (stored externally in secure storage).
+/// We store link only, not the document content.
+model IepDocumentRef {
+  id                  String              @id @default(uuid()) @db.Uuid
+  tenantId            String              @map("tenant_id") @db.Uuid
+  learnerId           String              @map("learner_id") @db.Uuid
+  
+  /// Secure URL to document (e.g., S3/Vault reference)
+  fileUrl             String              @map("file_url")
+  
+  /// Document description
+  description         String?
+  
+  /// Who can access this document
+  accessScope         DocumentAccessScope @default(PARENTS_AND_ASSIGNED_STAFF) @map("access_scope")
+  
+  /// Document metadata
+  fileName            String?             @map("file_name")
+  fileSizeBytes       Int?                @map("file_size_bytes")
+  mimeType            String?             @map("mime_type")
+  
+  // ── Audit ───────────────────────────────────────────────────────────────────
+  uploadedByUserId    String              @map("uploaded_by_user_id") @db.Uuid
+  uploadedAt          DateTime            @default(now()) @map("uploaded_at") @db.Timestamptz
+  
+  // ── Soft Delete ─────────────────────────────────────────────────────────────
+  isDeleted           Boolean             @default(false) @map("is_deleted")
+  deletedAt           DateTime?           @map("deleted_at") @db.Timestamptz
+  deletedByUserId     String?             @map("deleted_by_user_id") @db.Uuid
+
+  @@index([tenantId, learnerId])
+  @@index([accessScope])
+  @@map("iep_document_refs")
+}
+
+/// Change log for profile updates (audit trail)
+model ProfileChangeLog {
+  id                  String          @id @default(uuid()) @db.Uuid
+  profileId           String          @map("profile_id") @db.Uuid
+  tenantId            String          @map("tenant_id") @db.Uuid
+  learnerId           String          @map("learner_id") @db.Uuid
+  
+  /// Version after this change
+  version             Int
+  
+  /// What fields changed
+  changedFields       String[]        @default([]) @map("changed_fields")
+  
+  /// Snapshot of previous values (redacted if needed)
+  previousValuesJson  Json?           @map("previous_values_json")
+  
+  /// Who made the change
+  changedByUserId     String          @map("changed_by_user_id") @db.Uuid
+  changedByRole       String          @map("changed_by_role")
+  
+  /// When
+  changedAt           DateTime        @default(now()) @map("changed_at") @db.Timestamptz
+  
+  // ── Relations ───────────────────────────────────────────────────────────────
+  profile             LearnerProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([tenantId, learnerId])
+  @@index([changedAt])
+  @@map("profile_change_logs")
+}

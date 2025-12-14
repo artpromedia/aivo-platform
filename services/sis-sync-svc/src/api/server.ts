@@ -5,6 +5,7 @@
 import Fastify from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { registerRoutes } from './routes';
+import { registerOAuthRoutes } from './oauth';
 import { SyncScheduler } from '../scheduler';
 
 export async function createServer() {
@@ -22,12 +23,15 @@ export async function createServer() {
   // Initialize scheduler
   const scheduler = new SyncScheduler(prisma, {
     autoStart: process.env.NODE_ENV !== 'test',
-    maxConcurrentSyncs: parseInt(process.env.MAX_CONCURRENT_SYNCS || '2'),
-    lockTimeout: parseInt(process.env.SYNC_LOCK_TIMEOUT || '1800000'),
+    maxConcurrentSyncs: Number.parseInt(process.env.MAX_CONCURRENT_SYNCS || '2', 10),
+    lockTimeout: Number.parseInt(process.env.SYNC_LOCK_TIMEOUT || '1800000', 10),
   });
 
   // Register routes
   registerRoutes(app, prisma, scheduler);
+  
+  // Register OAuth routes for Google/Microsoft SSO
+  registerOAuthRoutes(app, prisma);
 
   // Graceful shutdown
   const shutdown = async () => {
@@ -51,8 +55,8 @@ export async function createServer() {
 
 // Start server if run directly
 if (require.main === module) {
-  createServer().then(async ({ app }) => {
-    const port = parseInt(process.env.PORT || '3000');
+  void createServer().then(async ({ app }) => {
+    const port = Number.parseInt(process.env.PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';
     
     try {

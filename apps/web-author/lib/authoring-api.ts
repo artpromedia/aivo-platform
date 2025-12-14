@@ -435,3 +435,235 @@ export async function searchStandards(query: string): Promise<Standard[]> {
       s.code.toLowerCase().includes(lowerQuery) || s.description.toLowerCase().includes(lowerQuery)
   );
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REVIEW QUEUE API
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface ReviewQueueParams {
+  subject?: string;
+  gradeBand?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ReviewQueueItem {
+  id: string;
+  versionNumber: number;
+  submittedAt: string;
+  createdByUserId: string;
+  learningObject: {
+    id: string;
+    slug: string;
+    title: string;
+    subject: string;
+    gradeBand: string;
+  };
+  _count?: {
+    reviews: number;
+  };
+}
+
+export interface ReviewQueueResponse {
+  items: ReviewQueueItem[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+export async function getReviewQueue(params?: ReviewQueueParams): Promise<ReviewQueueResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.subject) searchParams.set('subject', params.subject);
+  if (params?.gradeBand) searchParams.set('gradeBand', params.gradeBand);
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  if (params?.offset) searchParams.set('offset', String(params.offset));
+
+  const query = searchParams.toString();
+  return apiFetch<ReviewQueueResponse>(
+    AUTHORING_SVC_URL,
+    `/review-queue${query ? `?${query}` : ''}`
+  );
+}
+
+export interface SubmitReviewRequest {
+  decision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED';
+  comments?: string;
+  validationErrors?: string[];
+  checklist?: Record<string, boolean>;
+}
+
+export interface Review {
+  id: string;
+  versionId: string;
+  reviewerUserId: string;
+  decision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED';
+  comments: string | null;
+  validationErrors: string[];
+  checklist: Record<string, boolean>;
+  reviewedAt: string;
+}
+
+export async function submitReview(versionId: string, data: SubmitReviewRequest): Promise<Review> {
+  return apiFetch<Review>(AUTHORING_SVC_URL, `/versions/${versionId}/reviews`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getVersionReviews(versionId: string): Promise<Review[]> {
+  return apiFetch<Review[]>(AUTHORING_SVC_URL, `/versions/${versionId}/reviews`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INGESTION API
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface IngestionJob {
+  id: string;
+  tenantId: string | null;
+  source: 'MANUAL' | 'FILE_CSV' | 'FILE_JSON' | 'AI_DRAFT';
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+  inputFileUrl: string | null;
+  inputMetadata: Record<string, unknown>;
+  totalRows: number | null;
+  successCount: number;
+  errorCount: number;
+  createdLoIds: string[];
+  errors: Array<{ row?: number; slug?: string; errors?: Array<{ field: string; message: string }> }>;
+  createdByUserId: string;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface IngestionJobsParams {
+  status?: string;
+  source?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface IngestionJobsResponse {
+  jobs: Pick<IngestionJob, 'id' | 'source' | 'status' | 'totalRows' | 'successCount' | 'errorCount' | 'createdAt' | 'completedAt'>[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+export async function getIngestionJobs(params?: IngestionJobsParams): Promise<IngestionJobsResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.source) searchParams.set('source', params.source);
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  if (params?.offset) searchParams.set('offset', String(params.offset));
+
+  const query = searchParams.toString();
+  return apiFetch<IngestionJobsResponse>(
+    AUTHORING_SVC_URL,
+    `/ingest/jobs${query ? `?${query}` : ''}`
+  );
+}
+
+export async function getIngestionJob(jobId: string): Promise<IngestionJob> {
+  return apiFetch<IngestionJob>(AUTHORING_SVC_URL, `/ingest/jobs/${jobId}`);
+}
+
+export interface ManualIngestionItem {
+  slug: string;
+  title: string;
+  subject: string;
+  gradeBand: string;
+  contentJson: Record<string, unknown>;
+  accessibilityJson?: Record<string, unknown>;
+  standardsJson?: Record<string, unknown>;
+  tags?: string[];
+  primarySkillId?: string;
+}
+
+export interface ManualIngestionRequest {
+  items: ManualIngestionItem[];
+  validateOnly?: boolean;
+  autoSubmitForReview?: boolean;
+}
+
+export interface ManualIngestionResponse {
+  jobId: string;
+  totalItems: number;
+  successCount: number;
+  errorCount: number;
+  results: Array<{
+    index: number;
+    slug: string;
+    success: boolean;
+    loId?: string;
+    versionId?: string;
+    errors?: Array<{ field: string; message: string }>;
+    warnings?: Array<{ field: string; message: string }>;
+  }>;
+}
+
+export async function ingestManual(data: ManualIngestionRequest): Promise<ManualIngestionResponse> {
+  return apiFetch<ManualIngestionResponse>(AUTHORING_SVC_URL, '/ingest/manual', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export interface FileIngestionRequest {
+  fileUrl: string;
+  fileType: 'csv' | 'json';
+  mappings?: Record<string, string>;
+  defaultSubject?: string;
+  defaultGradeBand?: string;
+  autoSubmitForReview?: boolean;
+}
+
+export interface FileIngestionResponse {
+  jobId: string;
+  status: string;
+  message: string;
+}
+
+export async function ingestFile(data: FileIngestionRequest): Promise<FileIngestionResponse> {
+  return apiFetch<FileIngestionResponse>(AUTHORING_SVC_URL, '/ingest/file', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export interface AiDraftRequest {
+  subject: string;
+  gradeBand: string;
+  contentType: 'reading_passage' | 'math_problem' | 'quiz' | 'generic';
+  standards?: string[];
+  targetSkills?: string[];
+  promptSummary: string;
+  difficulty?: number;
+  estimatedMinutes?: number;
+}
+
+export interface AiDraftResponse {
+  jobId: string;
+  status: string;
+  loId?: string;
+  versionId?: string;
+  message: string;
+  warning?: string;
+}
+
+export async function createAiDraft(data: AiDraftRequest): Promise<AiDraftResponse> {
+  return apiFetch<AiDraftResponse>(AUTHORING_SVC_URL, '/ingest/ai-draft', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function cancelIngestionJob(jobId: string): Promise<IngestionJob> {
+  return apiFetch<IngestionJob>(AUTHORING_SVC_URL, `/ingest/jobs/${jobId}/cancel`, {
+    method: 'POST',
+  });
+}

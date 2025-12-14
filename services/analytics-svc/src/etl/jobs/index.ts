@@ -10,6 +10,7 @@ export {
   jobSyncDimUser,
   jobSyncDimSubject,
   jobSyncDimSkill,
+  jobSyncDimContent,
   runAllDimensionSyncs,
 } from './dimensions.js';
 
@@ -19,5 +20,8 @@ export {
   jobBuildFactHomeworkEvents,
   jobBuildFactLearningProgress,
   jobBuildFactRecommendationEvents,
+  jobBuildFactActivityEvents,
+  jobBuildFactAIUsage,
+  jobBuildFactBilling,
   runAllFactBuilds,
 } from './facts.js';

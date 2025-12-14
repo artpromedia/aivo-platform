@@ -8,15 +8,13 @@ import { SisProviderType } from '@prisma/client';
 import {
   ISisProvider,
   ProviderConfig,
-  CleverConfig,
-  ClassLinkConfig,
-  OneRosterApiConfig,
-  OneRosterCsvConfig,
 } from './types';
 import { CleverProvider } from './clever';
 import { ClassLinkProvider } from './classlink';
 import { OneRosterApiProvider } from './oneroster-api';
 import { OneRosterCsvProvider } from './oneroster-csv';
+import { GoogleWorkspaceProvider } from './google-workspace';
+import { MicrosoftEntraProvider } from './microsoft-entra';
 
 export function createProvider(providerType: SisProviderType): ISisProvider {
   switch (providerType) {
@@ -28,6 +26,10 @@ export function createProvider(providerType: SisProviderType): ISisProvider {
       return new OneRosterApiProvider();
     case 'ONEROSTER_CSV':
       return new OneRosterCsvProvider();
+    case 'GOOGLE_WORKSPACE':
+      return new GoogleWorkspaceProvider();
+    case 'MICROSOFT_ENTRA':
+      return new MicrosoftEntraProvider();
     case 'CUSTOM':
       throw new Error('Custom providers must be implemented separately');
     default:
@@ -84,6 +86,17 @@ export function validateProviderConfig(
       if (!config.remotePath) errors.push('remotePath is required');
       break;
 
+    case 'GOOGLE_WORKSPACE':
+      if (!config.domain) errors.push('domain is required');
+      if (!config.customerId) errors.push('customerId is required (e.g., C01234567)');
+      if (!config.clientId) errors.push('clientId is required');
+      break;
+
+    case 'MICROSOFT_ENTRA':
+      if (!config.tenantId) errors.push('tenantId is required');
+      if (!config.clientId) errors.push('clientId is required');
+      break;
+
     case 'CUSTOM':
       // Custom providers have their own validation
       break;
@@ -104,3 +117,5 @@ export { CleverProvider } from './clever';
 export { ClassLinkProvider } from './classlink';
 export { OneRosterApiProvider } from './oneroster-api';
 export { OneRosterCsvProvider } from './oneroster-csv';
+export { GoogleWorkspaceProvider, GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from './google-workspace';
+export { MicrosoftEntraProvider, MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from './microsoft-entra';

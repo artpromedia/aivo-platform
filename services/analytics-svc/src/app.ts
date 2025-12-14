@@ -11,6 +11,7 @@ import { explanationRoutes } from './routes/explanationRoutes.js';
 import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
 import { modelCardsRoutes } from './routes/modelCardsRoutes.js';
 import { parentAnalyticsRoutes } from './routes/parentAnalytics.js';
+import { researchExportRoutes } from './routes/researchExports.js';
 import { teacherAnalyticsRoutes } from './routes/teacherAnalytics.js';
 import { tenantAnalyticsRoutes } from './routes/tenantAnalytics.js';
 
@@ -51,6 +52,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register internal events admin routes (for replay, DLQ management)
   await app.register(eventsAdminRoutes, { prefix: '/internal/events' });
+
+  // Register research exports routes (FERPA/COPPA compliant de-identified data)
+  await app.register(researchExportRoutes, { prefix: '/research' });
 
   return app;
 }

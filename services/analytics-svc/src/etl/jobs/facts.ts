@@ -291,7 +291,7 @@ export async function jobBuildFactFocusEvents(targetDate: Date, force = false): 
             learnerKey,
             event.event_type,
             event.event_time,
-            event.duration_seconds ? parseInt(event.duration_seconds) : null,
+            event.duration_seconds ? Number.parseInt(event.duration_seconds) : null,
             event.intervention_type,
             event.intervention_completed,
             event.focus_score,
@@ -798,6 +798,535 @@ export async function jobBuildFactRecommendationEvents(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// BUILD FACT_ACTIVITY_EVENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build fact_activity_event for a target date.
+ * Granular learner activity events (responses, completions, hints).
+ */
+export async function jobBuildFactActivityEvents(
+  targetDate: Date,
+  force = false
+): Promise<JobResult> {
+  return runJob('build_fact_activity_events', targetDate, force, async () => {
+    const source = getSourcePool();
+    const warehouse = getWarehousePool();
+    const logger = createLogger('build_fact_activity_events');
+
+    const dateKey = toDateKey(targetDate);
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
+
+    let rowsProcessed = 0;
+    let rowsInserted = 0;
+    let rowsDeleted = 0;
+
+    // Fetch activity events from session_events
+    const eventsResult = await source.query(
+      `
+      SELECT 
+        se.id as event_id,
+        se.session_id,
+        s.tenant_id,
+        s.learner_id,
+        se.activity_id as content_id,
+        se.event_type,
+        se.metadata_json->>'questionId' as question_id,
+        (se.metadata_json->>'isCorrect')::boolean as is_correct,
+        (se.metadata_json->>'responseTimeMs')::integer as response_time_ms,
+        (se.metadata_json->>'attemptNumber')::integer as attempt_number,
+        (se.metadata_json->>'preMasteryScore')::numeric as pre_mastery_score,
+        (se.metadata_json->>'postMasteryScore')::numeric as post_mastery_score,
+        COALESCE((se.metadata_json->>'aiHintProvided')::boolean, false) as ai_hint_provided,
+        COALESCE((se.metadata_json->>'aiExplanationProvided')::boolean, false) as ai_explanation_provided,
+        se.event_time as occurred_at,
+        se.metadata_json as metadata
+      FROM session_events se
+      JOIN sessions s ON se.session_id = s.id
+      WHERE se.event_time >= $1 AND se.event_time < $2
+        AND se.event_type IN (
+          'ACTIVITY_RESPONSE_SUBMITTED',
+          'ACTIVITY_COMPLETED',
+          'ACTIVITY_SKIPPED',
+          'HOMEWORK_HINT_REQUESTED',
+          'HOMEWORK_EXPLANATION_VIEWED'
+        )
+      ORDER BY se.event_time
+      `,
+      [dayStart, dayEnd]
+    );
+
+    const events = eventsResult.rows as {
+      event_id: string;
+      session_id: string;
+      tenant_id: string;
+      learner_id: string;
+      content_id: string | null;
+      event_type: string;
+      question_id: string | null;
+      is_correct: boolean | null;
+      response_time_ms: number | null;
+      attempt_number: number | null;
+      pre_mastery_score: number | null;
+      post_mastery_score: number | null;
+      ai_hint_provided: boolean;
+      ai_explanation_provided: boolean;
+      occurred_at: Date;
+      metadata: Record<string, unknown>;
+    }[];
+
+    rowsProcessed = events.length;
+    logger.info(`Fetched ${rowsProcessed} activity events for ${formatDate(targetDate)}`);
+
+    await withTransaction(warehouse, async (client) => {
+      // Delete existing rows for this date (idempotency)
+      const deleteResult = await client.query(
+        `DELETE FROM fact_activity_event WHERE date_key = $1`,
+        [dateKey]
+      );
+      rowsDeleted = deleteResult.rowCount ?? 0;
+
+      if (rowsDeleted > 0) {
+        logger.info(`Deleted ${rowsDeleted} existing rows for date_key ${dateKey}`);
+      }
+
+      for (const event of events) {
+        // Look up dimension keys
+        const tenantResult = await client.query(
+          `SELECT tenant_key FROM dim_tenant WHERE tenant_id = $1 AND is_current = true`,
+          [event.tenant_id]
+        );
+        const learnerResult = await client.query(
+          `SELECT learner_key FROM dim_learner WHERE learner_id = $1 AND is_current = true`,
+          [event.learner_id]
+        );
+
+        if (tenantResult.rowCount === 0 || learnerResult.rowCount === 0) {
+          logger.warn(`Missing dimension for event ${event.event_id}`);
+          continue;
+        }
+
+        const tenantKey = (tenantResult.rows[0] as { tenant_key: number }).tenant_key;
+        const learnerKey = (learnerResult.rows[0] as { learner_key: number }).learner_key;
+
+        // Look up optional dimension keys
+        let contentKey: number | null = null;
+        if (event.content_id) {
+          const contentResult = await client.query(
+            `SELECT content_key FROM dim_content WHERE content_id = $1 AND is_current = true`,
+            [event.content_id]
+          );
+          if (contentResult.rowCount && contentResult.rowCount > 0) {
+            contentKey = (contentResult.rows[0] as { content_key: number }).content_key;
+          }
+        }
+
+        let sessionKey: number | null = null;
+        if (event.session_id) {
+          const sessionResult = await client.query(
+            `SELECT session_key FROM fact_sessions WHERE session_id = $1`,
+            [event.session_id]
+          );
+          if (sessionResult.rowCount && sessionResult.rowCount > 0) {
+            sessionKey = (sessionResult.rows[0] as { session_key: number }).session_key;
+          }
+        }
+
+        // Map event type to canonical names
+        const eventTypeMap: Record<string, string> = {
+          ACTIVITY_RESPONSE_SUBMITTED: 'response',
+          ACTIVITY_COMPLETED: 'completed',
+          ACTIVITY_SKIPPED: 'skipped',
+          HOMEWORK_HINT_REQUESTED: 'hint_used',
+          HOMEWORK_EXPLANATION_VIEWED: 'explanation_viewed',
+        };
+        const eventType = eventTypeMap[event.event_type] ?? event.event_type.toLowerCase();
+
+        // Calculate mastery delta if both scores available
+        const masteryDelta =
+          event.pre_mastery_score != null && event.post_mastery_score != null
+            ? event.post_mastery_score - event.pre_mastery_score
+            : null;
+
+        await client.query(
+          `INSERT INTO fact_activity_event (
+            event_id, date_key, tenant_key, learner_key, content_key, session_key,
+            event_type, question_id, is_correct, response_time_ms, attempt_number,
+            pre_mastery_score, post_mastery_score, mastery_delta,
+            ai_hint_provided, ai_explanation_provided, occurred_at, metadata
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+          [
+            event.event_id,
+            dateKey,
+            tenantKey,
+            learnerKey,
+            contentKey,
+            sessionKey,
+            eventType,
+            event.question_id,
+            event.is_correct,
+            event.response_time_ms,
+            event.attempt_number,
+            event.pre_mastery_score,
+            event.post_mastery_score,
+            masteryDelta,
+            event.ai_hint_provided,
+            event.ai_explanation_provided,
+            event.occurred_at,
+            event.metadata,
+          ]
+        );
+        rowsInserted++;
+      }
+    });
+
+    return {
+      jobName: 'build_fact_activity_events',
+      status: 'SUCCESS',
+      rowsProcessed,
+      rowsInserted,
+      rowsUpdated: 0,
+      rowsDeleted,
+      durationMs: 0,
+    };
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BUILD FACT_AI_USAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build fact_ai_usage for a target date.
+ * Tracks AI model invocations, tokens, costs, and latency.
+ */
+export async function jobBuildFactAIUsage(targetDate: Date, force = false): Promise<JobResult> {
+  return runJob('build_fact_ai_usage', targetDate, force, async () => {
+    const source = getSourcePool();
+    const warehouse = getWarehousePool();
+    const logger = createLogger('build_fact_ai_usage');
+
+    const dateKey = toDateKey(targetDate);
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
+
+    let rowsProcessed = 0;
+    let rowsInserted = 0;
+    let rowsDeleted = 0;
+
+    // Fetch AI call logs from ai-orchestrator database
+    // Note: In production, this would query the ai-orchestrator's ai_call_logs table
+    const aiLogsResult = await source.query(
+      `
+      SELECT 
+        id as call_id,
+        tenant_id,
+        learner_id,
+        session_id,
+        agent_type,
+        model_name,
+        provider,
+        input_tokens,
+        output_tokens,
+        (input_tokens + output_tokens) as total_tokens,
+        cost_microdollars,
+        latency_ms,
+        COALESCE(was_cached, false) as was_cached,
+        cache_hit_rate,
+        COALESCE(was_filtered, false) as was_filtered,
+        user_rating,
+        feedback_type,
+        feature_area,
+        created_at as called_at,
+        metadata_json as metadata
+      FROM ai_call_logs
+      WHERE created_at >= $1 AND created_at < $2
+      ORDER BY created_at
+      `,
+      [dayStart, dayEnd]
+    );
+
+    const aiLogs = aiLogsResult.rows as {
+      call_id: string;
+      tenant_id: string;
+      learner_id: string | null;
+      session_id: string | null;
+      agent_type: string;
+      model_name: string;
+      provider: string;
+      input_tokens: number;
+      output_tokens: number;
+      total_tokens: number;
+      cost_microdollars: number;
+      latency_ms: number;
+      was_cached: boolean;
+      cache_hit_rate: number | null;
+      was_filtered: boolean;
+      user_rating: number | null;
+      feedback_type: string | null;
+      feature_area: string | null;
+      called_at: Date;
+      metadata: Record<string, unknown>;
+    }[];
+
+    rowsProcessed = aiLogs.length;
+    logger.info(`Fetched ${rowsProcessed} AI call logs for ${formatDate(targetDate)}`);
+
+    await withTransaction(warehouse, async (client) => {
+      // Delete existing rows for this date (idempotency)
+      const deleteResult = await client.query(`DELETE FROM fact_ai_usage WHERE date_key = $1`, [
+        dateKey,
+      ]);
+      rowsDeleted = deleteResult.rowCount ?? 0;
+
+      if (rowsDeleted > 0) {
+        logger.info(`Deleted ${rowsDeleted} existing rows for date_key ${dateKey}`);
+      }
+
+      for (const log of aiLogs) {
+        // Look up dimension keys
+        const tenantResult = await client.query(
+          `SELECT tenant_key FROM dim_tenant WHERE tenant_id = $1 AND is_current = true`,
+          [log.tenant_id]
+        );
+
+        if (tenantResult.rowCount === 0) {
+          logger.warn(`Missing tenant dimension for AI call ${log.call_id}`);
+          continue;
+        }
+
+        const tenantKey = (tenantResult.rows[0] as { tenant_key: number }).tenant_key;
+
+        // Optional dimension keys
+        let learnerKey: number | null = null;
+        if (log.learner_id) {
+          const learnerResult = await client.query(
+            `SELECT learner_key FROM dim_learner WHERE learner_id = $1 AND is_current = true`,
+            [log.learner_id]
+          );
+          if (learnerResult.rowCount && learnerResult.rowCount > 0) {
+            learnerKey = (learnerResult.rows[0] as { learner_key: number }).learner_key;
+          }
+        }
+
+        let sessionKey: number | null = null;
+        if (log.session_id) {
+          const sessionResult = await client.query(
+            `SELECT session_key FROM fact_sessions WHERE session_id = $1`,
+            [log.session_id]
+          );
+          if (sessionResult.rowCount && sessionResult.rowCount > 0) {
+            sessionKey = (sessionResult.rows[0] as { session_key: number }).session_key;
+          }
+        }
+
+        await client.query(
+          `INSERT INTO fact_ai_usage (
+            call_id, date_key, tenant_key, learner_key, session_key,
+            agent_type, model_name, provider,
+            input_tokens, output_tokens, total_tokens, cost_microdollars,
+            latency_ms, was_cached, cache_hit_rate,
+            was_filtered, user_rating, feedback_type, feature_area,
+            called_at, metadata
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+          [
+            log.call_id,
+            dateKey,
+            tenantKey,
+            learnerKey,
+            sessionKey,
+            log.agent_type,
+            log.model_name,
+            log.provider,
+            log.input_tokens,
+            log.output_tokens,
+            log.total_tokens,
+            log.cost_microdollars,
+            log.latency_ms,
+            log.was_cached,
+            log.cache_hit_rate,
+            log.was_filtered,
+            log.user_rating,
+            log.feedback_type,
+            log.feature_area,
+            log.called_at,
+            log.metadata,
+          ]
+        );
+        rowsInserted++;
+      }
+    });
+
+    return {
+      jobName: 'build_fact_ai_usage',
+      status: 'SUCCESS',
+      rowsProcessed,
+      rowsInserted,
+      rowsUpdated: 0,
+      rowsDeleted,
+      durationMs: 0,
+    };
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BUILD FACT_BILLING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build fact_billing for a target date.
+ * Tracks invoices and revenue by tenant.
+ */
+export async function jobBuildFactBilling(targetDate: Date, force = false): Promise<JobResult> {
+  return runJob('build_fact_billing', targetDate, force, async () => {
+    const source = getSourcePool();
+    const warehouse = getWarehousePool();
+    const logger = createLogger('build_fact_billing');
+
+    const dateKey = toDateKey(targetDate);
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
+
+    let rowsProcessed = 0;
+    let rowsInserted = 0;
+    let rowsDeleted = 0;
+
+    // Fetch invoices from billing-svc
+    const invoicesResult = await source.query(
+      `
+      SELECT 
+        i.id as invoice_id,
+        i.tenant_id,
+        i.period_start,
+        i.period_end,
+        sub.tier as subscription_tier,
+        sub.billing_frequency,
+        sub.seat_count,
+        i.base_amount_cents,
+        COALESCE(i.discount_amount_cents, 0) as discount_amount_cents,
+        COALESCE(i.tax_amount_cents, 0) as tax_amount_cents,
+        i.total_amount_cents,
+        i.status as payment_status,
+        i.payment_method,
+        COALESCE(i.ai_overage_cents, 0) as ai_overage_cents,
+        COALESCE(i.storage_overage_cents, 0) as storage_overage_cents,
+        i.invoice_date,
+        i.due_date,
+        i.paid_date,
+        i.stripe_invoice_id,
+        i.metadata_json as metadata
+      FROM invoices i
+      JOIN subscriptions sub ON i.subscription_id = sub.id
+      WHERE i.invoice_date >= $1 AND i.invoice_date < $2
+      ORDER BY i.invoice_date
+      `,
+      [dayStart, dayEnd]
+    );
+
+    const invoices = invoicesResult.rows as {
+      invoice_id: string;
+      tenant_id: string;
+      period_start: Date;
+      period_end: Date;
+      subscription_tier: string;
+      billing_frequency: string;
+      seat_count: number | null;
+      base_amount_cents: number;
+      discount_amount_cents: number;
+      tax_amount_cents: number;
+      total_amount_cents: number;
+      payment_status: string;
+      payment_method: string | null;
+      ai_overage_cents: number;
+      storage_overage_cents: number;
+      invoice_date: Date;
+      due_date: Date;
+      paid_date: Date | null;
+      stripe_invoice_id: string | null;
+      metadata: Record<string, unknown>;
+    }[];
+
+    rowsProcessed = invoices.length;
+    logger.info(`Fetched ${rowsProcessed} invoices for ${formatDate(targetDate)}`);
+
+    await withTransaction(warehouse, async (client) => {
+      // Delete existing rows for this date (idempotency)
+      const deleteResult = await client.query(`DELETE FROM fact_billing WHERE date_key = $1`, [
+        dateKey,
+      ]);
+      rowsDeleted = deleteResult.rowCount ?? 0;
+
+      if (rowsDeleted > 0) {
+        logger.info(`Deleted ${rowsDeleted} existing rows for date_key ${dateKey}`);
+      }
+
+      for (const invoice of invoices) {
+        // Look up tenant dimension key
+        const tenantResult = await client.query(
+          `SELECT tenant_key FROM dim_tenant WHERE tenant_id = $1 AND is_current = true`,
+          [invoice.tenant_id]
+        );
+
+        if (tenantResult.rowCount === 0) {
+          logger.warn(`Missing tenant dimension for invoice ${invoice.invoice_id}`);
+          continue;
+        }
+
+        const tenantKey = (tenantResult.rows[0] as { tenant_key: number }).tenant_key;
+
+        await client.query(
+          `INSERT INTO fact_billing (
+            invoice_id, date_key, tenant_key,
+            period_start, period_end,
+            subscription_tier, billing_frequency, seat_count,
+            base_amount_cents, discount_amount_cents, tax_amount_cents, total_amount_cents,
+            payment_status, payment_method,
+            ai_overage_cents, storage_overage_cents,
+            invoice_date, due_date, paid_date,
+            stripe_invoice_id, metadata
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+          [
+            invoice.invoice_id,
+            dateKey,
+            tenantKey,
+            invoice.period_start,
+            invoice.period_end,
+            invoice.subscription_tier,
+            invoice.billing_frequency,
+            invoice.seat_count,
+            invoice.base_amount_cents,
+            invoice.discount_amount_cents,
+            invoice.tax_amount_cents,
+            invoice.total_amount_cents,
+            invoice.payment_status,
+            invoice.payment_method,
+            invoice.ai_overage_cents,
+            invoice.storage_overage_cents,
+            invoice.invoice_date,
+            invoice.due_date,
+            invoice.paid_date,
+            invoice.stripe_invoice_id,
+            invoice.metadata,
+          ]
+        );
+        rowsInserted++;
+      }
+    });
+
+    return {
+      jobName: 'build_fact_billing',
+      status: 'SUCCESS',
+      rowsProcessed,
+      rowsInserted,
+      rowsUpdated: 0,
+      rowsDeleted,
+      durationMs: 0,
+    };
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // RUN ALL FACT BUILDS
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -805,14 +1334,17 @@ export async function jobBuildFactRecommendationEvents(
  * Run all fact table builds for a target date.
  */
 export async function runAllFactBuilds(targetDate: Date, force = false): Promise<JobResult[]> {
-  const results: JobResult[] = [];
-
   // Order: sessions first (other facts may reference session_key)
-  results.push(await jobBuildFactSessions(targetDate, force));
-  results.push(await jobBuildFactFocusEvents(targetDate, force));
-  results.push(await jobBuildFactHomeworkEvents(targetDate, force));
-  results.push(await jobBuildFactLearningProgress(targetDate, force));
-  results.push(await jobBuildFactRecommendationEvents(targetDate, force));
+  const results: JobResult[] = [
+    await jobBuildFactSessions(targetDate, force),
+    await jobBuildFactFocusEvents(targetDate, force),
+    await jobBuildFactHomeworkEvents(targetDate, force),
+    await jobBuildFactLearningProgress(targetDate, force),
+    await jobBuildFactRecommendationEvents(targetDate, force),
+    await jobBuildFactActivityEvents(targetDate, force),
+    await jobBuildFactAIUsage(targetDate, force),
+    await jobBuildFactBilling(targetDate, force),
+  ];
 
   return results;
 }

@@ -185,7 +185,81 @@ export interface OneRosterCsvConfig {
   };
 }
 
-export type ProviderConfig = CleverConfig | ClassLinkConfig | OneRosterApiConfig | OneRosterCsvConfig;
+/**
+ * Google Workspace for Education configuration
+ * Uses Google Directory API for users and Classroom API for classes
+ */
+export interface GoogleWorkspaceConfig {
+  /** Google Cloud Project ID */
+  projectId?: string;
+  /** Google Workspace customer ID (e.g., C01234567) */
+  customerId: string;
+  /** Primary domain (e.g., springfield.k12.us) */
+  domain: string;
+  /** Additional domains to include */
+  additionalDomains?: string[];
+  /** OAuth 2.0 Client ID */
+  clientId: string;
+  /** OAuth 2.0 Client Secret (stored in Vault) - reference only */
+  clientSecretRef?: string;
+  /** Service account email for admin SDK access */
+  serviceAccountEmail?: string;
+  /** Admin user email for domain-wide delegation */
+  adminEmail?: string;
+  /** OAuth access token */
+  accessToken?: string;
+  /** OAuth refresh token */
+  refreshToken?: string;
+  /** Token expiry */
+  tokenExpiry?: Date;
+  /** Scopes granted */
+  scopes?: string[];
+  /** Whether to use Classroom API for classes/enrollments */
+  useClassroomApi?: boolean;
+  /** Filter: only sync these organizational units */
+  orgUnitPaths?: string[];
+  /** Filter: only sync these user types */
+  userTypes?: ('student' | 'teacher' | 'staff')[];
+}
+
+/**
+ * Microsoft Entra ID (Azure AD) configuration
+ * Uses Microsoft Graph API for users, groups, and Teams/Classes
+ */
+export interface MicrosoftEntraConfig {
+  /** Azure AD Tenant ID */
+  tenantId: string;
+  /** Primary domain */
+  domain: string;
+  /** OAuth 2.0 Client/Application ID */
+  clientId: string;
+  /** OAuth 2.0 Client Secret (stored in Vault) - reference only */
+  clientSecretRef?: string;
+  /** OAuth access token */
+  accessToken?: string;
+  /** OAuth refresh token */
+  refreshToken?: string;
+  /** Token expiry */
+  tokenExpiry?: Date;
+  /** Scopes granted */
+  scopes?: string[];
+  /** Whether to use Education APIs (requires EDU tenant) */
+  useEducationApis?: boolean;
+  /** Whether to sync from Microsoft Teams for Education */
+  syncTeamsClasses?: boolean;
+  /** Filter: only sync users from these groups */
+  groupFilters?: string[];
+  /** Filter: only sync users with these licenses */
+  licenseFilters?: string[];
+}
+
+export type ProviderConfig = 
+  | CleverConfig 
+  | ClassLinkConfig 
+  | OneRosterApiConfig 
+  | OneRosterCsvConfig
+  | GoogleWorkspaceConfig
+  | MicrosoftEntraConfig;
 
 // ============================================================================
 // Sync Results
@@ -248,9 +322,18 @@ export function createEmptySyncStats(): SyncStats {
 // Provider Interface
 // ============================================================================
 
+/** All supported SIS provider types */
+export type SisProviderTypeId = 
+  | 'CLEVER' 
+  | 'CLASSLINK' 
+  | 'ONEROSTER_API' 
+  | 'ONEROSTER_CSV'
+  | 'GOOGLE_WORKSPACE'
+  | 'MICROSOFT_ENTRA';
+
 export interface ISisProvider {
   /** Provider type identifier */
-  readonly providerType: 'CLEVER' | 'CLASSLINK' | 'ONEROSTER_API' | 'ONEROSTER_CSV';
+  readonly providerType: SisProviderTypeId;
   
   /** Initialize the provider with configuration */
   initialize(config: ProviderConfig): Promise<void>;

@@ -26,11 +26,15 @@ import {
   jobSyncDimUser,
   jobSyncDimSubject,
   jobSyncDimSkill,
+  jobSyncDimContent,
   jobBuildFactSessions,
   jobBuildFactFocusEvents,
   jobBuildFactHomeworkEvents,
   jobBuildFactLearningProgress,
   jobBuildFactRecommendationEvents,
+  jobBuildFactActivityEvents,
+  jobBuildFactAIUsage,
+  jobBuildFactBilling,
 } from './jobs/index.js';
 import { getRecentJobRuns } from './logger.js';
 import type { JobResult } from './types.js';
@@ -59,12 +63,13 @@ Options:
 Jobs:
   Dimensions:
     sync_dim_tenant, sync_dim_learner, sync_dim_user,
-    sync_dim_subject, sync_dim_skill
+    sync_dim_subject, sync_dim_skill, sync_dim_content
 
   Facts:
     build_fact_sessions, build_fact_focus_events,
     build_fact_homework_events, build_fact_learning_progress,
-    build_fact_recommendation_events
+    build_fact_recommendation_events, build_fact_activity_events,
+    build_fact_ai_usage, build_fact_billing
 
 Examples:
   etl run --date=2025-01-15
@@ -84,6 +89,7 @@ const dimensionJobs: Record<string, (force: boolean) => Promise<JobResult>> = {
   sync_dim_user: jobSyncDimUser,
   sync_dim_subject: jobSyncDimSubject,
   sync_dim_skill: jobSyncDimSkill,
+  sync_dim_content: jobSyncDimContent,
 };
 
 const factJobs: Record<string, (date: Date, force: boolean) => Promise<JobResult>> = {
@@ -92,6 +98,9 @@ const factJobs: Record<string, (date: Date, force: boolean) => Promise<JobResult
   build_fact_homework_events: jobBuildFactHomeworkEvents,
   build_fact_learning_progress: jobBuildFactLearningProgress,
   build_fact_recommendation_events: jobBuildFactRecommendationEvents,
+  build_fact_activity_events: jobBuildFactActivityEvents,
+  build_fact_ai_usage: jobBuildFactAIUsage,
+  build_fact_billing: jobBuildFactBilling,
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -14,11 +14,17 @@ export type JobName =
   | 'sync_dim_user'
   | 'sync_dim_subject'
   | 'sync_dim_skill'
+  | 'sync_dim_content'
+  | 'sync_dim_experiment'
   | 'build_fact_sessions'
   | 'build_fact_focus_events'
   | 'build_fact_homework_events'
   | 'build_fact_learning_progress'
-  | 'build_fact_recommendation_events';
+  | 'build_fact_recommendation_events'
+  | 'build_fact_activity_events'
+  | 'build_fact_ai_usage'
+  | 'build_fact_billing'
+  | 'build_fact_experiment_exposures';
 
 export type JobStatus = 'RUNNING' | 'SUCCESS' | 'FAILED' | 'SKIPPED';
 

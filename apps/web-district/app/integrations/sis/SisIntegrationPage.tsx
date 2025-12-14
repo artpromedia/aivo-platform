@@ -6,7 +6,7 @@ import { useState, useCallback, useEffect } from 'react';
 // TYPES
 // ============================================================================
 
-type SisProviderType = 'CLEVER' | 'CLASSLINK' | 'ONEROSTER_API' | 'ONEROSTER_CSV';
+type SisProviderType = 'CLEVER' | 'CLASSLINK' | 'ONEROSTER_API' | 'ONEROSTER_CSV' | 'GOOGLE_WORKSPACE' | 'MICROSOFT_ENTRA';
 type SyncStatus = 'PENDING' | 'IN_PROGRESS' | 'SUCCESS' | 'PARTIAL' | 'FAILURE' | 'CANCELLED';
 
 interface SisProvider {
@@ -55,14 +55,14 @@ interface ProviderStatus {
 }
 
 interface SisIntegrationPageProps {
-  tenantId: string;
+  readonly tenantId: string;
 }
 
 // ============================================================================
 // PROVIDER METADATA
 // ============================================================================
 
-const PROVIDER_INFO: Record<SisProviderType, { name: string; description: string; icon: string }> = {
+const PROVIDER_INFO: Record<SisProviderType, { name: string; description: string; icon: string; requiresOAuth?: boolean }> = {
   CLEVER: {
     name: 'Clever',
     description: 'Connect to Clever for automatic rostering from your SIS',
@@ -82,6 +82,18 @@ const PROVIDER_INFO: Record<SisProviderType, { name: string; description: string
     name: 'OneRoster CSV',
     description: 'Import OneRoster CSV files via SFTP',
     icon: '📁',
+  },
+  GOOGLE_WORKSPACE: {
+    name: 'Google Workspace for Education',
+    description: 'Sync users and classes from Google Workspace (Google Classroom)',
+    icon: '🎓',
+    requiresOAuth: true,
+  },
+  MICROSOFT_ENTRA: {
+    name: 'Microsoft Entra ID',
+    description: 'Sync users and classes from Microsoft 365 (Teams for Education)',
+    icon: '🏢',
+    requiresOAuth: true,
   },
 };
 
@@ -151,6 +163,29 @@ async function deleteProvider(providerId: string): Promise<void> {
 async function testConnection(providerId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/v1/providers/${providerId}/test`, { method: 'POST' });
   return res.json();
+}
+
+// OAuth API functions for Google Workspace and Microsoft Entra
+async function initiateOAuth(providerId: string): Promise<{ authUrl: string; state: string }> {
+  const res = await fetch(`${API_BASE}/v1/providers/${providerId}/oauth/initiate`);
+  if (!res.ok) throw new Error('Failed to initiate OAuth');
+  return res.json();
+}
+
+async function getOAuthStatus(providerId: string): Promise<{
+  isConnected: boolean;
+  connectedAt?: string;
+  scopes?: string[];
+  expiresAt?: string;
+}> {
+  const res = await fetch(`${API_BASE}/v1/providers/${providerId}/oauth/status`);
+  if (!res.ok) throw new Error('Failed to get OAuth status');
+  return res.json();
+}
+
+async function disconnectOAuth(providerId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/v1/providers/${providerId}/oauth/disconnect`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to disconnect OAuth');
 }
 
 async function triggerSync(providerId: string): Promise<{ syncRunId: string }> {
@@ -241,13 +276,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
 
   const handleAddProvider = useCallback(
     async (data: { providerType: SisProviderType; name: string; config: Record<string, unknown>; syncSchedule?: string }) => {
-      try {
-        const provider = await createProvider(tenantId, data);
-        setProviders((p) => [...p, provider]);
-        setShowAddModal(false);
-      } catch (err) {
-        throw err;
-      }
+      const provider = await createProvider(tenantId, data);
+      setProviders((p) => [...p, provider]);
+      setShowAddModal(false);
     },
     [tenantId]
   );
@@ -424,14 +455,14 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
 // ============================================================================
 
 interface ProviderDetailsProps {
-  provider: SisProvider;
-  status: ProviderStatus | null;
-  syncRuns: SyncRun[];
-  onUpdate: (providerId: string, data: Partial<SisProvider>) => void;
-  onDelete: () => void;
-  onTriggerSync: () => void;
-  onCancelSync: () => void;
-  onConfigure: () => void;
+  readonly provider: SisProvider;
+  readonly status: ProviderStatus | null;
+  readonly syncRuns: SyncRun[];
+  readonly onUpdate: (providerId: string, data: Partial<SisProvider>) => void;
+  readonly onDelete: () => void;
+  readonly onTriggerSync: () => void;
+  readonly onCancelSync: () => void;
+  readonly onConfigure: () => void;
 }
 
 function ProviderDetails({
@@ -446,6 +477,30 @@ function ProviderDetails({
 }: ProviderDetailsProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [oauthStatus, setOauthStatus] = useState<{
+    isConnected: boolean;
+    connectedAt?: string;
+    scopes?: string[];
+    expiresAt?: string;
+  } | null>(null);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  const isOAuthProvider = PROVIDER_INFO[provider.providerType].requiresOAuth;
+
+  // Load OAuth status for OAuth providers
+  useEffect(() => {
+    if (!isOAuthProvider) return;
+    
+    async function loadOAuthStatus() {
+      try {
+        const status = await getOAuthStatus(provider.id);
+        setOauthStatus(status);
+      } catch {
+        setOauthStatus({ isConnected: false });
+      }
+    }
+    loadOAuthStatus();
+  }, [provider.id, isOAuthProvider]);
 
   const handleTest = async () => {
     setTesting(true);
@@ -455,6 +510,44 @@ function ProviderDetails({
       setTestResult(result);
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleConnectOAuth = async () => {
+    setOauthLoading(true);
+    try {
+      const { authUrl } = await initiateOAuth(provider.id);
+      // Open OAuth popup
+      const popup = window.open(authUrl, 'oauth', 'width=600,height=700,scrollbars=yes');
+      
+      // Poll for completion
+      const checkClosed = setInterval(async () => {
+        if (popup?.closed) {
+          clearInterval(checkClosed);
+          // Refresh OAuth status
+          const status = await getOAuthStatus(provider.id);
+          setOauthStatus(status);
+          setOauthLoading(false);
+        }
+      }, 500);
+    } catch (err) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to initiate OAuth' });
+      setOauthLoading(false);
+    }
+  };
+
+  const handleDisconnectOAuth = async () => {
+    if (!confirm('Are you sure you want to disconnect? You will need to re-authorize to sync again.')) {
+      return;
+    }
+    setOauthLoading(true);
+    try {
+      await disconnectOAuth(provider.id);
+      setOauthStatus({ isConnected: false });
+    } catch (err) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to disconnect' });
+    } finally {
+      setOauthLoading(false);
     }
   };
 
@@ -523,12 +616,91 @@ function ProviderDetails({
         </div>
       </div>
 
+      {/* OAuth Connection Status (for Google Workspace / Microsoft Entra) */}
+      {isOAuthProvider && (
+        <div className={`rounded-lg border p-4 ${
+          oauthStatus?.isConnected 
+            ? 'border-green-200 bg-green-50' 
+            : 'border-yellow-200 bg-yellow-50'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {oauthStatus?.isConnected ? (
+                <>
+                  <span className="text-2xl">✅</span>
+                  <div>
+                    <div className="font-medium text-green-900">Connected</div>
+                    <div className="text-sm text-green-700">
+                      Authorized on {oauthStatus.connectedAt ? new Date(oauthStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                      {oauthStatus.expiresAt && (
+                        <span className="ml-2">
+                          • Expires {new Date(oauthStatus.expiresAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl">⚠️</span>
+                  <div>
+                    <div className="font-medium text-yellow-900">Not Connected</div>
+                    <div className="text-sm text-yellow-700">
+                      {provider.providerType === 'GOOGLE_WORKSPACE' 
+                        ? 'Click "Connect Google" to authorize access to your Google Workspace domain'
+                        : 'Click "Connect Microsoft" to authorize access to your Microsoft 365 tenant'
+                      }
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div>
+              {oauthStatus?.isConnected ? (
+                <button
+                  onClick={handleDisconnectOAuth}
+                  disabled={oauthLoading}
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-100 disabled:opacity-50"
+                >
+                  {oauthLoading ? '...' : '🔓 Disconnect'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnectOAuth}
+                  disabled={oauthLoading}
+                  className={`rounded-lg px-4 py-2 text-white disabled:opacity-50 ${
+                    provider.providerType === 'GOOGLE_WORKSPACE'
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-[#0078d4] hover:bg-[#106ebe]'
+                  }`}
+                >
+                  {oauthLoading ? '⏳ Connecting...' : (
+                    provider.providerType === 'GOOGLE_WORKSPACE' 
+                      ? '🔐 Connect Google' 
+                      : '🔐 Connect Microsoft'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+          {oauthStatus?.scopes && oauthStatus.scopes.length > 0 && (
+            <div className="mt-3 border-t border-green-200 pt-3">
+              <div className="text-xs text-green-700">
+                <strong>Authorized scopes:</strong> {oauthStatus.scopes.slice(0, 3).join(', ')}
+                {oauthStatus.scopes.length > 3 && ` +${oauthStatus.scopes.length - 3} more`}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
         <button
           onClick={onTriggerSync}
-          disabled={status?.isRunning || !provider.enabled}
+          disabled={status?.isRunning || !provider.enabled || (isOAuthProvider && !oauthStatus?.isConnected)}
           className="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-dark disabled:opacity-50"
+          title={isOAuthProvider && !oauthStatus?.isConnected ? 'Connect OAuth first to sync' : undefined}
         >
           {status?.isRunning ? '⏳ Syncing...' : '▶️ Run Sync Now'}
         </button>
@@ -627,8 +799,8 @@ function ProviderDetails({
 // ============================================================================
 
 interface AddProviderModalProps {
-  existingTypes: SisProviderType[];
-  onAdd: (data: {
+  readonly existingTypes: SisProviderType[];
+  readonly onAdd: (data: {
     providerType: SisProviderType;
     name: string;
     config: Record<string, unknown>;
@@ -676,7 +848,7 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Add SIS Integration</h2>
+          <h2 id="add-sis-modal-title" className="text-xl font-bold">Add SIS Integration</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
@@ -865,6 +1037,114 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="/path/to/csv/files"
                   />
+                </div>
+              </>
+            )}
+
+            {selectedType === 'GOOGLE_WORKSPACE' && (
+              <>
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🎓</span>
+                    <div>
+                      <h4 className="font-medium text-blue-900">Google Workspace for Education</h4>
+                      <p className="mt-1 text-sm text-blue-700">
+                        After creating this integration, you&apos;ll need to authorize access to your 
+                        Google Workspace domain. This requires a Google Workspace admin account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Google Workspace Domain</label>
+                  <input
+                    type="text"
+                    value={config.domain || ''}
+                    onChange={(e) => setConfig({ ...config, domain: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="yourschool.edu"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    The primary domain of your Google Workspace for Education account
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="syncClassroom"
+                    checked={config.syncClassroom === 'true'}
+                    onChange={(e) => setConfig({ ...config, syncClassroom: e.target.checked ? 'true' : 'false' })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="syncClassroom" className="text-sm">
+                    Sync Google Classroom courses and enrollments
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="syncOrganizationalUnits"
+                    checked={config.syncOrganizationalUnits === 'true'}
+                    onChange={(e) => setConfig({ ...config, syncOrganizationalUnits: e.target.checked ? 'true' : 'false' })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="syncOrganizationalUnits" className="text-sm">
+                    Sync organizational units as schools
+                  </label>
+                </div>
+              </>
+            )}
+
+            {selectedType === 'MICROSOFT_ENTRA' && (
+              <>
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🏢</span>
+                    <div>
+                      <h4 className="font-medium text-blue-900">Microsoft Entra ID (Azure AD)</h4>
+                      <p className="mt-1 text-sm text-blue-700">
+                        After creating this integration, you&apos;ll need to authorize access to your 
+                        Microsoft 365 tenant. This requires a Microsoft 365 admin account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Microsoft 365 Tenant Domain</label>
+                  <input
+                    type="text"
+                    value={config.domain || ''}
+                    onChange={(e) => setConfig({ ...config, domain: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="yourschool.onmicrosoft.com"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Your Microsoft 365 tenant domain (e.g., yourschool.onmicrosoft.com)
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="syncTeams"
+                    checked={config.syncTeams === 'true'}
+                    onChange={(e) => setConfig({ ...config, syncTeams: e.target.checked ? 'true' : 'false' })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="syncTeams" className="text-sm">
+                    Sync Microsoft Teams for Education classes
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="syncSds"
+                    checked={config.syncSds === 'true'}
+                    onChange={(e) => setConfig({ ...config, syncSds: e.target.checked ? 'true' : 'false' })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="syncSds" className="text-sm">
+                    Sync School Data Sync (SDS) data if available
+                  </label>
                 </div>
               </>
             )}

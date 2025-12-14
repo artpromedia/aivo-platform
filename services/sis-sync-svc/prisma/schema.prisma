@@ -20,7 +20,20 @@ enum SisProviderType {
   CLASSLINK
   ONEROSTER_API
   ONEROSTER_CSV
+  GOOGLE_WORKSPACE
+  MICROSOFT_ENTRA
   CUSTOM
+}
+
+/// Integration connection status for OAuth-based providers
+enum IntegrationStatus {
+  DISCONNECTED    // No OAuth tokens, not connected
+  CONNECTING      // OAuth flow in progress
+  CONNECTED       // Successfully connected, ready to sync
+  ERROR           // Connection error (token expired, revoked, etc.)
+  SUSPENDED       // Manually suspended by admin
+
+  @@map("integration_status")
 }
 
 /// Status of a sync run
@@ -47,21 +60,47 @@ model SisProvider {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id")
   
-  /// Type of SIS provider (Clever, ClassLink, OneRoster, etc.)
+  /// Type of SIS provider (Clever, ClassLink, OneRoster, Google, Microsoft, etc.)
   providerType SisProviderType @map("provider_type")
   
   /// Display name for this integration
   name      String
   
   /// Provider-specific configuration (encrypted at rest)
-  /// For Clever: { clientId, clientSecret, districtId }
-  /// For ClassLink: { clientId, clientSecret, tenantId }
-  /// For OneRoster API: { baseUrl, clientId, clientSecret }
-  /// For OneRoster CSV: { sftpHost, sftpUser, sftpKeyPath, remotePath }
+  /// For Clever: { clientId, districtId }
+  /// For ClassLink: { tenantId }
+  /// For Google Workspace: { domain, customerId }
+  /// For Microsoft Entra: { tenantId, domain }
+  /// For OneRoster API: { baseUrl }
+  /// For OneRoster CSV: { sftpHost, remotePath }
   configJson String @map("config_json") @db.Text
   
   /// Whether this provider is currently enabled
   enabled   Boolean @default(true)
+  
+  /// OAuth connection status for providers that use OAuth
+  integrationStatus IntegrationStatus @default(DISCONNECTED) @map("integration_status")
+  
+  /// Reference to secrets in Vault/KMS (OAuth tokens, client secrets)
+  secretsRef String? @map("secrets_ref") @db.VarChar(512)
+  
+  /// Enable SSO login via this provider
+  ssoEnabled Boolean @default(false) @map("sso_enabled")
+  
+  /// Domain filter: only sync users from these email domains
+  domainFilter String[] @map("domain_filter")
+  
+  /// Auto-provisioning settings
+  autoProvisionUsers   Boolean @default(false) @map("auto_provision_users")
+  autoProvisionLearners Boolean @default(false) @map("auto_provision_learners")
+  defaultRole          String  @default("TEACHER") @map("default_role") @db.VarChar(50)
+  
+  /// OAuth metadata (non-sensitive data like scopes granted)
+  oauthMetadata Json? @map("oauth_metadata")
+  
+  /// Connection health tracking
+  lastConnectionCheck DateTime? @map("last_connection_check")
+  connectionError     String?   @map("connection_error") @db.Text
   
   /// Last successful sync timestamp
   lastSyncAt DateTime? @map("last_sync_at")
@@ -73,16 +112,22 @@ model SisProvider {
   updatedAt DateTime @updatedAt @map("updated_at")
   
   // Relations
-  syncRuns    SisSyncRun[]
-  rawSchools  SisRawSchool[]
-  rawClasses  SisRawClass[]
-  rawUsers    SisRawUser[]
-  rawEnrollments SisRawEnrollment[]
-  fieldMappings SisFieldMapping[]
+  syncRuns           SisSyncRun[]
+  rawSchools         SisRawSchool[]
+  rawClasses         SisRawClass[]
+  rawUsers           SisRawUser[]
+  rawEnrollments     SisRawEnrollment[]
+  fieldMappings      SisFieldMapping[]
+  schoolMappings     ExternalSchoolMapping[]
+  classMappings      ExternalClassMapping[]
+  userMappings       ExternalUserMapping[]
+  enrollmentMappings ExternalEnrollmentMapping[]
+  identityConflicts  IdentityConflict[]
   
   @@unique([tenantId, providerType])
   @@index([tenantId])
   @@index([enabled])
+  @@index([integrationStatus])
   @@map("sis_providers")
 }
 
@@ -389,4 +434,304 @@ model SisSyncQueue {
   @@index([processAt])
   @@index([syncRunId])
   @@map("sis_sync_queue")
+}
+
+// ============================================================================
+// External ID Mapping Tables
+// Map external SIS identities to Aivo canonical entities
+// ============================================================================
+
+/// Role hint from SIS provider for user mapping
+enum ExternalUserRoleHint {
+  STUDENT
+  TEACHER
+  ADMINISTRATOR
+  AIDE
+  PARENT
+  GUARDIAN
+  OTHER
+
+  @@map("external_user_role_hint")
+}
+
+/// Role in enrollment context
+enum ExternalEnrollmentRole {
+  STUDENT
+  TEACHER
+  AIDE
+
+  @@map("external_enrollment_role")
+}
+
+/// Conflict type for identity resolution
+enum IdentityConflictType {
+  EMAIL_MISMATCH         // Same external ID, different email
+  DUPLICATE_EMAIL        // Same email, different external IDs
+  NAME_MISMATCH          // Same ID, significantly different name
+  ROLE_CONFLICT          // User appears with conflicting roles
+  MULTI_TENANT           // User exists in multiple tenants
+  ORPHANED_MAPPING       // Mapping exists but Aivo entity deleted
+  MERGE_CANDIDATE        // Potential duplicate users to merge
+
+  @@map("identity_conflict_type")
+}
+
+/// Status of identity conflict resolution
+enum IdentityConflictStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED_MERGED
+  RESOLVED_KEPT_SEPARATE
+  RESOLVED_MANUAL
+  DISMISSED
+
+  @@map("identity_conflict_status")
+}
+
+/// Maps external SIS school IDs to Aivo School entities
+model ExternalSchoolMapping {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  providerId       String   @map("provider_id")
+  
+  /// External identifier from the SIS provider
+  externalSchoolId String   @map("external_school_id") @db.VarChar(512)
+  
+  /// Aivo internal School ID (FK to tenant-svc)
+  aivoSchoolId     String   @map("aivo_school_id") @db.Uuid
+  
+  /// Additional metadata from provider
+  externalName     String?  @map("external_name") @db.Text
+  externalMetadata Json?    @map("external_metadata")
+  
+  /// Sync tracking
+  firstSyncedAt    DateTime @default(now()) @map("first_synced_at")
+  lastSyncedAt     DateTime @default(now()) @map("last_synced_at")
+  lastSyncRunId    String?  @map("last_sync_run_id") @db.VarChar(255)
+  
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  
+  provider         SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, providerId, externalSchoolId], name: "uq_ext_school_provider_external")
+  @@unique([tenantId, providerId, aivoSchoolId], name: "uq_ext_school_aivo")
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([externalSchoolId])
+  @@index([aivoSchoolId])
+  @@map("external_school_mappings")
+}
+
+/// Maps external SIS class/section IDs to Aivo Classroom entities
+model ExternalClassMapping {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  providerId        String   @map("provider_id")
+  
+  /// External identifier from the SIS provider
+  externalClassId   String   @map("external_class_id") @db.VarChar(512)
+  
+  /// Aivo internal Classroom ID (FK to tenant-svc)
+  aivoClassroomId   String   @map("aivo_classroom_id") @db.Uuid
+  
+  /// Link to parent school in external system
+  externalSchoolId  String?  @map("external_school_id") @db.VarChar(512)
+  
+  /// Additional metadata from provider
+  externalName      String?  @map("external_name") @db.Text
+  externalMetadata  Json?    @map("external_metadata")
+  
+  /// Sync tracking
+  firstSyncedAt     DateTime @default(now()) @map("first_synced_at")
+  lastSyncedAt      DateTime @default(now()) @map("last_synced_at")
+  lastSyncRunId     String?  @map("last_sync_run_id") @db.VarChar(255)
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  provider          SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, providerId, externalClassId], name: "uq_ext_class_provider_external")
+  @@unique([tenantId, providerId, aivoClassroomId], name: "uq_ext_class_aivo")
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([externalClassId])
+  @@index([aivoClassroomId])
+  @@index([externalSchoolId])
+  @@map("external_class_mappings")
+}
+
+/// Maps external SIS user IDs to Aivo User entities
+model ExternalUserMapping {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  providerId       String   @map("provider_id")
+  
+  /// External identifier from the SIS provider
+  externalUserId   String   @map("external_user_id") @db.VarChar(512)
+  
+  /// Aivo internal User ID (FK to auth-svc)
+  aivoUserId       String   @map("aivo_user_id") @db.Uuid
+  
+  /// Role hint from the SIS provider
+  roleHint         ExternalUserRoleHint @map("role_hint")
+  
+  /// For students, link to Learner record
+  aivoLearnerId    String?  @map("aivo_learner_id") @db.Uuid
+  
+  /// External identifiers for cross-referencing
+  externalEmail    String?  @map("external_email") @db.VarChar(512)
+  externalUsername String?  @map("external_username") @db.VarChar(255)
+  studentNumber    String?  @map("student_number") @db.VarChar(100)
+  staffId          String?  @map("staff_id") @db.VarChar(100)
+  
+  /// Additional metadata from provider
+  externalName     String?  @map("external_name") @db.Text
+  externalMetadata Json?    @map("external_metadata")
+  
+  /// Sync tracking
+  firstSyncedAt    DateTime @default(now()) @map("first_synced_at")
+  lastSyncedAt     DateTime @default(now()) @map("last_synced_at")
+  lastSyncRunId    String?  @map("last_sync_run_id") @db.VarChar(255)
+  
+  /// Conflict tracking
+  hasConflict      Boolean  @default(false) @map("has_conflict")
+  conflictType     String?  @map("conflict_type") @db.VarChar(100)
+  conflictDetails  Json?    @map("conflict_details")
+  resolvedAt       DateTime? @map("resolved_at")
+  resolvedBy       String?  @map("resolved_by") @db.Uuid
+  
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  
+  provider         SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, providerId, externalUserId], name: "uq_ext_user_provider_external")
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([externalUserId])
+  @@index([aivoUserId])
+  @@index([externalEmail])
+  @@index([roleHint])
+  @@index([aivoLearnerId])
+  @@map("external_user_mappings")
+}
+
+/// Maps external SIS enrollment records to Aivo entities
+model ExternalEnrollmentMapping {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  providerId           String   @map("provider_id")
+  
+  /// External identifiers
+  externalEnrollmentId String?  @map("external_enrollment_id") @db.VarChar(512)
+  externalUserId       String   @map("external_user_id") @db.VarChar(512)
+  externalClassId      String   @map("external_class_id") @db.VarChar(512)
+  
+  /// Role in the enrollment
+  enrollmentRole       ExternalEnrollmentRole @map("enrollment_role")
+  
+  /// Aivo internal IDs after mapping
+  aivoUserId           String?  @map("aivo_user_id") @db.Uuid
+  aivoClassroomId      String?  @map("aivo_classroom_id") @db.Uuid
+  
+  /// Enrollment details
+  isPrimary            Boolean  @default(true) @map("is_primary")
+  startDate            DateTime? @map("start_date") @db.Date
+  endDate              DateTime? @map("end_date") @db.Date
+  
+  /// Additional metadata
+  externalMetadata     Json?    @map("external_metadata")
+  
+  /// Status
+  isActive             Boolean  @default(true) @map("is_active")
+  
+  /// Sync tracking
+  firstSyncedAt        DateTime @default(now()) @map("first_synced_at")
+  lastSyncedAt         DateTime @default(now()) @map("last_synced_at")
+  lastSyncRunId        String?  @map("last_sync_run_id") @db.VarChar(255)
+  
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  
+  provider             SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, providerId, externalUserId, externalClassId], name: "uq_ext_enroll_provider_user_class")
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([externalUserId])
+  @@index([externalClassId])
+  @@index([enrollmentRole])
+  @@map("external_enrollment_mappings")
+}
+
+/// Identity mapping conflicts for admin resolution
+model IdentityConflict {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  providerId       String   @map("provider_id")
+  syncRunId        String?  @map("sync_run_id") @db.VarChar(255)
+  
+  /// Conflict details
+  conflictType     IdentityConflictType @map("conflict_type")
+  status           IdentityConflictStatus @default(OPEN)
+  severity         String   @default("MEDIUM") @db.VarChar(20) // LOW, MEDIUM, HIGH, CRITICAL
+  
+  /// The entities involved
+  externalId1      String?  @map("external_id_1") @db.VarChar(512)
+  externalId2      String?  @map("external_id_2") @db.VarChar(512)
+  aivoUserId1      String?  @map("aivo_user_id_1") @db.Uuid
+  aivoUserId2      String?  @map("aivo_user_id_2") @db.Uuid
+  
+  /// Human-readable description
+  description      String   @db.Text
+  detailsJson      Json?    @map("details_json")
+  
+  /// Resolution
+  resolutionAction  String?  @map("resolution_action") @db.Text
+  resolvedByUserId  String?  @map("resolved_by_user_id") @db.Uuid
+  resolvedAt        DateTime? @map("resolved_at")
+  resolutionNotes   String?  @map("resolution_notes") @db.Text
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  provider          SisProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([status])
+  @@index([conflictType])
+  @@map("identity_conflicts")
+}
+
+/// OAuth state for CSRF protection during OAuth flows
+model OAuthState {
+  id            String   @id @default(uuid()) @db.Uuid
+  stateToken    String   @unique @map("state_token") @db.VarChar(255)
+  tenantId      String   @map("tenant_id") @db.Uuid
+  providerId    String?  @map("provider_id") @db.VarChar(255)
+  providerType  String   @map("provider_type") @db.VarChar(50)
+  
+  /// OAuth PKCE parameters
+  codeVerifier  String?  @map("code_verifier") @db.VarChar(255)
+  
+  /// Where to redirect after OAuth
+  redirectUri   String?  @map("redirect_uri") @db.Text
+  
+  /// Anti-CSRF nonce
+  nonce         String?  @db.VarChar(255)
+  
+  /// Initiating user (if authenticated)
+  initiatedBy   String?  @map("initiated_by") @db.Uuid
+  
+  /// Expiry (short-lived, ~10 minutes)
+  expiresAt     DateTime @map("expires_at")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@index([stateToken])
+  @@index([expiresAt])
+  @@map("oauth_state")
 }

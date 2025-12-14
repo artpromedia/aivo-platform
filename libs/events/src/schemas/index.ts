@@ -106,6 +106,32 @@ export {
   type RecommendationEvent,
 } from './recommendation.js';
 
+// Content events
+export {
+  ContentPublishedSchema,
+  ContentRetiredSchema,
+  VersionCreatedSchema,
+  VersionSubmittedSchema,
+  VersionApprovedSchema,
+  VersionChangesRequestedSchema,
+  VersionRejectedSchema,
+  IngestionStartedSchema,
+  IngestionCompletedSchema,
+  IngestionFailedSchema,
+  CONTENT_EVENT_TYPES,
+  type ContentPublished,
+  type ContentRetired,
+  type VersionCreated,
+  type VersionSubmitted,
+  type VersionApproved,
+  type VersionChangesRequested,
+  type VersionRejected,
+  type IngestionStarted,
+  type IngestionCompleted,
+  type IngestionFailed,
+  type ContentEvent,
+} from './content.js';
+
 // -----------------------------------------------------------------------------
 // All Events Union
 // -----------------------------------------------------------------------------
@@ -141,6 +167,7 @@ export const EVENT_STREAM_MAP: Record<string, string> = {
   focus: 'FOCUS',
   homework: 'HOMEWORK',
   recommendation: 'RECOMMENDATION',
+  content: 'CONTENT',
 };
 
 /**

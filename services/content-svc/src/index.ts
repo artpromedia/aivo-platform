@@ -23,9 +23,11 @@ import cors from '@fastify/cors';
 import Fastify from 'fastify';
 
 import { fileRoutes } from './routes/files.js';
+import { ingestionRoutes } from './routes/ingestion.js';
 import { learningObjectRoutes } from './routes/learningObjects.js';
 import { contentPackageRoutes } from './routes/packages.js';
 import { renderRoutes } from './routes/render.js';
+import { reviewRoutes } from './routes/reviews.js';
 import { searchRoutes } from './routes/search.js';
 import { versionRoutes } from './routes/versions.js';
 
@@ -48,6 +50,8 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'content-svc' }));
 // Register routes
 await fastify.register(learningObjectRoutes, { prefix: '/api' });
 await fastify.register(versionRoutes, { prefix: '/api' });
+await fastify.register(reviewRoutes, { prefix: '/api' });
+await fastify.register(ingestionRoutes, { prefix: '/api' });
 await fastify.register(searchRoutes, { prefix: '/api' });
 await fastify.register(renderRoutes, { prefix: '/api' });
 await fastify.register(contentPackageRoutes, { prefix: '/api' });

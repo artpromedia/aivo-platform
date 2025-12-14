@@ -4,8 +4,8 @@
  * Provides REST API for managing SIS integrations.
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient, SisProviderType, SyncStatus } from '@prisma/client';
+import { FastifyInstance } from 'fastify';
+import { PrismaClient, SisProviderType } from '@prisma/client';
 import { z } from 'zod';
 import { SyncScheduler, getSchedulePreset, isValidCronExpression } from '../scheduler';
 import { validateProviderConfig } from '../providers';
@@ -13,7 +13,7 @@ import { validateProviderConfig } from '../providers';
 // Request/Response Schemas
 const CreateProviderSchema = z.object({
   tenantId: z.string().min(1),
-  providerType: z.enum(['CLEVER', 'CLASSLINK', 'ONEROSTER_API', 'ONEROSTER_CSV', 'CUSTOM']),
+  providerType: z.enum(['CLEVER', 'CLASSLINK', 'ONEROSTER_API', 'ONEROSTER_CSV', 'GOOGLE_WORKSPACE', 'MICROSOFT_ENTRA', 'CUSTOM']),
   name: z.string().min(1).max(255),
   config: z.record(z.unknown()),
   enabled: z.boolean().default(true),
@@ -376,8 +376,8 @@ export function registerRoutes(
         isManual: true,
       },
       orderBy: { startedAt: 'desc' },
-      take: parseInt(limit),
-      skip: parseInt(offset),
+      take: Number.parseInt(limit, 10),
+      skip: Number.parseInt(offset, 10),
     });
 
     const total = await prisma.sisSyncRun.count({
@@ -391,8 +391,8 @@ export function registerRoutes(
         statsJson: undefined,
       })),
       total,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
+      limit: Number.parseInt(limit, 10),
+      offset: Number.parseInt(offset, 10),
     });
   });
 

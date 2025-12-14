@@ -95,6 +95,7 @@ model LearningObjectVersion {
   learningObject LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
   skills         LearningObjectSkill[]
   transitions    LearningObjectVersionTransition[]
+  reviews        LearningObjectReview[]
 
   @@unique([learningObjectId, versionNumber])
   @@index([learningObjectId, state, versionNumber(sort: Desc)])
@@ -149,6 +150,94 @@ model LearningObjectVersionTransition {
 
   @@index([versionId, transitionedAt(sort: Desc)])
   @@map("learning_object_version_transitions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENT REVIEW
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ReviewDecision {
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+
+  @@map("review_decision")
+}
+
+/// Formal review records for learning object versions.
+/// Supports multiple reviewers and detailed feedback tracking.
+model LearningObjectReview {
+  id                String                      @id @default(uuid()) @db.Uuid
+  versionId         String                      @map("version_id") @db.Uuid
+  reviewerUserId    String                      @map("reviewer_user_id") @db.Uuid
+  decision          ReviewDecision
+  comments          String?                     @db.Text
+  validationErrors  Json                        @default("[]") @map("validation_errors")
+  checklist         Json                        @default("{}") @map("checklist")
+  createdAt         DateTime                    @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  version LearningObjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId, createdAt(sort: Desc)])
+  @@index([reviewerUserId])
+  @@map("learning_object_reviews")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENT INGESTION
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum IngestionJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+
+  @@map("ingestion_job_status")
+}
+
+enum IngestionSource {
+  MANUAL      // Structured JSON via API
+  FILE_CSV    // CSV file upload
+  FILE_JSON   // JSON file upload
+  AI_DRAFT    // AI-generated content
+
+  @@map("ingestion_source")
+}
+
+/// Tracks bulk content ingestion jobs with row-level error reporting.
+model IngestionJob {
+  id                String                   @id @default(uuid()) @db.Uuid
+  tenantId          String?                  @map("tenant_id") @db.Uuid
+  source            IngestionSource
+  status            IngestionJobStatus       @default(PENDING)
+  
+  // Input metadata
+  inputFileUrl      String?                  @map("input_file_url")
+  inputMetadata     Json                     @default("{}") @map("input_metadata")
+  
+  // Results
+  totalRows         Int                      @default(0) @map("total_rows")
+  successCount      Int                      @default(0) @map("success_count")
+  errorCount        Int                      @default(0) @map("error_count")
+  createdLoIds      String[]                 @default([]) @map("created_lo_ids") @db.Uuid
+  
+  // Error details (array of { row, field, message })
+  errors            Json                     @default("[]")
+  
+  // Tracking
+  createdByUserId   String                   @map("created_by_user_id") @db.Uuid
+  startedAt         DateTime?                @map("started_at") @db.Timestamptz
+  completedAt       DateTime?                @map("completed_at") @db.Timestamptz
+  createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([createdByUserId])
+  @@map("ingestion_jobs")
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

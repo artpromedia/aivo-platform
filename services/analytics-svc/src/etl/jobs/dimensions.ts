@@ -557,6 +557,178 @@ export async function jobSyncDimSkill(force = false): Promise<JobResult> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// SYNC DIM_CONTENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Sync content dimension from OLTP content/activities tables.
+ * Uses SCD Type 2 for tracking content changes over time.
+ */
+export async function jobSyncDimContent(force = false): Promise<JobResult> {
+  return runJob('sync_dim_content', null, force, async () => {
+    const source = getSourcePool();
+    const warehouse = getWarehousePool();
+    const logger = createLogger('sync_dim_content');
+
+    let rowsProcessed = 0;
+    let rowsInserted = 0;
+    let rowsUpdated = 0;
+
+    // Fetch content from OLTP (activities, modules, assessments)
+    const contentResult = await source.query(`
+      SELECT 
+        a.id as content_id,
+        a.version_id as content_version_id,
+        a.title,
+        a.type as content_type,
+        a.subject,
+        a.grade_band,
+        a.skill_id,
+        s.code as skill_code,
+        a.standard_codes,
+        a.difficulty_level,
+        a.estimated_duration_minutes,
+        a.question_count,
+        COALESCE(a.is_ai_generated, false) as is_ai_generated,
+        a.tenant_id as created_by_tenant_id,
+        COALESCE(a.is_marketplace, false) as is_marketplace,
+        a.updated_at as source_updated_at
+      FROM activities a
+      LEFT JOIN skills s ON a.skill_id = s.id
+      WHERE a.deleted_at IS NULL
+        AND a.status = 'PUBLISHED'
+    `);
+
+    const contents = contentResult.rows as {
+      content_id: string;
+      content_version_id: string | null;
+      title: string;
+      content_type: string;
+      subject: string | null;
+      grade_band: string | null;
+      skill_id: string | null;
+      skill_code: string | null;
+      standard_codes: string[] | null;
+      difficulty_level: string | null;
+      estimated_duration_minutes: number | null;
+      question_count: number | null;
+      is_ai_generated: boolean;
+      created_by_tenant_id: string | null;
+      is_marketplace: boolean;
+      source_updated_at: Date;
+    }[];
+
+    rowsProcessed = contents.length;
+    logger.info(`Fetched ${rowsProcessed} content items from OLTP`);
+
+    await withTransaction(warehouse, async (client) => {
+      for (const content of contents) {
+        // Check if content exists and has changed (SCD Type 2)
+        const existing = await client.query(
+          `SELECT content_key, title, difficulty_level, question_count, source_updated_at
+           FROM dim_content 
+           WHERE content_id = $1 AND is_current = true`,
+          [content.content_id]
+        );
+
+        if (existing.rowCount === 0) {
+          // Insert new content
+          await client.query(
+            `INSERT INTO dim_content (
+              content_id, content_version_id, title, content_type,
+              subject, grade_band, skill_id, skill_code, standard_codes,
+              difficulty_level, estimated_duration_minutes, question_count,
+              is_ai_generated, created_by_tenant_id, is_marketplace,
+              effective_from, is_current, source_updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), true, $16)`,
+            [
+              content.content_id,
+              content.content_version_id,
+              content.title,
+              content.content_type,
+              content.subject,
+              content.grade_band,
+              content.skill_id,
+              content.skill_code,
+              content.standard_codes,
+              content.difficulty_level,
+              content.estimated_duration_minutes,
+              content.question_count,
+              content.is_ai_generated,
+              content.created_by_tenant_id,
+              content.is_marketplace,
+              content.source_updated_at,
+            ]
+          );
+          rowsInserted++;
+        } else {
+          const row = existing.rows[0] as {
+            content_key: number;
+            title: string;
+            difficulty_level: string | null;
+            question_count: number | null;
+            source_updated_at: Date;
+          };
+
+          // Check if content has been updated (compare timestamps)
+          if (
+            new Date(content.source_updated_at).getTime() >
+            new Date(row.source_updated_at).getTime()
+          ) {
+            // Close old record
+            await client.query(
+              `UPDATE dim_content SET effective_to = NOW(), is_current = false
+               WHERE content_key = $1`,
+              [row.content_key]
+            );
+
+            // Insert new version
+            await client.query(
+              `INSERT INTO dim_content (
+                content_id, content_version_id, title, content_type,
+                subject, grade_band, skill_id, skill_code, standard_codes,
+                difficulty_level, estimated_duration_minutes, question_count,
+                is_ai_generated, created_by_tenant_id, is_marketplace,
+                effective_from, is_current, source_updated_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), true, $16)`,
+              [
+                content.content_id,
+                content.content_version_id,
+                content.title,
+                content.content_type,
+                content.subject,
+                content.grade_band,
+                content.skill_id,
+                content.skill_code,
+                content.standard_codes,
+                content.difficulty_level,
+                content.estimated_duration_minutes,
+                content.question_count,
+                content.is_ai_generated,
+                content.created_by_tenant_id,
+                content.is_marketplace,
+                content.source_updated_at,
+              ]
+            );
+            rowsUpdated++;
+          }
+        }
+      }
+    });
+
+    return {
+      jobName: 'sync_dim_content',
+      status: 'SUCCESS',
+      rowsProcessed,
+      rowsInserted,
+      rowsUpdated,
+      rowsDeleted: 0,
+      durationMs: 0,
+    };
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // RUN ALL DIMENSION SYNCS
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -564,14 +736,15 @@ export async function jobSyncDimSkill(force = false): Promise<JobResult> {
  * Run all dimension sync jobs in order.
  */
 export async function runAllDimensionSyncs(force = false): Promise<JobResult[]> {
-  const results: JobResult[] = [];
-
   // Order matters: subjects before skills, tenants before learners/users
-  results.push(await jobSyncDimSubject(force));
-  results.push(await jobSyncDimTenant(force));
-  results.push(await jobSyncDimLearner(force));
-  results.push(await jobSyncDimUser(force));
-  results.push(await jobSyncDimSkill(force));
+  const results: JobResult[] = [
+    await jobSyncDimSubject(force),
+    await jobSyncDimTenant(force),
+    await jobSyncDimLearner(force),
+    await jobSyncDimUser(force),
+    await jobSyncDimSkill(force),
+    await jobSyncDimContent(force),
+  ];
 
   return results;
 }

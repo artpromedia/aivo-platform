@@ -4,3 +4,4 @@
 
 export { createServer } from './server';
 export { registerRoutes } from './routes';
+export { registerOAuthRoutes } from './oauth';

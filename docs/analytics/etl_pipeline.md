@@ -6,8 +6,8 @@ This document describes the ETL (Extract, Transform, Load) pipeline for moving d
 
 The ETL pipeline:
 
-1. **Syncs dimension tables** from OLTP sources (tenants, learners, users, skills)
-2. **Builds fact tables** by aggregating session events, homework data, and progress snapshots
+1. **Syncs dimension tables** from OLTP sources (tenants, learners, users, skills, content)
+2. **Builds fact tables** by aggregating session events, homework data, progress snapshots, AI usage, and billing
 3. **Tracks job runs** for monitoring and idempotency
 
 ## Architecture
@@ -35,13 +35,14 @@ The ETL pipeline:
 
 ### Dimension Sync Jobs
 
-| Job                | Schedule | Description                      |
-| ------------------ | -------- | -------------------------------- |
-| `sync_dim_tenant`  | Hourly   | Upserts tenants with SCD Type 2  |
-| `sync_dim_learner` | Hourly   | Upserts learners with SCD Type 2 |
-| `sync_dim_user`    | Hourly   | Upserts users (teachers/parents) |
-| `sync_dim_subject` | Daily    | Static subject configuration     |
-| `sync_dim_skill`   | Daily    | Skills from curriculum           |
+| Job                  | Schedule | Description                       |
+| -------------------- | -------- | --------------------------------- |
+| `sync_dim_tenant`    | Hourly   | Upserts tenants with SCD Type 2   |
+| `sync_dim_learner`   | Hourly   | Upserts learners with SCD Type 2  |
+| `sync_dim_user`      | Hourly   | Upserts users (teachers/parents)  |
+| `sync_dim_subject`   | Daily    | Static subject configuration      |
+| `sync_dim_skill`     | Daily    | Skills from curriculum            |
+| `sync_dim_content`   | Daily    | Learning content (SCD Type 2)     |
 
 ### Fact Build Jobs
 
@@ -52,6 +53,9 @@ The ETL pipeline:
 | `build_fact_homework_events`       | Daily 2am | Homework submission aggregates |
 | `build_fact_learning_progress`     | Daily 3am | Daily skill mastery snapshots  |
 | `build_fact_recommendation_events` | Daily 2am | AI recommendation tracking     |
+| `build_fact_activity_events`       | Daily 2am | Granular learner activity      |
+| `build_fact_ai_usage`              | Daily 2am | AI model usage, tokens, costs  |
+| `build_fact_billing`               | Daily 3am | Invoices and revenue           |
 
 ## Usage
 
