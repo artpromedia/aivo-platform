@@ -21,6 +21,9 @@ interface CachedEntry {
 
 const DEFAULT_CACHE_TTL_MS = 30_000;
 
+// Track rollout warnings to avoid spamming
+const warnedRolloutTotals = new Set<string>();
+
 export class AgentConfigRegistry {
   private cache: Map<AgentType, CachedEntry> = new Map<AgentType, CachedEntry>();
   private readonly cacheTtlMs: number;
@@ -111,7 +114,12 @@ function selectConfigForKey(configs: AgentConfig[], key: string): AgentConfig {
   let scale = 1;
   if (normalizedTotal > 100) {
     scale = 100 / normalizedTotal;
-    console.warn(`Rollout percentages exceed 100 (total=${normalizedTotal}). Normalizing.`);
+    // Only warn once per unique config set to avoid log spam
+    const warnKey = sorted.map((c) => `${c.id}:${c.rolloutPercentage}`).join('|');
+    if (!warnedRolloutTotals.has(warnKey)) {
+      warnedRolloutTotals.add(warnKey);
+      console.warn(`Rollout percentages exceed 100 (total=${normalizedTotal}). Normalizing.`);
+    }
   }
 
   let cumulative = 0;

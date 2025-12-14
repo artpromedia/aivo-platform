@@ -146,3 +146,9 @@ export {
   CircuitState,
   type ProviderHealth,
 } from './failover.js';
+
+export {
+  ProviderRouter,
+  type TenantProviderConfig,
+  type ProviderSelection,
+} from './providerRouter.js';

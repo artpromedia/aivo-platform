@@ -4,19 +4,24 @@ import Fastify, { type FastifyRequest } from 'fastify';
 import { Pool } from 'pg';
 
 import { config } from './config.js';
+import { IncidentService } from './incidents/index.js';
 import { createPolicyEnforcer, type PolicyEnforcer } from './policy/index.js';
 import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js';
 import type { AgentConfigStore } from './registry/store.js';
 import { registerAdminStatsRoutes } from './routes/adminStats.js';
+import { registerBrainRoutes } from './routes/brain.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
+import { UsageTracker } from './usage/index.js';
 
 export interface AppOptions {
   registry?: AgentConfigRegistry;
   store?: AgentConfigStore;
   telemetryStore?: TelemetryStore;
   policyEnforcer?: PolicyEnforcer;
+  incidentService?: IncidentService;
+  usageTracker?: UsageTracker;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -33,6 +38,10 @@ export function createApp(options: AppOptions = {}) {
   const policyPool = new Pool({ connectionString: config.databaseUrl });
   const policyEnforcer = options.policyEnforcer ?? createPolicyEnforcer(policyPool);
 
+  // Initialize AI safety and monitoring services
+  const incidentService = options.incidentService ?? new IncidentService(policyPool);
+  const usageTracker = options.usageTracker ?? new UsageTracker(policyPool);
+
   app.addHook('onRequest', async (request, reply) => {
     const incoming = request.headers['x-correlation-id'];
     const correlationId =
@@ -46,6 +55,9 @@ export function createApp(options: AppOptions = {}) {
   // Admin stats routes for compliance dashboard
   app.register(registerAdminStatsRoutes, { pool: policyPool });
 
+  // Brain update routes for virtual brain synchronization
+  app.register(registerBrainRoutes, { prefix: '/internal/ai/brain', pool: policyPool });
+
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
     app.log.error({ err: error, correlationId }, 'request failed');
@@ -56,6 +68,8 @@ export function createApp(options: AppOptions = {}) {
   app.decorate('agentConfigStore', store);
   app.decorate('telemetryStore', telemetryStore);
   app.decorate('policyEnforcer', policyEnforcer);
+  app.decorate('incidentService', incidentService);
+  app.decorate('usageTracker', usageTracker);
 
   app.addHook('onClose', async () => {
     if (typeof store.dispose === 'function') {

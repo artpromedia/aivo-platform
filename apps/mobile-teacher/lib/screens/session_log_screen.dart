@@ -459,7 +459,7 @@ class _SessionLogScreenState extends ConsumerState<SessionLogScreen>
                       labelText: 'Student',
                       border: OutlineInputBorder(),
                     ),
-                    value: selectedLearnerId,
+                    initialValue: selectedLearnerId,
                     items: state.attendance.map((a) {
                       return DropdownMenuItem(
                         value: a.learnerId,
