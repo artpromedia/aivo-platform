@@ -12,4 +12,5 @@ export {
   ParticipantRole,
   MessageType,
   MessageStatus,
+  ContextType,
 } from '../generated/prisma-client/index.js';

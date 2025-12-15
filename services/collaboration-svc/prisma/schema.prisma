@@ -1,0 +1,495 @@
+// Collaboration Service Prisma Schema
+// Epic 15: Caregiver Collaboration, Shared Action Plans & Messaging 2.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+/// Roles for care team members
+enum CareTeamRole {
+  PARENT
+  GUARDIAN
+  TEACHER
+  SPECIALIST     // Special ed teacher, resource teacher
+  THERAPIST      // OT, PT, SLP, ABA, etc.
+  COUNSELOR      // School counselor, psychologist
+  DISTRICT_ADMIN // District-level support staff
+  CASE_MANAGER   // IEP case manager
+  AIDE           // Classroom aide, para
+  OTHER
+}
+
+/// Status of an action plan
+enum ActionPlanStatus {
+  DRAFT        // Being created, not yet shared
+  ACTIVE       // Currently in use
+  ON_HOLD      // Temporarily paused
+  COMPLETED    // Successfully completed
+  ARCHIVED     // No longer active, kept for records
+}
+
+/// Context/setting where a task is performed
+enum TaskContext {
+  HOME         // Task for home setting
+  SCHOOL       // Task for school setting
+  THERAPY      // Task for therapy sessions
+  COMMUNITY    // Community-based activities
+  SHARED       // Applicable across all settings
+}
+
+/// How often a task should be done
+enum TaskFrequency {
+  DAILY
+  WEEKLY
+  TWICE_WEEKLY
+  MONTHLY
+  AS_NEEDED    // Ad hoc, situational
+}
+
+/// Completion status for individual task instances
+enum TaskCompletionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED      // Intentionally skipped (with reason)
+  MISSED       // Not completed in timeframe
+}
+
+/// Type of care note
+enum CareNoteType {
+  OBSERVATION       // General observation
+  PROGRESS_UPDATE   // Progress toward goals
+  QUESTION          // Question for team
+  HOME_UPDATE       // Update from home
+  SCHOOL_UPDATE     // Update from school
+  THERAPY_UPDATE    // Update from therapy
+  MEETING_NOTES     // Notes from a meeting
+  STRATEGY_FEEDBACK // Feedback on strategy effectiveness
+  CELEBRATION       // Positive milestone or win
+}
+
+/// Visibility of notes
+enum NoteVisibility {
+  TEAM           // All care team members
+  PARENTS_ONLY   // Only parents/guardians
+  EDUCATORS_ONLY // Teachers and school staff only
+  PRIVATE        // Only the author
+}
+
+/// Status of a meeting
+enum MeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+/// Type of meeting
+enum MeetingType {
+  CHECK_IN       // Regular check-in
+  IEP_MEETING    // IEP/504 meeting
+  PROGRESS_REVIEW // Progress review
+  STRATEGY_SESSION // Planning new strategies
+  PARENT_TEACHER  // Parent-teacher conference
+  TEAM_MEETING    // Full team meeting
+  OTHER
+}
+
+// =============================================================================
+// CARE TEAM
+// =============================================================================
+
+/// A member of a learner's care team
+model CareTeamMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The tenant (school district) this belongs to
+  tenantId String @db.Uuid
+
+  /// The learner this care team member supports
+  learnerId String @db.Uuid
+
+  /// The user account of the care team member
+  userId String @db.Uuid
+
+  /// Display name for this member (may differ from user profile name)
+  displayName String
+
+  /// Role on the care team
+  role CareTeamRole
+
+  /// Specific title (e.g., "Occupational Therapist", "Resource Room Teacher")
+  title String?
+
+  /// Email for contact (may differ from user account email)
+  contactEmail String?
+
+  /// Phone for contact
+  contactPhone String?
+
+  /// Whether this member is currently active
+  isActive Boolean @default(true)
+
+  /// Date when this member joined the care team
+  joinedAt DateTime @default(now())
+
+  /// Date when this member left the care team (if applicable)
+  leftAt DateTime?
+
+  /// Notes about this member's role or expertise
+  notes String?
+
+  /// Who added this member to the team
+  addedByUserId String @db.Uuid
+
+  /// The user who last modified this record
+  updatedByUserId String? @db.Uuid
+
+  // Relations
+  actionPlansCreated ActionPlan[]     @relation("ActionPlanCreator")
+  tasksAssigned      ActionPlanTask[] @relation("TaskAssignee")
+  careNotes          CareNote[]
+  meetingParticipations MeetingParticipant[]
+
+  @@unique([learnerId, userId])
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([userId])
+}
+
+// =============================================================================
+// ACTION PLANS
+// =============================================================================
+
+/// A shared action plan for supporting a learner
+model ActionPlan {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The tenant (school district) this belongs to
+  tenantId String @db.Uuid
+
+  /// The learner this action plan is for
+  learnerId String @db.Uuid
+
+  /// Title of the action plan (learner-friendly language)
+  title String
+
+  /// Description of what this plan aims to achieve
+  description String?
+
+  /// Current status
+  status ActionPlanStatus @default(DRAFT)
+
+  /// Start date for the plan
+  startDate DateTime?
+
+  /// Target end date for the plan
+  targetEndDate DateTime?
+
+  /// Actual end date (when completed/archived)
+  actualEndDate DateTime?
+
+  /// Link to a related goal in goal-svc (optional)
+  linkedGoalId String? @db.Uuid
+
+  /// Link to a learner profile in profile-svc (optional)
+  linkedProfileId String? @db.Uuid
+
+  /// Focus areas for this plan (JSONB for flexibility)
+  /// e.g., ["executive-function", "self-regulation", "social-skills"]
+  focusAreas Json @default("[]")
+
+  /// The care team member who created this plan
+  createdById String @db.Uuid
+  createdBy   CareTeamMember @relation("ActionPlanCreator", fields: [createdById], references: [id])
+
+  /// Who last updated this plan
+  updatedByUserId String? @db.Uuid
+
+  // Relations
+  tasks ActionPlanTask[]
+  notes CareNote[]
+  meetings CareMeeting[]
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([status])
+  @@index([linkedGoalId])
+  @@index([linkedProfileId])
+}
+
+/// A task within an action plan
+model ActionPlanTask {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Parent action plan
+  actionPlanId String     @db.Uuid
+  actionPlan   ActionPlan @relation(fields: [actionPlanId], references: [id], onDelete: Cascade)
+
+  /// Task title (learner-friendly, strengths-based language)
+  title String
+
+  /// Detailed description of the task/strategy
+  description String?
+
+  /// Context where this task applies
+  context TaskContext
+
+  /// How often this task should be done
+  frequency TaskFrequency
+
+  /// Specific time of day if relevant (e.g., "morning routine", "before lunch")
+  timeOfDay String?
+
+  /// Order for display within the plan
+  sortOrder Int @default(0)
+
+  /// Whether this task is currently active
+  isActive Boolean @default(true)
+
+  /// Care team member responsible for supporting this task
+  assigneeId String?         @db.Uuid
+  assignee   CareTeamMember? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  /// Supports/scaffolds needed (JSONB)
+  /// e.g., {"visualSupport": true, "timerNeeded": true, "checklistSteps": [...]}
+  supports Json @default("{}")
+
+  /// Success criteria (what does "done" look like?)
+  successCriteria String?
+
+  /// Additional notes for implementers
+  implementationNotes String?
+
+  // Relations
+  completions TaskCompletion[]
+
+  @@index([actionPlanId])
+  @@index([context])
+  @@index([assigneeId])
+}
+
+/// Record of task completion
+model TaskCompletion {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The task being tracked
+  taskId String         @db.Uuid
+  task   ActionPlanTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  /// When this instance was due
+  dueDate DateTime
+
+  /// When it was completed (null if not completed)
+  completedAt DateTime?
+
+  /// Completion status
+  status TaskCompletionStatus @default(NOT_STARTED)
+
+  /// User who recorded this completion
+  recordedByUserId String @db.Uuid
+
+  /// Notes about this completion (what worked, challenges, etc.)
+  notes String?
+
+  /// Context where it was completed
+  completedInContext TaskContext?
+
+  /// Rating of how well it went (1-5 scale, optional)
+  effectivenessRating Int?
+
+  @@index([taskId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+// =============================================================================
+// CARE NOTES
+// =============================================================================
+
+/// A note/observation shared by care team members
+model CareNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The tenant this belongs to
+  tenantId String @db.Uuid
+
+  /// The learner this note is about
+  learnerId String @db.Uuid
+
+  /// Type of note
+  noteType CareNoteType
+
+  /// Title/subject of the note
+  title String?
+
+  /// The note content (non-diagnostic, strengths-based language)
+  content String
+
+  /// Visibility setting
+  visibility NoteVisibility @default(TEAM)
+
+  /// Author of the note
+  authorId String         @db.Uuid
+  author   CareTeamMember @relation(fields: [authorId], references: [id])
+
+  /// Related action plan (optional)
+  actionPlanId String?     @db.Uuid
+  actionPlan   ActionPlan? @relation(fields: [actionPlanId], references: [id])
+
+  /// Related meeting (optional)
+  meetingId String?      @db.Uuid
+  meeting   CareMeeting? @relation(fields: [meetingId], references: [id])
+
+  /// Tags for categorization (JSONB)
+  /// e.g., ["morning-routine", "math", "sensory"]
+  tags Json @default("[]")
+
+  /// Attachments (JSONB with file references)
+  attachments Json @default("[]")
+
+  /// Whether this note has been acknowledged by team
+  isAcknowledged Boolean @default(false)
+
+  /// Users who have acknowledged (JSONB array of user IDs)
+  acknowledgedBy Json @default("[]")
+
+  /// Whether this note requires follow-up
+  requiresFollowUp Boolean @default(false)
+
+  /// Follow-up notes
+  followUpNotes String?
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([authorId])
+  @@index([actionPlanId])
+  @@index([meetingId])
+  @@index([noteType])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// MEETINGS
+// =============================================================================
+
+/// A care team meeting
+model CareMeeting {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The tenant this belongs to
+  tenantId String @db.Uuid
+
+  /// The learner this meeting is about
+  learnerId String @db.Uuid
+
+  /// Meeting title
+  title String
+
+  /// Meeting description/agenda
+  description String?
+
+  /// Type of meeting
+  meetingType MeetingType
+
+  /// Current status
+  status MeetingStatus @default(SCHEDULED)
+
+  /// Scheduled start time
+  scheduledStart DateTime
+
+  /// Scheduled end time
+  scheduledEnd DateTime
+
+  /// Actual start time (if started)
+  actualStart DateTime?
+
+  /// Actual end time (if ended)
+  actualEnd DateTime?
+
+  /// Location or video link
+  location String?
+
+  /// Video conference link
+  videoLink String?
+
+  /// Related action plan (optional)
+  actionPlanId String?     @db.Uuid
+  actionPlan   ActionPlan? @relation(fields: [actionPlanId], references: [id])
+
+  /// Agenda items (JSONB)
+  agendaItems Json @default("[]")
+
+  /// Summary/notes from the meeting
+  summary String?
+
+  /// Action items from the meeting (JSONB)
+  actionItems Json @default("[]")
+
+  /// Who organized this meeting
+  organizedByUserId String @db.Uuid
+
+  /// Who last updated this record
+  updatedByUserId String? @db.Uuid
+
+  // Relations
+  participants MeetingParticipant[]
+  notes        CareNote[]
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([actionPlanId])
+  @@index([scheduledStart])
+  @@index([status])
+}
+
+/// A participant in a meeting
+model MeetingParticipant {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The meeting
+  meetingId String      @db.Uuid
+  meeting   CareMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  /// The care team member
+  careTeamMemberId String         @db.Uuid
+  careTeamMember   CareTeamMember @relation(fields: [careTeamMemberId], references: [id])
+
+  /// RSVP status
+  rsvpStatus String? // ACCEPTED, DECLINED, TENTATIVE, PENDING
+
+  /// Whether they attended
+  attended Boolean?
+
+  /// Notes from this participant
+  participantNotes String?
+
+  @@unique([meetingId, careTeamMemberId])
+  @@index([meetingId])
+  @@index([careTeamMemberId])
+}

@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
 import { auditRoutes } from './routes/auditRoutes.js';
 import { classroomAnalyticsRoutes } from './routes/classroomAnalytics.js';
+import { collaborationAnalyticsRoutes } from './routes/collaborationAnalytics.js';
 import { eventsAdminRoutes } from './routes/events-admin.js';
 import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
 import { explanationRoutes } from './routes/explanationRoutes.js';
@@ -20,9 +21,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     logger: {
       level: config.nodeEnv === 'production' ? 'info' : 'debug',
       transport:
-        config.nodeEnv !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
+        config.nodeEnv === 'production'
+          ? undefined
+          : { target: 'pino-pretty', options: { colorize: true } },
     },
   });
 
@@ -40,6 +41,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(parentAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(teacherAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(classroomAnalyticsRoutes, { prefix: '/analytics' });
+  await app.register(collaborationAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(tenantAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(experimentAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(explanationRoutes, { prefix: '/analytics' });

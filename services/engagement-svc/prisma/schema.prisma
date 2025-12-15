@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Engagement event types that can award XP
+enum EngagementEventType {
+  SESSION_STARTED
+  SESSION_COMPLETED
+  ACTIVITY_COMPLETED
+  FOCUS_BREAK_USED
+  FOCUS_BREAK_RETURNED    // Learner returned to task after break
+  HOMEWORK_HELPER_USED
+  HOMEWORK_STEP_COMPLETED
+  RECOMMENDATION_ACCEPTED
+  ACTION_PLAN_TASK_COMPLETED
+  BASELINE_COMPLETED
+  STREAK_MAINTAINED
+  BADGE_EARNED
+
+  @@map("engagement_event_type")
+}
+
+/// Preferred reward style for learner
+enum RewardStyle {
+  VISUAL_BADGES      // Rich badge graphics and animations
+  PRAISE_MESSAGES    // Text-based encouragement
+  POINTS_AND_LEVELS  // Focus on XP numbers and levels
+  MINIMAL            // Quiet, unobtrusive feedback
+
+  @@map("reward_style")
+}
+
+/// Badge categories for organization
+enum BadgeCategory {
+  EFFORT        // Trying hard, persistence
+  CONSISTENCY   // Streaks, daily practice
+  FOCUS         // Attention, returning from breaks
+  COLLABORATION // Working with caregivers
+  GROWTH        // Skill improvement
+  MILESTONE     // Major achievements
+
+  @@map("badge_category")
+}
+
+/// Source of badge award
+enum BadgeSource {
+  SYSTEM   // Auto-awarded by rules engine
+  TEACHER  // Manually awarded by teacher
+  PARENT   // Manually awarded by parent
+
+  @@map("badge_source")
+}
+
+/// Context for kudos messages
+enum KudosContext {
+  SESSION      // Related to a learning session
+  ACTION_PLAN  // Related to action plan progress
+  BADGE        // Celebrating a badge
+  GENERAL      // General encouragement
+
+  @@map("kudos_context")
+}
+
+/// Role of kudos sender
+enum KudosSenderRole {
+  PARENT
+  TEACHER
+  THERAPIST
+  ADMIN
+  SYSTEM
+
+  @@map("kudos_sender_role")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CORE ENGAGEMENT MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Per-learner engagement summary - denormalized for fast reads
+model EngagementProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  learnerId String   @unique @map("learner_id") @db.Uuid
+
+  // XP & Leveling
+  level              Int @default(1)
+  xpTotal            Int @default(0) @map("xp_total")
+  xpThisWeek         Int @default(0) @map("xp_this_week")
+  xpToday            Int @default(0) @map("xp_today")
+  xpTodayDate        DateTime? @map("xp_today_date") @db.Date
+
+  // Streaks
+  currentStreakDays  Int @default(0) @map("current_streak_days")
+  maxStreakDays      Int @default(0) @map("max_streak_days")
+  lastSessionDate    DateTime? @map("last_session_date") @db.Date
+  streakFreezeUsed   Boolean @default(false) @map("streak_freeze_used")
+
+  // Session stats (denormalized)
+  sessionsCompleted  Int @default(0) @map("sessions_completed")
+  totalMinutesLearned Int @default(0) @map("total_minutes_learned")
+
+  // Preferences (learner/parent-set)
+  preferredRewardStyle RewardStyle @default(VISUAL_BADGES) @map("preferred_reward_style")
+  muteCelebrations     Boolean @default(false) @map("mute_celebrations")
+  reducedVisuals       Boolean @default(false) @map("reduced_visuals")
+  showBadges           Boolean @default(true) @map("show_badges")
+  showStreaks          Boolean @default(true) @map("show_streaks")
+  showXp               Boolean @default(true) @map("show_xp")
+
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  events      EngagementEvent[]
+  badges      LearnerBadge[]
+  kudosReceived Kudos[]
+
+  @@index([tenantId])
+  @@index([tenantId, learnerId])
+  @@map("engagement_profiles")
+}
+
+/// Fine-grained engagement event log
+model EngagementEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  learnerId String   @map("learner_id") @db.Uuid
+
+  eventType   EngagementEventType @map("event_type")
+  xpAwarded   Int @default(0) @map("xp_awarded")
+  
+  // Optional metadata
+  sessionId   String? @map("session_id") @db.Uuid
+  activityId  String? @map("activity_id") @db.Uuid
+  taskId      String? @map("task_id") @db.Uuid
+  badgeId     String? @map("badge_id") @db.Uuid
+  metadata    Json?   @db.JsonB
+
+  occurredAt  DateTime @default(now()) @map("occurred_at")
+
+  // Relations
+  profile     EngagementProfile @relation(fields: [learnerId], references: [learnerId], onDelete: Cascade)
+
+  @@index([tenantId, learnerId])
+  @@index([tenantId, eventType])
+  @@index([occurredAt])
+  @@map("engagement_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BADGES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Badge definition (master data)
+model Badge {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique // e.g., "FIRST_SESSION", "WEEK_STREAK_5"
+  name        String   // Display name: "First Steps"
+  description String   // "Completed your first learning session!"
+  
+  category    BadgeCategory
+  iconKey     String   @map("icon_key") // Asset key for icon lookup
+  
+  // Criteria for auto-awarding (JSON rules)
+  criteriaJson Json   @map("criteria_json") @db.JsonB
+  // Example: {"eventType": "SESSION_COMPLETED", "count": 1}
+  // Example: {"streakDays": 7}
+  // Example: {"xpTotal": 1000}
+
+  // Ordering & display
+  sortOrder   Int @default(0) @map("sort_order")
+  isSecret    Boolean @default(false) @map("is_secret") // Hidden until earned
+  
+  // Tenant scoping (null = global badge)
+  tenantId    String? @map("tenant_id") @db.Uuid
+  
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  awards      LearnerBadge[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("badges")
+}
+
+/// Awarded badge instance
+model LearnerBadge {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  learnerId String   @map("learner_id") @db.Uuid
+  badgeId   String   @map("badge_id") @db.Uuid
+
+  awardedAt   DateTime @default(now()) @map("awarded_at")
+  firstSeenAt DateTime? @map("first_seen_at") // When learner first viewed it
+  
+  source      BadgeSource @default(SYSTEM)
+  awardedBy   String? @map("awarded_by") @db.Uuid // User who manually awarded
+  note        String? // Optional message from awarder
+
+  // Relations
+  profile     EngagementProfile @relation(fields: [learnerId], references: [learnerId], onDelete: Cascade)
+  badge       Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([learnerId, badgeId]) // Each badge can only be earned once
+  @@index([tenantId, learnerId])
+  @@index([badgeId])
+  @@map("learner_badges")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KUDOS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Human-to-learner encouragement messages
+model Kudos {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  learnerId String   @map("learner_id") @db.Uuid
+
+  fromUserId  String @map("from_user_id") @db.Uuid
+  fromRole    KudosSenderRole @map("from_role")
+  fromName    String @map("from_name") // Cached for display
+
+  message     String @db.VarChar(500) // Kid-friendly, short
+  emoji       String? @db.VarChar(10) // Optional emoji accent
+
+  context     KudosContext @default(GENERAL)
+  linkedSessionId    String? @map("linked_session_id") @db.Uuid
+  linkedActionPlanId String? @map("linked_action_plan_id") @db.Uuid
+  linkedBadgeId      String? @map("linked_badge_id") @db.Uuid
+
+  visibleToLearner Boolean @default(true) @map("visible_to_learner")
+  readAt           DateTime? @map("read_at") // When learner viewed it
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  profile   EngagementProfile @relation(fields: [learnerId], references: [learnerId], onDelete: Cascade)
+
+  @@index([tenantId, learnerId])
+  @@index([fromUserId])
+  @@index([createdAt])
+  @@map("kudos")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION SETTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tenant-level gamification configuration
+model GamificationSettings {
+  id       String @id @default(uuid()) @db.Uuid
+  tenantId String @unique @map("tenant_id") @db.Uuid
+
+  // Feature toggles
+  xpEnabled          Boolean @default(true) @map("xp_enabled")
+  streaksEnabled     Boolean @default(true) @map("streaks_enabled")
+  badgesEnabled      Boolean @default(true) @map("badges_enabled")
+  kudosEnabled       Boolean @default(true) @map("kudos_enabled")
+  celebrationsEnabled Boolean @default(true) @map("celebrations_enabled")
+  levelsEnabled      Boolean @default(true) @map("levels_enabled")
+
+  // Limits & guardrails
+  maxDailyXp              Int @default(100) @map("max_daily_xp")
+  maxDailyCelebrations    Int @default(3) @map("max_daily_celebrations")
+  streakGracePeriodHours  Int @default(24) @map("streak_grace_period_hours")
+
+  // Privacy & comparison settings
+  showComparisons    Boolean @default(false) @map("show_comparisons") // Never show learner vs learner
+  anonymizeInReports Boolean @default(true) @map("anonymize_in_reports")
+
+  // XP multipliers (tenant can adjust)
+  xpMultiplier Float @default(1.0) @map("xp_multiplier")
+
+  // Custom XP rules (override defaults)
+  xpRulesOverride Json? @map("xp_rules_override") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("gamification_settings")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// XP RULES CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Default XP rules (can be tenant-customized via GamificationSettings)
+model XpRule {
+  id        String @id @default(uuid()) @db.Uuid
+  
+  eventType   EngagementEventType @map("event_type")
+  xpAmount    Int @map("xp_amount")
+  
+  // Optional conditions
+  minDurationSeconds Int? @map("min_duration_seconds") // For session events
+  maxPerDay          Int? @map("max_per_day") // Daily cap for this event type
+  cooldownMinutes    Int? @map("cooldown_minutes") // Minimum time between awards
+
+  description String? // "Award 10 XP for completing a learning session"
+  
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([eventType]) // One rule per event type (for now)
+  @@map("xp_rules")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEVEL THRESHOLDS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// XP thresholds for each level
+model LevelThreshold {
+  id    String @id @default(uuid()) @db.Uuid
+  level Int @unique
+  xpRequired Int @map("xp_required")
+  title String? // Optional level title: "Explorer", "Champion"
+  
+  @@map("level_thresholds")
+}

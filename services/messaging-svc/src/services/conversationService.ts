@@ -4,7 +4,7 @@
  * Core business logic for managing conversations.
  */
 
-import { prisma, ConversationType, ParticipantRole } from '../prisma.js';
+import { prisma, ConversationType, ParticipantRole, ContextType } from '../prisma.js';
 import type {
   CreateConversationInput,
   UpdateConversationInput,
@@ -31,6 +31,9 @@ export async function createConversation(input: CreateConversationInput) {
       avatarUrl: conversationData.avatarUrl,
       contextType: conversationData.contextType,
       contextId: conversationData.contextId,
+      contextLearnerId: conversationData.contextLearnerId,
+      contextActionPlanId: conversationData.contextActionPlanId,
+      contextMeetingId: conversationData.contextMeetingId,
       createdBy: conversationData.createdBy,
       participants: {
         create: allParticipantIds.map((userId, index) => ({
@@ -95,6 +98,9 @@ export async function listConversations(
     where.contextType = filters.contextType;
     if (filters.contextId) {
       where.contextId = filters.contextId;
+    }
+    if (filters.contextLearnerId) {
+      where.contextLearnerId = filters.contextLearnerId;
     }
   }
 
@@ -219,6 +225,161 @@ export async function updateConversationStats(
       messageCount: { increment: 1 },
       lastMessageAt: lastMessage.createdAt,
       lastMessagePreview: lastMessage.content.substring(0, 100),
+    },
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTEXTUAL THREADS (Messaging 2.0)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface ContextThreadInput {
+  tenantId: string;
+  createdBy: string;
+  contextType: ContextType;
+  contextId?: string;
+  contextLearnerId?: string;
+  contextActionPlanId?: string;
+  contextMeetingId?: string;
+  name: string;
+  description?: string;
+  participantIds: string[];
+}
+
+/**
+ * Find or create a thread for a specific context (learner, action plan, meeting, etc.)
+ */
+export async function findOrCreateContextThread(input: ContextThreadInput) {
+  // Build where clause based on context type
+  const contextWhere: Record<string, unknown> = {
+    tenantId: input.tenantId,
+    contextType: input.contextType,
+  };
+
+  // Add specific context fields based on type
+  if (input.contextLearnerId) {
+    contextWhere.contextLearnerId = input.contextLearnerId;
+  }
+  if (input.contextActionPlanId) {
+    contextWhere.contextActionPlanId = input.contextActionPlanId;
+  }
+  if (input.contextMeetingId) {
+    contextWhere.contextMeetingId = input.contextMeetingId;
+  }
+  if (input.contextId) {
+    contextWhere.contextId = input.contextId;
+  }
+
+  // Look for existing thread with this context
+  const existingThread = await prisma.conversation.findFirst({
+    where: contextWhere,
+    include: {
+      participants: {
+        where: { isActive: true },
+      },
+    },
+  });
+
+  if (existingThread) {
+    return { conversation: existingThread, created: false };
+  }
+
+  // Create new contextual thread
+  const conversation = await createConversation({
+    tenantId: input.tenantId,
+    createdBy: input.createdBy,
+    type: ConversationType.GROUP,
+    name: input.name,
+    description: input.description,
+    participantIds: input.participantIds,
+    contextType: input.contextType,
+    contextId: input.contextId,
+    contextLearnerId: input.contextLearnerId,
+    contextActionPlanId: input.contextActionPlanId,
+    contextMeetingId: input.contextMeetingId,
+  });
+
+  return { conversation, created: true };
+}
+
+/**
+ * Get all threads for a specific learner (across all context types)
+ */
+export async function getThreadsForLearner(
+  tenantId: string,
+  userId: string,
+  learnerId: string,
+  pagination: { page?: number; pageSize?: number } = {}
+) {
+  const { page = 1, pageSize = 20 } = pagination;
+  const skip = (page - 1) * pageSize;
+
+  // Get conversations where user is participant and learner is context
+  const participantConversations = await prisma.participant.findMany({
+    where: {
+      tenantId,
+      userId,
+      isActive: true,
+    },
+    select: { conversationId: true },
+  });
+
+  const conversationIds = participantConversations.map((p) => p.conversationId);
+
+  const where = {
+    id: { in: conversationIds },
+    tenantId,
+    contextLearnerId: learnerId,
+  };
+
+  const [threads, total] = await Promise.all([
+    prisma.conversation.findMany({
+      where,
+      include: {
+        participants: {
+          where: { isActive: true },
+        },
+      },
+      orderBy: { lastMessageAt: 'desc' },
+      skip,
+      take: pageSize,
+    }),
+    prisma.conversation.count({ where }),
+  ]);
+
+  return {
+    data: threads,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+    hasMore: skip + threads.length < total,
+  };
+}
+
+/**
+ * Get a thread by context type and context ID
+ */
+export async function getThreadByContext(
+  tenantId: string,
+  contextType: ContextType,
+  contextId: string
+) {
+  return prisma.conversation.findFirst({
+    where: {
+      tenantId,
+      contextType,
+      OR: [
+        { contextId },
+        { contextLearnerId: contextId },
+        { contextActionPlanId: contextId },
+        { contextMeetingId: contextId },
+      ],
+    },
+    include: {
+      participants: {
+        where: { isActive: true },
+      },
     },
   });
 }

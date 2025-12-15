@@ -17,8 +17,22 @@ enum ConversationType {
   DIRECT          // 1-to-1 conversation
   GROUP           // Multi-participant group
   CHANNEL         // Public/semi-public channel
+  THREAD          // Contextual thread linked to entity
 
   @@map("conversation_type")
+}
+
+/// Context type for linked conversations
+enum ContextType {
+  LEARNER         // Linked to a specific learner
+  ACTION_PLAN     // Linked to an action plan
+  MEETING         // Linked to a care meeting
+  GOAL            // Linked to a learning goal
+  SESSION         // Linked to a learning session
+  CLASS           // Linked to a classroom
+  TASK            // Linked to an action plan task
+
+  @@map("context_type")
 }
 
 /// Participant role in conversation
@@ -71,9 +85,13 @@ model Conversation {
   isArchived        Boolean             @default(false) @map("is_archived")
   isMuted           Boolean             @default(false) @map("is_muted")
   
-  // Context linking
-  contextType       String?             @map("context_type") // 'session', 'goal', 'class', etc.
+  // Context linking (Messaging 2.0)
+  contextType       ContextType?        @map("context_type")
   contextId         String?             @map("context_id") @db.Uuid
+  // Additional context for rich display
+  contextName       String?             @map("context_name")        // e.g., "Morning Routine Plan"
+  contextLearnerId  String?             @map("context_learner_id") @db.Uuid  // Learner associated with context
+  contextLearnerName String?            @map("context_learner_name")
   
   // Stats
   messageCount      Int                 @default(0) @map("message_count")
@@ -91,6 +109,7 @@ model Conversation {
 
   @@index([tenantId])
   @@index([tenantId, contextType, contextId])
+  @@index([tenantId, contextLearnerId])
   @@index([lastMessageAt])
   @@map("conversations")
 }

@@ -26,7 +26,6 @@
     "sourceMap": true,
     "declaration": false,
     "incremental": true,
-    "baseUrl": ".",
     "paths": {
       "@aivo/*": ["./libs/*/src", "./services/*/src", "./apps/*/src"]
     },

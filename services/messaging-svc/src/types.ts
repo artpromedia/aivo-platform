@@ -6,7 +6,20 @@ import type {
   ConversationType,
   ParticipantRole,
   MessageType,
+  ContextType,
 } from './prisma.js';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTEXT TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface ConversationContext {
+  contextType: ContextType;
+  contextId?: string;
+  contextLearnerId?: string;
+  contextActionPlanId?: string;
+  contextMeetingId?: string;
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONVERSATION TYPES
@@ -20,8 +33,11 @@ export interface CreateConversationInput {
   description?: string;
   avatarUrl?: string;
   participantIds: string[];
-  contextType?: string;
+  contextType?: ContextType;
   contextId?: string;
+  contextLearnerId?: string;
+  contextActionPlanId?: string;
+  contextMeetingId?: string;
 }
 
 export interface UpdateConversationInput {
@@ -37,8 +53,9 @@ export interface ConversationFilters {
   userId: string;
   type?: ConversationType;
   isArchived?: boolean;
-  contextType?: string;
+  contextType?: ContextType;
   contextId?: string;
+  contextLearnerId?: string;
   search?: string;
 }
 

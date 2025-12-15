@@ -5,16 +5,16 @@
 import Fastify, { FastifyInstance } from 'fastify';
 
 import { config } from './config.js';
-import { registerConversationRoutes, registerMessageRoutes } from './routes/index.js';
+import { registerConversationRoutes, registerMessageRoutes, registerThreadRoutes } from './routes/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
       level: config.nodeEnv === 'production' ? 'info' : 'debug',
       transport:
-        config.nodeEnv !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
+        config.nodeEnv === 'production'
+          ? undefined
+          : { target: 'pino-pretty', options: { colorize: true } },
     },
   });
 
@@ -82,6 +82,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await registerConversationRoutes(app);
   await registerMessageRoutes(app);
+  await registerThreadRoutes(app);
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT
@@ -89,11 +90,12 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.get('/', async () => ({
     service: 'messaging-svc',
-    version: '0.1.0',
-    description: 'In-app Messaging Service',
+    version: '0.2.0',
+    description: 'In-app Messaging Service with Contextual Threads',
     endpoints: {
       conversations: '/conversations',
       messages: '/messages',
+      threads: '/threads',
       unread: '/unread',
     },
   }));
