@@ -1,0 +1,70 @@
+{
+  "name": "@aivo/ts-shared",
+  "version": "1.0.0",
+  "description": "Shared TypeScript utilities for AIVO platform including authentication, authorization, and common helpers",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "jose": "^6.0.11",
+    "ioredis": "^5.6.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.21",
+    "fastify": "^5.3.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4",
+    "rimraf": "^6.0.1"
+  },
+  "peerDependencies": {
+    "fastify": "^5.x",
+    "express": "^4.x || ^5.x"
+  },
+  "peerDependenciesMeta": {
+    "fastify": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "directory": "libs/ts-shared"
+  },
+  "keywords": [
+    "aivo",
+    "authentication",
+    "jwt",
+    "authorization",
+    "middleware"
+  ],
+  "license": "UNLICENSED"
+}

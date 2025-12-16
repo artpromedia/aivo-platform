@@ -37,13 +37,21 @@ model User {
   passwordHash  String
   externalId    String?    // IdP subject/nameId for federated users
   status        UserStatus @default(ACTIVE)
+  emailVerified Boolean    @default(false)
+  lastLoginAt   DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-  roles         UserRole[]
+  
+  // Relations
+  roles                    UserRole[]
+  sessions                 Session[]
+  passwordResetTokens      PasswordResetToken[]
+  emailVerificationTokens  EmailVerificationToken[]
 
   @@unique([tenantId, email])
   @@unique([tenantId, externalId])
   @@index([tenantId])
+  @@index([email])
 }
 
 model UserRole {
@@ -172,4 +180,91 @@ model Tenant {
   
   @@index([slug])
   @@index([domain])
+}
+
+// ============================================================================
+// SESSION MANAGEMENT
+// ============================================================================
+
+/// User session for token management and device tracking
+model Session {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  tenantId        String    @db.Uuid
+  
+  // Device/client information
+  userAgent       String?
+  ipAddress       String?
+  deviceId        String?   // Optional device fingerprint
+  deviceName      String?   // User-friendly device name
+  platform        String?   // e.g., "web", "ios", "android"
+  
+  // Token tracking
+  refreshTokenHash String?  // Hash of the current refresh token
+  lastActivityAt  DateTime  @default(now())
+  
+  // Session lifecycle
+  expiresAt       DateTime
+  revokedAt       DateTime? // Set when session is explicitly revoked
+  revokeReason    String?   // e.g., "logout", "password_change", "admin_revoke"
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+/// Password reset tokens
+model PasswordResetToken {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  tokenHash       String    // Hashed token for security
+  expiresAt       DateTime
+  usedAt          DateTime? // Set when token is used
+  
+  createdAt       DateTime  @default(now())
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+/// Email verification tokens
+model EmailVerificationToken {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  tokenHash       String    // Hashed token for security
+  email           String    // Email being verified
+  expiresAt       DateTime
+  verifiedAt      DateTime? // Set when verified
+  
+  createdAt       DateTime  @default(now())
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+/// Failed login attempts for rate limiting
+model FailedLoginAttempt {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String
+  tenantId        String?   @db.Uuid
+  ipAddress       String?
+  userAgent       String?
+  attemptedAt     DateTime  @default(now())
+  
+  @@index([email, tenantId])
+  @@index([ipAddress])
+  @@index([attemptedAt])
 }
