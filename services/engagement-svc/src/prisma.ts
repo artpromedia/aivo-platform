@@ -2,27 +2,31 @@
  * Prisma client singleton for engagement-svc
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
+
+export { Prisma };
 
 export const prisma = new PrismaClient({
-  log:
-    process.env.NODE_ENV === 'development'
-      ? ['query', 'warn', 'error']
-      : ['warn', 'error'],
+  log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['warn', 'error'],
 });
 
 // Re-export types for convenience
-export {
+export type {
   EngagementProfile,
   EngagementEvent,
   Badge,
   LearnerBadge,
   Kudos,
-  TenantGamificationSettings,
-  LearnerGamificationPreferences,
+  GamificationSettings,
+  XpRule,
+  LevelThreshold,
+} from '../generated/prisma-client/index.js';
+
+export {
   EngagementEventType,
   BadgeCategory,
+  BadgeSource,
   KudosContext,
-  KudosSource,
+  KudosSenderRole,
   RewardStyle,
-} from '@prisma/client';
+} from '../generated/prisma-client/index.js';

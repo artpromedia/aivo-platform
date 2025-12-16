@@ -3,12 +3,16 @@
  */
 
 import { authMiddleware as sharedAuthMiddleware } from '@aivo/ts-rbac';
-import type { FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
 
-const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
+function authPlugin(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     // In tests, allow bypassing JWT verification with an injected user header
     if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
@@ -57,6 +61,7 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
     await auth(request, reply);
   });
   done();
-};
+}
 
-export const authMiddleware = fp(authPlugin);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const authMiddleware = fp(authPlugin as any);

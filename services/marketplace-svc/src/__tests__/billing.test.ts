@@ -56,8 +56,8 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         tenantId: 'tenant-1',
-        itemId: 'item-1',
-        item: {
+        marketplaceItemId: 'item-1',
+        marketplaceItem: {
           id: 'item-1',
           title: 'Free Content Pack',
           vendorId: 'vendor-1',
@@ -68,7 +68,9 @@ describe('InstallationBillingService', () => {
         },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
       vi.mocked(prisma.marketplaceInstallation.update).mockResolvedValue({
         ...mockInstallation,
         billingStatus: 'ACTIVE',
@@ -102,10 +104,12 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         tenantId: 'tenant-1',
-        item: { isFree: false, billingModel: 'TENANT_FLAT', billingSku: 'MP_TEST' },
+        marketplaceItem: { isFree: false, billingModel: 'TENANT_FLAT', billingSku: 'MP_TEST' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
 
       const result = await service.activateBilling({
         installationId: 'install-1',
@@ -120,7 +124,7 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         tenantId: 'tenant-1',
-        item: {
+        marketplaceItem: {
           id: 'item-1',
           title: 'Paid Content Pack',
           vendorId: 'vendor-1',
@@ -131,7 +135,9 @@ describe('InstallationBillingService', () => {
         },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
 
       const result = await service.activateBilling({
         installationId: 'install-1',
@@ -146,7 +152,7 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         tenantId: 'tenant-1',
-        item: {
+        marketplaceItem: {
           id: 'item-1',
           title: 'Premium Content Pack',
           vendorId: 'vendor-1',
@@ -157,7 +163,9 @@ describe('InstallationBillingService', () => {
         },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
 
       // Mock find active contract
       mockFetch
@@ -168,12 +176,13 @@ describe('InstallationBillingService', () => {
         // Mock create line item
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            lineItemId: 'line-item-1',
-            contractId: 'contract-1',
-            sku: 'MPK_PREMIUM_PACK',
-            status: 'ACTIVE',
-          }),
+          json: () =>
+            Promise.resolve({
+              lineItemId: 'line-item-1',
+              contractId: 'contract-1',
+              sku: 'MPK_PREMIUM_PACK',
+              status: 'ACTIVE',
+            }),
         });
 
       vi.mocked(prisma.marketplaceInstallation.update).mockResolvedValue({
@@ -205,7 +214,7 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         tenantId: 'tenant-1',
-        item: {
+        marketplaceItem: {
           id: 'item-1',
           title: 'Per-Seat Tool',
           vendorId: 'vendor-1',
@@ -216,7 +225,9 @@ describe('InstallationBillingService', () => {
         },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
 
       mockFetch
         .mockResolvedValueOnce({
@@ -225,12 +236,13 @@ describe('InstallationBillingService', () => {
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            lineItemId: 'line-item-1',
-            contractId: 'contract-1',
-            sku: 'MPT_TOOL_SEATS',
-            status: 'ACTIVE',
-          }),
+          json: () =>
+            Promise.resolve({
+              lineItemId: 'line-item-1',
+              contractId: 'contract-1',
+              sku: 'MPT_TOOL_SEATS',
+              status: 'ACTIVE',
+            }),
         });
 
       vi.mocked(prisma.marketplaceInstallation.update).mockResolvedValue({
@@ -264,7 +276,9 @@ describe('InstallationBillingService', () => {
         billingMetadataJson: { contractId: 'contract-1' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
 
       mockFetch.mockResolvedValueOnce({ ok: true });
 
@@ -300,7 +314,9 @@ describe('InstallationBillingService', () => {
         billingMetadataJson: null,
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
       vi.mocked(prisma.marketplaceInstallation.update).mockResolvedValue({
         ...mockInstallation,
         billingStatus: 'CANCELED',
@@ -324,10 +340,12 @@ describe('InstallationBillingService', () => {
         contractLineItemId: 'line-item-1',
         seatQuantity: 50,
         billingMetadataJson: {},
-        item: { billingModel: 'PER_SEAT' },
+        marketplaceItem: { billingModel: 'PER_SEAT' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
       mockFetch.mockResolvedValueOnce({ ok: true });
       vi.mocked(prisma.marketplaceInstallation.update).mockResolvedValue({
         ...mockInstallation,
@@ -352,10 +370,12 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         billingStatus: 'ACTIVE',
-        item: { billingModel: 'TENANT_FLAT' },
+        marketplaceItem: { billingModel: 'TENANT_FLAT' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findUnique).mockResolvedValue(
+        mockInstallation as any
+      );
 
       const result = await service.updateSeatQuantity('install-1', 100);
 
@@ -369,10 +389,12 @@ describe('InstallationBillingService', () => {
       const mockInstallation = {
         id: 'install-1',
         status: 'INSTALLED',
-        item: { isFree: true, billingModel: 'FREE' },
+        marketplaceItem: { isFree: true, billingModel: 'FREE' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findFirst).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findFirst).mockResolvedValue(
+        mockInstallation as any
+      );
 
       const result = await service.checkEntitlement('tenant-1', 'item-1');
 
@@ -384,10 +406,12 @@ describe('InstallationBillingService', () => {
         id: 'install-1',
         status: 'INSTALLED',
         billingStatus: 'ACTIVE',
-        item: { isFree: false, billingModel: 'TENANT_FLAT' },
+        marketplaceItem: { isFree: false, billingModel: 'TENANT_FLAT' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findFirst).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findFirst).mockResolvedValue(
+        mockInstallation as any
+      );
 
       const result = await service.checkEntitlement('tenant-1', 'item-1');
 
@@ -399,10 +423,12 @@ describe('InstallationBillingService', () => {
         id: 'install-1',
         status: 'INSTALLED',
         billingStatus: 'PENDING',
-        item: { isFree: false, billingModel: 'TENANT_FLAT' },
+        marketplaceItem: { isFree: false, billingModel: 'TENANT_FLAT' },
       };
 
-      vi.mocked(prisma.marketplaceInstallation.findFirst).mockResolvedValue(mockInstallation as any);
+      vi.mocked(prisma.marketplaceInstallation.findFirst).mockResolvedValue(
+        mockInstallation as any
+      );
 
       const result = await service.checkEntitlement('tenant-1', 'item-1');
 
@@ -459,7 +485,7 @@ describe('Billing Model Validation', () => {
   it('should validate SKU naming conventions', () => {
     // Content packs should start with MPK_
     expect('MPK_FRACTIONS_PACK_G3_5').toMatch(/^MPK_/);
-    
+
     // Tools should start with MPT_
     expect('MPT_TOOL_MATH_GAME').toMatch(/^MPT_/);
 

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../engagement/models.dart';
 import '../engagement/providers.dart';
-import '../widgets/engagement_widgets.dart';
 
 /// Screen displaying all earned and in-progress badges
 class BadgesScreen extends ConsumerWidget {

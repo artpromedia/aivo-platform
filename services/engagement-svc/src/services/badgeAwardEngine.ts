@@ -2,9 +2,16 @@
  * Badge Auto-Award Engine - Evaluates badge criteria after engagement events
  */
 
-import { prisma, BadgeCategory, type Badge, type EngagementProfile } from '../prisma.js';
-import * as badgeService from './badgeService.js';
 import * as publisher from '../events/publisher.js';
+import {
+  prisma,
+  BadgeCategory,
+  BadgeSource,
+  type Badge,
+  type EngagementProfile,
+} from '../prisma.js';
+
+import * as badgeService from './badgeService.js';
 
 /**
  * Badge criteria types
@@ -38,8 +45,8 @@ export async function checkAndAwardBadges(
   profile: EngagementProfile,
   eventType?: string,
   eventCount?: number
-): Promise<Array<{ badge: Badge; isNew: boolean }>> {
-  const awardedBadges: Array<{ badge: Badge; isNew: boolean }> = [];
+): Promise<{ badge: Badge; isNew: boolean }[]> {
+  const awardedBadges: { badge: Badge; isNew: boolean }[] = [];
 
   // Get all active badges that the learner doesn't have yet
   const allBadges = await prisma.badge.findMany({
@@ -64,15 +71,22 @@ export async function checkAndAwardBadges(
     // Skip if already earned
     if (earnedBadgeIds.has(badge.id)) continue;
 
-    const criteria = badge.criteriaJson as BadgeCriteria;
-    const earned = await evaluateCriteria(tenantId, learnerId, profile, criteria, eventType, eventCount);
+    const criteria = badge.criteriaJson as unknown as BadgeCriteria;
+    const earned = await evaluateCriteria(
+      tenantId,
+      learnerId,
+      profile,
+      criteria,
+      eventType,
+      eventCount
+    );
 
     if (earned) {
       const result = await badgeService.awardBadge({
         tenantId,
         learnerId,
         badgeCode: badge.code,
-        source: 'SYSTEM',
+        source: BadgeSource.SYSTEM,
       });
 
       if (result) {
@@ -153,20 +167,14 @@ export async function getBadgeProgress(
   tenantId: string,
   learnerId: string,
   profile: EngagementProfile
-): Promise<Array<{ badge: Badge; progress: number; target: number; earned: boolean }>> {
+): Promise<{ badge: Badge; progress: number; target: number; earned: boolean }[]> {
   const allBadges = await prisma.badge.findMany({
     where: {
       isActive: true,
       isSecret: false, // Don't show secret badges
-      OR: [
-        { tenantId: null },
-        { tenantId },
-      ],
+      OR: [{ tenantId: null }, { tenantId }],
     },
-    orderBy: [
-      { category: 'asc' },
-      { sortOrder: 'asc' },
-    ],
+    orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }],
   });
 
   const existingBadges = await prisma.learnerBadge.findMany({
@@ -175,11 +183,11 @@ export async function getBadgeProgress(
   });
   const earnedBadgeIds = new Set(existingBadges.map((b) => b.badgeId));
 
-  const progressList: Array<{ badge: Badge; progress: number; target: number; earned: boolean }> = [];
+  const progressList: { badge: Badge; progress: number; target: number; earned: boolean }[] = [];
 
   for (const badge of allBadges) {
     const earned = earnedBadgeIds.has(badge.id);
-    const criteria = badge.criteriaJson as BadgeCriteria;
+    const criteria = badge.criteriaJson as unknown as BadgeCriteria;
     const { progress, target } = await calculateProgress(tenantId, learnerId, profile, criteria);
 
     progressList.push({
@@ -246,7 +254,7 @@ export async function getNextBadges(
   learnerId: string,
   profile: EngagementProfile,
   limit = 3
-): Promise<Array<{ badge: Badge; progress: number; target: number }>> {
+): Promise<{ badge: Badge; progress: number; target: number }[]> {
   const allProgress = await getBadgeProgress(tenantId, learnerId, profile);
 
   // Filter to unearned badges and sort by progress percentage

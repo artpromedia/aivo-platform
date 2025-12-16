@@ -3,6 +3,8 @@
  *
  * Endpoints for safety reviews, tenant policies, domain allowlists,
  * and safety transparency.
+ *
+ * @module safety.routes
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -10,6 +12,17 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import { createSafetyValidationService } from '../services/safety-validation.service.js';
+
+// Augment Fastify request with user property
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: {
+      id: string;
+      role: string;
+      tenantId?: string;
+    };
+  }
+}
 
 const safetyService = createSafetyValidationService();
 
@@ -19,10 +32,6 @@ const safetyService = createSafetyValidationService();
 
 const VersionIdSchema = z.object({
   versionId: z.string().uuid(),
-});
-
-const ReviewIdSchema = z.object({
-  reviewId: z.string().uuid(),
 });
 
 const TenantIdSchema = z.object({
@@ -45,7 +54,6 @@ const SafetyReviewSubmissionSchema = z.object({
   safetyRatingAssigned: z.enum(['PENDING', 'APPROVED_K12', 'RESTRICTED', 'REJECTED']),
   dataAccessProfileAssigned: z.enum(['MINIMAL', 'MODERATE', 'HIGH']),
   reviewNotes: z.string().max(5000).optional(),
-  internalNotes: z.string().max(5000).optional(),
 });
 
 const EscalateReviewSchema = z.object({
@@ -54,7 +62,9 @@ const EscalateReviewSchema = z.object({
 });
 
 const TenantPolicyUpdateSchema = z.object({
-  allowedSafetyRatings: z.array(z.enum(['PENDING', 'APPROVED_K12', 'RESTRICTED', 'REJECTED'])).optional(),
+  allowedSafetyRatings: z
+    .array(z.enum(['PENDING', 'APPROVED_K12', 'RESTRICTED', 'REJECTED']))
+    .optional(),
   allowedDataAccessProfiles: z.array(z.enum(['MINIMAL', 'MODERATE', 'HIGH'])).optional(),
   blockedVendorIds: z.array(z.string().uuid()).optional(),
   blockedItemIds: z.array(z.string().uuid()).optional(),
@@ -79,7 +89,7 @@ const ToolLaunchSchema = z.object({
 
 /**
  * GET /safety/review-queue
- * List versions pending safety review
+ * List versions pending safety review (those with PENDING safetyRating)
  */
 async function getSafetyReviewQueue(
   request: FastifyRequest<{
@@ -91,57 +101,53 @@ async function getSafetyReviewQueue(
   }>,
   _reply: FastifyReply
 ) {
-  const { status, limit = '50', offset = '0' } = request.query;
+  const { status = 'PENDING', limit = '50', offset = '0' } = request.query;
 
-  const whereClause: Record<string, unknown> = {};
-  if (status) {
-    whereClause.status = status;
-  }
-
-  // Get versions needing safety review (PENDING rating or active reviews)
-  const pendingReviews = await prisma.safetyReview.findMany({
-    where: whereClause,
+  // Query versions that need safety review based on safetyRating
+  const pendingVersions = await prisma.marketplaceItemVersion.findMany({
+    where: {
+      safetyRating: status as 'PENDING' | 'APPROVED_K12' | 'RESTRICTED' | 'REJECTED',
+    },
     include: {
-      marketplaceItemVersion: {
-        include: {
-          marketplaceItem: {
+      marketplaceItem: {
+        select: {
+          slug: true,
+          title: true,
+          itemType: true,
+          vendor: {
             select: {
+              name: true,
               slug: true,
-              title: true,
-              itemType: true,
-              vendor: {
-                select: {
-                  name: true,
-                  slug: true,
-                },
-              },
             },
           },
-          embeddedToolConfig: true,
         },
       },
+      embeddedToolConfig: true,
     },
     orderBy: { createdAt: 'asc' },
     take: parseInt(limit, 10),
     skip: parseInt(offset, 10),
   });
 
-  const total = await prisma.safetyReview.count({ where: whereClause });
+  const total = await prisma.marketplaceItemVersion.count({
+    where: {
+      safetyRating: status as 'PENDING' | 'APPROVED_K12' | 'RESTRICTED' | 'REJECTED',
+    },
+  });
 
   return {
-    data: pendingReviews.map((r) => ({
-      reviewId: r.id,
-      status: r.status,
-      reviewType: r.reviewType,
-      createdAt: r.createdAt,
+    data: pendingVersions.map((v) => ({
+      versionId: v.id,
+      status: v.safetyRating,
+      createdAt: v.createdAt,
       version: {
-        id: r.marketplaceItemVersion.id,
-        version: r.marketplaceItemVersion.version,
-        safetyRating: r.marketplaceItemVersion.safetyRating,
-        dataAccessProfile: r.marketplaceItemVersion.dataAccessProfile,
+        id: v.id,
+        version: v.version,
+        safetyRating: v.safetyRating,
+        dataAccessProfile: v.dataAccessProfile,
       },
-      item: r.marketplaceItemVersion.marketplaceItem,
-      hasEmbeddedTool: !!r.marketplaceItemVersion.embeddedToolConfig,
+      item: v.marketplaceItem,
+      hasEmbeddedTool: !!v.embeddedToolConfig,
     })),
     pagination: {
       total,
@@ -168,14 +174,15 @@ async function getVersionForSafetyReview(
         include: {
           vendor: {
             include: {
-              domainAllowlist: true,
+              allowedDomains: true,
             },
           },
         },
       },
       embeddedToolConfig: true,
-      safetyReviews: {
-        orderBy: { createdAt: 'desc' },
+      safetyReviewLogs: {
+        orderBy: { performedAt: 'desc' },
+        take: 20,
       },
     },
   });
@@ -209,9 +216,9 @@ async function getVersionForSafetyReview(
       id: version.marketplaceItem.vendor.id,
       name: version.marketplaceItem.vendor.name,
       type: version.marketplaceItem.vendor.type,
-      allowedDomains: version.marketplaceItem.vendor.domainAllowlist
-        .filter((d) => d.isActive)
-        .map((d) => d.domain),
+      allowedDomains: version.marketplaceItem.vendor.allowedDomains
+        .filter((d: { isActive: boolean }) => d.isActive)
+        .map((d: { domainPattern: string }) => d.domainPattern),
     },
     embeddedToolConfig: version.embeddedToolConfig
       ? {
@@ -222,13 +229,13 @@ async function getVersionForSafetyReview(
         }
       : null,
     automatedChecks,
-    previousReviews: version.safetyReviews,
+    previousReviews: version.safetyReviewLogs,
   };
 }
 
 /**
  * POST /safety/review-queue/:versionId/start
- * Start a safety review for a version
+ * Start a safety review for a version (logs the action)
  */
 async function startSafetyReview(
   request: FastifyRequest<{
@@ -238,7 +245,6 @@ async function startSafetyReview(
   reply: FastifyReply
 ) {
   const { versionId } = VersionIdSchema.parse(request.params);
-  const { reviewType = 'INITIAL' } = request.body || {};
   const userId = request.user?.id ?? 'system';
 
   // Check version exists
@@ -250,99 +256,65 @@ async function startSafetyReview(
     return reply.status(404).send({ error: 'Version not found' });
   }
 
-  // Check for existing in-progress review
-  const existingReview = await prisma.safetyReview.findFirst({
-    where: {
-      marketplaceItemVersionId: versionId,
-      status: { in: ['PENDING', 'IN_PROGRESS'] },
-    },
-  });
-
-  if (existingReview) {
-    return reply.status(409).send({
-      error: 'Active safety review already exists',
-      reviewId: existingReview.id,
-    });
-  }
-
   // Run automated checks
   const automatedChecks = await safetyService.runAutomatedChecks(versionId);
 
-  // Create safety review
-  const review = await prisma.safetyReview.create({
+  // Log the review start action
+  await prisma.safetyReviewLog.create({
     data: {
       marketplaceItemVersionId: versionId,
-      reviewerUserId: userId,
-      reviewType: reviewType as 'INITIAL' | 'VERSION_UPDATE' | 'INCIDENT_RESPONSE' | 'PERIODIC_RECHECK' | 'COMPLAINT',
-      status: 'IN_PROGRESS',
-      automatedChecksJson: automatedChecks as unknown as Record<string, unknown>,
+      action: 'STARTED',
+      performedByUserId: userId,
+      metadataJson: automatedChecks as object,
+    },
+  });
+
+  // Update version with automated check results
+  await prisma.marketplaceItemVersion.update({
+    where: { id: versionId },
+    data: {
+      automatedChecksJson: automatedChecks as object,
     },
   });
 
   return {
-    reviewId: review.id,
-    status: review.status,
+    versionId,
+    status: 'IN_PROGRESS',
     automatedChecks,
   };
 }
 
 /**
- * POST /safety/reviews/:reviewId/submit
+ * POST /safety/reviews/:versionId/submit
  * Submit safety review decision
  */
 async function submitSafetyReview(
   request: FastifyRequest<{
-    Params: z.infer<typeof ReviewIdSchema>;
+    Params: z.infer<typeof VersionIdSchema>;
     Body: z.infer<typeof SafetyReviewSubmissionSchema>;
   }>,
   reply: FastifyReply
 ) {
-  const { reviewId } = ReviewIdSchema.parse(request.params);
+  const { versionId } = VersionIdSchema.parse(request.params);
   const body = SafetyReviewSubmissionSchema.parse(request.body);
   const userId = request.user?.id ?? 'system';
 
-  const review = await prisma.safetyReview.findUnique({
-    where: { id: reviewId },
-    include: {
-      marketplaceItemVersion: true,
-    },
+  const version = await prisma.marketplaceItemVersion.findUnique({
+    where: { id: versionId },
   });
 
-  if (!review) {
-    return reply.status(404).send({ error: 'Review not found' });
+  if (!version) {
+    return reply.status(404).send({ error: 'Version not found' });
   }
 
-  if (review.status === 'APPROVED' || review.status === 'REJECTED') {
-    return reply.status(409).send({ error: 'Review already completed' });
-  }
+  const previousRating = version.safetyRating;
+  const action = body.safetyRatingAssigned === 'REJECTED' ? 'REJECTED' : 'APPROVED';
 
-  // Determine review status based on safety rating
-  const reviewStatus = body.safetyRatingAssigned === 'REJECTED'
-    ? 'REJECTED'
-    : 'APPROVED';
-
-  // Update review and version in transaction
+  // Update version with safety fields and log the action in transaction
   await prisma.$transaction(async (tx) => {
-    // Update review
-    await tx.safetyReview.update({
-      where: { id: reviewId },
-      data: {
-        status: reviewStatus,
-        dataCategoriesAccessed: body.dataCategoriesAccessed,
-        dataUsagePurposes: body.dataUsagePurposes,
-        policyTagsAssigned: body.policyTagsAssigned,
-        diagnosticUseConfirmed: body.diagnosticUseConfirmed,
-        safetyRatingAssigned: body.safetyRatingAssigned,
-        dataAccessProfileAssigned: body.dataAccessProfileAssigned,
-        reviewNotes: body.reviewNotes ?? null,
-        internalNotes: body.internalNotes ?? null,
-        completedAt: new Date(),
-      },
-    });
-
     // Update version with safety fields
     await tx.marketplaceItemVersion.update({
-      where: { id: review.marketplaceItemVersionId },
+      where: { id: versionId },
       data: {
         safetyRating: body.safetyRatingAssigned,
         dataAccessProfile: body.dataAccessProfileAssigned,
@@ -351,54 +323,76 @@ async function submitSafetyReview(
         dataCategoriesAccessed: body.dataCategoriesAccessed,
         safetyReviewedByUserId: userId,
         safetyReviewedAt: new Date(),
-        automatedChecksPassed: true, // Assuming passed if manual review approved
+        automatedChecksPassed: true,
+      },
+    });
+
+    // Create audit log entry
+    await tx.safetyReviewLog.create({
+      data: {
+        marketplaceItemVersionId: versionId,
+        action: action,
+        performedByUserId: userId,
+        previousRating,
+        newRating: body.safetyRatingAssigned,
+        notes: body.reviewNotes ?? null,
+        metadataJson: {
+          dataCategoriesAccessed: body.dataCategoriesAccessed,
+          dataUsagePurposes: body.dataUsagePurposes,
+          policyTagsAssigned: body.policyTagsAssigned,
+          diagnosticUseConfirmed: body.diagnosticUseConfirmed,
+          dataAccessProfileAssigned: body.dataAccessProfileAssigned,
+        },
       },
     });
   });
 
   return {
-    reviewId,
-    status: reviewStatus,
-    versionId: review.marketplaceItemVersionId,
+    versionId,
+    status: action,
     safetyRating: body.safetyRatingAssigned,
     dataAccessProfile: body.dataAccessProfileAssigned,
   };
 }
 
 /**
- * POST /safety/reviews/:reviewId/escalate
+ * POST /safety/reviews/:versionId/escalate
  * Escalate a safety review
  */
 async function escalateSafetyReview(
   request: FastifyRequest<{
-    Params: z.infer<typeof ReviewIdSchema>;
+    Params: z.infer<typeof VersionIdSchema>;
     Body: z.infer<typeof EscalateReviewSchema>;
   }>,
   reply: FastifyReply
 ) {
-  const { reviewId } = ReviewIdSchema.parse(request.params);
+  const { versionId } = VersionIdSchema.parse(request.params);
   const { escalateToUserId, reason } = EscalateReviewSchema.parse(request.body);
+  const userId = request.user?.id ?? 'system';
 
-  const review = await prisma.safetyReview.findUnique({
-    where: { id: reviewId },
+  const version = await prisma.marketplaceItemVersion.findUnique({
+    where: { id: versionId },
   });
 
-  if (!review) {
-    return reply.status(404).send({ error: 'Review not found' });
+  if (!version) {
+    return reply.status(404).send({ error: 'Version not found' });
   }
 
-  await prisma.safetyReview.update({
-    where: { id: reviewId },
+  // Log the escalation
+  await prisma.safetyReviewLog.create({
     data: {
-      status: 'ESCALATED',
-      escalatedToUserId,
-      internalNotes: review.internalNotes
-        ? `${review.internalNotes}\n\n[ESCALATED] ${reason}`
-        : `[ESCALATED] ${reason}`,
+      marketplaceItemVersionId: versionId,
+      action: 'ESCALATED',
+      performedByUserId: userId,
+      notes: reason,
+      metadataJson: {
+        escalatedTo: escalateToUserId,
+        reason,
+      },
     },
   });
 
-  return { reviewId, status: 'ESCALATED', escalatedTo: escalateToUserId };
+  return { versionId, status: 'ESCALATED', escalatedTo: escalateToUserId };
 }
 
 // ============================================================================
@@ -411,7 +405,7 @@ async function escalateSafetyReview(
  */
 async function getTenantPolicy(
   request: FastifyRequest<{ Params: z.infer<typeof TenantIdSchema> }>,
-  reply: FastifyReply
+  _reply: FastifyReply
 ) {
   const { tenantId } = TenantIdSchema.parse(request.params);
 
@@ -447,7 +441,7 @@ async function updateTenantPolicy(
     Params: z.infer<typeof TenantIdSchema>;
     Body: z.infer<typeof TenantPolicyUpdateSchema>;
   }>,
-  reply: FastifyReply
+  _reply: FastifyReply
 ) {
   const { tenantId } = TenantIdSchema.parse(request.params);
   const body = TenantPolicyUpdateSchema.parse(request.body);
@@ -459,17 +453,24 @@ async function updateTenantPolicy(
       tenantId,
       allowedSafetyRatings: body.allowedSafetyRatings ?? ['APPROVED_K12'],
       allowedDataAccessProfiles: body.allowedDataAccessProfiles ?? ['MINIMAL', 'MODERATE'],
-      blockedVendorIds: body.blockedVendorIds ?? [],
+      blockedVendors: body.blockedVendorIds ?? [],
       blockedItemIds: body.blockedItemIds ?? [],
       blockedPolicyTags: body.blockedPolicyTags ?? [],
-      requireSafetyReview: body.requireSafetyReview ?? false,
-      allowGracePeriodDays: body.allowGracePeriodDays ?? 0,
-      customRulesJson: body.customRulesJson ?? null,
+      requireInstallApproval: body.requireSafetyReview ?? false,
       createdByUserId: userId,
       updatedByUserId: userId,
     },
     update: {
-      ...body,
+      ...(body.allowedSafetyRatings && { allowedSafetyRatings: body.allowedSafetyRatings }),
+      ...(body.allowedDataAccessProfiles && {
+        allowedDataAccessProfiles: body.allowedDataAccessProfiles,
+      }),
+      ...(body.blockedVendorIds && { blockedVendors: body.blockedVendorIds }),
+      ...(body.blockedItemIds && { blockedItemIds: body.blockedItemIds }),
+      ...(body.blockedPolicyTags && { blockedPolicyTags: body.blockedPolicyTags }),
+      ...(body.requireSafetyReview !== undefined && {
+        requireInstallApproval: body.requireSafetyReview,
+      }),
       updatedByUserId: userId,
     },
   });
@@ -487,11 +488,11 @@ async function updateTenantPolicy(
  */
 async function getVendorDomains(
   request: FastifyRequest<{ Params: z.infer<typeof VendorIdSchema> }>,
-  reply: FastifyReply
+  _reply: FastifyReply
 ) {
   const { vendorId } = VendorIdSchema.parse(request.params);
 
-  const domains = await prisma.vendorDomainAllowlist.findMany({
+  const domains = await prisma.embeddedToolDomainAllowlist.findMany({
     where: { vendorId },
     orderBy: { createdAt: 'desc' },
   });
@@ -512,7 +513,6 @@ async function addVendorDomain(
 ) {
   const { vendorId } = VendorIdSchema.parse(request.params);
   const { domain, notes } = DomainAllowlistSchema.parse(request.body);
-  const userId = request.user?.id ?? 'system';
 
   // Check vendor exists
   const vendor = await prisma.vendor.findUnique({
@@ -524,8 +524,8 @@ async function addVendorDomain(
   }
 
   // Check domain not already in list
-  const existing = await prisma.vendorDomainAllowlist.findFirst({
-    where: { vendorId, domain },
+  const existing = await prisma.embeddedToolDomainAllowlist.findFirst({
+    where: { vendorId, domainPattern: domain },
   });
 
   if (existing) {
@@ -535,12 +535,12 @@ async function addVendorDomain(
     });
   }
 
-  const entry = await prisma.vendorDomainAllowlist.create({
+  const entry = await prisma.embeddedToolDomainAllowlist.create({
     data: {
       vendorId,
-      domain,
-      isActive: false, // Requires verification
-      notes,
+      domainPattern: domain,
+      isActive: false, // Requires approval
+      notes: notes ?? null,
     },
   });
 
@@ -560,20 +560,20 @@ async function verifyVendorDomain(
   const { vendorId, domain } = request.params;
   const userId = request.user?.id ?? 'system';
 
-  const entry = await prisma.vendorDomainAllowlist.findFirst({
-    where: { vendorId, domain },
+  const entry = await prisma.embeddedToolDomainAllowlist.findFirst({
+    where: { vendorId, domainPattern: domain },
   });
 
   if (!entry) {
     return reply.status(404).send({ error: 'Domain not found in allowlist' });
   }
 
-  const updated = await prisma.vendorDomainAllowlist.update({
+  const updated = await prisma.embeddedToolDomainAllowlist.update({
     where: { id: entry.id },
     data: {
       isActive: true,
-      verifiedAt: new Date(),
-      verifiedByUserId: userId,
+      approvedAt: new Date(),
+      approvedByUserId: userId,
     },
   });
 
@@ -592,15 +592,15 @@ async function removeVendorDomain(
 ) {
   const { vendorId, domain } = request.params;
 
-  const entry = await prisma.vendorDomainAllowlist.findFirst({
-    where: { vendorId, domain },
+  const entry = await prisma.embeddedToolDomainAllowlist.findFirst({
+    where: { vendorId, domainPattern: domain },
   });
 
   if (!entry) {
     return reply.status(404).send({ error: 'Domain not found in allowlist' });
   }
 
-  await prisma.vendorDomainAllowlist.delete({
+  await prisma.embeddedToolDomainAllowlist.delete({
     where: { id: entry.id },
   });
 
@@ -643,19 +643,14 @@ async function validateToolLaunch(
     Params: z.infer<typeof InstallationIdSchema>;
     Body: z.infer<typeof ToolLaunchSchema>;
   }>,
-  reply: FastifyReply
+  _reply: FastifyReply
 ) {
   const { installationId } = InstallationIdSchema.parse(request.params);
   const { context } = ToolLaunchSchema.parse(request.body);
   const userId = request.user?.id ?? 'system';
   const userRole = request.user?.role ?? 'unknown';
 
-  const result = await safetyService.validateToolLaunch(
-    installationId,
-    userId,
-    userRole,
-    context
-  );
+  const result = await safetyService.validateToolLaunch(installationId, userId, userRole, context);
 
   return result;
 }
@@ -701,6 +696,8 @@ async function launchTool(
   }
 
   // Log the launch
+  const userAgent = request.headers['user-agent'];
+  const sessionId = request.headers['x-session-id'];
   await safetyService.logToolLaunch({
     installationId,
     versionId: installation.marketplaceItemVersionId,
@@ -712,8 +709,8 @@ async function launchTool(
     context,
     checks: validation.checks,
     ipAddress: request.ip,
-    userAgent: request.headers['user-agent'] as string | undefined,
-    sessionId: request.headers['x-session-id'] as string | undefined,
+    ...(typeof userAgent === 'string' && { userAgent }),
+    ...(typeof sessionId === 'string' && { sessionId }),
   });
 
   return {
@@ -739,15 +736,11 @@ async function validateInstall(
       versionId?: string;
     };
   }>,
-  reply: FastifyReply
+  _reply: FastifyReply
 ) {
   const { tenantId, itemId, versionId } = request.body;
 
-  const result = await safetyService.validateInstallation(
-    tenantId,
-    itemId,
-    versionId
-  );
+  const result = await safetyService.validateInstallation(tenantId, itemId, versionId);
 
   return result;
 }
@@ -757,12 +750,12 @@ async function validateInstall(
 // ============================================================================
 
 export async function safetyRoutes(fastify: FastifyInstance): Promise<void> {
-  // Safety Review Queue
+  // Safety Review Queue (now using versionId in URLs)
   fastify.get('/safety/review-queue', getSafetyReviewQueue);
   fastify.get('/safety/review-queue/:versionId', getVersionForSafetyReview);
   fastify.post('/safety/review-queue/:versionId/start', startSafetyReview);
-  fastify.post('/safety/reviews/:reviewId/submit', submitSafetyReview);
-  fastify.post('/safety/reviews/:reviewId/escalate', escalateSafetyReview);
+  fastify.post('/safety/reviews/:versionId/submit', submitSafetyReview);
+  fastify.post('/safety/reviews/:versionId/escalate', escalateSafetyReview);
 
   // Tenant Policies
   fastify.get('/safety/policies/:tenantId', getTenantPolicy);

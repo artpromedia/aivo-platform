@@ -7,20 +7,24 @@ import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
-import { engagementRoutes } from './routes/engagement.js';
 import { badgeRoutes } from './routes/badges.js';
+import { engagementRoutes } from './routes/engagement.js';
 import { kudosRoutes } from './routes/kudos.js';
 import { settingsRoutes } from './routes/settings.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
+  const loggerOptions =
+    config.nodeEnv === 'production'
+      ? {
+          level: 'info' as const,
+        }
+      : {
+          level: 'debug' as const,
+          transport: { target: 'pino-pretty', options: { colorize: true } },
+        };
+
   const app = Fastify({
-    logger: {
-      level: config.nodeEnv === 'production' ? 'info' : 'debug',
-      transport:
-        config.nodeEnv === 'production'
-          ? undefined
-          : { target: 'pino-pretty', options: { colorize: true } },
-    },
+    logger: loggerOptions,
   });
 
   // Health check (unauthenticated)
@@ -32,6 +36,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // JWT auth for all other routes
+
   await app.register(authMiddleware);
 
   // Register routes

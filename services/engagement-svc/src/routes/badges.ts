@@ -4,11 +4,12 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { BadgeCategory } from '../prisma.js';
-import * as badgeService from '../services/badgeService.js';
-import * as badgeAwardEngine from '../services/badgeAwardEngine.js';
-import * as engagementService from '../services/engagementService.js';
+
 import * as publisher from '../events/publisher.js';
+import { BadgeCategory } from '../prisma.js';
+import * as badgeAwardEngine from '../services/badgeAwardEngine.js';
+import * as badgeService from '../services/badgeService.js';
+import * as engagementService from '../services/engagementService.js';
 
 // Schemas
 const learnerIdParamSchema = z.object({
@@ -221,7 +222,9 @@ export async function badgeRoutes(app: FastifyInstance): Promise<void> {
       const { tenantId, note } = grantBadgeBodySchema.parse(request.body);
 
       // Authorization
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -237,14 +240,15 @@ export async function badgeRoutes(app: FastifyInstance): Promise<void> {
       }
 
       // Determine source based on role
-      const source = user.role === 'parent' ? 'PARENT' : user.role === 'teacher' ? 'TEACHER' : 'SYSTEM';
+      const source =
+        user.role === 'parent' ? 'PARENT' : user.role === 'teacher' ? 'TEACHER' : 'SYSTEM';
 
       const result = await badgeService.awardBadge({
         tenantId,
         learnerId,
         badgeCode,
         source,
-        note,
+        note: note ?? undefined,
       });
 
       if (!result) {

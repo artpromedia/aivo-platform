@@ -4,9 +4,10 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { KudosContext, KudosSource } from '../prisma.js';
-import * as kudosService from '../services/kudosService.js';
+
 import * as publisher from '../events/publisher.js';
+import { KudosContext, KudosSenderRole } from '../prisma.js';
+import * as kudosService from '../services/kudosService.js';
 
 // Schemas
 const learnerIdParamSchema = z.object({
@@ -15,6 +16,7 @@ const learnerIdParamSchema = z.object({
 
 const createKudosSchema = z.object({
   tenantId: z.string().uuid(),
+  fromName: z.string().min(1).max(100).optional(),
   message: z.string().min(1).max(500),
   context: z.nativeEnum(KudosContext).default(KudosContext.GENERAL),
   linkedSessionId: z.string().uuid().optional(),
@@ -45,7 +47,9 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
       const body = createKudosSchema.parse(request.body);
 
       // Authorization
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -55,19 +59,26 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
       }
 
       // Only parent, teacher, therapist, or admin can send kudos
-      const allowedRoles = ['parent', 'teacher', 'therapist', 'tenant_admin', 'platform_admin', 'service'];
+      const allowedRoles = [
+        'parent',
+        'teacher',
+        'therapist',
+        'tenant_admin',
+        'platform_admin',
+        'service',
+      ];
       if (!allowedRoles.includes(user.role)) {
         return reply.status(403).send({ error: 'Forbidden - insufficient role' });
       }
 
-      // Map role to KudosSource
-      const roleToSource: Record<string, KudosSource> = {
-        parent: KudosSource.PARENT,
-        teacher: KudosSource.TEACHER,
-        therapist: KudosSource.THERAPIST,
-        tenant_admin: KudosSource.ADMIN,
-        platform_admin: KudosSource.ADMIN,
-        service: KudosSource.SYSTEM,
+      // Map role to KudosSenderRole
+      const roleToSource: Record<string, KudosSenderRole> = {
+        parent: KudosSenderRole.PARENT,
+        teacher: KudosSenderRole.TEACHER,
+        therapist: KudosSenderRole.THERAPIST,
+        tenant_admin: KudosSenderRole.ADMIN,
+        platform_admin: KudosSenderRole.ADMIN,
+        service: KudosSenderRole.SYSTEM,
       };
 
       try {
@@ -75,7 +86,8 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
           tenantId: body.tenantId,
           learnerId,
           fromUserId: user.sub,
-          fromRole: roleToSource[user.role] ?? KudosSource.PARENT,
+          fromName: body.fromName ?? user.role,
+          fromRole: roleToSource[user.role] ?? KudosSenderRole.PARENT,
           message: body.message,
           context: body.context,
           linkedSessionId: body.linkedSessionId,
@@ -113,7 +125,9 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
       const { tenantId, limit } = listKudosQuerySchema.parse(request.query);
 
       // Authorization
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -146,7 +160,9 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
       const { tenantId, limit } = listKudosQuerySchema.parse(request.query);
 
       // Authorization - must be parent, teacher, or admin
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -155,7 +171,14 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(403).send({ error: 'Forbidden' });
       }
 
-      const allowedRoles = ['parent', 'teacher', 'therapist', 'tenant_admin', 'platform_admin', 'service'];
+      const allowedRoles = [
+        'parent',
+        'teacher',
+        'therapist',
+        'tenant_admin',
+        'platform_admin',
+        'service',
+      ];
       if (!allowedRoles.includes(user.role)) {
         return reply.status(403).send({ error: 'Forbidden - insufficient role' });
       }
@@ -172,10 +195,7 @@ export async function kudosRoutes(app: FastifyInstance): Promise<void> {
    */
   app.delete(
     '/kudos/:kudosId',
-    async (
-      request: FastifyRequest<{ Params: { kudosId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { kudosId: string } }>, reply: FastifyReply) => {
       const { kudosId } = request.params;
 
       const user = (request as FastifyRequest & { user?: { sub: string; role: string } }).user;

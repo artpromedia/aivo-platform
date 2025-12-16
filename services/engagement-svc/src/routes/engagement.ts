@@ -4,6 +4,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+
 import { EngagementEventType } from '../prisma.js';
 import * as engagementService from '../services/engagementService.js';
 
@@ -14,7 +15,8 @@ const applyEventSchema = z.object({
   eventType: z.nativeEnum(EngagementEventType),
   sessionId: z.string().uuid().optional(),
   taskId: z.string().uuid().optional(),
-  actionPlanId: z.string().uuid().optional(),
+  activityId: z.string().uuid().optional(),
+  badgeId: z.string().uuid().optional(),
   metadata: z.record(z.unknown()).optional(),
   customXp: z.number().int().min(0).max(100).optional(),
 });
@@ -44,24 +46,25 @@ export async function engagementRoutes(app: FastifyInstance): Promise<void> {
       reply: FastifyReply
     ) => {
       const body = applyEventSchema.parse(request.body);
-      
+
       const result = await engagementService.applyEvent({
         tenantId: body.tenantId,
         learnerId: body.learnerId,
         eventType: body.eventType,
-        sessionId: body.sessionId,
-        taskId: body.taskId,
-        actionPlanId: body.actionPlanId,
-        metadata: body.metadata,
-        customXp: body.customXp,
+        sessionId: body.sessionId ?? undefined,
+        taskId: body.taskId ?? undefined,
+        activityId: body.activityId ?? undefined,
+        badgeId: body.badgeId ?? undefined,
+        metadata: body.metadata as engagementService.ApplyEventInput['metadata'],
+        customXp: body.customXp ?? undefined,
       });
-      
+
       return reply.status(200).send({
         event: result.event,
         profile: {
           level: result.profile.level,
           xpTotal: result.profile.xpTotal,
-          streakDays: result.profile.sessionsCompletedStreakDays,
+          streakDays: result.profile.currentStreakDays,
         },
         xpAwarded: result.xpAwarded,
         leveledUp: result.leveledUp,
@@ -87,20 +90,22 @@ export async function engagementRoutes(app: FastifyInstance): Promise<void> {
     ) => {
       const { learnerId } = getEngagementParamsSchema.parse(request.params);
       const { tenantId } = getEngagementQuerySchema.parse(request.query);
-      
+
       // Authorization check - user must be the learner, parent, teacher, or admin
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
-      
+
       // Tenant check
       if (user.tenantId !== tenantId && user.role !== 'service') {
         return reply.status(403).send({ error: 'Forbidden' });
       }
-      
+
       const engagement = await engagementService.getEngagement(tenantId, learnerId);
-      
+
       return reply.status(200).send(engagement);
     }
   );
@@ -120,18 +125,20 @@ export async function engagementRoutes(app: FastifyInstance): Promise<void> {
     ) => {
       const { learnerId } = getEngagementParamsSchema.parse(request.params);
       const { tenantId, limit } = getEventsQuerySchema.parse(request.query);
-      
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
-      
+
       if (user.tenantId !== tenantId && user.role !== 'service') {
         return reply.status(403).send({ error: 'Forbidden' });
       }
-      
+
       const events = await engagementService.getRecentEvents(tenantId, learnerId, limit);
-      
+
       return reply.status(200).send({ events });
     }
   );
@@ -148,13 +155,13 @@ export async function engagementRoutes(app: FastifyInstance): Promise<void> {
     ) => {
       const tenantId = request.query.tenantId;
       const limit = request.query.limit ? Number.parseInt(request.query.limit, 10) : 10;
-      
+
       if (!tenantId) {
         return reply.status(400).send({ error: 'tenantId is required' });
       }
-      
+
       const leaderboard = await engagementService.getWeeklyLeaderboard(tenantId, limit);
-      
+
       // Empty if comparisons not enabled
       return reply.status(200).send({ leaderboard });
     }

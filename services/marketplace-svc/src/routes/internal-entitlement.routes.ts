@@ -238,14 +238,16 @@ async function checkEntitlement(
 
   // Single LO check
   if (data.loId) {
-    const result = await entitlementService.checkEntitlement(buildCheckRequest({
-      tenantId: data.tenantId,
-      loId: data.loId,
-      learnerId: data.learnerId,
-      schoolId: data.schoolId,
-      classroomId: data.classroomId,
-      gradeBand: data.gradeBand,
-    }));
+    const result = await entitlementService.checkEntitlement(
+      buildCheckRequest({
+        tenantId: data.tenantId,
+        loId: data.loId,
+        learnerId: data.learnerId,
+        schoolId: data.schoolId,
+        classroomId: data.classroomId,
+        gradeBand: data.gradeBand,
+      })
+    );
 
     return {
       isAllowed: result.entitled,
@@ -258,14 +260,16 @@ async function checkEntitlement(
 
   // Batch LO check (if loIds provided)
   if (data.loIds?.length) {
-    const result = await entitlementService.batchCheckEntitlements(buildBatchCheckRequest({
-      tenantId: data.tenantId,
-      loIds: data.loIds,
-      learnerId: data.learnerId,
-      schoolId: data.schoolId,
-      classroomId: data.classroomId,
-      gradeBand: data.gradeBand,
-    }));
+    const result = await entitlementService.batchCheckEntitlements(
+      buildBatchCheckRequest({
+        tenantId: data.tenantId,
+        loIds: data.loIds,
+        learnerId: data.learnerId,
+        schoolId: data.schoolId,
+        classroomId: data.classroomId,
+        gradeBand: data.gradeBand,
+      })
+    );
 
     // Transform to simpler response format
     const entitledLoIds: string[] = [];
@@ -290,14 +294,16 @@ async function checkEntitlement(
 
   // Marketplace item check (not tied to specific LO)
   if (data.marketplaceItemId) {
-    const result = await entitlementService.checkMarketplaceItemEntitlement(buildMarketplaceItemCheckRequest({
-      tenantId: data.tenantId,
-      marketplaceItemId: data.marketplaceItemId,
-      learnerId: data.learnerId,
-      schoolId: data.schoolId,
-      classroomId: data.classroomId,
-      gradeBand: data.gradeBand,
-    }));
+    const result = await entitlementService.checkMarketplaceItemEntitlement(
+      buildMarketplaceItemCheckRequest({
+        tenantId: data.tenantId,
+        marketplaceItemId: data.marketplaceItemId,
+        learnerId: data.learnerId,
+        schoolId: data.schoolId,
+        classroomId: data.classroomId,
+        gradeBand: data.gradeBand,
+      })
+    );
 
     return {
       isAllowed: result.entitled,
@@ -324,14 +330,16 @@ async function batchCheckEntitlements(
 ) {
   const data = BatchEntitlementCheckSchema.parse(request.body);
 
-  const result = await entitlementService.batchCheckEntitlements(buildBatchCheckRequest({
-    tenantId: data.tenantId,
-    loIds: data.loIds,
-    learnerId: data.learnerId,
-    schoolId: data.schoolId,
-    classroomId: data.classroomId,
-    gradeBand: data.gradeBand,
-  }));
+  const result = await entitlementService.batchCheckEntitlements(
+    buildBatchCheckRequest({
+      tenantId: data.tenantId,
+      loIds: data.loIds,
+      learnerId: data.learnerId,
+      schoolId: data.schoolId,
+      classroomId: data.classroomId,
+      gradeBand: data.gradeBand,
+    })
+  );
 
   // Transform to optimized response
   const entitled: string[] = [];
@@ -369,16 +377,18 @@ async function getEntitledContent(
 ) {
   const query = EntitledContentQuerySchema.parse(request.body);
 
-  const result = await entitlementService.getEntitledMarketplaceItems(buildEntitledItemsQuery({
-    tenantId: query.tenantId,
-    schoolId: query.schoolId,
-    classroomId: query.classroomId,
-    gradeBand: query.gradeBand,
-    subject: query.subject,
-    itemType: query.itemType,
-    limit: query.limit,
-    offset: query.offset,
-  }));
+  const result = await entitlementService.getEntitledMarketplaceItems(
+    buildEntitledItemsQuery({
+      tenantId: query.tenantId,
+      schoolId: query.schoolId,
+      classroomId: query.classroomId,
+      gradeBand: query.gradeBand,
+      subject: query.subject,
+      itemType: query.itemType,
+      limit: query.limit,
+      offset: query.offset,
+    })
+  );
 
   return {
     data: result.items.map((item) => ({
@@ -431,11 +441,14 @@ async function getEntitledLoIds(
   const data = EntitledLosQuerySchema.parse(request.body);
   const { tenantId, schoolId, gradeBand } = data;
 
-  const loIds = await entitlementService.getEntitledLoIds(tenantId, buildLoIdsQuery({
-    schoolId,
-    gradeBand,
-    activeOnly: true,
-  }));
+  const loIds = await entitlementService.getEntitledLoIds(
+    tenantId,
+    buildLoIdsQuery({
+      schoolId,
+      gradeBand,
+      activeOnly: true,
+    })
+  );
 
   return {
     loIds,
@@ -465,14 +478,16 @@ async function filterLosByEntitlement(
   } = data;
 
   // Get batch entitlement results
-  const result = await entitlementService.batchCheckEntitlements(buildBatchCheckRequest({
-    tenantId,
-    loIds,
-    learnerId,
-    schoolId,
-    classroomId,
-    gradeBand,
-  }));
+  const result = await entitlementService.batchCheckEntitlements(
+    buildBatchCheckRequest({
+      tenantId,
+      loIds,
+      learnerId,
+      schoolId,
+      classroomId,
+      gradeBand,
+    })
+  );
 
   // Filter to only entitled LOs
   const entitledLoIds: string[] = [];
@@ -520,7 +535,6 @@ export async function internalEntitlementRoutes(app: FastifyInstance) {
       schema: {
         description: 'Check entitlement for content access',
         tags: ['internal', 'entitlements'],
-        body: EntitlementCheckSchema,
       },
     },
     checkEntitlement
@@ -533,7 +547,6 @@ export async function internalEntitlementRoutes(app: FastifyInstance) {
       schema: {
         description: 'Batch check entitlements for multiple LOs',
         tags: ['internal', 'entitlements'],
-        body: BatchEntitlementCheckSchema,
       },
     },
     batchCheckEntitlements
@@ -546,7 +559,6 @@ export async function internalEntitlementRoutes(app: FastifyInstance) {
       schema: {
         description: 'Get entitled marketplace items for a tenant',
         tags: ['internal', 'entitlements'],
-        body: EntitledContentQuerySchema,
       },
     },
     getEntitledContent
@@ -559,7 +571,6 @@ export async function internalEntitlementRoutes(app: FastifyInstance) {
       schema: {
         description: 'Get all entitled LO IDs from partner content',
         tags: ['internal', 'entitlements'],
-        body: EntitledLosQuerySchema,
       },
     },
     getEntitledLoIds
@@ -572,7 +583,6 @@ export async function internalEntitlementRoutes(app: FastifyInstance) {
       schema: {
         description: 'Filter LO IDs by entitlement status',
         tags: ['internal', 'entitlements'],
-        body: FilterLosQuerySchema,
       },
     },
     filterLosByEntitlement

@@ -2,18 +2,19 @@
  * Kudos Service - Business logic for peer recognition / encouragement messages
  */
 
-import { prisma, KudosContext, KudosSource, type Kudos } from '../prisma.js';
+import { prisma, KudosContext, KudosSenderRole, type Kudos } from '../prisma.js';
 
 export interface SendKudosInput {
   tenantId: string;
   learnerId: string;
   fromUserId: string;
-  fromRole: KudosSource;
+  fromName: string;
+  fromRole: KudosSenderRole;
   message: string;
   context: KudosContext;
-  linkedSessionId?: string;
-  linkedActionPlanId?: string;
-  visibleToLearner?: boolean;
+  linkedSessionId?: string | undefined;
+  linkedActionPlanId?: string | undefined;
+  visibleToLearner?: boolean | undefined;
 }
 
 /**
@@ -21,28 +22,29 @@ export interface SendKudosInput {
  */
 export async function sendKudos(input: SendKudosInput): Promise<Kudos> {
   // Check if kudos is enabled for tenant
-  const settings = await prisma.tenantGamificationSettings.findUnique({
+  const settings = await prisma.gamificationSettings.findUnique({
     where: { tenantId: input.tenantId },
     select: { kudosEnabled: true },
   });
-  
+
   // Default to enabled if no settings exist
   const kudosEnabled = settings?.kudosEnabled ?? true;
-  
+
   if (!kudosEnabled) {
     throw new Error('Kudos is disabled for this tenant');
   }
-  
+
   return prisma.kudos.create({
     data: {
       tenantId: input.tenantId,
       learnerId: input.learnerId,
       fromUserId: input.fromUserId,
+      fromName: input.fromName,
       fromRole: input.fromRole,
       message: input.message,
       context: input.context,
-      linkedSessionId: input.linkedSessionId,
-      linkedActionPlanId: input.linkedActionPlanId,
+      linkedSessionId: input.linkedSessionId ?? null,
+      linkedActionPlanId: input.linkedActionPlanId ?? null,
       visibleToLearner: input.visibleToLearner ?? true,
     },
   });
@@ -100,10 +102,7 @@ export async function getKudosSentBy(
 /**
  * Get kudos count for a learner
  */
-export async function getKudosCount(
-  tenantId: string,
-  learnerId: string
-): Promise<number> {
+export async function getKudosCount(tenantId: string, learnerId: string): Promise<number> {
   return prisma.kudos.count({
     where: { tenantId, learnerId, visibleToLearner: true },
   });
@@ -112,10 +111,7 @@ export async function getKudosCount(
 /**
  * Get recent kudos for context (e.g., linked to a specific session)
  */
-export async function getKudosForSession(
-  tenantId: string,
-  sessionId: string
-): Promise<Kudos[]> {
+export async function getKudosForSession(tenantId: string, sessionId: string): Promise<Kudos[]> {
   return prisma.kudos.findMany({
     where: { tenantId, linkedSessionId: sessionId },
     orderBy: { createdAt: 'desc' },
@@ -146,18 +142,18 @@ export async function deleteKudos(
   const kudos = await prisma.kudos.findUnique({
     where: { id: kudosId },
   });
-  
+
   if (!kudos) return false;
-  
+
   // Only sender or admin can delete
   if (!isAdmin && kudos.fromUserId !== requestingUserId) {
     return false;
   }
-  
+
   await prisma.kudos.delete({
     where: { id: kudosId },
   });
-  
+
   return true;
 }
 
@@ -187,17 +183,20 @@ export async function generateSystemKudos(
       `"${value}" badge is yours! Well done! 🌈`,
     ],
   };
-  
-  const typeMessages = messages[achievementType] || messages.level;
-  const message = typeMessages[Math.floor(Math.random() * typeMessages.length)];
-  
+
+  const typeMessages = messages[achievementType] ?? messages.level ?? [];
+  const message =
+    typeMessages[Math.floor(Math.random() * typeMessages.length)] ??
+    `Great job! Achievement: ${value}`;
+
   return sendKudos({
     tenantId,
     learnerId,
     fromUserId: 'system',
-    fromRole: KudosSource.SYSTEM,
+    fromName: 'Aivo System',
+    fromRole: KudosSenderRole.SYSTEM,
     message,
-    context: KudosContext.ACHIEVEMENT,
+    context: KudosContext.BADGE,
     visibleToLearner: true,
   });
 }

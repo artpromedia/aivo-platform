@@ -2,52 +2,61 @@
  * Engagement Service - Core business logic for XP, streaks, levels
  */
 
-import { prisma, EngagementEventType, type EngagementProfile, type EngagementEvent } from '../prisma.js';
 import type { JsonValue } from '@prisma/client/runtime/library';
+
 import * as publisher from '../events/publisher.js';
+import {
+  prisma,
+  EngagementEventType,
+  type EngagementProfile,
+  type EngagementEvent,
+} from '../prisma.js';
+
 import * as badgeAwardEngine from './badgeAwardEngine.js';
 
 // Default XP rules per event type
 const DEFAULT_XP_RULES: Record<EngagementEventType, number> = {
-  SESSION_COMPLETED: 10,
   SESSION_STARTED: 2,
+  SESSION_COMPLETED: 10,
+  ACTIVITY_COMPLETED: 8,
   FOCUS_BREAK_USED: 3,
   FOCUS_BREAK_RETURNED: 5,
   HOMEWORK_HELPER_USED: 5,
-  HOMEWORK_HELPER_COMPLETED: 10,
+  HOMEWORK_STEP_COMPLETED: 10,
   RECOMMENDATION_ACCEPTED: 5,
   ACTION_PLAN_TASK_COMPLETED: 8,
   BASELINE_COMPLETED: 20,
-  GOAL_ACHIEVED: 15,
-  CUSTOM: 0,
+  STREAK_MAINTAINED: 5,
+  BADGE_EARNED: 0,
 };
 
 // Level thresholds (XP needed for each level)
 const LEVEL_THRESHOLDS = [
-  0,     // Level 1
-  50,    // Level 2
-  150,   // Level 3
-  300,   // Level 4
-  500,   // Level 5
-  750,   // Level 6
-  1100,  // Level 7
-  1500,  // Level 8
-  2000,  // Level 9
-  2600,  // Level 10
-  3300,  // Level 11
-  4100,  // Level 12
-  5000,  // Level 13
+  0, // Level 1
+  50, // Level 2
+  150, // Level 3
+  300, // Level 4
+  500, // Level 5
+  750, // Level 6
+  1100, // Level 7
+  1500, // Level 8
+  2000, // Level 9
+  2600, // Level 10
+  3300, // Level 11
+  4100, // Level 12
+  5000, // Level 13
 ];
 
 export interface ApplyEventInput {
   tenantId: string;
   learnerId: string;
   eventType: EngagementEventType;
-  sessionId?: string;
-  taskId?: string;
-  actionPlanId?: string;
-  metadata?: JsonValue;
-  customXp?: number;
+  sessionId?: string | undefined;
+  taskId?: string | undefined;
+  activityId?: string | undefined;
+  badgeId?: string | undefined;
+  metadata?: JsonValue | undefined;
+  customXp?: number | undefined;
 }
 
 export interface ApplyEventResult {
@@ -58,7 +67,7 @@ export interface ApplyEventResult {
   previousLevel: number;
   streakUpdated: boolean;
   previousStreak: number;
-  awardedBadges: Array<{ badge: { code: string; name: string }; isNew: boolean }>;
+  awardedBadges: { badge: { code: string; name: string }; isNew: boolean }[];
 }
 
 /**
@@ -66,7 +75,8 @@ export interface ApplyEventResult {
  */
 function calculateLevel(xpTotal: number): number {
   for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (xpTotal >= LEVEL_THRESHOLDS[i]) {
+    const threshold = LEVEL_THRESHOLDS[i];
+    if (threshold !== undefined && xpTotal >= threshold) {
       return i + 1;
     }
   }
@@ -80,7 +90,7 @@ export function xpForNextLevel(currentLevel: number): number {
   if (currentLevel >= LEVEL_THRESHOLDS.length) {
     return Infinity; // Max level reached
   }
-  return LEVEL_THRESHOLDS[currentLevel];
+  return LEVEL_THRESHOLDS[currentLevel] ?? Infinity;
 }
 
 /**
@@ -88,16 +98,16 @@ export function xpForNextLevel(currentLevel: number): number {
  */
 function isConsecutiveDay(lastDate: Date | null, currentDate: Date): boolean {
   if (!lastDate) return false;
-  
+
   const lastDay = new Date(lastDate);
   lastDay.setHours(0, 0, 0, 0);
-  
+
   const currentDay = new Date(currentDate);
   currentDay.setHours(0, 0, 0, 0);
-  
+
   const diffMs = currentDay.getTime() - lastDay.getTime();
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  
+
   return diffDays === 1;
 }
 
@@ -106,13 +116,13 @@ function isConsecutiveDay(lastDate: Date | null, currentDate: Date): boolean {
  */
 function isSameDay(date1: Date | null, date2: Date): boolean {
   if (!date1) return false;
-  
+
   const d1 = new Date(date1);
   d1.setHours(0, 0, 0, 0);
-  
+
   const d2 = new Date(date2);
   d2.setHours(0, 0, 0, 0);
-  
+
   return d1.getTime() === d2.getTime();
 }
 
@@ -120,16 +130,16 @@ function isSameDay(date1: Date | null, date2: Date): boolean {
  * Get tenant's custom XP rules (if any)
  */
 async function getTenantXpRules(tenantId: string): Promise<Record<string, number> | null> {
-  const settings = await prisma.tenantGamificationSettings.findUnique({
+  const settings = await prisma.gamificationSettings.findUnique({
     where: { tenantId },
-    select: { customXpRules: true, xpEnabled: true },
+    select: { xpRulesOverride: true, xpEnabled: true },
   });
-  
+
   if (!settings?.xpEnabled) {
     return null; // XP disabled for tenant
   }
-  
-  return settings.customXpRules as Record<string, number> | null;
+
+  return settings.xpRulesOverride as Record<string, number> | null;
 }
 
 /**
@@ -138,7 +148,7 @@ async function getTenantXpRules(tenantId: string): Promise<Record<string, number
 async function getTodayXp(tenantId: string, learnerId: string): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  
+
   const result = await prisma.engagementEvent.aggregate({
     where: {
       tenantId,
@@ -147,7 +157,7 @@ async function getTodayXp(tenantId: string, learnerId: string): Promise<number> 
     },
     _sum: { xpAwarded: true },
   });
-  
+
   return result._sum.xpAwarded ?? 0;
 }
 
@@ -159,11 +169,9 @@ export async function getOrCreateProfile(
   learnerId: string
 ): Promise<EngagementProfile> {
   let profile = await prisma.engagementProfile.findUnique({
-    where: {
-      tenantId_learnerId: { tenantId, learnerId },
-    },
+    where: { learnerId },
   });
-  
+
   if (!profile) {
     profile = await prisma.engagementProfile.create({
       data: {
@@ -172,12 +180,12 @@ export async function getOrCreateProfile(
         level: 1,
         xpTotal: 0,
         xpThisWeek: 0,
-        sessionsCompletedStreakDays: 0,
+        currentStreakDays: 0,
         maxStreakDays: 0,
       },
     });
   }
-  
+
   return profile;
 }
 
@@ -186,24 +194,24 @@ export async function getOrCreateProfile(
  */
 export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResult> {
   const now = new Date();
-  
+
   // Get or create profile
   let profile = await getOrCreateProfile(input.tenantId, input.learnerId);
   const previousLevel = profile.level;
-  const previousStreak = profile.sessionsCompletedStreakDays;
-  
+  const previousStreak = profile.currentStreakDays;
+
   // Check if XP is enabled for tenant
   const tenantXpRules = await getTenantXpRules(input.tenantId);
   const xpEnabled = tenantXpRules !== null;
-  
+
   // Calculate XP to award
   let baseXp = input.customXp ?? DEFAULT_XP_RULES[input.eventType];
-  
+
   // Apply tenant custom rules if present
-  if (tenantXpRules && tenantXpRules[input.eventType] !== undefined) {
-    baseXp = tenantXpRules[input.eventType];
+  if (tenantXpRules?.[input.eventType] !== undefined) {
+    baseXp = tenantXpRules[input.eventType] ?? baseXp;
   }
-  
+
   // Apply daily cap (100 XP by default)
   let xpAwarded = 0;
   if (xpEnabled && baseXp > 0) {
@@ -211,7 +219,7 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
     const dailyCap = 100; // Could be tenant-configurable
     xpAwarded = Math.min(baseXp, Math.max(0, dailyCap - todayXp));
   }
-  
+
   // Create the event record
   const event = await prisma.engagementEvent.create({
     data: {
@@ -220,36 +228,35 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
       eventType: input.eventType,
       xpAwarded,
       metadata: input.metadata ?? {},
-      sessionId: input.sessionId,
-      taskId: input.taskId,
-      actionPlanId: input.actionPlanId,
+      sessionId: input.sessionId ?? null,
+      taskId: input.taskId ?? null,
       occurredAt: now,
     },
   });
-  
+
   // Update profile
   let streakUpdated = false;
-  let newStreak = profile.sessionsCompletedStreakDays;
-  
+  let newStreak = profile.currentStreakDays;
+
   // Update streak only for session completion events
   if (input.eventType === EngagementEventType.SESSION_COMPLETED) {
     if (!isSameDay(profile.lastSessionDate, now)) {
       if (isConsecutiveDay(profile.lastSessionDate, now)) {
-        newStreak = profile.sessionsCompletedStreakDays + 1;
+        newStreak = profile.currentStreakDays + 1;
         streakUpdated = true;
       } else if (!profile.lastSessionDate || !isSameDay(profile.lastSessionDate, now)) {
         // First session or streak broken
         newStreak = 1;
-        streakUpdated = profile.sessionsCompletedStreakDays > 0;
+        streakUpdated = profile.currentStreakDays > 0;
       }
     }
   }
-  
+
   // Calculate new totals
   const newXpTotal = profile.xpTotal + xpAwarded;
   const newLevel = calculateLevel(newXpTotal);
   const leveledUp = newLevel > previousLevel;
-  
+
   // Update profile
   profile = await prisma.engagementProfile.update({
     where: { id: profile.id },
@@ -257,10 +264,10 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
       xpTotal: newXpTotal,
       xpThisWeek: profile.xpThisWeek + xpAwarded,
       level: newLevel,
-      sessionsCompletedStreakDays: newStreak,
+      currentStreakDays: newStreak,
       maxStreakDays: Math.max(profile.maxStreakDays, newStreak),
-      lastSessionDate: input.eventType === EngagementEventType.SESSION_COMPLETED ? now : profile.lastSessionDate,
-      lastUpdatedAt: now,
+      lastSessionDate:
+        input.eventType === EngagementEventType.SESSION_COMPLETED ? now : profile.lastSessionDate,
     },
   });
 
@@ -307,7 +314,7 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
     profile,
     input.eventType
   );
-  
+
   return {
     event,
     profile,
@@ -325,12 +332,12 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
  */
 export async function getEngagement(tenantId: string, learnerId: string) {
   const profile = await getOrCreateProfile(tenantId, learnerId);
-  
+
   const xpToNextLevel = xpForNextLevel(profile.level);
-  const xpInCurrentLevel = profile.level > 1 ? LEVEL_THRESHOLDS[profile.level - 1] : 0;
+  const xpInCurrentLevel = profile.level > 1 ? (LEVEL_THRESHOLDS[profile.level - 1] ?? 0) : 0;
   const xpProgress = profile.xpTotal - xpInCurrentLevel;
   const xpNeeded = xpToNextLevel - xpInCurrentLevel;
-  
+
   return {
     ...profile,
     xpToNextLevel,
@@ -361,17 +368,17 @@ export async function getRecentEvents(
 export async function getWeeklyLeaderboard(
   tenantId: string,
   limit = 10
-): Promise<Array<{ learnerId: string; xpThisWeek: number; level: number }>> {
+): Promise<{ learnerId: string; xpThisWeek: number; level: number }[]> {
   // Check if comparisons are enabled for tenant
-  const settings = await prisma.tenantGamificationSettings.findUnique({
+  const settings = await prisma.gamificationSettings.findUnique({
     where: { tenantId },
     select: { showComparisons: true },
   });
-  
+
   if (!settings?.showComparisons) {
     return [];
   }
-  
+
   const profiles = await prisma.engagementProfile.findMany({
     where: { tenantId },
     orderBy: { xpThisWeek: 'desc' },
@@ -382,7 +389,7 @@ export async function getWeeklyLeaderboard(
       level: true,
     },
   });
-  
+
   return profiles;
 }
 

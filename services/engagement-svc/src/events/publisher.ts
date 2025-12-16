@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+
 import type { EngagementEventType, Badge, Kudos, EngagementProfile } from '../prisma.js';
 
 // Event types for engagement domain
@@ -20,9 +21,9 @@ export interface EngagementEventPayload {
     leveledUp: boolean;
     streakDays: number;
     streakUpdated: boolean;
-    sessionId?: string;
-    taskId?: string;
-    metadata?: Record<string, unknown>;
+    sessionId?: string | undefined;
+    taskId?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
   };
 }
 
@@ -38,7 +39,7 @@ export interface BadgeAwardedPayload {
     badgeCategory: string;
     xpReward: number;
     source: string;
-    awardedBy?: string;
+    awardedBy?: string | undefined;
     isNew: boolean;
   };
 }
@@ -54,8 +55,8 @@ export interface KudosSentPayload {
     fromUserId: string;
     fromRole: string;
     context: string;
-    linkedSessionId?: string;
-    linkedActionPlanId?: string;
+    linkedSessionId?: string | undefined;
+    linkedActionPlanId?: string | undefined;
   };
 }
 
@@ -188,10 +189,7 @@ export async function publishBadgeAwarded(
 /**
  * Publish a kudos sent event
  */
-export async function publishKudosSent(
-  tenantId: string,
-  kudos: Kudos
-): Promise<void> {
+export async function publishKudosSent(tenantId: string, kudos: Kudos): Promise<void> {
   const payload: KudosSentPayload = {
     id: randomUUID(),
     eventType: 'kudos.sent',

@@ -4,6 +4,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+
 import * as settingsService from '../services/settingsService.js';
 
 // Schemas
@@ -31,7 +32,9 @@ const updateTenantSettingsSchema = z.object({
 });
 
 const updateLearnerPreferencesSchema = z.object({
-  preferredRewardStyle: z.enum(['VISUAL_BADGES', 'PRAISE_MESSAGES', 'POINTS_AND_LEVELS', 'MINIMAL']).optional(),
+  preferredRewardStyle: z
+    .enum(['VISUAL_BADGES', 'PRAISE_MESSAGES', 'POINTS_AND_LEVELS', 'MINIMAL'])
+    .optional(),
   muteCelebrations: z.boolean().optional(),
   reducedVisuals: z.boolean().optional(),
   showBadges: z.boolean().optional(),
@@ -89,7 +92,11 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
 
-      if (user.role !== 'tenant_admin' && user.role !== 'platform_admin' && user.role !== 'service') {
+      if (
+        user.role !== 'tenant_admin' &&
+        user.role !== 'platform_admin' &&
+        user.role !== 'service'
+      ) {
         return reply.status(403).send({ error: 'Forbidden - requires tenant admin' });
       }
 
@@ -97,7 +104,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(403).send({ error: 'Forbidden - wrong tenant' });
       }
 
-      const settings = await settingsService.updateTenantSettings(tenantId, updates);
+      const settings = await settingsService.upsertTenantSettings({ tenantId, ...updates });
       return reply.status(200).send(settings);
     }
   );
@@ -123,7 +130,9 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
       }
 
       // Authorization: learner, parent, teacher, or admin
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -158,7 +167,9 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
       }
 
       // Authorization: parent of learner or admin
-      const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }).user;
+      const user = (
+        request as FastifyRequest & { user?: { sub: string; tenantId: string; role: string } }
+      ).user;
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -174,11 +185,12 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(403).send({ error: 'Forbidden - insufficient role' });
       }
 
-      const preferences = await settingsService.updateLearnerPreferences(
+      const validatedUpdates = updateLearnerPreferencesSchema.parse(updates);
+      const preferences = await settingsService.upsertLearnerPreferences({
         tenantId,
         learnerId,
-        updateLearnerPreferencesSchema.parse(updates)
-      );
+        ...validatedUpdates,
+      });
 
       return reply.status(200).send(preferences);
     }
