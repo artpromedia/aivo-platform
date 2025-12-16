@@ -382,19 +382,44 @@ async function executeExport(job: {
 
   // Parse constraints
   const defaultConstraints = DEFAULT_CONSTRAINTS[job.datasetDefinition.granularity];
-  const customConstraints = job.datasetDefinition
-    .privacyConstraintsJson as Partial<PrivacyConstraints>;
-  const constraints: PrivacyConstraints = {
-    ...defaultConstraints,
-    ...customConstraints,
-  };
+  const customConstraints = job.datasetDefinition.privacyConstraintsJson as
+    | Partial<PrivacyConstraints>
+    | undefined;
 
-  // Parse schema - TODO: use for dynamic query building
-  const _schema = job.datasetDefinition.schemaJson as {
+  // Filter out undefined values from custom constraints and merge with defaults
+  const filteredCustom: Partial<PrivacyConstraints> = {};
+  if (customConstraints) {
+    for (const [key, value] of Object.entries(customConstraints)) {
+      if (value !== undefined) {
+        (filteredCustom as Record<string, unknown>)[key] = value;
+      }
+    }
+  }
+
+  const constraints = {
+    ...defaultConstraints,
+    ...filteredCustom,
+  } as PrivacyConstraints;
+
+  // Parse schema for dynamic query building
+  const schema = job.datasetDefinition.schemaJson as {
     factTables?: string[];
     dimensions?: string[];
     metrics?: string[];
   };
+
+  // Determine which fact tables to use (defaults to sessions)
+  const factTable = schema.factTables?.[0] ?? 'fact_sessions';
+
+  // Build select clause from metrics (use defaults if not specified)
+  const defaultMetrics = [
+    'session_type',
+    'duration_seconds',
+    'activities_completed',
+    'correct_responses',
+    'hints_used',
+  ];
+  const selectMetrics = schema.metrics?.length ? schema.metrics : defaultMetrics;
 
   // Parse cohort filter
   const filter = job.cohort.filterJson as {
@@ -404,16 +429,14 @@ async function executeExport(job: {
   };
 
   // Build and execute query (simplified example using sessions)
-  const fromDateKey = Number.parseInt(
-    job.dateRangeFrom.toISOString().split('T')[0].replaceAll('-', ''),
-    10
-  );
-  const toDateKey = Number.parseInt(
-    job.dateRangeTo.toISOString().split('T')[0].replaceAll('-', ''),
-    10
-  );
+  const fromDateStr = job.dateRangeFrom.toISOString().split('T')[0] ?? '';
+  const fromDateKey = Number.parseInt(fromDateStr.replaceAll('-', ''), 10);
+  const toDateStr = job.dateRangeTo.toISOString().split('T')[0] ?? '';
+  const toDateKey = Number.parseInt(toDateStr.replaceAll('-', ''), 10);
 
-  // Example query - in production this would be dynamic based on schema
+  // Build dynamic query based on schema configuration
+  const metricsSelect = selectMetrics.map((m) => `fs.${m}`).join(',\n      ');
+
   const query = `
     WITH tenant_filter AS (
       SELECT tenant_key FROM dim_tenant 
@@ -423,13 +446,9 @@ async function executeExport(job: {
       dl.learner_id,
       dt.full_date as session_date,
       dl.grade_band,
-      fs.session_type,
-      fs.duration_seconds,
-      fs.activities_completed,
-      fs.correct_responses,
-      (fs.correct_responses + fs.incorrect_responses) as total_responses,
-      fs.hints_used
-    FROM fact_sessions fs
+      ${metricsSelect},
+      (fs.correct_responses + fs.incorrect_responses) as total_responses
+    FROM ${factTable} fs
     JOIN tenant_filter tf ON fs.tenant_key = tf.tenant_key
     JOIN dim_learner dl ON fs.learner_key = dl.learner_key AND dl.is_current = true
     JOIN dim_time dt ON fs.date_key = dt.date_key
@@ -506,7 +525,10 @@ async function generateAndUploadFile(
 function convertToCSV(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return '';
 
-  const headers = Object.keys(rows[0]);
+  const firstRow = rows[0];
+  if (!firstRow) return '';
+
+  const headers = Object.keys(firstRow);
   const csvRows = [
     headers.join(','),
     ...rows.map((row) =>

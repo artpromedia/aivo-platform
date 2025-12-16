@@ -1,13 +1,18 @@
 /**
  * Research Project Service
- * 
+ *
  * Handles CRUD operations and status management for research projects.
  */
 
 import type { ProjectStatus, ProjectType } from '@prisma/client';
 
+import {
+  publishProjectApproved,
+  publishProjectCreated,
+  publishProjectRejected,
+} from '../events/publisher.js';
 import { prisma } from '../prisma.js';
-import { publishProjectApproved, publishProjectCreated, publishProjectRejected } from '../events/publisher.js';
+
 import { recordAuditLog, type AuditContext } from './auditService.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -58,10 +63,7 @@ export interface ListProjectsOptions {
 /**
  * Create a new research project (starts in DRAFT status)
  */
-export async function createProject(
-  input: CreateProjectInput,
-  auditContext: AuditContext
-) {
+export async function createProject(input: CreateProjectInput, auditContext: AuditContext) {
   const project = await prisma.researchProject.create({
     data: {
       tenantId: input.tenantId,
@@ -134,7 +136,7 @@ export async function getProject(projectId: string, tenantId: string) {
 export async function listProjects(options: ListProjectsOptions) {
   const { tenantId, status, type, userId, limit = 20, offset = 0 } = options;
 
-  const where: Parameters<typeof prisma.researchProject.findMany>[0]['where'] = {
+  const where: NonNullable<Parameters<typeof prisma.researchProject.findMany>[0]>['where'] = {
     tenantId,
     ...(status && status.length > 0 ? { status: { in: status } } : {}),
     ...(type && type.length > 0 ? { type: { in: type } } : {}),
@@ -195,7 +197,7 @@ export async function updateProject(
   });
 
   await recordAuditLog(auditContext, 'PROJECT_UPDATED', project.id, {
-    updatedFields: Object.keys(input).filter(k => k !== 'updatedByUserId'),
+    updatedFields: Object.keys(input).filter((k) => k !== 'updatedByUserId'),
   });
 
   return project;

@@ -1,10 +1,12 @@
 /**
  * Export Worker
- * 
+ *
  * NATS JetStream consumer for processing export jobs asynchronously.
  */
 
-import { connect, StringCodec, NatsConnection, JetStreamClient, ConsumerConfig } from 'nats';
+import type { NatsConnection, JetStreamClient, ConsumerConfig } from 'nats';
+import { connect, StringCodec, RetentionPolicy, AckPolicy } from 'nats';
+
 import { config } from './config.js';
 import { prisma } from './prisma.js';
 import { processExportJob } from './services/exportService.js';
@@ -40,7 +42,7 @@ export async function startWorker(): Promise<void> {
       await jsm.streams.add({
         name: 'RESEARCH',
         subjects: ['research.>'],
-        retention: 'limits',
+        retention: RetentionPolicy.Limits,
         max_msgs: 100000,
         max_age: 7 * 24 * 60 * 60 * 1000000000, // 7 days in nanoseconds
       });
@@ -50,7 +52,7 @@ export async function startWorker(): Promise<void> {
     // Create durable consumer
     const consumerConfig: Partial<ConsumerConfig> = {
       durable_name: 'export-processor',
-      ack_policy: 'explicit',
+      ack_policy: AckPolicy.Explicit,
       max_deliver: 3,
       ack_wait: 5 * 60 * 1000000000, // 5 minutes
       filter_subject: 'research.export.requested',
@@ -79,7 +81,7 @@ export async function startWorker(): Promise<void> {
         console.log(`Completed export job: ${data.exportJobId}`);
       } catch (error) {
         console.error(`Failed export job ${data.exportJobId}:`, error);
-        
+
         // Mark job as failed in database
         await prisma.researchExportJob.update({
           where: { id: data.exportJobId },
@@ -91,7 +93,9 @@ export async function startWorker(): Promise<void> {
         });
 
         // Negative ack for retry or dead letter
-        if (msg.redelivered && (msg.info?.redeliveryCount ?? 0) >= 2) {
+        // Check if message has been redelivered multiple times
+        const deliveryCount = msg.info?.deliveryCount ?? 1;
+        if (msg.redelivered && deliveryCount >= 3) {
           msg.term(); // Terminal - don't retry
         } else {
           msg.nak(); // Retry
@@ -110,12 +114,12 @@ export async function startWorker(): Promise<void> {
 
 export async function stopWorker(): Promise<void> {
   console.log('Stopping export worker...');
-  
+
   if (nc) {
     await nc.drain();
     await nc.close();
   }
-  
+
   await prisma.$disconnect();
   console.log('Worker stopped');
 }
@@ -124,7 +128,7 @@ export async function stopWorker(): Promise<void> {
 // Standalone Execution
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const isMainModule = import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`;
+const isMainModule = import.meta.url === `file://${(process.argv[1] ?? '').replaceAll('\\', '/')}`;
 
 if (isMainModule) {
   process.on('SIGTERM', async () => {
@@ -137,7 +141,7 @@ if (isMainModule) {
     process.exit(0);
   });
 
-  startWorker().catch((error) => {
+  await startWorker().catch((error: unknown) => {
     console.error('Worker failed to start:', error);
     process.exit(1);
   });

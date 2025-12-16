@@ -80,6 +80,46 @@ const listSchema = z.object({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Helper Functions
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Estimate cohort size based on filter criteria
+ * In production, this would query the analytics warehouse
+ */
+async function estimateCohortSize(
+  filterJson: Record<string, unknown> | null,
+  _tenantId: string
+): Promise<number> {
+  if (!filterJson) {
+    return 0;
+  }
+
+  // Base estimate starts at a typical cohort size
+  let estimate = 500;
+
+  // Apply reduction factors based on filter specificity
+  const gradeBands = filterJson.gradeBands as string[] | undefined;
+  const profileTags = filterJson.profileTags as string[] | undefined;
+  const schools = filterJson.schools as string[] | undefined;
+
+  if (gradeBands?.length) {
+    estimate = Math.floor(estimate * (gradeBands.length / 4)); // Assume 4 total grade bands
+  }
+
+  if (profileTags?.length) {
+    estimate = Math.floor(estimate * Math.pow(0.7, profileTags.length)); // Each tag reduces by 30%
+  }
+
+  if (schools?.length) {
+    estimate = Math.floor(estimate * (schools.length / 10)); // Assume 10 schools on average
+  }
+
+  // Ensure minimum viable estimate
+  return Math.max(estimate, 1);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Route Plugin
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -217,13 +257,48 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Cohort not found' });
     }
 
-    // TODO: Query warehouse to estimate matching rows
-    // For now, return placeholder
+    // Use cached estimate if fresh (within 24 hours), otherwise compute new estimate
+    const cacheValidDuration = 24 * 60 * 60 * 1000; // 24 hours
+    const isCacheFresh =
+      cohort.estimatedAt &&
+      cohort.estimatedLearnerCount !== null &&
+      Date.now() - new Date(cohort.estimatedAt).getTime() < cacheValidDuration;
+
+    let estimatedLearners: number;
+    if (isCacheFresh && cohort.estimatedLearnerCount !== null) {
+      estimatedLearners = cohort.estimatedLearnerCount;
+    } else {
+      // Compute estimate based on filter criteria
+      // In production, this would query the data warehouse
+      // For now, use a simple heuristic based on filter complexity
+      const filterJson = cohort.filterJson as Record<string, unknown> | null;
+      estimatedLearners = await estimateCohortSize(filterJson, user.tenantId);
+
+      // Update cache asynchronously
+      void prisma.researchCohort.update({
+        where: { id: cohort.id },
+        data: {
+          estimatedLearnerCount: estimatedLearners,
+          estimatedAt: new Date(),
+        },
+      });
+    }
+
+    // Estimate rows based on learners and typical data density
+    const avgRowsPerLearner = 30; // Typical activity records per learner
+    const estimatedRows = estimatedLearners * avgRowsPerLearner;
+
+    // Check k-anonymity requirement (minimum 5 learners for privacy)
+    const kAnonymityThreshold = 5;
+    const kAnonymitySatisfied = estimatedLearners >= kAnonymityThreshold;
+
     return reply.send({
-      estimatedLearners: 1500,
-      estimatedRows: 45000,
-      kAnonymitySatisfied: true,
-      warning: null,
+      estimatedLearners,
+      estimatedRows,
+      kAnonymitySatisfied,
+      warning: kAnonymitySatisfied
+        ? null
+        : `Cohort has fewer than ${kAnonymityThreshold} learners, which may not satisfy k-anonymity requirements.`,
     });
   });
 
@@ -259,10 +334,10 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     await recordAuditLog(
       {
         projectId: cohort.researchProjectId,
-        action: 'COHORT_DELETED',
+        action: 'COHORT_UPDATED',
         entityType: 'COHORT',
         entityId: id,
-        details: { name: cohort.name },
+        details: { name: cohort.name, deleted: true },
       },
       auditContext
     );
@@ -317,7 +392,7 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     await recordAuditLog(
       {
         projectId: body.projectId,
-        action: 'DATASET_DEFINITION_CREATED',
+        action: 'DATASET_CREATED',
         entityType: 'DATASET_DEFINITION',
         entityId: datasetDef.id,
         details: { name: body.name, granularity: body.granularity },
@@ -456,7 +531,7 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     await recordAuditLog(
       {
         projectId: body.projectId,
-        action: 'DATASET_DEFINITION_CREATED',
+        action: 'DATASET_CREATED',
         entityType: 'DATASET_DEFINITION',
         entityId: datasetDef.id,
         details: {

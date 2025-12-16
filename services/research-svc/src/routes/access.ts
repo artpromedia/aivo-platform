@@ -1,6 +1,6 @@
 /**
  * Access Grant Routes
- * 
+ *
  * Manage researcher access to projects and DUA acceptance.
  */
 
@@ -11,7 +11,7 @@ import {
   grantAccess,
   revokeAccess,
   getProjectAccessGrants,
-  getUserAccessGrants,
+  getUserAccessGrant,
   acceptDUA,
 } from '../services/accessGrantService.js';
 import type { AuditContext } from '../services/auditService.js';
@@ -30,9 +30,8 @@ const grantAccessSchema = z.object({
 });
 
 const acceptDUASchema = z.object({
-  duaId: z.string().uuid(),
-  signature: z.string().min(10).max(500), // Digital signature or typed name
-  agreedToTerms: z.literal(true),
+  grantId: z.string().uuid(),
+  duaVersion: z.number().int().positive(),
 });
 
 const listAccessSchema = z.object({
@@ -54,7 +53,8 @@ export const accessRoutes: FastifyPluginAsync = async (app) => {
     const body = grantAccessSchema.parse(request.body);
 
     // Only admins or project owners can grant access
-    const isAdmin = user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
+    const isAdmin =
+      user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
     if (!isAdmin) {
       return reply.status(403).send({ error: 'Only admins can grant access' });
     }
@@ -69,12 +69,14 @@ export const accessRoutes: FastifyPluginAsync = async (app) => {
 
     const grant = await grantAccess(
       {
-        projectId: body.projectId,
+        tenantId: user.tenantId,
+        researchProjectId: body.projectId,
         userId: body.userId,
         userEmail: body.userEmail,
+        userRole: 'researcher',
         scope: body.scope,
         expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
-        grantedByUserId: user.sub,
+        createdByUserId: user.sub,
       },
       auditContext
     );
@@ -87,32 +89,30 @@ export const accessRoutes: FastifyPluginAsync = async (app) => {
    * List access grants for a project
    */
   app.get('/projects/:projectId/access-grants', async (request, reply) => {
-    const user = request.user as { sub: string; tenantId: string };
     const { projectId } = request.params as { projectId: string };
-    const query = listAccessSchema.parse(request.query);
+    // Parse query for potential future pagination use
+    listAccessSchema.parse(request.query);
 
-    const result = await getProjectAccessGrants(projectId, user.tenantId, {
-      limit: query.limit,
-      offset: query.offset,
-    });
+    const result = await getProjectAccessGrants(projectId);
 
-    return reply.send(result);
+    return reply.send({ data: result, total: result.length });
   });
 
   /**
    * GET /research/my-access
-   * List current user's access grants
+   * Get current user's access grants for a project
    */
-  app.get('/my-access', async (request, reply) => {
+  app.get('/my-access/:projectId', async (request, reply) => {
     const user = request.user as { sub: string; tenantId: string };
-    const query = listAccessSchema.parse(request.query);
+    const { projectId } = request.params as { projectId: string };
 
-    const result = await getUserAccessGrants(user.sub, user.tenantId, {
-      limit: query.limit,
-      offset: query.offset,
-    });
+    const grant = await getUserAccessGrant(projectId, user.sub);
 
-    return reply.send(result);
+    if (!grant) {
+      return reply.status(404).send({ error: 'No active access grant found' });
+    }
+
+    return reply.send(grant);
   });
 
   /**
@@ -123,7 +123,8 @@ export const accessRoutes: FastifyPluginAsync = async (app) => {
     const user = request.user as { sub: string; email: string; tenantId: string; roles?: string[] };
     const { id } = request.params as { id: string };
 
-    const isAdmin = user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
+    const isAdmin =
+      user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
     if (!isAdmin) {
       return reply.status(403).send({ error: 'Only admins can revoke access' });
     }
@@ -136,7 +137,14 @@ export const accessRoutes: FastifyPluginAsync = async (app) => {
       userAgent: request.headers['user-agent'],
     };
 
-    await revokeAccess(id, user.tenantId, user.sub, auditContext);
+    await revokeAccess(
+      {
+        grantId: id,
+        revokedByUserId: user.sub,
+        reason: 'Access revoked by admin',
+      },
+      auditContext
+    );
 
     return reply.status(204).send();
   });
@@ -157,14 +165,7 @@ export const accessRoutes: FastifyPluginAsync = async (app) => {
       userAgent: request.headers['user-agent'],
     };
 
-    const acceptance = await acceptDUA(
-      {
-        duaId: body.duaId,
-        userId: user.sub,
-        signature: body.signature,
-      },
-      auditContext
-    );
+    const acceptance = await acceptDUA(body.grantId, body.duaVersion, auditContext);
 
     return reply.status(201).send(acceptance);
   });

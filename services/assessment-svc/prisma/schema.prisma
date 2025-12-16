@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
 }
 
 datasource db {
@@ -7,7 +8,271 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ── Enums ────────────────────────────────────────────────────────────────────
+// ============================================================================
+// ASSESSMENT ENUMS
+// ============================================================================
+
+enum AssessmentType {
+  QUIZ       // Quick knowledge check
+  TEST       // Formal assessment
+  PRACTICE   // Practice problems
+  DIAGNOSTIC // Baseline assessment
+  ASSIGNMENT // Homework/take-home
+  SURVEY     // Non-graded survey
+
+  @@map("assessment_type")
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("assessment_status")
+}
+
+enum Difficulty {
+  BEGINNER
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+
+  @@map("difficulty")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE // Single correct answer
+  MULTIPLE_SELECT // Multiple correct answers
+  TRUE_FALSE      // Binary choice
+  SHORT_ANSWER    // Text input, exact match
+  ESSAY           // Long text, manual grading
+  FILL_BLANK      // Fill in the blanks
+  MATCHING        // Match items
+  ORDERING        // Arrange in order
+  NUMERIC         // Number input with tolerance
+  HOTSPOT         // Click on image area
+  DRAG_DROP       // Drag items to zones
+
+  @@map("question_type")
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADING   // Awaiting manual grading
+  GRADED
+  EXPIRED   // Time ran out
+  ABANDONED // User left without submitting
+
+  @@map("attempt_status")
+}
+
+// ============================================================================
+// ASSESSMENT MODELS
+// ============================================================================
+
+/// Assessment (Quiz, Test, Assignment)
+model Assessment {
+  id               String           @id @default(uuid()) @db.Uuid
+  tenantId         String           @map("tenant_id") @db.Uuid
+  title            String           @db.VarChar(200)
+  description      String?          @db.Text
+  type             AssessmentType
+  status           AssessmentStatus @default(DRAFT)
+
+  /// Configuration JSON
+  /// { timeLimit, passingScore, maxAttempts, shuffleQuestions, shuffleOptions,
+  ///   showCorrectAnswers, showExplanations, allowReview, adaptiveDifficulty }
+  settings         Json             @default("{}")
+
+  /// Metadata
+  subjectId        String?          @map("subject_id") @db.Uuid
+  topicIds         String[]         @default([]) @map("topic_ids") @db.Uuid
+  difficulty       Difficulty       @default(MEDIUM)
+  estimatedMinutes Int              @default(15) @map("estimated_minutes") @db.SmallInt
+  totalPoints      Int              @default(0) @map("total_points")
+
+  /// Relationships
+  questions        AssessmentQuestion[]
+  attempts         Attempt[]
+
+  /// Audit
+  authorId         String           @map("author_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  publishedAt      DateTime?        @map("published_at") @db.Timestamptz
+  archivedAt       DateTime?        @map("archived_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([subjectId])
+  @@index([status])
+  @@index([type])
+  @@index([authorId])
+  @@map("assessments")
+}
+
+/// Question Bank
+model Question {
+  id            String       @id @default(uuid()) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  type          QuestionType
+
+  /// Content
+  stem          String       @db.Text // Question text (supports markdown)
+  stemMedia     Json?        @map("stem_media") // { type: 'image'|'audio'|'video', url: string }
+  options       Json?        // For choice-based questions
+  correctAnswer Json         @map("correct_answer") // Flexible based on question type
+  explanation   String?      @db.Text // Shown after answering
+  hints         String[]     @default([])
+
+  /// Metadata
+  subjectId     String?      @map("subject_id") @db.Uuid
+  topicId       String?      @map("topic_id") @db.Uuid
+  difficulty    Difficulty   @default(MEDIUM)
+  points        Int          @default(1)
+  tags          String[]     @default([])
+
+  /// Statistics (updated over time)
+  /// { timesAnswered, correctRate, averageTimeSeconds, discriminationIndex }
+  stats         Json         @default("{}")
+
+  /// Relationships
+  assessments   AssessmentQuestion[]
+  responses     QuestionResponse[]
+
+  /// Audit
+  authorId      String       @map("author_id") @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([subjectId])
+  @@index([topicId])
+  @@index([type])
+  @@index([difficulty])
+  @@index([authorId])
+  @@map("questions")
+}
+
+/// Join table for Assessment-Question (with ordering)
+model AssessmentQuestion {
+  id           String     @id @default(uuid()) @db.Uuid
+  assessmentId String     @map("assessment_id") @db.Uuid
+  questionId   String     @map("question_id") @db.Uuid
+  orderIndex   Int        @map("order_index") @db.SmallInt
+  points       Int?       // Override question's default points
+  required     Boolean    @default(true)
+
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  question     Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, questionId])
+  @@index([assessmentId])
+  @@index([questionId])
+  @@map("assessment_questions")
+}
+
+/// Assessment Attempt
+model Attempt {
+  id               String        @id @default(uuid()) @db.Uuid
+  assessmentId     String        @map("assessment_id") @db.Uuid
+  userId           String        @map("user_id") @db.Uuid
+  tenantId         String        @map("tenant_id") @db.Uuid
+
+  /// Status
+  status           AttemptStatus @default(IN_PROGRESS)
+  attemptNumber    Int           @default(1) @map("attempt_number") @db.SmallInt
+
+  /// Timing
+  startedAt        DateTime      @default(now()) @map("started_at") @db.Timestamptz
+  submittedAt      DateTime?     @map("submitted_at") @db.Timestamptz
+  timeSpentSeconds Int           @default(0) @map("time_spent_seconds")
+
+  /// Scoring
+  score            Float?        // Percentage 0-100
+  pointsEarned     Int?          @map("points_earned")
+  pointsPossible   Int?          @map("points_possible")
+  passed           Boolean?
+
+  /// Metadata
+  /// { browser, device, ipAddress, proctored }
+  metadata         Json          @default("{}")
+
+  /// Relationships
+  assessment       Assessment    @relation(fields: [assessmentId], references: [id])
+  responses        QuestionResponse[]
+
+  /// Grading
+  gradedBy         String?       @map("graded_by") @db.Uuid
+  gradedAt         DateTime?     @map("graded_at") @db.Timestamptz
+  feedback         String?       @db.Text // Overall feedback
+
+  @@index([assessmentId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([userId, assessmentId])
+  @@map("attempts")
+}
+
+/// Individual Question Response
+model QuestionResponse {
+  id               String    @id @default(uuid()) @db.Uuid
+  attemptId        String    @map("attempt_id") @db.Uuid
+  questionId       String    @map("question_id") @db.Uuid
+
+  /// Response data
+  response         Json      // User's answer (format depends on question type)
+  responseText     String?   @map("response_text") @db.Text // Text representation for search/display
+
+  /// Scoring
+  isCorrect        Boolean?  @map("is_correct")
+  pointsEarned     Float?    @map("points_earned")
+  partialCredit    Boolean   @default(false) @map("partial_credit")
+
+  /// Timing
+  startedAt        DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  answeredAt       DateTime? @map("answered_at") @db.Timestamptz
+  timeSpentSeconds Int       @default(0) @map("time_spent_seconds")
+
+  /// Hints used
+  hintsUsed        Int       @default(0) @map("hints_used") @db.SmallInt
+
+  /// Feedback
+  feedback         String?   @db.Text // Auto or manual feedback
+
+  /// Relationships
+  attempt          Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         Question  @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("question_responses")
+}
+
+/// Question Pool (for randomized selection)
+model QuestionPool {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+
+  /// Filter criteria for questions
+  /// { subjectIds, topicIds, difficulties, types, tags, minCorrectRate, maxCorrectRate }
+  criteria    Json
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@map("question_pools")
+}
+
+// ============================================================================
+// BASELINE ENUMS (existing)
+// ============================================================================
 
 enum BaselineDomain {
   ELA

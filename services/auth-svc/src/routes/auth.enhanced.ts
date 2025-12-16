@@ -3,14 +3,13 @@
  * Provides complete auth flow with session management
  */
 
-import { Role } from '@aivo/ts-rbac';
 import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { config } from '../config.js';
-import { prisma } from '../prisma.js';
-import { AuthService, createAuthService } from '../services/auth.service.js';
 import { verifyToken } from '../lib/jwt.js';
+import { prisma } from '../prisma.js';
+import { createAuthService } from '../services/auth.service.js';
 
 // ============================================================================
 // Validation Schemas
@@ -72,9 +71,12 @@ function getDeviceInfo(request: FastifyRequest) {
   };
 }
 
-async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<{ userId: string; sessionId?: string }> {
+async function authenticate(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<{ userId: string; sessionId?: string }> {
   const authHeader = request.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     reply.status(401).send({ error: 'Authorization required' });
     throw new Error('Unauthorized');
   }
@@ -203,7 +205,11 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
         expiresIn: tokens.expiresIn,
       });
     } catch (error: any) {
-      if (error.message.includes('Invalid') || error.message.includes('expired') || error.message.includes('revoked')) {
+      if (
+        error.message.includes('Invalid') ||
+        error.message.includes('expired') ||
+        error.message.includes('revoked')
+      ) {
         return reply.status(401).send({ error: error.message });
       }
       fastify.log.error(error, 'Token refresh failed');
@@ -234,7 +240,10 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
     try {
       const { userId, sessionId } = await authenticate(request, reply);
       const keepCurrent = (request.query as any).keepCurrent === 'true';
-      const count = await authService.logoutAllSessions(userId, keepCurrent ? sessionId : undefined);
+      const count = await authService.logoutAllSessions(
+        userId,
+        keepCurrent ? sessionId : undefined
+      );
       return reply.status(200).send({
         message: `Logged out from ${count} session(s)`,
         count,

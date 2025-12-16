@@ -6,16 +6,19 @@
  * - Baseline attempts with domain scores
  * - Sample baseline items and responses
  * - Skill estimates
+ * - Assessments (Quiz, Test, Practice)
+ * - Questions with various types
+ * - Sample attempts and responses
+ * - Question pools
  */
 
-import {
-  PrismaClient,
+import { PrismaClient } from '../generated/prisma-client/index.js';
+import type {
   GradeBand,
   BaselineStatus,
   BaselineDomain,
   RetestReasonType,
-} from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+} from '../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 
@@ -480,6 +483,12 @@ async function main() {
   }
   console.log(`  ✅ Created ${skillEstimates.length} skill estimates`);
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // NEW: Assessment Service Data
+  // ══════════════════════════════════════════════════════════════════════════
+
+  await seedAssessmentData();
+
   console.log('');
   console.log('✅ assessment-svc seeding complete!');
   console.log('');
@@ -489,6 +498,471 @@ async function main() {
   console.log('  - 5 sample assessment items (Math, ELA, SEL)');
   console.log('  - 5 learner responses with scores');
   console.log('  - 8 skill estimates linked to Common Core standards');
+  console.log('  - 3 assessments (Quiz, Test, Practice)');
+  console.log('  - 15+ questions with various types');
+  console.log('  - Sample attempts and responses');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Assessment Data Seeding
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Assessment IDs
+const MATH_QUIZ_ID = '00000000-0000-0000-a000-000000000001';
+const READING_TEST_ID = '00000000-0000-0000-a000-000000000002';
+const SCIENCE_PRACTICE_ID = '00000000-0000-0000-a000-000000000003';
+
+// Question IDs
+const QUESTION_MC_1 = '00000000-0000-0000-a100-000000000001';
+const QUESTION_MC_2 = '00000000-0000-0000-a100-000000000002';
+const QUESTION_TF_1 = '00000000-0000-0000-a100-000000000003';
+const QUESTION_TF_2 = '00000000-0000-0000-a100-000000000004';
+const QUESTION_SHORT_1 = '00000000-0000-0000-a100-000000000005';
+const QUESTION_NUMERIC_1 = '00000000-0000-0000-a100-000000000006';
+const QUESTION_ORDER_1 = '00000000-0000-0000-a100-000000000007';
+const QUESTION_MATCH_1 = '00000000-0000-0000-a100-000000000008';
+const QUESTION_FILL_1 = '00000000-0000-0000-a100-000000000009';
+const QUESTION_SELECT_1 = '00000000-0000-0000-a100-000000000010';
+
+// Teacher ID (from auth-svc)
+const TEACHER_USER_ID = '00000000-0000-0000-1000-000000000001';
+
+async function seedAssessmentData() {
+  console.log('');
+  console.log('📝 Seeding Assessment data...');
+
+  // Create Questions
+  const questions = [
+    {
+      id: QUESTION_MC_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'MULTIPLE_CHOICE' as const,
+      stem: 'What is 2 + 2?',
+      options: [
+        { id: 'a', text: '3' },
+        { id: 'b', text: '4' },
+        { id: 'c', text: '5' },
+        { id: 'd', text: '6' },
+      ],
+      correctAnswer: { optionId: 'b' },
+      explanation: 'Two plus two equals four.',
+      difficulty: 'EASY' as const,
+      points: 1,
+      tags: ['math', 'addition', 'basic'],
+      stats: {
+        timesAnswered: 100,
+        correctRate: 95,
+        averageTimeSeconds: 10,
+        discriminationIndex: 0.3,
+      },
+    },
+    {
+      id: QUESTION_MC_2,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'MULTIPLE_CHOICE' as const,
+      stem: 'What is the capital of France?',
+      options: [
+        { id: 'a', text: 'London' },
+        { id: 'b', text: 'Berlin' },
+        { id: 'c', text: 'Paris' },
+        { id: 'd', text: 'Madrid' },
+      ],
+      correctAnswer: { optionId: 'c' },
+      explanation: 'Paris is the capital city of France.',
+      difficulty: 'EASY' as const,
+      points: 1,
+      tags: ['geography', 'capitals', 'europe'],
+      stats: {
+        timesAnswered: 80,
+        correctRate: 90,
+        averageTimeSeconds: 8,
+        discriminationIndex: 0.25,
+      },
+    },
+    {
+      id: QUESTION_TF_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'TRUE_FALSE' as const,
+      stem: 'The sun rises in the east.',
+      correctAnswer: { value: true },
+      explanation: 'The sun rises in the east and sets in the west.',
+      difficulty: 'BEGINNER' as const,
+      points: 1,
+      tags: ['science', 'astronomy', 'basic'],
+      stats: {
+        timesAnswered: 120,
+        correctRate: 98,
+        averageTimeSeconds: 5,
+        discriminationIndex: 0.1,
+      },
+    },
+    {
+      id: QUESTION_TF_2,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'TRUE_FALSE' as const,
+      stem: 'Water boils at 50 degrees Celsius at sea level.',
+      correctAnswer: { value: false },
+      explanation: 'Water boils at 100 degrees Celsius (212°F) at sea level.',
+      difficulty: 'MEDIUM' as const,
+      points: 1,
+      tags: ['science', 'chemistry', 'water'],
+      stats: {
+        timesAnswered: 60,
+        correctRate: 75,
+        averageTimeSeconds: 12,
+        discriminationIndex: 0.45,
+      },
+    },
+    {
+      id: QUESTION_SHORT_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'SHORT_ANSWER' as const,
+      stem: 'What is the chemical symbol for water?',
+      correctAnswer: { acceptedAnswers: ['H2O', 'h2o'], caseSensitive: false },
+      explanation: 'Water is composed of two hydrogen atoms and one oxygen atom.',
+      difficulty: 'EASY' as const,
+      points: 1,
+      tags: ['science', 'chemistry', 'elements'],
+      stats: {
+        timesAnswered: 50,
+        correctRate: 85,
+        averageTimeSeconds: 15,
+        discriminationIndex: 0.35,
+      },
+    },
+    {
+      id: QUESTION_NUMERIC_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'NUMERIC' as const,
+      stem: 'What is the square root of 144?',
+      correctAnswer: { value: 12, tolerance: 0 },
+      explanation: '12 × 12 = 144, so the square root of 144 is 12.',
+      difficulty: 'MEDIUM' as const,
+      points: 2,
+      tags: ['math', 'square-roots', 'algebra'],
+      stats: {
+        timesAnswered: 40,
+        correctRate: 70,
+        averageTimeSeconds: 20,
+        discriminationIndex: 0.5,
+      },
+    },
+    {
+      id: QUESTION_ORDER_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'ORDERING' as const,
+      stem: 'Arrange these planets in order from closest to the sun to farthest:',
+      options: [
+        { id: 'mercury', text: 'Mercury' },
+        { id: 'venus', text: 'Venus' },
+        { id: 'earth', text: 'Earth' },
+        { id: 'mars', text: 'Mars' },
+      ],
+      correctAnswer: { correctOrder: ['mercury', 'venus', 'earth', 'mars'] },
+      explanation: 'Mercury is closest, followed by Venus, Earth, then Mars.',
+      difficulty: 'MEDIUM' as const,
+      points: 2,
+      tags: ['science', 'astronomy', 'planets'],
+      stats: {
+        timesAnswered: 30,
+        correctRate: 60,
+        averageTimeSeconds: 30,
+        discriminationIndex: 0.55,
+      },
+    },
+    {
+      id: QUESTION_MATCH_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'MATCHING' as const,
+      stem: 'Match each country to its capital city:',
+      options: [
+        { id: 'uk', text: 'United Kingdom' },
+        { id: 'japan', text: 'Japan' },
+        { id: 'canada', text: 'Canada' },
+      ],
+      correctAnswer: {
+        pairs: [
+          { left: 'United Kingdom', right: 'London' },
+          { left: 'Japan', right: 'Tokyo' },
+          { left: 'Canada', right: 'Ottawa' },
+        ],
+      },
+      explanation: 'London is the capital of the UK, Tokyo of Japan, and Ottawa of Canada.',
+      difficulty: 'MEDIUM' as const,
+      points: 3,
+      tags: ['geography', 'capitals', 'world'],
+      stats: {
+        timesAnswered: 25,
+        correctRate: 65,
+        averageTimeSeconds: 45,
+        discriminationIndex: 0.48,
+      },
+    },
+    {
+      id: QUESTION_FILL_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'FILL_BLANK' as const,
+      stem: 'The mitochondria is the _____ of the cell.',
+      correctAnswer: {
+        blanks: [
+          { position: 0, acceptedAnswers: ['powerhouse', 'power house'], caseSensitive: false },
+        ],
+      },
+      explanation: 'Mitochondria produce ATP, which is the energy currency of cells.',
+      difficulty: 'MEDIUM' as const,
+      points: 1,
+      tags: ['biology', 'cells', 'organelles'],
+      stats: {
+        timesAnswered: 70,
+        correctRate: 80,
+        averageTimeSeconds: 18,
+        discriminationIndex: 0.4,
+      },
+    },
+    {
+      id: QUESTION_SELECT_1,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      type: 'MULTIPLE_SELECT' as const,
+      stem: 'Which of the following are primary colors? (Select all that apply)',
+      options: [
+        { id: 'red', text: 'Red' },
+        { id: 'green', text: 'Green' },
+        { id: 'blue', text: 'Blue' },
+        { id: 'yellow', text: 'Yellow' },
+        { id: 'purple', text: 'Purple' },
+      ],
+      correctAnswer: { optionIds: ['red', 'blue', 'yellow'] },
+      explanation: 'The primary colors in traditional color theory are red, blue, and yellow.',
+      difficulty: 'EASY' as const,
+      points: 2,
+      tags: ['art', 'colors', 'basics'],
+      stats: {
+        timesAnswered: 45,
+        correctRate: 55,
+        averageTimeSeconds: 25,
+        discriminationIndex: 0.52,
+      },
+    },
+  ];
+
+  for (const question of questions) {
+    await prisma.question.upsert({
+      where: { id: question.id },
+      update: {},
+      create: question,
+    });
+  }
+  console.log(`  ✅ Created ${questions.length} questions`);
+
+  // Create Assessments
+  const assessments = [
+    {
+      id: MATH_QUIZ_ID,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      title: 'Basic Math Skills Quiz',
+      description: 'A quick quiz to test basic arithmetic skills.',
+      type: 'QUIZ' as const,
+      status: 'PUBLISHED' as const,
+      settings: {
+        timeLimit: 10,
+        passingScore: 70,
+        maxAttempts: 3,
+        shuffleQuestions: true,
+        showCorrectAnswers: true,
+        showExplanations: true,
+      },
+      difficulty: 'EASY' as const,
+      estimatedMinutes: 10,
+      totalPoints: 5,
+      publishedAt: new Date(),
+    },
+    {
+      id: READING_TEST_ID,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      title: 'Science Knowledge Test',
+      description: 'A comprehensive test covering basic science concepts.',
+      type: 'TEST' as const,
+      status: 'PUBLISHED' as const,
+      settings: {
+        timeLimit: 30,
+        passingScore: 60,
+        maxAttempts: 2,
+        shuffleQuestions: false,
+        showCorrectAnswers: false,
+        showExplanations: false,
+        allowReview: true,
+      },
+      difficulty: 'MEDIUM' as const,
+      estimatedMinutes: 25,
+      totalPoints: 10,
+      publishedAt: new Date(),
+    },
+    {
+      id: SCIENCE_PRACTICE_ID,
+      tenantId: DEV_TENANT_ID,
+      authorId: TEACHER_USER_ID,
+      title: 'Geography Practice',
+      description: 'Practice questions on world geography and capitals.',
+      type: 'PRACTICE' as const,
+      status: 'PUBLISHED' as const,
+      settings: {
+        showCorrectAnswers: true,
+        showExplanations: true,
+        adaptiveDifficulty: true,
+      },
+      difficulty: 'MEDIUM' as const,
+      estimatedMinutes: 15,
+      totalPoints: 6,
+      publishedAt: new Date(),
+    },
+  ];
+
+  for (const assessment of assessments) {
+    await prisma.assessment.upsert({
+      where: { id: assessment.id },
+      update: {},
+      create: assessment,
+    });
+  }
+  console.log(`  ✅ Created ${assessments.length} assessments`);
+
+  // Link questions to assessments
+  const assessmentQuestions = [
+    // Math Quiz
+    { assessmentId: MATH_QUIZ_ID, questionId: QUESTION_MC_1, orderIndex: 0 },
+    { assessmentId: MATH_QUIZ_ID, questionId: QUESTION_NUMERIC_1, orderIndex: 1 },
+    { assessmentId: MATH_QUIZ_ID, questionId: QUESTION_TF_1, orderIndex: 2 },
+
+    // Science Test
+    { assessmentId: READING_TEST_ID, questionId: QUESTION_TF_1, orderIndex: 0 },
+    { assessmentId: READING_TEST_ID, questionId: QUESTION_TF_2, orderIndex: 1 },
+    { assessmentId: READING_TEST_ID, questionId: QUESTION_SHORT_1, orderIndex: 2 },
+    { assessmentId: READING_TEST_ID, questionId: QUESTION_ORDER_1, orderIndex: 3 },
+    { assessmentId: READING_TEST_ID, questionId: QUESTION_FILL_1, orderIndex: 4 },
+
+    // Geography Practice
+    { assessmentId: SCIENCE_PRACTICE_ID, questionId: QUESTION_MC_2, orderIndex: 0 },
+    { assessmentId: SCIENCE_PRACTICE_ID, questionId: QUESTION_MATCH_1, orderIndex: 1 },
+    { assessmentId: SCIENCE_PRACTICE_ID, questionId: QUESTION_SELECT_1, orderIndex: 2 },
+  ];
+
+  for (const aq of assessmentQuestions) {
+    await prisma.assessmentQuestion.upsert({
+      where: {
+        assessmentId_questionId: {
+          assessmentId: aq.assessmentId,
+          questionId: aq.questionId,
+        },
+      },
+      update: {},
+      create: {
+        ...aq,
+        required: true,
+      },
+    });
+  }
+  console.log(`  ✅ Linked ${assessmentQuestions.length} questions to assessments`);
+
+  // Create sample attempts
+  const ATTEMPT_1_ID = '00000000-0000-0000-a200-000000000001';
+
+  await prisma.attempt.upsert({
+    where: { id: ATTEMPT_1_ID },
+    update: {},
+    create: {
+      id: ATTEMPT_1_ID,
+      assessmentId: MATH_QUIZ_ID,
+      userId: ALEX_USER_ID,
+      tenantId: DEV_TENANT_ID,
+      status: 'GRADED',
+      attemptNumber: 1,
+      startedAt: new Date(Date.now() - 1000 * 60 * 10),
+      submittedAt: new Date(Date.now() - 1000 * 60 * 5),
+      timeSpentSeconds: 300,
+      score: 80,
+      pointsEarned: 4,
+      pointsPossible: 5,
+      passed: true,
+      gradedAt: new Date(),
+    },
+  });
+
+  // Create sample responses for the attempt
+  const responses = [
+    {
+      attemptId: ATTEMPT_1_ID,
+      questionId: QUESTION_MC_1,
+      response: { optionId: 'b' },
+      isCorrect: true,
+      pointsEarned: 1,
+      timeSpentSeconds: 60,
+    },
+    {
+      attemptId: ATTEMPT_1_ID,
+      questionId: QUESTION_NUMERIC_1,
+      response: { value: 12 },
+      isCorrect: true,
+      pointsEarned: 2,
+      timeSpentSeconds: 120,
+    },
+    {
+      attemptId: ATTEMPT_1_ID,
+      questionId: QUESTION_TF_1,
+      response: { value: true },
+      isCorrect: true,
+      pointsEarned: 1,
+      timeSpentSeconds: 30,
+    },
+  ];
+
+  for (const response of responses) {
+    await prisma.questionResponse.upsert({
+      where: {
+        attemptId_questionId: {
+          attemptId: response.attemptId,
+          questionId: response.questionId,
+        },
+      },
+      update: {},
+      create: {
+        ...response,
+        partialCredit: false,
+        answeredAt: new Date(),
+      },
+    });
+  }
+  console.log(`  ✅ Created 1 sample attempt with ${responses.length} responses`);
+
+  // Create question pool
+  const POOL_1_ID = '00000000-0000-0000-a300-000000000001';
+  await prisma.questionPool.upsert({
+    where: { id: POOL_1_ID },
+    update: {},
+    create: {
+      id: POOL_1_ID,
+      tenantId: DEV_TENANT_ID,
+      name: 'Easy Science Questions',
+      description: 'A pool of easy science questions for practice assessments.',
+      criteria: {
+        difficulties: ['BEGINNER', 'EASY'],
+        tags: ['science'],
+        minCorrectRate: 70,
+      },
+    },
+  });
+  console.log('  ✅ Created 1 question pool');
 }
 
 try {

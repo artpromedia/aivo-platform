@@ -1,6 +1,6 @@
 /**
  * Privacy Guard Module
- * 
+ *
  * Implements de-identification, k-anonymity, and other privacy controls
  * for research data exports. FERPA/COPPA compliant.
  */
@@ -14,13 +14,13 @@ import { config } from '../config.js';
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface PrivacyConstraints {
-  minCellSize: number;           // Minimum learners per cohort (k-anonymity)
-  maxDimensions: number;         // Max grouping dimensions to prevent narrow groups
-  excludeColumns: string[];      // Columns to remove
-  dateCoarsening: 'day' | 'week' | 'month';  // Date precision
+  minCellSize: number; // Minimum learners per cohort (k-anonymity)
+  maxDimensions: number; // Max grouping dimensions to prevent narrow groups
+  excludeColumns: string[]; // Columns to remove
+  dateCoarsening: 'day' | 'week' | 'month'; // Date precision
   noiseInjection?: {
     enabled: boolean;
-    magnitude: number;           // Percentage of noise (e.g., 0.05 = 5%)
+    magnitude: number; // Percentage of noise (e.g., 0.05 = 5%)
   };
 }
 
@@ -50,9 +50,7 @@ export function pseudonymize(identifier: string, exportId: string): string {
  */
 export function generalizeAge(birthDate: Date | null): string | null {
   if (!birthDate) return null;
-  const age = Math.floor(
-    (Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-  );
+  const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
   if (age < 5) return '0-4';
   if (age < 10) return '5-9';
   if (age < 15) return '10-14';
@@ -65,21 +63,26 @@ export function generalizeAge(birthDate: Date | null): string | null {
  */
 export function coarsenDate(date: Date, precision: 'day' | 'week' | 'month'): string {
   const d = new Date(date);
-  
+
+  const getDateOnly = (date: Date): string => {
+    const isoStr = date.toISOString();
+    return isoStr.split('T')[0] ?? isoStr.substring(0, 10);
+  };
+
   switch (precision) {
     case 'day':
-      return d.toISOString().split('T')[0];
+      return getDateOnly(d);
     case 'week': {
       // Round to start of week (Monday)
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1);
       d.setDate(diff);
-      return d.toISOString().split('T')[0];
+      return getDateOnly(d);
     }
     case 'month':
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
     default:
-      return d.toISOString().split('T')[0];
+      return getDateOnly(d);
   }
 }
 
@@ -180,9 +183,9 @@ export function validateDimensions(
   }
 
   // Check for high-cardinality combinations that could be risky
-  const riskyDimensions = ['school_id', 'classroom_id', 'teacher_id'];
-  const riskyCount = dimensions.filter(d => riskyDimensions.includes(d)).length;
-  
+  const riskyDimensions = new Set(['school_id', 'classroom_id', 'teacher_id']);
+  const riskyCount = dimensions.filter((d) => riskyDimensions.has(d)).length;
+
   if (riskyCount > 1) {
     return {
       valid: false,
@@ -215,9 +218,9 @@ export function transformDataset(
   let suppressedRowCount = 0;
 
   // 1. Remove excluded columns and apply transformations
-  workingRows = workingRows.map(row => transformRow(row, exportId, constraints));
+  workingRows = workingRows.map((row) => transformRow(row, exportId, constraints));
   transformations.push(`Transformed ${originalRowCount} rows`);
-  
+
   if (constraints.excludeColumns.length > 0) {
     transformations.push(`Excluded columns: ${constraints.excludeColumns.join(', ')}`);
   }
@@ -240,9 +243,7 @@ export function transformDataset(
 
   // 3. Add noise if enabled
   if (constraints.noiseInjection?.enabled) {
-    transformations.push(
-      `Noise injection: ${constraints.noiseInjection.magnitude * 100}%`
-    );
+    transformations.push(`Noise injection: ${constraints.noiseInjection.magnitude * 100}%`);
   }
 
   return {

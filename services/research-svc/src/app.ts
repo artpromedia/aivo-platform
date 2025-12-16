@@ -1,24 +1,27 @@
 /**
  * Research Service - Fastify Application
- * 
+ *
  * Researcher & Insights Export Portal backend.
  * Provides governed access to de-identified analytics data.
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
 import jwt from '@fastify/jwt';
+import rateLimit from '@fastify/rate-limit';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
+
+// Import types to augment Fastify JWT module
+import './types.js';
 
 import { config } from './config.js';
 import { prisma } from './prisma.js';
-import { projectRoutes } from './routes/projects.js';
-import { exportRoutes } from './routes/exports.js';
 import { accessRoutes } from './routes/access.js';
-import { dataRoutes } from './routes/data.js';
 import { auditRoutes } from './routes/audit.js';
+import { dataRoutes } from './routes/data.js';
+import { exportRoutes } from './routes/exports.js';
+import { projectRoutes } from './routes/projects.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // App Factory
@@ -28,9 +31,7 @@ export async function createApp() {
   const app = Fastify({
     logger: {
       level: config.LOG_LEVEL,
-      transport: config.isDev
-        ? { target: 'pino-pretty', options: { colorize: true } }
-        : undefined,
+      transport: config.isDev ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
     },
     requestIdHeader: 'x-request-id',
     trustProxy: true,
@@ -40,14 +41,15 @@ export async function createApp() {
   // Security Plugins
   // ─────────────────────────────────────────────────────────────────────────────
 
-  await app.register(helmet);
-  
-  await app.register(cors, {
+  // Use type assertions to work around Fastify plugin type incompatibilities
+  await app.register(helmet as unknown as Parameters<FastifyInstance['register']>[0]);
+
+  await app.register(cors as unknown as Parameters<FastifyInstance['register']>[0], {
     origin: config.CORS_ORIGINS.split(','),
     credentials: true,
   });
 
-  await app.register(rateLimit, {
+  await app.register(rateLimit as unknown as Parameters<FastifyInstance['register']>[0], {
     max: 100,
     timeWindow: '1 minute',
     errorResponseBuilder: () => ({
@@ -61,7 +63,7 @@ export async function createApp() {
   // JWT Authentication
   // ─────────────────────────────────────────────────────────────────────────────
 
-  await app.register(jwt, {
+  await app.register(jwt as unknown as Parameters<FastifyInstance['register']>[0], {
     secret: config.JWT_SECRET,
   });
 
@@ -75,7 +77,8 @@ export async function createApp() {
     try {
       await request.jwtVerify();
     } catch (err) {
-      reply.status(401).send({ error: 'Unauthorized' });
+      request.log.warn({ err }, 'JWT verification failed');
+      return reply.status(401).send({ error: 'Unauthorized' });
     }
   });
 
@@ -123,7 +126,9 @@ export async function createApp() {
       await prisma.$queryRaw`SELECT 1`;
       return { status: 'ready', database: 'connected' };
     } catch {
-      throw { statusCode: 503, message: 'Database unavailable' };
+      const error = new Error('Database unavailable');
+      (error as Error & { statusCode: number }).statusCode = 503;
+      throw error;
     }
   });
 

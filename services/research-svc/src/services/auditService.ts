@@ -1,10 +1,10 @@
 /**
  * Research Audit Service
- * 
+ *
  * Records all research-related actions to an immutable audit log.
  */
 
-import type { AuditAction } from '@prisma/client';
+import type { AuditAction, Prisma } from '@prisma/client';
 
 import { prisma } from '../prisma.js';
 
@@ -16,64 +16,64 @@ export interface AuditContext {
   userAgent?: string;
 }
 
-export interface AuditMetadata {
-  [key: string]: unknown;
-}
+export type AuditMetadata = Record<string, unknown>;
 
 export interface RecordAuditLogInput {
   projectId?: string;
-  action: string;
+  action: AuditAction;
   entityType: string;
   entityId: string;
   details?: Record<string, unknown>;
 }
 
 /**
- * Record an action to the audit log (new interface)
+ * Record an action to the audit log
+ * Supports both new interface (input, context) and legacy interface (context, action, projectId?, metadata?)
  */
 export async function recordAuditLog(
-  input: RecordAuditLogInput,
-  context: AuditContext
-): Promise<void> {
-  await prisma.researchAuditLog.create({
-    data: {
-      tenantId: context.tenantId,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      action: input.action as AuditAction,
-      researchProjectId: input.projectId,
-      metadataJson: {
-        entityType: input.entityType,
-        entityId: input.entityId,
-        ...input.details,
-      },
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-    },
-  });
-}
-
-/**
- * Record an action to the audit log (legacy interface)
- */
-export async function recordAuditLogLegacy(
-  context: AuditContext,
-  action: AuditAction,
+  contextOrInput: AuditContext | RecordAuditLogInput,
+  actionOrContext: AuditAction | AuditContext,
   researchProjectId?: string,
   metadata?: AuditMetadata
 ): Promise<void> {
-  await prisma.researchAuditLog.create({
-    data: {
-      tenantId: context.tenantId,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      action,
-      researchProjectId,
-      metadataJson: metadata ?? undefined,
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-    },
-  });
+  // Detect which interface is being used
+  if (typeof actionOrContext !== 'object' || !('tenantId' in actionOrContext)) {
+    // Legacy interface: (context, action, projectId?, metadata?)
+    const context = contextOrInput as AuditContext;
+    const action = actionOrContext;
+    await prisma.researchAuditLog.create({
+      data: {
+        tenantId: context.tenantId,
+        userId: context.userId,
+        userEmail: context.userEmail,
+        action,
+        researchProjectId: researchProjectId ?? null,
+        metadataJson: (metadata ?? undefined) as Prisma.InputJsonValue | undefined,
+        ipAddress: context.ipAddress ?? null,
+        userAgent: context.userAgent ?? null,
+      },
+    });
+  } else {
+    // New interface: (input, context)
+    const input = contextOrInput as RecordAuditLogInput;
+    const context = actionOrContext;
+    await prisma.researchAuditLog.create({
+      data: {
+        tenantId: context.tenantId,
+        userId: context.userId,
+        userEmail: context.userEmail,
+        action: input.action,
+        researchProjectId: input.projectId ?? null,
+        metadataJson: {
+          entityType: input.entityType,
+          entityId: input.entityId,
+          ...input.details,
+        },
+        ipAddress: context.ipAddress ?? null,
+        userAgent: context.userAgent ?? null,
+      },
+    });
+  }
 }
 
 /**
@@ -136,7 +136,7 @@ export async function getExportAuditLogs(
   } = {}
 ) {
   const { limit = 50, offset = 0 } = options;
-  
+
   const exportActions: AuditAction[] = [
     'EXPORT_REQUESTED',
     'EXPORT_COMPLETED',
@@ -146,7 +146,7 @@ export async function getExportAuditLogs(
 
   const where = {
     tenantId,
-    action: { in: options.action?.length ? options.action as AuditAction[] : exportActions },
+    action: { in: options.action?.length ? (options.action as AuditAction[]) : exportActions },
     ...(options.startDate || options.endDate
       ? {
           createdAt: {

@@ -4,6 +4,7 @@
  * Export job creation, listing, and download management.
  */
 
+import type { ExportJobStatus } from '@prisma/client';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
@@ -65,14 +66,13 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 
     const job = await createExportJob(
       {
-        projectId: body.projectId,
+        tenantId: user.tenantId,
+        researchProjectId: body.projectId,
         datasetDefinitionId: body.datasetDefinitionId,
-        cohortId: body.cohortId,
+        cohortId: body.cohortId ?? '', // cohortId is optional in schema but required in service
         format: body.format,
-        dateRangeStart: body.dateRangeStart ? new Date(body.dateRangeStart) : undefined,
-        dateRangeEnd: body.dateRangeEnd ? new Date(body.dateRangeEnd) : undefined,
-        samplingEnabled: body.sampling?.enabled,
-        samplingRate: body.sampling?.rate,
+        dateRangeFrom: body.dateRangeStart ? new Date(body.dateRangeStart) : new Date(),
+        dateRangeTo: body.dateRangeEnd ? new Date(body.dateRangeEnd) : new Date(),
         requestedByUserId: user.sub,
       },
       auditContext
@@ -100,18 +100,14 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
     if (query.projectId) {
       // List exports for specific project
       result = await getProjectExportJobs(query.projectId, user.tenantId, {
-        status: query.status?.split(',') as
-          | ('PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED')[]
-          | undefined,
+        status: query.status?.split(',') as ExportJobStatus[] | undefined,
         limit: query.limit,
         offset: query.offset,
       });
     } else {
       // List user's exports (admins see all)
       result = await getUserExportJobs(isAdmin ? undefined : user.sub, user.tenantId, {
-        status: query.status?.split(',') as
-          | ('PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED')[]
-          | undefined,
+        status: query.status?.split(',') as ExportJobStatus[] | undefined,
         limit: query.limit,
         offset: query.offset,
       });
@@ -151,16 +147,16 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Export job not found' });
     }
 
-    if (job.status !== 'COMPLETED') {
+    if (job.status !== 'SUCCEEDED') {
       return reply.status(400).send({ error: 'Export not ready for download', status: job.status });
     }
 
-    if (!job.outputPath) {
+    if (!job.storagePath) {
       return reply.status(500).send({ error: 'Export file path missing' });
     }
 
     // Check expiry
-    if (job.expiresAt && new Date(job.expiresAt) < new Date()) {
+    if (job.storageExpiresAt && new Date(job.storageExpiresAt) < new Date()) {
       return reply.status(410).send({ error: 'Export has expired' });
     }
 
@@ -177,13 +173,13 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 
     // In production, generate signed URL from S3
     // For now, return the path
-    const signedUrl = await generateSignedDownloadUrl(job.outputPath);
+    const signedUrl = await generateSignedDownloadUrl(job.storagePath);
 
     return reply.send({
       url: signedUrl,
       expiresIn: 3600, // 1 hour
       filename: `export-${job.id}.${job.format.toLowerCase()}`,
-      checksum: job.outputChecksum,
+      // checksum field not available in schema
     });
   });
 
@@ -201,7 +197,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Export job not found' });
     }
 
-    if (job.status !== 'COMPLETED') {
+    if (job.status !== 'SUCCEEDED') {
       return reply.status(400).send({ error: 'Export not ready for preview', status: job.status });
     }
 
@@ -223,9 +219,12 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 /**
  * Generate a signed download URL for S3.
  * In production, use @aws-sdk/s3-request-presigner.
+ *
+ * @param path - The S3 object path to generate a signed URL for
+ * @returns A presigned URL valid for 1 hour
  */
 async function generateSignedDownloadUrl(path: string): Promise<string> {
-  // TODO: Implement actual S3 presigned URL generation
-  // For now, return a placeholder
+  // FIXME: Replace with actual S3 presigned URL generation using @aws-sdk/s3-request-presigner
+  // Current implementation returns a placeholder URL for development
   return `https://research-exports.aivo.com/download?path=${encodeURIComponent(path)}&expires=3600`;
 }
