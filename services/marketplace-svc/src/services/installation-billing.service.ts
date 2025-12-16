@@ -10,7 +10,6 @@ import { prisma } from '../prisma.js';
 import type {
   MarketplaceBillingModel,
   MarketplaceBillingStatus,
-  BillingMetadata,
 } from '../types/marketplace.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -75,7 +74,8 @@ export class InstallationBillingService {
   private readonly billingSvcBaseUrl: string;
 
   constructor(billingSvcBaseUrl?: string) {
-    this.billingSvcBaseUrl = billingSvcBaseUrl ?? process.env.BILLING_SVC_URL ?? 'http://localhost:3003';
+    this.billingSvcBaseUrl =
+      billingSvcBaseUrl ?? process.env.BILLING_SVC_URL ?? 'http://localhost:3003';
   }
 
   /**
@@ -123,7 +123,10 @@ export class InstallationBillingService {
     }
 
     // 3. Check if item is free - no billing needed
-    if (installation.marketplaceItem.isFree || installation.marketplaceItem.billingModel === 'FREE') {
+    if (
+      installation.marketplaceItem.isFree ||
+      installation.marketplaceItem.billingModel === 'FREE'
+    ) {
       await prisma.marketplaceInstallation.update({
         where: { id: installationId },
         data: {
@@ -182,7 +185,7 @@ export class InstallationBillingService {
         metadata: {
           marketplaceInstallationId: installationId,
           marketplaceItemId: installation.marketplaceItem.id,
-          billingModel: installation.marketplaceItem.billingModel ?? 'FREE',
+          billingModel: installation.marketplaceItem.billingModel,
         },
       });
 
@@ -209,7 +212,8 @@ export class InstallationBillingService {
         contractLineItemId: lineItemResponse.lineItemId,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error creating billing line item';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error creating billing line item';
       return {
         success: false,
         installationId,
@@ -367,7 +371,10 @@ export class InstallationBillingService {
     }
 
     // Free items are always entitled once installed
-    if (installation.marketplaceItem.isFree || installation.marketplaceItem.billingModel === 'FREE') {
+    if (
+      installation.marketplaceItem.isFree ||
+      installation.marketplaceItem.billingModel === 'FREE'
+    ) {
       return { entitled: true };
     }
 
@@ -413,7 +420,7 @@ export class InstallationBillingService {
         return undefined;
       }
 
-      const data = await response.json() as { data?: Array<{ id: string }> };
+      const data = (await response.json()) as { data?: { id: string }[] };
       return data.data?.[0]?.id;
     } catch {
       return undefined;
@@ -439,21 +446,20 @@ export class InstallationBillingService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new Error((error as { message?: string }).message ?? 'Failed to create billing line item');
+      throw new Error(
+        (error as { message?: string }).message ?? 'Failed to create billing line item'
+      );
     }
 
     return response.json() as Promise<BillingSvcLineItemResponse>;
   }
 
   private async cancelBillingLineItem(lineItemId: string, reason?: string): Promise<void> {
-    const response = await fetch(
-      `${this.billingSvcBaseUrl}/api/line-items/${lineItemId}/cancel`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
-      }
-    );
+    const response = await fetch(`${this.billingSvcBaseUrl}/api/line-items/${lineItemId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
 
     if (!response.ok) {
       throw new Error('Failed to cancel billing line item');
@@ -461,14 +467,11 @@ export class InstallationBillingService {
   }
 
   private async updateBillingLineItemQuantity(lineItemId: string, quantity: number): Promise<void> {
-    const response = await fetch(
-      `${this.billingSvcBaseUrl}/api/line-items/${lineItemId}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity }),
-      }
-    );
+    const response = await fetch(`${this.billingSvcBaseUrl}/api/line-items/${lineItemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity }),
+    });
 
     if (!response.ok) {
       throw new Error('Failed to update billing line item quantity');

@@ -63,7 +63,8 @@ async function main() {
       learnerId: ALEX_USER_ID,
       createdByUserId: TEACHER_USER_ID,
       title: 'Master fraction concepts and operations',
-      description: 'By end of Q2, Alex will demonstrate understanding of fractions including identifying, comparing, and adding fractions with like denominators.',
+      description:
+        'By end of Q2, Alex will demonstrate understanding of fractions including identifying, comparing, and adding fractions with like denominators.',
       domain: GoalDomain.MATH,
       skillId: SKILL_FRACTIONS,
       startDate: new Date('2024-01-15'),
@@ -84,7 +85,8 @@ async function main() {
       learnerId: ALEX_USER_ID,
       createdByUserId: THERAPIST_USER_ID,
       title: 'Improve focus and self-regulation',
-      description: 'Alex will increase on-task behavior during learning sessions to 15+ minutes with appropriate break requests.',
+      description:
+        'Alex will increase on-task behavior during learning sessions to 15+ minutes with appropriate break requests.',
       domain: GoalDomain.SEL,
       skillId: SKILL_SEL_MANAGEMENT,
       startDate: new Date('2024-01-15'),
@@ -104,7 +106,8 @@ async function main() {
       learnerId: JORDAN_USER_ID,
       createdByUserId: TEACHER_USER_ID,
       title: 'Develop reading comprehension skills',
-      description: 'Jordan will demonstrate improved reading comprehension by accurately answering inferential questions about grade-level texts.',
+      description:
+        'Jordan will demonstrate improved reading comprehension by accurately answering inferential questions about grade-level texts.',
       domain: GoalDomain.ELA,
       skillId: SKILL_READING,
       startDate: new Date('2024-01-20'),
@@ -408,7 +411,8 @@ async function main() {
       goalObjectiveId: '00000000-0000-0000-tp01-000000000002',
       createdByUserId: TEACHER_USER_ID,
       noteType: 'SESSION_SUMMARY',
-      noteText: 'Alex showed good understanding of fraction comparison today. Struggled a bit with 4ths vs 8ths but improved with visual support. Requested one break appropriately.',
+      noteText:
+        'Alex showed good understanding of fraction comparison today. Struggled a bit with 4ths vs 8ths but improved with visual support. Requested one break appropriately.',
       visibleToParents: true,
       metadataJson: { mood: 'positive', engagement: 'high' },
     },
@@ -419,7 +423,8 @@ async function main() {
       goalObjectiveId: '00000000-0000-0000-tp01-000000000010',
       createdByUserId: THERAPIST_USER_ID,
       noteType: 'PROGRESS_UPDATE',
-      noteText: 'Alex is making good progress on self-identifying when focus is dropping. Used the "focus meter" successfully 3/4 times this week.',
+      noteText:
+        'Alex is making good progress on self-identifying when focus is dropping. Used the "focus meter" successfully 3/4 times this week.',
       visibleToParents: true,
     },
     {
@@ -428,7 +433,8 @@ async function main() {
       goalId: SAM_GOAL_SEL,
       createdByUserId: THERAPIST_USER_ID,
       noteType: 'GOAL_COMPLETE',
-      noteText: 'Goal completed! Sam consistently identifies and labels both basic and complex emotions. Ready to advance to emotion regulation strategies.',
+      noteText:
+        'Goal completed! Sam consistently identifies and labels both basic and complex emotions. Ready to advance to emotion regulation strategies.',
       visibleToParents: true,
     },
   ];
@@ -459,11 +465,11 @@ async function main() {
   console.log('  - Progress documentation for parent visibility');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

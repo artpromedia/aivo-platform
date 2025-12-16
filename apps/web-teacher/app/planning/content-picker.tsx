@@ -5,13 +5,14 @@
  *
  * Allows teachers to select content from their library
  * to add to lesson plan activities.
- * 
+ *
  * Features:
  * - Aivo Content tab: Native LOs
  * - Partner Content tab: Licensed third-party content packs
  */
 
 import { Button } from '@aivo/ui-web';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 import {
@@ -23,18 +24,24 @@ import {
 } from '../../lib/marketplace-api';
 
 interface Props {
-  open: boolean;
-  onClose: () => void;
-  onSelect: (contentId: string, contentTitle: string, contentType: string) => void;
-  gradeBand?: string;
-  subject?: string;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onSelect: (contentId: string, contentTitle: string, contentType: string) => void;
+  readonly gradeBand?: string;
+  readonly subject?: string;
 }
 
-// TODO: Get from auth context
+// FIXME: Get from auth context
 const MOCK_TEACHER_ID = 'teacher-123';
 const MOCK_TENANT_ID = 'tenant-456';
 
 type ContentTab = 'aivo' | 'partner';
+
+function getItemIcon(isPartner: boolean, itemType: string): string {
+  if (isPartner) return '🤝';
+  if (itemType === 'CONTENT_PACK') return '📚';
+  return '🔧';
+}
 
 export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: Props) {
   const [activeTab, setActiveTab] = useState<ContentTab>('aivo');
@@ -47,8 +54,9 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
 
   useEffect(() => {
     if (open) {
-      loadContent();
+      void loadContent();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, gradeBand, subject]);
 
   async function loadContent() {
@@ -91,7 +99,12 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 cursor-default"
+        onClick={onClose}
+        aria-label="Close modal"
+      />
 
       {/* Modal */}
       <div className="relative flex max-h-[80vh] w-full max-w-2xl flex-col rounded-lg border border-border bg-surface shadow-xl">
@@ -116,7 +129,9 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
         {/* Tabs */}
         <div className="flex border-b border-border">
           <button
-            onClick={() => { setActiveTab('aivo'); }}
+            onClick={() => {
+              setActiveTab('aivo');
+            }}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === 'aivo'
                 ? 'border-b-2 border-primary text-primary'
@@ -126,12 +141,14 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
             📚 Aivo Content
           </button>
           <button
-            onClick={() => { setActiveTab('partner'); }}
+            onClick={() => {
+              setActiveTab('partner');
+            }}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === 'partner'
                 ? 'border-b-2 border-primary text-primary'
                 : 'text-muted hover:text-text'
-            } ${!partnerContentAvailable ? 'opacity-50' : ''}`}
+            } ${partnerContentAvailable ? '' : 'opacity-50'}`}
             disabled={!partnerContentAvailable}
           >
             🤝 Partner Content
@@ -174,33 +191,15 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-16 animate-pulse rounded-lg bg-surface-muted" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-              <p className="text-sm text-red-600">{error}</p>
-              <button onClick={loadContent} className="mt-2 text-sm text-primary hover:underline">
-                Try again
-              </button>
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <EmptyState hasSearch={search.length > 0} isPartnerTab={activeTab === 'partner'} />
-          ) : (
-            <div className="space-y-2">
-              {filteredItems.map((item) => (
-                <ContentItemCard
-                  key={item.id}
-                  item={item}
-                  isPartner={activeTab === 'partner'}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          )}
+          <ContentList
+            loading={loading}
+            error={error}
+            filteredItems={filteredItems}
+            search={search}
+            activeTab={activeTab}
+            onSelect={onSelect}
+            loadContent={loadContent}
+          />
         </div>
 
         {/* Footer */}
@@ -217,7 +216,72 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
   );
 }
 
-function EmptyState({ hasSearch, isPartnerTab }: { hasSearch: boolean; isPartnerTab: boolean }) {
+/**
+ * ContentList Component - Renders the content list based on loading/error state
+ */
+function ContentList({
+  loading,
+  error,
+  filteredItems,
+  search,
+  activeTab,
+  onSelect,
+  loadContent,
+}: {
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly filteredItems: (MarketplaceLibraryItem | PartnerContentItem)[];
+  readonly search: string;
+  readonly activeTab: 'aivo' | 'partner';
+  readonly onSelect: (contentId: string, contentTitle: string, contentType: string) => void;
+  readonly loadContent: () => void;
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-surface-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+        <p className="text-sm text-red-600">{error}</p>
+        <button onClick={loadContent} className="mt-2 text-sm text-primary hover:underline">
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (filteredItems.length === 0) {
+    return <EmptyState hasSearch={search.length > 0} isPartnerTab={activeTab === 'partner'} />;
+  }
+
+  return (
+    <div className="space-y-2">
+      {filteredItems.map((item) => (
+        <ContentItemCard
+          key={item.id}
+          item={item}
+          isPartner={activeTab === 'partner'}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({
+  hasSearch,
+  isPartnerTab,
+}: {
+  readonly hasSearch: boolean;
+  readonly isPartnerTab: boolean;
+}) {
   if (hasSearch) {
     return (
       <div className="rounded-lg border border-border bg-surface-muted p-6 text-center">
@@ -234,7 +298,7 @@ function EmptyState({ hasSearch, isPartnerTab }: { hasSearch: boolean; isPartner
         </div>
         <h3 className="font-medium">No partner content available</h3>
         <p className="mt-1 text-sm text-muted">
-          Your district hasn't licensed any partner content packs yet.
+          Your district hasn&apos;t licensed any partner content packs yet.
           <br />
           Contact your admin to explore the marketplace.
         </p>
@@ -269,7 +333,7 @@ function EmptyState({ hasSearch, isPartnerTab }: { hasSearch: boolean; isPartner
 
 /**
  * Content Item Card Component
- * 
+ *
  * Handles rendering for both Aivo and Partner content items
  */
 function ContentItemCard({
@@ -277,13 +341,13 @@ function ContentItemCard({
   isPartner,
   onSelect,
 }: {
-  item: MarketplaceLibraryItem | PartnerContentItem;
-  isPartner: boolean;
-  onSelect: (contentId: string, contentTitle: string, contentType: string) => void;
+  readonly item: MarketplaceLibraryItem | PartnerContentItem;
+  readonly isPartner: boolean;
+  readonly onSelect: (contentId: string, contentTitle: string, contentType: string) => void;
 }) {
   const isPartnerItem = 'license' in item;
-  const vendorName = item.vendor?.name || 'Aivo';
-  const itemType = item.itemType || 'CONTENT_PACK';
+  const vendorName = item.vendor?.name ?? 'Aivo';
+  const itemType = item.itemType ?? 'CONTENT_PACK';
 
   // Check if partner content has seat limits
   const hasSeatsWarning =
@@ -304,10 +368,16 @@ function ContentItemCard({
       }`}
     >
       {item.iconUrl ? (
-        <img src={item.iconUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+        <Image
+          src={item.iconUrl}
+          alt=""
+          width={40}
+          height={40}
+          className="h-10 w-10 rounded-lg object-cover"
+        />
       ) : (
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-muted text-xl">
-          {isPartner ? '🤝' : itemType === 'CONTENT_PACK' ? '📚' : '🔧'}
+          {getItemIcon(isPartner, itemType)}
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -334,10 +404,7 @@ function ContentItemCard({
         {isPartnerItem && item.accessibilityTags && item.accessibilityTags.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {item.accessibilityTags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700"
-              >
+              <span key={tag} className="rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700">
                 {formatAccessibilityTag(tag)}
               </span>
             ))}
@@ -350,12 +417,7 @@ function ContentItemCard({
           </p>
         )}
       </div>
-      <svg
-        className="h-5 w-5 text-muted"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
+      <svg className="h-5 w-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"

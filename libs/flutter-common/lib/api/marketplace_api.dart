@@ -193,7 +193,6 @@ class MarketplaceApiClient {
 
   final Dio _dio;
 
-  static const String _basePath = '/api/v1';
   static const String _internalPath = '/internal/entitlements';
 
   /// Get entitled partner content for the current tenant.

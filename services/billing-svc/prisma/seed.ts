@@ -309,11 +309,11 @@ async function main() {
   console.log('  - District: $45/seat/year');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

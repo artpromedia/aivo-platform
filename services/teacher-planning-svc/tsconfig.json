@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "baseUrl": "../..",
     "paths": {
       "@aivo/ts-data-access": ["libs/ts-data-access/dist/index.d.ts"],

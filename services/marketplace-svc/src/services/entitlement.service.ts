@@ -52,7 +52,7 @@ interface CacheEntry {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class EntitlementService {
-  private cache = new Map<string, CacheEntry>();
+  private readonly cache = new Map<string, CacheEntry>();
   private readonly cacheTtlMs: number;
 
   constructor(cacheTtlMs = 60_000) {
@@ -87,10 +87,7 @@ export class EntitlementService {
         tenantId,
         loId,
         isActive: true,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gte: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
       },
       include: {
         license: {
@@ -198,10 +195,7 @@ export class EntitlementService {
         tenantId,
         loId: { in: loIds },
         isActive: true,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gte: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
       },
       include: {
         license: true,
@@ -209,86 +203,102 @@ export class EntitlementService {
     });
 
     // Build a map of loId -> entitlement
-    const entitlementMap = new Map<string, typeof entitlements[0]>();
+    const entitlementMap = new Map<string, (typeof entitlements)[0]>();
     for (const ent of entitlements) {
       entitlementMap.set(ent.loId, ent);
     }
 
     // Check each LO
     const results: Record<string, EntitlementCheckResponse> = {};
+    const context = { learnerId, schoolId, classroomId, gradeBand };
 
     for (const loId of loIds) {
-      const entitlement = entitlementMap.get(loId);
-
-      if (!entitlement) {
-        results[loId] = {
-          entitled: false,
-          reason: 'No active license found for this content',
-        };
-        continue;
-      }
-
-      const license = entitlement.license;
-
-      // Check license status
-      if (license.status !== 'ACTIVE') {
-        results[loId] = {
-          entitled: false,
-          reason: `License is ${license.status.toLowerCase()}`,
-          license: this.buildLicenseSummary(license),
-        };
-        continue;
-      }
-
-      // Check scope restrictions
-      const scopeResult = this.checkScopeRestrictions(entitlement, {
-        schoolId,
-        classroomId,
-        gradeBand,
-      });
-
-      if (!scopeResult.allowed) {
-        results[loId] = buildEntitlementResponse(
-          {
-            entitled: false,
-            license: this.buildLicenseSummary(license),
-          },
-          scopeResult.reason
-        );
-        continue;
-      }
-
-      // Check D2C learner restrictions
-      if (license.purchaserParentUserId && learnerId) {
-        if (license.learnerIds.length > 0 && !license.learnerIds.includes(learnerId)) {
-          results[loId] = {
-            entitled: false,
-            reason: 'Learner not covered by this license',
-            license: this.buildLicenseSummary(license),
-          };
-          continue;
-        }
-      }
-
-      // Check seat limits
-      if (license.seatLimit !== null) {
-        results[loId] = {
-          entitled: true,
-          license: this.buildLicenseSummary(license),
-          seatRequired: true,
-          seatAvailable: license.seatsUsed < license.seatLimit,
-        };
-        continue;
-      }
-
-      // Full entitlement
-      results[loId] = {
-        entitled: true,
-        license: this.buildLicenseSummary(license),
-      };
+      results[loId] = this.checkSingleLoEntitlement(entitlementMap.get(loId), context);
     }
 
     return { results };
+  }
+
+  /**
+   * Check entitlement for a single LO (used by batch check)
+   */
+  private checkSingleLoEntitlement(
+    entitlement:
+      | {
+          license: {
+            status: LicenseStatus;
+            purchaserParentUserId: string | null;
+            learnerIds: string[];
+            seatLimit: number | null;
+            seatsUsed: number;
+          } & Record<string, unknown>;
+          allowedSchoolIds: string[];
+          allowedGradeBands: MarketplaceGradeBand[];
+        }
+      | undefined,
+    context: {
+      learnerId?: string;
+      schoolId?: string;
+      classroomId?: string;
+      gradeBand?: MarketplaceGradeBand;
+    }
+  ): EntitlementCheckResponse {
+    if (!entitlement) {
+      return { entitled: false, reason: 'No active license found for this content' };
+    }
+
+    const { license } = entitlement;
+    const licenseSummary = this.buildLicenseSummary(license);
+
+    // Check license status
+    if (license.status !== 'ACTIVE') {
+      return {
+        entitled: false,
+        reason: `License is ${license.status.toLowerCase()}`,
+        license: licenseSummary,
+      };
+    }
+
+    // Check scope restrictions
+    const scopeResult = this.checkScopeRestrictions(entitlement, context);
+    if (!scopeResult.allowed) {
+      return buildEntitlementResponse(
+        { entitled: false, license: licenseSummary },
+        scopeResult.reason
+      );
+    }
+
+    // Check D2C learner restrictions
+    if (this.isLearnerExcluded(license, context.learnerId)) {
+      return {
+        entitled: false,
+        reason: 'Learner not covered by this license',
+        license: licenseSummary,
+      };
+    }
+
+    // Check seat limits
+    if (license.seatLimit !== null) {
+      return {
+        entitled: true,
+        license: licenseSummary,
+        seatRequired: true,
+        seatAvailable: license.seatsUsed < license.seatLimit,
+      };
+    }
+
+    return { entitled: true, license: licenseSummary };
+  }
+
+  /**
+   * Check if learner is excluded from a D2C license
+   */
+  private isLearnerExcluded(
+    license: { purchaserParentUserId: string | null; learnerIds: string[] },
+    learnerId: string | undefined
+  ): boolean {
+    if (!license.purchaserParentUserId || !learnerId) return false;
+    return license.learnerIds.length > 0 && !license.learnerIds.includes(learnerId);
   }
 
   /**
@@ -320,10 +330,7 @@ export class EntitlementService {
 
     if (activeOnly) {
       where.isActive = true;
-      where.OR = [
-        { expiresAt: null },
-        { expiresAt: { gte: new Date() } },
-      ];
+      where.OR = [{ expiresAt: null }, { expiresAt: { gte: new Date() } }];
     }
 
     // Filter by school if provided
@@ -524,7 +531,7 @@ export class EntitlementService {
     license?: EntitlementCheckResponse['license'];
     seatRequired?: boolean;
     seatAvailable?: boolean;
-    entitledPacks?: Array<{ id: string; title: string }>;
+    entitledPacks?: { id: string; title: string }[];
   }> {
     const { tenantId, marketplaceItemId, schoolId, classroomId, gradeBand, learnerId } = request;
 
@@ -534,10 +541,7 @@ export class EntitlementService {
         tenantId,
         marketplaceItemId,
         status: 'ACTIVE',
-        OR: [
-          { validUntil: null },
-          { validUntil: { gte: new Date() } },
-        ],
+        OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
       },
       include: {
         marketplaceItem: {
@@ -610,7 +614,7 @@ export class EntitlementService {
     limit: number;
     offset: number;
   }): Promise<{
-    items: Array<{
+    items: {
       id: string;
       slug: string;
       title: string;
@@ -630,7 +634,7 @@ export class EntitlementService {
       loCount: number;
       accessibilityTags: string[];
       safetyTags: string[];
-    }>;
+    }[];
     total: number;
   }> {
     const { tenantId, schoolId, gradeBand, subject, itemType, limit, offset } = options;
@@ -640,10 +644,7 @@ export class EntitlementService {
     const licenseWhere: any = {
       tenantId,
       status: 'ACTIVE',
-      OR: [
-        { validUntil: null },
-        { validUntil: { gte: new Date() } },
-      ],
+      OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
     };
 
     // Get active licenses with marketplace items
@@ -698,9 +699,8 @@ export class EntitlementService {
         const item = license.marketplaceItem;
         const latestVersion = item.versions[0];
 
-        // Type assertion for the version with content items
-        type VersionWithContent = (typeof item.versions)[number];
-        const versionTags = (latestVersion as VersionWithContent | undefined)?.policyTags ?? [];
+        // Type for the version with content items
+        const versionTags = latestVersion?.policyTags ?? [];
 
         return {
           id: item.id,
@@ -719,7 +719,7 @@ export class EntitlementService {
             seatsUsed: license.seatsUsed,
             validUntil: license.validUntil,
           },
-          loCount: latestVersion?.contentPackItems?.length ?? 0,
+          loCount: latestVersion?.contentPackItems.length ?? 0,
           accessibilityTags: versionTags.filter((t: string) =>
             ['TTS', 'DYSLEXIA_FRIENDLY', 'CAPTIONS', 'HIGH_CONTRAST'].includes(t)
           ),
@@ -756,37 +756,65 @@ export class EntitlementService {
       return { allowed: true };
     }
 
-    // Check school restriction
-    if (license.scopeType === 'SCHOOL' && context.schoolId) {
-      if (
-        license.allowedSchoolIds.length > 0 &&
-        !license.allowedSchoolIds.includes(context.schoolId)
-      ) {
-        return { allowed: false, reason: 'School not covered by license' };
-      }
-    }
+    // Get the relevant check for this scope type
+    return this.checkScopeByType(license, context);
+  }
 
-    // Check classroom restriction
-    if (license.scopeType === 'CLASSROOM' && context.classroomId) {
-      if (
-        license.allowedClassroomIds.length > 0 &&
-        !license.allowedClassroomIds.includes(context.classroomId)
-      ) {
-        return { allowed: false, reason: 'Classroom not covered by license' };
-      }
+  /**
+   * Check scope restriction by scope type
+   */
+  private checkScopeByType(
+    license: {
+      scopeType: string;
+      allowedSchoolIds: string[];
+      allowedGradeBands: MarketplaceGradeBand[];
+      allowedClassroomIds: string[];
+    },
+    context: {
+      schoolId: string | undefined;
+      classroomId: string | undefined;
+      gradeBand: MarketplaceGradeBand | undefined;
     }
-
-    // Check grade band restriction
-    if (license.scopeType === 'GRADE_BAND' && context.gradeBand) {
-      if (
-        license.allowedGradeBands.length > 0 &&
-        !license.allowedGradeBands.includes(context.gradeBand)
-      ) {
-        return { allowed: false, reason: 'Grade band not covered by license' };
-      }
+  ): { allowed: boolean; reason?: string } {
+    switch (license.scopeType) {
+      case 'SCHOOL':
+        return this.checkAllowedList(
+          context.schoolId,
+          license.allowedSchoolIds,
+          'School not covered by license'
+        );
+      case 'CLASSROOM':
+        return this.checkAllowedList(
+          context.classroomId,
+          license.allowedClassroomIds,
+          'Classroom not covered by license'
+        );
+      case 'GRADE_BAND':
+        return this.checkAllowedList(
+          context.gradeBand,
+          license.allowedGradeBands,
+          'Grade band not covered by license'
+        );
+      default:
+        return { allowed: true };
     }
+  }
 
-    return { allowed: true };
+  /**
+   * Check if a value is in the allowed list
+   */
+  private checkAllowedList(
+    value: string | undefined,
+    allowedValues: string[],
+    reason: string
+  ): { allowed: boolean; reason?: string } {
+    if (!value || allowedValues.length === 0) {
+      return { allowed: true };
+    }
+    if (allowedValues.includes(value)) {
+      return { allowed: true };
+    }
+    return { allowed: false, reason };
   }
 
   // ══════════════════════════════════════════════════════════════════════════════

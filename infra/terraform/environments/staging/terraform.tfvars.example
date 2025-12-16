@@ -1,0 +1,11 @@
+# =============================================================================
+# AIVO Platform - Staging Environment Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in the values
+
+project_id        = "aivo-staging-XXXXX"
+region            = "us-central1"
+alert_email       = "staging-alerts@aivo.io"
+slack_webhook_url = ""
+cors_origins      = ["https://staging.aivo.io", "https://app.staging.aivo.io"]
+enable_cdn        = false

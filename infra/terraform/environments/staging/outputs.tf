@@ -1,0 +1,108 @@
+# =============================================================================
+# AIVO Platform - Staging Environment Outputs
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# GKE Outputs
+# -----------------------------------------------------------------------------
+
+output "gke_cluster_name" {
+  description = "GKE cluster name"
+  value       = module.gke.cluster_name
+}
+
+output "gke_cluster_endpoint" {
+  description = "GKE cluster endpoint"
+  value       = module.gke.cluster_endpoint
+  sensitive   = true
+}
+
+output "gke_get_credentials_command" {
+  description = "Command to get GKE credentials"
+  value       = module.gke.get_credentials_command
+}
+
+# -----------------------------------------------------------------------------
+# Database Outputs
+# -----------------------------------------------------------------------------
+
+output "cloudsql_instance_name" {
+  description = "Cloud SQL instance name"
+  value       = module.cloudsql.instance_name
+}
+
+output "cloudsql_connection_name" {
+  description = "Cloud SQL connection name"
+  value       = module.cloudsql.connection_name
+}
+
+output "cloudsql_private_ip" {
+  description = "Cloud SQL private IP"
+  value       = module.cloudsql.private_ip
+  sensitive   = true
+}
+
+output "cloudsql_read_replica_ip" {
+  description = "Cloud SQL read replica private IP"
+  value       = module.cloudsql.read_replica_private_ip
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# Redis Outputs
+# -----------------------------------------------------------------------------
+
+output "redis_cache_host" {
+  description = "Redis cache host"
+  value       = module.redis.cache_host
+}
+
+output "redis_session_host" {
+  description = "Redis session host"
+  value       = module.redis.session_host
+}
+
+output "redis_pubsub_host" {
+  description = "Redis pub/sub host"
+  value       = module.redis.pubsub_host
+}
+
+# -----------------------------------------------------------------------------
+# Storage Outputs
+# -----------------------------------------------------------------------------
+
+output "storage_buckets" {
+  description = "Storage bucket names"
+  value = {
+    content_assets = module.storage.content_assets_bucket_name
+    user_uploads   = module.storage.user_uploads_bucket_name
+    static_assets  = module.storage.static_assets_bucket_name
+    backups        = module.storage.backup_bucket_name
+  }
+}
+
+# -----------------------------------------------------------------------------
+# CDN Outputs
+# -----------------------------------------------------------------------------
+
+output "cdn_ip_address" {
+  description = "CDN IP address"
+  value       = var.enable_cdn ? module.cdn[0].cdn_ip_address : null
+}
+
+output "cdn_url" {
+  description = "CDN URL"
+  value       = var.enable_cdn ? module.cdn[0].cdn_url : null
+}
+
+# -----------------------------------------------------------------------------
+# IAM Outputs
+# -----------------------------------------------------------------------------
+
+output "service_accounts" {
+  description = "Service account emails"
+  value = {
+    application = module.iam.application_service_account_email
+    gke_nodes   = module.iam.gke_nodes_service_account_email
+  }
+}

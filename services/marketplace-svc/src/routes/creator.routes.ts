@@ -10,19 +10,18 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import {
-  MarketplaceItemType,
-  MarketplaceSubject,
-  MarketplaceGradeBand,
-  MarketplaceModality,
-  MarketplaceVersionStatus,
-  PricingModel,
-  EmbeddedToolLaunchType,
-} from '../types/index.js';
-import {
   ALLOWED_TOOL_SCOPES,
   validateSubmission,
   validateContentPackConsistency,
 } from '../services/validation.service.js';
+import {
+  MarketplaceItemType,
+  MarketplaceSubject,
+  MarketplaceGradeBand,
+  MarketplaceModality,
+  PricingModel,
+  EmbeddedToolLaunchType,
+} from '../types/index.js';
 
 // ============================================================================
 // Schema Validation
@@ -262,12 +261,12 @@ async function createItem(
       },
     },
   };
-  
+
   // Add optional fields only if defined
   if (body.iconUrl !== undefined) createData.iconUrl = body.iconUrl;
   if (body.priceCents !== undefined) createData.priceCents = body.priceCents;
   if (body.metadataJson !== undefined) {
-    createData.metadataJson = JSON.parse(JSON.stringify(body.metadataJson));
+    createData.metadataJson = structuredClone(body.metadataJson);
   }
 
   // Create item with initial version
@@ -372,7 +371,7 @@ async function updateItem(
   }
 
   const latestVersion = item.versions[0];
-  if (!latestVersion || latestVersion.status !== 'DRAFT') {
+  if (latestVersion?.status !== 'DRAFT') {
     return reply.status(400).send({
       error: 'Can only edit items with a DRAFT version. Create a new version first.',
     });
@@ -472,7 +471,7 @@ async function createVersion(
 
   // Create new version, optionally copying content from previous
   const previousVersion = item.versions[0];
-  
+
   // Build base version data
   const versionCreateData: Parameters<typeof prisma.marketplaceItemVersion.create>[0]['data'] = {
     marketplaceItemId: itemId,
@@ -480,14 +479,18 @@ async function createVersion(
     status: 'DRAFT',
     submittedByUserId: userId,
   };
-  
+
   // Add optional changelog
   if (body.changelog !== undefined) {
     versionCreateData.changelog = body.changelog;
   }
-  
+
   // Copy content pack items if applicable
-  if (previousVersion && item.itemType === 'CONTENT_PACK' && previousVersion.contentPackItems.length > 0) {
+  if (
+    previousVersion &&
+    item.itemType === 'CONTENT_PACK' &&
+    previousVersion.contentPackItems.length > 0
+  ) {
     versionCreateData.contentPackItems = {
       create: previousVersion.contentPackItems.map((cp) => {
         type ContentPackItemCreate = Omit<
@@ -499,15 +502,13 @@ async function createVersion(
           loId: cp.loId ?? null,
           position: cp.position,
           isHighlight: cp.isHighlight,
-          metadataJson: cp.metadataJson !== null 
-            ? JSON.parse(JSON.stringify(cp.metadataJson)) 
-            : null,
+          metadataJson: cp.metadataJson === null ? null : structuredClone(cp.metadataJson),
         };
         return cpItem;
       }),
     };
   }
-  
+
   // Copy tool config if applicable
   if (previousVersion?.embeddedToolConfig && item.itemType === 'EMBEDDED_TOOL') {
     type ToolConfigCreate = Parameters<typeof prisma.embeddedToolConfig.create>[0]['data'];
@@ -530,7 +531,7 @@ async function createVersion(
       create: toolConfig,
     };
   }
-  
+
   const version = await prisma.marketplaceItemVersion.create({
     data: versionCreateData,
   });
@@ -672,8 +673,8 @@ async function setToolConfig(
       requiredScopes: body.requiredScopes,
       optionalScopes: body.optionalScopes ?? [],
       sandboxAttributes: body.sandboxAttributes ?? [],
-      configSchemaJson: body.configSchemaJson ? JSON.parse(JSON.stringify(body.configSchemaJson)) : null,
-      defaultConfigJson: body.defaultConfigJson ? JSON.parse(JSON.stringify(body.defaultConfigJson)) : null,
+      configSchemaJson: body.configSchemaJson ? structuredClone(body.configSchemaJson) : null,
+      defaultConfigJson: body.defaultConfigJson ? structuredClone(body.defaultConfigJson) : null,
       ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
       ...(body.cspDirectives !== undefined && { cspDirectives: body.cspDirectives }),
     },
@@ -683,8 +684,8 @@ async function setToolConfig(
       requiredScopes: body.requiredScopes,
       optionalScopes: body.optionalScopes ?? [],
       sandboxAttributes: body.sandboxAttributes ?? [],
-      configSchemaJson: body.configSchemaJson ? JSON.parse(JSON.stringify(body.configSchemaJson)) : null,
-      defaultConfigJson: body.defaultConfigJson ? JSON.parse(JSON.stringify(body.defaultConfigJson)) : null,
+      configSchemaJson: body.configSchemaJson ? structuredClone(body.configSchemaJson) : null,
+      defaultConfigJson: body.defaultConfigJson ? structuredClone(body.defaultConfigJson) : null,
       ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
       ...(body.cspDirectives !== undefined && { cspDirectives: body.cspDirectives }),
     },
@@ -748,10 +749,7 @@ async function submitForReview(
   }
 
   // Run consistency checks for Aivo content packs
-  if (
-    version.marketplaceItem.itemType === 'CONTENT_PACK' &&
-    access.vendor.type === 'AIVO'
-  ) {
+  if (version.marketplaceItem.itemType === 'CONTENT_PACK' && access.vendor.type === 'AIVO') {
     const consistencyCheck = await validateContentPackConsistency(version.id);
     if (!consistencyCheck.valid) {
       return reply.status(400).send({
@@ -848,28 +846,16 @@ export async function creatorRoutes(fastify: FastifyInstance) {
   );
 
   // Create new item
-  fastify.post(
-    '/creators/:vendorId/items',
-    createItem
-  );
+  fastify.post('/creators/:vendorId/items', createItem);
 
   // Get item details
-  fastify.get(
-    '/creators/:vendorId/items/:itemId',
-    getCreatorItem
-  );
+  fastify.get('/creators/:vendorId/items/:itemId', getCreatorItem);
 
   // Update item
-  fastify.patch(
-    '/creators/:vendorId/items/:itemId',
-    updateItem
-  );
+  fastify.patch('/creators/:vendorId/items/:itemId', updateItem);
 
   // Create new version
-  fastify.post(
-    '/creators/:vendorId/items/:itemId/versions',
-    createVersion
-  );
+  fastify.post('/creators/:vendorId/items/:itemId/versions', createVersion);
 
   // Set content pack items
   fastify.post(
@@ -878,20 +864,11 @@ export async function creatorRoutes(fastify: FastifyInstance) {
   );
 
   // Set tool config
-  fastify.put(
-    '/creators/:vendorId/items/:itemId/versions/:versionId/tool-config',
-    setToolConfig
-  );
+  fastify.put('/creators/:vendorId/items/:itemId/versions/:versionId/tool-config', setToolConfig);
 
   // Submit for review
-  fastify.post(
-    '/creators/:vendorId/items/:itemId/versions/:versionId/submit',
-    submitForReview
-  );
+  fastify.post('/creators/:vendorId/items/:itemId/versions/:versionId/submit', submitForReview);
 
   // Discard version
-  fastify.delete(
-    '/creators/:vendorId/items/:itemId/versions/:versionId',
-    discardVersion
-  );
+  fastify.delete('/creators/:vendorId/items/:itemId/versions/:versionId', discardVersion);
 }

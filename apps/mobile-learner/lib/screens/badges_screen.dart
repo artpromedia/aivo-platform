@@ -6,15 +6,17 @@ import '../engagement/providers.dart';
 
 /// Screen displaying all earned and in-progress badges
 class BadgesScreen extends ConsumerWidget {
-  const BadgesScreen({super.key, required this.learnerId});
+  const BadgesScreen({super.key, required this.tenantId, required this.learnerId});
 
+  final String tenantId;
   final String learnerId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final badgesAsync = ref.watch(learnerBadgesProvider(learnerId));
-    final progressAsync = ref.watch(badgeProgressProvider(learnerId));
+    final params = (tenantId: tenantId, learnerId: learnerId);
+    final badgesAsync = ref.watch(learnerBadgesProvider(params));
+    final progressAsync = ref.watch(badgeProgressProvider(params));
 
     return Scaffold(
       appBar: AppBar(
@@ -31,13 +33,14 @@ class BadgesScreen extends ConsumerWidget {
               Text('Failed to load badges', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => ref.invalidate(learnerBadgesProvider(learnerId)),
+                onPressed: () => ref.invalidate(learnerBadgesProvider(params)),
                 child: const Text('Retry'),
               ),
             ],
           ),
         ),
         data: (badges) => _BadgesContent(
+          tenantId: tenantId,
           learnerId: learnerId,
           badges: badges,
           progressAsync: progressAsync,
@@ -49,11 +52,13 @@ class BadgesScreen extends ConsumerWidget {
 
 class _BadgesContent extends StatelessWidget {
   const _BadgesContent({
+    required this.tenantId,
     required this.learnerId,
     required this.badges,
     required this.progressAsync,
   });
 
+  final String tenantId;
   final String learnerId;
   final List<LearnerBadge> badges;
   final AsyncValue<List<BadgeProgress>> progressAsync;
@@ -61,7 +66,8 @@ class _BadgesContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final earnedBadges = badges.where((b) => b.awardedAt != null).toList();
+    // LearnerBadge.awardedAt is required, so all badges are earned
+    final earnedBadges = badges;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -128,7 +134,7 @@ class _BadgesContent extends StatelessWidget {
             ),
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             data: (progress) {
-              final inProgress = progress.where((p) => p.currentValue < p.targetValue).toList();
+              final inProgress = progress.where((p) => !p.earned).toList();
               if (inProgress.isEmpty) {
                 return const SliverToBoxAdapter(child: SizedBox.shrink());
               }
@@ -218,12 +224,12 @@ class _EarnedBadgeCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  badge.badge.icon ?? '🏆',
+                  _getIconEmoji(badge.iconKey),
                   style: const TextStyle(fontSize: 36),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  badge.badge.name,
+                  badge.badgeName,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -231,24 +237,37 @@ class _EarnedBadgeCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (badge.badge.description != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    badge.badge.description!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 4),
+                Text(
+                  badge.badgeDescription,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ],
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  String _getIconEmoji(String iconKey) {
+    // Map icon keys to emojis - could be expanded
+    const iconMap = {
+      'trophy': '🏆',
+      'star': '⭐',
+      'medal': '🥇',
+      'fire': '🔥',
+      'lightning': '⚡',
+      'heart': '❤️',
+      'book': '📚',
+      'rocket': '🚀',
+    };
+    return iconMap[iconKey] ?? '🏆';
   }
 
   void _showBadgeDetails(BuildContext context) {
@@ -262,34 +281,31 @@ class _EarnedBadgeCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              badge.badge.icon ?? '🏆',
+              _getIconEmoji(badge.iconKey),
               style: const TextStyle(fontSize: 64),
             ),
             const SizedBox(height: 16),
             Text(
-              badge.badge.name,
+              badge.badgeName,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (badge.badge.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                badge.badge.description!,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
+            const SizedBox(height: 8),
+            Text(
+              badge.badgeDescription,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-            ],
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
-            if (badge.awardedAt != null)
-              Text(
-                'Earned ${_formatDate(badge.awardedAt!)}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            Text(
+              'Earned ${_formatDate(badge.awardedAt)}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.pop(context),
@@ -320,8 +336,8 @@ class _InProgressBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final percentage = progress.targetValue > 0
-        ? progress.currentValue / progress.targetValue
+    final percentage = progress.target > 0
+        ? progress.progress / progress.target
         : 0.0;
 
     return Padding(
@@ -335,7 +351,7 @@ class _InProgressBadgeCard extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              progress.badge.icon ?? '🔒',
+              _getIconEmoji(progress.iconKey),
               style: TextStyle(
                 fontSize: 32,
                 color: Colors.grey.withValues(alpha: 0.7),
@@ -347,7 +363,7 @@ class _InProgressBadgeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    progress.badge.name,
+                    progress.badgeName,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -360,7 +376,7 @@ class _InProgressBadgeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${progress.currentValue} / ${progress.targetValue}',
+                    '${progress.progress} / ${progress.target}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -372,5 +388,19 @@ class _InProgressBadgeCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getIconEmoji(String iconKey) {
+    const iconMap = {
+      'trophy': '🏆',
+      'star': '⭐',
+      'medal': '🥇',
+      'fire': '🔥',
+      'lightning': '⚡',
+      'heart': '❤️',
+      'book': '📚',
+      'rocket': '🚀',
+    };
+    return iconMap[iconKey] ?? '🔒';
   }
 }

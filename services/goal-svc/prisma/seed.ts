@@ -6,7 +6,7 @@
  * - Goal objectives with mastery criteria
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 
@@ -39,7 +39,8 @@ async function main() {
       learnerId: LEARNER_IDS[0],
       createdByUserId: TEACHER_USER_ID,
       title: 'Master Fraction Operations',
-      description: 'Alex will demonstrate proficiency in adding, subtracting, multiplying, and dividing fractions.',
+      description:
+        'Alex will demonstrate proficiency in adding, subtracting, multiplying, and dividing fractions.',
       category: 'ACADEMIC',
       subject: 'MATH',
       targetDate: daysFromNow(30),
@@ -109,7 +110,7 @@ async function main() {
 
   for (const goal of alexGoals) {
     const { objectives, ...goalData } = goal;
-    
+
     await prisma.goal.upsert({
       where: { id: goal.id },
       update: {},
@@ -274,11 +275,11 @@ async function main() {
   console.log('  - 1 completed goal for Sam');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

@@ -116,44 +116,44 @@ function Write-Header {
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✅ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
-function Write-Warning {
+function Write-WarningMessage {
     param([string]$Message)
-    Write-Host "⚠️  $Message" -ForegroundColor Yellow
+    Write-Host "[WARN] $Message" -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-ErrorMessage {
     param([string]$Message)
-    Write-Host "❌ $Message" -ForegroundColor Red
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Host "ℹ️  $Message" -ForegroundColor Blue
+    Write-Host "[INFO] $Message" -ForegroundColor Blue
 }
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "📦 $Message" -ForegroundColor Yellow
+    Write-Host "[STEP] $Message" -ForegroundColor Yellow
 }
 
 function Test-ServiceHasPrisma {
     param([string]$ServiceName)
-    $prismaPath = Join-Path $ServicesDir $ServiceName "prisma" "schema.prisma"
+    $prismaPath = Join-Path (Join-Path (Join-Path $ServicesDir $ServiceName) "prisma") "schema.prisma"
     return Test-Path $prismaPath
 }
 
 function Test-ServiceHasSeed {
     param([string]$ServiceName)
-    $seedPath = Join-Path $ServicesDir $ServiceName "prisma" "seed.ts"
+    $seedPath = Join-Path (Join-Path (Join-Path $ServicesDir $ServiceName) "prisma") "seed.ts"
     return Test-Path $seedPath
 }
 
 function Get-ServicePrismaPath {
     param([string]$ServiceName)
-    return Join-Path $ServicesDir $ServiceName "prisma"
+    return Join-Path (Join-Path $ServicesDir $ServiceName) "prisma"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -164,7 +164,7 @@ function Invoke-Migration {
     param([string]$ServiceName)
     
     if (-not (Test-ServiceHasPrisma $ServiceName)) {
-        Write-Warning "Skipping $ServiceName (no prisma directory)"
+        Write-WarningMessage "Skipping $ServiceName (no prisma directory)"
         return $true
     }
     
@@ -182,12 +182,12 @@ function Invoke-Migration {
             Write-Success "$ServiceName migrated successfully"
             return $true
         } else {
-            Write-Error "$ServiceName migration failed: $result"
+            Write-ErrorMessage "$ServiceName migration failed: $result"
             return $false
         }
     }
     catch {
-        Write-Error "$ServiceName migration failed: $_"
+        Write-ErrorMessage "$ServiceName migration failed: $_"
         return $false
     }
     finally {
@@ -203,7 +203,7 @@ function Invoke-Seed {
     param([string]$ServiceName)
     
     if (-not (Test-ServiceHasSeed $ServiceName)) {
-        Write-Warning "Skipping $ServiceName (no seed.ts)"
+        Write-WarningMessage "Skipping $ServiceName (no seed.ts)"
         return $true
     }
     
@@ -220,12 +220,12 @@ function Invoke-Seed {
             Write-Success "$ServiceName seeded successfully"
             return $true
         } else {
-            Write-Error "$ServiceName seeding failed: $result"
+            Write-ErrorMessage "$ServiceName seeding failed: $result"
             return $false
         }
     }
     catch {
-        Write-Error "$ServiceName seeding failed: $_"
+        Write-ErrorMessage "$ServiceName seeding failed: $_"
         return $false
     }
     finally {
@@ -241,7 +241,7 @@ function Invoke-Reset {
     param([string]$ServiceName)
     
     if (-not (Test-ServiceHasPrisma $ServiceName)) {
-        Write-Warning "Skipping $ServiceName (no prisma directory)"
+        Write-WarningMessage "Skipping $ServiceName (no prisma directory)"
         return $true
     }
     
@@ -258,12 +258,12 @@ function Invoke-Reset {
             Write-Success "$ServiceName reset successfully"
             return $true
         } else {
-            Write-Error "$ServiceName reset failed: $result"
+            Write-ErrorMessage "$ServiceName reset failed: $result"
             return $false
         }
     }
     catch {
-        Write-Error "$ServiceName reset failed: $_"
+        Write-ErrorMessage "$ServiceName reset failed: $_"
         return $false
     }
     finally {
@@ -449,10 +449,10 @@ switch ($Command) {
             Write-Info "Seeding complete: $seedSuccessCount succeeded, $seedFailCount failed"
         }
         elseif (-not $migrationSuccess) {
-            Write-Warning "Skipping seeding due to migration failures"
+            Write-WarningMessage "Skipping seeding due to migration failures"
         }
         else {
-            Write-Warning "Skipping seeding (--SkipSeed flag)"
+            Write-WarningMessage "Skipping seeding (--SkipSeed flag)"
         }
     }
 }

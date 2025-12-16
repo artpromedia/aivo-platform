@@ -53,7 +53,8 @@ async function main() {
       id: INTERNAL_EVAL_PROJECT,
       tenantId: DEV_TENANT_ID,
       title: 'Q1 2024 Math Intervention Effectiveness Study',
-      description: 'Internal program evaluation to measure the impact of AIVO adaptive learning on 3rd grade math proficiency in Title I schools.',
+      description:
+        'Internal program evaluation to measure the impact of AIVO adaptive learning on 3rd grade math proficiency in Title I schools.',
       type: ProjectType.INTERNAL_EVAL,
       status: ProjectStatus.APPROVED,
       piName: 'Dr. Sarah Assessment',
@@ -69,7 +70,8 @@ async function main() {
       id: ACADEMIC_RESEARCH_PROJECT,
       tenantId: DEV_TENANT_ID,
       title: 'Adaptive Learning and Executive Function Development in Neurodiverse Learners',
-      description: 'IRB-approved academic study examining how personalized pacing affects executive function development in students with ADHD and autism.',
+      description:
+        'IRB-approved academic study examining how personalized pacing affects executive function development in students with ADHD and autism.',
       type: ProjectType.EXTERNAL_RESEARCH,
       status: ProjectStatus.APPROVED,
       piName: 'Dr. Maya Researcher',
@@ -105,7 +107,8 @@ async function main() {
       researchProjectId: INTERNAL_EVAL_PROJECT,
       version: 1,
       title: 'Internal Evaluation Data Use Agreement',
-      agreementText: 'This agreement governs the use of de-identified learner data for internal program evaluation purposes...',
+      agreementText:
+        'This agreement governs the use of de-identified learner data for internal program evaluation purposes...',
       effectiveFrom: new Date('2024-01-01'),
       effectiveTo: new Date('2024-06-30'),
       status: DUAStatus.ACTIVE,
@@ -120,7 +123,8 @@ async function main() {
       researchProjectId: ACADEMIC_RESEARCH_PROJECT,
       version: 1,
       title: 'Academic Research Data Use Agreement',
-      agreementText: 'This agreement governs the use of de-identified learner data for academic research purposes per IRB protocol IRB-2024-0123...',
+      agreementText:
+        'This agreement governs the use of de-identified learner data for academic research purposes per IRB protocol IRB-2024-0123...',
       documentUrl: 'https://storage.aivo.dev/dua/irb-2024-0123-dua.pdf',
       effectiveFrom: new Date('2024-02-01'),
       effectiveTo: new Date('2025-12-31'),
@@ -167,7 +171,8 @@ async function main() {
       tenantId: DEV_TENANT_ID,
       researchProjectId: ACADEMIC_RESEARCH_PROJECT,
       name: 'SEL + Neurodiverse Cohort',
-      description: 'Students with ADHD or autism receiving SEL curriculum with consent for research',
+      description:
+        'Students with ADHD or autism receiving SEL curriculum with consent for research',
       filterJson: {
         profileTags: ['adhd', 'autism'],
         hasResearchConsent: true,
@@ -369,7 +374,11 @@ async function main() {
       researchProjectId: INTERNAL_EVAL_PROJECT,
       action: AuditAction.EXPORT_COMPLETED,
       userId: ADMIN_USER_ID,
-      details: { exportJobId: '00000000-0000-0000-re30-000000000001', rowCount: 4890, format: 'CSV' },
+      details: {
+        exportJobId: '00000000-0000-0000-re30-000000000001',
+        rowCount: 4890,
+        format: 'CSV',
+      },
       createdAt: new Date('2024-02-01T10:05:32Z'),
     },
     {
@@ -411,11 +420,11 @@ async function main() {
   console.log('  - Complete audit trail for data access');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

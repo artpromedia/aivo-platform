@@ -20,12 +20,12 @@ This guide covers setting up databases for local development, running migrations
 
 ### Required Software
 
-| Software | Version | Purpose |
-|----------|---------|---------|
-| PostgreSQL | 15.0+ | Primary database |
-| Node.js | 20.x | Runtime for services |
-| pnpm | 8.x+ | Package manager |
-| Docker | 20.x+ | Optional: containerized PostgreSQL |
+| Software   | Version | Purpose                            |
+| ---------- | ------- | ---------------------------------- |
+| PostgreSQL | 15.0+   | Primary database                   |
+| Node.js    | 20.x    | Runtime for services               |
+| pnpm       | 8.x+    | Package manager                    |
+| Docker     | 20.x+   | Optional: containerized PostgreSQL |
 
 ### Verify Installation
 
@@ -33,7 +33,7 @@ This guide covers setting up databases for local development, running migrations
 # Check PostgreSQL
 psql --version
 
-# Check Node.js  
+# Check Node.js
 node --version
 
 # Check pnpm
@@ -121,10 +121,10 @@ DATABASE_URL="postgresql://aivo:aivo_dev_password@localhost:5432/aivo_dev"
 
 Each service can use a separate database or share one. The default setup uses a single PostgreSQL instance with schema separation.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | Default connection for all services | Required |
-| `{SERVICE}_DATABASE_URL` | Service-specific override | Optional |
+| Variable                 | Description                         | Default  |
+| ------------------------ | ----------------------------------- | -------- |
+| `DATABASE_URL`           | Default connection for all services | Required |
+| `{SERVICE}_DATABASE_URL` | Service-specific override           | Optional |
 
 ### Example Multi-Database Setup
 
@@ -200,49 +200,49 @@ npx tsx prisma/seed.ts
 
 The seed scripts create a comprehensive development environment with **26 seeded services**:
 
-| Service | Data Created |
-|---------|--------------|
-| **tenant-svc** | Development tenant, Demo tenant, 3 schools, 6 classrooms |
-| **auth-svc** | Admin, 2 teachers, therapist, parent, 5 learners (10 users total) |
-| **profile-svc** | 5 learner profiles with learning styles, sensory preferences |
-| **content-svc** | 8 learning objects (Math, ELA, Science, SEL) with versions |
-| **content-authoring-svc** | 4 LOs, 5 versions, QA checks, translations |
-| **learner-model-svc** | 23 skills, 11 prerequisites, 3 virtual brains |
-| **session-svc** | 9 sessions with events across learners |
-| **engagement-svc** | 18 badge definitions, learner profiles, badge awards |
-| **goal-svc** | 4 goals with objectives across 3 learners |
-| **focus-svc** | Focus states, 20 ping logs, 3 interventions |
-| **homework-helper-svc** | 3 submissions with steps |
-| **assessment-svc** | 5 baseline profiles, 4 attempts, skill estimates |
-| **baseline-svc** | 3 profiles, 2 attempts, items, responses, estimates |
-| **messaging-svc** | 3 conversations, 7 participants, 12 messages |
-| **notify-svc** | 12 notification templates |
-| **marketplace-svc** | 4 vendors, 5 items, 3 tenant installations |
-| **billing-svc** | 7 plans, 2 accounts, 3 subscriptions |
-| **lti-svc** | 2 LTI tools (Canvas, Schoology), 4 links |
-| **teacher-planning-svc** | 4 goals, 9 objectives, 3 session plans |
-| **collaboration-svc** | Care teams, action plans, tasks, notes, meetings |
-| **embedded-tools-svc** | 3 tool definitions, 2 sessions, 8 events |
-| **integration-svc** | 2 webhook endpoints, API keys, deliveries |
-| **sis-sync-svc** | 3 SIS providers, sync runs, field mappings |
-| **device-mgmt-svc** | 5 devices, 3 pools, policies, events |
-| **sandbox-svc** | 3 partners, sandbox tenants, API keys |
-| **research-svc** | 2 research projects, cohorts, exports, DUAs |
+| Service                   | Data Created                                                      |
+| ------------------------- | ----------------------------------------------------------------- |
+| **tenant-svc**            | Development tenant, Demo tenant, 3 schools, 6 classrooms          |
+| **auth-svc**              | Admin, 2 teachers, therapist, parent, 5 learners (10 users total) |
+| **profile-svc**           | 5 learner profiles with learning styles, sensory preferences      |
+| **content-svc**           | 8 learning objects (Math, ELA, Science, SEL) with versions        |
+| **content-authoring-svc** | 4 LOs, 5 versions, QA checks, translations                        |
+| **learner-model-svc**     | 23 skills, 11 prerequisites, 3 virtual brains                     |
+| **session-svc**           | 9 sessions with events across learners                            |
+| **engagement-svc**        | 18 badge definitions, learner profiles, badge awards              |
+| **goal-svc**              | 4 goals with objectives across 3 learners                         |
+| **focus-svc**             | Focus states, 20 ping logs, 3 interventions                       |
+| **homework-helper-svc**   | 3 submissions with steps                                          |
+| **assessment-svc**        | 5 baseline profiles, 4 attempts, skill estimates                  |
+| **baseline-svc**          | 3 profiles, 2 attempts, items, responses, estimates               |
+| **messaging-svc**         | 3 conversations, 7 participants, 12 messages                      |
+| **notify-svc**            | 12 notification templates                                         |
+| **marketplace-svc**       | 4 vendors, 5 items, 3 tenant installations                        |
+| **billing-svc**           | 7 plans, 2 accounts, 3 subscriptions                              |
+| **lti-svc**               | 2 LTI tools (Canvas, Schoology), 4 links                          |
+| **teacher-planning-svc**  | 4 goals, 9 objectives, 3 session plans                            |
+| **collaboration-svc**     | Care teams, action plans, tasks, notes, meetings                  |
+| **embedded-tools-svc**    | 3 tool definitions, 2 sessions, 8 events                          |
+| **integration-svc**       | 2 webhook endpoints, API keys, deliveries                         |
+| **sis-sync-svc**          | 3 SIS providers, sync runs, field mappings                        |
+| **device-mgmt-svc**       | 5 devices, 3 pools, policies, events                              |
+| **sandbox-svc**           | 3 partners, sandbox tenants, API keys                             |
+| **research-svc**          | 2 research projects, cohorts, exports, DUAs                       |
 
 ### Default User Credentials
 
-| Email | Password | Role |
-|-------|----------|------|
-| `admin@aivo.dev` | `Admin123!@#` | Platform Admin |
-| `author@aivo.dev` | `Author123!@#` | Content Author |
-| `teacher@aivo.dev` | `Teacher123!@#` | Teacher |
-| `therapist@aivo.dev` | `Therapist123!@#` | Therapist |
-| `parent@aivo.dev` | `Parent123!@#` | Parent |
-| `alex@aivo.dev` | `Learner123!@#` | Learner (active) |
-| `jordan@aivo.dev` | `Learner123!@#` | Learner (new) |
-| `sam@aivo.dev` | `Learner123!@#` | Learner |
-| `taylor@aivo.dev` | `Learner123!@#` | Learner |
-| `morgan@aivo.dev` | `Learner123!@#` | Learner |
+| Email                | Password          | Role             |
+| -------------------- | ----------------- | ---------------- |
+| `admin@aivo.dev`     | `Admin123!@#`     | Platform Admin   |
+| `author@aivo.dev`    | `Author123!@#`    | Content Author   |
+| `teacher@aivo.dev`   | `Teacher123!@#`   | Teacher          |
+| `therapist@aivo.dev` | `Therapist123!@#` | Therapist        |
+| `parent@aivo.dev`    | `Parent123!@#`    | Parent           |
+| `alex@aivo.dev`      | `Learner123!@#`   | Learner (active) |
+| `jordan@aivo.dev`    | `Learner123!@#`   | Learner (new)    |
+| `sam@aivo.dev`       | `Learner123!@#`   | Learner          |
+| `taylor@aivo.dev`    | `Learner123!@#`   | Learner          |
+| `morgan@aivo.dev`    | `Learner123!@#`   | Learner          |
 
 ---
 
@@ -280,39 +280,46 @@ npx prisma migrate reset --force
 Services are migrated in dependency order to ensure foreign key relationships work correctly:
 
 ### Tier 1: Core Infrastructure
+
 1. `tenant-svc` - Multi-tenant foundation
 2. `auth-svc` - Users, roles, authentication
 3. `profile-svc` - Learner profiles
 
 ### Tier 2: Content & Learning
+
 4. `content-svc` - Learning objects catalog
 5. `content-authoring-svc` - Authoring workflow
 6. `learner-model-svc` - Skills, virtual brains
 7. `session-svc` - Learning sessions
 
 ### Tier 3: Engagement & Support
+
 8. `engagement-svc` - Badges, gamification
 9. `goal-svc` - Learning goals
 10. `focus-svc` - Focus tracking
 11. `homework-helper-svc` - Homework scaffolding
 
 ### Tier 4: Assessment & Analytics
+
 12. `assessment-svc` - Baseline assessments
 13. `baseline-svc` - Baseline profiles and attempts
 14. `analytics-svc` - Usage analytics
 
 ### Tier 5: Communication & Collaboration
+
 15. `messaging-svc` - In-app messaging
 16. `notify-svc` - Push notifications
 17. `collaboration-svc` - Care team coordination
 
 ### Tier 6: Marketplace & Integrations
+
 18. `marketplace-svc` - Content marketplace
 19. `lti-svc` - LMS integrations
 20. `integration-svc` - Webhooks, API keys
 21. `sis-sync-svc` - Student Information System sync
 
 ### Tier 7: Administrative & Support
+
 22. `billing-svc` - Billing & subscriptions
 23. `teacher-planning-svc` - Teacher tools
 24. `embedded-tools-svc` - Embedded learning tools
@@ -397,16 +404,16 @@ AIVO uses **row-level tenant isolation**:
 
 Seed data uses predictable UUIDs for cross-service references:
 
-| Entity Type | UUID Pattern |
-|-------------|--------------|
-| Tenants | `00000000-0000-0000-0000-00000000000X` |
-| Schools | `00000000-0000-0000-0001-00000000000X` |
-| Classrooms | `00000000-0000-0000-0002-00000000000X` |
-| Staff Users | `00000000-0000-0000-1000-00000000000X` |
-| Learner Users | `00000000-0000-0000-2000-00000000000X` |
+| Entity Type      | UUID Pattern                           |
+| ---------------- | -------------------------------------- |
+| Tenants          | `00000000-0000-0000-0000-00000000000X` |
+| Schools          | `00000000-0000-0000-0001-00000000000X` |
+| Classrooms       | `00000000-0000-0000-0002-00000000000X` |
+| Staff Users      | `00000000-0000-0000-1000-00000000000X` |
+| Learner Users    | `00000000-0000-0000-2000-00000000000X` |
 | Learning Objects | `00000000-0000-0000-4000-00000000000X` |
-| Badges | `00000000-0000-0000-5000-00000000000X` |
-| Sessions | `00000000-0000-0000-6000-00000000000X` |
+| Badges           | `00000000-0000-0000-5000-00000000000X` |
+| Sessions         | `00000000-0000-0000-6000-00000000000X` |
 
 ### Development Tenant
 

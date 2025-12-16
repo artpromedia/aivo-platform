@@ -9,10 +9,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
-import type {
-  MarketplaceBillingModel,
-  VendorRevenueShare,
-} from '../types/marketplace.types.js';
+import type { MarketplaceBillingModel } from '../types/marketplace.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -34,13 +31,17 @@ const UpdateBillingConfigSchema = z.object({
   isFree: z.boolean().optional(),
   billingModel: z.enum(['FREE', 'TENANT_FLAT', 'PER_SEAT']).optional(),
   billingSku: z.string().max(50).optional().nullable(),
-  billingMetadataJson: z.object({
-    trialDays: z.number().int().min(0).max(365).optional(),
-    minSeats: z.number().int().min(1).optional(),
-    pricePerSeatCents: z.number().int().min(0).optional(),
-    flatPriceCents: z.number().int().min(0).optional(),
-    billingPeriod: z.enum(['MONTHLY', 'ANNUAL']).optional(),
-  }).passthrough().optional().nullable(),
+  billingMetadataJson: z
+    .object({
+      trialDays: z.number().int().min(0).max(365).optional(),
+      minSeats: z.number().int().min(1).optional(),
+      pricePerSeatCents: z.number().int().min(0).optional(),
+      flatPriceCents: z.number().int().min(0).optional(),
+      billingPeriod: z.enum(['MONTHLY', 'ANNUAL']).optional(),
+    })
+    .passthrough()
+    .optional()
+    .nullable(),
 });
 
 const CreateRevenueShareSchema = z.object({
@@ -221,10 +222,7 @@ async function listRevenueShares(
   if (activeOnly) {
     const now = new Date();
     where.effectiveStartDate = { lte: now };
-    where.OR = [
-      { effectiveEndDate: null },
-      { effectiveEndDate: { gt: now } },
-    ];
+    where.OR = [{ effectiveEndDate: null }, { effectiveEndDate: { gt: now } }];
   }
 
   const [shares, total] = await Promise.all([
@@ -413,10 +411,7 @@ async function getVendorRevenueSummary(
     where: {
       vendorId,
       effectiveStartDate: { lte: new Date() },
-      OR: [
-        { effectiveEndDate: null },
-        { effectiveEndDate: { gt: new Date() } },
-      ],
+      OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gt: new Date() } }],
     },
   });
 

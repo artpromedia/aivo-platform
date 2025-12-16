@@ -10,11 +10,13 @@ import '../widgets/child_engagement_card.dart';
 class ChildEngagementScreen extends ConsumerWidget {
   const ChildEngagementScreen({
     super.key,
+    required this.tenantId,
     required this.learnerId,
     required this.learnerName,
     required this.parentId,
   });
 
+  final String tenantId;
   final String learnerId;
   final String learnerName;
   final String parentId;
@@ -173,7 +175,7 @@ class ChildEngagementScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => SendKudosDialog(
-        learner: Learner(id: learnerId, name: learnerName),
+        learner: Learner(id: learnerId, tenantId: tenantId, name: learnerName, grade: null),
         parentId: parentId,
       ),
     );

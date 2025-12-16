@@ -86,9 +86,9 @@ export async function upsertTenantSettings(
       maxDailyCelebrations: input.maxDailyCelebrations ?? 3,
       showComparisons: input.showComparisons ?? false,
       xpRulesOverride:
-        input.xpRulesOverride !== undefined
-          ? (input.xpRulesOverride as Prisma.InputJsonValue)
-          : Prisma.DbNull,
+        input.xpRulesOverride === undefined
+          ? Prisma.DbNull
+          : (input.xpRulesOverride as Prisma.InputJsonValue),
     },
     update: updateData,
   });

@@ -249,11 +249,7 @@ async function main() {
       description: 'For local development and testing',
       keyPrefix: 'aivo_pk_dev_',
       keyHash: 'sha256:dev_key_hash_placeholder_do_not_use_in_production',
-      scopes: [
-        ApiScope.READ_LEARNER_PROGRESS,
-        ApiScope.READ_SESSION_DATA,
-        ApiScope.READ_ANALYTICS,
-      ],
+      scopes: [ApiScope.READ_LEARNER_PROGRESS, ApiScope.READ_SESSION_DATA, ApiScope.READ_ANALYTICS],
       rateLimitPerMinute: 120,
       rateLimitPerHour: 2000,
       rateLimitPerDay: 20000,
@@ -272,11 +268,7 @@ async function main() {
       keyHash: 'sha256:partner_key_hash_placeholder',
       clientId: 'district-analytics-client',
       clientSecretHash: '$2b$12$placeholder_bcrypt_hash',
-      scopes: [
-        ApiScope.READ_LEARNER_PROGRESS,
-        ApiScope.READ_ANALYTICS,
-        ApiScope.MANAGE_WEBHOOKS,
-      ],
+      scopes: [ApiScope.READ_LEARNER_PROGRESS, ApiScope.READ_ANALYTICS, ApiScope.MANAGE_WEBHOOKS],
       rateLimitPerMinute: 60,
       rateLimitPerHour: 1000,
       rateLimitPerDay: 10000,
@@ -335,11 +327,11 @@ async function main() {
   console.log('  - Rate limiting and IP restrictions');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

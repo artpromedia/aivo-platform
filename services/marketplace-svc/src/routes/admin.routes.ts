@@ -8,10 +8,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
-import {
-  InstallationStatus,
-  MarketplaceVersionStatus,
-} from '../types/index.js';
+import { InstallationStatus, MarketplaceVersionStatus } from '../types/index.js';
 
 // ============================================================================
 // Schema Validation
@@ -75,8 +72,8 @@ async function getReviewQueue(
       },
     },
     orderBy: { submittedAt: 'asc' }, // FIFO queue
-    take: parseInt(limit, 10),
-    skip: parseInt(offset, 10),
+    take: Number.parseInt(limit, 10),
+    skip: Number.parseInt(offset, 10),
   });
 
   const total = await prisma.marketplaceItemVersion.count({
@@ -95,8 +92,8 @@ async function getReviewQueue(
     })),
     pagination: {
       total,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
+      limit: Number.parseInt(limit, 10),
+      offset: Number.parseInt(offset, 10),
     },
   };
 }
@@ -174,9 +171,7 @@ async function reviewVersion(
   }
 
   const newStatus =
-    decision === 'APPROVE'
-      ? MarketplaceVersionStatus.APPROVED
-      : MarketplaceVersionStatus.REJECTED;
+    decision === 'APPROVE' ? MarketplaceVersionStatus.APPROVED : MarketplaceVersionStatus.REJECTED;
 
   const updated = await prisma.marketplaceItemVersion.update({
     where: { id: versionId },
@@ -233,10 +228,7 @@ async function publishVersion(
     },
   });
 
-  request.log.info(
-    { versionId, itemSlug: version.marketplaceItem.slug },
-    'Version published'
-  );
+  request.log.info({ versionId, itemSlug: version.marketplaceItem.slug }, 'Version published');
 
   return {
     versionId: updated.id,
@@ -257,7 +249,7 @@ async function deprecateVersion(
   reply: FastifyReply
 ) {
   const { versionId } = VersionIdSchema.parse(request.params);
-  const { reason } = request.body ?? {};
+  const { reason } = request.body;
 
   const version = await prisma.marketplaceItemVersion.findUnique({
     where: { id: versionId },
@@ -335,8 +327,8 @@ async function getInstallationApprovals(
       },
     },
     orderBy: { installedAt: 'asc' },
-    take: parseInt(limit, 10),
-    skip: parseInt(offset, 10),
+    take: Number.parseInt(limit, 10),
+    skip: Number.parseInt(offset, 10),
   });
 
   const total = await prisma.marketplaceInstallation.count({
@@ -350,8 +342,8 @@ async function getInstallationApprovals(
     data: pendingInstallations,
     pagination: {
       total,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
+      limit: Number.parseInt(limit, 10),
+      offset: Number.parseInt(offset, 10),
     },
   };
 }
@@ -388,8 +380,7 @@ async function reviewInstallation(
     });
   }
 
-  const newStatus =
-    decision === 'APPROVE' ? InstallationStatus.ACTIVE : InstallationStatus.REVOKED;
+  const newStatus = decision === 'APPROVE' ? InstallationStatus.ACTIVE : InstallationStatus.REVOKED;
 
   const updated = await prisma.marketplaceInstallation.update({
     where: { id: installationId },

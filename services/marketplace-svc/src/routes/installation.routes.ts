@@ -88,8 +88,8 @@ async function listInstallations(
         },
       },
     },
-    take: parseInt(limit, 10),
-    skip: parseInt(offset, 10),
+    take: Number.parseInt(limit, 10),
+    skip: Number.parseInt(offset, 10),
     orderBy: { installedAt: 'desc' },
   });
 
@@ -106,8 +106,8 @@ async function listInstallations(
     data: installations,
     pagination: {
       total,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
+      limit: Number.parseInt(limit, 10),
+      offset: Number.parseInt(offset, 10),
     },
   };
 }
@@ -235,9 +235,8 @@ async function createInstallation(
       classroomId: data.classroomId ?? null,
       status,
       installedByUserId,
-      configJson: data.installationConfig !== undefined 
-        ? JSON.parse(JSON.stringify(data.installationConfig)) 
-        : null,
+      configJson:
+        data.installationConfig === undefined ? null : structuredClone(data.installationConfig),
       statusTransitions: {
         create: {
           fromStatus: InstallationStatus.PENDING_APPROVAL, // Initial pseudo-state
@@ -355,7 +354,7 @@ async function disableInstallation(
   reply: FastifyReply
 ) {
   const { tenantId, installationId } = request.params;
-  const { reason } = request.body ?? {};
+  const { reason } = request.body;
 
   // TODO: Extract from auth context
   const actorUserId = '00000000-0000-0000-0000-000000000000';
@@ -458,7 +457,7 @@ async function uninstall(
   reply: FastifyReply
 ) {
   const { tenantId, installationId } = request.params;
-  const { reason } = request.body ?? {};
+  const { reason } = request.body;
 
   // TODO: Extract from auth context
   const actorUserId = '00000000-0000-0000-0000-000000000000';

@@ -6,7 +6,13 @@
  * - Sample LTI Links (assignments)
  */
 
-import { PrismaClient, LtiPlatformType, LtiUserRole, LtiLaunchStatus, LtiGradeStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  LtiPlatformType,
+  LtiUserRole,
+  LtiLaunchStatus,
+  LtiGradeStatus,
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -52,7 +58,8 @@ async function main() {
       toolPrivateKeyRef: 'vault://lti/canvas-springfield/private-key',
       toolPublicKeyId: 'aivo-canvas-key-001',
       lineItemsUrl: 'https://canvas.springfield.k12.us/api/lti/courses/{context_id}/line_items',
-      membershipsUrl: 'https://canvas.springfield.k12.us/api/lti/courses/{context_id}/names_and_roles',
+      membershipsUrl:
+        'https://canvas.springfield.k12.us/api/lti/courses/{context_id}/names_and_roles',
       deepLinkingUrl: 'https://canvas.springfield.k12.us/api/lti/deep_linking',
       enabled: true,
       configJson: {
@@ -229,11 +236,11 @@ async function main() {
   console.log('  - Schoology: Basic LTI 1.3 with grade sync');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

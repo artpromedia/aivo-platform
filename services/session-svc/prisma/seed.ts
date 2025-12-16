@@ -6,12 +6,7 @@
  * - Session events showing learning activity
  */
 
-import {
-  PrismaClient,
-  SessionType,
-  SessionOrigin,
-  SessionEventType,
-} from '@prisma/client';
+import { PrismaClient, SessionType, SessionOrigin, SessionEventType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -70,7 +65,7 @@ async function main() {
 
   for (const session of alexSessions) {
     const endedAt = new Date(session.startedAt.getTime() + session.durationMs);
-    
+
     const created = await prisma.session.upsert({
       where: { id: session.id },
       update: {},
@@ -112,7 +107,11 @@ async function main() {
           learnerId: LEARNER_IDS[0],
           eventType: SessionEventType.ACTIVITY_COMPLETED,
           eventTime: new Date(session.startedAt.getTime() + session.durationMs / 2),
-          metadataJson: { activityId: 'activity-001', score: 0.85, durationMs: session.durationMs / 2 },
+          metadataJson: {
+            activityId: 'activity-001',
+            score: 0.85,
+            durationMs: session.durationMs / 2,
+          },
         },
         {
           sessionId: created.id,
@@ -143,7 +142,7 @@ async function main() {
   };
 
   const jordanEndedAt = new Date(jordanSession.startedAt.getTime() + jordanSession.durationMs);
-  
+
   await prisma.session.upsert({
     where: { id: jordanSession.id },
     update: {},
@@ -286,11 +285,11 @@ async function main() {
   console.log('  - Sam: 5 learning sessions');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

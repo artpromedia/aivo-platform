@@ -172,19 +172,17 @@ export async function getOrCreateProfile(
     where: { learnerId },
   });
 
-  if (!profile) {
-    profile = await prisma.engagementProfile.create({
-      data: {
-        tenantId,
-        learnerId,
-        level: 1,
-        xpTotal: 0,
-        xpThisWeek: 0,
-        currentStreakDays: 0,
-        maxStreakDays: 0,
-      },
-    });
-  }
+  profile ??= await prisma.engagementProfile.create({
+    data: {
+      tenantId,
+      learnerId,
+      level: 1,
+      xpTotal: 0,
+      xpThisWeek: 0,
+      currentStreakDays: 0,
+      maxStreakDays: 0,
+    },
+  });
 
   return profile;
 }
@@ -272,18 +270,18 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
   });
 
   // Publish engagement event to NATS
-  await publisher.publishEngagementEvent(
-    input.tenantId,
-    input.learnerId,
-    input.eventType,
+  await publisher.publishEngagementEvent({
+    tenantId: input.tenantId,
+    learnerId: input.learnerId,
+    engagementEventType: input.eventType,
     xpAwarded,
     profile,
     leveledUp,
     streakUpdated,
-    input.sessionId,
-    input.taskId,
-    input.metadata as Record<string, unknown> | undefined
-  );
+    sessionId: input.sessionId,
+    taskId: input.taskId,
+    metadata: input.metadata as Record<string, unknown> | undefined,
+  });
 
   // Publish level up event if applicable
   if (leveledUp) {

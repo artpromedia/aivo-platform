@@ -132,19 +132,19 @@ async function main() {
     {
       id: '00000000-0000-0000-0002-000000000001',
       schoolId: schools[0].id,
-      name: 'Mrs. Johnson\'s 3rd Grade',
+      name: "Mrs. Johnson's 3rd Grade",
       grade: '3',
     },
     {
       id: '00000000-0000-0000-0002-000000000002',
       schoolId: schools[0].id,
-      name: 'Mr. Smith\'s 4th Grade',
+      name: "Mr. Smith's 4th Grade",
       grade: '4',
     },
     {
       id: '00000000-0000-0000-0002-000000000003',
       schoolId: schools[0].id,
-      name: 'Ms. Davis\'s 5th Grade',
+      name: "Ms. Davis's 5th Grade",
       grade: '5',
     },
     // Springfield Middle School classrooms
@@ -187,11 +187,11 @@ async function main() {
   console.log(`  - ${classrooms.length} classrooms`);
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

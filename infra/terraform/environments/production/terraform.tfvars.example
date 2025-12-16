@@ -1,0 +1,17 @@
+# =============================================================================
+# AIVO Platform - Production Environment Terraform Variables
+# =============================================================================
+# 
+# IMPORTANT: This is an EXAMPLE file. Do NOT commit actual production values.
+# Copy this file to terraform.tfvars and fill in the values.
+# terraform.tfvars should be in .gitignore.
+#
+# For CI/CD, use environment variables or a secrets manager.
+# =============================================================================
+
+project_id        = "aivo-production-XXXXX"
+region            = "us-central1"
+alert_email       = "production-alerts@aivo.io"
+slack_webhook_url = ""  # Set via TF_VAR_slack_webhook_url environment variable
+cors_origins      = ["https://aivo.io", "https://app.aivo.io", "https://www.aivo.io"]
+cdn_domains       = ["cdn.aivo.io", "assets.aivo.io"]

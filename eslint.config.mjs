@@ -25,7 +25,9 @@ export default [
       "**/vitest.config.ts",
       "**/*.test.ts",
       "**/*.config.mjs",
-      "**/tests/**"
+      "**/tests/**",
+      "**/prisma/seed.ts",
+      "scripts/validate-schemas.ts"
     ]
   },
   ...tseslint.configs.strictTypeChecked,

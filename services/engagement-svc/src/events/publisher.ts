@@ -120,18 +120,33 @@ export function getNatsPublisher(): NatsPublisher | null {
 /**
  * Publish an engagement event to NATS
  */
-export async function publishEngagementEvent(
-  tenantId: string,
-  learnerId: string,
-  engagementEventType: EngagementEventType,
-  xpAwarded: number,
-  profile: EngagementProfile,
-  leveledUp: boolean,
-  streakUpdated: boolean,
-  sessionId?: string,
-  taskId?: string,
-  metadata?: Record<string, unknown>
-): Promise<void> {
+interface PublishEngagementEventParams {
+  tenantId: string;
+  learnerId: string;
+  engagementEventType: EngagementEventType;
+  xpAwarded: number;
+  profile: EngagementProfile;
+  leveledUp: boolean;
+  streakUpdated: boolean;
+  sessionId?: string;
+  taskId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export async function publishEngagementEvent(params: PublishEngagementEventParams): Promise<void> {
+  const {
+    tenantId,
+    learnerId,
+    engagementEventType,
+    xpAwarded,
+    profile,
+    leveledUp,
+    streakUpdated,
+    sessionId,
+    taskId,
+    metadata,
+  } = params;
+
   const payload: EngagementEventPayload = {
     id: randomUUID(),
     eventType: 'engagement.event',

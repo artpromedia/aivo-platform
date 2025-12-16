@@ -40,7 +40,8 @@ async function main() {
     {
       id: '00000000-0000-0000-7000-000000000001',
       learnerId: LEARNER_IDS[0], // alex
-      summary: 'Alex benefits from visual supports and hands-on activities. Works best with clear, step-by-step instructions.',
+      summary:
+        'Alex benefits from visual supports and hands-on activities. Works best with clear, step-by-step instructions.',
       learningStyleJson: {
         prefersVisual: true,
         prefersAudio: false,
@@ -65,7 +66,8 @@ async function main() {
     {
       id: '00000000-0000-0000-7000-000000000002',
       learnerId: LEARNER_IDS[1], // jordan
-      summary: 'Jordan is just getting started. Profile will be refined based on learning patterns.',
+      summary:
+        'Jordan is just getting started. Profile will be refined based on learning patterns.',
       learningStyleJson: {
         prefersVisual: true,
         prefersAudio: true,
@@ -90,7 +92,8 @@ async function main() {
     {
       id: '00000000-0000-0000-7000-000000000003',
       learnerId: LEARNER_IDS[2], // sam
-      summary: 'Sam benefits from audio content and read-aloud support. Prefers longer, uninterrupted work periods.',
+      summary:
+        'Sam benefits from audio content and read-aloud support. Prefers longer, uninterrupted work periods.',
       learningStyleJson: {
         prefersVisual: false,
         prefersAudio: true,
@@ -115,7 +118,8 @@ async function main() {
     {
       id: '00000000-0000-0000-7000-000000000004',
       learnerId: LEARNER_IDS[3], // taylor
-      summary: 'Taylor benefits from dyslexia-friendly fonts and reduced visual clutter. Prefers minimal distractions.',
+      summary:
+        'Taylor benefits from dyslexia-friendly fonts and reduced visual clutter. Prefers minimal distractions.',
       learningStyleJson: {
         prefersVisual: true,
         prefersAudio: true,
@@ -172,11 +176,11 @@ async function main() {
   console.log('  - Accessibility settings');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

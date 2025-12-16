@@ -12,11 +12,11 @@ import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
-import { catalogRoutes } from './routes/catalog.routes.js';
-import { vendorRoutes } from './routes/vendor.routes.js';
-import { installationRoutes } from './routes/installation.routes.js';
 import { adminRoutes } from './routes/admin.routes.js';
+import { catalogRoutes } from './routes/catalog.routes.js';
+import { installationRoutes } from './routes/installation.routes.js';
 import { internalEntitlementRoutes } from './routes/internal-entitlement.routes.js';
+import { vendorRoutes } from './routes/vendor.routes.js';
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
@@ -67,4 +67,9 @@ async function main() {
   }
 }
 
-void main();
+try {
+  await main();
+} catch (err) {
+  console.error('Fatal error starting marketplace service:', err);
+  process.exit(1);
+}

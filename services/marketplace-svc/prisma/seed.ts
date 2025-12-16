@@ -41,7 +41,7 @@ async function main() {
       slug: 'aivo',
       description: 'First-party content from the AIVO team',
       websiteUrl: 'https://aivo.com',
-      supportEmail: 'support@aivo.com',
+      contactEmail: 'support@aivo.com',
       logoUrl: '/vendors/aivo-logo.png',
       isVerified: true,
       isActive: true,
@@ -53,7 +53,7 @@ async function main() {
       slug: 'mathventures',
       description: 'Interactive math games and activities for K-8',
       websiteUrl: 'https://mathventures.example.com',
-      supportEmail: 'help@mathventures.example.com',
+      contactEmail: 'help@mathventures.example.com',
       logoUrl: '/vendors/mathventures-logo.png',
       isVerified: true,
       isActive: true,
@@ -65,7 +65,7 @@ async function main() {
       slug: 'readingrocket',
       description: 'Leveled reading passages and comprehension tools',
       websiteUrl: 'https://readingrocket.example.com',
-      supportEmail: 'support@readingrocket.example.com',
+      contactEmail: 'support@readingrocket.example.com',
       logoUrl: '/vendors/readingrocket-logo.png',
       isVerified: true,
       isActive: true,
@@ -77,7 +77,7 @@ async function main() {
       slug: 'sciencelab-vr',
       description: 'Virtual science experiments and simulations',
       websiteUrl: 'https://sciencelabvr.example.com',
-      supportEmail: 'hello@sciencelabvr.example.com',
+      contactEmail: 'hello@sciencelabvr.example.com',
       logoUrl: '/vendors/sciencelab-logo.png',
       isVerified: false,
       isActive: true,
@@ -101,11 +101,12 @@ async function main() {
     {
       id: '00000000-0000-0000-a100-000000000001',
       vendorId: vendors[0].id, // AIVO
-      type: MarketplaceItemType.CONTENT_PACK,
-      name: 'AIVO Core Math Pack',
+      itemType: MarketplaceItemType.CONTENT_PACK,
+      title: 'AIVO Core Math Pack',
       slug: 'aivo-core-math',
       shortDescription: 'Essential math content for grades K-5',
-      fullDescription: 'A comprehensive collection of math lessons, practice activities, and assessments covering the core curriculum for elementary grades.',
+      longDescription:
+        'A comprehensive collection of math lessons, practice activities, and assessments covering the core curriculum for elementary grades.',
       subjects: [MarketplaceSubject.MATH],
       gradeBands: [MarketplaceGradeBand.K_2, MarketplaceGradeBand.G3_5],
       modalities: [MarketplaceModality.DRILL, MarketplaceModality.GAME],
@@ -118,11 +119,12 @@ async function main() {
     {
       id: '00000000-0000-0000-a100-000000000002',
       vendorId: vendors[0].id, // AIVO
-      type: MarketplaceItemType.CONTENT_PACK,
-      name: 'AIVO SEL Foundations',
+      itemType: MarketplaceItemType.CONTENT_PACK,
+      title: 'AIVO SEL Foundations',
       slug: 'aivo-sel-foundations',
       shortDescription: 'Social-emotional learning activities',
-      fullDescription: 'Interactive lessons and activities focused on emotional awareness, self-regulation, and social skills.',
+      longDescription:
+        'Interactive lessons and activities focused on emotional awareness, self-regulation, and social skills.',
       subjects: [MarketplaceSubject.SEL],
       gradeBands: [MarketplaceGradeBand.K_2, MarketplaceGradeBand.G3_5, MarketplaceGradeBand.G6_8],
       modalities: [MarketplaceModality.SEL_ACTIVITY, MarketplaceModality.VIDEO],
@@ -135,11 +137,12 @@ async function main() {
     {
       id: '00000000-0000-0000-a100-000000000003',
       vendorId: vendors[1].id, // MathVentures
-      type: MarketplaceItemType.EMBEDDED_TOOL,
-      name: 'Fraction Fighters',
+      itemType: MarketplaceItemType.EMBEDDED_TOOL,
+      title: 'Fraction Fighters',
       slug: 'fraction-fighters',
       shortDescription: 'Game-based fraction practice',
-      fullDescription: 'An engaging game where students practice fraction operations while battling through levels. Adaptive difficulty based on performance.',
+      longDescription:
+        'An engaging game where students practice fraction operations while battling through levels. Adaptive difficulty based on performance.',
       subjects: [MarketplaceSubject.MATH],
       gradeBands: [MarketplaceGradeBand.G3_5, MarketplaceGradeBand.G6_8],
       modalities: [MarketplaceModality.GAME],
@@ -152,11 +155,12 @@ async function main() {
     {
       id: '00000000-0000-0000-a100-000000000004',
       vendorId: vendors[2].id, // ReadingRocket
-      type: MarketplaceItemType.CONTENT_PACK,
-      name: 'ReadingRocket Leveled Library',
+      itemType: MarketplaceItemType.CONTENT_PACK,
+      title: 'ReadingRocket Leveled Library',
       slug: 'readingrocket-library',
       shortDescription: '500+ leveled reading passages',
-      fullDescription: 'A comprehensive library of leveled reading passages with built-in comprehension questions and vocabulary support.',
+      longDescription:
+        'A comprehensive library of leveled reading passages with built-in comprehension questions and vocabulary support.',
       subjects: [MarketplaceSubject.ELA],
       gradeBands: [MarketplaceGradeBand.K_2, MarketplaceGradeBand.G3_5, MarketplaceGradeBand.G6_8],
       modalities: [MarketplaceModality.READING, MarketplaceModality.ASSESSMENT],
@@ -169,11 +173,12 @@ async function main() {
     {
       id: '00000000-0000-0000-a100-000000000005',
       vendorId: vendors[3].id, // ScienceLab VR
-      type: MarketplaceItemType.EMBEDDED_TOOL,
-      name: 'Virtual Chemistry Lab',
+      itemType: MarketplaceItemType.EMBEDDED_TOOL,
+      title: 'Virtual Chemistry Lab',
       slug: 'virtual-chemistry-lab',
       shortDescription: 'Safe virtual chemistry experiments',
-      fullDescription: 'Students can conduct chemistry experiments in a safe virtual environment. Perfect for demonstrating reactions without safety concerns.',
+      longDescription:
+        'Students can conduct chemistry experiments in a safe virtual environment. Perfect for demonstrating reactions without safety concerns.',
       subjects: [MarketplaceSubject.SCIENCE],
       gradeBands: [MarketplaceGradeBand.G6_8, MarketplaceGradeBand.G9_12],
       modalities: [MarketplaceModality.SIMULATION],
@@ -191,28 +196,34 @@ async function main() {
       update: {},
       create: item,
     });
-    console.log(`  ✅ Created marketplace item: ${item.name}`);
+    console.log(`  ✅ Created marketplace item: ${item.title}`);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
   // 3. Create Marketplace Versions (Published)
   // ══════════════════════════════════════════════════════════════════════════
 
+  // Store version IDs for installations
+  const versionIds: Record<string, string> = {};
+
   for (const item of items) {
-    await prisma.marketplaceVersion.upsert({
+    const versionId = `${item.id.slice(0, -1)}v`; // Generate version ID based on item ID
+    versionIds[item.id] = versionId;
+
+    await prisma.marketplaceItemVersion.upsert({
       where: {
-        marketplaceItemId_versionNumber: {
+        marketplaceItemId_version: {
           marketplaceItemId: item.id,
-          versionNumber: '1.0.0',
+          version: '1.0.0',
         },
       },
       update: {},
       create: {
+        id: versionId,
         marketplaceItemId: item.id,
-        versionNumber: '1.0.0',
+        version: '1.0.0',
         status: MarketplaceVersionStatus.PUBLISHED,
-        releaseNotes: 'Initial release',
-        changelogJson: { changes: ['Initial release'] },
+        changelog: 'Initial release',
         publishedAt: new Date(),
       },
     });
@@ -229,6 +240,7 @@ async function main() {
       id: '00000000-0000-0000-a200-000000000001',
       tenantId: DEV_TENANT_ID,
       marketplaceItemId: items[0].id, // AIVO Core Math
+      marketplaceItemVersionId: versionIds[items[0].id],
       status: InstallationStatus.ACTIVE,
       installedByUserId: '00000000-0000-0000-1000-000000000001', // admin
     },
@@ -236,6 +248,7 @@ async function main() {
       id: '00000000-0000-0000-a200-000000000002',
       tenantId: DEV_TENANT_ID,
       marketplaceItemId: items[1].id, // AIVO SEL
+      marketplaceItemVersionId: versionIds[items[1].id],
       status: InstallationStatus.ACTIVE,
       installedByUserId: '00000000-0000-0000-1000-000000000001', // admin
     },
@@ -243,20 +256,21 @@ async function main() {
       id: '00000000-0000-0000-a200-000000000003',
       tenantId: DEV_TENANT_ID,
       marketplaceItemId: items[2].id, // Fraction Fighters
+      marketplaceItemVersionId: versionIds[items[2].id],
       status: InstallationStatus.ACTIVE,
       installedByUserId: '00000000-0000-0000-1000-000000000001', // admin
     },
   ];
 
   for (const installation of installations) {
-    await prisma.tenantInstallation.upsert({
+    await prisma.marketplaceInstallation.upsert({
       where: { id: installation.id },
       update: {},
       create: installation,
     });
   }
 
-  console.log(`  ✅ Created ${installations.length} tenant installations`);
+  console.log(`  ✅ Created ${installations.length} marketplace installations`);
 
   console.log('');
   console.log('✅ marketplace-svc seeding complete!');
@@ -264,14 +278,14 @@ async function main() {
   console.log('Created:');
   console.log(`  - ${vendors.length} vendors`);
   console.log(`  - ${items.length} marketplace items`);
-  console.log(`  - ${installations.length} tenant installations`);
+  console.log(`  - ${installations.length} marketplace installations`);
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

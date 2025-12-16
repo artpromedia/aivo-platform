@@ -7,11 +7,7 @@
  * - Sample tool sessions
  */
 
-import {
-  PrismaClient,
-  ToolSessionStatus,
-  SessionEventType,
-} from '@prisma/client';
+import { PrismaClient, ToolSessionStatus, SessionEventType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -122,11 +118,7 @@ async function main() {
         allowForms: false,
         allowTopNavigation: false,
       },
-      defaultScopes: [
-        'LEARNER_PSEUDONYM',
-        'SESSION_EVENTS_WRITE',
-        'THEME_READ',
-      ],
+      defaultScopes: ['LEARNER_PSEUDONYM', 'SESSION_EVENTS_WRITE', 'THEME_READ'],
       ageRangeMin: 5,
       ageRangeMax: 10,
       subjects: ['ELA'],
@@ -163,7 +155,12 @@ async function main() {
       learnerId: ALEX_USER_ID,
       sessionToken: 'tok_alex_fractions_001',
       status: ToolSessionStatus.COMPLETED,
-      grantedScopes: ['LEARNER_PROFILE_MIN', 'SESSION_EVENTS_WRITE', 'PROGRESS_WRITE', 'THEME_READ'],
+      grantedScopes: [
+        'LEARNER_PROFILE_MIN',
+        'SESSION_EVENTS_WRITE',
+        'PROGRESS_WRITE',
+        'THEME_READ',
+      ],
       startedAt: oneHourAgo,
       endedAt: thirtyMinutesAgo,
       expiresAt: new Date(oneHourAgo.getTime() + 2 * 60 * 60 * 1000),
@@ -186,7 +183,13 @@ async function main() {
       learnerId: SAM_USER_ID,
       sessionToken: 'tok_sam_vrlab_001',
       status: ToolSessionStatus.ACTIVE,
-      grantedScopes: ['LEARNER_PROFILE_MIN', 'SESSION_EVENTS_WRITE', 'PROGRESS_WRITE', 'THEME_READ', 'CLASSROOM_CONTEXT'],
+      grantedScopes: [
+        'LEARNER_PROFILE_MIN',
+        'SESSION_EVENTS_WRITE',
+        'PROGRESS_WRITE',
+        'THEME_READ',
+        'CLASSROOM_CONTEXT',
+      ],
       startedAt: thirtyMinutesAgo,
       expiresAt: new Date(now.getTime() + 60 * 60 * 1000),
       contextJson: {
@@ -293,11 +296,11 @@ async function main() {
   console.log('  - Event tracking for learning analytics');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

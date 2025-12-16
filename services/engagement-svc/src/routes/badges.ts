@@ -240,8 +240,12 @@ export async function badgeRoutes(app: FastifyInstance): Promise<void> {
       }
 
       // Determine source based on role
-      const source =
-        user.role === 'parent' ? 'PARENT' : user.role === 'teacher' ? 'TEACHER' : 'SYSTEM';
+      const getSource = (role: string) => {
+        if (role === 'parent') return 'PARENT';
+        if (role === 'teacher') return 'TEACHER';
+        return 'SYSTEM';
+      };
+      const source = getSource(user.role);
 
       const result = await badgeService.awardBadge({
         tenantId,

@@ -162,14 +162,38 @@ async function main() {
 
   const memberships = [
     // Lab A iPads in Lab A pool
-    { id: '00000000-0000-0000-dm20-000000000001', deviceId: DEVICE_IPAD_1, devicePoolId: LAB_A_POOL },
-    { id: '00000000-0000-0000-dm20-000000000002', deviceId: DEVICE_IPAD_2, devicePoolId: LAB_A_POOL },
-    { id: '00000000-0000-0000-dm20-000000000003', deviceId: DEVICE_IPAD_3, devicePoolId: LAB_A_POOL },
+    {
+      id: '00000000-0000-0000-dm20-000000000001',
+      deviceId: DEVICE_IPAD_1,
+      devicePoolId: LAB_A_POOL,
+    },
+    {
+      id: '00000000-0000-0000-dm20-000000000002',
+      deviceId: DEVICE_IPAD_2,
+      devicePoolId: LAB_A_POOL,
+    },
+    {
+      id: '00000000-0000-0000-dm20-000000000003',
+      deviceId: DEVICE_IPAD_3,
+      devicePoolId: LAB_A_POOL,
+    },
     // Chromebooks in Grade 3 pool
-    { id: '00000000-0000-0000-dm20-000000000004', deviceId: DEVICE_CHROMEBOOK_1, devicePoolId: GRADE3_POOL },
-    { id: '00000000-0000-0000-dm20-000000000005', deviceId: DEVICE_CHROMEBOOK_2, devicePoolId: GRADE3_POOL },
+    {
+      id: '00000000-0000-0000-dm20-000000000004',
+      deviceId: DEVICE_CHROMEBOOK_1,
+      devicePoolId: GRADE3_POOL,
+    },
+    {
+      id: '00000000-0000-0000-dm20-000000000005',
+      deviceId: DEVICE_CHROMEBOOK_2,
+      devicePoolId: GRADE3_POOL,
+    },
     // iPad 3 also in checkout pool (multi-pool)
-    { id: '00000000-0000-0000-dm20-000000000006', deviceId: DEVICE_IPAD_3, devicePoolId: CHECKOUT_POOL },
+    {
+      id: '00000000-0000-0000-dm20-000000000006',
+      deviceId: DEVICE_IPAD_3,
+      devicePoolId: CHECKOUT_POOL,
+    },
   ];
 
   for (const membership of memberships) {
@@ -219,7 +243,7 @@ async function main() {
         theme: {
           primaryColor: '#4ECDC4',
           iconSize: 'medium',
-          fontScale: 1.0,
+          fontScale: 1,
         },
         features: {
           offlineMode: true,
@@ -289,7 +313,10 @@ async function main() {
       id: '00000000-0000-0000-dm40-000000000010',
       deviceId: DEVICE_IPAD_3,
       eventType: 'STALE_WARNING',
-      eventData: { lastCheckIn: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(), thresholdDays: 2 },
+      eventData: {
+        lastCheckIn: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+        thresholdDays: 2,
+      },
       ipAddress: null,
       createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
     },
@@ -330,11 +357,11 @@ async function main() {
   console.log('  - Device health monitoring');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

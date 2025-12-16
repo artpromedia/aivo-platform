@@ -44,9 +44,7 @@ async function main() {
       passwordHash: adminPassword,
       status: UserStatus.ACTIVE,
       roles: {
-        create: [
-          { role: UserRoleEnum.PLATFORM_ADMIN },
-        ],
+        create: [{ role: UserRoleEnum.PLATFORM_ADMIN }],
       },
     },
   });
@@ -73,9 +71,7 @@ async function main() {
       passwordHash: authorPassword,
       status: UserStatus.ACTIVE,
       roles: {
-        create: [
-          { role: UserRoleEnum.TEACHER },
-        ],
+        create: [{ role: UserRoleEnum.TEACHER }],
       },
     },
   });
@@ -90,7 +86,11 @@ async function main() {
 
   const teachers = [
     { id: '00000000-0000-0000-1000-000000000003', email: 'teacher@aivo.dev', name: 'Jane Teacher' },
-    { id: '00000000-0000-0000-1000-000000000004', email: 'mrs.johnson@aivo.dev', name: 'Mrs. Johnson' },
+    {
+      id: '00000000-0000-0000-1000-000000000004',
+      email: 'mrs.johnson@aivo.dev',
+      name: 'Mrs. Johnson',
+    },
     { id: '00000000-0000-0000-1000-000000000005', email: 'mr.smith@aivo.dev', name: 'Mr. Smith' },
   ];
 
@@ -110,9 +110,7 @@ async function main() {
         passwordHash: teacherPassword,
         status: UserStatus.ACTIVE,
         roles: {
-          create: [
-            { role: UserRoleEnum.TEACHER },
-          ],
+          create: [{ role: UserRoleEnum.TEACHER }],
         },
       },
     });
@@ -139,9 +137,7 @@ async function main() {
       passwordHash: therapistPassword,
       status: UserStatus.ACTIVE,
       roles: {
-        create: [
-          { role: UserRoleEnum.THERAPIST },
-        ],
+        create: [{ role: UserRoleEnum.THERAPIST }],
       },
     },
   });
@@ -168,9 +164,7 @@ async function main() {
       passwordHash: parentPassword,
       status: UserStatus.ACTIVE,
       roles: {
-        create: [
-          { role: UserRoleEnum.PARENT },
-        ],
+        create: [{ role: UserRoleEnum.PARENT }],
       },
     },
   });
@@ -185,10 +179,18 @@ async function main() {
 
   const learners = [
     { id: '00000000-0000-0000-2000-000000000001', email: 'alex@aivo.dev', name: 'Alex Student' },
-    { id: '00000000-0000-0000-2000-000000000002', email: 'jordan@aivo.dev', name: 'Jordan Learner' },
+    {
+      id: '00000000-0000-0000-2000-000000000002',
+      email: 'jordan@aivo.dev',
+      name: 'Jordan Learner',
+    },
     { id: '00000000-0000-0000-2000-000000000003', email: 'sam@aivo.dev', name: 'Sam Scholar' },
     { id: '00000000-0000-0000-2000-000000000004', email: 'taylor@aivo.dev', name: 'Taylor Pupil' },
-    { id: '00000000-0000-0000-2000-000000000005', email: 'morgan@aivo.dev', name: 'Morgan Apprentice' },
+    {
+      id: '00000000-0000-0000-2000-000000000005',
+      email: 'morgan@aivo.dev',
+      name: 'Morgan Apprentice',
+    },
   ];
 
   for (const learner of learners) {
@@ -207,9 +209,7 @@ async function main() {
         passwordHash: learnerPassword,
         status: UserStatus.ACTIVE,
         roles: {
-          create: [
-            { role: UserRoleEnum.LEARNER },
-          ],
+          create: [{ role: UserRoleEnum.LEARNER }],
         },
       },
     });
@@ -235,9 +235,7 @@ async function main() {
       passwordHash: adminPassword,
       status: UserStatus.ACTIVE,
       roles: {
-        create: [
-          { role: UserRoleEnum.DISTRICT_ADMIN },
-        ],
+        create: [{ role: UserRoleEnum.DISTRICT_ADMIN }],
       },
     },
   });
@@ -260,11 +258,11 @@ async function main() {
   console.log('  - morgan@aivo.dev / Learner123!@# (LEARNER)');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

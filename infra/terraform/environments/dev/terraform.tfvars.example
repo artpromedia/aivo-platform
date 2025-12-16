@@ -1,0 +1,8 @@
+# =============================================================================
+# AIVO Platform - Development Environment Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in the values
+
+project_id  = "aivo-dev-XXXXX"
+region      = "us-central1"
+alert_email = "dev-alerts@aivo.example.com"

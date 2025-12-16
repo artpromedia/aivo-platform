@@ -6,7 +6,7 @@
  * - Sample notification preferences
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 
@@ -39,7 +39,8 @@ async function main() {
       category: 'ENGAGEMENT',
       channels: ['PUSH'],
       titleTemplate: '🔥 Keep your streak going!',
-      bodyTemplate: 'You\'re on a {{streakDays}}-day streak! Complete a session today to keep it going.',
+      bodyTemplate:
+        "You're on a {{streakDays}}-day streak! Complete a session today to keep it going.",
       defaultEnabled: true,
     },
     {
@@ -79,8 +80,9 @@ async function main() {
       name: 'Daily Progress Summary',
       category: 'PARENT',
       channels: ['EMAIL', 'PUSH'],
-      titleTemplate: '📊 {{learnerName}}\'s Daily Summary',
-      bodyTemplate: '{{learnerName}} completed {{sessionsCount}} sessions today, earning {{xpEarned}} XP. Total time: {{totalMinutes}} minutes.',
+      titleTemplate: "📊 {{learnerName}}'s Daily Summary",
+      bodyTemplate:
+        '{{learnerName}} completed {{sessionsCount}} sessions today, earning {{xpEarned}} XP. Total time: {{totalMinutes}} minutes.',
       defaultEnabled: true,
     },
     {
@@ -89,8 +91,9 @@ async function main() {
       name: 'Weekly Progress Summary',
       category: 'PARENT',
       channels: ['EMAIL'],
-      titleTemplate: '📈 {{learnerName}}\'s Weekly Report',
-      bodyTemplate: 'This week {{learnerName}} completed {{sessionsCount}} sessions, maintained a {{streakDays}}-day streak, and earned {{xpEarned}} XP!',
+      titleTemplate: "📈 {{learnerName}}'s Weekly Report",
+      bodyTemplate:
+        'This week {{learnerName}} completed {{sessionsCount}} sessions, maintained a {{streakDays}}-day streak, and earned {{xpEarned}} XP!',
       defaultEnabled: true,
     },
     {
@@ -111,7 +114,8 @@ async function main() {
       category: 'TEACHER',
       channels: ['EMAIL', 'IN_APP'],
       titleTemplate: '⚠️ {{learnerName}} may need support',
-      bodyTemplate: '{{learnerName}} has shown difficulty with {{skillName}}. Consider reviewing or providing additional support.',
+      bodyTemplate:
+        '{{learnerName}} has shown difficulty with {{skillName}}. Consider reviewing or providing additional support.',
       defaultEnabled: true,
     },
     {
@@ -120,8 +124,9 @@ async function main() {
       name: 'Class Activity Summary',
       category: 'TEACHER',
       channels: ['EMAIL'],
-      titleTemplate: '📊 Today\'s Class Activity',
-      bodyTemplate: '{{activeStudents}} of {{totalStudents}} students were active today. Average session time: {{avgMinutes}} minutes.',
+      titleTemplate: "📊 Today's Class Activity",
+      bodyTemplate:
+        '{{activeStudents}} of {{totalStudents}} students were active today. Average session time: {{avgMinutes}} minutes.',
       defaultEnabled: true,
     },
     // System notifications
@@ -132,7 +137,8 @@ async function main() {
       category: 'SYSTEM',
       channels: ['IN_APP'],
       titleTemplate: '👋 Welcome to AIVO!',
-      bodyTemplate: 'Hi {{userName}}! We\'re excited to have you. Let\'s get started with your first lesson!',
+      bodyTemplate:
+        "Hi {{userName}}! We're excited to have you. Let's get started with your first lesson!",
       defaultEnabled: true,
     },
     {
@@ -171,11 +177,11 @@ async function main() {
   console.log('  - System: welcome, new content');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

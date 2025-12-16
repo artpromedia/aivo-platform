@@ -48,7 +48,8 @@ async function main() {
       gradeBand: GradeBand.K5,
       sourceType: SourceType.IMAGE,
       sourceUrl: '/uploads/homework/alex-math-001.jpg',
-      rawText: 'A farmer has 24 apples. He wants to put them in bags with 6 apples in each bag. How many bags does he need?',
+      rawText:
+        'A farmer has 24 apples. He wants to put them in bags with 6 apples in each bag. How many bags does he need?',
       status: SubmissionStatus.COMPLETED,
       stepCount: 4,
       stepsCompleted: 4,
@@ -86,7 +87,7 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000003',
       submissionId: mathSubmission.id,
       stepOrder: 3,
-      promptText: 'If we\'re putting equal groups into bags, what math operation should we use?',
+      promptText: "If we're putting equal groups into bags, what math operation should we use?",
       hintText: 'When we split things into equal groups, we use division.',
       expectedConcept: 'Recognize division: 24 ÷ 6',
       isStarted: true,
@@ -131,7 +132,8 @@ async function main() {
       subject: Subject.ELA,
       gradeBand: GradeBand.K5,
       sourceType: SourceType.TEXT,
-      rawText: 'Write a paragraph about your favorite season. Include at least 3 reasons why it is your favorite.',
+      rawText:
+        'Write a paragraph about your favorite season. Include at least 3 reasons why it is your favorite.',
       status: SubmissionStatus.SCAFFOLDED,
       stepCount: 5,
       stepsCompleted: 2,
@@ -155,7 +157,8 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000011',
       submissionId: elaSubmission.id,
       stepOrder: 2,
-      promptText: 'Great choice! Now, can you think of your first reason? What\'s one thing you love about this season?',
+      promptText:
+        "Great choice! Now, can you think of your first reason? What's one thing you love about this season?",
       expectedConcept: 'First reason',
       isStarted: true,
       isCompleted: true,
@@ -164,7 +167,7 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000012',
       submissionId: elaSubmission.id,
       stepOrder: 3,
-      promptText: 'What\'s another thing that makes this season special to you?',
+      promptText: "What's another thing that makes this season special to you?",
       hintText: 'Think about activities, weather, holidays, or foods you enjoy during this time.',
       expectedConcept: 'Second reason',
       isStarted: true,
@@ -174,7 +177,8 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000013',
       submissionId: elaSubmission.id,
       stepOrder: 4,
-      promptText: 'Can you think of one more reason? Three reasons will make your paragraph strong!',
+      promptText:
+        'Can you think of one more reason? Three reasons will make your paragraph strong!',
       expectedConcept: 'Third reason',
       isStarted: false,
       isCompleted: false,
@@ -183,7 +187,8 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000014',
       submissionId: elaSubmission.id,
       stepOrder: 5,
-      promptText: 'Now let\'s put it all together! Start with "My favorite season is..." and include all three reasons.',
+      promptText:
+        'Now let\'s put it all together! Start with "My favorite season is..." and include all three reasons.',
       expectedConcept: 'Complete paragraph',
       isStarted: false,
       isCompleted: false,
@@ -232,7 +237,8 @@ async function main() {
       submissionId: scienceSubmission.id,
       stepOrder: 1,
       promptText: 'Do you know the three states of matter? What are they called?',
-      hintText: 'Think about water - it can be ice, liquid water, or steam. What are these three forms called?',
+      hintText:
+        'Think about water - it can be ice, liquid water, or steam. What are these three forms called?',
       expectedConcept: 'Solid, liquid, gas',
       isStarted: false,
       isCompleted: false,
@@ -241,8 +247,8 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000021',
       submissionId: scienceSubmission.id,
       stepOrder: 2,
-      promptText: 'Let\'s start with solids. What makes something a solid? Can you give an example?',
-      hintText: 'Solids have a definite shape. They don\'t flow like liquids.',
+      promptText: "Let's start with solids. What makes something a solid? Can you give an example?",
+      hintText: "Solids have a definite shape. They don't flow like liquids.",
       expectedConcept: 'Solid: definite shape, example like ice or rock',
       isStarted: false,
       isCompleted: false,
@@ -251,7 +257,7 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000022',
       submissionId: scienceSubmission.id,
       stepOrder: 3,
-      promptText: 'Now think about liquids. How are they different from solids? What\'s an example?',
+      promptText: "Now think about liquids. How are they different from solids? What's an example?",
       hintText: 'Liquids flow and take the shape of their container.',
       expectedConcept: 'Liquid: flows, takes container shape, example like water or juice',
       isStarted: false,
@@ -261,8 +267,9 @@ async function main() {
       id: '00000000-0000-0000-9100-000000000023',
       submissionId: scienceSubmission.id,
       stepOrder: 4,
-      promptText: 'Finally, what about gases? How are they special? What\'s an example you can think of?',
-      hintText: 'Gases spread out to fill any space. You can\'t always see them!',
+      promptText:
+        "Finally, what about gases? How are they special? What's an example you can think of?",
+      hintText: "Gases spread out to fill any space. You can't always see them!",
       expectedConcept: 'Gas: spreads to fill space, example like air or steam',
       isStarted: false,
       isCompleted: false,
@@ -288,11 +295,11 @@ async function main() {
   console.log('  - 1 new submission (Jordan - Science)');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

@@ -27,7 +27,7 @@ const updateTenantSettingsSchema = z.object({
   maxDailyCelebrations: z.number().int().min(0).max(10).optional(),
   streakGracePeriodHours: z.number().int().min(0).max(72).optional(),
   showComparisons: z.boolean().optional(),
-  xpMultiplier: z.number().min(0.1).max(5.0).optional(),
+  xpMultiplier: z.number().min(0.1).max(5).optional(),
   xpRulesOverride: z.record(z.number().int().min(0).max(100)).optional(),
 });
 

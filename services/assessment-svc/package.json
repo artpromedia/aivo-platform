@@ -7,6 +7,15 @@
     "dev": "echo \"start assessment-svc dev server\"",
     "lint": "echo \"lint assessment-svc\"",
     "test": "echo \"test assessment-svc\"",
-    "build": "echo \"build assessment-svc\""
+    "build": "echo \"build assessment-svc\"",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
   }
 }

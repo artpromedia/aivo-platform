@@ -86,7 +86,8 @@ async function main() {
       id: '00000000-0000-0000-sb01-000000000001',
       partnerId: EDTECH_PARTNER,
       integrationType: ['api', 'webhooks'],
-      useCase: 'Build a companion app that tracks student progress and provides supplementary content recommendations based on AIVO learning data.',
+      useCase:
+        'Build a companion app that tracks student progress and provides supplementary content recommendations based on AIVO learning data.',
       expectedVolume: '1000 API calls/day',
       timeline: 'Q2 2024 launch',
       reviewNotes: 'Clear use case, appropriate data access requests',
@@ -97,7 +98,8 @@ async function main() {
       id: '00000000-0000-0000-sb01-000000000002',
       partnerId: RESEARCH_PARTNER,
       integrationType: ['api'],
-      useCase: 'Research study on adaptive learning efficacy. Need read-only access to de-identified learning analytics for academic publication.',
+      useCase:
+        'Research study on adaptive learning efficacy. Need read-only access to de-identified learning analytics for academic publication.',
       expectedVolume: '100 API calls/day',
       timeline: '2-year research grant',
       reviewNotes: 'IRB approved, data use agreement signed',
@@ -351,11 +353,11 @@ async function main() {
   console.log('  - API key and webhook management');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

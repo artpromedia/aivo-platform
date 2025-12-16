@@ -81,7 +81,7 @@ async function main() {
       tenantId: DEV_TENANT_ID,
       learnerId: ALEX_USER_ID,
       userId: PARENT_USER_ID,
-      displayName: 'Alex\'s Mom',
+      displayName: "Alex's Mom",
       role: CareTeamRole.PARENT,
       contactEmail: 'parent@aivo.dev',
       contactPhone: '555-123-4567',
@@ -112,7 +112,8 @@ async function main() {
       learnerId: ALEX_USER_ID,
       creatorId: ALEX_TEAM_THERAPIST,
       title: 'Building Focus & Self-Regulation',
-      description: 'A coordinated plan to help Alex improve focus during learning activities and develop self-regulation skills across home and school settings.',
+      description:
+        'A coordinated plan to help Alex improve focus during learning activities and develop self-regulation skills across home and school settings.',
       status: ActionPlanStatus.ACTIVE,
       startDate: new Date('2024-01-15'),
       targetEndDate: new Date('2024-04-30'),
@@ -134,7 +135,8 @@ async function main() {
       id: '00000000-0000-0000-co11-000000000001',
       actionPlanId: ALEX_ACTION_PLAN_FOCUS,
       title: 'Provide visual timer for tasks',
-      description: 'Use a visual timer to show Alex how much time remains for each activity. Start with 10-minute segments.',
+      description:
+        'Use a visual timer to show Alex how much time remains for each activity. Start with 10-minute segments.',
       context: TaskContext.SCHOOL,
       frequency: TaskFrequency.DAILY,
       assigneeId: ALEX_TEAM_TEACHER,
@@ -146,7 +148,8 @@ async function main() {
       id: '00000000-0000-0000-co11-000000000002',
       actionPlanId: ALEX_ACTION_PLAN_FOCUS,
       title: 'Offer sensory breaks',
-      description: 'Proactively offer a 2-minute sensory break every 15 minutes during focused work.',
+      description:
+        'Proactively offer a 2-minute sensory break every 15 minutes during focused work.',
       context: TaskContext.SCHOOL,
       frequency: TaskFrequency.DAILY,
       assigneeId: ALEX_TEAM_TEACHER,
@@ -159,7 +162,8 @@ async function main() {
       id: '00000000-0000-0000-co11-000000000003',
       actionPlanId: ALEX_ACTION_PLAN_FOCUS,
       title: 'Practice deep breathing exercises',
-      description: 'Work on "belly breathing" technique for 5 minutes at the start of each session.',
+      description:
+        'Work on "belly breathing" technique for 5 minutes at the start of each session.',
       context: TaskContext.THERAPY,
       frequency: TaskFrequency.TWICE_WEEKLY,
       assigneeId: ALEX_TEAM_THERAPIST,
@@ -172,7 +176,8 @@ async function main() {
       id: '00000000-0000-0000-co11-000000000010',
       actionPlanId: ALEX_ACTION_PLAN_FOCUS,
       title: 'Use visual schedule for homework',
-      description: 'Create a simple visual checklist for homework time. Break tasks into 10-minute blocks.',
+      description:
+        'Create a simple visual checklist for homework time. Break tasks into 10-minute blocks.',
       context: TaskContext.HOME,
       frequency: TaskFrequency.DAILY,
       assigneeId: ALEX_TEAM_PARENT,
@@ -184,7 +189,8 @@ async function main() {
       id: '00000000-0000-0000-co11-000000000011',
       actionPlanId: ALEX_ACTION_PLAN_FOCUS,
       title: 'Celebrate focus wins',
-      description: 'When Alex completes a 10-minute focus block, provide specific praise about what they did well.',
+      description:
+        'When Alex completes a 10-minute focus block, provide specific praise about what they did well.',
       context: TaskContext.SHARED,
       frequency: TaskFrequency.AS_NEEDED,
       orderIndex: 10,
@@ -214,7 +220,8 @@ async function main() {
       status: TaskCompletionStatus.COMPLETED,
       dueDate: new Date('2024-01-16'),
       completedAt: new Date('2024-01-16T14:30:00Z'),
-      notes: 'Used 10-minute timer for math practice. Alex asked for one extra minute to finish problem.',
+      notes:
+        'Used 10-minute timer for math practice. Alex asked for one extra minute to finish problem.',
       rating: 4, // 1-5 effectiveness
     },
     {
@@ -261,7 +268,8 @@ async function main() {
       noteType: CareNoteType.PROGRESS_UPDATE,
       visibility: NoteVisibility.TEAM,
       title: 'Great week for focus!',
-      content: 'Alex had a really strong week with focus. Used the visual timer independently 3 times and asked for breaks before getting frustrated. Math scores improved too!',
+      content:
+        'Alex had a really strong week with focus. Used the visual timer independently 3 times and asked for breaks before getting frustrated. Math scores improved too!',
       actionPlanId: ALEX_ACTION_PLAN_FOCUS,
       isPinned: true,
     },
@@ -273,7 +281,8 @@ async function main() {
       noteType: CareNoteType.HOME_UPDATE,
       visibility: NoteVisibility.TEAM,
       title: 'Homework going smoother',
-      content: 'The visual checklist is working great at home. Alex even made their own checklist for cleaning their room! Less meltdowns during homework time.',
+      content:
+        'The visual checklist is working great at home. Alex even made their own checklist for cleaning their room! Less meltdowns during homework time.',
     },
     {
       id: '00000000-0000-0000-co20-000000000003',
@@ -283,7 +292,8 @@ async function main() {
       noteType: CareNoteType.THERAPY_UPDATE,
       visibility: NoteVisibility.TEAM,
       title: 'OT Session - Breathing Practice',
-      content: 'Practiced belly breathing today. Alex can now do 5 deep breaths independently. Introduced the "calm down corner" concept for home and school.',
+      content:
+        'Practiced belly breathing today. Alex can now do 5 deep breaths independently. Introduced the "calm down corner" concept for home and school.',
       metadataJson: { sessionType: 'occupational_therapy', duration: 30 },
     },
     {
@@ -294,7 +304,8 @@ async function main() {
       noteType: CareNoteType.QUESTION,
       visibility: NoteVisibility.TEAM,
       title: 'Sensory tools at home?',
-      content: 'Does Alex have access to any sensory tools at home? Squeeze balls, fidgets, weighted blanket? Would be helpful for homework time.',
+      content:
+        'Does Alex have access to any sensory tools at home? Squeeze balls, fidgets, weighted blanket? Would be helpful for homework time.',
     },
     {
       id: '00000000-0000-0000-co20-000000000005',
@@ -304,7 +315,8 @@ async function main() {
       noteType: CareNoteType.CELEBRATION,
       visibility: NoteVisibility.TEAM,
       title: '🎉 Focus Milestone!',
-      content: 'AMAZING NEWS! Alex focused for 18 minutes straight during independent reading today - a new personal best! They were so proud of themselves.',
+      content:
+        'AMAZING NEWS! Alex focused for 18 minutes straight during independent reading today - a new personal best! They were so proud of themselves.',
       isPinned: true,
     },
   ];
@@ -328,7 +340,7 @@ async function main() {
     learnerId: ALEX_USER_ID,
     createdByUserId: TEACHER_USER_ID,
     title: 'Monthly Progress Check-In',
-    description: 'Review Alex\'s progress on the focus action plan and discuss next steps.',
+    description: "Review Alex's progress on the focus action plan and discuss next steps.",
     meetingType: MeetingType.PROGRESS_REVIEW,
     status: MeetingStatus.SCHEDULED,
     scheduledAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Next week
@@ -352,9 +364,27 @@ async function main() {
 
   // Add participants
   const participants = [
-    { id: '00000000-0000-0000-co31-000000000001', meetingId: meeting.id, careTeamMemberId: ALEX_TEAM_TEACHER, isRequired: true, hasAccepted: true },
-    { id: '00000000-0000-0000-co31-000000000002', meetingId: meeting.id, careTeamMemberId: ALEX_TEAM_THERAPIST, isRequired: true, hasAccepted: true },
-    { id: '00000000-0000-0000-co31-000000000003', meetingId: meeting.id, careTeamMemberId: ALEX_TEAM_PARENT, isRequired: true, hasAccepted: null },
+    {
+      id: '00000000-0000-0000-co31-000000000001',
+      meetingId: meeting.id,
+      careTeamMemberId: ALEX_TEAM_TEACHER,
+      isRequired: true,
+      hasAccepted: true,
+    },
+    {
+      id: '00000000-0000-0000-co31-000000000002',
+      meetingId: meeting.id,
+      careTeamMemberId: ALEX_TEAM_THERAPIST,
+      isRequired: true,
+      hasAccepted: true,
+    },
+    {
+      id: '00000000-0000-0000-co31-000000000003',
+      meetingId: meeting.id,
+      careTeamMemberId: ALEX_TEAM_PARENT,
+      isRequired: true,
+      hasAccepted: null,
+    },
   ];
 
   for (const participant of participants) {
@@ -383,11 +413,11 @@ async function main() {
   console.log('  - Meeting scheduling and coordination');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

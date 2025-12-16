@@ -3,13 +3,7 @@
  */
 
 import * as publisher from '../events/publisher.js';
-import {
-  prisma,
-  BadgeCategory,
-  BadgeSource,
-  type Badge,
-  type EngagementProfile,
-} from '../prisma.js';
+import { prisma, BadgeSource, type Badge, type EngagementProfile } from '../prisma.js';
 
 import * as badgeService from './badgeService.js';
 

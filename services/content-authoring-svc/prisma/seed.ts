@@ -222,8 +222,14 @@ async function main() {
       contentJson: {
         type: 'interactive_activity',
         components: [
-          { type: 'emotion_picker', emotions: ['happy', 'sad', 'angry', 'scared', 'excited', 'calm'] },
-          { type: 'journal_prompt', prompts: ['Today I feel... because...', 'Something that made me happy was...'] },
+          {
+            type: 'emotion_picker',
+            emotions: ['happy', 'sad', 'angry', 'scared', 'excited', 'calm'],
+          },
+          {
+            type: 'journal_prompt',
+            prompts: ['Today I feel... because...', 'Something that made me happy was...'],
+          },
           { type: 'drawing_canvas', prompt: 'Draw how you feel' },
         ],
         estimatedMinutes: 8,
@@ -280,16 +286,48 @@ async function main() {
   // ══════════════════════════════════════════════════════════════════════════
 
   const tags = [
-    { id: '00000000-0000-0000-ca20-000000000001', learningObjectId: LO_FRACTIONS_ID, tag: 'visual-learning' },
-    { id: '00000000-0000-0000-ca20-000000000002', learningObjectId: LO_FRACTIONS_ID, tag: 'fractions' },
-    { id: '00000000-0000-0000-ca20-000000000003', learningObjectId: LO_FRACTIONS_ID, tag: 'interactive' },
-    { id: '00000000-0000-0000-ca20-000000000004', learningObjectId: LO_READING_ID, tag: 'reading-comprehension' },
-    { id: '00000000-0000-0000-ca20-000000000005', learningObjectId: LO_READING_ID, tag: 'detective-theme' },
+    {
+      id: '00000000-0000-0000-ca20-000000000001',
+      learningObjectId: LO_FRACTIONS_ID,
+      tag: 'visual-learning',
+    },
+    {
+      id: '00000000-0000-0000-ca20-000000000002',
+      learningObjectId: LO_FRACTIONS_ID,
+      tag: 'fractions',
+    },
+    {
+      id: '00000000-0000-0000-ca20-000000000003',
+      learningObjectId: LO_FRACTIONS_ID,
+      tag: 'interactive',
+    },
+    {
+      id: '00000000-0000-0000-ca20-000000000004',
+      learningObjectId: LO_READING_ID,
+      tag: 'reading-comprehension',
+    },
+    {
+      id: '00000000-0000-0000-ca20-000000000005',
+      learningObjectId: LO_READING_ID,
+      tag: 'detective-theme',
+    },
     { id: '00000000-0000-0000-ca20-000000000006', learningObjectId: LO_SEL_ID, tag: 'feelings' },
     { id: '00000000-0000-0000-ca20-000000000007', learningObjectId: LO_SEL_ID, tag: 'journaling' },
-    { id: '00000000-0000-0000-ca20-000000000008', learningObjectId: LO_SCIENCE_ID, tag: 'life-science' },
-    { id: '00000000-0000-0000-ca20-000000000009', learningObjectId: LO_SCIENCE_ID, tag: 'butterflies' },
-    { id: '00000000-0000-0000-ca20-00000000000a', learningObjectId: LO_SCIENCE_ID, tag: 'animations' },
+    {
+      id: '00000000-0000-0000-ca20-000000000008',
+      learningObjectId: LO_SCIENCE_ID,
+      tag: 'life-science',
+    },
+    {
+      id: '00000000-0000-0000-ca20-000000000009',
+      learningObjectId: LO_SCIENCE_ID,
+      tag: 'butterflies',
+    },
+    {
+      id: '00000000-0000-0000-ca20-00000000000a',
+      learningObjectId: LO_SCIENCE_ID,
+      tag: 'animations',
+    },
   ];
 
   for (const tag of tags) {
@@ -306,11 +344,41 @@ async function main() {
   // ══════════════════════════════════════════════════════════════════════════
 
   const skills = [
-    { id: '00000000-0000-0000-ca30-000000000001', learningObjectVersionId: LO_FRACTIONS_V1, skillId: SKILL_FRACTIONS, isPrimary: true, weight: new Decimal(0.7) },
-    { id: '00000000-0000-0000-ca30-000000000002', learningObjectVersionId: LO_FRACTIONS_V1, skillId: SKILL_FRACTION_ADD, isPrimary: false, weight: new Decimal(0.3) },
-    { id: '00000000-0000-0000-ca30-000000000003', learningObjectVersionId: LO_READING_V1, skillId: SKILL_READING, isPrimary: true, weight: new Decimal(0.6) },
-    { id: '00000000-0000-0000-ca30-000000000004', learningObjectVersionId: LO_READING_V1, skillId: SKILL_VOCAB, isPrimary: false, weight: new Decimal(0.4) },
-    { id: '00000000-0000-0000-ca30-000000000005', learningObjectVersionId: LO_SEL_V1, skillId: SKILL_SEL_AWARENESS, isPrimary: true, weight: new Decimal(1.0) },
+    {
+      id: '00000000-0000-0000-ca30-000000000001',
+      learningObjectVersionId: LO_FRACTIONS_V1,
+      skillId: SKILL_FRACTIONS,
+      isPrimary: true,
+      weight: new Decimal(0.7),
+    },
+    {
+      id: '00000000-0000-0000-ca30-000000000002',
+      learningObjectVersionId: LO_FRACTIONS_V1,
+      skillId: SKILL_FRACTION_ADD,
+      isPrimary: false,
+      weight: new Decimal(0.3),
+    },
+    {
+      id: '00000000-0000-0000-ca30-000000000003',
+      learningObjectVersionId: LO_READING_V1,
+      skillId: SKILL_READING,
+      isPrimary: true,
+      weight: new Decimal(0.6),
+    },
+    {
+      id: '00000000-0000-0000-ca30-000000000004',
+      learningObjectVersionId: LO_READING_V1,
+      skillId: SKILL_VOCAB,
+      isPrimary: false,
+      weight: new Decimal(0.4),
+    },
+    {
+      id: '00000000-0000-0000-ca30-000000000005',
+      learningObjectVersionId: LO_SEL_V1,
+      skillId: SKILL_SEL_AWARENESS,
+      isPrimary: true,
+      weight: new Decimal(1),
+    },
   ];
 
   for (const skill of skills) {
@@ -328,18 +396,70 @@ async function main() {
 
   const qaChecks = [
     // Fractions V1 checks (all passed)
-    { id: '00000000-0000-0000-ca40-000000000001', learningObjectVersionId: LO_FRACTIONS_V1, checkType: QaCheckType.ACCESSIBILITY, status: QaCheckStatus.PASSED, message: 'All images have alt text', details: { imagesChecked: 8, allHaveAltText: true } },
-    { id: '00000000-0000-0000-ca40-000000000002', learningObjectVersionId: LO_FRACTIONS_V1, checkType: QaCheckType.METADATA_COMPLETENESS, status: QaCheckStatus.PASSED, message: 'All required metadata fields present', details: { completeness: 100 } },
-    { id: '00000000-0000-0000-ca40-000000000003', learningObjectVersionId: LO_FRACTIONS_V1, checkType: QaCheckType.CONTENT_STRUCTURE, status: QaCheckStatus.PASSED, message: 'Content structure valid', details: { sectionsValid: true } },
+    {
+      id: '00000000-0000-0000-ca40-000000000001',
+      learningObjectVersionId: LO_FRACTIONS_V1,
+      checkType: QaCheckType.ACCESSIBILITY,
+      status: QaCheckStatus.PASSED,
+      message: 'All images have alt text',
+      details: { imagesChecked: 8, allHaveAltText: true },
+    },
+    {
+      id: '00000000-0000-0000-ca40-000000000002',
+      learningObjectVersionId: LO_FRACTIONS_V1,
+      checkType: QaCheckType.METADATA_COMPLETENESS,
+      status: QaCheckStatus.PASSED,
+      message: 'All required metadata fields present',
+      details: { completeness: 100 },
+    },
+    {
+      id: '00000000-0000-0000-ca40-000000000003',
+      learningObjectVersionId: LO_FRACTIONS_V1,
+      checkType: QaCheckType.CONTENT_STRUCTURE,
+      status: QaCheckStatus.PASSED,
+      message: 'Content structure valid',
+      details: { sectionsValid: true },
+    },
 
     // Reading V1 checks (one warning)
-    { id: '00000000-0000-0000-ca40-000000000010', learningObjectVersionId: LO_READING_V1, checkType: QaCheckType.ACCESSIBILITY, status: QaCheckStatus.PASSED, message: 'Accessibility requirements met' },
-    { id: '00000000-0000-0000-ca40-000000000011', learningObjectVersionId: LO_READING_V1, checkType: QaCheckType.POLICY_LANGUAGE, status: QaCheckStatus.WARNING, message: 'Consider adding more diverse character names', details: { suggestion: 'Include culturally diverse names' } },
-    { id: '00000000-0000-0000-ca40-000000000012', learningObjectVersionId: LO_READING_V1, checkType: QaCheckType.SKILL_ALIGNMENT, status: QaCheckStatus.PASSED, message: 'Skills properly aligned' },
+    {
+      id: '00000000-0000-0000-ca40-000000000010',
+      learningObjectVersionId: LO_READING_V1,
+      checkType: QaCheckType.ACCESSIBILITY,
+      status: QaCheckStatus.PASSED,
+      message: 'Accessibility requirements met',
+    },
+    {
+      id: '00000000-0000-0000-ca40-000000000011',
+      learningObjectVersionId: LO_READING_V1,
+      checkType: QaCheckType.POLICY_LANGUAGE,
+      status: QaCheckStatus.WARNING,
+      message: 'Consider adding more diverse character names',
+      details: { suggestion: 'Include culturally diverse names' },
+    },
+    {
+      id: '00000000-0000-0000-ca40-000000000012',
+      learningObjectVersionId: LO_READING_V1,
+      checkType: QaCheckType.SKILL_ALIGNMENT,
+      status: QaCheckStatus.PASSED,
+      message: 'Skills properly aligned',
+    },
 
     // SEL V1 checks
-    { id: '00000000-0000-0000-ca40-000000000020', learningObjectVersionId: LO_SEL_V1, checkType: QaCheckType.ACCESSIBILITY, status: QaCheckStatus.PASSED, message: 'Color blind friendly palette verified' },
-    { id: '00000000-0000-0000-ca40-000000000021', learningObjectVersionId: LO_SEL_V1, checkType: QaCheckType.CONTENT_STRUCTURE, status: QaCheckStatus.PASSED, message: 'Activity structure validated' },
+    {
+      id: '00000000-0000-0000-ca40-000000000020',
+      learningObjectVersionId: LO_SEL_V1,
+      checkType: QaCheckType.ACCESSIBILITY,
+      status: QaCheckStatus.PASSED,
+      message: 'Color blind friendly palette verified',
+    },
+    {
+      id: '00000000-0000-0000-ca40-000000000021',
+      learningObjectVersionId: LO_SEL_V1,
+      checkType: QaCheckType.CONTENT_STRUCTURE,
+      status: QaCheckStatus.PASSED,
+      message: 'Activity structure validated',
+    },
   ];
 
   for (const check of qaChecks) {
@@ -360,16 +480,63 @@ async function main() {
 
   const transitions = [
     // Fractions V1 workflow
-    { id: '00000000-0000-0000-ca50-000000000001', versionId: LO_FRACTIONS_V1, fromState: LearningObjectVersionState.DRAFT, toState: LearningObjectVersionState.IN_REVIEW, transitionedByUserId: AUTHOR_USER_ID, reason: 'Ready for review', transitionedAt: new Date('2024-01-01T10:00:00Z') },
-    { id: '00000000-0000-0000-ca50-000000000002', versionId: LO_FRACTIONS_V1, fromState: LearningObjectVersionState.IN_REVIEW, toState: LearningObjectVersionState.APPROVED, transitionedByUserId: ADMIN_USER_ID, reason: 'Approved after review', transitionedAt: new Date('2024-01-01T14:00:00Z') },
-    { id: '00000000-0000-0000-ca50-000000000003', versionId: LO_FRACTIONS_V1, fromState: LearningObjectVersionState.APPROVED, toState: LearningObjectVersionState.PUBLISHED, transitionedByUserId: ADMIN_USER_ID, reason: 'Publishing to production', transitionedAt: new Date('2024-01-01T15:00:00Z') },
+    {
+      id: '00000000-0000-0000-ca50-000000000001',
+      versionId: LO_FRACTIONS_V1,
+      fromState: LearningObjectVersionState.DRAFT,
+      toState: LearningObjectVersionState.IN_REVIEW,
+      transitionedByUserId: AUTHOR_USER_ID,
+      reason: 'Ready for review',
+      transitionedAt: new Date('2024-01-01T10:00:00Z'),
+    },
+    {
+      id: '00000000-0000-0000-ca50-000000000002',
+      versionId: LO_FRACTIONS_V1,
+      fromState: LearningObjectVersionState.IN_REVIEW,
+      toState: LearningObjectVersionState.APPROVED,
+      transitionedByUserId: ADMIN_USER_ID,
+      reason: 'Approved after review',
+      transitionedAt: new Date('2024-01-01T14:00:00Z'),
+    },
+    {
+      id: '00000000-0000-0000-ca50-000000000003',
+      versionId: LO_FRACTIONS_V1,
+      fromState: LearningObjectVersionState.APPROVED,
+      toState: LearningObjectVersionState.PUBLISHED,
+      transitionedByUserId: ADMIN_USER_ID,
+      reason: 'Publishing to production',
+      transitionedAt: new Date('2024-01-01T15:00:00Z'),
+    },
 
     // Reading V1 workflow (in review)
-    { id: '00000000-0000-0000-ca50-000000000010', versionId: LO_READING_V1, fromState: LearningObjectVersionState.DRAFT, toState: LearningObjectVersionState.IN_REVIEW, transitionedByUserId: AUTHOR_USER_ID, reason: 'Submitted for review', transitionedAt: new Date('2024-01-10T09:00:00Z') },
+    {
+      id: '00000000-0000-0000-ca50-000000000010',
+      versionId: LO_READING_V1,
+      fromState: LearningObjectVersionState.DRAFT,
+      toState: LearningObjectVersionState.IN_REVIEW,
+      transitionedByUserId: AUTHOR_USER_ID,
+      reason: 'Submitted for review',
+      transitionedAt: new Date('2024-01-10T09:00:00Z'),
+    },
 
     // SEL V1 workflow (approved)
-    { id: '00000000-0000-0000-ca50-000000000020', versionId: LO_SEL_V1, fromState: LearningObjectVersionState.DRAFT, toState: LearningObjectVersionState.IN_REVIEW, transitionedByUserId: AUTHOR_USER_ID, transitionedAt: new Date('2024-01-08T10:00:00Z') },
-    { id: '00000000-0000-0000-ca50-000000000021', versionId: LO_SEL_V1, fromState: LearningObjectVersionState.IN_REVIEW, toState: LearningObjectVersionState.APPROVED, transitionedByUserId: ADMIN_USER_ID, reason: 'Excellent SEL content, ready to publish', transitionedAt: new Date('2024-01-08T16:00:00Z') },
+    {
+      id: '00000000-0000-0000-ca50-000000000020',
+      versionId: LO_SEL_V1,
+      fromState: LearningObjectVersionState.DRAFT,
+      toState: LearningObjectVersionState.IN_REVIEW,
+      transitionedByUserId: AUTHOR_USER_ID,
+      transitionedAt: new Date('2024-01-08T10:00:00Z'),
+    },
+    {
+      id: '00000000-0000-0000-ca50-000000000021',
+      versionId: LO_SEL_V1,
+      fromState: LearningObjectVersionState.IN_REVIEW,
+      toState: LearningObjectVersionState.APPROVED,
+      transitionedByUserId: ADMIN_USER_ID,
+      reason: 'Excellent SEL content, ready to publish',
+      transitionedAt: new Date('2024-01-08T16:00:00Z'),
+    },
   ];
 
   for (const transition of transitions) {
@@ -386,9 +553,28 @@ async function main() {
   // ══════════════════════════════════════════════════════════════════════════
 
   const reviewNotes = [
-    { id: '00000000-0000-0000-ca60-000000000001', learningObjectVersionId: LO_FRACTIONS_V1, authorUserId: ADMIN_USER_ID, noteText: 'Great use of visual representations. The pie chart demo is very effective.', noteType: 'APPROVAL' },
-    { id: '00000000-0000-0000-ca60-000000000002', learningObjectVersionId: LO_READING_V1, authorUserId: ADMIN_USER_ID, noteText: 'Story is engaging but consider adding more diverse character names as noted in QA check.', noteType: 'FEEDBACK' },
-    { id: '00000000-0000-0000-ca60-000000000003', learningObjectVersionId: LO_SEL_V1, authorUserId: ADMIN_USER_ID, noteText: 'Perfect for young learners. The emoji selector is age-appropriate and engaging.', noteType: 'APPROVAL' },
+    {
+      id: '00000000-0000-0000-ca60-000000000001',
+      learningObjectVersionId: LO_FRACTIONS_V1,
+      authorUserId: ADMIN_USER_ID,
+      noteText: 'Great use of visual representations. The pie chart demo is very effective.',
+      noteType: 'APPROVAL',
+    },
+    {
+      id: '00000000-0000-0000-ca60-000000000002',
+      learningObjectVersionId: LO_READING_V1,
+      authorUserId: ADMIN_USER_ID,
+      noteText:
+        'Story is engaging but consider adding more diverse character names as noted in QA check.',
+      noteType: 'FEEDBACK',
+    },
+    {
+      id: '00000000-0000-0000-ca60-000000000003',
+      learningObjectVersionId: LO_SEL_V1,
+      authorUserId: ADMIN_USER_ID,
+      noteText: 'Perfect for young learners. The emoji selector is age-appropriate and engaging.',
+      noteType: 'APPROVAL',
+    },
   ];
 
   for (const note of reviewNotes) {
@@ -434,8 +620,14 @@ async function main() {
       contentJson: {
         type: 'interactive_activity',
         components: [
-          { type: 'emotion_picker', emotions: ['feliz', 'triste', 'enojado', 'asustado', 'emocionado', 'tranquilo'] },
-          { type: 'journal_prompt', prompts: ['Hoy me siento... porque...', 'Algo que me hizo feliz fue...'] },
+          {
+            type: 'emotion_picker',
+            emotions: ['feliz', 'triste', 'enojado', 'asustado', 'emocionado', 'tranquilo'],
+          },
+          {
+            type: 'journal_prompt',
+            prompts: ['Hoy me siento... porque...', 'Algo que me hizo feliz fue...'],
+          },
           { type: 'drawing_canvas', prompt: 'Dibuja cómo te sientes' },
         ],
       },
@@ -470,11 +662,11 @@ async function main() {
   console.log('  - 2 Spanish translations');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

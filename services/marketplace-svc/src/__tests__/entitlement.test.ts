@@ -10,7 +10,7 @@ import { EntitlementService } from '../services/entitlement.service.js';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 // Mock Prisma
 vi.mock('../prisma.js', () => ({

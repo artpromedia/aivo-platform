@@ -7,14 +7,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { InstallationBillingService } from '../services/installation-billing.service.js';
-import type {
-  MarketplaceBillingModel,
-  MarketplaceBillingStatus,
-} from '../types/marketplace.types.js';
+import type { MarketplaceBillingModel } from '../types/marketplace.types.js';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 // Mock Prisma
 vi.mock('../prisma.js', () => ({

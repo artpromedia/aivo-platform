@@ -125,8 +125,8 @@ async function getSafetyReviewQueue(
       embeddedToolConfig: true,
     },
     orderBy: { createdAt: 'asc' },
-    take: parseInt(limit, 10),
-    skip: parseInt(offset, 10),
+    take: Number.parseInt(limit, 10),
+    skip: Number.parseInt(offset, 10),
   });
 
   const total = await prisma.marketplaceItemVersion.count({
@@ -151,8 +151,8 @@ async function getSafetyReviewQueue(
     })),
     pagination: {
       total,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
+      limit: Number.parseInt(limit, 10),
+      offset: Number.parseInt(offset, 10),
     },
   };
 }
@@ -704,8 +704,8 @@ async function launchTool(
     tenantId: installation.tenantId,
     userId,
     userRole,
-    launchUrl: validation.launchUrl!,
-    scopesGranted: validation.grantedScopes!,
+    launchUrl: validation.launchUrl ?? '',
+    scopesGranted: validation.grantedScopes ?? [],
     context,
     checks: validation.checks,
     ipAddress: request.ip,

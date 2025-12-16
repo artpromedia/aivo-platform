@@ -7,7 +7,14 @@
  * - Messages
  */
 
-import { PrismaClient, ConversationType, ContextType, ParticipantRole, MessageType, MessageStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  ConversationType,
+  ContextType,
+  ParticipantRole,
+  MessageType,
+  MessageStatus,
+} from '../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 
@@ -94,7 +101,7 @@ async function main() {
       tenantId: DEV_TENANT_ID,
       type: ConversationType.THREAD,
       name: 'Fraction Operations Goal',
-      description: 'Discussion about Alex\'s progress on fraction mastery',
+      description: "Discussion about Alex's progress on fraction mastery",
       contextType: ContextType.GOAL,
       contextId: ALEX_GOAL_FRACTIONS,
       contextName: 'Master fraction operations',
@@ -211,7 +218,7 @@ async function main() {
       conversationId: CONV_DIRECT_TEACHER_PARENT,
       senderId: TEACHER_USER_ID,
       type: MessageType.TEXT,
-      content: 'Hi! I wanted to share that Alex did great on today\'s math assessment.',
+      content: "Hi! I wanted to share that Alex did great on today's math assessment.",
       status: MessageStatus.READ,
       createdAt: new Date(oneHourAgo.getTime() - 30 * 60 * 1000),
     },
@@ -253,7 +260,7 @@ async function main() {
       conversationId: CONV_GROUP_CARE_TEAM,
       senderId: TEACHER_USER_ID,
       type: MessageType.TEXT,
-      content: 'Team, I wanted to give an update on Alex\'s progress this week.',
+      content: "Team, I wanted to give an update on Alex's progress this week.",
       status: MessageStatus.READ,
       createdAt: new Date(thirtyMinutesAgo.getTime() - 2 * 60 * 60 * 1000),
     },
@@ -263,7 +270,8 @@ async function main() {
       conversationId: CONV_GROUP_CARE_TEAM,
       senderId: TEACHER_USER_ID,
       type: MessageType.TEXT,
-      content: 'Alex completed 8 sessions this week with an average focus time of 12 minutes - up from 8 minutes last week!',
+      content:
+        'Alex completed 8 sessions this week with an average focus time of 12 minutes - up from 8 minutes last week!',
       status: MessageStatus.READ,
       createdAt: new Date(thirtyMinutesAgo.getTime() - 115 * 60 * 1000),
     },
@@ -353,11 +361,11 @@ async function main() {
   console.log('  - 12 messages demonstrating care team collaboration');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

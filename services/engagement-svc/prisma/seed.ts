@@ -7,11 +7,7 @@
  * - Sample engagement profiles for test learners
  */
 
-import {
-  PrismaClient,
-  BadgeCategory,
-  RewardStyle,
-} from '../generated/prisma-client/index.js';
+import { PrismaClient, BadgeCategory, RewardStyle } from '../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 
@@ -329,9 +325,16 @@ async function main() {
   // ══════════════════════════════════════════════════════════════════════════
 
   // Alex has earned several badges
-  const alexBadges = ['FIRST_SESSION', 'TEN_SESSIONS', 'STREAK_3', 'STREAK_7', 'TRY_AGAIN', 'XP_1000'];
+  const alexBadges = [
+    'FIRST_SESSION',
+    'TEN_SESSIONS',
+    'STREAK_3',
+    'STREAK_7',
+    'TRY_AGAIN',
+    'XP_1000',
+  ];
   for (const badgeCode of alexBadges) {
-    const badge = badges.find(b => b.code === badgeCode);
+    const badge = badges.find((b) => b.code === badgeCode);
     if (badge) {
       await prisma.learnerBadge.upsert({
         where: {
@@ -354,9 +357,18 @@ async function main() {
   console.log(`  ✅ Awarded ${alexBadges.length} badges to Alex`);
 
   // Sam has earned many badges
-  const samBadges = ['FIRST_SESSION', 'TEN_SESSIONS', 'FIFTY_SESSIONS', 'STREAK_3', 'STREAK_7', 'STREAK_30', 'SKILL_UP', 'XP_1000'];
+  const samBadges = [
+    'FIRST_SESSION',
+    'TEN_SESSIONS',
+    'FIFTY_SESSIONS',
+    'STREAK_3',
+    'STREAK_7',
+    'STREAK_30',
+    'SKILL_UP',
+    'XP_1000',
+  ];
   for (const badgeCode of samBadges) {
-    const badge = badges.find(b => b.code === badgeCode);
+    const badge = badges.find((b) => b.code === badgeCode);
     if (badge) {
       await prisma.learnerBadge.upsert({
         where: {
@@ -381,7 +393,7 @@ async function main() {
   // Jordan has first steps badge
   const jordanBadges = ['FIRST_SESSION', 'STREAK_3'];
   for (const badgeCode of jordanBadges) {
-    const badge = badges.find(b => b.code === badgeCode);
+    const badge = badges.find((b) => b.code === badgeCode);
     if (badge) {
       await prisma.learnerBadge.upsert({
         where: {
@@ -410,11 +422,11 @@ async function main() {
   console.log(`Created ${learnerProfiles.length} engagement profiles`);
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

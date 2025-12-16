@@ -8,7 +8,13 @@
  * - Skill estimates
  */
 
-import { PrismaClient, GradeBand, BaselineStatus, BaselineDomain, RetestReasonType } from '@prisma/client';
+import {
+  PrismaClient,
+  GradeBand,
+  BaselineStatus,
+  BaselineDomain,
+  RetestReasonType,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
@@ -232,7 +238,11 @@ async function main() {
         correctIndex: 1,
       },
       correctAnswerJson: { value: '42', index: 1 },
-      aiMetadataJson: { difficulty: 0.4, skill: 'addition-2digit', irtParams: { a: 1.2, b: -0.3, c: 0.25 } },
+      aiMetadataJson: {
+        difficulty: 0.4,
+        skill: 'addition-2digit',
+        irtParams: { a: 1.2, b: -0.3, c: 0.25 },
+      },
     },
     {
       id: '00000000-0000-0000-e200-000000000002',
@@ -247,7 +257,11 @@ async function main() {
         correctIndex: 2,
       },
       correctAnswerJson: { value: '3/4', index: 2 },
-      aiMetadataJson: { difficulty: 0.65, skill: 'fraction-addition', irtParams: { a: 1.4, b: 0.5, c: 0.25 } },
+      aiMetadataJson: {
+        difficulty: 0.65,
+        skill: 'fraction-addition',
+        irtParams: { a: 1.4, b: 0.5, c: 0.25 },
+      },
     },
     {
       id: '00000000-0000-0000-e200-000000000003',
@@ -262,7 +276,11 @@ async function main() {
         correctIndex: 1,
       },
       correctAnswerJson: { value: 'joyful', index: 1 },
-      aiMetadataJson: { difficulty: 0.3, skill: 'vocabulary-synonyms', irtParams: { a: 1.1, b: -0.5, c: 0.25 } },
+      aiMetadataJson: {
+        difficulty: 0.3,
+        skill: 'vocabulary-synonyms',
+        irtParams: { a: 1.1, b: -0.5, c: 0.25 },
+      },
     },
     {
       id: '00000000-0000-0000-e200-000000000004',
@@ -278,7 +296,11 @@ async function main() {
         correctIndex: 1,
       },
       correctAnswerJson: { value: 'on the mat', index: 1 },
-      aiMetadataJson: { difficulty: 0.25, skill: 'reading-literal', irtParams: { a: 1.0, b: -0.8, c: 0.25 } },
+      aiMetadataJson: {
+        difficulty: 0.25,
+        skill: 'reading-literal',
+        irtParams: { a: 1, b: -0.8, c: 0.25 },
+      },
     },
     {
       id: '00000000-0000-0000-e200-000000000005',
@@ -289,11 +311,20 @@ async function main() {
       promptJson: {
         type: 'scenario',
         scenario: 'Your friend accidentally breaks your favorite toy. How do you feel?',
-        options: ['I would yell at them', 'I would feel sad but talk to them about it', 'I would never speak to them again', 'I would break their toy'],
+        options: [
+          'I would yell at them',
+          'I would feel sad but talk to them about it',
+          'I would never speak to them again',
+          'I would break their toy',
+        ],
         correctIndex: 1,
       },
       correctAnswerJson: { value: 'I would feel sad but talk to them about it', index: 1 },
-      aiMetadataJson: { difficulty: 0.4, skill: 'emotional-regulation', irtParams: { a: 0.9, b: -0.2, c: 0.25 } },
+      aiMetadataJson: {
+        difficulty: 0.4,
+        skill: 'emotional-regulation',
+        irtParams: { a: 0.9, b: -0.2, c: 0.25 },
+      },
     },
   ];
 
@@ -317,7 +348,7 @@ async function main() {
       learnerId: ALEX_USER_ID,
       responseJson: { selectedIndex: 1, value: '42' },
       isCorrect: true,
-      score: new Decimal(1.0),
+      score: new Decimal(1),
       latencyMs: 8500,
     },
     {
@@ -326,7 +357,7 @@ async function main() {
       learnerId: ALEX_USER_ID,
       responseJson: { selectedIndex: 0, value: '1/4' },
       isCorrect: false,
-      score: new Decimal(0.0),
+      score: new Decimal(0),
       latencyMs: 15200,
     },
     {
@@ -335,7 +366,7 @@ async function main() {
       learnerId: ALEX_USER_ID,
       responseJson: { selectedIndex: 1, value: 'joyful' },
       isCorrect: true,
-      score: new Decimal(1.0),
+      score: new Decimal(1),
       latencyMs: 4200,
     },
     {
@@ -344,7 +375,7 @@ async function main() {
       learnerId: ALEX_USER_ID,
       responseJson: { selectedIndex: 1, value: 'on the mat' },
       isCorrect: true,
-      score: new Decimal(1.0),
+      score: new Decimal(1),
       latencyMs: 12300,
     },
     {
@@ -353,7 +384,7 @@ async function main() {
       learnerId: ALEX_USER_ID,
       responseJson: { selectedIndex: 1, value: 'I would feel sad but talk to them about it' },
       isCorrect: true,
-      score: new Decimal(1.0),
+      score: new Decimal(1),
       latencyMs: 9800,
     },
   ];
@@ -427,7 +458,7 @@ async function main() {
       baselineAttemptId: SAM_ATTEMPT_1,
       skillCode: 'MATH.NF.1',
       domain: BaselineDomain.MATH,
-      estimatedLevel: new Decimal(4.0),
+      estimatedLevel: new Decimal(4),
       confidence: new Decimal(0.88),
     },
     {
@@ -435,7 +466,7 @@ async function main() {
       baselineAttemptId: SAM_ATTEMPT_1,
       skillCode: 'ELA.L.4',
       domain: BaselineDomain.ELA,
-      estimatedLevel: new Decimal(4.0),
+      estimatedLevel: new Decimal(4),
       confidence: new Decimal(0.85),
     },
   ];
@@ -460,11 +491,11 @@ async function main() {
   console.log('  - 8 skill estimates linked to Common Core standards');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

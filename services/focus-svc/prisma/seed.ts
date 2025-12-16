@@ -62,7 +62,7 @@ async function main() {
       learnerId: LEARNER_IDS[1], // jordan - not in session
       currentState: FocusState.AWAY,
       sessionId: null,
-      focusScore: 1.0,
+      focusScore: 1,
       consecutiveFocusedPings: 0,
       consecutiveDistractedPings: 0,
       lastBreakAt: null,
@@ -105,7 +105,7 @@ async function main() {
   for (let i = 0; i < 20; i++) {
     const focusScore = 0.7 + Math.random() * 0.3; // 0.7 - 1.0
     const isOnTask = focusScore > 0.6;
-    
+
     pingLogs.push({
       tenantId: DEV_TENANT_ID,
       learnerId: LEARNER_IDS[0],
@@ -113,7 +113,7 @@ async function main() {
       focusScore,
       isOnTask,
       focusLossDetected: !isOnTask,
-      lossReasons: !isOnTask ? [FocusLossReason.EXTENDED_IDLE] : [],
+      lossReasons: isOnTask ? [] : [FocusLossReason.EXTENDED_IDLE],
       idleTimeMs: isOnTask ? Math.floor(Math.random() * 5000) : Math.floor(Math.random() * 30000),
       interactionCount: Math.floor(Math.random() * 10),
       errorCount: Math.floor(Math.random() * 2),
@@ -199,11 +199,11 @@ async function main() {
   console.log(`  - ${interventions.length} focus interventions`);
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (e) {
+  console.error('❌ Seeding failed:', e);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

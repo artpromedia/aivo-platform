@@ -55,7 +55,7 @@ model BaselineProfile {
   gradeBand      GradeBand      @map("grade_band")
   status         BaselineStatus @default(NOT_STARTED)
   attemptCount   Int            @default(0) @map("attempt_count") @db.SmallInt
-  finalAttemptId String?        @map("final_attempt_id") @db.Uuid
+  finalAttemptId String?        @unique @map("final_attempt_id") @db.Uuid
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
 
