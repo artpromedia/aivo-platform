@@ -1,12 +1,13 @@
 /**
  * Research Export Routes
- * 
+ *
  * Export job creation, listing, and download management.
  */
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
+import type { AuditContext } from '../services/auditService.js';
 import {
   createExportJob,
   getExportJob,
@@ -14,7 +15,6 @@ import {
   getProjectExportJobs,
   recordDownload,
 } from '../services/exportService.js';
-import type { AuditContext } from '../services/auditService.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -27,10 +27,12 @@ const createExportSchema = z.object({
   format: z.enum(['CSV', 'JSON', 'PARQUET']).default('CSV'),
   dateRangeStart: z.string().datetime().optional(),
   dateRangeEnd: z.string().datetime().optional(),
-  sampling: z.object({
-    enabled: z.boolean(),
-    rate: z.number().min(0.01).max(1),
-  }).optional(),
+  sampling: z
+    .object({
+      enabled: z.boolean(),
+      rate: z.number().min(0.01).max(1),
+    })
+    .optional(),
 });
 
 const listExportsSchema = z.object({
@@ -58,7 +60,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
       userId: user.sub,
       userEmail: user.email,
       ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      ...(request.headers['user-agent'] && { userAgent: request.headers['user-agent'] }),
     };
 
     const job = await createExportJob(
@@ -91,31 +93,28 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
     const user = request.user as { sub: string; tenantId: string; roles?: string[] };
     const query = listExportsSchema.parse(request.query);
 
-    const isAdmin = user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
-    
+    const isAdmin =
+      user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
+
     let result;
     if (query.projectId) {
       // List exports for specific project
-      result = await getProjectExportJobs(
-        query.projectId,
-        user.tenantId,
-        {
-          status: query.status?.split(',') as ('PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED')[] | undefined,
-          limit: query.limit,
-          offset: query.offset,
-        }
-      );
+      result = await getProjectExportJobs(query.projectId, user.tenantId, {
+        status: query.status?.split(',') as
+          | ('PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED')[]
+          | undefined,
+        limit: query.limit,
+        offset: query.offset,
+      });
     } else {
       // List user's exports (admins see all)
-      result = await getUserExportJobs(
-        isAdmin ? undefined : user.sub,
-        user.tenantId,
-        {
-          status: query.status?.split(',') as ('PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED')[] | undefined,
-          limit: query.limit,
-          offset: query.offset,
-        }
-      );
+      result = await getUserExportJobs(isAdmin ? undefined : user.sub, user.tenantId, {
+        status: query.status?.split(',') as
+          | ('PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED')[]
+          | undefined,
+        limit: query.limit,
+        offset: query.offset,
+      });
     }
 
     return reply.send(result);
@@ -170,7 +169,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
       userId: user.sub,
       userEmail: user.email,
       ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      ...(request.headers['user-agent'] && { userAgent: request.headers['user-agent'] }),
     };
 
     // Record download access

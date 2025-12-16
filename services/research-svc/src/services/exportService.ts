@@ -1,23 +1,23 @@
 /**
  * Export Job Service
- * 
+ *
  * Handles export job creation, execution, and file generation.
  */
 
 import type { DatasetGranularity, ExportFormat, ExportJobStatus } from '@prisma/client';
 
+import { config } from '../config.js';
+import {
+  publishExportCompleted,
+  publishExportFailed,
+  publishExportRequested,
+} from '../events/publisher.js';
 import { prisma } from '../prisma.js';
 import { getWarehousePool } from '../warehouse.js';
-import { publishExportCompleted, publishExportFailed, publishExportRequested } from '../events/publisher.js';
-import { recordAuditLog, type AuditContext } from './auditService.js';
+
 import { validateUserAccess } from './accessGrantService.js';
-import { 
-  DEFAULT_CONSTRAINTS, 
-  transformDataset, 
-  pseudonymize,
-  type PrivacyConstraints 
-} from './privacyGuard.js';
-import { config } from '../config.js';
+import { recordAuditLog, type AuditContext } from './auditService.js';
+import { DEFAULT_CONSTRAINTS, transformDataset, type PrivacyConstraints } from './privacyGuard.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -118,7 +118,9 @@ async function validateExportRequest(input: CreateExportJobInput): Promise<{
   return { valid: true, project, dataset, cohort };
 }
 
-function granularityToScope(granularity: DatasetGranularity): 'AGG_ONLY' | 'DEIDENTIFIED_LEARNER_LEVEL' | 'INTERNAL_FULL_ACCESS' {
+function granularityToScope(
+  granularity: DatasetGranularity
+): 'AGG_ONLY' | 'DEIDENTIFIED_LEARNER_LEVEL' | 'INTERNAL_FULL_ACCESS' {
   switch (granularity) {
     case 'AGGREGATED':
       return 'AGG_ONLY';
@@ -138,10 +140,7 @@ function granularityToScope(granularity: DatasetGranularity): 'AGG_ONLY' | 'DEID
 /**
  * Create a new export job
  */
-export async function createExportJob(
-  input: CreateExportJobInput,
-  auditContext: AuditContext
-) {
+export async function createExportJob(input: CreateExportJobInput, auditContext: AuditContext) {
   // Validate request
   const validation = await validateExportRequest(input);
   if (!validation.valid) {
@@ -194,7 +193,7 @@ export async function createExportJob(
  * Get export jobs for a user
  */
 export async function getUserExportJobs(
-  userId: string,
+  userId: string | undefined,
   tenantId: string,
   options: {
     projectId?: string;
@@ -207,9 +206,39 @@ export async function getUserExportJobs(
 
   return prisma.researchExportJob.findMany({
     where: {
-      requestedByUserId: userId,
+      ...(userId ? { requestedByUserId: userId } : {}),
       tenantId,
       ...(projectId ? { researchProjectId: projectId } : {}),
+      ...(status && status.length > 0 ? { status: { in: status } } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    skip: offset,
+    include: {
+      datasetDefinition: { select: { name: true, granularity: true } },
+      cohort: { select: { name: true } },
+    },
+  });
+}
+
+/**
+ * Get export jobs for a project
+ */
+export async function getProjectExportJobs(
+  projectId: string,
+  tenantId: string,
+  options: {
+    status?: ExportJobStatus[];
+    limit?: number;
+    offset?: number;
+  } = {}
+) {
+  const { status, limit = 20, offset = 0 } = options;
+
+  return prisma.researchExportJob.findMany({
+    where: {
+      researchProjectId: projectId,
+      tenantId,
       ...(status && status.length > 0 ? { status: { in: status } } : {}),
     },
     orderBy: { createdAt: 'desc' },
@@ -305,7 +334,6 @@ export async function processExportJob(jobId: string): Promise<void> {
       storagePath,
       timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorCode = error instanceof Error && 'code' in error ? String(error.code) : 'UNKNOWN';
@@ -351,17 +379,18 @@ async function executeExport(job: {
   };
 }): Promise<ExportResult> {
   const warehouse = getWarehousePool();
-  
+
   // Parse constraints
   const defaultConstraints = DEFAULT_CONSTRAINTS[job.datasetDefinition.granularity];
-  const customConstraints = job.datasetDefinition.privacyConstraintsJson as Partial<PrivacyConstraints>;
+  const customConstraints = job.datasetDefinition
+    .privacyConstraintsJson as Partial<PrivacyConstraints>;
   const constraints: PrivacyConstraints = {
     ...defaultConstraints,
     ...customConstraints,
   };
 
-  // Parse schema
-  const schema = job.datasetDefinition.schemaJson as {
+  // Parse schema - TODO: use for dynamic query building
+  const _schema = job.datasetDefinition.schemaJson as {
     factTables?: string[];
     dimensions?: string[];
     metrics?: string[];
@@ -405,9 +434,7 @@ async function executeExport(job: {
     JOIN dim_learner dl ON fs.learner_key = dl.learner_key AND dl.is_current = true
     JOIN dim_time dt ON fs.date_key = dt.date_key
     WHERE fs.date_key BETWEEN $2 AND $3
-    ${filter.gradeBands && filter.gradeBands.length > 0 
-      ? `AND dl.grade_band = ANY($4)` 
-      : ''}
+    ${filter.gradeBands && filter.gradeBands.length > 0 ? `AND dl.grade_band = ANY($4)` : ''}
     ORDER BY dt.full_date, dl.learner_id
   `;
 
@@ -420,15 +447,10 @@ async function executeExport(job: {
   const rawRows = result.rows as Record<string, unknown>[];
 
   // Apply privacy transformations
-  const transformed = transformDataset(
-    rawRows,
-    job.id,
-    constraints,
-    {
-      isAggregated: job.datasetDefinition.granularity === 'AGGREGATED',
-      learnerCountColumn: 'learner_count',
-    }
-  );
+  const transformed = transformDataset(rawRows, job.id, constraints, {
+    isAggregated: job.datasetDefinition.granularity === 'AGGREGATED',
+    learnerCountColumn: 'learner_count',
+  });
 
   return {
     rows: transformed.rows,
@@ -487,15 +509,22 @@ function convertToCSV(rows: Record<string, unknown>[]): string {
   const headers = Object.keys(rows[0]);
   const csvRows = [
     headers.join(','),
-    ...rows.map(row =>
-      headers.map(h => {
-        const val = row[h];
-        if (val === null || val === undefined) return '';
-        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-          return `"${val.replace(/"/g, '""')}"`;
-        }
-        return String(val);
-      }).join(',')
+    ...rows.map((row) =>
+      headers
+        .map((h) => {
+          const val = row[h];
+          if (val === null || val === undefined) return '';
+          if (typeof val === 'object') {
+            const jsonStr = JSON.stringify(val);
+            return `"${jsonStr.replaceAll('"', '""')}"`;
+          }
+          const strVal = typeof val === 'string' ? val : String(val as string | number | boolean);
+          if (strVal.includes(',') || strVal.includes('"')) {
+            return `"${strVal.replaceAll('"', '""')}"`;
+          }
+          return strVal;
+        })
+        .join(',')
     ),
   ];
 

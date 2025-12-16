@@ -1,0 +1,627 @@
+# AIVO Platform - Kong Gateway Declarative Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# API Gateway configuration for routing, authentication, and rate limiting.
+# ══════════════════════════════════════════════════════════════════════════════
+
+_format_version: "3.0"
+_transform: true
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Services
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Authentication (Public - No JWT required)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: auth-service
+    url: http://auth-svc:3000
+    routes:
+      - name: auth-routes
+        paths:
+          - /api/v1/auth
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+    plugins:
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+          headers: ["Accept", "Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"]
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 60
+          policy: local
+          hide_client_headers: false
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Core Services (JWT Protected)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: tenant-service
+    url: http://tenant-svc:3000
+    routes:
+      - name: tenant-routes
+        paths:
+          - /api/v1/tenants
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: kid
+          claims_to_verify: ["exp"]
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+          headers: ["Accept", "Authorization", "Content-Type", "X-Tenant-ID"]
+          credentials: true
+
+  - name: profile-service
+    url: http://profile-svc:3000
+    routes:
+      - name: profile-routes
+        paths:
+          - /api/v1/profiles
+          - /api/v1/learners
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: content-service
+    url: http://content-svc:3000
+    routes:
+      - name: content-routes
+        paths:
+          - /api/v1/content
+          - /api/v1/learning-objects
+          - /api/v1/modules
+          - /api/v1/courses
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: kid
+          claims_to_verify: ["exp"]
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+          headers: ["Accept", "Authorization", "Content-Type", "X-Tenant-ID"]
+          credentials: true
+      - name: rate-limiting
+        config:
+          minute: 300
+          policy: local
+
+  - name: content-authoring-service
+    url: http://content-authoring-svc:3000
+    routes:
+      - name: authoring-routes
+        paths:
+          - /api/v1/authoring
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: session-service
+    url: http://session-svc:3000
+    routes:
+      - name: session-routes
+        paths:
+          - /api/v1/sessions
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: local
+
+  - name: assessment-service
+    url: http://assessment-svc:3000
+    routes:
+      - name: assessment-routes
+        paths:
+          - /api/v1/assessments
+          - /api/v1/quizzes
+          - /api/v1/questions
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: baseline-service
+    url: http://baseline-svc:3000
+    routes:
+      - name: baseline-routes
+        paths:
+          - /api/v1/baseline
+          - /api/v1/diagnostics
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: engagement-service
+    url: http://engagement-svc:3000
+    routes:
+      - name: engagement-routes
+        paths:
+          - /api/v1/engagement
+          - /api/v1/xp
+          - /api/v1/badges
+          - /api/v1/streaks
+          - /api/v1/achievements
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: personalization-service
+    url: http://personalization-svc:3000
+    routes:
+      - name: personalization-routes
+        paths:
+          - /api/v1/personalization
+          - /api/v1/recommendations
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: learner-model-service
+    url: http://learner-model-svc:3000
+    routes:
+      - name: learner-model-routes
+        paths:
+          - /api/v1/learner-models
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # AI Services (Rate Limited)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: ai-service
+    url: http://ai-orchestrator:3000
+    routes:
+      - name: ai-routes
+        paths:
+          - /api/v1/ai
+          - /api/v1/chat
+          - /api/v1/tutor
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: rate-limiting
+        config:
+          minute: 30
+          policy: local
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: homework-helper-service
+    url: http://homework-helper-svc:3000
+    routes:
+      - name: homework-routes
+        paths:
+          - /api/v1/homework
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: rate-limiting
+        config:
+          minute: 60
+          policy: local
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Analytics & Reporting
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: analytics-service
+    url: http://analytics-svc:3000
+    routes:
+      - name: analytics-routes
+        paths:
+          - /api/v1/analytics
+          - /api/v1/events
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  - name: reports-service
+    url: http://reports-svc:3000
+    routes:
+      - name: reports-routes
+        paths:
+          - /api/v1/reports
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: research-service
+    url: http://research-svc:3000
+    routes:
+      - name: research-routes
+        paths:
+          - /api/v1/research
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Goals & Planning
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: goal-service
+    url: http://goal-svc:3000
+    routes:
+      - name: goal-routes
+        paths:
+          - /api/v1/goals
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: teacher-planning-service
+    url: http://teacher-planning-svc:3000
+    routes:
+      - name: teacher-planning-routes
+        paths:
+          - /api/v1/teacher-planning
+          - /api/v1/session-plans
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: focus-service
+    url: http://focus-svc:3000
+    routes:
+      - name: focus-routes
+        paths:
+          - /api/v1/focus
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Marketplace & Billing
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: marketplace-service
+    url: http://marketplace-svc:3000
+    routes:
+      - name: marketplace-routes
+        paths:
+          - /api/v1/marketplace
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: billing-service
+    url: http://billing-svc:3000
+    routes:
+      - name: billing-routes
+        paths:
+          - /api/v1/billing
+          - /api/v1/subscriptions
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: payments-service
+    url: http://payments-svc:3000
+    routes:
+      - name: payments-routes
+        paths:
+          - /api/v1/payments
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # Stripe webhooks (no JWT)
+  - name: payments-webhooks
+    url: http://payments-svc:3000
+    routes:
+      - name: stripe-webhooks
+        paths:
+          - /api/v1/webhooks/stripe
+        strip_path: true
+        methods:
+          - POST
+    plugins:
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Communication
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: notification-service
+    url: http://notify-svc:3000
+    routes:
+      - name: notification-routes
+        paths:
+          - /api/v1/notifications
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: messaging-service
+    url: http://messaging-svc:3000
+    routes:
+      - name: messaging-routes
+        paths:
+          - /api/v1/messaging
+          - /api/v1/messages
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: collaboration-service
+    url: http://collaboration-svc:3000
+    routes:
+      - name: collaboration-routes
+        paths:
+          - /api/v1/collaboration
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Integration & Sync
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: integration-service
+    url: http://integration-svc:3000
+    routes:
+      - name: integration-routes
+        paths:
+          - /api/v1/integrations
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: lti-service
+    url: http://lti-svc:3000
+    routes:
+      - name: lti-routes
+        paths:
+          - /api/v1/lti
+        strip_path: true
+    plugins:
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: sis-sync-service
+    url: http://sis-sync-svc:3000
+    routes:
+      - name: sis-sync-routes
+        paths:
+          - /api/v1/sis-sync
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Safety & Compliance
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: consent-service
+    url: http://consent-svc:3000
+    routes:
+      - name: consent-routes
+        paths:
+          - /api/v1/consent
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: dsr-service
+    url: http://dsr-svc:3000
+    routes:
+      - name: dsr-routes
+        paths:
+          - /api/v1/dsr
+          - /api/v1/data-requests
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Tools & Sandbox
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: embedded-tools-service
+    url: http://embedded-tools-svc:3000
+    routes:
+      - name: embedded-tools-routes
+        paths:
+          - /api/v1/tools
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: sandbox-service
+    url: http://sandbox-svc:3000
+    routes:
+      - name: sandbox-routes
+        paths:
+          - /api/v1/sandbox
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  - name: device-mgmt-service
+    url: http://device-mgmt-svc:3000
+    routes:
+      - name: device-mgmt-routes
+        paths:
+          - /api/v1/devices
+        strip_path: true
+    plugins:
+      - name: jwt
+      - name: cors
+        config:
+          origins: ["*"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Health & Status (Public)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - name: health-aggregator
+    url: http://kong:8001
+    routes:
+      - name: platform-health
+        paths:
+          - /health
+        strip_path: false
+        methods:
+          - GET
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Consumers & Credentials
+# ══════════════════════════════════════════════════════════════════════════════
+
+consumers:
+  - username: aivo-web-app
+    custom_id: web-frontend
+  - username: aivo-mobile-app
+    custom_id: mobile-app
+  - username: aivo-internal
+    custom_id: internal-services
+
+jwt_secrets:
+  - consumer: aivo-web-app
+    key: aivo-web-key
+    secret: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+    algorithm: HS256
+  - consumer: aivo-mobile-app
+    key: aivo-mobile-key
+    secret: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+    algorithm: HS256
+  - consumer: aivo-internal
+    key: aivo-internal-key
+    secret: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+    algorithm: HS256
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Global Plugins
+# ══════════════════════════════════════════════════════════════════════════════
+
+plugins:
+  # Add correlation ID to all requests
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+
+  # Global request size limit
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10
+      size_unit: megabytes
+
+  # IP restriction for admin endpoints (commented out for dev)
+  # - name: ip-restriction
+  #   route: admin-routes
+  #   config:
+  #     allow:
+  #       - 127.0.0.1
+  #       - 10.0.0.0/8

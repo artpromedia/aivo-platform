@@ -7,6 +7,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 import { InstallationStatus, MarketplaceVersionStatus } from '../types/index.js';
 
@@ -236,7 +237,9 @@ async function createInstallation(
       status,
       installedByUserId,
       configJson:
-        data.installationConfig === undefined ? null : structuredClone(data.installationConfig),
+        data.installationConfig === undefined
+          ? Prisma.JsonNull
+          : (structuredClone(data.installationConfig) as Prisma.InputJsonValue),
       statusTransitions: {
         create: {
           fromStatus: InstallationStatus.PENDING_APPROVAL, // Initial pseudo-state
@@ -262,8 +265,12 @@ async function createInstallation(
     data: { totalInstalls: { increment: 1 } },
   });
 
+  const itemInfo = installation as typeof installation & {
+    marketplaceItem: { slug: string; title: string };
+  };
+
   request.log.info(
-    { installationId: installation.id, itemSlug: installation.marketplaceItem.slug },
+    { installationId: installation.id, itemSlug: itemInfo.marketplaceItem.slug },
     'Marketplace item installed'
   );
 

@@ -5,10 +5,8 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import {
-  CreateProfileRequestSchema,
-  UpdateProfileRequestSchema,
-} from '../schemas/index.js';
+
+import { CreateProfileRequestSchema, UpdateProfileRequestSchema } from '../schemas/index.js';
 import {
   getProfile,
   createProfile,

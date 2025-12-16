@@ -1,0 +1,219 @@
+# AIVO Platform - Docker Compose Development Overrides
+# ══════════════════════════════════════════════════════════════════════════════
+# This file provides development-specific overrides including:
+# - Source code volume mounts for hot-reloading
+# - Development tools (Adminer, Redis Commander, etc.)
+# - Debug configurations
+# ══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Core Services with Hot Reload
+  # ════════════════════════════════════════════════════════════════════════════
+
+  auth-svc:
+    volumes:
+      - ../services/auth-svc/src:/app/src:ro
+      - ../services/auth-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/ts-types/src:/app/libs/ts-types/src:ro
+      - ../libs/ts-observability/src:/app/libs/ts-observability/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  tenant-svc:
+    volumes:
+      - ../services/tenant-svc/src:/app/src:ro
+      - ../services/tenant-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/ts-types/src:/app/libs/ts-types/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  profile-svc:
+    volumes:
+      - ../services/profile-svc/src:/app/src:ro
+      - ../services/profile-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/ts-types/src:/app/libs/ts-types/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  content-svc:
+    volumes:
+      - ../services/content-svc/src:/app/src:ro
+      - ../services/content-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/ts-types/src:/app/libs/ts-types/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  content-authoring-svc:
+    volumes:
+      - ../services/content-authoring-svc/src:/app/src:ro
+      - ../services/content-authoring-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  session-svc:
+    volumes:
+      - ../services/session-svc/src:/app/src:ro
+      - ../services/session-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/billing-access/src:/app/libs/billing-access/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  assessment-svc:
+    volumes:
+      - ../services/assessment-svc/src:/app/src:ro
+      - ../services/assessment-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  engagement-svc:
+    volumes:
+      - ../services/engagement-svc/src:/app/src:ro
+      - ../services/engagement-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/events/src:/app/libs/events/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  personalization-svc:
+    volumes:
+      - ../services/personalization-svc/src:/app/src:ro
+      - ../services/personalization-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  baseline-svc:
+    volumes:
+      - ../services/baseline-svc/src:/app/src:ro
+      - ../services/baseline-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  analytics-svc:
+    volumes:
+      - ../services/analytics-svc/src:/app/src:ro
+      - ../services/analytics-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  ai-orchestrator:
+    volumes:
+      - ../services/ai-orchestrator/src:/app/src:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/ts-resilience/src:/app/libs/ts-resilience/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  marketplace-svc:
+    volumes:
+      - ../services/marketplace-svc/src:/app/src:ro
+      - ../services/marketplace-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  billing-svc:
+    volumes:
+      - ../services/billing-svc/src:/app/src:ro
+      - ../services/billing-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+      - ../libs/billing-common/src:/app/libs/billing-common/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  notify-svc:
+    volumes:
+      - ../services/notify-svc/src:/app/src:ro
+      - ../services/notify-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  research-svc:
+    volumes:
+      - ../services/research-svc/src:/app/src:ro
+      - ../services/research-svc/prisma:/app/prisma:ro
+      - ../libs/ts-utils/src:/app/libs/ts-utils/src:ro
+    command: pnpm run dev
+    environment:
+      - DEBUG=aivo:*
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Development Tools
+  # ════════════════════════════════════════════════════════════════════════════
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=nette
+    networks:
+      - aivo-network
+    depends_on:
+      - postgres
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    networks:
+      - aivo-network
+    depends_on:
+      - redis
+
+  nats-box:
+    image: natsio/nats-box:latest
+    networks:
+      - aivo-network
+    command: ["tail", "-f", "/dev/null"]
+    depends_on:
+      - nats
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - aivo-network
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Override notify-svc to use Mailhog
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # notify-svc:
+  #   environment:
+  #     - SMTP_HOST=mailhog
+  #     - SMTP_PORT=1025
+  #     - SMTP_SECURE=false

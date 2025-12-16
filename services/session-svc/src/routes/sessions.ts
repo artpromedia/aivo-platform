@@ -1,10 +1,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
-import { SessionType, SessionOrigin, SessionEventType, type SessionWithEvents } from '../types.js';
-import { sessionEventPublisher } from '../services/event-publisher.js';
 import { billingAccessPreHandler, checkAddonAccess } from '../middleware/billingAccess.js';
+import { prisma } from '../prisma.js';
+import { sessionEventPublisher } from '../services/event-publisher.js';
+import { SessionType, SessionOrigin, SessionEventType, type SessionWithEvents } from '../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -47,14 +47,16 @@ const CreateFromPlanSchema = z.object({
   tenantId: z.string().uuid(),
   learnerId: z.string().uuid(),
   sessionPlanId: z.string().uuid(),
-  sessionType: z.enum([
-    SessionType.LEARNING,
-    SessionType.HOMEWORK,
-    SessionType.BASELINE,
-    SessionType.PRACTICE,
-    SessionType.SEL,
-    SessionType.ASSESSMENT,
-  ]).optional(),
+  sessionType: z
+    .enum([
+      SessionType.LEARNING,
+      SessionType.HOMEWORK,
+      SessionType.BASELINE,
+      SessionType.PRACTICE,
+      SessionType.SEL,
+      SessionType.ASSESSMENT,
+    ])
+    .optional(),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -127,79 +129,83 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
     '/sessions',
     { preHandler: [billingAccessPreHandler] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
 
-    const parsed = CreateSessionSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        error: 'Invalid request body',
-        details: parsed.error.flatten(),
-      });
-    }
-
-    const { tenantId, learnerId, sessionType, origin, metadata } = parsed.data;
-
-    if (!canAccessTenant(user, tenantId)) {
-      return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
-    }
-
-    // Check add-on access for SEL sessions
-    if (sessionType === SessionType.SEL) {
-      const addonAccess = await checkAddonAccess(tenantId, learnerId, 'ADDON_SEL');
-      if (!addonAccess.hasAccess) {
-        return reply.status(402).send({
-          error: 'ADDON_REQUIRED',
-          message: 'SEL sessions require the Social-Emotional Learning add-on. Please upgrade your subscription.',
-          code: 'BILLING_ADDON_REQUIRED',
-          requiredAddon: 'ADDON_SEL',
+      const parsed = CreateSessionSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: parsed.error.flatten(),
         });
       }
-    }
 
-    const now = new Date();
+      const { tenantId, learnerId, sessionType, origin, metadata } = parsed.data;
 
-    // Create session with initial SESSION_STARTED event
-    const session = await prisma.session.create({
-      data: {
-        tenantId,
-        learnerId,
-        sessionType,
-        origin,
-        startedAt: now,
-        ...(metadata && { metadataJson: metadata }),
-        events: {
-          create: {
-            tenantId,
-            learnerId,
-            eventType: SessionEventType.SESSION_STARTED,
-            eventTime: now,
-            metadataJson: { origin, sessionType },
+      if (!canAccessTenant(user, tenantId)) {
+        return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+      }
+
+      // Check add-on access for SEL sessions
+      if (sessionType === SessionType.SEL) {
+        const addonAccess = await checkAddonAccess(tenantId, learnerId, 'ADDON_SEL');
+        if (!addonAccess.hasAccess) {
+          return reply.status(402).send({
+            error: 'ADDON_REQUIRED',
+            message:
+              'SEL sessions require the Social-Emotional Learning add-on. Please upgrade your subscription.',
+            code: 'BILLING_ADDON_REQUIRED',
+            requiredAddon: 'ADDON_SEL',
+          });
+        }
+      }
+
+      const now = new Date();
+
+      // Create session with initial SESSION_STARTED event
+      const session = await prisma.session.create({
+        data: {
+          tenantId,
+          learnerId,
+          sessionType,
+          origin,
+          startedAt: now,
+          ...(metadata && { metadataJson: metadata }),
+          events: {
+            create: {
+              tenantId,
+              learnerId,
+              eventType: SessionEventType.SESSION_STARTED,
+              eventTime: now,
+              metadataJson: { origin, sessionType },
+            },
           },
         },
-      },
-      include: {
-        events: true,
-      },
-    });
+        include: {
+          events: true,
+        },
+      });
 
-    // Publish event to NATS (non-blocking)
-    sessionEventPublisher.publishSessionStarted({
-      id: session.id,
-      tenantId,
-      learnerId,
-      sessionType,
-      origin,
-      startedAt: now,
-      metadata: metadata as Record<string, unknown> | undefined,
-    }).catch((err: unknown) => {
-      console.error('[sessions] Failed to publish session.started event:', err);
-    });
+      // Publish event to NATS (non-blocking)
+      sessionEventPublisher
+        .publishSessionStarted({
+          id: session.id,
+          tenantId,
+          learnerId,
+          sessionType,
+          origin,
+          startedAt: now,
+          metadata: metadata as Record<string, unknown> | undefined,
+        })
+        .catch((err: unknown) => {
+          console.error('[sessions] Failed to publish session.started event:', err);
+        });
 
-    return reply.status(201).send(session);
-  });
+      return reply.status(201).send(session);
+    }
+  );
 
   /**
    * GET /sessions
@@ -415,7 +421,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
 
     // Merge metadata if provided
     const mergedMetadata = metadata
-      ? { ...((session.metadataJson as Record<string, unknown>) || {}), ...metadata }
+      ? { ...(session.metadataJson as Record<string, unknown>), ...metadata }
       : session.metadataJson;
 
     // Update session and create SESSION_ENDED event in transaction
@@ -446,31 +452,38 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
     ]);
 
     // Count activities from events
-    const activityEvents = updatedSession.events.filter(e => 
-      e.eventType === SessionEventType.ACTIVITY_STARTED ||
-      e.eventType === SessionEventType.ACTIVITY_COMPLETED
+    const activityEvents = updatedSession.events.filter(
+      (e) =>
+        e.eventType === SessionEventType.ACTIVITY_STARTED ||
+        e.eventType === SessionEventType.ACTIVITY_COMPLETED
     );
-    const activitiesStarted = activityEvents.filter(e => e.eventType === SessionEventType.ACTIVITY_STARTED).length;
-    const activitiesCompleted = activityEvents.filter(e => e.eventType === SessionEventType.ACTIVITY_COMPLETED).length;
+    const activitiesStarted = activityEvents.filter(
+      (e) => e.eventType === SessionEventType.ACTIVITY_STARTED
+    ).length;
+    const activitiesCompleted = activityEvents.filter(
+      (e) => e.eventType === SessionEventType.ACTIVITY_COMPLETED
+    ).length;
 
     // Publish event to NATS (non-blocking)
-    sessionEventPublisher.publishSessionEnded({
-      sessionId: session.id,
-      tenantId: session.tenantId,
-      learnerId: session.learnerId,
-      durationMs,
-      endReason: 'completed',
-      summary: {
-        activitiesStarted,
-        activitiesCompleted,
-        correctAnswers: 0, // Would need to track this in events
-        incorrectAnswers: 0,
-        hintsUsed: 0,
-      },
-      endedAt: endTime,
-    }).catch((err: unknown) => {
-      console.error('[sessions] Failed to publish session.ended event:', err);
-    });
+    sessionEventPublisher
+      .publishSessionEnded({
+        sessionId: session.id,
+        tenantId: session.tenantId,
+        learnerId: session.learnerId,
+        durationMs,
+        endReason: 'completed',
+        summary: {
+          activitiesStarted,
+          activitiesCompleted,
+          correctAnswers: 0, // Would need to track this in events
+          incorrectAnswers: 0,
+          hintsUsed: 0,
+        },
+        endedAt: endTime,
+      })
+      .catch((err: unknown) => {
+        console.error('[sessions] Failed to publish session.ended event:', err);
+      });
 
     return reply.send(updatedSession);
   });
@@ -574,13 +587,13 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   /**
    * POST /sessions/from-plan
    * Create a new session from a session plan (teacher-led sessions).
-   * 
+   *
    * Flow:
    * 1. Validates the session plan exists (calls teacher-planning-svc)
    * 2. Creates a SESSION row with TEACHER_LED origin
    * 3. Emits SESSION_STARTED event with sessionPlanId in metadata
    * 4. Returns the new session with its ID
-   * 
+   *
    * Virtual Brain Integration (future):
    * - Session events (ACTIVITY_COMPLETED) with skill_id and rating will feed
    *   into learner_skill_states updates via an async pipeline.
@@ -674,10 +687,10 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   /**
    * POST /sessions/:id/activity-completed
    * Mark an activity (session plan item) as completed.
-   * 
+   *
    * Emits ACTIVITY_COMPLETED event with the plan item details.
    * Optionally creates a quick progress note.
-   * 
+   *
    * Virtual Brain Integration (future):
    * - If skillId is provided, this event will trigger a mastery update
    *   based on the rating: rating >= 3 increases mastery, < 2 may decrease.
@@ -730,8 +743,16 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         return reply.status(400).send({ error: 'Cannot update completed session' });
       }
 
-      const { planItemId, activityType, skillId, goalId, goalObjectiveId, rating, durationMs, note } =
-        bodyParsed.data;
+      const {
+        planItemId,
+        activityType,
+        skillId,
+        goalId,
+        goalObjectiveId,
+        rating,
+        durationMs,
+        note,
+      } = bodyParsed.data;
 
       const event = await prisma.sessionEvent.create({
         data: {
@@ -765,10 +786,10 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   /**
    * POST /sessions/:id/progress-note
    * Create a progress note linked to this session.
-   * 
+   *
    * This is a convenience endpoint that proxies to the progress-notes API
    * with the sessionId pre-filled.
-   * 
+   *
    * Note: In a full implementation, this would call teacher-planning-svc's
    * progress notes endpoint. For now, we store it as a session event.
    */
@@ -856,86 +877,82 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   /**
    * GET /sessions/:id/summary
    * Get a summary of the session for the completion screen.
-   * 
+   *
    * Returns:
    * - Session duration
    * - Activities completed count
    * - Progress notes captured
    * - Events timeline
    */
-  fastify.get(
-    '/sessions/:id/summary',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = getUserFromRequest(request);
-      if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
-
-      const params = SessionIdParamsSchema.safeParse(request.params);
-      if (!params.success) {
-        return reply.status(400).send({ error: 'Invalid session ID' });
-      }
-
-      const session = await prisma.session.findUnique({
-        where: { id: params.data.id },
-        include: {
-          events: {
-            orderBy: { eventTime: 'asc' },
-          },
-        },
-      });
-
-      if (!session) {
-        return reply.status(404).send({ error: 'Session not found' });
-      }
-
-      if (!canAccessTenant(user, session.tenantId)) {
-        return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
-      }
-
-      // Calculate stats from events
-      const activitiesCompleted = session.events.filter(
-        (e) => e.eventType === SessionEventType.ACTIVITY_COMPLETED
-      );
-
-      const progressNotes = session.events.filter(
-        (e) =>
-          e.eventType === SessionEventType.ACTIVITY_RESPONSE_SUBMITTED &&
-          (e.metadataJson as Record<string, unknown> | null)?.type === 'progress_note'
-      );
-
-      const durationMs = session.durationMs || 
-        (session.endedAt 
-          ? session.endedAt.getTime() - session.startedAt.getTime()
-          : new Date().getTime() - session.startedAt.getTime());
-
-      return reply.send({
-        id: session.id,
-        sessionType: session.sessionType,
-        origin: session.origin,
-        startedAt: session.startedAt,
-        endedAt: session.endedAt,
-        durationMs,
-        durationFormatted: formatDuration(durationMs),
-        metadata: session.metadataJson,
-        stats: {
-          activitiesCompleted: activitiesCompleted.length,
-          progressNotesCount: progressNotes.length,
-          totalEvents: session.events.length,
-        },
-        activitiesCompleted: activitiesCompleted.map((e) => ({
-          eventId: e.id,
-          eventTime: e.eventTime,
-          metadata: e.metadataJson,
-        })),
-        progressNotes: progressNotes.map((e) => ({
-          eventId: e.id,
-          eventTime: e.eventTime,
-          ...(e.metadataJson as Record<string, unknown>),
-        })),
-      });
+  fastify.get('/sessions/:id/summary', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return reply.status(401).send({ error: 'Unauthorized' });
     }
-  );
+
+    const params = SessionIdParamsSchema.safeParse(request.params);
+    if (!params.success) {
+      return reply.status(400).send({ error: 'Invalid session ID' });
+    }
+
+    const session = await prisma.session.findUnique({
+      where: { id: params.data.id },
+      include: {
+        events: {
+          orderBy: { eventTime: 'asc' },
+        },
+      },
+    });
+
+    if (!session) {
+      return reply.status(404).send({ error: 'Session not found' });
+    }
+
+    if (!canAccessTenant(user, session.tenantId)) {
+      return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+    }
+
+    // Calculate stats from events
+    const activitiesCompleted = session.events.filter(
+      (e) => e.eventType === SessionEventType.ACTIVITY_COMPLETED
+    );
+
+    const progressNotes = session.events.filter(
+      (e) =>
+        e.eventType === SessionEventType.ACTIVITY_RESPONSE_SUBMITTED &&
+        (e.metadataJson as Record<string, unknown> | null)?.type === 'progress_note'
+    );
+
+    const durationMs =
+      session.durationMs ||
+      (session.endedAt ? +session.endedAt - +session.startedAt : Date.now() - +session.startedAt);
+
+    return reply.send({
+      id: session.id,
+      sessionType: session.sessionType,
+      origin: session.origin,
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+      durationMs,
+      durationFormatted: formatDuration(durationMs),
+      metadata: session.metadataJson,
+      stats: {
+        activitiesCompleted: activitiesCompleted.length,
+        progressNotesCount: progressNotes.length,
+        totalEvents: session.events.length,
+      },
+      activitiesCompleted: activitiesCompleted.map((e) => ({
+        eventId: e.id,
+        eventTime: e.eventTime,
+        metadata: e.metadataJson,
+      })),
+      progressNotes: progressNotes.map((e) => ({
+        eventId: e.id,
+        eventTime: e.eventTime,
+        ...(e.metadataJson as Record<string, unknown>),
+      })),
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

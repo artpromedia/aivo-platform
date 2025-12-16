@@ -11,6 +11,7 @@
  * - Enforces seat limits with atomic seat assignment
  */
 
+import type { Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 import type {
   EntitlementCheckRequest,
@@ -210,7 +211,17 @@ export class EntitlementService {
 
     // Check each LO
     const results: Record<string, EntitlementCheckResponse> = {};
-    const context = { learnerId, schoolId, classroomId, gradeBand };
+    // Build context with only defined properties to satisfy exactOptionalPropertyTypes
+    const context: {
+      learnerId?: string;
+      schoolId?: string;
+      classroomId?: string;
+      gradeBand?: MarketplaceGradeBand;
+    } = {};
+    if (learnerId !== undefined) context.learnerId = learnerId;
+    if (schoolId !== undefined) context.schoolId = schoolId;
+    if (classroomId !== undefined) context.classroomId = classroomId;
+    if (gradeBand !== undefined) context.gradeBand = gradeBand;
 
     for (const loId of loIds) {
       results[loId] = this.checkSingleLoEntitlement(entitlementMap.get(loId), context);
@@ -226,12 +237,15 @@ export class EntitlementService {
     entitlement:
       | {
           license: {
+            id: string;
+            marketplaceItemId: string;
             status: LicenseStatus;
+            validUntil: Date | null;
             purchaserParentUserId: string | null;
             learnerIds: string[];
             seatLimit: number | null;
             seatsUsed: number;
-          } & Record<string, unknown>;
+          };
           allowedSchoolIds: string[];
           allowedGradeBands: MarketplaceGradeBand[];
         }
@@ -260,7 +274,11 @@ export class EntitlementService {
     }
 
     // Check scope restrictions
-    const scopeResult = this.checkScopeRestrictions(entitlement, context);
+    const scopeResult = this.checkScopeRestrictions(entitlement, {
+      schoolId: context.schoolId,
+      classroomId: context.classroomId,
+      gradeBand: context.gradeBand,
+    });
     if (!scopeResult.allowed) {
       return buildEntitlementResponse(
         { entitled: false, license: licenseSummary },
@@ -319,9 +337,8 @@ export class EntitlementService {
   ): Promise<string[]> {
     const { schoolId, gradeBand, activeOnly = true } = options ?? {};
 
-    // Build where clause incrementally to avoid undefined property issues
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
+    // Build where clause using Prisma's generated types
+    const where: Prisma.TenantContentEntitlementWhereInput = {
       tenantId,
       license: {
         status: 'ACTIVE',
@@ -343,8 +360,13 @@ export class EntitlementService {
 
     // Filter by grade band if provided
     if (gradeBand) {
+      // Normalize existing OR clauses to an array
+      let existingOr: Prisma.TenantContentEntitlementWhereInput[] = [];
+      if (where.OR) {
+        existingOr = Array.isArray(where.OR) ? where.OR : [where.OR];
+      }
       where.OR = [
-        ...(where.OR ?? []),
+        ...existingOr,
         { allowedGradeBands: { isEmpty: true } }, // No restrictions
         { allowedGradeBands: { has: gradeBand } }, // Grade band is allowed
       ];
@@ -639,17 +661,13 @@ export class EntitlementService {
   }> {
     const { tenantId, schoolId, gradeBand, subject, itemType, limit, offset } = options;
 
-    // Build where clause for licenses
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const licenseWhere: any = {
-      tenantId,
-      status: 'ACTIVE',
-      OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
-    };
-
     // Get active licenses with marketplace items
     const licenses = await prisma.tenantContentLicense.findMany({
-      where: licenseWhere,
+      where: {
+        tenantId,
+        status: 'ACTIVE',
+        OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+      },
       include: {
         marketplaceItem: {
           include: {

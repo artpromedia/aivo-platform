@@ -464,7 +464,7 @@ switch ($Command) {
 Write-Header "Setup Complete"
 
 if ($Command -ne "status") {
-    Write-Host "Results: $successCount succeeded, $failCount failed" -ForegroundColor $(if ($failCount -eq 0) { "Green" } else { "Yellow" })
+    Write-Host "Results: $successCount/$totalServices succeeded, $failCount failed" -ForegroundColor $(if ($failCount -eq 0) { "Green" } else { "Yellow" })
     Write-Host ""
 }
 

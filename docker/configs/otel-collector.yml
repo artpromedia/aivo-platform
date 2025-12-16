@@ -1,0 +1,212 @@
+# AIVO Platform - OpenTelemetry Collector Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# Centralized telemetry collection for traces, metrics, and logs.
+# ══════════════════════════════════════════════════════════════════════════════
+
+receivers:
+  # ════════════════════════════════════════════════════════════════════════════
+  # OTLP Receiver (Primary)
+  # ════════════════════════════════════════════════════════════════════════════
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "*"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Prometheus Receiver (For scraping metrics)
+  # ════════════════════════════════════════════════════════════════════════════
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Host Metrics (Container/Host level)
+  # ════════════════════════════════════════════════════════════════════════════
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      network:
+
+processors:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Batch Processor (For efficiency)
+  # ════════════════════════════════════════════════════════════════════════════
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+    send_batch_max_size: 1500
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Memory Limiter (Prevent OOM)
+  # ════════════════════════════════════════════════════════════════════════════
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Resource Detection
+  # ════════════════════════════════════════════════════════════════════════════
+  resourcedetection:
+    detectors:
+      - env
+      - system
+      - docker
+    timeout: 5s
+    override: false
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Attributes Processor (Add common attributes)
+  # ════════════════════════════════════════════════════════════════════════════
+  attributes:
+    actions:
+      - key: environment
+        value: development
+        action: upsert
+      - key: platform
+        value: aivo
+        action: upsert
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Filter Processor (Drop noisy data)
+  # ════════════════════════════════════════════════════════════════════════════
+  filter:
+    traces:
+      span:
+        # Drop health check spans
+        - 'attributes["http.target"] == "/health"'
+        - 'attributes["http.target"] == "/metrics"'
+        - 'attributes["http.target"] == "/ready"'
+
+exporters:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Debug Exporter (Development)
+  # ════════════════════════════════════════════════════════════════════════════
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Jaeger Exporter (Traces)
+  # ════════════════════════════════════════════════════════════════════════════
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Prometheus Exporter (Metrics)
+  # ════════════════════════════════════════════════════════════════════════════
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: aivo
+    const_labels:
+      environment: development
+    send_timestamps: true
+    metric_expiration: 5m
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Loki Exporter (Logs)
+  # ════════════════════════════════════════════════════════════════════════════
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    labels:
+      attributes:
+        service.name: "service"
+        service.namespace: "namespace"
+      resource:
+        deployment.environment: "environment"
+
+extensions:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Health Check Extension
+  # ════════════════════════════════════════════════════════════════════════════
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Performance Profiler
+  # ════════════════════════════════════════════════════════════════════════════
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # zPages (Debug UI)
+  # ════════════════════════════════════════════════════════════════════════════
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions:
+    - health_check
+    - pprof
+    - zpages
+
+  pipelines:
+    # ══════════════════════════════════════════════════════════════════════════
+    # Traces Pipeline
+    # ══════════════════════════════════════════════════════════════════════════
+    traces:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resourcedetection
+        - attributes
+        - filter
+        - batch
+      exporters:
+        - otlp/jaeger
+        - debug
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Metrics Pipeline
+    # ══════════════════════════════════════════════════════════════════════════
+    metrics:
+      receivers:
+        - otlp
+        - prometheus
+        - hostmetrics
+      processors:
+        - memory_limiter
+        - resourcedetection
+        - attributes
+        - batch
+      exporters:
+        - prometheus
+        - debug
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Logs Pipeline
+    # ══════════════════════════════════════════════════════════════════════════
+    logs:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resourcedetection
+        - attributes
+        - batch
+      exporters:
+        - loki
+        - debug
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: 0.0.0.0:8888

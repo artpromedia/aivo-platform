@@ -1,0 +1,307 @@
+# AIVO Platform - Prometheus Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# Metrics scraping configuration for all AIVO services.
+# ══════════════════════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'aivo-dev'
+    env: 'development'
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Alerting Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule Files
+# ══════════════════════════════════════════════════════════════════════════════
+
+rule_files:
+  # - "alerts/*.yml"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Scrape Configurations
+# ══════════════════════════════════════════════════════════════════════════════
+
+scrape_configs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Prometheus Self-Monitoring
+  # ════════════════════════════════════════════════════════════════════════════
+  
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Infrastructure Services
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: 'redis'
+    # Redis exporter would be needed for actual metrics
+
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['nats:8222']
+        labels:
+          service: 'nats'
+    metrics_path: /metrics
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+        labels:
+          service: 'postgres'
+    # Postgres exporter would be needed for actual metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # API Gateway
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['kong:8001']
+        labels:
+          service: 'kong'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Core Services
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'auth-svc'
+    static_configs:
+      - targets: ['auth-svc:3000']
+        labels:
+          service: 'auth-svc'
+          tier: 'core'
+    metrics_path: /metrics
+
+  - job_name: 'tenant-svc'
+    static_configs:
+      - targets: ['tenant-svc:3000']
+        labels:
+          service: 'tenant-svc'
+          tier: 'core'
+    metrics_path: /metrics
+
+  - job_name: 'profile-svc'
+    static_configs:
+      - targets: ['profile-svc:3000']
+        labels:
+          service: 'profile-svc'
+          tier: 'core'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Content Layer
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'content-svc'
+    static_configs:
+      - targets: ['content-svc:3000']
+        labels:
+          service: 'content-svc'
+          tier: 'content'
+    metrics_path: /metrics
+
+  - job_name: 'content-authoring-svc'
+    static_configs:
+      - targets: ['content-authoring-svc:3000']
+        labels:
+          service: 'content-authoring-svc'
+          tier: 'content'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Assessment & Learning
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'assessment-svc'
+    static_configs:
+      - targets: ['assessment-svc:3000']
+        labels:
+          service: 'assessment-svc'
+          tier: 'learning'
+    metrics_path: /metrics
+
+  - job_name: 'session-svc'
+    static_configs:
+      - targets: ['session-svc:3000']
+        labels:
+          service: 'session-svc'
+          tier: 'learning'
+    metrics_path: /metrics
+
+  - job_name: 'baseline-svc'
+    static_configs:
+      - targets: ['baseline-svc:3000']
+        labels:
+          service: 'baseline-svc'
+          tier: 'learning'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Personalization
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'personalization-svc'
+    static_configs:
+      - targets: ['personalization-svc:3000']
+        labels:
+          service: 'personalization-svc'
+          tier: 'personalization'
+    metrics_path: /metrics
+
+  - job_name: 'learner-model-svc'
+    static_configs:
+      - targets: ['learner-model-svc:3000']
+        labels:
+          service: 'learner-model-svc'
+          tier: 'personalization'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Engagement & Gamification
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'engagement-svc'
+    static_configs:
+      - targets: ['engagement-svc:3000']
+        labels:
+          service: 'engagement-svc'
+          tier: 'engagement'
+    metrics_path: /metrics
+
+  - job_name: 'focus-svc'
+    static_configs:
+      - targets: ['focus-svc:3000']
+        labels:
+          service: 'focus-svc'
+          tier: 'engagement'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # AI Services
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'ai-orchestrator'
+    static_configs:
+      - targets: ['ai-orchestrator:3000']
+        labels:
+          service: 'ai-orchestrator'
+          tier: 'ai'
+    metrics_path: /metrics
+    scrape_interval: 30s  # Less frequent for AI service
+
+  - job_name: 'homework-helper-svc'
+    static_configs:
+      - targets: ['homework-helper-svc:3000']
+        labels:
+          service: 'homework-helper-svc'
+          tier: 'ai'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Analytics & Research
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'analytics-svc'
+    static_configs:
+      - targets: ['analytics-svc:3000']
+        labels:
+          service: 'analytics-svc'
+          tier: 'analytics'
+    metrics_path: /metrics
+
+  - job_name: 'research-svc'
+    static_configs:
+      - targets: ['research-svc:3000']
+        labels:
+          service: 'research-svc'
+          tier: 'analytics'
+    metrics_path: /metrics
+
+  - job_name: 'reports-svc'
+    static_configs:
+      - targets: ['reports-svc:3000']
+        labels:
+          service: 'reports-svc'
+          tier: 'analytics'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Marketplace & Billing
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'marketplace-svc'
+    static_configs:
+      - targets: ['marketplace-svc:3000']
+        labels:
+          service: 'marketplace-svc'
+          tier: 'commerce'
+    metrics_path: /metrics
+
+  - job_name: 'billing-svc'
+    static_configs:
+      - targets: ['billing-svc:3000']
+        labels:
+          service: 'billing-svc'
+          tier: 'commerce'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Communication
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'notify-svc'
+    static_configs:
+      - targets: ['notify-svc:3000']
+        labels:
+          service: 'notify-svc'
+          tier: 'communication'
+    metrics_path: /metrics
+
+  - job_name: 'messaging-svc'
+    static_configs:
+      - targets: ['messaging-svc:3000']
+        labels:
+          service: 'messaging-svc'
+          tier: 'communication'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # OpenTelemetry Collector
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8888']
+        labels:
+          service: 'otel-collector'
+    metrics_path: /metrics
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Elasticsearch
+  # ════════════════════════════════════════════════════════════════════════════
+
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+        labels:
+          service: 'elasticsearch'
+    metrics_path: /_prometheus/metrics
+    # Requires elasticsearch-exporter or prometheus plugin

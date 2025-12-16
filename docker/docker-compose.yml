@@ -1,0 +1,1009 @@
+# AIVO Platform - Docker Compose Base Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# This file contains the complete platform configuration for local development.
+# Use with docker-compose.override.yml for hot-reloading during development.
+# ══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+# ══════════════════════════════════════════════════════════════════════════════
+# YAML Anchors for DRY Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - aivo-network
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-node-service: &node-service
+  <<: *service-defaults
+  environment: &common-env
+    NODE_ENV: development
+    LOG_LEVEL: debug
+    NATS_URL: nats://nats:4222
+    REDIS_URL: redis://redis:6379
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    OTEL_SERVICE_NAME: ${SERVICE_NAME:-aivo-service}
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SERVICES
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Infrastructure Services
+  # ════════════════════════════════════════════════════════════════════════════
+
+  postgres:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: aivo
+      POSTGRES_PASSWORD: aivo_dev_password
+      POSTGRES_MULTIPLE_DATABASES: >-
+        aivo_auth,aivo_tenant,aivo_content,aivo_session,
+        aivo_assessment,aivo_engagement,aivo_analytics,
+        aivo_personalization,aivo_baseline,aivo_retention,
+        aivo_marketplace,aivo_notification,aivo_billing,
+        aivo_profile,aivo_research,aivo_collaboration,
+        aivo_consent,aivo_focus,aivo_goal,aivo_homework,
+        aivo_learner_model,aivo_messaging,aivo_reports,
+        aivo_experimentation,aivo_teacher_planning
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aivo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    <<: *service-defaults
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    <<: *service-defaults
+    ports:
+      - "4222:4222"   # Client connections
+      - "8222:8222"   # HTTP monitoring
+      - "6222:6222"   # Cluster routing
+    command: ["-c", "/etc/nats/nats.conf", "-js"]
+    volumes:
+      - ./configs/nats.conf:/etc/nats/nats.conf:ro
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # API Gateway
+  # ════════════════════════════════════════════════════════════════════════════
+
+  kong:
+    image: kong:3.4-alpine
+    <<: *service-defaults
+    ports:
+      - "8000:8000"   # HTTP proxy
+      - "8443:8443"   # HTTPS proxy
+      - "8001:8001"   # Admin API
+      - "8444:8444"   # Admin API SSL
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PLUGINS: bundled,jwt,rate-limiting,cors,request-transformer,correlation-id
+    volumes:
+      - ./configs/kong.yml:/etc/kong/kong.yml:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      auth-svc:
+        condition: service_healthy
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Core Services (Tier 1 - No service dependencies)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  auth-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/auth-svc/Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: auth-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_auth
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      JWT_EXPIRES_IN: 24h
+      REFRESH_TOKEN_EXPIRES_IN: 7d
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  tenant-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/tenant-svc/Dockerfile
+    ports:
+      - "3002:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: tenant-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  profile-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/profile-svc/Dockerfile
+    ports:
+      - "3003:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: profile-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_profile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  consent-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/consent-svc/Dockerfile
+    ports:
+      - "3004:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: consent-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_consent
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Content Layer (Tier 2)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  content-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/content-svc/Dockerfile
+    ports:
+      - "3010:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: content-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+      STORAGE_BUCKET: aivo-content-dev
+      CDN_URL: http://localhost:9000/aivo-content-dev
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: aivo_minio
+      S3_SECRET_KEY: aivo_minio_secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  content-authoring-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/content-authoring-svc/Dockerfile
+    ports:
+      - "3011:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: content-authoring-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+      CONTENT_SVC_URL: http://content-svc:3000
+    depends_on:
+      content-svc:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Assessment & Learning (Tier 3)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  assessment-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/assessment-svc/Dockerfile
+    ports:
+      - "3020:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: assessment-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_assessment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  session-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/session-svc/Dockerfile
+    ports:
+      - "3021:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: session-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_session
+      CONTENT_SVC_URL: http://content-svc:3000
+      PERSONALIZATION_SVC_URL: http://personalization-svc:3000
+      BILLING_SVC_URL: http://billing-svc:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      content-svc:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  baseline-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/baseline-svc/Dockerfile
+    ports:
+      - "3022:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: baseline-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_baseline
+      ASSESSMENT_SVC_URL: http://assessment-svc:3000
+      PERSONALIZATION_SVC_URL: http://personalization-svc:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      assessment-svc:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Personalization (Tier 4)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  personalization-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/personalization-svc/Dockerfile
+    ports:
+      - "3030:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: personalization-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_personalization
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  learner-model-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/learner-model-svc/Dockerfile
+    ports:
+      - "3031:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: learner-model-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_learner_model
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Engagement & Gamification (Tier 5)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  engagement-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/engagement-svc/Dockerfile
+    ports:
+      - "3040:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: engagement-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_engagement
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  focus-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/focus-svc/Dockerfile
+    ports:
+      - "3041:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: focus-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_focus
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Homework & Goals (Tier 6)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  homework-helper-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/homework-helper-svc/Dockerfile
+    ports:
+      - "3050:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: homework-helper-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_homework
+      AI_ORCHESTRATOR_URL: http://ai-orchestrator:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  goal-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/goal-svc/Dockerfile
+    ports:
+      - "3051:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: goal-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_goal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  teacher-planning-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/teacher-planning-svc/Dockerfile
+    ports:
+      - "3052:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: teacher-planning-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_teacher_planning
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Analytics & Research (Tier 7)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  analytics-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/analytics-svc/Dockerfile
+    ports:
+      - "3060:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: analytics-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_analytics
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  retention-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/retention-svc/Dockerfile
+    ports:
+      - "3061:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: retention-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_retention
+      NOTIFICATION_SVC_URL: http://notify-svc:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  research-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/research-svc/Dockerfile
+    ports:
+      - "3062:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: research-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_research
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  experimentation-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/experimentation-svc/Dockerfile
+    ports:
+      - "3063:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: experimentation-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_experimentation
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  reports-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/reports-svc/Dockerfile
+    ports:
+      - "3064:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: reports-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_reports
+      ANALYTICS_SVC_URL: http://analytics-svc:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Marketplace & Billing (Tier 8)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  marketplace-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/marketplace-svc/Dockerfile
+    ports:
+      - "3070:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: marketplace-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_marketplace
+      CONTENT_SVC_URL: http://content-svc:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  billing-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/billing-svc/Dockerfile
+    ports:
+      - "3071:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: billing-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_billing
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  payments-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/payments-svc/Dockerfile
+    ports:
+      - "3072:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: payments-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_billing
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Communication (Tier 9)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  notify-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/notify-svc/Dockerfile
+    ports:
+      - "3080:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: notify-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_notification
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  messaging-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/messaging-svc/Dockerfile
+    ports:
+      - "3081:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: messaging-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_messaging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  collaboration-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/collaboration-svc/Dockerfile
+    ports:
+      - "3082:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: collaboration-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_collaboration
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Integration & Sync (Tier 10)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  integration-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/integration-svc/Dockerfile
+    ports:
+      - "3090:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: integration-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  lti-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/lti-svc/Dockerfile
+    ports:
+      - "3091:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: lti-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  sis-sync-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/sis-sync-svc/Dockerfile
+    ports:
+      - "3092:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: sis-sync-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Safety & Compliance (Tier 11)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  dsr-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/dsr-svc/Dockerfile
+    ports:
+      - "3100:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: dsr-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_consent
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Tools & Sandbox (Tier 12)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  embedded-tools-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/embedded-tools-svc/Dockerfile
+    ports:
+      - "3110:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: embedded-tools-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  sandbox-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/sandbox-svc/Dockerfile
+    ports:
+      - "3111:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: sandbox-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  device-mgmt-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/device-mgmt-svc/Dockerfile
+    ports:
+      - "3112:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: device-mgmt-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # AI Services (Tier 13)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  ai-orchestrator:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/ai-orchestrator/Dockerfile
+    ports:
+      - "3200:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: ai-orchestrator
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DEFAULT_LLM_PROVIDER: ${DEFAULT_LLM_PROVIDER:-openai}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-gpt-4-turbo-preview}
+      CONTENT_SVC_URL: http://content-svc:3000
+      PERSONALIZATION_SVC_URL: http://personalization-svc:3000
+      PROFILE_SVC_URL: http://profile-svc:3000
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Search Infrastructure
+  # ════════════════════════════════════════════════════════════════════════════
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    <<: *service-defaults
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Observability Stack
+  # ════════════════════════════════════════════════════════════════════════════
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    <<: *service-defaults
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Metrics
+    volumes:
+      - ./configs/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    <<: *service-defaults
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    <<: *service-defaults
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    <<: *service-defaults
+    ports:
+      - "16686:16686"  # UI
+      - "14268:14268"  # Collector HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  loki:
+    image: grafana/loki:2.9.0
+    <<: *service-defaults
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./configs/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # MinIO (S3-compatible storage for local dev)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  minio:
+    image: minio/minio:latest
+    <<: *service-defaults
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: aivo_minio
+      MINIO_ROOT_PASSWORD: aivo_minio_secret
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  minio-setup:
+    image: minio/mc:latest
+    <<: *service-defaults
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 aivo_minio aivo_minio_secret;
+      mc mb myminio/aivo-content-dev --ignore-existing;
+      mc mb myminio/aivo-uploads-dev --ignore-existing;
+      mc mb myminio/aivo-exports-dev --ignore-existing;
+      mc anonymous set download myminio/aivo-content-dev;
+      exit 0;
+      "
+    restart: "no"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Networks
+# ══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  aivo-network:
+    driver: bridge
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Volumes
+# ══════════════════════════════════════════════════════════════════════════════
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  minio_data:

@@ -8,6 +8,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 import {
   ALLOWED_TOOL_SCOPES,
@@ -266,7 +267,7 @@ async function createItem(
   if (body.iconUrl !== undefined) createData.iconUrl = body.iconUrl;
   if (body.priceCents !== undefined) createData.priceCents = body.priceCents;
   if (body.metadataJson !== undefined) {
-    createData.metadataJson = structuredClone(body.metadataJson);
+    createData.metadataJson = structuredClone(body.metadataJson) as Prisma.InputJsonValue;
   }
 
   // Create item with initial version
@@ -502,7 +503,10 @@ async function createVersion(
           loId: cp.loId ?? null,
           position: cp.position,
           isHighlight: cp.isHighlight,
-          metadataJson: cp.metadataJson === null ? null : structuredClone(cp.metadataJson),
+          metadataJson:
+            cp.metadataJson === null
+              ? Prisma.JsonNull
+              : (structuredClone(cp.metadataJson) as Prisma.InputJsonValue),
         };
         return cpItem;
       }),
@@ -673,8 +677,12 @@ async function setToolConfig(
       requiredScopes: body.requiredScopes,
       optionalScopes: body.optionalScopes ?? [],
       sandboxAttributes: body.sandboxAttributes ?? [],
-      configSchemaJson: body.configSchemaJson ? structuredClone(body.configSchemaJson) : null,
-      defaultConfigJson: body.defaultConfigJson ? structuredClone(body.defaultConfigJson) : null,
+      configSchemaJson: body.configSchemaJson
+        ? (structuredClone(body.configSchemaJson) as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
+      defaultConfigJson: body.defaultConfigJson
+        ? (structuredClone(body.defaultConfigJson) as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
       ...(body.cspDirectives !== undefined && { cspDirectives: body.cspDirectives }),
     },
@@ -684,8 +692,12 @@ async function setToolConfig(
       requiredScopes: body.requiredScopes,
       optionalScopes: body.optionalScopes ?? [],
       sandboxAttributes: body.sandboxAttributes ?? [],
-      configSchemaJson: body.configSchemaJson ? structuredClone(body.configSchemaJson) : null,
-      defaultConfigJson: body.defaultConfigJson ? structuredClone(body.defaultConfigJson) : null,
+      configSchemaJson: body.configSchemaJson
+        ? (structuredClone(body.configSchemaJson) as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
+      defaultConfigJson: body.defaultConfigJson
+        ? (structuredClone(body.defaultConfigJson) as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
       ...(body.cspDirectives !== undefined && { cspDirectives: body.cspDirectives }),
     },
