@@ -390,3 +390,312 @@ model AuditEvent {
   @@index([createdAt(sort: Desc)])
   @@map("audit_events")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEARNING EVENTS (Raw event ingestion)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum LearningEventType {
+  // Content events
+  CONTENT_VIEWED
+  CONTENT_STARTED
+  CONTENT_COMPLETED
+  CONTENT_PROGRESS
+  CONTENT_BOOKMARKED
+  CONTENT_RATED
+
+  // Video events
+  VIDEO_PLAY
+  VIDEO_PAUSE
+  VIDEO_SEEK
+  VIDEO_COMPLETE
+
+  // Assessment events
+  ASSESSMENT_STARTED
+  ASSESSMENT_COMPLETED
+  QUESTION_ANSWERED
+  QUESTION_SKIPPED
+  HINT_USED
+
+  // Session events
+  SESSION_STARTED
+  SESSION_ENDED
+  SESSION_PAUSED
+  SESSION_RESUMED
+
+  // Engagement events
+  XP_EARNED
+  BADGE_EARNED
+  STREAK_UPDATED
+  LEVEL_UP
+  ACHIEVEMENT_UNLOCKED
+
+  // Search/Navigation
+  SEARCH_PERFORMED
+  RECOMMENDATION_CLICKED
+  NAVIGATION
+
+  // AI events
+  AI_TUTOR_QUERY
+  AI_EXPLANATION_REQUESTED
+  AI_FEEDBACK_RECEIVED
+
+  // User actions
+  LOGIN
+  LOGOUT
+  PROFILE_UPDATED
+  SETTINGS_CHANGED
+
+  @@map("learning_event_type")
+}
+
+enum LearningEventCategory {
+  LEARNING
+  ASSESSMENT
+  ENGAGEMENT
+  NAVIGATION
+  AI_INTERACTION
+  SYSTEM
+
+  @@map("learning_event_category")
+}
+
+/// Raw learning event captured from various sources
+model LearningEvent {
+  id            String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String                @map("tenant_id") @db.Uuid
+  userId        String                @map("user_id") @db.Uuid
+  sessionId     String?               @map("session_id") @db.Uuid
+
+  eventType     LearningEventType     @map("event_type")
+  eventCategory LearningEventCategory @map("event_category")
+
+  contentId     String?               @map("content_id") @db.Uuid
+  contentType   String?               @map("content_type") @db.VarChar(50)
+  subjectId     String?               @map("subject_id") @db.Uuid
+  topicId       String?               @map("topic_id") @db.Uuid
+  assessmentId  String?               @map("assessment_id") @db.Uuid
+  questionId    String?               @map("question_id") @db.Uuid
+
+  data          Json                  @default("{}") @db.JsonB
+  duration      Int?
+  score         Float?
+
+  deviceType    String?               @map("device_type") @db.VarChar(50)
+  platform      String?               @db.VarChar(50)
+  appVersion    String?               @map("app_version") @db.VarChar(20)
+
+  timestamp     DateTime              @default(now()) @db.Timestamptz
+  processedAt   DateTime?             @map("processed_at") @db.Timestamptz
+
+  @@index([tenantId, timestamp(sort: Desc)], name: "idx_learning_event_tenant_time")
+  @@index([userId, timestamp(sort: Desc)], name: "idx_learning_event_user_time")
+  @@index([eventType], name: "idx_learning_event_type")
+  @@index([contentId], name: "idx_learning_event_content")
+  @@index([sessionId], name: "idx_learning_event_session")
+  @@map("learning_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AGGREGATED DAILY METRICS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Aggregated daily metrics per user
+model DailyUserMetrics {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  date                 DateTime @db.Date
+
+  totalTimeSeconds     Int      @default(0) @map("total_time_seconds")
+  activeTimeSeconds    Int      @default(0) @map("active_time_seconds")
+  sessionsCount        Int      @default(0) @map("sessions_count")
+
+  contentViewed        Int      @default(0) @map("content_viewed")
+  contentCompleted     Int      @default(0) @map("content_completed")
+  videosWatched        Int      @default(0) @map("videos_watched")
+  videoTimeSeconds     Int      @default(0) @map("video_time_seconds")
+
+  assessmentsStarted   Int      @default(0) @map("assessments_started")
+  assessmentsCompleted Int      @default(0) @map("assessments_completed")
+  questionsAnswered    Int      @default(0) @map("questions_answered")
+  questionsCorrect     Int      @default(0) @map("questions_correct")
+  averageScore         Float?   @map("average_score")
+
+  xpEarned             Int      @default(0) @map("xp_earned")
+  badgesEarned         Int      @default(0) @map("badges_earned")
+  streakMaintained     Boolean  @default(false) @map("streak_maintained")
+
+  aiInteractions       Int      @default(0) @map("ai_interactions")
+
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, userId, date], name: "uq_daily_user_metrics")
+  @@index([tenantId, date], name: "idx_daily_user_tenant_date")
+  @@index([userId, date], name: "idx_daily_user_date")
+  @@map("daily_user_metrics")
+}
+
+/// Aggregated daily metrics per content item
+model DailyContentMetrics {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  contentId        String   @map("content_id") @db.Uuid
+  contentType      String   @map("content_type") @db.VarChar(50)
+  date             DateTime @db.Date
+
+  views            Int      @default(0)
+  uniqueViewers    Int      @default(0) @map("unique_viewers")
+  completions      Int      @default(0)
+  completionRate   Float?   @map("completion_rate")
+
+  totalTimeSeconds Int      @default(0) @map("total_time_seconds")
+  avgTimeSeconds   Float?   @map("avg_time_seconds")
+
+  bookmarks        Int      @default(0)
+  ratings          Int      @default(0)
+  avgRating        Float?   @map("avg_rating")
+
+  attempts         Int      @default(0)
+  avgScore         Float?   @map("avg_score")
+  passRate         Float?   @map("pass_rate")
+
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, contentId, date], name: "uq_daily_content_metrics")
+  @@index([tenantId, date], name: "idx_daily_content_tenant_date")
+  @@index([contentId, date], name: "idx_daily_content_date")
+  @@map("daily_content_metrics")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOPIC/SUBJECT PROGRESS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Aggregated topic/subject progress per user
+model TopicProgress {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  subjectId        String    @map("subject_id") @db.Uuid
+  topicId          String    @map("topic_id") @db.Uuid
+
+  progressPercent  Float     @default(0) @map("progress_percent")
+  masteryLevel     Float     @default(0) @map("mastery_level")
+
+  totalContent     Int       @default(0) @map("total_content")
+  completedContent Int       @default(0) @map("completed_content")
+
+  assessmentsTaken Int       @default(0) @map("assessments_taken")
+  averageScore     Float?    @map("average_score")
+  bestScore        Float?    @map("best_score")
+
+  totalTimeSeconds Int       @default(0) @map("total_time_seconds")
+
+  firstAccessedAt  DateTime? @map("first_accessed_at") @db.Timestamptz
+  lastAccessedAt   DateTime? @map("last_accessed_at") @db.Timestamptz
+  masteredAt       DateTime? @map("mastered_at") @db.Timestamptz
+
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([userId, topicId], name: "uq_user_topic_progress")
+  @@index([userId, subjectId], name: "idx_topic_progress_user_subject")
+  @@index([tenantId, topicId], name: "idx_topic_progress_tenant_topic")
+  @@map("topic_progress")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PERIOD ROLLUPS (Weekly/Monthly/Quarterly/Yearly)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum PeriodType {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+
+  @@map("period_type")
+}
+
+enum MetricScope {
+  USER
+  CONTENT
+  TOPIC
+  SUBJECT
+  TENANT
+
+  @@map("metric_scope")
+}
+
+/// Period-based aggregated metrics
+model PeriodMetrics {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String      @map("tenant_id") @db.Uuid
+  periodType  PeriodType  @map("period_type")
+  periodStart DateTime    @map("period_start") @db.Date
+  periodEnd   DateTime    @map("period_end") @db.Date
+
+  scope       MetricScope
+  scopeId     String?     @map("scope_id") @db.Uuid
+
+  metrics     Json        @db.JsonB
+
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([tenantId, periodType, periodStart, scope, scopeId], name: "uq_period_metrics")
+  @@index([tenantId, periodType, periodStart], name: "idx_period_metrics_lookup")
+  @@map("period_metrics")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// METRICS CACHE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Cache for dashboard metrics
+model MetricsCache {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  cacheKey  String   @map("cache_key") @db.VarChar(255)
+  metrics   Json     @db.JsonB
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, cacheKey], name: "uq_metrics_cache")
+  @@index([expiresAt], name: "idx_metrics_cache_expires")
+  @@map("metrics_cache")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEARNING PATH ANALYTICS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Analytics for learning path progression
+model LearningPathAnalytics {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  pathId           String    @map("path_id") @db.Uuid
+
+  startedAt        DateTime  @map("started_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  currentNodeId    String?   @map("current_node_id") @db.Uuid
+  nodesCompleted   Int       @default(0) @map("nodes_completed")
+  totalNodes       Int       @map("total_nodes")
+
+  averageScore     Float?    @map("average_score")
+  totalTimeSeconds Int       @default(0) @map("total_time_seconds")
+
+  sessionsCount    Int       @default(0) @map("sessions_count")
+  lastSessionAt    DateTime? @map("last_session_at") @db.Timestamptz
+
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([userId, pathId], name: "uq_user_path_analytics")
+  @@index([tenantId, pathId], name: "idx_path_analytics_tenant")
+  @@map("learning_path_analytics")
+}

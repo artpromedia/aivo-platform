@@ -16,6 +16,11 @@ import { researchExportRoutes } from './routes/researchExports.js';
 import { teacherAnalyticsRoutes } from './routes/teacherAnalytics.js';
 import { tenantAnalyticsRoutes } from './routes/tenantAnalytics.js';
 
+// New analytics service routes
+import analyticsRoutes from './routes/analytics.routes.js';
+import eventsRoutes from './routes/events.routes.js';
+import dashboardRoutes from './routes/dashboards.routes.js';
+
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
@@ -57,6 +62,11 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register research exports routes (FERPA/COPPA compliant de-identified data)
   await app.register(researchExportRoutes, { prefix: '/research' });
+
+  // Register new analytics service routes
+  await app.register(analyticsRoutes, { prefix: '/v2/analytics' });
+  await app.register(eventsRoutes, { prefix: '/v2/events' });
+  await app.register(dashboardRoutes, { prefix: '/v2/dashboards' });
 
   return app;
 }
