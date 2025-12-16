@@ -209,3 +209,154 @@ export function getGradeBandLabel(gradeBand: string): string {
   };
   return labels[gradeBand] || gradeBand;
 }
+
+// ============================================================================
+// Partner Content API Functions
+// ============================================================================
+
+export interface PartnerContentItem {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string;
+  itemType: MarketplaceItemType;
+  subjects: string[];
+  gradeBands: string[];
+  iconUrl?: string;
+  vendor: {
+    id: string;
+    slug: string;
+    name: string;
+    logoUrl?: string;
+  };
+  license: {
+    id: string;
+    status: string;
+    seatLimit: number | null;
+    seatsUsed: number;
+    validUntil: string | null;
+  };
+  loCount: number;
+  accessibilityTags: string[];
+  safetyTags: string[];
+}
+
+export interface EntitledContentResponse {
+  data: PartnerContentItem[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+/**
+ * Get partner content that the tenant is entitled to
+ * Used by the partner content tab in the content picker
+ */
+export async function getEntitledPartnerContent(
+  tenantId: string,
+  options?: {
+    schoolId?: string;
+    classroomId?: string;
+    gradeBand?: string;
+    subject?: string;
+    itemType?: MarketplaceItemType;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<EntitledContentResponse> {
+  const res = await fetch(`${API_BASE}/internal/entitlements/entitled-content`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tenantId,
+      schoolId: options?.schoolId,
+      classroomId: options?.classroomId,
+      gradeBand: options?.gradeBand,
+      subject: options?.subject,
+      itemType: options?.itemType,
+      limit: options?.limit ?? 50,
+      offset: options?.offset ?? 0,
+    }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch entitled partner content: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Check if tenant has entitlement to specific LOs
+ * Used for filtering content before display
+ */
+export async function checkEntitlements(
+  tenantId: string,
+  loIds: string[],
+  options?: {
+    learnerId?: string;
+    schoolId?: string;
+    classroomId?: string;
+    gradeBand?: string;
+  }
+): Promise<{
+  entitled: string[];
+  denied: Array<{ loId: string; reason: string }>;
+  summary: {
+    totalRequested: number;
+    totalEntitled: number;
+    totalDenied: number;
+  };
+}> {
+  const res = await fetch(`${API_BASE}/internal/entitlements/batch-check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tenantId,
+      loIds,
+      learnerId: options?.learnerId,
+      schoolId: options?.schoolId,
+      classroomId: options?.classroomId,
+      gradeBand: options?.gradeBand,
+    }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to check entitlements: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Get entitled LO IDs for partner content
+ */
+export async function getEntitledLoIds(
+  tenantId: string,
+  options?: {
+    schoolId?: string;
+    gradeBand?: string;
+  }
+): Promise<{ loIds: string[]; count: number }> {
+  const res = await fetch(`${API_BASE}/internal/entitlements/entitled-los`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tenantId,
+      schoolId: options?.schoolId,
+      gradeBand: options?.gradeBand,
+    }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch entitled LO IDs: ${res.statusText}`);
+  }
+
+  return res.json();
+}

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { MasteryDistribution } from '../../../../components/mastery-distribution';
 import { SessionsChart } from '../../../../components/sessions-chart';
+import { ClassroomEngagementCard } from '../../../../components/classroom-engagement';
 import {
   fetchClassroomOverview,
   fetchClassroomLearnerList,
@@ -339,6 +340,12 @@ export default function ClassroomAnalyticsPage() {
           </div>
         </Card>
       </div>
+
+      {/* Gamification & Rewards */}
+      <ClassroomEngagementCard
+        classroomId={classroomId}
+        classroomName={overview.classroomName}
+      />
     </section>
   );
 }

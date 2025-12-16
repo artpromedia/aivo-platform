@@ -165,14 +165,25 @@ async function updateBillingConfig(
     isFree = body.billingModel === 'FREE';
   }
 
+  // Build update data conditionally to handle exactOptionalPropertyTypes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateData: Record<string, any> = {};
+  if (isFree !== undefined) {
+    updateData.isFree = isFree;
+  }
+  if (body.billingModel) {
+    updateData.billingModel = body.billingModel as MarketplaceBillingModel;
+  }
+  if (body.billingSku !== undefined) {
+    updateData.billingSku = body.billingSku;
+  }
+  if (body.billingMetadataJson !== undefined) {
+    updateData.billingMetadataJson = body.billingMetadataJson;
+  }
+
   const updated = await prisma.marketplaceItem.update({
     where: { id: itemId },
-    data: {
-      ...(isFree !== undefined && { isFree }),
-      ...(body.billingModel && { billingModel: body.billingModel as MarketplaceBillingModel }),
-      ...(body.billingSku !== undefined && { billingSku: body.billingSku }),
-      ...(body.billingMetadataJson !== undefined && { billingMetadataJson: body.billingMetadataJson }),
-    },
+    data: updateData,
     select: {
       id: true,
       title: true,

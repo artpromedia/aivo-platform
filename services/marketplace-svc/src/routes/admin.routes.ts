@@ -396,11 +396,13 @@ async function reviewInstallation(
     data: {
       status: newStatus,
       approvedByUserId: decision === 'APPROVE' ? approverUserId : null,
-      auditLogs: {
+      approvedAt: decision === 'APPROVE' ? new Date() : null,
+      statusTransitions: {
         create: {
-          eventType: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-          actorUserId: approverUserId,
-          eventData: { reason },
+          fromStatus: InstallationStatus.PENDING_APPROVAL,
+          toStatus: newStatus,
+          transitionedByUserId: approverUserId,
+          ...(reason && { reason }),
         },
       },
     },

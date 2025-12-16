@@ -16,6 +16,7 @@ import { catalogRoutes } from './routes/catalog.routes.js';
 import { vendorRoutes } from './routes/vendor.routes.js';
 import { installationRoutes } from './routes/installation.routes.js';
 import { adminRoutes } from './routes/admin.routes.js';
+import { internalEntitlementRoutes } from './routes/internal-entitlement.routes.js';
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
@@ -43,6 +44,7 @@ async function main() {
   await app.register(vendorRoutes, { prefix: '/api/v1/vendors' });
   await app.register(installationRoutes, { prefix: '/api/v1' }); // Routes already include /tenants/:tenantId/installations
   await app.register(adminRoutes); // Routes already include /admin prefix
+  await app.register(internalEntitlementRoutes); // Internal routes for cross-service calls
 
   // Graceful shutdown
   const shutdown = async () => {

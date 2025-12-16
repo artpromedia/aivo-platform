@@ -1,0 +1,413 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// Research Service - Prisma Schema
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Defines the data models for the Research & Insights Export Portal.
+// Implements governance for de-identified data exports with FERPA/COPPA compliance.
+//
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+enum ProjectType {
+  INTERNAL_EVAL     // District internal program evaluation
+  EXTERNAL_RESEARCH // External academic research (IRB required)
+  VENDOR_STUDY      // Vendor/partner study
+}
+
+enum ProjectStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum DUAStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+}
+
+enum DatasetGranularity {
+  AGGREGATED                    // Only aggregated metrics (safest)
+  DEIDENTIFIED_LEARNER_LEVEL    // Per-learner rows with pseudonymized IDs
+  INTERNAL_LEARNER_LEVEL        // Internal staff: pseudonymized with more detail
+}
+
+enum ExportJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum ExportFormat {
+  CSV
+  PARQUET
+  JSON
+}
+
+enum AccessGrantScope {
+  AGG_ONLY                      // Can only request aggregated exports
+  DEIDENTIFIED_LEARNER_LEVEL    // Can request de-identified learner-level
+  INTERNAL_FULL_ACCESS          // Internal staff with broader access
+}
+
+enum AccessGrantStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum AuditAction {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_APPROVED
+  PROJECT_REJECTED
+  PROJECT_CLOSED
+  DUA_CREATED
+  DUA_UPDATED
+  DUA_ACCEPTED
+  COHORT_CREATED
+  COHORT_UPDATED
+  DATASET_CREATED
+  DATASET_UPDATED
+  EXPORT_REQUESTED
+  EXPORT_STARTED
+  EXPORT_COMPLETED
+  EXPORT_FAILED
+  EXPORT_DOWNLOADED
+  ACCESS_GRANTED
+  ACCESS_REVOKED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEARCH PROJECT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Represents a research study or program evaluation
+model ResearchProject {
+  id                String          @id @default(uuid()) @db.Uuid
+  tenantId          String          @map("tenant_id") @db.Uuid
+  
+  title             String          @db.VarChar(500)
+  description       String?         @db.Text
+  type              ProjectType
+  status            ProjectStatus   @default(DRAFT)
+  
+  // Principal investigator / owner
+  piName            String          @map("pi_name") @db.VarChar(255)
+  piEmail           String          @map("pi_email") @db.VarChar(255)
+  piAffiliation     String?         @map("pi_affiliation") @db.VarChar(255)
+  
+  // Timeline
+  startDate         DateTime?       @map("start_date") @db.Date
+  endDate           DateTime?       @map("end_date") @db.Date
+  
+  // IRB info (required for EXTERNAL_RESEARCH)
+  irbProtocolId     String?         @map("irb_protocol_id") @db.VarChar(100)
+  irbExpiryDate     DateTime?       @map("irb_expiry_date") @db.Date
+  
+  // Audit
+  createdByUserId   String          @map("created_by_user_id") @db.Uuid
+  updatedByUserId   String?         @map("updated_by_user_id") @db.Uuid
+  approvedByUserId  String?         @map("approved_by_user_id") @db.Uuid
+  approvedAt        DateTime?       @map("approved_at")
+  rejectedReason    String?         @map("rejected_reason") @db.Text
+  
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  
+  // Relations
+  dataUseAgreements DataUseAgreement[]
+  cohorts           ResearchCohort[]
+  datasetDefinitions ResearchDatasetDefinition[]
+  exportJobs        ResearchExportJob[]
+  accessGrants      ResearchAccessGrant[]
+  auditLogs         ResearchAuditLog[]
+  
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@index([createdByUserId])
+  @@map("research_project")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA USE AGREEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// The formal agreement governing data use for a research project
+model DataUseAgreement {
+  id                String      @id @default(uuid()) @db.Uuid
+  tenantId          String      @map("tenant_id") @db.Uuid
+  researchProjectId String      @map("research_project_id") @db.Uuid
+  
+  version           Int         @default(1)
+  title             String      @db.VarChar(500)
+  agreementText     String      @map("agreement_text") @db.Text
+  documentUrl       String?     @map("document_url") @db.VarChar(1000)
+  
+  effectiveFrom     DateTime    @map("effective_from") @db.Date
+  effectiveTo       DateTime?   @map("effective_to") @db.Date
+  status            DUAStatus   @default(DRAFT)
+  
+  // Terms summary (structured)
+  allowedDataTypes  String[]    @map("allowed_data_types") @default([])
+  retentionDays     Int?        @map("retention_days")
+  allowDerivatives  Boolean     @default(false) @map("allow_derivatives")
+  allowPublication  Boolean     @default(false) @map("allow_publication")
+  
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  researchProject   ResearchProject @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  
+  @@unique([researchProjectId, version])
+  @@index([tenantId])
+  @@index([status])
+  @@map("data_use_agreement")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEARCH COHORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Defines a logical group of learners for a research study (filter-based, not a fixed list)
+model ResearchCohort {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @map("tenant_id") @db.Uuid
+  researchProjectId   String          @map("research_project_id") @db.Uuid
+  
+  name                String          @db.VarChar(255)
+  description         String?         @db.Text
+  
+  /// JSON filter definition for cohort selection
+  /// Example: { "gradeBands": ["K5", "G6_8"], "profileTags": ["autism", "adhd"], "schools": [...] }
+  filterJson          Json            @map("filter_json") @db.JsonB
+  
+  /// Estimated learner count (computed periodically)
+  estimatedLearnerCount Int?          @map("estimated_learner_count")
+  estimatedAt         DateTime?       @map("estimated_at")
+  
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  
+  // Relations
+  researchProject     ResearchProject @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  exportJobs          ResearchExportJob[]
+  
+  @@index([tenantId])
+  @@index([researchProjectId])
+  @@map("research_cohort")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEARCH DATASET DEFINITION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Defines a reusable dataset template with schema and privacy constraints
+model ResearchDatasetDefinition {
+  id                  String              @id @default(uuid()) @db.Uuid
+  tenantId            String              @map("tenant_id") @db.Uuid
+  researchProjectId   String              @map("research_project_id") @db.Uuid
+  
+  name                String              @db.VarChar(255)
+  description         String?             @db.Text
+  granularity         DatasetGranularity
+  
+  /// Schema definition: which fact tables, dimensions, and metrics to include
+  /// Example: { "factTables": ["sessions", "activity_events"], "dimensions": ["grade_band", "subject"], "metrics": ["avg_correct_rate", "total_sessions"] }
+  schemaJson          Json                @map("schema_json") @db.JsonB
+  
+  /// Privacy constraints applied during export
+  /// Example: { "minCellSize": 10, "maxDimensions": 3, "excludeColumns": ["exact_timestamp"], "dateCoarsening": "week" }
+  privacyConstraintsJson Json             @map("privacy_constraints_json") @db.JsonB
+  
+  /// Whether this is a predefined template (vs custom)
+  isTemplate          Boolean             @default(false) @map("is_template")
+  
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  
+  // Relations
+  researchProject     ResearchProject     @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  exportJobs          ResearchExportJob[]
+  
+  @@index([tenantId])
+  @@index([researchProjectId])
+  @@index([granularity])
+  @@map("research_dataset_definition")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEARCH EXPORT JOB
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Represents an async export job that produces a de-identified dataset
+model ResearchExportJob {
+  id                    String            @id @default(uuid()) @db.Uuid
+  tenantId              String            @map("tenant_id") @db.Uuid
+  researchProjectId     String            @map("research_project_id") @db.Uuid
+  datasetDefinitionId   String            @map("dataset_definition_id") @db.Uuid
+  cohortId              String            @map("cohort_id") @db.Uuid
+  
+  requestedByUserId     String            @map("requested_by_user_id") @db.Uuid
+  status                ExportJobStatus   @default(QUEUED)
+  format                ExportFormat      @default(CSV)
+  
+  /// Date range for the export
+  dateRangeFrom         DateTime          @map("date_range_from") @db.Date
+  dateRangeTo           DateTime          @map("date_range_to") @db.Date
+  
+  /// Job execution details
+  startedAt             DateTime?         @map("started_at")
+  completedAt           DateTime?         @map("completed_at")
+  rowCount              Int?              @map("row_count")
+  fileSizeBytes         BigInt?           @map("file_size_bytes")
+  
+  /// Storage location (S3 path or signed URL)
+  storagePath           String?           @map("storage_path") @db.VarChar(1000)
+  storageExpiresAt      DateTime?         @map("storage_expires_at")
+  
+  /// Error details if failed
+  errorMessage          String?           @map("error_message") @db.Text
+  errorCode             String?           @map("error_code") @db.VarChar(50)
+  
+  /// Privacy verification
+  kAnonymityPassed      Boolean?          @map("k_anonymity_passed")
+  suppressedRowCount    Int?              @map("suppressed_row_count")
+  
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  
+  // Relations
+  researchProject       ResearchProject   @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  datasetDefinition     ResearchDatasetDefinition @relation(fields: [datasetDefinitionId], references: [id])
+  cohort                ResearchCohort    @relation(fields: [cohortId], references: [id])
+  
+  @@index([tenantId])
+  @@index([researchProjectId])
+  @@index([requestedByUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("research_export_job")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEARCH ACCESS GRANT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Defines who can access what data for a research project
+model ResearchAccessGrant {
+  id                  String              @id @default(uuid()) @db.Uuid
+  tenantId            String              @map("tenant_id") @db.Uuid
+  researchProjectId   String              @map("research_project_id") @db.Uuid
+  
+  userId              String              @map("user_id") @db.Uuid
+  userEmail           String              @map("user_email") @db.VarChar(255)
+  userRole            String              @map("user_role") @db.VarChar(50)  // 'researcher', 'district_admin', 'analyst'
+  
+  scope               AccessGrantScope
+  status              AccessGrantStatus   @default(ACTIVE)
+  
+  /// When the grant expires (null = no expiry, tied to project end)
+  expiresAt           DateTime?           @map("expires_at")
+  revokedAt           DateTime?           @map("revoked_at")
+  revokedReason       String?             @map("revoked_reason") @db.Text
+  
+  /// Who granted/revoked access
+  createdByUserId     String              @map("created_by_user_id") @db.Uuid
+  revokedByUserId     String?             @map("revoked_by_user_id") @db.Uuid
+  
+  /// Terms acceptance
+  duaAcceptedAt       DateTime?           @map("dua_accepted_at")
+  duaVersion          Int?                @map("dua_version")
+  
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  
+  // Relations
+  researchProject     ResearchProject     @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  
+  @@unique([researchProjectId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@map("research_access_grant")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEARCH AUDIT LOG
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Immutable audit trail for all research-related actions
+model ResearchAuditLog {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @map("tenant_id") @db.Uuid
+  researchProjectId   String?         @map("research_project_id") @db.Uuid
+  
+  userId              String          @map("user_id") @db.Uuid
+  userEmail           String          @map("user_email") @db.VarChar(255)
+  action              AuditAction
+  
+  /// Additional context about the action
+  /// Example: { "exportJobId": "...", "format": "CSV", "rowCount": 1234 }
+  metadataJson        Json?           @map("metadata_json") @db.JsonB
+  
+  /// Client information
+  ipAddress           String?         @map("ip_address") @db.VarChar(45)
+  userAgent           String?         @map("user_agent") @db.Text
+  
+  createdAt           DateTime        @default(now()) @map("created_at")
+  
+  // Relations (optional - some actions may not have a project)
+  researchProject     ResearchProject? @relation(fields: [researchProjectId], references: [id], onDelete: SetNull)
+  
+  @@index([tenantId])
+  @@index([researchProjectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("research_audit_log")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATASET TEMPLATES (Predefined by Aivo)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// System-wide dataset templates available to all tenants
+model DatasetTemplate {
+  id                  String              @id @default(uuid()) @db.Uuid
+  
+  code                String              @unique @db.VarChar(50)
+  name                String              @db.VarChar(255)
+  description         String?             @db.Text
+  category            String              @db.VarChar(100)  // 'engagement', 'learning_outcomes', 'ai_usage', etc.
+  granularity         DatasetGranularity
+  
+  schemaJson          Json                @map("schema_json") @db.JsonB
+  privacyConstraintsJson Json             @map("privacy_constraints_json") @db.JsonB
+  
+  isActive            Boolean             @default(true) @map("is_active")
+  
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  
+  @@index([category])
+  @@index([isActive])
+  @@map("dataset_template")
+}

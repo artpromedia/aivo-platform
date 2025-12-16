@@ -1008,3 +1008,240 @@ export interface ToolLaunchValidationResult {
   launchUrl?: string;
   grantedScopes?: string[];
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LICENSE & ENTITLEMENT TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * License status values
+ */
+export const LicenseStatus = {
+  PENDING: 'PENDING',
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  EXPIRED: 'EXPIRED',
+  CANCELED: 'CANCELED',
+} as const;
+export type LicenseStatus = (typeof LicenseStatus)[keyof typeof LicenseStatus];
+
+/**
+ * License scope type values
+ */
+export const LicenseScopeType = {
+  TENANT: 'TENANT',
+  SCHOOL: 'SCHOOL',
+  GRADE_BAND: 'GRADE_BAND',
+  CLASSROOM: 'CLASSROOM',
+} as const;
+export type LicenseScopeType = (typeof LicenseScopeType)[keyof typeof LicenseScopeType];
+
+/**
+ * Tenant Content License - A formal license agreement
+ */
+export interface TenantContentLicense {
+  id: string;
+  tenantId: string;
+  marketplaceItemId: string;
+  marketplaceItemVersionId: string | null;
+  status: LicenseStatus;
+  scopeType: LicenseScopeType;
+  // Scope restrictions
+  allowedSchoolIds: string[];
+  allowedGradeBands: MarketplaceGradeBand[];
+  allowedClassroomIds: string[];
+  // Seat limits
+  seatLimit: number | null;
+  seatsUsed: number;
+  // Validity period
+  validFrom: Date;
+  validUntil: Date | null;
+  gracePeriodDays: number;
+  // Billing integration
+  billingSubscriptionId: string | null;
+  billingContractLineId: string | null;
+  externalReference: string | null;
+  billingMetadataJson: LicenseBillingMetadata | null;
+  // D2C parent fields
+  purchaserParentUserId: string | null;
+  learnerIds: string[];
+  // Audit
+  createdByUserId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Billing metadata for licenses
+ */
+export interface LicenseBillingMetadata {
+  /** Price at time of purchase (cents) */
+  priceAtPurchase?: number;
+  /** Original order/invoice ID */
+  orderId?: string;
+  /** PO number for B2B */
+  poNumber?: string;
+  /** Auto-renewal enabled */
+  autoRenew?: boolean;
+  /** Next billing date */
+  nextBillingDate?: Date;
+  /** Additional custom fields */
+  [key: string]: unknown;
+}
+
+/**
+ * Create license request
+ */
+export interface CreateLicenseRequest {
+  tenantId: string;
+  marketplaceItemId: string;
+  marketplaceItemVersionId?: string;
+  scopeType?: LicenseScopeType;
+  allowedSchoolIds?: string[];
+  allowedGradeBands?: MarketplaceGradeBand[];
+  allowedClassroomIds?: string[];
+  seatLimit?: number;
+  validFrom?: Date;
+  validUntil?: Date;
+  gracePeriodDays?: number;
+  billingSubscriptionId?: string;
+  billingContractLineId?: string;
+  externalReference?: string;
+  purchaserParentUserId?: string;
+  learnerIds?: string[];
+  notes?: string;
+}
+
+/**
+ * Update license request
+ */
+export interface UpdateLicenseRequest {
+  status?: LicenseStatus;
+  seatLimit?: number;
+  validUntil?: Date;
+  gracePeriodDays?: number;
+  allowedSchoolIds?: string[];
+  allowedGradeBands?: MarketplaceGradeBand[];
+  allowedClassroomIds?: string[];
+  notes?: string;
+}
+
+/**
+ * Tenant Content Entitlement - A specific LO access right
+ */
+export interface TenantContentEntitlement {
+  id: string;
+  tenantId: string;
+  licenseId: string;
+  loId: string;
+  loVersionId: string | null;
+  allowedGradeBands: MarketplaceGradeBand[];
+  allowedSchoolIds: string[];
+  isActive: boolean;
+  expiresAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Learner Seat Assignment
+ */
+export interface LearnerSeatAssignment {
+  id: string;
+  licenseId: string;
+  tenantId: string;
+  learnerId: string;
+  assignedByUserId: string;
+  schoolId: string | null;
+  classroomId: string | null;
+  assignedAt: Date;
+  releasedAt: Date | null;
+  releasedByUserId: string | null;
+  releaseReason: string | null;
+  lastActivityAt: Date;
+}
+
+/**
+ * Entitlement check request
+ */
+export interface EntitlementCheckRequest {
+  tenantId: string;
+  loId: string;
+  learnerId?: string;
+  schoolId?: string;
+  classroomId?: string;
+  gradeBand?: MarketplaceGradeBand;
+}
+
+/**
+ * Entitlement check response
+ */
+export interface EntitlementCheckResponse {
+  entitled: boolean;
+  reason?: string;
+  license?: {
+    id: string;
+    marketplaceItemId: string;
+    status: LicenseStatus;
+    expiresAt: Date | null;
+    seatLimit: number | null;
+    seatsUsed: number;
+  };
+  seatRequired?: boolean;
+  seatAvailable?: boolean;
+}
+
+/**
+ * Batch entitlement check request
+ */
+export interface BatchEntitlementCheckRequest {
+  tenantId: string;
+  loIds: string[];
+  learnerId?: string;
+  schoolId?: string;
+  classroomId?: string;
+  gradeBand?: MarketplaceGradeBand;
+}
+
+/**
+ * Batch entitlement check response
+ */
+export interface BatchEntitlementCheckResponse {
+  results: Record<string, EntitlementCheckResponse>;
+}
+
+/**
+ * License summary for UI display
+ */
+export interface LicenseSummary {
+  id: string;
+  marketplaceItem: {
+    id: string;
+    title: string;
+    iconUrl: string | null;
+    vendor: {
+      name: string;
+      slug: string;
+    };
+  };
+  status: LicenseStatus;
+  scopeType: LicenseScopeType;
+  seatLimit: number | null;
+  seatsUsed: number;
+  validFrom: Date;
+  validUntil: Date | null;
+  isExpiringSoon: boolean;
+}
+
+/**
+ * License list filters
+ */
+export interface LicenseListParams {
+  tenantId: string;
+  status?: LicenseStatus[];
+  marketplaceItemId?: string;
+  includeExpired?: boolean;
+  page?: number;
+  pageSize?: number;
+}

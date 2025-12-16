@@ -11,6 +11,8 @@ import { EducatorModeToggle } from './educator-mode-toggle';
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/schools', label: 'Schools' },
+  { href: '/analytics', label: 'Analytics' },
+  { href: '/research', label: 'Research Portal' },
   { href: '/marketplace', label: 'Marketplace' },
   { href: '/privacy', label: 'Privacy & Consent' },
   { href: '/integrations/sis', label: 'SIS Integration' },

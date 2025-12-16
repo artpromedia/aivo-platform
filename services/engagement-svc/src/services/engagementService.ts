@@ -4,6 +4,8 @@
 
 import { prisma, EngagementEventType, type EngagementProfile, type EngagementEvent } from '../prisma.js';
 import type { JsonValue } from '@prisma/client/runtime/library';
+import * as publisher from '../events/publisher.js';
+import * as badgeAwardEngine from './badgeAwardEngine.js';
 
 // Default XP rules per event type
 const DEFAULT_XP_RULES: Record<EngagementEventType, number> = {
@@ -56,6 +58,7 @@ export interface ApplyEventResult {
   previousLevel: number;
   streakUpdated: boolean;
   previousStreak: number;
+  awardedBadges: Array<{ badge: { code: string; name: string }; isNew: boolean }>;
 }
 
 /**
@@ -260,6 +263,50 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
       lastUpdatedAt: now,
     },
   });
+
+  // Publish engagement event to NATS
+  await publisher.publishEngagementEvent(
+    input.tenantId,
+    input.learnerId,
+    input.eventType,
+    xpAwarded,
+    profile,
+    leveledUp,
+    streakUpdated,
+    input.sessionId,
+    input.taskId,
+    input.metadata as Record<string, unknown> | undefined
+  );
+
+  // Publish level up event if applicable
+  if (leveledUp) {
+    await publisher.publishLevelUp(
+      input.tenantId,
+      input.learnerId,
+      previousLevel,
+      newLevel,
+      newXpTotal
+    );
+  }
+
+  // Check streak milestones
+  if (streakUpdated) {
+    await badgeAwardEngine.checkStreakMilestones(
+      input.tenantId,
+      input.learnerId,
+      newStreak,
+      previousStreak,
+      profile.maxStreakDays
+    );
+  }
+
+  // Check and award any earned badges
+  const awardedBadges = await badgeAwardEngine.checkAndAwardBadges(
+    input.tenantId,
+    input.learnerId,
+    profile,
+    input.eventType
+  );
   
   return {
     event,
@@ -269,6 +316,7 @@ export async function applyEvent(input: ApplyEventInput): Promise<ApplyEventResu
     previousLevel,
     streakUpdated,
     previousStreak,
+    awardedBadges,
   };
 }
 

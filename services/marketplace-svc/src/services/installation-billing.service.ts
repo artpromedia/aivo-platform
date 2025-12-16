@@ -89,7 +89,7 @@ export class InstallationBillingService {
     const installation = await prisma.marketplaceInstallation.findUnique({
       where: { id: installationId },
       include: {
-        item: {
+        marketplaceItem: {
           select: {
             id: true,
             title: true,
@@ -123,7 +123,7 @@ export class InstallationBillingService {
     }
 
     // 3. Check if item is free - no billing needed
-    if (installation.item.isFree || installation.item.billingModel === 'FREE') {
+    if (installation.marketplaceItem.isFree || installation.marketplaceItem.billingModel === 'FREE') {
       await prisma.marketplaceInstallation.update({
         where: { id: installationId },
         data: {
@@ -140,7 +140,7 @@ export class InstallationBillingService {
     }
 
     // 4. Ensure item has a billing SKU for paid items
-    if (!installation.item.billingSku) {
+    if (!installation.marketplaceItem.billingSku) {
       return {
         success: false,
         installationId,
@@ -167,7 +167,7 @@ export class InstallationBillingService {
 
     // 6. Calculate quantity based on billing model
     const quantity = this.calculateBillingQuantity(
-      installation.item.billingModel as MarketplaceBillingModel,
+      installation.marketplaceItem.billingModel as MarketplaceBillingModel,
       seatQuantity
     );
 
@@ -176,13 +176,13 @@ export class InstallationBillingService {
       const lineItemResponse = await this.createBillingLineItem({
         tenantId,
         contractId: activeContractId,
-        sku: installation.item.billingSku,
-        description: `Marketplace: ${installation.item.title}`,
+        sku: installation.marketplaceItem.billingSku,
+        description: `Marketplace: ${installation.marketplaceItem.title}`,
         quantity,
         metadata: {
           marketplaceInstallationId: installationId,
-          marketplaceItemId: installation.item.id,
-          billingModel: installation.item.billingModel ?? 'FREE',
+          marketplaceItemId: installation.marketplaceItem.id,
+          billingModel: installation.marketplaceItem.billingModel ?? 'FREE',
         },
       });
 
@@ -291,7 +291,7 @@ export class InstallationBillingService {
     const installation = await prisma.marketplaceInstallation.findUnique({
       where: { id: installationId },
       include: {
-        item: {
+        marketplaceItem: {
           select: { billingModel: true },
         },
       },
@@ -301,7 +301,7 @@ export class InstallationBillingService {
       return { success: false, error: 'Installation not found' };
     }
 
-    if (installation.item.billingModel !== 'PER_SEAT') {
+    if (installation.marketplaceItem.billingModel !== 'PER_SEAT') {
       return { success: false, error: 'Item does not use per-seat billing' };
     }
 
@@ -352,11 +352,11 @@ export class InstallationBillingService {
     const installation = await prisma.marketplaceInstallation.findFirst({
       where: {
         tenantId,
-        itemId,
-        status: 'INSTALLED',
+        marketplaceItemId: itemId,
+        status: 'ACTIVE',
       },
       include: {
-        item: {
+        marketplaceItem: {
           select: { isFree: true, billingModel: true },
         },
       },
@@ -367,7 +367,7 @@ export class InstallationBillingService {
     }
 
     // Free items are always entitled once installed
-    if (installation.item.isFree || installation.item.billingModel === 'FREE') {
+    if (installation.marketplaceItem.isFree || installation.marketplaceItem.billingModel === 'FREE') {
       return { entitled: true };
     }
 

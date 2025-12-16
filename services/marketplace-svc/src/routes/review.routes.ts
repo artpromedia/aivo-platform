@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { Prisma } from '../../generated/prisma-client/index.js';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
@@ -46,19 +47,19 @@ async function listPendingReviews(
 ) {
   const { status, itemType, vendorType, page, limit } = ListReviewsQuery.parse(request.query);
 
-  const where = {
-    status: status ?? { in: ['PENDING_REVIEW', 'IN_REVIEW'] as const },
-    ...(itemType && {
-      marketplaceItem: {
-        itemType,
-        ...(vendorType && { vendor: { type: vendorType } }),
-      },
-    }),
-    ...(vendorType &&
-      !itemType && {
-        marketplaceItem: { vendor: { type: vendorType } },
-      }),
+  // Build where clause conditionally to avoid exactOptionalPropertyTypes issues
+  const where: Prisma.MarketplaceItemVersionWhereInput = {
+    status: status ?? { in: ['PENDING_REVIEW', 'IN_REVIEW'] },
   };
+  
+  if (itemType) {
+    where.marketplaceItem = {
+      itemType,
+      ...(vendorType && { vendor: { type: vendorType } }),
+    };
+  } else if (vendorType) {
+    where.marketplaceItem = { vendor: { type: vendorType } };
+  }
 
   const [versions, total] = await Promise.all([
     prisma.marketplaceItemVersion.findMany({
@@ -199,6 +200,17 @@ async function performReviewAction(
   // Build update data based on action
   const updateData = buildUpdateData(action, targetStatus, userId, notes);
 
+  // Build transition data conditionally
+  const transitionData: Parameters<typeof prisma.versionStatusTransition.create>[0]['data'] = {
+    versionId,
+    fromStatus: version.status,
+    toStatus: targetStatus,
+    transitionedByUserId: userId,
+  };
+  if (notes !== undefined) {
+    transitionData.reason = notes;
+  }
+
   // Perform the update
   const [updated] = await prisma.$transaction([
     prisma.marketplaceItemVersion.update({
@@ -206,13 +218,7 @@ async function performReviewAction(
       data: updateData,
     }),
     prisma.versionStatusTransition.create({
-      data: {
-        versionId,
-        fromStatus: version.status,
-        toStatus: targetStatus,
-        transitionedByUserId: userId,
-        reason: notes,
-      },
+      data: transitionData,
     }),
     // If publishing, also activate the item
     ...(action === 'publish'
@@ -301,18 +307,18 @@ function getActionsForStatus(status: string): string[] {
   }
 }
 
-function getTargetStatus(action: string): string | null {
+function getTargetStatus(action: string): MarketplaceVersionStatus | null {
   switch (action) {
     case 'start_review':
-      return 'IN_REVIEW';
+      return MarketplaceVersionStatus.IN_REVIEW;
     case 'approve':
-      return 'APPROVED';
+      return MarketplaceVersionStatus.APPROVED;
     case 'reject':
-      return 'REJECTED';
+      return MarketplaceVersionStatus.REJECTED;
     case 'publish':
-      return 'PUBLISHED';
+      return MarketplaceVersionStatus.PUBLISHED;
     case 'deprecate':
-      return 'DEPRECATED';
+      return MarketplaceVersionStatus.DEPRECATED;
     default:
       return null;
   }
@@ -320,7 +326,7 @@ function getTargetStatus(action: string): string | null {
 
 function buildUpdateData(
   action: string,
-  targetStatus: string,
+  targetStatus: MarketplaceVersionStatus,
   userId: string,
   notes?: string
 ): Record<string, unknown> {
@@ -370,50 +376,14 @@ function buildUpdateData(
 
 export async function reviewRoutes(fastify: FastifyInstance) {
   // List pending reviews
-  fastify.get(
-    '/review/pending',
-    {
-      schema: {
-        description: 'List versions pending review',
-        tags: ['Review'],
-      },
-    },
-    listPendingReviews
-  );
+  fastify.get('/review/pending', listPendingReviews);
 
   // Get review stats
-  fastify.get(
-    '/review/stats',
-    {
-      schema: {
-        description: 'Get review queue statistics',
-        tags: ['Review'],
-      },
-    },
-    getReviewStats
-  );
+  fastify.get('/review/stats', getReviewStats);
 
   // Get version details for review
-  fastify.get(
-    '/review/:versionId',
-    {
-      schema: {
-        description: 'Get version details for review',
-        tags: ['Review'],
-      },
-    },
-    getReviewDetails
-  );
+  fastify.get('/review/:versionId', getReviewDetails);
 
   // Perform review action
-  fastify.post(
-    '/review/:versionId/action',
-    {
-      schema: {
-        description: 'Perform a review action',
-        tags: ['Review'],
-      },
-    },
-    performReviewAction
-  );
+  fastify.post('/review/:versionId/action', performReviewAction);
 }

@@ -5,6 +5,10 @@
  *
  * Allows teachers to select content from their library
  * to add to lesson plan activities.
+ * 
+ * Features:
+ * - Aivo Content tab: Native LOs
+ * - Partner Content tab: Licensed third-party content packs
  */
 
 import { Button } from '@aivo/ui-web';
@@ -12,7 +16,9 @@ import { useState, useEffect } from 'react';
 
 import {
   type MarketplaceLibraryItem,
+  type PartnerContentItem,
   getTeacherLibrary,
+  getEntitledPartnerContent,
   getItemTypeLabel,
 } from '../../lib/marketplace-api';
 
@@ -26,39 +32,58 @@ interface Props {
 
 // TODO: Get from auth context
 const MOCK_TEACHER_ID = 'teacher-123';
+const MOCK_TENANT_ID = 'tenant-456';
+
+type ContentTab = 'aivo' | 'partner';
 
 export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: Props) {
-  const [items, setItems] = useState<MarketplaceLibraryItem[]>([]);
+  const [activeTab, setActiveTab] = useState<ContentTab>('aivo');
+  const [aivoItems, setAivoItems] = useState<MarketplaceLibraryItem[]>([]);
+  const [partnerItems, setPartnerItems] = useState<PartnerContentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [partnerContentAvailable, setPartnerContentAvailable] = useState(false);
 
   useEffect(() => {
     if (open) {
-      loadItems();
+      loadContent();
     }
   }, [open, gradeBand, subject]);
 
-  async function loadItems() {
+  async function loadContent() {
     setLoading(true);
     setError(null);
     try {
-      const result = await getTeacherLibrary(MOCK_TEACHER_ID, {
-        gradeBand: gradeBand || undefined,
-        subject: subject || undefined,
-      });
-      setItems(result.data);
+      // Load both Aivo content and partner content in parallel
+      const [aivoResult, partnerResult] = await Promise.all([
+        getTeacherLibrary(MOCK_TEACHER_ID, {
+          gradeBand: gradeBand || undefined,
+          subject: subject || undefined,
+        }),
+        getEntitledPartnerContent(MOCK_TENANT_ID, {
+          gradeBand: gradeBand || undefined,
+          subject: subject || undefined,
+          itemType: 'CONTENT_PACK',
+          limit: 50,
+        }),
+      ]);
+      setAivoItems(aivoResult.data);
+      setPartnerItems(partnerResult.data);
+      setPartnerContentAvailable(partnerResult.data.length > 0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load library');
+      setError(err instanceof Error ? err.message : 'Failed to load content');
     } finally {
       setLoading(false);
     }
   }
 
+  const items = activeTab === 'aivo' ? aivoItems : partnerItems;
+
   const filteredItems = items.filter(
     (item) =>
       item.title.toLowerCase().includes(search.toLowerCase()) ||
-      item.vendor.name.toLowerCase().includes(search.toLowerCase())
+      ('vendor' in item && item.vendor.name.toLowerCase().includes(search.toLowerCase()))
   );
 
   if (!open) return null;
@@ -72,7 +97,7 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
       <div className="relative flex max-h-[80vh] w-full max-w-2xl flex-col rounded-lg border border-border bg-surface shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-lg font-semibold">Choose Content from Library</h2>
+          <h2 className="text-lg font-semibold">Choose Content</h2>
           <button
             onClick={onClose}
             className="rounded-lg p-1 text-muted hover:bg-surface-muted hover:text-text"
@@ -85,6 +110,36 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-border">
+          <button
+            onClick={() => { setActiveTab('aivo'); }}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'aivo'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted hover:text-text'
+            }`}
+          >
+            📚 Aivo Content
+          </button>
+          <button
+            onClick={() => { setActiveTab('partner'); }}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'partner'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted hover:text-text'
+            } ${!partnerContentAvailable ? 'opacity-50' : ''}`}
+            disabled={!partnerContentAvailable}
+          >
+            🤝 Partner Content
+            {partnerContentAvailable && (
+              <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                {partnerItems.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -128,51 +183,21 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
           ) : error ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
               <p className="text-sm text-red-600">{error}</p>
-              <button onClick={loadItems} className="mt-2 text-sm text-primary hover:underline">
+              <button onClick={loadContent} className="mt-2 text-sm text-primary hover:underline">
                 Try again
               </button>
             </div>
           ) : filteredItems.length === 0 ? (
-            <EmptyState hasSearch={search.length > 0} />
+            <EmptyState hasSearch={search.length > 0} isPartnerTab={activeTab === 'partner'} />
           ) : (
             <div className="space-y-2">
               {filteredItems.map((item) => (
-                <button
+                <ContentItemCard
                   key={item.id}
-                  onClick={() => {
-                    onSelect(item.id, item.title, item.itemType);
-                  }}
-                  className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:bg-surface-muted hover:border-primary"
-                >
-                  {item.iconUrl ? (
-                    <img src={item.iconUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-muted text-xl">
-                      {item.itemType === 'CONTENT_PACK' ? '📚' : '🔧'}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{item.title}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted">
-                      <span>{item.vendor.name}</span>
-                      <span>•</span>
-                      <span>{getItemTypeLabel(item.itemType)}</span>
-                    </div>
-                  </div>
-                  <svg
-                    className="h-5 w-5 text-muted"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                </button>
+                  item={item}
+                  isPartner={activeTab === 'partner'}
+                  onSelect={onSelect}
+                />
               ))}
             </div>
           )}
@@ -192,11 +217,27 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
   );
 }
 
-function EmptyState({ hasSearch }: { hasSearch: boolean }) {
+function EmptyState({ hasSearch, isPartnerTab }: { hasSearch: boolean; isPartnerTab: boolean }) {
   if (hasSearch) {
     return (
       <div className="rounded-lg border border-border bg-surface-muted p-6 text-center">
         <p className="text-muted">No content matches your search.</p>
+      </div>
+    );
+  }
+
+  if (isPartnerTab) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6 text-center">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-surface-muted p-3">
+          <span className="text-2xl">🤝</span>
+        </div>
+        <h3 className="font-medium">No partner content available</h3>
+        <p className="mt-1 text-sm text-muted">
+          Your district hasn't licensed any partner content packs yet.
+          <br />
+          Contact your admin to explore the marketplace.
+        </p>
       </div>
     );
   }
@@ -224,4 +265,117 @@ function EmptyState({ hasSearch }: { hasSearch: boolean }) {
       </p>
     </div>
   );
+}
+
+/**
+ * Content Item Card Component
+ * 
+ * Handles rendering for both Aivo and Partner content items
+ */
+function ContentItemCard({
+  item,
+  isPartner,
+  onSelect,
+}: {
+  item: MarketplaceLibraryItem | PartnerContentItem;
+  isPartner: boolean;
+  onSelect: (contentId: string, contentTitle: string, contentType: string) => void;
+}) {
+  const isPartnerItem = 'license' in item;
+  const vendorName = item.vendor?.name || 'Aivo';
+  const itemType = item.itemType || 'CONTENT_PACK';
+
+  // Check if partner content has seat limits
+  const hasSeatsWarning =
+    isPartnerItem &&
+    item.license.seatLimit !== null &&
+    item.license.seatsUsed >= item.license.seatLimit;
+
+  return (
+    <button
+      onClick={() => {
+        onSelect(item.id, item.title, itemType);
+      }}
+      disabled={hasSeatsWarning}
+      className={`flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left transition-colors ${
+        hasSeatsWarning
+          ? 'cursor-not-allowed opacity-50'
+          : 'hover:bg-surface-muted hover:border-primary'
+      }`}
+    >
+      {item.iconUrl ? (
+        <img src={item.iconUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+      ) : (
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-muted text-xl">
+          {isPartner ? '🤝' : itemType === 'CONTENT_PACK' ? '📚' : '🔧'}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-medium truncate">{item.title}</p>
+          {isPartner && (
+            <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+              Partner
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span>{vendorName}</span>
+          <span>•</span>
+          <span>{getItemTypeLabel(itemType)}</span>
+          {isPartnerItem && item.loCount > 0 && (
+            <>
+              <span>•</span>
+              <span>{item.loCount} activities</span>
+            </>
+          )}
+        </div>
+        {/* Accessibility tags for partner content */}
+        {isPartnerItem && item.accessibilityTags && item.accessibilityTags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {item.accessibilityTags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700"
+              >
+                {formatAccessibilityTag(tag)}
+              </span>
+            ))}
+          </div>
+        )}
+        {/* Seat limit warning */}
+        {hasSeatsWarning && (
+          <p className="mt-1 text-xs text-amber-600">
+            ⚠️ All seats in use ({item.license.seatsUsed}/{item.license.seatLimit})
+          </p>
+        )}
+      </div>
+      <svg
+        className="h-5 w-5 text-muted"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+        />
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * Format accessibility tag for display
+ */
+function formatAccessibilityTag(tag: string): string {
+  const labels: Record<string, string> = {
+    TTS: 'Text-to-Speech',
+    DYSLEXIA_FRIENDLY: 'Dyslexia Friendly',
+    CAPTIONS: 'Captions',
+    HIGH_CONTRAST: 'High Contrast',
+  };
+  return labels[tag] || tag;
 }

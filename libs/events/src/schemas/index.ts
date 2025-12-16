@@ -132,6 +132,31 @@ export {
   type ContentEvent,
 } from './content.js';
 
+// Marketplace events
+export {
+  VendorApprovedEvent,
+  VendorSuspendedEvent,
+  PackPublishedEvent,
+  PackDeprecatedEvent,
+  LicenseCreatedEvent,
+  LicenseActivatedEvent,
+  LicenseSuspendedEvent,
+  LicenseExpiredEvent,
+  LicenseCanceledEvent,
+  LicenseRenewedEvent,
+  EntitlementAssignedEvent,
+  EntitlementRevokedEvent,
+  SeatAssignedEvent,
+  SeatReleasedEvent,
+  PartnerContentUsageEvent,
+  EntitlementCheckFailedEvent,
+  InstallationCreatedEvent,
+  InstallationApprovedEvent,
+  InstallationRevokedEvent,
+  MarketplaceEvent,
+  MARKETPLACE_SUBJECTS,
+} from './marketplace.js';
+
 // -----------------------------------------------------------------------------
 // All Events Union
 // -----------------------------------------------------------------------------
@@ -141,6 +166,7 @@ import { z } from 'zod';
 import { FocusEventSchema } from './focus.js';
 import { HomeworkEventSchema } from './homework.js';
 import { LearningEventSchema } from './learning.js';
+import { MarketplaceEvent } from './marketplace.js';
 import { RecommendationEventSchema } from './recommendation.js';
 
 /**
@@ -151,6 +177,7 @@ export const AivoEventSchema = z.union([
   FocusEventSchema,
   HomeworkEventSchema,
   RecommendationEventSchema,
+  MarketplaceEvent,
 ]);
 
 export type AivoEvent = z.infer<typeof AivoEventSchema>;
@@ -168,6 +195,7 @@ export const EVENT_STREAM_MAP: Record<string, string> = {
   homework: 'HOMEWORK',
   recommendation: 'RECOMMENDATION',
   content: 'CONTENT',
+  marketplace: 'MARKETPLACE',
 };
 
 /**

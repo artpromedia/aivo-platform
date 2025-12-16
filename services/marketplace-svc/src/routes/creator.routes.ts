@@ -239,33 +239,40 @@ async function createItem(
     return reply.status(400).send({ error: 'Slug already exists' });
   }
 
-  // Create item with initial version
-  const item = await prisma.marketplaceItem.create({
-    data: {
-      vendorId,
-      slug: body.slug,
-      title: body.title,
-      shortDescription: body.shortDescription,
-      longDescription: body.longDescription,
-      itemType: body.itemType,
-      subjects: body.subjects,
-      gradeBands: body.gradeBands,
-      modalities: body.modalities ?? [],
-      iconUrl: body.iconUrl,
-      screenshotsJson: body.screenshotsJson ?? [],
-      pricingModel: body.pricingModel ?? 'FREE',
-      priceCents: body.priceCents,
-      metadataJson: body.metadataJson ?? {},
-      searchKeywords: body.searchKeywords ?? [],
-      isActive: false, // Not active until published
-      versions: {
-        create: {
-          version: '1.0.0',
-          status: 'DRAFT',
-          submittedByUserId: userId,
-        },
+  // Build create data, handling optional fields carefully
+  const createData: Parameters<typeof prisma.marketplaceItem.create>[0]['data'] = {
+    vendorId,
+    slug: body.slug,
+    title: body.title,
+    shortDescription: body.shortDescription,
+    longDescription: body.longDescription,
+    itemType: body.itemType,
+    subjects: body.subjects,
+    gradeBands: body.gradeBands,
+    modalities: body.modalities ?? [],
+    screenshotsJson: body.screenshotsJson ?? [],
+    pricingModel: body.pricingModel ?? 'FREE',
+    searchKeywords: body.searchKeywords ?? [],
+    isActive: false, // Not active until published
+    versions: {
+      create: {
+        version: '1.0.0',
+        status: 'DRAFT',
+        submittedByUserId: userId,
       },
     },
+  };
+  
+  // Add optional fields only if defined
+  if (body.iconUrl !== undefined) createData.iconUrl = body.iconUrl;
+  if (body.priceCents !== undefined) createData.priceCents = body.priceCents;
+  if (body.metadataJson !== undefined) {
+    createData.metadataJson = JSON.parse(JSON.stringify(body.metadataJson));
+  }
+
+  // Create item with initial version
+  const item = await prisma.marketplaceItem.create({
+    data: createData,
     include: {
       versions: true,
     },
@@ -371,22 +378,25 @@ async function updateItem(
     });
   }
 
+  // Build update data conditionally to handle exactOptionalPropertyTypes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateData: Record<string, any> = {};
+  if (body.title !== undefined) updateData.title = body.title;
+  if (body.shortDescription !== undefined) updateData.shortDescription = body.shortDescription;
+  if (body.longDescription !== undefined) updateData.longDescription = body.longDescription;
+  if (body.subjects !== undefined) updateData.subjects = body.subjects;
+  if (body.gradeBands !== undefined) updateData.gradeBands = body.gradeBands;
+  if (body.modalities !== undefined) updateData.modalities = body.modalities;
+  if (body.iconUrl !== undefined) updateData.iconUrl = body.iconUrl;
+  if (body.screenshotsJson !== undefined) updateData.screenshotsJson = body.screenshotsJson;
+  if (body.pricingModel !== undefined) updateData.pricingModel = body.pricingModel;
+  if (body.priceCents !== undefined) updateData.priceCents = body.priceCents;
+  if (body.metadataJson !== undefined) updateData.metadataJson = body.metadataJson;
+  if (body.searchKeywords !== undefined) updateData.searchKeywords = body.searchKeywords;
+
   const updated = await prisma.marketplaceItem.update({
     where: { id: itemId },
-    data: {
-      title: body.title,
-      shortDescription: body.shortDescription,
-      longDescription: body.longDescription,
-      subjects: body.subjects,
-      gradeBands: body.gradeBands,
-      modalities: body.modalities,
-      iconUrl: body.iconUrl,
-      screenshotsJson: body.screenshotsJson,
-      pricingModel: body.pricingModel,
-      priceCents: body.priceCents,
-      metadataJson: body.metadataJson,
-      searchKeywords: body.searchKeywords,
-    },
+    data: updateData,
   });
 
   return { data: updated };
@@ -462,44 +472,67 @@ async function createVersion(
 
   // Create new version, optionally copying content from previous
   const previousVersion = item.versions[0];
+  
+  // Build base version data
+  const versionCreateData: Parameters<typeof prisma.marketplaceItemVersion.create>[0]['data'] = {
+    marketplaceItemId: itemId,
+    version: body.version,
+    status: 'DRAFT',
+    submittedByUserId: userId,
+  };
+  
+  // Add optional changelog
+  if (body.changelog !== undefined) {
+    versionCreateData.changelog = body.changelog;
+  }
+  
+  // Copy content pack items if applicable
+  if (previousVersion && item.itemType === 'CONTENT_PACK' && previousVersion.contentPackItems.length > 0) {
+    versionCreateData.contentPackItems = {
+      create: previousVersion.contentPackItems.map((cp) => {
+        type ContentPackItemCreate = Omit<
+          Parameters<typeof prisma.contentPackItem.create>[0]['data'],
+          'version' | 'versionId' | 'marketplaceItemVersionId'
+        >;
+        const cpItem: ContentPackItemCreate = {
+          loVersionId: cp.loVersionId,
+          loId: cp.loId ?? null,
+          position: cp.position,
+          isHighlight: cp.isHighlight,
+          metadataJson: cp.metadataJson !== null 
+            ? JSON.parse(JSON.stringify(cp.metadataJson)) 
+            : null,
+        };
+        return cpItem;
+      }),
+    };
+  }
+  
+  // Copy tool config if applicable
+  if (previousVersion?.embeddedToolConfig && item.itemType === 'EMBEDDED_TOOL') {
+    type ToolConfigCreate = Parameters<typeof prisma.embeddedToolConfig.create>[0]['data'];
+    const toolConfig: Omit<ToolConfigCreate, 'version' | 'versionId'> = {
+      launchUrl: previousVersion.embeddedToolConfig.launchUrl,
+      launchType: previousVersion.embeddedToolConfig.launchType,
+      requiredScopes: previousVersion.embeddedToolConfig.requiredScopes,
+      optionalScopes: previousVersion.embeddedToolConfig.optionalScopes,
+      webhookUrl: previousVersion.embeddedToolConfig.webhookUrl,
+      cspDirectives: previousVersion.embeddedToolConfig.cspDirectives,
+      sandboxAttributes: previousVersion.embeddedToolConfig.sandboxAttributes,
+    };
+    if (previousVersion.embeddedToolConfig.configSchemaJson !== null) {
+      toolConfig.configSchemaJson = previousVersion.embeddedToolConfig.configSchemaJson;
+    }
+    if (previousVersion.embeddedToolConfig.defaultConfigJson !== null) {
+      toolConfig.defaultConfigJson = previousVersion.embeddedToolConfig.defaultConfigJson;
+    }
+    versionCreateData.embeddedToolConfig = {
+      create: toolConfig,
+    };
+  }
+  
   const version = await prisma.marketplaceItemVersion.create({
-    data: {
-      marketplaceItemId: itemId,
-      version: body.version,
-      status: 'DRAFT',
-      changelog: body.changelog,
-      submittedByUserId: userId,
-      // Copy content pack items if applicable
-      ...(previousVersion &&
-        item.itemType === 'CONTENT_PACK' && {
-          contentPackItems: {
-            create: previousVersion.contentPackItems.map((cp) => ({
-              loVersionId: cp.loVersionId,
-              loId: cp.loId,
-              position: cp.position,
-              isHighlight: cp.isHighlight,
-              metadataJson: cp.metadataJson,
-            })),
-          },
-        }),
-      // Copy tool config if applicable
-      ...(previousVersion?.embeddedToolConfig &&
-        item.itemType === 'EMBEDDED_TOOL' && {
-          embeddedToolConfig: {
-            create: {
-              launchUrl: previousVersion.embeddedToolConfig.launchUrl,
-              launchType: previousVersion.embeddedToolConfig.launchType,
-              requiredScopes: previousVersion.embeddedToolConfig.requiredScopes,
-              optionalScopes: previousVersion.embeddedToolConfig.optionalScopes,
-              configSchemaJson: previousVersion.embeddedToolConfig.configSchemaJson,
-              defaultConfigJson: previousVersion.embeddedToolConfig.defaultConfigJson,
-              webhookUrl: previousVersion.embeddedToolConfig.webhookUrl,
-              cspDirectives: previousVersion.embeddedToolConfig.cspDirectives,
-              sandboxAttributes: previousVersion.embeddedToolConfig.sandboxAttributes,
-            },
-          },
-        }),
-    },
+    data: versionCreateData,
   });
 
   return reply.status(201).send({ data: version });
@@ -558,7 +591,7 @@ async function setContentPackItems(
       data: body.items.map((item) => ({
         marketplaceItemVersionId: versionId,
         loVersionId: item.loVersionId,
-        loId: item.loId,
+        loId: item.loId ?? null,
         position: item.position,
         isHighlight: item.isHighlight ?? false,
         metadataJson: item.metadataJson ?? {},
@@ -619,7 +652,9 @@ async function setToolConfig(
   }
 
   // Validate scopes are allowed
-  const invalidScopes = body.requiredScopes.filter((s) => !ALLOWED_TOOL_SCOPES.includes(s));
+  const invalidScopes = body.requiredScopes.filter(
+    (s) => !ALLOWED_TOOL_SCOPES.includes(s as (typeof ALLOWED_TOOL_SCOPES)[number])
+  );
   if (invalidScopes.length > 0) {
     return reply.status(400).send({
       error: `Invalid scopes: ${invalidScopes.join(', ')}`,
@@ -636,22 +671,22 @@ async function setToolConfig(
       launchType: body.launchType,
       requiredScopes: body.requiredScopes,
       optionalScopes: body.optionalScopes ?? [],
-      configSchemaJson: body.configSchemaJson ?? null,
-      defaultConfigJson: body.defaultConfigJson ?? null,
-      webhookUrl: body.webhookUrl,
-      cspDirectives: body.cspDirectives,
       sandboxAttributes: body.sandboxAttributes ?? [],
+      configSchemaJson: body.configSchemaJson ? JSON.parse(JSON.stringify(body.configSchemaJson)) : null,
+      defaultConfigJson: body.defaultConfigJson ? JSON.parse(JSON.stringify(body.defaultConfigJson)) : null,
+      ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
+      ...(body.cspDirectives !== undefined && { cspDirectives: body.cspDirectives }),
     },
     update: {
       launchUrl: body.launchUrl,
       launchType: body.launchType,
       requiredScopes: body.requiredScopes,
       optionalScopes: body.optionalScopes ?? [],
-      configSchemaJson: body.configSchemaJson ?? null,
-      defaultConfigJson: body.defaultConfigJson ?? null,
-      webhookUrl: body.webhookUrl,
-      cspDirectives: body.cspDirectives,
       sandboxAttributes: body.sandboxAttributes ?? [],
+      configSchemaJson: body.configSchemaJson ? JSON.parse(JSON.stringify(body.configSchemaJson)) : null,
+      defaultConfigJson: body.defaultConfigJson ? JSON.parse(JSON.stringify(body.defaultConfigJson)) : null,
+      ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
+      ...(body.cspDirectives !== undefined && { cspDirectives: body.cspDirectives }),
     },
   });
 
@@ -701,7 +736,10 @@ async function submitForReview(
   }
 
   // Run validation
-  const validation = validateSubmission(version, version.marketplaceItem);
+  const validation = validateSubmission(
+    version as Parameters<typeof validateSubmission>[0],
+    version.marketplaceItem as Parameters<typeof validateSubmission>[1]
+  );
   if (!validation.valid) {
     return reply.status(400).send({
       error: 'Validation failed',
@@ -739,7 +777,7 @@ async function submitForReview(
         fromStatus: 'DRAFT',
         toStatus: 'PENDING_REVIEW',
         transitionedByUserId: userId,
-        reason: body.notes,
+        ...(body.notes !== undefined && { reason: body.notes }),
       },
     }),
   ]);
@@ -812,96 +850,48 @@ export async function creatorRoutes(fastify: FastifyInstance) {
   // Create new item
   fastify.post(
     '/creators/:vendorId/items',
-    {
-      schema: {
-        description: 'Create a new marketplace item',
-        tags: ['Creator'],
-      },
-    },
     createItem
   );
 
   // Get item details
   fastify.get(
     '/creators/:vendorId/items/:itemId',
-    {
-      schema: {
-        description: 'Get item details for editing',
-        tags: ['Creator'],
-      },
-    },
     getCreatorItem
   );
 
   // Update item
   fastify.patch(
     '/creators/:vendorId/items/:itemId',
-    {
-      schema: {
-        description: 'Update item metadata (only if latest version is DRAFT)',
-        tags: ['Creator'],
-      },
-    },
     updateItem
   );
 
   // Create new version
   fastify.post(
     '/creators/:vendorId/items/:itemId/versions',
-    {
-      schema: {
-        description: 'Create a new version of an existing item',
-        tags: ['Creator'],
-      },
-    },
     createVersion
   );
 
   // Set content pack items
   fastify.post(
     '/creators/:vendorId/items/:itemId/versions/:versionId/content-pack-items',
-    {
-      schema: {
-        description: 'Add/update content pack items',
-        tags: ['Creator'],
-      },
-    },
     setContentPackItems
   );
 
   // Set tool config
   fastify.put(
     '/creators/:vendorId/items/:itemId/versions/:versionId/tool-config',
-    {
-      schema: {
-        description: 'Set embedded tool configuration',
-        tags: ['Creator'],
-      },
-    },
     setToolConfig
   );
 
   // Submit for review
   fastify.post(
     '/creators/:vendorId/items/:itemId/versions/:versionId/submit',
-    {
-      schema: {
-        description: 'Submit version for review',
-        tags: ['Creator'],
-      },
-    },
     submitForReview
   );
 
   // Discard version
   fastify.delete(
     '/creators/:vendorId/items/:itemId/versions/:versionId',
-    {
-      schema: {
-        description: 'Discard a DRAFT version',
-        tags: ['Creator'],
-      },
-    },
     discardVersion
   );
 }

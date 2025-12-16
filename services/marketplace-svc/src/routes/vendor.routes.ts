@@ -180,11 +180,11 @@ async function updateVendor(
   const updated = await prisma.vendor.update({
     where: { slug },
     data: {
-      name: data.name,
-      contactEmail: data.contactEmail,
-      websiteUrl: data.websiteUrl,
-      logoUrl: data.logoUrl,
-      description: data.description,
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.contactEmail !== undefined && { contactEmail: data.contactEmail }),
+      ...(data.websiteUrl !== undefined && { websiteUrl: data.websiteUrl }),
+      ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl }),
+      ...(data.description !== undefined && { description: data.description }),
     },
   });
 

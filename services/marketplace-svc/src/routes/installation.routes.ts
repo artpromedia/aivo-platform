@@ -141,8 +141,8 @@ async function getInstallation(
           embeddedToolConfig: true,
         },
       },
-      auditLogs: {
-        orderBy: { timestamp: 'desc' },
+      statusTransitions: {
+        orderBy: { transitionedAt: 'desc' },
         take: 20,
       },
     },
@@ -230,20 +230,20 @@ async function createInstallation(
     data: {
       tenantId,
       marketplaceItemId: data.marketplaceItemId,
-      versionId,
+      marketplaceItemVersionId: versionId,
       schoolId: data.schoolId ?? null,
       classroomId: data.classroomId ?? null,
       status,
       installedByUserId,
-      installationConfig: data.installationConfig ?? {},
-      auditLogs: {
+      configJson: data.installationConfig !== undefined 
+        ? JSON.parse(JSON.stringify(data.installationConfig)) 
+        : null,
+      statusTransitions: {
         create: {
-          eventType: 'INSTALLED',
-          actorUserId: installedByUserId,
-          eventData: {
-            status,
-            versionId,
-          },
+          fromStatus: InstallationStatus.PENDING_APPROVAL, // Initial pseudo-state
+          toStatus: status,
+          transitionedByUserId: installedByUserId,
+          reason: 'Installation created',
         },
       },
     },
@@ -301,7 +301,6 @@ async function updateInstallation(
 
   // Build update data
   const updateData: Record<string, unknown> = {};
-  const eventData: Record<string, unknown> = {};
 
   if (data.versionId) {
     // Verify version belongs to the same item and is published
@@ -317,26 +316,27 @@ async function updateInstallation(
       return reply.status(400).send({ error: 'Invalid or unpublished version' });
     }
 
-    updateData.versionId = data.versionId;
-    eventData.previousVersionId = installation.versionId;
-    eventData.newVersionId = data.versionId;
+    updateData.marketplaceItemVersionId = data.versionId;
   }
 
   if (data.installationConfig) {
-    updateData.installationConfig = data.installationConfig;
+    updateData.configJson = data.installationConfig;
   }
 
   const updated = await prisma.marketplaceInstallation.update({
     where: { id: installationId },
     data: {
       ...updateData,
-      auditLogs: {
-        create: {
-          eventType: data.versionId ? 'VERSION_CHANGED' : 'CONFIG_CHANGED',
-          actorUserId,
-          eventData,
+      ...(data.versionId && {
+        statusTransitions: {
+          create: {
+            fromStatus: installation.status,
+            toStatus: installation.status,
+            transitionedByUserId: actorUserId,
+            reason: `Version updated to ${data.versionId}`,
+          },
         },
-      },
+      }),
     },
   });
 
@@ -379,11 +379,13 @@ async function disableInstallation(
     where: { id: installationId },
     data: {
       status: InstallationStatus.DISABLED,
-      auditLogs: {
+      disabledAt: new Date(),
+      statusTransitions: {
         create: {
-          eventType: 'DISABLED',
-          actorUserId,
-          eventData: { reason, previousStatus: installation.status },
+          fromStatus: installation.status,
+          toStatus: InstallationStatus.DISABLED,
+          transitionedByUserId: actorUserId,
+          ...(reason && { reason }),
         },
       },
     },
@@ -428,11 +430,12 @@ async function enableInstallation(
     where: { id: installationId },
     data: {
       status: InstallationStatus.ACTIVE,
-      auditLogs: {
+      statusTransitions: {
         create: {
-          eventType: 'ENABLED',
-          actorUserId,
-          eventData: {},
+          fromStatus: InstallationStatus.DISABLED,
+          toStatus: InstallationStatus.ACTIVE,
+          transitionedByUserId: actorUserId,
+          reason: 'Re-enabled',
         },
       },
     },
@@ -474,13 +477,14 @@ async function uninstall(
     return reply.status(404).send({ error: 'Installation not found' });
   }
 
-  // Create final audit log before deletion
-  await prisma.installationAuditLog.create({
+  // Create final status transition before revocation
+  await prisma.installationStatusTransition.create({
     data: {
       installationId,
-      eventType: 'UNINSTALLED',
-      actorUserId,
-      eventData: { reason },
+      fromStatus: installation.status,
+      toStatus: InstallationStatus.REVOKED,
+      transitionedByUserId: actorUserId,
+      ...(reason && { reason }),
     },
   });
 

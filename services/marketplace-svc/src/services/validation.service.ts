@@ -149,7 +149,11 @@ export function validateSubmission(
 
     // Check positions are sequential
     const positions = contentItems.map((cp) => cp.position).sort((a, b) => a - b);
-    const hasGaps = positions.some((pos, idx) => idx > 0 && pos - positions[idx - 1] > 1);
+    const hasGaps = positions.some((pos, idx) => {
+      if (idx === 0) return false;
+      const prevPos = positions[idx - 1];
+      return prevPos !== undefined && pos - prevPos > 1;
+    });
     if (hasGaps) {
       warnings.push({
         field: 'contentPackItems',
