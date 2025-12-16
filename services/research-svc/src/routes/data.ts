@@ -1,15 +1,15 @@
 /**
  * Cohort and Dataset Definition Routes
- * 
+ *
  * Manage cohort definitions and dataset schemas.
  */
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+
 import { prisma } from '../prisma.js';
 import type { AuditContext } from '../services/auditService.js';
 import { recordAuditLog } from '../services/auditService.js';
-import { publishEvent } from '../events/publisher.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -19,13 +19,15 @@ const createCohortSchema = z.object({
   projectId: z.string().uuid(),
   name: z.string().min(3).max(255),
   description: z.string().optional(),
-  filters: z.object({
+  filterJson: z.object({
     gradeLevel: z.array(z.string()).optional(),
     schools: z.array(z.string()).optional(),
-    dateRange: z.object({
-      start: z.string().datetime(),
-      end: z.string().datetime(),
-    }).optional(),
+    dateRange: z
+      .object({
+        start: z.string().datetime(),
+        end: z.string().datetime(),
+      })
+      .optional(),
     contentTypes: z.array(z.string()).optional(),
     minSessionCount: z.number().min(0).optional(),
   }),
@@ -35,23 +37,40 @@ const createDatasetDefSchema = z.object({
   projectId: z.string().uuid(),
   name: z.string().min(3).max(255),
   description: z.string().optional(),
-  baseTable: z.enum(['fact_sessions', 'fact_activity_event', 'fact_ai_usage', 'agg_daily_learner_summary']),
-  columns: z.array(z.object({
-    name: z.string(),
-    alias: z.string().optional(),
-    transform: z.enum(['NONE', 'PSEUDONYMIZE', 'COARSEN_DATE', 'ROUND', 'BUCKET', 'EXCLUDE']).optional(),
-  })),
-  constraints: z.object({
-    kAnonymityThreshold: z.number().min(5).max(100).optional(),
-    dateCoarsening: z.enum(['DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR']).optional(),
-    noiseInjection: z.number().min(0).max(0.1).optional(),
-    excludedColumns: z.array(z.string()).optional(),
-  }).optional(),
-  joins: z.array(z.object({
-    table: z.string(),
-    on: z.string(),
-    columns: z.array(z.string()),
-  })).optional(),
+  granularity: z.enum(['AGGREGATED', 'DEIDENTIFIED_LEARNER_LEVEL', 'INTERNAL_LEARNER_LEVEL']),
+  schemaJson: z.object({
+    baseTable: z
+      .enum(['fact_sessions', 'fact_activity_event', 'fact_ai_usage', 'agg_daily_learner_summary'])
+      .optional(),
+    columns: z
+      .array(
+        z.object({
+          name: z.string(),
+          alias: z.string().optional(),
+          transform: z
+            .enum(['NONE', 'PSEUDONYMIZE', 'COARSEN_DATE', 'ROUND', 'BUCKET', 'EXCLUDE'])
+            .optional(),
+        })
+      )
+      .optional(),
+    joins: z
+      .array(
+        z.object({
+          table: z.string(),
+          on: z.string(),
+          columns: z.array(z.string()),
+        })
+      )
+      .optional(),
+  }),
+  privacyConstraintsJson: z
+    .object({
+      kAnonymityThreshold: z.number().min(5).max(100).optional(),
+      dateCoarsening: z.enum(['DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR']).optional(),
+      noiseInjection: z.number().min(0).max(0.1).optional(),
+      excludedColumns: z.array(z.string()).optional(),
+    })
+    .optional(),
 });
 
 const listSchema = z.object({
@@ -82,7 +101,7 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       userId: user.sub,
       userEmail: user.email,
       ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      ...(request.headers['user-agent'] && { userAgent: request.headers['user-agent'] }),
     };
 
     // Verify project access
@@ -96,21 +115,24 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
 
     const cohort = await prisma.researchCohort.create({
       data: {
-        projectId: body.projectId,
+        tenantId: user.tenantId,
+        researchProjectId: body.projectId,
         name: body.name,
-        description: body.description,
-        filters: body.filters,
-        createdByUserId: user.sub,
+        description: body.description ?? null,
+        filterJson: body.filterJson,
       },
     });
 
-    await recordAuditLog({
-      projectId: body.projectId,
-      action: 'COHORT_CREATED',
-      entityType: 'COHORT',
-      entityId: cohort.id,
-      details: { name: body.name, filters: body.filters },
-    }, auditContext);
+    await recordAuditLog(
+      {
+        projectId: body.projectId,
+        action: 'COHORT_CREATED',
+        entityType: 'COHORT',
+        entityId: cohort.id,
+        details: { name: body.name, filterJson: body.filterJson },
+      },
+      auditContext
+    );
 
     return reply.status(201).send(cohort);
   });
@@ -126,8 +148,8 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     const [cohorts, total] = await Promise.all([
       prisma.researchCohort.findMany({
         where: {
-          projectId: query.projectId,
-          project: { tenantId: user.tenantId },
+          researchProjectId: query.projectId,
+          researchProject: { tenantId: user.tenantId },
         },
         orderBy: { createdAt: 'desc' },
         take: query.limit ?? 25,
@@ -135,8 +157,8 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       }),
       prisma.researchCohort.count({
         where: {
-          projectId: query.projectId,
-          project: { tenantId: user.tenantId },
+          researchProjectId: query.projectId,
+          researchProject: { tenantId: user.tenantId },
         },
       }),
     ]);
@@ -162,10 +184,10 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     const cohort = await prisma.researchCohort.findFirst({
       where: {
         id,
-        project: { tenantId: user.tenantId },
+        researchProject: { tenantId: user.tenantId },
       },
       include: {
-        project: { select: { id: true, title: true, status: true } },
+        researchProject: { select: { id: true, title: true, status: true } },
       },
     });
 
@@ -187,7 +209,7 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     const cohort = await prisma.researchCohort.findFirst({
       where: {
         id,
-        project: { tenantId: user.tenantId },
+        researchProject: { tenantId: user.tenantId },
       },
     });
 
@@ -216,7 +238,7 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     const cohort = await prisma.researchCohort.findFirst({
       where: {
         id,
-        project: { tenantId: user.tenantId },
+        researchProject: { tenantId: user.tenantId },
       },
     });
 
@@ -231,16 +253,19 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       userId: user.sub,
       userEmail: user.email,
       ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      ...(request.headers['user-agent'] && { userAgent: request.headers['user-agent'] }),
     };
 
-    await recordAuditLog({
-      projectId: cohort.projectId,
-      action: 'COHORT_DELETED',
-      entityType: 'COHORT',
-      entityId: id,
-      details: { name: cohort.name },
-    }, auditContext);
+    await recordAuditLog(
+      {
+        projectId: cohort.researchProjectId,
+        action: 'COHORT_DELETED',
+        entityType: 'COHORT',
+        entityId: id,
+        details: { name: cohort.name },
+      },
+      auditContext
+    );
 
     return reply.status(204).send();
   });
@@ -262,7 +287,7 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       userId: user.sub,
       userEmail: user.email,
       ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      ...(request.headers['user-agent'] && { userAgent: request.headers['user-agent'] }),
     };
 
     // Verify project access
@@ -276,27 +301,29 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
 
     const datasetDef = await prisma.researchDatasetDefinition.create({
       data: {
-        projectId: body.projectId,
+        tenantId: user.tenantId,
+        researchProjectId: body.projectId,
         name: body.name,
-        description: body.description,
-        baseTable: body.baseTable,
-        columns: body.columns,
-        joins: body.joins ?? [],
-        constraints: body.constraints ?? {
+        description: body.description ?? null,
+        granularity: body.granularity,
+        schemaJson: body.schemaJson,
+        privacyConstraintsJson: body.privacyConstraintsJson ?? {
           kAnonymityThreshold: 10,
           dateCoarsening: 'DAY',
         },
-        createdByUserId: user.sub,
       },
     });
 
-    await recordAuditLog({
-      projectId: body.projectId,
-      action: 'DATASET_DEFINITION_CREATED',
-      entityType: 'DATASET_DEFINITION',
-      entityId: datasetDef.id,
-      details: { name: body.name, baseTable: body.baseTable },
-    }, auditContext);
+    await recordAuditLog(
+      {
+        projectId: body.projectId,
+        action: 'DATASET_DEFINITION_CREATED',
+        entityType: 'DATASET_DEFINITION',
+        entityId: datasetDef.id,
+        details: { name: body.name, granularity: body.granularity },
+      },
+      auditContext
+    );
 
     return reply.status(201).send(datasetDef);
   });
@@ -312,8 +339,8 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     const [definitions, total] = await Promise.all([
       prisma.researchDatasetDefinition.findMany({
         where: {
-          projectId: query.projectId,
-          project: { tenantId: user.tenantId },
+          researchProjectId: query.projectId,
+          researchProject: { tenantId: user.tenantId },
         },
         orderBy: { createdAt: 'desc' },
         take: query.limit ?? 25,
@@ -321,8 +348,8 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       }),
       prisma.researchDatasetDefinition.count({
         where: {
-          projectId: query.projectId,
-          project: { tenantId: user.tenantId },
+          researchProjectId: query.projectId,
+          researchProject: { tenantId: user.tenantId },
         },
       }),
     ]);
@@ -348,10 +375,10 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
     const definition = await prisma.researchDatasetDefinition.findFirst({
       where: {
         id,
-        project: { tenantId: user.tenantId },
+        researchProject: { tenantId: user.tenantId },
       },
       include: {
-        project: { select: { id: true, title: true, status: true } },
+        researchProject: { select: { id: true, title: true, status: true } },
       },
     });
 
@@ -381,17 +408,19 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post('/dataset-definitions/from-template', async (request, reply) => {
     const user = request.user as { sub: string; email: string; tenantId: string };
-    const body = z.object({
-      projectId: z.string().uuid(),
-      templateId: z.string().uuid(),
-      name: z.string().min(3).max(255).optional(),
-    }).parse(request.body);
+    const body = z
+      .object({
+        projectId: z.string().uuid(),
+        templateId: z.string().uuid(),
+        name: z.string().min(3).max(255).optional(),
+      })
+      .parse(request.body);
 
     const template = await prisma.datasetTemplate.findUnique({
       where: { id: body.templateId },
     });
 
-    if (!template || !template.isActive) {
+    if (!template?.isActive) {
       return reply.status(404).send({ error: 'Template not found' });
     }
 
@@ -405,15 +434,14 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
 
     const datasetDef = await prisma.researchDatasetDefinition.create({
       data: {
-        projectId: body.projectId,
+        tenantId: user.tenantId,
+        researchProjectId: body.projectId,
         name: body.name ?? template.name,
         description: template.description,
-        baseTable: template.baseTable as string,
-        columns: template.columns as object[],
-        joins: [],
-        constraints: template.defaultConstraints as object,
-        createdByUserId: user.sub,
-        templateId: template.id,
+        granularity: template.granularity,
+        schemaJson: template.schemaJson as object,
+        privacyConstraintsJson: template.privacyConstraintsJson as object,
+        isTemplate: false,
       },
     });
 
@@ -422,16 +450,23 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
       userId: user.sub,
       userEmail: user.email,
       ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      ...(request.headers['user-agent'] && { userAgent: request.headers['user-agent'] }),
     };
 
-    await recordAuditLog({
-      projectId: body.projectId,
-      action: 'DATASET_DEFINITION_CREATED',
-      entityType: 'DATASET_DEFINITION',
-      entityId: datasetDef.id,
-      details: { name: datasetDef.name, baseTable: datasetDef.baseTable, fromTemplate: template.id },
-    }, auditContext);
+    await recordAuditLog(
+      {
+        projectId: body.projectId,
+        action: 'DATASET_DEFINITION_CREATED',
+        entityType: 'DATASET_DEFINITION',
+        entityId: datasetDef.id,
+        details: {
+          name: datasetDef.name,
+          granularity: datasetDef.granularity,
+          fromTemplate: template.id,
+        },
+      },
+      auditContext
+    );
 
     return reply.status(201).send(datasetDef);
   });
