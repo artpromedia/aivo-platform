@@ -1,0 +1,99 @@
+# .github/actions/build-service/action.yml
+# Reusable action for building and pushing service Docker images
+
+name: Build Service
+description: Builds and pushes a service Docker image to the registry
+
+inputs:
+  service-name:
+    description: 'Name of the service to build'
+    required: true
+  registry:
+    description: 'Docker registry URL'
+    required: false
+    default: 'gcr.io'
+  project-id:
+    description: 'GCP project ID'
+    required: true
+  version:
+    description: 'Version tag for the image'
+    required: true
+  push:
+    description: 'Whether to push the image'
+    required: false
+    default: 'true'
+  platforms:
+    description: 'Target platforms for multi-arch builds'
+    required: false
+    default: 'linux/amd64'
+  build-args:
+    description: 'Additional build arguments'
+    required: false
+    default: ''
+
+outputs:
+  image:
+    description: 'Full image name with tag'
+    value: ${{ steps.build.outputs.image }}
+  digest:
+    description: 'Image digest'
+    value: ${{ steps.build.outputs.digest }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Check for Dockerfile
+      id: check
+      shell: bash
+      run: |
+        if [[ -f "services/${{ inputs.service-name }}/Dockerfile" ]]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "::warning::No Dockerfile found for ${{ inputs.service-name }}"
+        fi
+
+    - name: Extract metadata
+      id: meta
+      if: steps.check.outputs.exists == 'true'
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ inputs.registry }}/${{ inputs.project-id }}/${{ inputs.service-name }}
+        tags: |
+          type=raw,value=${{ inputs.version }}
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+          type=sha,prefix=sha-
+
+    - name: Build and push
+      id: build
+      if: steps.check.outputs.exists == 'true'
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: services/${{ inputs.service-name }}/Dockerfile
+        push: ${{ inputs.push }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ inputs.platforms }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          VERSION=${{ inputs.version }}
+          BUILD_SHA=${{ github.sha }}
+          BUILD_TIME=${{ github.event.head_commit.timestamp }}
+          ${{ inputs.build-args }}
+
+    - name: Output image info
+      if: steps.check.outputs.exists == 'true'
+      shell: bash
+      run: |
+        echo "### 🐳 Image Built" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **Service** | ${{ inputs.service-name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Version** | ${{ inputs.version }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Image** | \`${{ inputs.registry }}/${{ inputs.project-id }}/${{ inputs.service-name }}:${{ inputs.version }}\` |" >> $GITHUB_STEP_SUMMARY

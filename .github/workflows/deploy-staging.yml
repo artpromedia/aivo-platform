@@ -1,0 +1,274 @@
+# .github/workflows/deploy-staging.yml
+# Deploy to Staging Environment
+# Automatically deploys on push to main
+
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (image tag)'
+        required: false
+        default: 'latest'
+
+env:
+  GKE_CLUSTER: aivo-staging
+  GKE_ZONE: us-central1
+  PROJECT_ID: aivo-platform
+  NAMESPACE: aivo-staging
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" && "${{ github.event.inputs.version }}" != "latest" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="main-$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update image tags
+        run: |
+          cd infra/k8s/overlays/staging
+          
+          SERVICES=(
+            "auth-svc"
+            "content-svc"
+            "session-svc"
+            "assessment-svc"
+            "analytics-svc"
+            "ai-orchestrator"
+            "notify-svc"
+            "messaging-svc"
+            "goal-svc"
+            "focus-svc"
+            "personalization-svc"
+            "billing-svc"
+            "consent-svc"
+          )
+          
+          for service in "${SERVICES[@]}"; do
+            echo "Setting image for $service..."
+            kustomize edit set image gcr.io/${{ env.PROJECT_ID }}/${service}=gcr.io/${{ env.PROJECT_ID }}/${service}:${{ steps.version.outputs.version }} 2>/dev/null || true
+          done
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "::group::Applying Kubernetes manifests"
+          kustomize build infra/k8s/overlays/staging | kubectl apply -f -
+          echo "::endgroup::"
+          
+          echo "::group::Waiting for rollout"
+          kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=600s
+          echo "::endgroup::"
+
+      - name: Verify deployment
+        run: |
+          echo "::group::Pod Status"
+          kubectl get pods -n ${{ env.NAMESPACE }} -o wide
+          echo "::endgroup::"
+          
+          echo "::group::Service Status"
+          kubectl get svc -n ${{ env.NAMESPACE }}
+          echo "::endgroup::"
+
+      - name: Run smoke tests
+        run: |
+          # Wait for services to be ready
+          sleep 30
+          
+          # Health check endpoints
+          SERVICES_TO_CHECK=(
+            "auth-svc:4000"
+            "content-svc:4001"
+            "session-svc:4002"
+          )
+          
+          for svc in "${SERVICES_TO_CHECK[@]}"; do
+            NAME=$(echo $svc | cut -d: -f1)
+            PORT=$(echo $svc | cut -d: -f2)
+            echo "Checking $NAME health..."
+            kubectl exec -n ${{ env.NAMESPACE }} deploy/$NAME -- curl -sf http://localhost:$PORT/health || echo "Warning: $NAME health check failed"
+          done
+        continue-on-error: true
+
+      - name: Notify on success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Staging deployment successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Staging Deployment Successful*\n\n*Version:* `${{ steps.version.outputs.version }}`\n*Commit:* `${{ github.sha }}`\n*Actor:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Staging" },
+                      "url": "https://staging.aivo.ai"
+                    },
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Workflow" },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Staging deployment failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *Staging Deployment Failed*\n\n*Version:* `${{ steps.version.outputs.version }}`\n*Commit:* `${{ github.sha }}`\n*Actor:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Logs" },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # RUN MIGRATIONS
+  # ════════════════════════════════════════════════════════════════════════════
+  run-migrations:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      - name: Run migrations
+        run: |
+          # Create migration job
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: db-migrate-${{ github.run_number }}
+            namespace: ${{ env.NAMESPACE }}
+          spec:
+            ttlSecondsAfterFinished: 300
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: migrate
+                    image: gcr.io/${{ env.PROJECT_ID }}/db-migrations:${{ needs.deploy.outputs.version }}
+                    command: ["npm", "run", "db:migrate:deploy"]
+                    envFrom:
+                      - secretRef:
+                          name: database-credentials
+          EOF
+          
+          # Wait for completion
+          kubectl wait --for=condition=complete job/db-migrate-${{ github.run_number }} -n ${{ env.NAMESPACE }} --timeout=300s
+          
+          # Get logs
+          kubectl logs job/db-migrate-${{ github.run_number }} -n ${{ env.NAMESPACE }}
+          
+          # Cleanup
+          kubectl delete job db-migrate-${{ github.run_number }} -n ${{ env.NAMESPACE }}
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SUMMARY
+  # ════════════════════════════════════════════════════════════════════════════
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy, run-migrations]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 🚀 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | Staging |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ needs.deploy.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployed By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployment Status** | ${{ needs.deploy.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Migrations** | ${{ needs.run-migrations.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Staging Environment](https://staging.aivo.ai)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Staging API](https://api-staging.aivo.ai)" >> $GITHUB_STEP_SUMMARY

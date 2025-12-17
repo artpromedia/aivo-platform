@@ -1,0 +1,228 @@
+# .github/workflows/db-migrations.yml
+# Database Migration Workflow
+# Manual workflow for running database migrations
+
+name: Database Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run migrations'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      action:
+        description: 'Migration action'
+        required: true
+        type: choice
+        options:
+          - migrate
+          - rollback
+          - status
+          - reset
+      service:
+        description: 'Service (or "all")'
+        required: false
+        default: 'all'
+      confirm:
+        description: 'Type "CONFIRM" to proceed with production migrations'
+        required: false
+        default: ''
+
+env:
+  PROJECT_ID: aivo-platform
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # VALIDATE
+  # ════════════════════════════════════════════════════════════════════════════
+  validate:
+    name: Validate Input
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate production confirmation
+        if: github.event.inputs.environment == 'production' && github.event.inputs.action != 'status'
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "CONFIRM" ]]; then
+            echo "❌ Production migrations require confirmation."
+            echo "Please type 'CONFIRM' in the confirmation field."
+            exit 1
+          fi
+          echo "✅ Production confirmation received"
+
+      - name: Validate rollback/reset
+        if: github.event.inputs.action == 'rollback' || github.event.inputs.action == 'reset'
+        run: |
+          echo "⚠️ WARNING: ${{ github.event.inputs.action }} operation requested"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Service: ${{ github.event.inputs.service }}"
+          
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "🚨 This is a destructive operation on PRODUCTION!"
+          fi
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # MIGRATE
+  # ════════════════════════════════════════════════════════════════════════════
+  migrate:
+    name: Run Migrations
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ github.event.inputs.environment == 'production' && secrets.GCP_PROD_SA_KEY || secrets.GCP_SA_KEY }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: aivo-${{ github.event.inputs.environment }}
+          location: us-central1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get database credentials
+        id: db-creds
+        run: |
+          # Fetch from Secret Manager
+          DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password-${{ github.event.inputs.environment }}")
+          echo "::add-mask::$DB_PASSWORD"
+          echo "password=$DB_PASSWORD" >> $GITHUB_OUTPUT
+          
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            DB_HOST="prod-db.aivo.internal"
+          else
+            DB_HOST="staging-db.aivo.internal"
+          fi
+          echo "host=$DB_HOST" >> $GITHUB_OUTPUT
+
+      - name: Determine services
+        id: services
+        run: |
+          if [[ "${{ github.event.inputs.service }}" == "all" ]]; then
+            # Find all services with Prisma schemas
+            SERVICES=$(find services -name "schema.prisma" -path "*/prisma/*" | xargs -n1 dirname | xargs -n1 dirname | xargs -n1 basename | tr '\n' ' ')
+          else
+            SERVICES="${{ github.event.inputs.service }}"
+          fi
+          echo "list=$SERVICES" >> $GITHUB_OUTPUT
+          echo "Services: $SERVICES"
+
+      - name: Run migration action
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          SERVICES="${{ steps.services.outputs.list }}"
+          
+          for service in $SERVICES; do
+            echo "::group::$service - $ACTION"
+            
+            if [[ ! -d "services/$service/prisma" ]]; then
+              echo "No Prisma schema found for $service, skipping..."
+              echo "::endgroup::"
+              continue
+            fi
+            
+            cd "services/$service"
+            
+            case $ACTION in
+              migrate)
+                echo "Running migrations for $service..."
+                npx prisma migrate deploy
+                ;;
+              status)
+                echo "Checking migration status for $service..."
+                npx prisma migrate status
+                ;;
+              rollback)
+                echo "⚠️ Prisma doesn't have built-in rollback. Manual intervention required."
+                echo "To rollback, you would need to:"
+                echo "1. Identify the migration to revert"
+                echo "2. Create a new migration that reverses the changes"
+                echo "3. Apply the new migration"
+                npx prisma migrate status
+                ;;
+              reset)
+                if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+                  echo "❌ Reset is not allowed in production!"
+                  exit 1
+                fi
+                echo "Resetting database for $service..."
+                npx prisma migrate reset --force
+                ;;
+            esac
+            
+            cd ../..
+            echo "::endgroup::"
+          done
+        env:
+          DATABASE_URL: postgresql://aivo:${{ steps.db-creds.outputs.password }}@${{ steps.db-creds.outputs.host }}:5432/aivo_${{ github.event.inputs.environment }}
+
+      - name: Notify completion
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Database migration completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "📊 *Database Migration Completed*\n\n*Environment:* ${{ github.event.inputs.environment }}\n*Action:* ${{ github.event.inputs.action }}\n*Service:* ${{ github.event.inputs.service }}\n*Actor:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Logs" },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SUMMARY
+  # ════════════════════════════════════════════════════════════════════════════
+  summary:
+    name: Migration Summary
+    runs-on: ubuntu-latest
+    needs: migrate
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 📊 Database Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Action** | ${{ github.event.inputs.action }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Service** | ${{ github.event.inputs.service }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ needs.migrate.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Executed By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Time** | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY

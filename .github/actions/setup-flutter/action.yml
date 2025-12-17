@@ -1,0 +1,52 @@
+# .github/actions/setup-flutter/action.yml
+# Reusable action for setting up Flutter environment
+
+name: Setup Flutter Environment
+description: Sets up Flutter with caching for optimal CI performance
+
+inputs:
+  flutter-version:
+    description: 'Flutter version to use'
+    required: false
+    default: '3.16.x'
+  channel:
+    description: 'Flutter channel'
+    required: false
+    default: 'stable'
+  working-directory:
+    description: 'Working directory for Flutter commands'
+    required: false
+    default: '.'
+  install-dependencies:
+    description: 'Whether to run flutter pub get'
+    required: false
+    default: 'true'
+
+outputs:
+  flutter-version:
+    description: 'Installed Flutter version'
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: ${{ inputs.channel }}
+        cache: true
+
+    - name: Install dependencies
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: flutter pub get
+
+    - name: Get version
+      id: version
+      shell: bash
+      run: |
+        VERSION=$(flutter --version | head -1)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Flutter: $VERSION"

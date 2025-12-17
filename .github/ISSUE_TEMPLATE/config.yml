@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://docs.aivo.ai
+    about: Check our documentation for answers to common questions
+  - name: 💬 Discussions
+    url: https://github.com/artpromedia/aivo-platform/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔒 Security Vulnerabilities
+    url: https://github.com/artpromedia/aivo-platform/security/advisories/new
+    about: Report security vulnerabilities privately

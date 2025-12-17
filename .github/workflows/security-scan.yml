@@ -1,0 +1,293 @@
+# .github/workflows/security-scan.yml
+# Security Scanning Workflow
+# Runs on schedule and can be manually triggered
+
+name: Security Scan
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
+      - '**/pubspec.yaml'
+      - '**/Dockerfile'
+      - '.github/workflows/security-scan.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
+      - '**/pubspec.yaml'
+      - '**/Dockerfile'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of scan to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - dependencies
+          - code
+          - containers
+          - secrets
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPENDENCY SCAN
+  # ════════════════════════════════════════════════════════════════════════════
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'dependencies' || github.event.inputs.scan_type == ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        id: pnpm-audit
+        run: |
+          pnpm audit --json > audit-results.json 2>&1 || true
+          
+          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+          
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          
+          if [[ "$CRITICAL" -gt 0 || "$HIGH" -gt 0 ]]; then
+            echo "::warning::Found $CRITICAL critical and $HIGH high vulnerabilities"
+          fi
+        continue-on-error: true
+
+      - name: Run Snyk
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json-file-output=snyk-results.json
+
+      - name: Upload Snyk results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: snyk-results
+          path: snyk-results.json
+          retention-days: 30
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          ignore-unfixed: true
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-filesystem'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # CODE SECURITY SCAN
+  # ════════════════════════════════════════════════════════════════════════════
+  code-scan:
+    name: Code Security Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'code' || github.event.inputs.scan_type == ''
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, typescript
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: 'codeql-analysis'
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/typescript
+            p/nodejs
+          generateSarif: true
+
+      - name: Upload Semgrep results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: 'semgrep'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # CONTAINER SCAN
+  # ════════════════════════════════════════════════════════════════════════════
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'containers' || github.event.inputs.scan_type == ''
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-svc
+          - content-svc
+          - session-svc
+          - assessment-svc
+          - ai-orchestrator
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Dockerfile
+        id: check-dockerfile
+        run: |
+          if [[ -f "services/${{ matrix.service }}/Dockerfile" ]]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build image for scanning
+        if: steps.check-dockerfile.outputs.exists == 'true'
+        run: |
+          docker build -t aivo-${{ matrix.service }}:scan services/${{ matrix.service }}
+
+      - name: Run Trivy container scan
+        if: steps.check-dockerfile.outputs.exists == 'true'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'aivo-${{ matrix.service }}:scan'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+      - name: Upload Trivy results
+        if: steps.check-dockerfile.outputs.exists == 'true'
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
+          category: 'trivy-container-${{ matrix.service }}'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SECRET SCAN
+  # ════════════════════════════════════════════════════════════════════════════
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'secrets' || github.event.inputs.scan_type == ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SUMMARY
+  # ════════════════════════════════════════════════════════════════════════════
+  summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, code-scan, container-scan, secret-scan]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result == 'success' && '✅ Passed' || (needs.dependency-scan.result == 'skipped' && '⏭️ Skipped' || '⚠️ Issues Found') }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Scan | ${{ needs.code-scan.result == 'success' && '✅ Passed' || (needs.code-scan.result == 'skipped' && '⏭️ Skipped' || '⚠️ Issues Found') }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Scan | ${{ needs.container-scan.result == 'success' && '✅ Passed' || (needs.container-scan.result == 'skipped' && '⏭️ Skipped' || '⚠️ Issues Found') }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Detection | ${{ needs.secret-scan.result == 'success' && '✅ Passed' || (needs.secret-scan.result == 'skipped' && '⏭️ Skipped' || '🚨 Secrets Found') }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Notes" >> $GITHUB_STEP_SUMMARY
+          echo "- Security scan results are uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+          echo "- Review any warnings in the individual job logs" >> $GITHUB_STEP_SUMMARY
+          echo "- Critical and high severity issues should be addressed promptly" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on critical issues
+        if: needs.secret-scan.result == 'failure'
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "🚨 Security Alert: Secrets detected in codebase",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *SECURITY ALERT*\n\nPotential secrets detected in the codebase!\n\nPlease investigate immediately."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Scan Results" },
+                      "style": "danger",
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

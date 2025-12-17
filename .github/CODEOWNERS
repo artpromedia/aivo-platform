@@ -1,0 +1,96 @@
+# CODEOWNERS
+# This file defines code ownership for the AIVO platform
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DEFAULT OWNERS
+# ══════════════════════════════════════════════════════════════════════════════
+# These owners will be requested for review when someone opens a PR
+* @artpromedia/platform-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# INFRASTRUCTURE
+# ══════════════════════════════════════════════════════════════════════════════
+/infra/                         @artpromedia/devops-team @artpromedia/platform-leads
+/.github/                       @artpromedia/devops-team @artpromedia/platform-leads
+/docker/                        @artpromedia/devops-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BACKEND SERVICES
+# ══════════════════════════════════════════════════════════════════════════════
+/services/                      @artpromedia/backend-team
+
+# Authentication & Authorization
+/services/auth-svc/             @artpromedia/security-team @artpromedia/backend-team
+/services/consent-svc/          @artpromedia/security-team @artpromedia/compliance-team
+/libs/ts-rbac/                  @artpromedia/security-team
+
+# AI Services
+/services/ai-orchestrator/      @artpromedia/ai-team @artpromedia/backend-team
+/services/personalization-svc/  @artpromedia/ai-team
+/services/learner-model-svc/    @artpromedia/ai-team
+
+# Core Platform
+/services/content-svc/          @artpromedia/content-team
+/services/content-authoring-svc/ @artpromedia/content-team
+/services/session-svc/          @artpromedia/backend-team
+/services/assessment-svc/       @artpromedia/assessment-team
+
+# Engagement & Goals
+/services/goal-svc/             @artpromedia/backend-team
+/services/focus-svc/            @artpromedia/backend-team
+/services/notify-svc/           @artpromedia/backend-team
+/services/messaging-svc/        @artpromedia/backend-team
+
+# Analytics & Reporting
+/services/analytics-svc/        @artpromedia/data-team
+/services/reports-svc/          @artpromedia/data-team
+
+# Billing & Payments
+/services/billing-svc/          @artpromedia/billing-team @artpromedia/security-team
+/services/payments-svc/         @artpromedia/billing-team @artpromedia/security-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FRONTEND APPLICATIONS
+# ══════════════════════════════════════════════════════════════════════════════
+/apps/web-author/               @artpromedia/frontend-team @artpromedia/content-team
+/apps/web-district/             @artpromedia/frontend-team
+/apps/web-platform-admin/       @artpromedia/frontend-team @artpromedia/platform-leads
+/apps/web-teacher/              @artpromedia/frontend-team @artpromedia/teacher-tools-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MOBILE APPLICATIONS
+# ══════════════════════════════════════════════════════════════════════════════
+/apps/mobile-learner/           @artpromedia/mobile-team
+/apps/mobile-parent/            @artpromedia/mobile-team
+/apps/mobile-teacher/           @artpromedia/mobile-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SHARED LIBRARIES
+# ══════════════════════════════════════════════════════════════════════════════
+/libs/                          @artpromedia/platform-team
+/libs/ts-types/                 @artpromedia/platform-team
+/libs/ts-utils/                 @artpromedia/platform-team
+/libs/ts-data-access/           @artpromedia/backend-team
+/libs/ts-policy-engine/         @artpromedia/security-team
+/libs/ui-web/                   @artpromedia/frontend-team @artpromedia/design-team
+/libs/design-tokens/            @artpromedia/design-team
+/libs/flutter-common/           @artpromedia/mobile-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DOCUMENTATION
+# ══════════════════════════════════════════════════════════════════════════════
+/docs/                          @artpromedia/platform-team
+/docs/security/                 @artpromedia/security-team
+/docs/ai/                       @artpromedia/ai-team
+/docs/data_governance/          @artpromedia/compliance-team
+/docs/safety/                   @artpromedia/compliance-team
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CRITICAL FILES
+# ══════════════════════════════════════════════════════════════════════════════
+# These files require review from platform leads
+package.json                    @artpromedia/platform-leads
+pnpm-workspace.yaml            @artpromedia/platform-leads
+tsconfig.base.json             @artpromedia/platform-leads
+turbo.json                     @artpromedia/platform-leads

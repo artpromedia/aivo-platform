@@ -1,0 +1,312 @@
+# .github/workflows/build.yml
+# Build and Push Docker Images
+# Runs on pushes to main/release branches and tags
+
+name: Build and Push
+
+on:
+  push:
+    branches: [main, release/*]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to build (comma-separated, or "all")'
+        required: false
+        default: 'all'
+
+env:
+  REGISTRY: gcr.io
+  PROJECT_ID: aivo-platform
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+  FLUTTER_VERSION: '3.16.x'
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # PREPARE
+  # ════════════════════════════════════════════════════════════════════════════
+  prepare:
+    name: Prepare Build
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.services.outputs.list }}
+      version: ${{ steps.version.outputs.version }}
+      sha_short: ${{ steps.version.outputs.sha_short }}
+      is_release: ${{ steps.version.outputs.is_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine services to build
+        id: services
+        run: |
+          if [[ "${{ github.event.inputs.services }}" == "all" ]] || [[ -z "${{ github.event.inputs.services }}" ]]; then
+            # Get all services with Dockerfiles
+            SERVICES=$(find services -maxdepth 2 -name "Dockerfile" -exec dirname {} \; | xargs -n1 basename | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          else
+            # Parse input
+            SERVICES=$(echo "${{ github.event.inputs.services }}" | tr ',' '\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          fi
+          echo "list=$SERVICES" >> $GITHUB_OUTPUT
+          echo "Building services: $SERVICES"
+
+      - name: Determine version
+        id: version
+        run: |
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          IS_RELEASE="false"
+          
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            IS_RELEASE="true"
+          elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            VERSION="main-$SHA_SHORT"
+          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            BRANCH_NAME=$(echo "${{ github.ref }}" | sed 's|refs/heads/||' | tr '/' '-')
+            VERSION="${BRANCH_NAME}-$SHA_SHORT"
+          else
+            VERSION="dev-$SHA_SHORT"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION (Release: $IS_RELEASE)"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD SERVICES
+  # ════════════════════════════════════════════════════════════════════════════
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.prepare.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.version }}
+            BUILD_SHA=${{ needs.prepare.outputs.sha_short }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+
+      - name: Run Trivy scan on image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.prepare.outputs.version }}'
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD MOBILE APPS
+  # ════════════════════════════════════════════════════════════════════════════
+  build-mobile:
+    name: Build Mobile Apps
+    runs-on: macos-latest
+    needs: prepare
+    if: |
+      contains(github.event.head_commit.message, '[mobile]') ||
+      github.event_name == 'workflow_dispatch' ||
+      needs.prepare.outputs.is_release == 'true'
+    strategy:
+      matrix:
+        app: [mobile-learner, mobile-parent]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: apps/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Run tests
+        working-directory: apps/${{ matrix.app }}
+        run: flutter test
+
+      - name: Decode Android keystore
+        if: matrix.app == 'mobile-learner' || matrix.app == 'mobile-parent'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > apps/${{ matrix.app }}/android/app/keystore.jks
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Build Android APK
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          flutter build apk --release \
+            --build-number=${{ github.run_number }} \
+            --build-name=${{ needs.prepare.outputs.version }}
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+
+      - name: Build Android App Bundle
+        if: needs.prepare.outputs.is_release == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          flutter build appbundle --release \
+            --build-number=${{ github.run_number }} \
+            --build-name=${{ needs.prepare.outputs.version }}
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+
+      - name: Build iOS
+        if: needs.prepare.outputs.is_release == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          flutter build ios --release --no-codesign \
+            --build-number=${{ github.run_number }} \
+            --build-name=${{ needs.prepare.outputs.version }}
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.app }}-android-${{ needs.prepare.outputs.version }}
+          path: |
+            apps/${{ matrix.app }}/build/app/outputs/flutter-apk/*.apk
+            apps/${{ matrix.app }}/build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+
+      - name: Upload iOS artifacts
+        if: needs.prepare.outputs.is_release == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.app }}-ios-${{ needs.prepare.outputs.version }}
+          path: apps/${{ matrix.app }}/build/ios/iphoneos/
+          retention-days: 30
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD WEB APPS
+  # ════════════════════════════════════════════════════════════════════════════
+  build-web:
+    name: Build ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      matrix:
+        app: [web-author, web-district, web-platform-admin, web-teacher]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter ${{ matrix.app }} run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.aivo.ai' || 'https://api-staging.aivo.ai' }}
+          NEXT_PUBLIC_WS_URL: ${{ github.ref == 'refs/heads/main' && 'wss://ws.aivo.ai' || 'wss://ws-staging.aivo.ai' }}
+          NEXT_PUBLIC_VERSION: ${{ needs.prepare.outputs.version }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.app }}-${{ needs.prepare.outputs.version }}
+          path: apps/${{ matrix.app }}/.next
+          retention-days: 30
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD SUMMARY
+  # ════════════════════════════════════════════════════════════════════════════
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [prepare, build, build-web]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 🏗️ Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ needs.prepare.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ needs.prepare.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Release** | ${{ needs.prepare.outputs.is_release }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Registry** | \`${{ env.REGISTRY }}/${{ env.PROJECT_ID }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🐳 Services Built" >> $GITHUB_STEP_SUMMARY
+          echo '${{ needs.prepare.outputs.services }}' | jq -r '.[]' | while read service; do
+            echo "- ✅ \`$service\` → \`${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/$service:${{ needs.prepare.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🌐 Web Apps Built" >> $GITHUB_STEP_SUMMARY
+          for app in web-author web-district web-platform-admin web-teacher; do
+            echo "- ✅ \`$app\`" >> $GITHUB_STEP_SUMMARY
+          done

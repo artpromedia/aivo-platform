@@ -1,0 +1,63 @@
+# .github/actions/run-tests/action.yml
+# Reusable action for running tests with various configurations
+
+name: Run Tests
+description: Runs tests with database services and coverage
+
+inputs:
+  test-command:
+    description: 'Test command to run'
+    required: false
+    default: 'pnpm run test'
+  coverage:
+    description: 'Whether to collect coverage'
+    required: false
+    default: 'true'
+  shard:
+    description: 'Test shard (e.g., "1/4")'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+
+outputs:
+  coverage-file:
+    description: 'Path to coverage file'
+    value: ${{ steps.test.outputs.coverage-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run tests
+      id: test
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        CMD="${{ inputs.test-command }}"
+        
+        if [[ -n "${{ inputs.shard }}" ]]; then
+          CMD="$CMD --shard=${{ inputs.shard }}"
+        fi
+        
+        if [[ "${{ inputs.coverage }}" == "true" ]]; then
+          CMD="$CMD --coverage"
+        fi
+        
+        echo "Running: $CMD"
+        $CMD
+        
+        if [[ -f "coverage/lcov.info" ]]; then
+          echo "coverage-file=coverage/lcov.info" >> $GITHUB_OUTPUT
+        fi
+      env:
+        NODE_ENV: test
+        CI: true
+
+    - name: Upload coverage
+      if: inputs.coverage == 'true'
+      uses: codecov/codecov-action@v3
+      with:
+        files: ${{ inputs.working-directory }}/coverage/lcov.info
+        fail_ci_if_error: false

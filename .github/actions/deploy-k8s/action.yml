@@ -1,0 +1,115 @@
+# .github/actions/deploy-k8s/action.yml
+# Reusable action for deploying services to Kubernetes
+
+name: Deploy to Kubernetes
+description: Deploys services to a Kubernetes cluster using Kustomize
+
+inputs:
+  cluster:
+    description: 'GKE cluster name'
+    required: true
+  zone:
+    description: 'GKE zone/region'
+    required: true
+  namespace:
+    description: 'Kubernetes namespace'
+    required: true
+  version:
+    description: 'Image version tag'
+    required: true
+  services:
+    description: 'Services to deploy (comma-separated, or "all")'
+    required: false
+    default: 'all'
+  overlay:
+    description: 'Kustomize overlay directory'
+    required: false
+    default: ''
+  timeout:
+    description: 'Rollout timeout in seconds'
+    required: false
+    default: '600'
+  wait:
+    description: 'Whether to wait for rollout'
+    required: false
+    default: 'true'
+
+outputs:
+  deployed-services:
+    description: 'List of deployed services'
+    value: ${{ steps.deploy.outputs.services }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get GKE credentials
+      uses: google-github-actions/get-gke-credentials@v1
+      with:
+        cluster_name: ${{ inputs.cluster }}
+        location: ${{ inputs.zone }}
+
+    - name: Setup Kustomize
+      uses: imranismail/setup-kustomize@v2
+
+    - name: Determine overlay path
+      id: overlay
+      shell: bash
+      run: |
+        if [[ -n "${{ inputs.overlay }}" ]]; then
+          OVERLAY_PATH="${{ inputs.overlay }}"
+        else
+          OVERLAY_PATH="infra/k8s/overlays/${{ inputs.namespace }}"
+        fi
+        echo "path=$OVERLAY_PATH" >> $GITHUB_OUTPUT
+
+    - name: Determine services
+      id: services
+      shell: bash
+      run: |
+        if [[ "${{ inputs.services }}" == "all" ]]; then
+          SERVICES="auth-svc content-svc session-svc assessment-svc analytics-svc ai-orchestrator notify-svc messaging-svc goal-svc focus-svc personalization-svc billing-svc consent-svc"
+        else
+          SERVICES="${{ inputs.services }}"
+          SERVICES="${SERVICES//,/ }"
+        fi
+        echo "list=$SERVICES" >> $GITHUB_OUTPUT
+
+    - name: Update image tags
+      id: update
+      shell: bash
+      run: |
+        cd "${{ steps.overlay.outputs.path }}"
+        
+        for service in ${{ steps.services.outputs.list }}; do
+          echo "Setting image for $service to version ${{ inputs.version }}..."
+          kustomize edit set image gcr.io/${{ env.PROJECT_ID }}/${service}=gcr.io/${{ env.PROJECT_ID }}/${service}:${{ inputs.version }} 2>/dev/null || echo "Skipping $service (not in kustomization)"
+        done
+
+    - name: Deploy to Kubernetes
+      id: deploy
+      shell: bash
+      run: |
+        echo "::group::Applying manifests"
+        kustomize build "${{ steps.overlay.outputs.path }}" | kubectl apply -f -
+        echo "::endgroup::"
+        
+        echo "services=${{ steps.services.outputs.list }}" >> $GITHUB_OUTPUT
+
+    - name: Wait for rollout
+      if: inputs.wait == 'true'
+      shell: bash
+      run: |
+        echo "::group::Waiting for rollout"
+        kubectl rollout status deployment --all -n ${{ inputs.namespace }} --timeout=${{ inputs.timeout }}s
+        echo "::endgroup::"
+
+    - name: Verify deployment
+      shell: bash
+      run: |
+        echo "::group::Deployment Status"
+        kubectl get deployments -n ${{ inputs.namespace }}
+        echo "::endgroup::"
+        
+        echo "::group::Pod Status"
+        kubectl get pods -n ${{ inputs.namespace }}
+        echo "::endgroup::"
