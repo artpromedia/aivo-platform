@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { sessionRoutes } from './routes/sessions.js';
+import { transitionRoutes } from './transitions/transition.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -29,6 +30,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register session routes
   await app.register(sessionRoutes);
+
+  // Register transition routes
+  await app.register(transitionRoutes);
 
   return app;
 }

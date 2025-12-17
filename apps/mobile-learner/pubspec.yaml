@@ -14,6 +14,7 @@ dependencies:
   jwt_decode: ^0.3.1
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0
+  audioplayers: ^6.0.0
   flutter_common:
     path: ../../libs/flutter-common
 

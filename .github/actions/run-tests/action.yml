@@ -34,14 +34,20 @@ runs:
       id: test
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        NODE_ENV: test
+        CI: true
+        INPUT_TEST_COMMAND: ${{ inputs.test-command }}
+        INPUT_SHARD: ${{ inputs.shard }}
+        INPUT_COVERAGE: ${{ inputs.coverage }}
       run: |
-        CMD="${{ inputs.test-command }}"
+        CMD="$INPUT_TEST_COMMAND"
         
-        if [[ -n "${{ inputs.shard }}" ]]; then
-          CMD="$CMD --shard=${{ inputs.shard }}"
+        if [[ -n "$INPUT_SHARD" ]]; then
+          CMD="$CMD --shard=$INPUT_SHARD"
         fi
         
-        if [[ "${{ inputs.coverage }}" == "true" ]]; then
+        if [[ "$INPUT_COVERAGE" == "true" ]]; then
           CMD="$CMD --coverage"
         fi
         
@@ -51,9 +57,6 @@ runs:
         if [[ -f "coverage/lcov.info" ]]; then
           echo "coverage-file=coverage/lcov.info" >> $GITHUB_OUTPUT
         fi
-      env:
-        NODE_ENV: test
-        CI: true
 
     - name: Upload coverage
       if: inputs.coverage == 'true'

@@ -54,22 +54,27 @@ runs:
     - name: Determine overlay path
       id: overlay
       shell: bash
+      env:
+        INPUT_OVERLAY: ${{ inputs.overlay }}
+        INPUT_NAMESPACE: ${{ inputs.namespace }}
       run: |
-        if [[ -n "${{ inputs.overlay }}" ]]; then
-          OVERLAY_PATH="${{ inputs.overlay }}"
+        if [[ -n "$INPUT_OVERLAY" ]]; then
+          OVERLAY_PATH="$INPUT_OVERLAY"
         else
-          OVERLAY_PATH="infra/k8s/overlays/${{ inputs.namespace }}"
+          OVERLAY_PATH="infra/k8s/overlays/$INPUT_NAMESPACE"
         fi
         echo "path=$OVERLAY_PATH" >> $GITHUB_OUTPUT
 
     - name: Determine services
       id: services
       shell: bash
+      env:
+        INPUT_SERVICES: ${{ inputs.services }}
       run: |
-        if [[ "${{ inputs.services }}" == "all" ]]; then
+        if [[ "$INPUT_SERVICES" == "all" ]]; then
           SERVICES="auth-svc content-svc session-svc assessment-svc analytics-svc ai-orchestrator notify-svc messaging-svc goal-svc focus-svc personalization-svc billing-svc consent-svc"
         else
-          SERVICES="${{ inputs.services }}"
+          SERVICES="$INPUT_SERVICES"
           SERVICES="${SERVICES//,/ }"
         fi
         echo "list=$SERVICES" >> $GITHUB_OUTPUT
@@ -77,39 +82,51 @@ runs:
     - name: Update image tags
       id: update
       shell: bash
+      env:
+        OVERLAY_PATH: ${{ steps.overlay.outputs.path }}
+        SERVICES_LIST: ${{ steps.services.outputs.list }}
+        INPUT_VERSION: ${{ inputs.version }}
       run: |
-        cd "${{ steps.overlay.outputs.path }}"
+        cd "$OVERLAY_PATH"
         
-        for service in ${{ steps.services.outputs.list }}; do
-          echo "Setting image for $service to version ${{ inputs.version }}..."
-          kustomize edit set image gcr.io/${{ env.PROJECT_ID }}/${service}=gcr.io/${{ env.PROJECT_ID }}/${service}:${{ inputs.version }} 2>/dev/null || echo "Skipping $service (not in kustomization)"
+        for service in $SERVICES_LIST; do
+          echo "Setting image for $service to version $INPUT_VERSION..."
+          kustomize edit set image gcr.io/$PROJECT_ID/${service}=gcr.io/$PROJECT_ID/${service}:$INPUT_VERSION 2>/dev/null || echo "Skipping $service (not in kustomization)"
         done
 
     - name: Deploy to Kubernetes
       id: deploy
       shell: bash
+      env:
+        OVERLAY_PATH: ${{ steps.overlay.outputs.path }}
+        SERVICES_LIST: ${{ steps.services.outputs.list }}
       run: |
         echo "::group::Applying manifests"
-        kustomize build "${{ steps.overlay.outputs.path }}" | kubectl apply -f -
+        kustomize build "$OVERLAY_PATH" | kubectl apply -f -
         echo "::endgroup::"
         
-        echo "services=${{ steps.services.outputs.list }}" >> $GITHUB_OUTPUT
+        echo "services=$SERVICES_LIST" >> $GITHUB_OUTPUT
 
     - name: Wait for rollout
       if: inputs.wait == 'true'
       shell: bash
+      env:
+        INPUT_NAMESPACE: ${{ inputs.namespace }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}
       run: |
         echo "::group::Waiting for rollout"
-        kubectl rollout status deployment --all -n ${{ inputs.namespace }} --timeout=${{ inputs.timeout }}s
+        kubectl rollout status deployment --all -n $INPUT_NAMESPACE --timeout=${INPUT_TIMEOUT}s
         echo "::endgroup::"
 
     - name: Verify deployment
       shell: bash
+      env:
+        INPUT_NAMESPACE: ${{ inputs.namespace }}
       run: |
         echo "::group::Deployment Status"
-        kubectl get deployments -n ${{ inputs.namespace }}
+        kubectl get deployments -n $INPUT_NAMESPACE
         echo "::endgroup::"
         
         echo "::group::Pod Status"
-        kubectl get pods -n ${{ inputs.namespace }}
+        kubectl get pods -n $INPUT_NAMESPACE
         echo "::endgroup::"

@@ -26,6 +26,10 @@ __pycache__
 .packages
 pubspec.lock
 
+# Generated files (Prisma, etc.)
+**/generated/
+**/generated/**
+
 # Secrets
 config/secrets/*.pem
 config/secrets/*.env

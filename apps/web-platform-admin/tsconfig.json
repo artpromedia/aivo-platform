@@ -7,6 +7,7 @@
     "noEmit": true,
     "moduleResolution": "Bundler",
     "module": "esnext",
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {},
     "plugins": [
@@ -16,6 +17,15 @@
     ],
     "types": ["vitest/globals"]
   },
-  "include": ["app/**/*", "components/**/*", "lib/**/*", "__tests__/**/*", "next-env.d.ts", ".next/types/**/*.ts", "vitest.config.ts", "vitest.setup.ts"],
+  "include": [
+    "app/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "__tests__/**/*",
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
+  ],
   "exclude": ["node_modules", ".next", "dist", "build"]
 }

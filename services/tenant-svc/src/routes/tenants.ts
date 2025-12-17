@@ -265,27 +265,28 @@ export async function registerTenantRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid payload', details: body.error.issues });
     }
 
+    // Build update object using helper to reduce cognitive complexity
+    const buildTenantUpdate = (data: typeof body.data) => {
+      const update: Record<string, unknown> = {};
+      if (data.type !== undefined) update.type = data.type as TenantType;
+      if (data.name !== undefined) update.name = data.name;
+      if (data.primary_domain !== undefined) update.primaryDomain = data.primary_domain;
+      if (data.subdomain !== undefined && data.subdomain !== null)
+        update.subdomain = data.subdomain;
+      if (data.custom_domain !== undefined && data.custom_domain !== null)
+        update.customDomain = data.custom_domain;
+      if (data.region !== undefined) update.region = data.region;
+      if (data.logo_url !== undefined) update.logoUrl = data.logo_url;
+      if (data.primary_color !== undefined) update.primaryColor = data.primary_color;
+      if (data.billing_plan_id !== undefined) update.billingPlanId = data.billing_plan_id;
+      if (data.settings !== undefined) update.settingsJson = data.settings;
+      return update;
+    };
+
     try {
       const tenant = await lifecycleService.updateTenant(
         params.data.id,
-        {
-          ...(body.data.type !== undefined && { type: body.data.type as TenantType }),
-          ...(body.data.name !== undefined && { name: body.data.name }),
-          ...(body.data.primary_domain !== undefined && {
-            primaryDomain: body.data.primary_domain,
-          }),
-          ...(body.data.subdomain !== undefined &&
-            body.data.subdomain !== null && { subdomain: body.data.subdomain }),
-          ...(body.data.custom_domain !== undefined &&
-            body.data.custom_domain !== null && { customDomain: body.data.custom_domain }),
-          ...(body.data.region !== undefined && { region: body.data.region }),
-          ...(body.data.logo_url !== undefined && { logoUrl: body.data.logo_url }),
-          ...(body.data.primary_color !== undefined && { primaryColor: body.data.primary_color }),
-          ...(body.data.billing_plan_id !== undefined && {
-            billingPlanId: body.data.billing_plan_id,
-          }),
-          ...(body.data.settings !== undefined && { settingsJson: body.data.settings }),
-        },
+        buildTenantUpdate(body.data),
         getActorContext(request)
       );
 
@@ -473,67 +474,37 @@ export async function registerTenantRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid payload', details: body.error.issues });
     }
 
-    // Map snake_case to camelCase
+    // Map snake_case to camelCase using field mapping
+    const fieldMapping: Record<string, keyof UpdateTenantConfigInput> = {
+      allowed_ai_providers: 'allowedAIProviders',
+      default_ai_provider: 'defaultAIProvider',
+      ai_model_overrides: 'aiModelOverrides',
+      data_residency_region: 'dataResidencyRegion',
+      backup_region: 'backupRegion',
+      enabled_modules: 'enabledModules',
+      curriculum_standards: 'curriculumStandards',
+      grade_levels: 'gradeLevels',
+      enable_homework_helper: 'enableHomeworkHelper',
+      enable_focus_mode: 'enableFocusMode',
+      enable_parent_portal: 'enableParentPortal',
+      enable_teacher_dashboard: 'enableTeacherDashboard',
+      daily_llm_call_limit: 'dailyLLMCallLimit',
+      daily_tutor_turn_limit: 'dailyTutorTurnLimit',
+      max_learners_per_tenant: 'maxLearnersPerTenant',
+      storage_quota_gb: 'storageQuotaGB',
+      content_filter_level: 'contentFilterLevel',
+      enable_pii_redaction: 'enablePIIRedaction',
+      retention_days: 'retentionDays',
+      custom_settings: 'customSettings',
+    };
+
     const input: UpdateTenantConfigInput = {};
-    if (body.data.allowed_ai_providers !== undefined) {
-      input.allowedAIProviders = body.data.allowed_ai_providers;
-    }
-    if (body.data.default_ai_provider !== undefined) {
-      input.defaultAIProvider = body.data.default_ai_provider;
-    }
-    if (body.data.ai_model_overrides !== undefined) {
-      input.aiModelOverrides = body.data.ai_model_overrides;
-    }
-    if (body.data.data_residency_region !== undefined) {
-      input.dataResidencyRegion = body.data.data_residency_region;
-    }
-    if (body.data.backup_region !== undefined) {
-      input.backupRegion = body.data.backup_region;
-    }
-    if (body.data.enabled_modules !== undefined) {
-      input.enabledModules = body.data.enabled_modules;
-    }
-    if (body.data.curriculum_standards !== undefined) {
-      input.curriculumStandards = body.data.curriculum_standards;
-    }
-    if (body.data.grade_levels !== undefined) {
-      input.gradeLevels = body.data.grade_levels;
-    }
-    if (body.data.enable_homework_helper !== undefined) {
-      input.enableHomeworkHelper = body.data.enable_homework_helper;
-    }
-    if (body.data.enable_focus_mode !== undefined) {
-      input.enableFocusMode = body.data.enable_focus_mode;
-    }
-    if (body.data.enable_parent_portal !== undefined) {
-      input.enableParentPortal = body.data.enable_parent_portal;
-    }
-    if (body.data.enable_teacher_dashboard !== undefined) {
-      input.enableTeacherDashboard = body.data.enable_teacher_dashboard;
-    }
-    if (body.data.daily_llm_call_limit !== undefined) {
-      input.dailyLLMCallLimit = body.data.daily_llm_call_limit;
-    }
-    if (body.data.daily_tutor_turn_limit !== undefined) {
-      input.dailyTutorTurnLimit = body.data.daily_tutor_turn_limit;
-    }
-    if (body.data.max_learners_per_tenant !== undefined) {
-      input.maxLearnersPerTenant = body.data.max_learners_per_tenant;
-    }
-    if (body.data.storage_quota_gb !== undefined) {
-      input.storageQuotaGB = body.data.storage_quota_gb;
-    }
-    if (body.data.content_filter_level !== undefined) {
-      input.contentFilterLevel = body.data.content_filter_level;
-    }
-    if (body.data.enable_pii_redaction !== undefined) {
-      input.enablePIIRedaction = body.data.enable_pii_redaction;
-    }
-    if (body.data.retention_days !== undefined) {
-      input.retentionDays = body.data.retention_days;
-    }
-    if (body.data.custom_settings !== undefined) {
-      input.customSettings = body.data.custom_settings;
+    for (const [snakeKey, camelKey] of Object.entries(fieldMapping)) {
+      const value = body.data[snakeKey as keyof typeof body.data];
+      if (value !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (input as any)[camelKey] = value;
+      }
     }
 
     try {

@@ -18,14 +18,12 @@ import { randomBytes } from 'node:crypto';
 import { resolveTxt, resolveCname } from 'node:dns/promises';
 
 // Types will be properly typed after prisma generate is run
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type PrismaClient = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Tenant = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TenantDomainVerification = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Redis = any;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Types

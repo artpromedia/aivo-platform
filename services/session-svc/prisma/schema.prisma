@@ -170,3 +170,185 @@ model SessionEvent {
 
   @@map("session_events")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRANSITION SUPPORT SYSTEM
+// Provides predictable transitions for neurodiverse learners
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Visual warning style for transition countdowns
+enum VisualWarningStyle {
+  COUNTDOWN_CIRCLE     // Circular countdown animation
+  PROGRESS_BAR         // Horizontal bar that shrinks
+  SAND_TIMER           // Visual hourglass
+  NUMBER_COUNTDOWN     // Large numbers
+  CHARACTER_ANIMATION  // Friendly character showing countdown
+
+  @@map("visual_warning_style")
+}
+
+/// Color scheme for transition visuals
+enum TransitionColorScheme {
+  TRAFFIC_LIGHT  // Green → Yellow → Red
+  BLUE_GRADIENT  // Calm blue shades
+  NATURE         // Green/brown earth tones
+  MONOCHROME     // Grayscale for sensory sensitivity
+  CUSTOM         // User-defined colors
+
+  @@map("transition_color_scheme")
+}
+
+/// Audio warning type for transitions
+enum AudioWarningType {
+  GENTLE_CHIME      // Soft bell sound
+  NATURE_SOUND      // Bird chirp, water drop
+  MUSICAL_TONE      // Pleasant musical note
+  SPOKEN_COUNTDOWN  // Voice countdown
+  VIBRATION_ONLY    // No audio, haptic only
+  SILENT            // No audio at all
+
+  @@map("audio_warning_type")
+}
+
+/// Outcome of a transition event
+enum TransitionOutcome {
+  SMOOTH           // Completed without issues
+  NEEDED_EXTRA_TIME // Required additional time
+  USED_ROUTINE     // Followed transition routine
+  SKIPPED          // Learner skipped ahead
+  INTERRUPTED      // Session ended during transition
+  STRUGGLED        // Showed signs of difficulty
+
+  @@map("transition_outcome")
+}
+
+/// Transition configuration per learner
+/// Stores preferences for how transitions are handled
+model TransitionPreferences {
+  id                    String    @id @default(uuid()) @db.Uuid
+  learnerId             String    @unique @map("learner_id") @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+
+  // Warning timing
+  warningIntervals      Int[]     @default([60, 30, 10]) @map("warning_intervals") // seconds before transition
+  minimumTransitionTime Int       @default(30) @map("minimum_transition_time") // minimum seconds
+
+  // Sensory preferences for transitions
+  enableVisualWarnings  Boolean   @default(true) @map("enable_visual_warnings")
+  enableAudioWarnings   Boolean   @default(true) @map("enable_audio_warnings")
+  enableHapticWarnings  Boolean   @default(true) @map("enable_haptic_warnings")
+
+  // Visual settings
+  visualWarningStyle    VisualWarningStyle @default(COUNTDOWN_CIRCLE) @map("visual_warning_style")
+  colorScheme           TransitionColorScheme @default(TRAFFIC_LIGHT) @map("color_scheme")
+  showProgressBar       Boolean   @default(true) @map("show_progress_bar")
+
+  // Audio settings
+  audioWarningType      AudioWarningType @default(GENTLE_CHIME) @map("audio_warning_type")
+  audioVolume           Float     @default(0.7) @map("audio_volume")
+  useSpokenWarnings     Boolean   @default(false) @map("use_spoken_warnings") // "30 seconds until..."
+
+  // Transition routine
+  transitionRoutineId   String?   @map("transition_routine_id") @db.Uuid
+  showFirstThenBoard    Boolean   @default(true) @map("show_first_then_board")
+  requireAcknowledgment Boolean   @default(false) @map("require_acknowledgment")
+
+  /// Specific activity transitions (JSON for flexibility)
+  /// { "quiz_to_video": { extraTime: 30, routineId: "..." } }
+  activityTransitions   Json?     @map("activity_transitions") @db.JsonB
+
+  /// Custom colors if colorScheme is CUSTOM
+  /// { "warning": "#22c55e", "caution": "#eab308", "ready": "#ef4444" }
+  customColors          Json?     @map("custom_colors") @db.JsonB
+
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  routine               TransitionRoutine? @relation(fields: [transitionRoutineId], references: [id])
+
+  @@index([tenantId], name: "idx_transition_prefs_tenant")
+  @@map("transition_preferences")
+}
+
+/// Transition routines - reusable step-by-step sequences
+/// Can be system defaults or tenant-customized
+model TransitionRoutine {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  name            String
+  description     String?
+
+  /// Routine steps as JSON array
+  /// [
+  ///   { "type": "breathing", "duration": 10, "instruction": "Take 3 deep breaths" },
+  ///   { "type": "movement", "duration": 5, "instruction": "Stretch your arms up high" },
+  ///   { "type": "preview", "duration": 10, "instruction": "Look at what's coming next" },
+  ///   { "type": "ready_check", "instruction": "Tap when you're ready" }
+  /// ]
+  steps           Json      @db.JsonB
+
+  totalDuration   Int       @map("total_duration") // Total seconds
+  isDefault       Boolean   @default(false) @map("is_default")
+  isSystemRoutine Boolean   @default(false) @map("is_system_routine") // Built-in vs custom
+
+  /// Target activity types (empty = all types)
+  targetActivityTypes String[] @default([]) @map("target_activity_types")
+
+  /// Target age range { "min": 5, "max": 8 }
+  targetAgeRange      Json?   @map("target_age_range") @db.JsonB
+
+  /// Target grade bands (empty = all)
+  targetGradeBands    String[] @default([]) @map("target_grade_bands")
+
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  preferences     TransitionPreferences[]
+
+  @@index([tenantId], name: "idx_transition_routines_tenant")
+  @@index([tenantId, isDefault], name: "idx_transition_routines_default")
+  @@map("transition_routines")
+}
+
+/// Transition event log for analytics
+/// Tracks every transition for measuring effectiveness
+model TransitionEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  sessionId       String    @map("session_id") @db.Uuid
+  learnerId       String    @map("learner_id") @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+
+  // Transition details
+  fromActivityId   String?  @map("from_activity_id")
+  fromActivityType String?  @map("from_activity_type")
+  toActivityId     String   @map("to_activity_id")
+  toActivityType   String   @map("to_activity_type")
+
+  // Timing
+  warningStartedAt    DateTime  @map("warning_started_at") @db.Timestamptz
+  transitionStartedAt DateTime? @map("transition_started_at") @db.Timestamptz
+  transitionCompletedAt DateTime? @map("transition_completed_at") @db.Timestamptz
+
+  // Outcome
+  outcome         TransitionOutcome @default(SMOOTH)
+  acknowledgedAt  DateTime?   @map("acknowledged_at") @db.Timestamptz
+  skippedWarning  Boolean     @default(false) @map("skipped_warning")
+  usedRoutine     Boolean     @default(false) @map("used_routine")
+  routineId       String?     @map("routine_id") @db.Uuid
+
+  // Context
+  focusStateBeforeTransition String? @map("focus_state_before")
+  moodBeforeTransition       String? @map("mood_before")
+
+  // Duration metrics
+  totalTransitionSeconds Int?  @map("total_transition_seconds")
+  plannedDurationSeconds Int?  @map("planned_duration_seconds")
+
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([sessionId], name: "idx_transition_events_session")
+  @@index([learnerId], name: "idx_transition_events_learner")
+  @@index([tenantId, createdAt(sort: Desc)], name: "idx_transition_events_tenant_recent")
+  @@index([tenantId, outcome], name: "idx_transition_events_outcome")
+  @@map("transition_events")
+}
