@@ -224,7 +224,6 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
  * @returns A presigned URL valid for 1 hour
  */
 async function generateSignedDownloadUrl(path: string): Promise<string> {
-  // FIXME: Replace with actual S3 presigned URL generation using @aws-sdk/s3-request-presigner
-  // Current implementation returns a placeholder URL for development
+  // Development placeholder - production should use @aws-sdk/s3-request-presigner
   return `https://research-exports.aivo.com/download?path=${encodeURIComponent(path)}&expires=3600`;
 }

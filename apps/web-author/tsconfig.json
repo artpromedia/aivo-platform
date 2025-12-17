@@ -7,6 +7,7 @@
     "moduleResolution": "Bundler",
     "module": "esnext",
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "@aivo/*": ["../../libs/*/src", "../../services/*/src", "../../apps/*/src"],
@@ -22,6 +23,7 @@
     "app/**/*",
     "components/**/*",
     "lib/**/*",
+    "__tests__/**/*",
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "vitest.config.ts",

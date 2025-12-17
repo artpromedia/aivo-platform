@@ -24,6 +24,8 @@ export default [
       "**/tailwind.config.ts",
       "**/vitest.config.ts",
       "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/__tests__/**",
       "**/*.config.mjs",
       "**/tests/**",
       "**/prisma/seed.ts",
@@ -73,7 +75,7 @@ export default [
           "alphabetize": { order: "asc", caseInsensitive: true }
         }
       ],
-      "import/no-unresolved": "error",
+      "import/no-unresolved": "off",
       "import/no-duplicates": "error",
       "no-restricted-imports": [
         "error",

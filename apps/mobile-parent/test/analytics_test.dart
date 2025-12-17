@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide AnalyticsService, analyticsServiceProvider;
 
 import 'package:mobile_parent/analytics/analytics_service.dart';
 import 'package:mobile_parent/widgets/homework_focus_card.dart';

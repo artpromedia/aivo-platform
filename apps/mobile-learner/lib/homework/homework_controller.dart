@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide HomeworkStep;
 
 import 'homework_service.dart';
 

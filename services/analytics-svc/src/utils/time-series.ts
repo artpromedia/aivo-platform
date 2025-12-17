@@ -124,7 +124,19 @@ export function generateDateSequence(range: DateRange, interval: TimeInterval): 
 /**
  * Get date range for common periods
  */
-export function getDateRangeForPeriod(period: 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'last7Days' | 'last30Days' | 'last90Days' | 'thisYear'): DateRange {
+export function getDateRangeForPeriod(
+  period:
+    | 'today'
+    | 'yesterday'
+    | 'thisWeek'
+    | 'lastWeek'
+    | 'thisMonth'
+    | 'lastMonth'
+    | 'last7Days'
+    | 'last30Days'
+    | 'last90Days'
+    | 'thisYear'
+): DateRange {
   const now = new Date();
   const today = getStartOf(now, 'day');
 
@@ -194,7 +206,7 @@ export function getDateRangeForPeriod(period: 'today' | 'yesterday' | 'thisWeek'
 export function fillGaps(data: TimeSeriesData): TimeSeriesData {
   const allDates = generateDateSequence(
     { start: data.startDate, end: data.endDate },
-    data.interval,
+    data.interval
   );
 
   const valueMap = new Map<string, number>();
@@ -219,7 +231,7 @@ export function fillGaps(data: TimeSeriesData): TimeSeriesData {
 export function resample(
   data: TimeSeriesData,
   targetInterval: TimeInterval,
-  aggregator: 'sum' | 'avg' | 'max' | 'min' = 'sum',
+  aggregator: 'sum' | 'avg' | 'max' | 'min' = 'sum'
 ): TimeSeriesData {
   const buckets = new Map<string, number[]>();
 
@@ -296,10 +308,7 @@ export function movingAverage(data: TimeSeriesPoint[], windowSize: number): Time
 /**
  * Calculate exponential moving average
  */
-export function exponentialMovingAverage(
-  data: TimeSeriesPoint[],
-  span: number,
-): TimeSeriesPoint[] {
+export function exponentialMovingAverage(data: TimeSeriesPoint[], span: number): TimeSeriesPoint[] {
   if (span <= 0 || data.length === 0) return [];
 
   const alpha = 2 / (span + 1);
@@ -324,14 +333,14 @@ export function exponentialMovingAverage(
  */
 export function periodOverPeriodChange(
   current: number,
-  previous: number,
+  previous: number
 ): { absolute: number; percentage: number | null } {
   const absolute = current - previous;
-  const percentage = previous !== 0 ? ((current - previous) / previous) * 100 : null;
+  const percentage = previous === 0 ? null : ((current - previous) / previous) * 100;
 
   return {
     absolute,
-    percentage: percentage !== null ? Math.round(percentage * 100) / 100 : null,
+    percentage: percentage === null ? null : Math.round(percentage * 100) / 100,
   };
 }
 
@@ -344,7 +353,7 @@ export function periodOverPeriodChange(
  */
 export function bucketByTime<T extends { timestamp: Date }>(
   data: T[],
-  interval: TimeInterval,
+  interval: TimeInterval
 ): BucketedData<T>[] {
   const buckets = new Map<string, { bucket: Date; data: T[] }>();
 
@@ -387,9 +396,6 @@ export function formatBucketLabel(date: Date, interval: TimeInterval): string {
       options.minute = '2-digit';
       break;
     case 'day':
-      options.month = 'short';
-      options.day = 'numeric';
-      break;
     case 'week':
       options.month = 'short';
       options.day = 'numeric';
@@ -419,7 +425,7 @@ export function formatBucketLabel(date: Date, interval: TimeInterval): string {
  */
 export function getComparisonDateRange(
   range: DateRange,
-  comparisonType: 'previous' | 'yearOverYear',
+  comparisonType: 'previous' | 'yearOverYear'
 ): DateRange {
   const duration = range.end.getTime() - range.start.getTime();
 
@@ -441,9 +447,7 @@ export function getComparisonDateRange(
 /**
  * Calculate trend direction
  */
-export function calculateTrend(
-  data: TimeSeriesPoint[],
-): 'up' | 'down' | 'flat' {
+export function calculateTrend(data: TimeSeriesPoint[]): 'up' | 'down' | 'flat' {
   if (data.length < 2) return 'flat';
 
   // Simple linear regression
