@@ -25,6 +25,14 @@ export 'ui/ui.dart';
 
 // Widgets
 export 'widgets/why_this.dart';
+export 'widgets/loading_widgets.dart';
+export 'widgets/error_widgets.dart' hide ErrorView, ErrorBanner;
+export 'widgets/offline_widgets.dart' hide SyncStatus, OfflineBanner;
+
+// Services (hide conflicts with existing providers and data models)
+export 'services/services.dart' 
+    hide AuthState, isAuthenticatedProvider, BaselineProfile, JwtClaims, 
+         SessionType, DeviceRegistration, TokenStorageKeys, ContentType;
 
 // Offline support
 export 'offline/offline.dart';
