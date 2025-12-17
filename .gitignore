@@ -10,6 +10,7 @@ build
 coverage
 .env
 .env.*
+!.env.example
 .DS_Store
 .idea
 .vscode
@@ -25,5 +26,9 @@ __pycache__
 .packages
 pubspec.lock
 
-# Prisma generated clients
-**/generated/prisma-client
+# Secrets
+config/secrets/*.pem
+config/secrets/*.env
+config/secrets/*.key
+!config/secrets/.gitkeep
+!config/secrets/README.md
