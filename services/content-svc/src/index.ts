@@ -29,6 +29,7 @@ import { contentPackageRoutes } from './routes/packages.js';
 import { renderRoutes } from './routes/render.js';
 import { reviewRoutes } from './routes/reviews.js';
 import { searchRoutes } from './routes/search.js';
+import { socialStoriesRoutes } from './routes/socialStories.js';
 import { versionRoutes } from './routes/versions.js';
 
 const PORT = Number.parseInt(process.env.PORT ?? '4020', 10);
@@ -56,6 +57,7 @@ await fastify.register(searchRoutes, { prefix: '/api' });
 await fastify.register(renderRoutes, { prefix: '/api' });
 await fastify.register(contentPackageRoutes, { prefix: '/api' });
 await fastify.register(fileRoutes, { prefix: '/api' });
+await fastify.register(socialStoriesRoutes, { prefix: '/api' });
 
 // Start server
 try {

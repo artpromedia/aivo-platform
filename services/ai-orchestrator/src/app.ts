@@ -11,6 +11,7 @@ import type { AgentConfigStore } from './registry/store.js';
 import { registerAdminStatsRoutes } from './routes/adminStats.js';
 import { registerBrainRoutes } from './routes/brain.js';
 import { registerInternalRoutes } from './routes/internal.js';
+import { socialStoryRoutes } from './routes/socialStories.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
 import { UsageTracker } from './usage/index.js';
@@ -57,6 +58,9 @@ export function createApp(options: AppOptions = {}) {
 
   // Brain update routes for virtual brain synchronization
   app.register(registerBrainRoutes, { prefix: '/internal/ai/brain', pool: policyPool });
+
+  // Social story AI personalization routes (ND-1.2)
+  app.register(socialStoryRoutes, { registry, telemetryStore });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;

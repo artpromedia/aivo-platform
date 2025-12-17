@@ -397,3 +397,261 @@ model StoredFile {
   @@index([tenantId, isDeleted, expiresAt])
   @@map("stored_files")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SOCIAL STORIES - ND-1.2
+// Evidence-based visual narratives for neurodiverse learners
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Categories for social stories following Carol Gray's Social Stories framework
+enum SocialStoryCategory {
+  // Transition & Routine
+  STARTING_LESSON          // Beginning academic activities
+  ENDING_LESSON            // Completing and wrapping up activities
+  CHANGING_ACTIVITY        // Moving between different tasks
+  UNEXPECTED_CHANGE        // Handling schedule changes
+  
+  // Assessment & Testing
+  TAKING_QUIZ              // Quiz and assessment situations
+  TEST_TAKING              // Formal test-taking strategies
+  RECEIVING_FEEDBACK       // Getting grades or corrections
+  
+  // Communication & Help
+  ASKING_FOR_HELP          // Requesting assistance
+  ASKING_FOR_BREAK         // Requesting sensory/mental breaks
+  RAISING_HAND             // Classroom participation
+  TALKING_TO_TEACHER       // Teacher communication
+  
+  // Emotional Regulation
+  FEELING_FRUSTRATED       // Managing frustration
+  FEELING_OVERWHELMED      // Handling sensory/cognitive overload
+  FEELING_ANXIOUS          // Anxiety management
+  CALMING_DOWN             // Self-regulation strategies
+  CELEBRATING_SUCCESS      // Appropriate celebration
+  
+  // Focus & Attention
+  STAYING_ON_TASK          // Maintaining focus
+  IGNORING_DISTRACTIONS    // Handling interruptions
+  WAITING_TURN             // Patient waiting
+  
+  // Technology
+  USING_DEVICE             // Device handling expectations
+  TECHNICAL_PROBLEM        // Handling tech issues
+  
+  // Social Interactions
+  WORKING_WITH_PEERS       // Group work situations
+  SHARING_MATERIALS        // Resource sharing
+  RESPECTFUL_DISAGREEMENT  // Handling different opinions
+  
+  // Sensory & Physical
+  SENSORY_BREAK            // Taking sensory breaks
+  MOVEMENT_BREAK           // Physical activity breaks
+  QUIET_SPACE              // Using calm-down areas
+  
+  // Safety & Emergencies
+  FIRE_DRILL               // Emergency procedures
+  LOCKDOWN                 // Safety procedures
+  FEELING_UNSAFE           // Reporting concerns
+  
+  // Custom
+  CUSTOM                   // User-defined category
+
+  @@map("social_story_category")
+}
+
+/// Reading level for social story content
+enum SocialStoryReadingLevel {
+  PRE_READER       // Picture-only with minimal text
+  EARLY_READER     // Simple sentences, large text
+  DEVELOPING       // Short paragraphs
+  INTERMEDIATE     // Grade-level text
+  
+  @@map("social_story_reading_level")
+}
+
+/// Visual style preferences for social stories
+enum SocialStoryVisualStyle {
+  PHOTOGRAPHS      // Real photographs
+  REALISTIC_ART    // Realistic illustrations
+  CARTOON          // Cartoon-style illustrations
+  SIMPLE_ICONS     // Simple symbolic icons
+  ABSTRACT         // Abstract/minimalist visuals
+  
+  @@map("social_story_visual_style")
+}
+
+/// Social story content - visual narratives for behavioral support
+model SocialStory {
+  id                String                    @id @default(uuid()) @db.Uuid
+  tenantId          String?                   @map("tenant_id") @db.Uuid
+  
+  // Basic metadata
+  slug              String                    @unique
+  title             String
+  description       String?                   @db.Text
+  category          SocialStoryCategory
+  
+  // Content
+  pages             Json                      @default("[]") // Array of StoryPage
+  readingLevel      SocialStoryReadingLevel   @default(DEVELOPING) @map("reading_level")
+  estimatedDuration Int                       @default(60) @map("estimated_duration") // seconds
+  
+  // Targeting
+  minAge            Int?                      @map("min_age")
+  maxAge            Int?                      @map("max_age")
+  gradeBands        LearningObjectGradeBand[] @map("grade_bands")
+  
+  // Personalization tokens
+  supportsPersonalization Boolean             @default(true) @map("supports_personalization")
+  personalizationTokens   String[]            @default([]) @map("personalization_tokens")
+  
+  // Visual preferences
+  defaultVisualStyle SocialStoryVisualStyle   @default(CARTOON) @map("default_visual_style")
+  hasAudio          Boolean                   @default(false) @map("has_audio")
+  hasVideo          Boolean                   @default(false) @map("has_video")
+  
+  // Accessibility
+  accessibilityFeatures Json                  @default("{}") @map("accessibility_features")
+  translations      Json                      @default("{}") // Locale -> translated content
+  
+  // Source & versioning
+  isBuiltIn         Boolean                   @default(false) @map("is_built_in")
+  sourceTemplate    String?                   @map("source_template")
+  version           Int                       @default(1)
+  
+  // Status
+  isActive          Boolean                   @default(true) @map("is_active")
+  isApproved        Boolean                   @default(false) @map("is_approved")
+  approvedByUserId  String?                   @map("approved_by_user_id") @db.Uuid
+  approvedAt        DateTime?                 @map("approved_at") @db.Timestamptz
+  
+  // Tracking
+  createdByUserId   String?                   @map("created_by_user_id") @db.Uuid
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  views             SocialStoryView[]
+  assignments       SocialStoryAssignment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, category, isActive])
+  @@index([tenantId, isActive, readingLevel])
+  @@index([category, isBuiltIn, isActive])
+  @@map("social_stories")
+}
+
+/// Learner preferences for social story presentation
+model LearnerStoryPreferences {
+  id               String                    @id @default(uuid()) @db.Uuid
+  learnerId        String                    @unique @map("learner_id") @db.Uuid
+  
+  // Visual preferences
+  preferredVisualStyle SocialStoryVisualStyle @default(CARTOON) @map("preferred_visual_style")
+  preferredReadingLevel SocialStoryReadingLevel @default(DEVELOPING) @map("preferred_reading_level")
+  
+  // Audio preferences
+  enableAudio       Boolean                   @default(true) @map("enable_audio")
+  enableTts         Boolean                   @default(true) @map("enable_tts")
+  ttsVoice          String?                   @map("tts_voice")
+  ttsSpeed          Float                     @default(1.0) @map("tts_speed")
+  
+  // Pacing preferences
+  autoAdvance       Boolean                   @default(false) @map("auto_advance")
+  pageDisplayTime   Int                       @default(10) @map("page_display_time") // seconds
+  
+  // Personalization
+  characterName     String?                   @map("character_name") // Custom character name
+  favoriteColor     String?                   @map("favorite_color")
+  interests         String[]                  @default([])
+  
+  // Accessibility
+  highContrast      Boolean                   @default(false) @map("high_contrast")
+  largeText         Boolean                   @default(false) @map("large_text")
+  reducedMotion     Boolean                   @default(false) @map("reduced_motion")
+  
+  // Timestamps
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("learner_story_preferences")
+}
+
+/// Tracks social story views for analytics and recommendations
+model SocialStoryView {
+  id               String    @id @default(uuid()) @db.Uuid
+  storyId          String    @map("story_id") @db.Uuid
+  learnerId        String    @map("learner_id") @db.Uuid
+  sessionId        String?   @map("session_id") @db.Uuid
+  
+  // View context
+  triggerType      String    @map("trigger_type") // MANUAL, AUTO, SCHEDULED, RECOMMENDED
+  triggerContext   Json      @default("{}") @map("trigger_context")
+  
+  // Completion tracking
+  pagesViewed      Int       @default(0) @map("pages_viewed")
+  totalPages       Int       @map("total_pages")
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  durationSeconds  Int?      @map("duration_seconds")
+  
+  // Engagement metrics
+  replayCount      Int       @default(0) @map("replay_count")
+  audioPlayed      Boolean   @default(false) @map("audio_played")
+  interactions     Json      @default("[]") // Array of interaction events
+  
+  // Effectiveness tracking
+  preEmotionalState  String?  @map("pre_emotional_state")
+  postEmotionalState String?  @map("post_emotional_state")
+  helpfulnessRating  Int?     @map("helpfulness_rating") // 1-5
+  
+  // Timestamps
+  viewedAt         DateTime  @default(now()) @map("viewed_at") @db.Timestamptz
+
+  // Relations
+  story            SocialStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([learnerId, viewedAt(sort: Desc)])
+  @@index([storyId, viewedAt(sort: Desc)])
+  @@index([learnerId, storyId])
+  @@map("social_story_views")
+}
+
+/// Teacher/parent assigned stories for specific learners
+model SocialStoryAssignment {
+  id               String    @id @default(uuid()) @db.Uuid
+  storyId          String    @map("story_id") @db.Uuid
+  learnerId        String    @map("learner_id") @db.Uuid
+  assignedByUserId String    @map("assigned_by_user_id") @db.Uuid
+  
+  // Assignment configuration
+  priority         Int       @default(0)
+  isRequired       Boolean   @default(false) @map("is_required")
+  
+  // Scheduling
+  showBefore       String[]  @default([]) @map("show_before") // Activity types
+  showAfter        String[]  @default([]) @map("show_after")  // Activity types
+  scheduledTimes   Json      @default("[]") @map("scheduled_times") // Specific times
+  
+  // Frequency limits
+  maxDailyViews    Int?      @map("max_daily_views")
+  minHoursBetween  Float?    @map("min_hours_between")
+  
+  // Status
+  isActive         Boolean   @default(true) @map("is_active")
+  expiresAt        DateTime? @map("expires_at") @db.Timestamptz
+  
+  // Notes
+  notes            String?   @db.Text
+  
+  // Timestamps
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  story            SocialStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, learnerId])
+  @@index([learnerId, isActive])
+  @@index([learnerId, isActive, priority(sort: Desc)])
+  @@map("social_story_assignments")
+}
