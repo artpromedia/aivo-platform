@@ -10,6 +10,7 @@ import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js
 import type { AgentConfigStore } from './registry/store.js';
 import { registerAdminStatsRoutes } from './routes/adminStats.js';
 import { registerBrainRoutes } from './routes/brain.js';
+import { emotionalStateRoutes } from './routes/emotionalState.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { socialStoryRoutes } from './routes/socialStories.js';
 import { createTelemetryStore } from './telemetry/index.js';
@@ -61,6 +62,9 @@ export function createApp(options: AppOptions = {}) {
 
   // Social story AI personalization routes (ND-1.2)
   app.register(socialStoryRoutes, { registry, telemetryStore });
+
+  // Emotional state detection and intervention routes (ND-2.3)
+  app.register(emotionalStateRoutes, { prefix: '/emotional-state', pool: policyPool });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
