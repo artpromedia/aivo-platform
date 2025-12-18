@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { sessionRoutes } from './routes/sessions.js';
+import { scheduleRoutes } from './routes/schedules.js';
 import { transitionRoutes } from './transitions/transition.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -30,6 +31,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register session routes
   await app.register(sessionRoutes);
+
+  // Register schedule routes (ND-1.3 Visual Schedules)
+  await app.register(scheduleRoutes, { prefix: '/schedules' });
 
   // Register transition routes
   await app.register(transitionRoutes);
