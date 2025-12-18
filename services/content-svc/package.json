@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@aivo/ts-rbac": "workspace:*",
+    "@aivo/ts-shared": "workspace:*",
     "@aivo/ts-storage": "workspace:*",
     "@aivo/ts-types": "workspace:*",
     "@aivo/ts-utils": "workspace:*",

@@ -92,10 +92,11 @@ model LearningObjectVersion {
   retiredAt          DateTime?                   @map("retired_at") @db.Timestamptz
 
   // Relations
-  learningObject LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
-  skills         LearningObjectSkill[]
-  transitions    LearningObjectVersionTransition[]
-  reviews        LearningObjectReview[]
+  learningObject  LearningObject                   @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
+  skills          LearningObjectSkill[]
+  transitions     LearningObjectVersionTransition[]
+  reviews         LearningObjectReview[]
+  sensoryMetadata ContentSensoryMetadata?          // ND-2.1 Sensory matching
 
   @@unique([learningObjectId, versionNumber])
   @@index([learningObjectId, state, versionNumber(sort: Desc)])
@@ -655,3 +656,279 @@ model SocialStoryAssignment {
   @@index([learnerId, isActive, priority(sort: Desc)])
   @@map("social_story_assignments")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SENSORY PROFILE & CONTENT MATCHING - ND-2.1
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum SensoryCategory {
+  HYPOSENSITIVE
+  TYPICAL
+  HYPERSENSITIVE
+  AVOIDING
+
+  @@map("sensory_category")
+}
+
+enum SensoryWarningLevel {
+  INFO
+  WARNING
+  CRITICAL
+
+  @@map("sensory_warning_level")
+}
+
+enum VisualComplexity {
+  SIMPLE
+  MODERATE
+  COMPLEX
+
+  @@map("visual_complexity")
+}
+
+enum AnimationIntensity {
+  NONE
+  MILD
+  MODERATE
+  INTENSE
+
+  @@map("animation_intensity")
+}
+
+enum CognitiveLoadLevel {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("cognitive_load_level")
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("incident_severity")
+}
+
+enum IncidentStatus {
+  REPORTED
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+
+  @@map("incident_status")
+}
+
+/// Sensory metadata attached to content for matching with learner profiles
+model ContentSensoryMetadata {
+  id                       String             @id @default(uuid()) @db.Uuid
+  learningObjectVersionId  String             @unique @map("learning_object_version_id") @db.Uuid
+  
+  // Audio characteristics
+  hasAudio                 Boolean            @default(false) @map("has_audio")
+  hasSuddenSounds          Boolean            @default(false) @map("has_sudden_sounds")
+  hasBackgroundMusic       Boolean            @default(false) @map("has_background_music")
+  audioLevel               Int                @default(5) @map("audio_level") // 1-10
+  peakVolume               Int?               @map("peak_volume") // 0-100
+  canMuteAudio             Boolean            @default(true) @map("can_mute_audio")
+  
+  // Visual characteristics
+  hasFlashing              Boolean            @default(false) @map("has_flashing")
+  flashFrequency           Float?             @map("flash_frequency") // Hz
+  visualComplexity         VisualComplexity   @default(MODERATE) @map("visual_complexity")
+  hasVibrantColors         Boolean            @default(false) @map("has_vibrant_colors")
+  contrastLevel            Int                @default(5) @map("contrast_level") // 1-10
+  
+  // Motion characteristics
+  hasAnimation             Boolean            @default(false) @map("has_animation")
+  animationIntensity       AnimationIntensity @default(NONE) @map("animation_intensity")
+  animationReducible       Boolean            @default(true) @map("animation_reducible")
+  hasQuickMotion           Boolean            @default(false) @map("has_quick_motion")
+  
+  // Touch/interaction characteristics
+  requiresFineTouchInput   Boolean            @default(false) @map("requires_fine_touch_input")
+  hasHapticFeedback        Boolean            @default(false) @map("has_haptic_feedback")
+  canDisableHaptic         Boolean            @default(true) @map("can_disable_haptic")
+  
+  // Cognitive characteristics
+  cognitiveLoad            CognitiveLoadLevel @default(MEDIUM) @map("cognitive_load")
+  hasTimeLimits            Boolean            @default(false) @map("has_time_limits")
+  timeLimitsAdjustable     Boolean            @default(true) @map("time_limits_adjustable")
+  requiresQuickReactions   Boolean            @default(false) @map("requires_quick_reactions")
+  
+  // Vestibular characteristics
+  hasScrolling             Boolean            @default(false) @map("has_scrolling")
+  hasParallax              Boolean            @default(false) @map("has_parallax")
+  
+  // Overall rating
+  overallIntensityScore    Int                @default(5) @map("overall_intensity_score") // 1-10
+  
+  // Safety warnings
+  sensoryWarnings          Json               @default("[]") @map("sensory_warnings")
+  
+  // Suitability flags
+  suitableForPhotosensitive Boolean           @default(true) @map("suitable_for_photosensitive")
+  suitableForAudioSensitive Boolean           @default(true) @map("suitable_for_audio_sensitive")
+  suitableForMotionSensitive Boolean          @default(true) @map("suitable_for_motion_sensitive")
+  
+  // Metadata
+  lastAnalyzedAt           DateTime?          @map("last_analyzed_at") @db.Timestamptz
+  analyzedBySystem         Boolean            @default(false) @map("analyzed_by_system")
+  manuallyReviewed         Boolean            @default(false) @map("manually_reviewed")
+  reviewedByUserId         String?            @map("reviewed_by_user_id") @db.Uuid
+  
+  // Timestamps
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  learningObjectVersion    LearningObjectVersion @relation(fields: [learningObjectVersionId], references: [id], onDelete: Cascade)
+  
+  @@index([overallIntensityScore])
+  @@index([suitableForPhotosensitive, suitableForAudioSensitive, suitableForMotionSensitive])
+  @@map("content_sensory_metadata")
+}
+
+/// Learner sensory profile for personalized content matching
+model LearnerSensoryProfile {
+  id                       String           @id @default(uuid()) @db.Uuid
+  learnerId                String           @unique @map("learner_id") @db.Uuid
+  tenantId                 String           @map("tenant_id") @db.Uuid
+  
+  // Audio sensitivities (1-10, higher = more sensitive)
+  audioSensitivity         Int              @default(5) @map("audio_sensitivity")
+  audioCategory            SensoryCategory  @default(TYPICAL) @map("audio_category")
+  prefersNoSuddenSounds    Boolean          @default(false) @map("prefers_no_sudden_sounds")
+  maxVolume                Int              @default(100) @map("max_volume") // 0-100
+  prefersQuietEnvironment  Boolean          @default(false) @map("prefers_quiet_environment")
+  
+  // Visual sensitivities
+  visualSensitivity        Int              @default(5) @map("visual_sensitivity")
+  visualCategory           SensoryCategory  @default(TYPICAL) @map("visual_category")
+  avoidsFlashing           Boolean          @default(false) @map("avoids_flashing")
+  prefersSimpleVisuals     Boolean          @default(false) @map("prefers_simple_visuals")
+  preferredBrightness      Int              @default(80) @map("preferred_brightness") // 0-100
+  preferredContrast        String           @default("normal") @map("preferred_contrast") // low, normal, high
+  
+  // Motion/vestibular sensitivities
+  motionSensitivity        Int              @default(5) @map("motion_sensitivity")
+  motionCategory           SensoryCategory  @default(TYPICAL) @map("motion_category")
+  prefersReducedMotion     Boolean          @default(false) @map("prefers_reduced_motion")
+  preferredAnimationSpeed  String           @default("normal") @map("preferred_animation_speed") // slow, normal, fast
+  avoidsParallax           Boolean          @default(false) @map("avoids_parallax")
+  
+  // Touch/tactile sensitivities
+  tactileSensitivity       Int              @default(5) @map("tactile_sensitivity")
+  tactileCategory          SensoryCategory  @default(TYPICAL) @map("tactile_category")
+  prefersNoHaptic          Boolean          @default(false) @map("prefers_no_haptic")
+  
+  // Cognitive/processing preferences
+  processingSpeed          String           @default("normal") @map("processing_speed") // slow, normal, fast
+  preferredPacing          String           @default("normal") @map("preferred_pacing") // slow, normal, fast
+  needsExtendedTime        Boolean          @default(false) @map("needs_extended_time")
+  timeExtensionFactor      Float            @default(1.0) @map("time_extension_factor") // 1.0, 1.5, 2.0
+  
+  // Photosensitivity
+  isPhotosensitive         Boolean          @default(false) @map("is_photosensitive")
+  photosensitivityLevel    Int?             @map("photosensitivity_level") // 1-10
+  
+  // Break preferences
+  needsFrequentBreaks      Boolean          @default(false) @map("needs_frequent_breaks")
+  preferredBreakFrequency  String           @default("normal") @map("preferred_break_frequency") // low, normal, high, very_high
+  
+  // Text preferences
+  preferredTextSize        String           @default("normal") @map("preferred_text_size") // small, normal, large, very_large
+  prefersDyslexiaFont      Boolean          @default(false) @map("prefers_dyslexia_font")
+  
+  // Environment preferences
+  typicalEnvironment       String           @default("mixed") @map("typical_environment") // quiet, noisy, mixed
+  
+  // Profile metadata
+  profileSource            String           @default("manual") @map("profile_source") // manual, assessed, imported
+  lastAssessedAt           DateTime?        @map("last_assessed_at") @db.Timestamptz
+  assessmentVersion        String?          @map("assessment_version")
+  parentConfirmedAt        DateTime?        @map("parent_confirmed_at") @db.Timestamptz
+  parentConfirmedByUserId  String?          @map("parent_confirmed_by_user_id") @db.Uuid
+  
+  // Notes
+  notes                    String?          @db.Text
+  
+  // Timestamps
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  incidents                SensoryIncident[]
+  
+  @@index([tenantId])
+  @@index([audioCategory, visualCategory, motionCategory])
+  @@map("learner_sensory_profiles")
+}
+
+/// Tracks sensory incidents to improve matching and detect issues
+model SensoryIncident {
+  id                   String           @id @default(uuid()) @db.Uuid
+  learnerId            String           @map("learner_id") @db.Uuid
+  profileId            String?          @map("profile_id") @db.Uuid
+  tenantId             String           @map("tenant_id") @db.Uuid
+  
+  // Content reference
+  contentId            String?          @map("content_id") @db.Uuid
+  contentType          String?          @map("content_type")
+  contentTitle         String?          @map("content_title")
+  
+  // Session context
+  sessionId            String?          @map("session_id") @db.Uuid
+  activityId           String?          @map("activity_id") @db.Uuid
+  
+  // Incident details
+  incidentType         String           @map("incident_type") // audio_distress, visual_distress, motion_sickness, overstimulation, etc.
+  severity             IncidentSeverity @default(MEDIUM)
+  status               IncidentStatus   @default(REPORTED)
+  
+  // What triggered it
+  triggerCategory      String           @map("trigger_category") // audio, visual, motion, tactile, cognitive
+  triggerDescription   String?          @map("trigger_description") @db.Text
+  triggerTimestamp     DateTime?        @map("trigger_timestamp") @db.Timestamptz
+  
+  // User feedback
+  reportedByUserId     String?          @map("reported_by_user_id") @db.Uuid
+  reportedByRole       String?          @map("reported_by_role") // learner, parent, teacher
+  userDescription      String?          @map("user_description") @db.Text
+  
+  // System detection
+  systemDetected       Boolean          @default(false) @map("system_detected")
+  detectionMethod      String?          @map("detection_method")
+  detectionConfidence  Float?           @map("detection_confidence")
+  
+  // Behavioral signals that triggered detection
+  behavioralSignals    Json             @default("[]") @map("behavioral_signals")
+  
+  // Resolution
+  resolvedAt           DateTime?        @map("resolved_at") @db.Timestamptz
+  resolvedByUserId     String?          @map("resolved_by_user_id") @db.Uuid
+  resolutionNotes      String?          @map("resolution_notes") @db.Text
+  
+  // Actions taken
+  actionsTaken         Json             @default("[]") @map("actions_taken")
+  profileUpdated       Boolean          @default(false) @map("profile_updated")
+  contentFlagged       Boolean          @default(false) @map("content_flagged")
+  
+  // Timestamps
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  profile              LearnerSensoryProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  
+  @@index([learnerId, createdAt(sort: Desc)])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([contentId])
+  @@index([status, severity])
+  @@index([profileId])
+  @@map("sensory_incidents")
+}
+
