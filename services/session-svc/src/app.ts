@@ -6,6 +6,7 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { scheduleRoutes } from './routes/schedules.js';
 import { transitionRoutes } from './transitions/transition.routes.js';
+import { predictabilityRoutes } from './routes/predictability.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -37,6 +38,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register transition routes
   await app.register(transitionRoutes);
+
+  // Register predictability routes (ND-2.2)
+  await app.register(predictabilityRoutes);
 
   return app;
 }

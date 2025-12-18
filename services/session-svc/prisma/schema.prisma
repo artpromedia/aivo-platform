@@ -80,6 +80,36 @@ enum SessionEventType {
   @@map("session_event_type")
 }
 
+/// ND-2.2: Routine types for predictable session structure
+enum RoutineType {
+  WELCOME     // Start of session
+  CHECKIN     // Emotional check-in
+  TRANSITION  // Between activities
+  BREAK       // Break routine
+  RETURN      // Return from break
+  GOODBYE     // End of session
+  CELEBRATION // After achievement
+  CALMING     // When overwhelmed
+
+  @@map("routine_type")
+}
+
+/// ND-2.2: Predictability event types for logging
+enum PredictabilityEventType {
+  SESSION_START
+  SESSION_END
+  ACTIVITY_CHANGE
+  UNEXPECTED_CHANGE
+  ROUTINE_COMPLETED
+  ROUTINE_SKIPPED
+  BREAK_TAKEN
+  CHANGE_EXPLAINED
+  LEARNER_ANXIOUS
+  PREDICTABILITY_RESTORED
+
+  @@map("predictability_event_type")
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MODELS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -505,3 +535,174 @@ model SchedulePreferences {
   @@map("schedule_preferences")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ND-2.2: PREDICTABILITY ENFORCEMENT MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// ND-2.2: Learner preferences for predictable session flow
+/// Controls how sessions are structured and how changes are handled
+model PredictabilityPreferences {
+  id                      String    @id @default(uuid()) @db.Uuid
+  learnerId               String    @unique @map("learner_id") @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+
+  // Core predictability settings
+  requiresPredictableFlow Boolean   @default(false) @map("requires_predictable_flow")
+  predictabilityLevel     String    @default("moderate") @map("predictability_level") // minimal, moderate, high, strict
+
+  // Session structure preferences
+  alwaysShowSessionOutline    Boolean   @default(true) @map("always_show_session_outline")
+  showEstimatedDurations      Boolean   @default(true) @map("show_estimated_durations")
+  showProgressIndicator       Boolean   @default(true) @map("show_progress_indicator")
+  announceActivityChanges     Boolean   @default(true) @map("announce_activity_changes")
+
+  // Routine preferences
+  preferConsistentOrder       Boolean   @default(true) @map("prefer_consistent_order")
+  preferFamiliarContent       Boolean   @default(false) @map("prefer_familiar_content")
+  preferSameTimeOfDay         Boolean   @default(false) @map("prefer_same_time_of_day")
+  typicalSessionTime          String?   @map("typical_session_time") // "09:00" preferred start time
+
+  // Transition preferences (links to transition system)
+  transitionWarningMinutes    Int       @default(2) @map("transition_warning_minutes")
+  requireTransitionAcknowledgment Boolean @default(true) @map("require_transition_acknowledgment")
+  showFirstThenBoard          Boolean   @default(true) @map("show_first_then_board")
+
+  // Surprise handling
+  allowSurpriseRewards        Boolean   @default(false) @map("allow_surprise_rewards")
+  allowDynamicContent         Boolean   @default(false) @map("allow_dynamic_content")
+  warnBeforeNewContent        Boolean   @default(true) @map("warn_before_new_content")
+
+  // Change tolerance
+  maxUnexpectedChanges        Int       @default(1) @map("max_unexpected_changes")
+  requireChangeExplanation    Boolean   @default(true) @map("require_change_explanation")
+
+  // Routine elements to include
+  includeWelcomeRoutine       Boolean   @default(true) @map("include_welcome_routine")
+  includeCheckInRoutine       Boolean   @default(true) @map("include_check_in_routine")
+  includeGoodbyeRoutine       Boolean   @default(true) @map("include_goodbye_routine")
+  includeBreakRoutines        Boolean   @default(true) @map("include_break_routines")
+
+  // Comfort elements
+  showFamiliarCharacter       Boolean   @default(true) @map("show_familiar_character")
+  characterName               String?   @map("character_name")
+  characterAvatarUrl          String?   @map("character_avatar_url")
+
+  createdAt                   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId], name: "idx_predictability_preferences_tenant")
+  @@map("predictability_preferences")
+}
+
+/// ND-2.2: Reusable session routines (welcome, goodbye, breaks, etc.)
+model SessionRoutine {
+  id                    String      @id @default(uuid()) @db.Uuid
+  tenantId              String      @map("tenant_id") @db.Uuid
+
+  // Routine info
+  name                  String
+  type                  RoutineType
+  description           String?
+
+  /// Routine steps as JSON array
+  /// [{ id, type, title, instruction, durationSeconds, mediaUrl, isSkippable, requiresInteraction }]
+  steps                 Json        @db.JsonB
+
+  // Duration
+  totalDurationSeconds  Int         @map("total_duration_seconds")
+
+  // Targeting
+  isDefault             Boolean     @default(false) @map("is_default")
+  targetAgeMin          Int?        @map("target_age_min")
+  targetAgeMax          Int?        @map("target_age_max")
+
+  // Customization
+  isCustomizable        Boolean     @default(true) @map("is_customizable")
+
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId], name: "idx_session_routines_tenant")
+  @@index([type], name: "idx_session_routines_type")
+  @@map("session_routines")
+}
+
+/// ND-2.2: Templates for structured session flow
+model SessionStructureTemplate {
+  id                      String    @id @default(uuid()) @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+
+  // Template info
+  name                    String
+  description             String?
+
+  /// Structure definition as JSON
+  /// { welcome: { routineId, required }, checkin: {...}, mainContent: {...}, breaks: {...}, goodbye: {...} }
+  structure               Json      @db.JsonB
+
+  // Timing
+  targetDurationMinutes   Int       @default(15) @map("target_duration_minutes")
+  flexibilityPercent      Int       @default(20) @map("flexibility_percent") // How much time can vary
+
+  // Targeting
+  isDefault               Boolean   @default(false) @map("is_default")
+
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId], name: "idx_session_structure_templates_tenant")
+  @@map("session_structure_templates")
+}
+
+/// ND-2.2: Audit log for predictability events during sessions
+model SessionPredictabilityLog {
+  id                        String                    @id @default(uuid()) @db.Uuid
+  sessionId                 String                    @map("session_id") @db.Uuid
+  learnerId                 String                    @map("learner_id") @db.Uuid
+  tenantId                  String                    @map("tenant_id") @db.Uuid
+
+  // What happened
+  eventType                 PredictabilityEventType   @map("event_type")
+
+  /// Details as JSON
+  /// { expectedActivity, actualActivity, reason, learnerResponse, etc. }
+  details                   Json                      @db.JsonB
+
+  // Was predictability maintained?
+  predictabilityMaintained  Boolean                   @default(true) @map("predictability_maintained")
+  unexpectedChangeCount     Int                       @default(0) @map("unexpected_change_count")
+
+  timestamp                 DateTime                  @default(now()) @db.Timestamptz
+
+  @@index([sessionId], name: "idx_session_predictability_logs_session")
+  @@index([learnerId], name: "idx_session_predictability_logs_learner")
+  @@map("session_predictability_logs")
+}
+
+/// ND-2.2: Cached predictable session plans for active sessions
+model SessionPlan {
+  id                      String    @id @default(uuid()) @db.Uuid
+  sessionId               String    @unique @map("session_id") @db.Uuid
+  learnerId               String    @map("learner_id") @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+
+  /// Full predictable session plan as JSON
+  planData                Json      @map("plan_data") @db.JsonB
+
+  // Current state
+  currentPhase            String    @default("welcome") @map("current_phase") // welcome, checkin, main, break, goodbye
+  currentActivityIndex    Int       @default(-1) @map("current_activity_index")
+  unexpectedChangesCount  Int       @default(0) @map("unexpected_changes_count")
+
+  // Timing
+  estimatedTotalMinutes   Int       @default(0) @map("estimated_total_minutes")
+  startedAt               DateTime? @map("started_at") @db.Timestamptz
+  completedAt             DateTime? @map("completed_at") @db.Timestamptz
+
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([learnerId], name: "idx_session_plans_learner")
+  @@index([tenantId], name: "idx_session_plans_tenant")
+  @@map("session_plans")
+}

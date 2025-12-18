@@ -1271,6 +1271,9 @@ importers:
       '@aivo/ts-rbac':
         specifier: workspace:*
         version: link:../../libs/ts-rbac
+      '@aivo/ts-shared':
+        specifier: workspace:*
+        version: link:../../libs/ts-shared
       '@aivo/ts-storage':
         specifier: workspace:*
         version: link:../../libs/ts-storage
