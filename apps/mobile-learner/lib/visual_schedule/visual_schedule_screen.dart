@@ -168,7 +168,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
     SchedulePreferences? preferences,
   ) {
     final style = widget.preferredStyle ??
-        preferences?.preferredStyle ??
+        preferences?.displayStyle ??
         ScheduleDisplayStyle.verticalList;
 
     switch (style) {
@@ -203,11 +203,11 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
             ScheduleItemWidget(
               item: item,
               displayStyle: ScheduleItemDisplayStyle.card,
-              showTime: preferences?.showTimes ?? true,
+              showTime: preferences?.showTime ?? true,
               showDuration: preferences?.showDuration ?? true,
               showImage: preferences?.showImages ?? true,
               useSymbols: preferences?.useSymbols ?? false,
-              iconSize: _getIconSize(preferences?.iconSize),
+              iconSize: _getIconSize(preferences?.itemSize),
               onTap: item.status == ScheduleItemStatus.current
                   ? () => _showItemActions(item)
                   : null,
@@ -750,19 +750,10 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
   }
 
   void _showPreferencesSheet() {
-    final preferences = ref.read(scheduleNotifierProvider).preferences;
-    final notifier = ref.read(scheduleNotifierProvider.notifier);
-
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ScheduleCustomizationScreen(
-          preferences: preferences,
-          onSave: (updates) {
-            notifier.updatePreferences(updates);
-            Navigator.pop(context);
-          },
-        ),
+        builder: (context) => const ScheduleCustomizationScreen(),
       ),
     );
   }

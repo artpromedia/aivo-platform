@@ -95,6 +95,8 @@ class _PredictableSessionWrapperState extends ConsumerState<PredictableSessionWr
     HapticFeedback.lightImpact();
   }
 
+  // TODO: Wire up _updateProgress to schedule item interactions
+  // ignore: unused_element
   Future<void> _updateProgress(String itemId) async {
     if (_plan == null) return;
 

@@ -407,105 +407,154 @@ class ScheduleWithProgress {
 /// Learner schedule preferences
 @immutable
 class SchedulePreferences {
-  final String id;
-  final String learnerId;
-  final ScheduleDisplayStyle preferredStyle;
-  final bool showTimes;
+  final String? id;
+  final String? learnerId;
+  final ScheduleDisplayStyle displayStyle;
+  final bool showTime;
   final bool showDuration;
-  final bool showImages;
-  final bool useSymbols;
-  final bool showCountdownToNext;
-  final bool warnBeforeTransition;
-  final int transitionWarningMinutes;
-  final String iconSize;
-  final bool colorCoding;
-  final bool highContrast;
-  final bool announceItems;
-  final bool playChimeOnChange;
-  final bool celebrateCompletion;
   final bool showProgressBar;
+  final bool highlightCurrentItem;
+  final bool enableAnimations;
+  final String itemSize;
+  final String colorScheme;
+  final int transitionWarningMinutes;
+  final bool showTransitionTimer;
+  final bool playTransitionSound;
+  final bool vibrationFeedback;
+  final bool celebrateCompletion;
+  final bool allowReordering;
+  final bool showSubItems;
+  // Legacy fields for API compatibility
+  final bool? showImages;
+  final bool? useSymbols;
+  final bool? showCountdownToNext;
+  final bool? warnBeforeTransition;
+  final bool? colorCoding;
+  final bool? highContrast;
+  final bool? announceItems;
+  final bool? playChimeOnChange;
 
   const SchedulePreferences({
-    required this.id,
-    required this.learnerId,
-    required this.preferredStyle,
-    required this.showTimes,
+    this.id,
+    this.learnerId,
+    required this.displayStyle,
+    required this.showTime,
     required this.showDuration,
-    required this.showImages,
-    required this.useSymbols,
-    required this.showCountdownToNext,
-    required this.warnBeforeTransition,
-    required this.transitionWarningMinutes,
-    required this.iconSize,
-    required this.colorCoding,
-    required this.highContrast,
-    required this.announceItems,
-    required this.playChimeOnChange,
-    required this.celebrateCompletion,
     required this.showProgressBar,
+    required this.highlightCurrentItem,
+    required this.enableAnimations,
+    required this.itemSize,
+    required this.colorScheme,
+    required this.transitionWarningMinutes,
+    required this.showTransitionTimer,
+    required this.playTransitionSound,
+    required this.vibrationFeedback,
+    required this.celebrateCompletion,
+    required this.allowReordering,
+    required this.showSubItems,
+    // Legacy fields
+    this.showImages,
+    this.useSymbols,
+    this.showCountdownToNext,
+    this.warnBeforeTransition,
+    this.colorCoding,
+    this.highContrast,
+    this.announceItems,
+    this.playChimeOnChange,
   });
 
   factory SchedulePreferences.fromJson(Map<String, dynamic> json) {
     return SchedulePreferences(
-      id: json['id'] as String,
-      learnerId: json['learnerId'] as String,
-      preferredStyle: VisualSchedule._parseDisplayStyle(
+      id: json['id'] as String?,
+      learnerId: json['learnerId'] as String?,
+      displayStyle: VisualSchedule._parseDisplayStyle(
+          json['displayStyle'] as String? ?? 
           json['preferredStyle'] as String? ?? 'VERTICAL_LIST'),
-      showTimes: json['showTimes'] as bool? ?? true,
+      showTime: json['showTime'] as bool? ?? json['showTimes'] as bool? ?? true,
       showDuration: json['showDuration'] as bool? ?? true,
-      showImages: json['showImages'] as bool? ?? true,
-      useSymbols: json['useSymbols'] as bool? ?? false,
-      showCountdownToNext: json['showCountdownToNext'] as bool? ?? true,
-      warnBeforeTransition: json['warnBeforeTransition'] as bool? ?? true,
-      transitionWarningMinutes: json['transitionWarningMinutes'] as int? ?? 2,
-      iconSize: json['iconSize'] as String? ?? 'medium',
-      colorCoding: json['colorCoding'] as bool? ?? true,
-      highContrast: json['highContrast'] as bool? ?? false,
-      announceItems: json['announceItems'] as bool? ?? false,
-      playChimeOnChange: json['playChimeOnChange'] as bool? ?? true,
-      celebrateCompletion: json['celebrateCompletion'] as bool? ?? true,
       showProgressBar: json['showProgressBar'] as bool? ?? true,
+      highlightCurrentItem: json['highlightCurrentItem'] as bool? ?? true,
+      enableAnimations: json['enableAnimations'] as bool? ?? true,
+      itemSize: json['itemSize'] as String? ?? json['iconSize'] as String? ?? 'medium',
+      colorScheme: json['colorScheme'] as String? ?? 'default',
+      transitionWarningMinutes: json['transitionWarningMinutes'] as int? ?? 5,
+      showTransitionTimer: json['showTransitionTimer'] as bool? ?? 
+          json['showCountdownToNext'] as bool? ?? true,
+      playTransitionSound: json['playTransitionSound'] as bool? ?? false,
+      vibrationFeedback: json['vibrationFeedback'] as bool? ?? true,
+      celebrateCompletion: json['celebrateCompletion'] as bool? ?? true,
+      allowReordering: json['allowReordering'] as bool? ?? false,
+      showSubItems: json['showSubItems'] as bool? ?? true,
+      // Legacy fields
+      showImages: json['showImages'] as bool?,
+      useSymbols: json['useSymbols'] as bool?,
+      showCountdownToNext: json['showCountdownToNext'] as bool?,
+      warnBeforeTransition: json['warnBeforeTransition'] as bool?,
+      colorCoding: json['colorCoding'] as bool?,
+      highContrast: json['highContrast'] as bool?,
+      announceItems: json['announceItems'] as bool?,
+      playChimeOnChange: json['playChimeOnChange'] as bool?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
+    if (learnerId != null) 'learnerId': learnerId,
+    'displayStyle': displayStyle.name,
+    'showTime': showTime,
+    'showDuration': showDuration,
+    'showProgressBar': showProgressBar,
+    'highlightCurrentItem': highlightCurrentItem,
+    'enableAnimations': enableAnimations,
+    'itemSize': itemSize,
+    'colorScheme': colorScheme,
+    'transitionWarningMinutes': transitionWarningMinutes,
+    'showTransitionTimer': showTransitionTimer,
+    'playTransitionSound': playTransitionSound,
+    'vibrationFeedback': vibrationFeedback,
+    'celebrateCompletion': celebrateCompletion,
+    'allowReordering': allowReordering,
+    'showSubItems': showSubItems,
+  };
 
   SchedulePreferences copyWith({
     String? id,
     String? learnerId,
-    ScheduleDisplayStyle? preferredStyle,
-    bool? showTimes,
+    ScheduleDisplayStyle? displayStyle,
+    bool? showTime,
     bool? showDuration,
-    bool? showImages,
-    bool? useSymbols,
-    bool? showCountdownToNext,
-    bool? warnBeforeTransition,
-    int? transitionWarningMinutes,
-    String? iconSize,
-    bool? colorCoding,
-    bool? highContrast,
-    bool? announceItems,
-    bool? playChimeOnChange,
-    bool? celebrateCompletion,
     bool? showProgressBar,
+    bool? highlightCurrentItem,
+    bool? enableAnimations,
+    String? itemSize,
+    String? colorScheme,
+    int? transitionWarningMinutes,
+    bool? showTransitionTimer,
+    bool? playTransitionSound,
+    bool? vibrationFeedback,
+    bool? celebrateCompletion,
+    bool? allowReordering,
+    bool? showSubItems,
   }) {
     return SchedulePreferences(
       id: id ?? this.id,
       learnerId: learnerId ?? this.learnerId,
-      preferredStyle: preferredStyle ?? this.preferredStyle,
-      showTimes: showTimes ?? this.showTimes,
+      displayStyle: displayStyle ?? this.displayStyle,
+      showTime: showTime ?? this.showTime,
       showDuration: showDuration ?? this.showDuration,
-      showImages: showImages ?? this.showImages,
-      useSymbols: useSymbols ?? this.useSymbols,
-      showCountdownToNext: showCountdownToNext ?? this.showCountdownToNext,
-      warnBeforeTransition: warnBeforeTransition ?? this.warnBeforeTransition,
+      showProgressBar: showProgressBar ?? this.showProgressBar,
+      highlightCurrentItem: highlightCurrentItem ?? this.highlightCurrentItem,
+      enableAnimations: enableAnimations ?? this.enableAnimations,
+      itemSize: itemSize ?? this.itemSize,
+      colorScheme: colorScheme ?? this.colorScheme,
       transitionWarningMinutes:
           transitionWarningMinutes ?? this.transitionWarningMinutes,
-      iconSize: iconSize ?? this.iconSize,
-      colorCoding: colorCoding ?? this.colorCoding,
-      highContrast: highContrast ?? this.highContrast,
-      announceItems: announceItems ?? this.announceItems,
-      playChimeOnChange: playChimeOnChange ?? this.playChimeOnChange,
+      showTransitionTimer: showTransitionTimer ?? this.showTransitionTimer,
+      playTransitionSound: playTransitionSound ?? this.playTransitionSound,
+      vibrationFeedback: vibrationFeedback ?? this.vibrationFeedback,
       celebrateCompletion: celebrateCompletion ?? this.celebrateCompletion,
-      showProgressBar: showProgressBar ?? this.showProgressBar,
+      allowReordering: allowReordering ?? this.allowReordering,
+      showSubItems: showSubItems ?? this.showSubItems,
     );
   }
 }

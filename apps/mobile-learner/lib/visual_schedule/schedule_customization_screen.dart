@@ -58,23 +58,23 @@ class _ScheduleCustomizationScreenState
   }
 
   Future<void> _savePreferences() async {
-    await ref.read(scheduleNotifierProvider.notifier).updatePreferences(
-          displayStyle: _preferences.displayStyle,
-          showTime: _preferences.showTime,
-          showDuration: _preferences.showDuration,
-          showProgressBar: _preferences.showProgressBar,
-          highlightCurrentItem: _preferences.highlightCurrentItem,
-          enableAnimations: _preferences.enableAnimations,
-          itemSize: _preferences.itemSize,
-          colorScheme: _preferences.colorScheme,
-          transitionWarningMinutes: _preferences.transitionWarningMinutes,
-          showTransitionTimer: _preferences.showTransitionTimer,
-          playTransitionSound: _preferences.playTransitionSound,
-          vibrationFeedback: _preferences.vibrationFeedback,
-          celebrateCompletion: _preferences.celebrateCompletion,
-          allowReordering: _preferences.allowReordering,
-          showSubItems: _preferences.showSubItems,
-        );
+    await ref.read(scheduleNotifierProvider.notifier).updatePreferences({
+          'displayStyle': _preferences.displayStyle.name,
+          'showTime': _preferences.showTime,
+          'showDuration': _preferences.showDuration,
+          'showProgressBar': _preferences.showProgressBar,
+          'highlightCurrentItem': _preferences.highlightCurrentItem,
+          'enableAnimations': _preferences.enableAnimations,
+          'itemSize': _preferences.itemSize,
+          'colorScheme': _preferences.colorScheme,
+          'transitionWarningMinutes': _preferences.transitionWarningMinutes,
+          'showTransitionTimer': _preferences.showTransitionTimer,
+          'playTransitionSound': _preferences.playTransitionSound,
+          'vibrationFeedback': _preferences.vibrationFeedback,
+          'celebrateCompletion': _preferences.celebrateCompletion,
+          'allowReordering': _preferences.allowReordering,
+          'showSubItems': _preferences.showSubItems,
+        });
 
     if (mounted) {
       setState(() => _hasChanges = false);
@@ -611,42 +611,4 @@ class _ScheduleCustomizationScreenState
   }
 }
 
-/// Extension for copyWith functionality
-extension SchedulePreferencesExtension on SchedulePreferences {
-  SchedulePreferences copyWith({
-    ScheduleDisplayStyle? displayStyle,
-    bool? showTime,
-    bool? showDuration,
-    bool? showProgressBar,
-    bool? highlightCurrentItem,
-    bool? enableAnimations,
-    String? itemSize,
-    String? colorScheme,
-    int? transitionWarningMinutes,
-    bool? showTransitionTimer,
-    bool? playTransitionSound,
-    bool? vibrationFeedback,
-    bool? celebrateCompletion,
-    bool? allowReordering,
-    bool? showSubItems,
-  }) {
-    return SchedulePreferences(
-      displayStyle: displayStyle ?? this.displayStyle,
-      showTime: showTime ?? this.showTime,
-      showDuration: showDuration ?? this.showDuration,
-      showProgressBar: showProgressBar ?? this.showProgressBar,
-      highlightCurrentItem: highlightCurrentItem ?? this.highlightCurrentItem,
-      enableAnimations: enableAnimations ?? this.enableAnimations,
-      itemSize: itemSize ?? this.itemSize,
-      colorScheme: colorScheme ?? this.colorScheme,
-      transitionWarningMinutes:
-          transitionWarningMinutes ?? this.transitionWarningMinutes,
-      showTransitionTimer: showTransitionTimer ?? this.showTransitionTimer,
-      playTransitionSound: playTransitionSound ?? this.playTransitionSound,
-      vibrationFeedback: vibrationFeedback ?? this.vibrationFeedback,
-      celebrateCompletion: celebrateCompletion ?? this.celebrateCompletion,
-      allowReordering: allowReordering ?? this.allowReordering,
-      showSubItems: showSubItems ?? this.showSubItems,
-    );
-  }
-}
+

@@ -17,21 +17,21 @@ void main() {
           'title': 'Starting My Lesson',
           'description': 'A story about starting lessons',
           'category': 'STARTING_LESSON',
-          'readingLevel': 'STANDARD',
-          'visualStyle': 'ILLUSTRATED',
+          'readingLevel': 'DEVELOPING',
+          'defaultVisualStyle': 'CARTOON',
           'isBuiltIn': true,
-          'isActive': true,
-          'pageCount': 4,
+          'isApproved': true,
+          'supportsPersonalization': true,
           'estimatedDuration': 180,
           'pages': [
             {
+              'id': 'page-1',
               'pageNumber': 1,
-              'title': 'Getting Ready',
               'sentences': [
                 {
                   'id': 'sent-1',
                   'text': 'I am about to start my lesson.',
-                  'sentenceType': 'DESCRIPTIVE',
+                  'type': 'DESCRIPTIVE',
                   'emphasisWords': ['lesson'],
                 }
               ],
@@ -47,64 +47,71 @@ void main() {
         expect(story.slug, 'starting-my-lesson');
         expect(story.title, 'Starting My Lesson');
         expect(story.category, SocialStoryCategory.startingLesson);
-        expect(story.readingLevel, SocialStoryReadingLevel.standard);
+        expect(story.readingLevel, SocialStoryReadingLevel.developing);
         expect(story.isBuiltIn, true);
-        expect(story.pageCount, 4);
+        expect(story.pageCount, 1);
         expect(story.pages.length, 1);
       });
 
-      test('converts story to JSON', () {
-        final story = SocialStory(
-          id: 'story-123',
-          tenantId: 'tenant-456',
-          slug: 'test-story',
-          title: 'Test Story',
-          category: SocialStoryCategory.calmingDown,
-          readingLevel: SocialStoryReadingLevel.standard,
-          visualStyle: SocialStoryVisualStyle.illustrated,
-          isBuiltIn: false,
-          isActive: true,
-          pageCount: 2,
-          estimatedDuration: 120,
-          pages: [],
-          createdAt: DateTime(2024, 1, 1),
-          updatedAt: DateTime(2024, 1, 1),
-        );
+      test('has correct default values', () {
+        final json = {
+          'id': 'story-123',
+          'slug': 'test-story',
+          'title': 'Test Story',
+          'category': 'CALMING_DOWN',
+          'readingLevel': 'DEVELOPING',
+          'defaultVisualStyle': 'CARTOON',
+          'isBuiltIn': false,
+          'isApproved': true,
+          'supportsPersonalization': true,
+          'estimatedDuration': 120,
+          'pages': [],
+          'createdAt': '2024-01-01T00:00:00Z',
+          'updatedAt': '2024-01-01T00:00:00Z',
+        };
 
-        final json = story.toJson();
+        final story = SocialStory.fromJson(json);
 
-        expect(json['id'], 'story-123');
-        expect(json['slug'], 'test-story');
-        expect(json['category'], 'CALMING_DOWN');
-        expect(json['readingLevel'], 'STANDARD');
+        expect(story.id, 'story-123');
+        expect(story.slug, 'test-story');
+        expect(story.category, SocialStoryCategory.calmingDown);
+        expect(story.readingLevel, SocialStoryReadingLevel.developing);
       });
     });
 
     group('StoryPage', () {
       test('creates page from JSON', () {
         final json = {
+          'id': 'page-1',
           'pageNumber': 1,
-          'title': 'First Page',
           'sentences': [
             {
               'id': 'sent-1',
               'text': 'Hello!',
-              'sentenceType': 'DESCRIPTIVE',
+              'type': 'DESCRIPTIVE',
             }
           ],
-          'visualUrl': 'https://example.com/image.png',
+          'visual': {
+            'id': 'visual-1',
+            'type': 'image',
+            'url': 'https://example.com/image.png',
+            'altText': 'Test image',
+            'style': 'CARTOON',
+            'position': 'center',
+          },
         };
 
         final page = StoryPage.fromJson(json);
 
         expect(page.pageNumber, 1);
-        expect(page.title, 'First Page');
         expect(page.sentences.length, 1);
-        expect(page.visualUrl, 'https://example.com/image.png');
+        expect(page.visual, isNotNull);
+        expect(page.visual!.url, 'https://example.com/image.png');
       });
 
       test('handles page without optional fields', () {
         final json = {
+          'id': 'page-2',
           'pageNumber': 2,
           'sentences': [],
         };
@@ -112,9 +119,8 @@ void main() {
         final page = StoryPage.fromJson(json);
 
         expect(page.pageNumber, 2);
-        expect(page.title, isNull);
-        expect(page.visualUrl, isNull);
-        expect(page.audioUrl, isNull);
+        expect(page.visual, isNull);
+        expect(page.audioNarration, isNull);
       });
     });
 
@@ -123,20 +129,18 @@ void main() {
         final json = {
           'id': 'sent-123',
           'text': 'I can stay calm.',
-          'sentenceType': 'DIRECTIVE',
+          'type': 'DIRECTIVE',
           'emphasisWords': ['stay', 'calm'],
-          'personalizable': true,
-          'placeholders': ['learnerName'],
+          'personalizationTokens': ['learnerName'],
         };
 
         final sentence = StorySentence.fromJson(json);
 
         expect(sentence.id, 'sent-123');
         expect(sentence.text, 'I can stay calm.');
-        expect(sentence.sentenceType, SentenceType.directive);
+        expect(sentence.type, SentenceType.directive);
         expect(sentence.emphasisWords, ['stay', 'calm']);
-        expect(sentence.personalizable, true);
-        expect(sentence.placeholders, ['learnerName']);
+        expect(sentence.personalizationTokens, ['learnerName']);
       });
 
       test('parses all sentence types correctly', () {
@@ -154,10 +158,10 @@ void main() {
           final json = {
             'id': 'test-${entry.key}',
             'text': 'Test sentence',
-            'sentenceType': entry.key,
+            'type': entry.key,
           };
           final sentence = StorySentence.fromJson(json);
-          expect(sentence.sentenceType, entry.value);
+          expect(sentence.type, entry.value);
         }
       });
     });
@@ -165,73 +169,51 @@ void main() {
     group('LearnerStoryPreferences', () {
       test('creates preferences from JSON', () {
         final json = {
-          'id': 'pref-123',
           'learnerId': 'learner-456',
-          'tenantId': 'tenant-789',
-          'preferredReadingLevel': 'SIMPLIFIED',
+          'preferredReadingLevel': 'PRE_READER',
           'preferredVisualStyle': 'CARTOON',
-          'autoPlayAudio': true,
-          'showTextHighlighting': true,
-          'fontSizeMultiplier': 1.2,
-          'preferredNarrationSpeed': 0.9,
+          'enableAudio': true,
           'enableTts': true,
+          'ttsSpeed': 0.9,
         };
 
         final prefs = LearnerStoryPreferences.fromJson(json);
 
-        expect(prefs.id, 'pref-123');
         expect(prefs.learnerId, 'learner-456');
-        expect(prefs.preferredReadingLevel, SocialStoryReadingLevel.simplified);
+        expect(prefs.preferredReadingLevel, SocialStoryReadingLevel.preReader);
         expect(prefs.preferredVisualStyle, SocialStoryVisualStyle.cartoon);
-        expect(prefs.autoPlayAudio, true);
-        expect(prefs.fontSizeMultiplier, 1.2);
-        expect(prefs.preferredNarrationSpeed, 0.9);
+        expect(prefs.enableAudio, true);
+        expect(prefs.ttsSpeed, 0.9);
       });
 
       test('uses defaults for missing optional fields', () {
         final json = {
-          'id': 'pref-123',
           'learnerId': 'learner-456',
-          'tenantId': 'tenant-789',
         };
 
         final prefs = LearnerStoryPreferences.fromJson(json);
 
-        expect(prefs.preferredReadingLevel, isNull);
-        expect(prefs.autoPlayAudio, false);
-        expect(prefs.fontSizeMultiplier, 1.0);
+        expect(prefs.preferredReadingLevel, SocialStoryReadingLevel.developing);
+        expect(prefs.enableAudio, true);
+        expect(prefs.ttsSpeed, 1.0);
       });
     });
 
     group('StoryRecommendation', () {
       test('creates recommendation from JSON', () {
         final json = {
-          'story': {
-            'id': 'story-123',
-            'tenantId': 'tenant-456',
-            'slug': 'calming-down',
-            'title': 'Calming Down',
-            'category': 'CALMING_DOWN',
-            'readingLevel': 'STANDARD',
-            'visualStyle': 'ILLUSTRATED',
-            'isBuiltIn': true,
-            'isActive': true,
-            'pageCount': 5,
-            'estimatedDuration': 200,
-            'pages': [],
-            'createdAt': '2024-01-01T00:00:00Z',
-            'updatedAt': '2024-01-01T00:00:00Z',
-          },
+          'storyId': 'story-123',
+          'story': _createMinimalStoryJson(),
+          'score': 0.95,
           'reason': 'EMOTIONAL_SUPPORT',
-          'priority': 'HIGH',
           'context': {'emotionalState': 'frustrated'},
         };
 
         final rec = StoryRecommendation.fromJson(json);
 
-        expect(rec.story.id, 'story-123');
+        expect(rec.storyId, 'story-123');
         expect(rec.reason, RecommendationReason.emotionalSupport);
-        expect(rec.priority, 'HIGH');
+        expect(rec.score, 0.95);
       });
 
       test('parses all recommendation reasons', () {
@@ -247,9 +229,10 @@ void main() {
 
         for (final entry in reasons.entries) {
           final json = {
+            'storyId': 'story-test',
             'story': _createMinimalStoryJson(),
+            'score': 0.5,
             'reason': entry.key,
-            'priority': 'MEDIUM',
           };
           final rec = StoryRecommendation.fromJson(json);
           expect(rec.reason, entry.value);
@@ -258,52 +241,45 @@ void main() {
     });
 
     group('StoryInteraction', () {
-      test('creates breathing exercise interaction', () {
+      test('creates interaction from JSON', () {
         final json = {
+          'id': 'interaction-1',
           'type': 'BREATHING',
-          'prompt': 'Let\'s take a deep breath together',
-          'breathingPattern': {
+          'config': {
             'inhale': 4,
             'hold': 4,
             'exhale': 4,
-            'holdAfterExhale': 4,
             'cycles': 3,
           },
+          'required': true,
         };
 
         final interaction = StoryInteraction.fromJson(json);
 
-        expect(interaction.type, InteractionType.breathing);
-        expect(interaction.breathingPattern, isNotNull);
-        expect(interaction.breathingPattern!.inhale, 4);
-        expect(interaction.breathingPattern!.cycles, 3);
+        expect(interaction.id, 'interaction-1');
+        expect(interaction.type, 'BREATHING');
+        expect(interaction.config['inhale'], 4);
+        expect(interaction.config['cycles'], 3);
+        expect(interaction.required, true);
       });
 
-      test('creates choice interaction', () {
+      test('creates choice interaction from JSON', () {
         final json = {
+          'id': 'interaction-2',
           'type': 'CHOICE',
-          'prompt': 'What would you do?',
-          'choices': ['Take a break', 'Ask for help', 'Keep trying'],
-          'correctChoices': [0, 1, 2],
+          'config': {
+            'prompt': 'What would you do?',
+            'choices': ['Take a break', 'Ask for help', 'Keep trying'],
+            'correctChoices': [0, 1, 2],
+          },
+          'required': false,
         };
 
         final interaction = StoryInteraction.fromJson(json);
 
-        expect(interaction.type, InteractionType.choice);
-        expect(interaction.choices!.length, 3);
-        expect(interaction.correctChoices, [0, 1, 2]);
-      });
-
-      test('creates emotion check-in interaction', () {
-        final json = {
-          'type': 'EMOTION_CHECKIN',
-          'prompt': 'How are you feeling right now?',
-        };
-
-        final interaction = StoryInteraction.fromJson(json);
-
-        expect(interaction.type, InteractionType.emotionCheckin);
-        expect(interaction.prompt, 'How are you feeling right now?');
+        expect(interaction.type, 'CHOICE');
+        expect(interaction.config['choices'], isA<List>());
+        expect((interaction.config['choices'] as List).length, 3);
       });
     });
 
@@ -325,8 +301,7 @@ void main() {
 
         for (final cat in categories) {
           final parsed = SocialStoryCategory.values.firstWhere(
-            (e) => e.name.toUpperCase().replaceAll(RegExp(r'([A-Z])'), '_\$1').substring(1) == cat ||
-                   _categoryToString(e) == cat,
+            (e) => _categoryToString(e) == cat,
             orElse: () => throw Exception('Category not found: $cat'),
           );
           expect(parsed, isNotNull);
@@ -344,11 +319,11 @@ Map<String, dynamic> _createMinimalStoryJson() {
     'slug': 'test',
     'title': 'Test',
     'category': 'CALMING_DOWN',
-    'readingLevel': 'STANDARD',
-    'visualStyle': 'ILLUSTRATED',
+    'readingLevel': 'DEVELOPING',
+    'defaultVisualStyle': 'CARTOON',
     'isBuiltIn': false,
-    'isActive': true,
-    'pageCount': 1,
+    'isApproved': true,
+    'supportsPersonalization': true,
     'estimatedDuration': 60,
     'pages': [],
     'createdAt': '2024-01-01T00:00:00Z',

@@ -357,13 +357,12 @@ class BreakReminder extends ConsumerStatefulWidget {
 }
 
 class _BreakReminderState extends ConsumerState<BreakReminder> {
-  DateTime? _lastBreakReminder;
+  DateTime _lastBreakReminder = DateTime.now();
   bool _showReminder = false;
 
   @override
   void initState() {
     super.initState();
-    _lastBreakReminder = DateTime.now();
     _checkForBreak();
   }
 
@@ -373,7 +372,10 @@ class _BreakReminderState extends ConsumerState<BreakReminder> {
 
     Future.delayed(Duration(minutes: settings.breakFrequencyMinutes), () {
       if (!mounted) return;
-      setState(() => _showReminder = true);
+      final timeSinceLastBreak = DateTime.now().difference(_lastBreakReminder);
+      if (timeSinceLastBreak.inMinutes >= settings.breakFrequencyMinutes) {
+        setState(() => _showReminder = true);
+      }
       _checkForBreak();
     });
   }
@@ -586,7 +588,7 @@ class _IncidentReportDialogState extends State<_IncidentReportDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration: const InputDecoration(
                 labelText: 'Type of problem',
                 border: OutlineInputBorder(),
