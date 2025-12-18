@@ -4,26 +4,27 @@
  * @module @aivo/ts-shared/auth/jwt
  */
 
+import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
+
 import {
   SignJWT,
   jwtVerify,
   importPKCS8,
   importSPKI,
   decodeJwt,
-  type KeyLike,
   type JWTPayload,
+  type CryptoKey,
 } from 'jose';
-import { randomUUID } from 'crypto';
 
-import type { TokenPayload, TokenPair, JWTConfig, ServiceTokenPayload } from './types';
+import type { TokenPayload, TokenPair, JWTConfig, ServiceTokenPayload } from './types.js';
 
 /**
  * Parse TTL string to seconds
  * Supports: '15m', '1h', '7d', '30d'
  */
 function parseTTL(ttl: string): number {
-  const match = ttl.match(/^(\d+)([smhd])$/);
+  const match = /^(\d+)([smhd])$/.exec(ttl);
   if (!match) {
     throw new Error(`Invalid TTL format: ${ttl}. Use format like '15m', '1h', '7d'`);
   }
@@ -60,8 +61,8 @@ function loadKey(keyOrPath: string): string {
  */
 export class JWTService {
   private config: JWTConfig;
-  private privateKeyPromise: Promise<KeyLike> | null = null;
-  private publicKeyPromise: Promise<KeyLike> | null = null;
+  private privateKeyPromise: Promise<CryptoKey> | null = null;
+  private publicKeyPromise: Promise<CryptoKey> | null = null;
 
   constructor(config: JWTConfig) {
     this.config = config;
@@ -70,7 +71,7 @@ export class JWTService {
   /**
    * Get cached key instances
    */
-  private async getKeys(): Promise<{ privateKey: KeyLike; publicKey: KeyLike }> {
+  private async getKeys(): Promise<{ privateKey: CryptoKey; publicKey: CryptoKey }> {
     if (!this.privateKeyPromise) {
       const privateKeyPem = loadKey(this.config.privateKey);
       this.privateKeyPromise = importPKCS8(privateKeyPem, 'RS256');
@@ -92,9 +93,7 @@ export class JWTService {
   /**
    * Generate an access token
    */
-  async generateAccessToken(
-    payload: Omit<TokenPayload, 'type' | 'iat' | 'exp'>
-  ): Promise<string> {
+  async generateAccessToken(payload: Omit<TokenPayload, 'type' | 'iat' | 'exp'>): Promise<string> {
     const { privateKey } = await this.getKeys();
 
     const token = await new SignJWT({ ...payload, type: 'access' as const })
@@ -102,12 +101,12 @@ export class JWTService {
         alg: 'RS256',
         kid: this.config.keyId,
       })
-      .setSubject(payload.sub)
+      .setSubject(payload.sub as string)
       .setIssuer(this.config.issuer)
       .setAudience(this.config.audience)
       .setIssuedAt()
       .setExpirationTime(this.config.accessTokenTTL)
-      .setJti(payload.jti || randomUUID())
+      .setJti((payload.jti as string | undefined) || randomUUID())
       .sign(privateKey);
 
     return token;
@@ -143,15 +142,13 @@ export class JWTService {
   /**
    * Generate both access and refresh tokens
    */
-  async generateTokenPair(
-    payload: Omit<TokenPayload, 'type' | 'iat' | 'exp'>
-  ): Promise<TokenPair> {
+  async generateTokenPair(payload: Omit<TokenPayload, 'type' | 'iat' | 'exp'>): Promise<TokenPair> {
     const [accessToken, refreshToken] = await Promise.all([
       this.generateAccessToken(payload),
       this.generateRefreshToken({
-        sub: payload.sub,
-        sessionId: payload.sessionId,
-        tenantId: payload.tenantId,
+        sub: payload.sub as string,
+        sessionId: payload.sessionId as string,
+        tenantId: payload.tenantId as string,
       }),
     ]);
 
