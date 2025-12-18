@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Built-in Social Story Templates - ND-1.2
  *
  * Pre-authored, evidence-based social stories following Carol Gray's framework.
@@ -7,15 +7,16 @@
  */
 
 import type { CreateSocialStoryInput } from './social-story.types.js';
+import { SentenceType } from './social-story.types.js';
 
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // STORY TEMPLATES
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // TRANSITION STORIES
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     slug: 'starting-my-lesson',
     title: 'Starting My Lesson',
@@ -38,12 +39,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p1-s1',
             text: "It's time to start a new lesson.",
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s2',
             text: 'Many students feel excited or a little nervous when starting something new.',
-            type: 'PERSPECTIVE',
+            type: SentenceType.PERSPECTIVE,
           },
         ],
         visual: {
@@ -63,12 +64,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p2-s1',
             text: '{{NAME}} can take a deep breath before starting.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p2-s2',
             text: 'Taking a breath helps my body feel calm and ready.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -96,17 +97,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p3-s1',
             text: 'During the lesson, I will see questions and activities.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p3-s2',
             text: 'It is okay if I need to think about the answers.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p3-s3',
             text: "Learning takes time, and that's perfectly fine.",
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -126,12 +127,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p4-s1',
             text: 'If I need help, I can ask {{TEACHER}} or use the help button.',
-            type: 'COOPERATIVE',
+            type: SentenceType.COOPERATIVE,
           },
           {
             id: 'p4-s2',
             text: 'Asking for help shows that I am a good learner.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -151,12 +152,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p5-s1',
             text: "I'm ready to start my lesson now!",
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p5-s2',
             text: 'I will try my best and learn new things.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
         ],
         visual: {
@@ -172,9 +173,9 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
     ],
   },
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // TAKING A QUIZ
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     slug: 'taking-a-quiz',
     title: 'Taking a Quiz',
@@ -197,12 +198,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p1-s1',
             text: 'Sometimes I will take quizzes to show what I have learned.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s2',
             text: 'Quizzes help {{NAME}} and teachers see how much I know.',
-            type: 'PERSPECTIVE',
+            type: SentenceType.PERSPECTIVE,
           },
         ],
         visual: {
@@ -222,17 +223,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p2-s1',
             text: 'Some students feel nervous before a quiz.',
-            type: 'PERSPECTIVE',
+            type: SentenceType.PERSPECTIVE,
           },
           {
             id: 'p2-s2',
             text: 'This is a normal feeling that many people have.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p2-s3',
             text: 'I can use my calming strategies when I feel nervous.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
         ],
         visual: {
@@ -252,17 +253,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p3-s1',
             text: 'Before starting, I can take three deep breaths.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s2',
             text: 'I breathe in slowly... and breathe out slowly.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p3-s3',
             text: 'This helps my brain think clearly.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -290,17 +291,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p4-s1',
             text: 'I will read each question carefully.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s2',
             text: "If I don't know an answer, I can skip it and come back later.",
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p4-s3',
             text: "It's okay to not know everything.",
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -320,12 +321,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p5-s1',
             text: 'When I finish, I can feel proud that I tried my best.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p5-s2',
             text: '{{NAME}} is a good learner, no matter the score.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -341,9 +342,9 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
     ],
   },
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // ASKING FOR A BREAK
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     slug: 'asking-for-a-break',
     title: 'Asking for a Break',
@@ -367,12 +368,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p1-s1',
             text: 'Sometimes my brain and body need a break.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s2',
             text: "Everyone needs breaks, and that's okay.",
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -392,22 +393,22 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p2-s1',
             text: 'I might need a break when:',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s2',
-            text: '• My body feels wiggly or restless',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ My body feels wiggly or restless',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s3',
-            text: '• My brain feels tired or foggy',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ My brain feels tired or foggy',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s4',
-            text: '• I feel upset or frustrated',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ I feel upset or frustrated',
+            type: SentenceType.DESCRIPTIVE,
           },
         ],
         visual: {
@@ -427,17 +428,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p3-s1',
             text: 'I can ask for a break in a calm voice.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s2',
             text: 'I can say "I need a break, please" or use my {{BREAK_SIGNAL}}.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s3',
             text: 'Asking nicely helps others understand what I need.',
-            type: 'PERSPECTIVE',
+            type: SentenceType.PERSPECTIVE,
           },
         ],
         visual: {
@@ -457,17 +458,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p4-s1',
             text: 'During my break, I can go to {{CALM_PLACE}}.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s2',
             text: 'I can take deep breaths, stretch, or do something quiet.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s3',
             text: 'This helps my brain and body feel better.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -487,12 +488,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p5-s1',
             text: 'After my break, I will feel ready to learn again.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p5-s2',
             text: 'Taking breaks helps {{NAME}} be a better learner.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -508,9 +509,9 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
     ],
   },
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // FEELING OVERWHELMED
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     slug: 'when-i-feel-overwhelmed',
     title: 'When I Feel Overwhelmed',
@@ -534,17 +535,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p1-s1',
             text: 'Sometimes things can feel like too much.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s2',
             text: 'This feeling is called being overwhelmed.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s3',
             text: 'Many people feel this way sometimes.',
-            type: 'PERSPECTIVE',
+            type: SentenceType.PERSPECTIVE,
           },
         ],
         visual: {
@@ -564,22 +565,22 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p2-s1',
             text: '{{NAME}} might feel overwhelmed when:',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s2',
-            text: "• There's too much noise around me",
-            type: 'DESCRIPTIVE',
+            text: "â€¢ There's too much noise around me",
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s3',
-            text: '• Something is too hard or confusing',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ Something is too hard or confusing',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s4',
-            text: '• I have too many things to do',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ I have too many things to do',
+            type: SentenceType.DESCRIPTIVE,
           },
         ],
         visual: {
@@ -607,17 +608,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p3-s1',
             text: 'When I feel overwhelmed, I can STOP and notice my body.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s2',
             text: 'My heart might beat fast. My hands might feel shaky.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p3-s3',
             text: 'These are signals that I need to calm down.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -637,27 +638,27 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p4-s1',
             text: 'I have tools to help me feel better:',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p4-s2',
-            text: '• Take slow, deep breaths',
-            type: 'DIRECTIVE',
+            text: 'â€¢ Take slow, deep breaths',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s3',
-            text: '• Go to {{CALM_PLACE}}',
-            type: 'DIRECTIVE',
+            text: 'â€¢ Go to {{CALM_PLACE}}',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s4',
-            text: '• Hold my {{COMFORT_ITEM}}',
-            type: 'DIRECTIVE',
+            text: 'â€¢ Hold my {{COMFORT_ITEM}}',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s5',
-            text: '• Ask {{HELPER}} for help',
-            type: 'COOPERATIVE',
+            text: 'â€¢ Ask {{HELPER}} for help',
+            type: SentenceType.COOPERATIVE,
           },
         ],
         visual: {
@@ -685,17 +686,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p5-s1',
             text: 'After I calm down, I can try one small thing at a time.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p5-s2',
             text: 'Big tasks can be broken into smaller steps.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p5-s3',
             text: '{{NAME}} can handle hard things, one step at a time.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -711,9 +712,9 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
     ],
   },
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // CALMING DOWN
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     slug: 'calming-down',
     title: 'Calming Down',
@@ -736,12 +737,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p1-s1',
             text: 'Sometimes I have big feelings.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s2',
             text: 'Big feelings are okay. Everyone has them.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -761,12 +762,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p2-s1',
             text: 'When feelings feel too big, I can calm my body.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p2-s2',
             text: "Here's how:",
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
         ],
         visual: {
@@ -786,12 +787,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p3-s1',
             text: '1. BREATHE: Take 5 slow breaths.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s2',
             text: 'In through my nose... Out through my mouth...',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
         ],
         visual: {
@@ -819,12 +820,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p4-s1',
             text: '2. SQUEEZE: Squeeze my hands tight, then let go.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p4-s2',
             text: 'This helps my muscles relax.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -852,12 +853,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p5-s1',
             text: '3. THINK: Think of {{CALM_PLACE}}.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p5-s2',
             text: 'Picture it in my mind. How does it look? How does it feel?',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
         ],
         visual: {
@@ -877,12 +878,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p6-s1',
             text: '4. HOLD: Hold {{COMFORT_ITEM}} if I have it.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p6-s2',
             text: 'Familiar things can help me feel safe.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -902,17 +903,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p7-s1',
             text: '{{NAME}} knows how to calm down.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p7-s2',
             text: 'Breathe. Squeeze. Think. Hold.',
-            type: 'CONTROL',
+            type: SentenceType.CONTROL,
           },
           {
             id: 'p7-s3',
             text: 'I can do hard things!',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -928,9 +929,9 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
     ],
   },
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // UNEXPECTED CHANGES
-  // ────────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     slug: 'when-things-change',
     title: 'When Things Change',
@@ -953,12 +954,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p1-s1',
             text: 'Sometimes plans change.',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p1-s2',
             text: "Changes can happen even when we don't expect them.",
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
         ],
         visual: {
@@ -978,22 +979,22 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p2-s1',
             text: 'When things change, {{NAME}} might feel:',
-            type: 'DESCRIPTIVE',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s2',
-            text: '• Confused or surprised',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ Confused or surprised',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s3',
-            text: '• Worried or upset',
-            type: 'DESCRIPTIVE',
+            text: 'â€¢ Worried or upset',
+            type: SentenceType.DESCRIPTIVE,
           },
           {
             id: 'p2-s4',
             text: 'These feelings make sense.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -1013,17 +1014,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p3-s1',
             text: 'When something changes, I can ask questions.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s2',
             text: '"What is happening now?"',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p3-s3',
             text: '"What will happen next?"',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
         ],
         visual: {
@@ -1043,12 +1044,12 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p4-s1',
             text: '{{TEACHER}} or {{HELPER}} can explain the new plan.',
-            type: 'COOPERATIVE',
+            type: SentenceType.COOPERATIVE,
           },
           {
             id: 'p4-s2',
             text: 'Knowing what comes next can help me feel better.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -1068,17 +1069,17 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
           {
             id: 'p5-s1',
             text: 'Changes can be hard, but I can handle them.',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
           {
             id: 'p5-s2',
             text: 'I can breathe, ask questions, and follow the new plan.',
-            type: 'DIRECTIVE',
+            type: SentenceType.DIRECTIVE,
           },
           {
             id: 'p5-s3',
             text: '{{NAME}} is flexible and brave!',
-            type: 'AFFIRMATIVE',
+            type: SentenceType.AFFIRMATIVE,
           },
         ],
         visual: {
@@ -1095,9 +1096,9 @@ export const BUILT_IN_TEMPLATES: CreateSocialStoryInput[] = [
   },
 ];
 
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SEEDING FUNCTION
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
  * Seed built-in stories to the database.
@@ -1113,7 +1114,7 @@ export async function seedBuiltInStories(
     try {
       await createStory(template);
       created++;
-    } catch (error) {
+    } catch {
       // Likely already exists
       skipped++;
     }

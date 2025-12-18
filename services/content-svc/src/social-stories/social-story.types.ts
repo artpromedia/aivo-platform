@@ -12,7 +12,6 @@ export {
   SocialStoryReadingLevel,
   SocialStoryVisualStyle,
   LearningObjectGradeBand,
-  StoryTriggerType,
 } from '@prisma/client';
 
 // Import for local use in type definitions
@@ -21,8 +20,16 @@ import type {
   SocialStoryReadingLevel as SocialStoryReadingLevelType,
   SocialStoryVisualStyle as SocialStoryVisualStyleType,
   LearningObjectGradeBand as LearningObjectGradeBandType,
-  StoryTriggerType as StoryTriggerTypeAlias,
 } from '@prisma/client';
+
+/** Trigger types for when a social story should be shown */
+export enum StoryTriggerType {
+  MANUAL = 'MANUAL',
+  TRANSITION = 'TRANSITION',
+  SCHEDULE = 'SCHEDULE',
+  EMOTIONAL = 'EMOTIONAL',
+  ASSIGNMENT = 'ASSIGNMENT',
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // STORY PAGE TYPES
@@ -218,7 +225,7 @@ export interface UpdateLearnerPreferencesInput {
 
 /** Context about what triggered a story view */
 export interface StoryTriggerContext {
-  triggerType: StoryTriggerTypeAlias;
+  triggerType: StoryTriggerType;
   activityType?: string;
   transitionType?: string;
   recommendationScore?: number;
@@ -232,7 +239,7 @@ export interface RecordStoryViewInput {
   storyId: string;
   learnerId: string;
   sessionId?: string;
-  triggerType: StoryTriggerTypeAlias;
+  triggerType: StoryTriggerType;
   triggerContext?: Record<string, unknown>;
   pagesViewed: number;
   totalPages: number;

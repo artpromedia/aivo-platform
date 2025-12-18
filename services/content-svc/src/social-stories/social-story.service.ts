@@ -9,7 +9,6 @@ import type {
   Prisma,
   SocialStoryCategory,
   SocialStoryReadingLevel,
-  SocialStoryVisualStyle,
   LearningObjectGradeBand,
 } from '@prisma/client';
 

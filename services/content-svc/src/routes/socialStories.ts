@@ -7,8 +7,6 @@
 
 import type {
   SocialStoryCategory,
-  SocialStoryReadingLevel,
-  SocialStoryVisualStyle,
   LearningObjectGradeBand,
 } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -179,7 +177,7 @@ const UpdatePreferencesSchema = z.object({
   enableAudio: z.boolean().optional(),
   enableTts: z.boolean().optional(),
   ttsVoice: z.string().optional(),
-  ttsSpeed: z.number().min(0.5).max(2.0).optional(),
+  ttsSpeed: z.number().min(0.5).max(2).optional(),
   autoAdvance: z.boolean().optional(),
   pageDisplayTime: z.number().int().min(3).max(60).optional(),
   characterName: z.string().max(50).optional(),
