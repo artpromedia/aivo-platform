@@ -12,6 +12,7 @@ import 'screens/homework_focus_detail_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/messages_screen.dart';
 import 'screens/module_selection_screen.dart';
+import 'screens/notification_settings_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/payment_setup_screen.dart';
 import 'screens/progress_report_screen.dart';
@@ -128,6 +129,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/messages',
         builder: (context, state) => const MessagesScreen(),
+      ),
+      // Notification settings
+      GoRoute(
+        path: '/notification-settings/:learnerId',
+        builder: (context, state) {
+          final learnerId = state.pathParameters['learnerId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return NotificationSettingsScreen(
+            learnerId: learnerId,
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
+          );
+        },
       ),
     ],
     redirect: (context, state) {

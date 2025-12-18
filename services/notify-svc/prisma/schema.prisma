@@ -264,3 +264,229 @@ model NotificationQueue {
   @@index([tenantId, recipientId])
   @@map("notification_queue")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARENT NOTIFICATION ENUMS (ND-3.1)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Categories for parent notifications
+enum ParentNotificationCategory {
+  EMOTIONAL_STATE    // Emotional state alerts
+  ACHIEVEMENT        // Badges, levels, streaks
+  SESSION_ACTIVITY   // Session start/complete
+  LEARNING_PROGRESS  // Progress reports
+  SAFETY_CONCERN     // Safety-related alerts
+  CARE_TEAM          // Care team updates
+  GOAL_UPDATE        // Goal progress
+  SYSTEM             // System notifications
+  REMINDER           // Reminders
+
+  @@map("parent_notification_category")
+}
+
+/// Urgency levels for parent notifications
+enum ParentNotificationUrgency {
+  CRITICAL    // Immediate attention required (safety, meltdown)
+  HIGH        // Important, time-sensitive
+  MEDIUM      // Notable events
+  LOW         // Nice to know
+  INFO        // Informational only
+
+  @@map("parent_notification_urgency")
+}
+
+/// Status for parent notification queue
+enum ParentNotificationStatus {
+  PENDING           // Awaiting processing
+  SCHEDULED         // Scheduled for later
+  QUEUED_FOR_DIGEST // Will be sent in digest
+  SENDING           // Currently being sent
+  SENT              // Successfully sent
+  DELIVERED         // Confirmed delivered
+  FAILED            // Failed to send
+  CANCELLED         // Cancelled
+  RATE_LIMITED      // Rate limited, queued for digest
+
+  @@map("parent_notification_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARENT NOTIFICATION MODELS (ND-3.1)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Parent notification preferences per child
+model ParentNotificationPreferences {
+  id                      String    @id @default(uuid()) @db.Uuid
+  parentId                String    @map("parent_id") @db.Uuid
+  learnerId               String    @map("learner_id") @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+  
+  // === Global Settings ===
+  notificationsEnabled    Boolean   @default(true) @map("notifications_enabled")
+  
+  // === Urgency Thresholds ===
+  urgencySettings         Json      @default("{}") @map("urgency_settings")
+  
+  // === Category Preferences ===
+  categorySettings        Json      @default("{}") @map("category_settings")
+  
+  // === Delivery Preferences ===
+  preferredChannels       String[]  @default(["push", "email"]) @map("preferred_channels")
+  
+  // Push notification settings
+  pushEnabled             Boolean   @default(true) @map("push_enabled")
+  pushDeviceTokens        Json      @default("[]") @map("push_device_tokens")
+  
+  // Email settings
+  emailEnabled            Boolean   @default(true) @map("email_enabled")
+  emailAddress            String?   @map("email_address")
+  emailFormat             String    @default("html") @map("email_format")
+  
+  // SMS settings
+  smsEnabled              Boolean   @default(false) @map("sms_enabled")
+  smsPhoneNumber          String?   @map("sms_phone_number")
+  smsForCriticalOnly      Boolean   @default(true) @map("sms_for_critical_only")
+  
+  // In-app settings
+  inAppEnabled            Boolean   @default(true) @map("in_app_enabled")
+  inAppBadgeCount         Boolean   @default(true) @map("in_app_badge_count")
+  
+  // === Timing Preferences ===
+  timezone                String    @default("America/New_York")
+  
+  // Quiet hours
+  quietHoursEnabled       Boolean   @default(true) @map("quiet_hours_enabled")
+  quietHoursStart         String    @default("21:00") @map("quiet_hours_start")
+  quietHoursEnd           String    @default("07:00") @map("quiet_hours_end")
+  quietHoursWeekendOnly   Boolean   @default(false) @map("quiet_hours_weekend_only")
+  
+  // === Digest Settings ===
+  digestEnabled           Boolean   @default(true) @map("digest_enabled")
+  digestFrequency         String    @default("daily") @map("digest_frequency")
+  digestTime              String    @default("18:00") @map("digest_time")
+  digestDayOfWeek         Int?      @default(5) @map("digest_day_of_week")
+  digestIncludeDetails    Boolean   @default(true) @map("digest_include_details")
+  
+  // === Rate Limiting ===
+  maxNotificationsPerHour Int       @default(5) @map("max_notifications_per_hour")
+  maxNotificationsPerDay  Int       @default(20) @map("max_notifications_per_day")
+  cooldownMinutes         Int       @default(15) @map("cooldown_minutes")
+  
+  // === Language & Format ===
+  language                String    @default("en")
+  useSimpleLanguage       Boolean   @default(false) @map("use_simple_language")
+  includeActionItems      Boolean   @default(true) @map("include_action_items")
+  includeResources        Boolean   @default(true) @map("include_resources")
+  
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([parentId, learnerId])
+  @@index([tenantId])
+  @@map("parent_notification_preferences")
+}
+
+/// Parent notification queue
+model ParentNotificationQueue {
+  id                      String                     @id @default(uuid()) @db.Uuid
+  parentId                String                     @map("parent_id") @db.Uuid
+  learnerId               String                     @map("learner_id") @db.Uuid
+  tenantId                String                     @map("tenant_id") @db.Uuid
+  
+  // Notification content
+  category                ParentNotificationCategory
+  urgency                 ParentNotificationUrgency
+  title                   String
+  body                    String
+  richContent             Json?                      @map("rich_content")
+  actionUrl               String?                    @map("action_url")
+  
+  // Metadata
+  sourceEvent             String                     @map("source_event")
+  sourceEventId           String?                    @map("source_event_id") @db.Uuid
+  relatedSessionId        String?                    @map("related_session_id") @db.Uuid
+  
+  // Status
+  status                  ParentNotificationStatus   @default(PENDING)
+  
+  // Scheduling
+  scheduledFor            DateTime?                  @map("scheduled_for") @db.Timestamptz
+  digestEligible          Boolean                    @default(true) @map("digest_eligible")
+  addedToDigest           Boolean                    @default(false) @map("added_to_digest")
+  
+  // Delivery tracking
+  channels                String[]                   @default([])
+  deliveredVia            String[]                   @default([]) @map("delivered_via")
+  deliveredAt             DateTime?                  @map("delivered_at") @db.Timestamptz
+  readAt                  DateTime?                  @map("read_at") @db.Timestamptz
+  
+  // Rate limiting
+  similarNotificationKey  String?                    @map("similar_notification_key")
+  
+  createdAt               DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime                   @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([parentId, status])
+  @@index([scheduledFor])
+  @@index([category, urgency])
+  @@map("parent_notification_queue")
+}
+
+/// Notification digest for parents
+model ParentNotificationDigest {
+  id                      String    @id @default(uuid()) @db.Uuid
+  parentId                String    @map("parent_id") @db.Uuid
+  learnerId               String    @map("learner_id") @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+  
+  // Digest period
+  periodStart             DateTime  @map("period_start") @db.Timestamptz
+  periodEnd               DateTime  @map("period_end") @db.Timestamptz
+  digestType              String    @map("digest_type")
+  
+  // Content
+  notifications           Json      @default("[]")
+  summary                 Json      @default("{}")
+  
+  // Delivery
+  status                  String    @default("pending")
+  sentAt                  DateTime? @map("sent_at") @db.Timestamptz
+  sentVia                 String[]  @default([]) @map("sent_via")
+  
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([parentId, periodStart])
+  @@index([status])
+  @@map("parent_notification_digests")
+}
+
+/// Parent notification delivery log
+model ParentNotificationLog {
+  id                      String    @id @default(uuid()) @db.Uuid
+  notificationId          String?   @map("notification_id") @db.Uuid
+  digestId                String?   @map("digest_id") @db.Uuid
+  parentId                String    @map("parent_id") @db.Uuid
+  learnerId               String    @map("learner_id") @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+  
+  // Delivery details
+  channel                 String
+  status                  String
+  
+  // Tracking
+  sentAt                  DateTime  @map("sent_at") @db.Timestamptz
+  deliveredAt             DateTime? @map("delivered_at") @db.Timestamptz
+  openedAt                DateTime? @map("opened_at") @db.Timestamptz
+  clickedAt               DateTime? @map("clicked_at") @db.Timestamptz
+  
+  // Error tracking
+  errorMessage            String?   @map("error_message")
+  retryCount              Int       @default(0) @map("retry_count")
+  
+  // Metadata
+  metadata                Json?
+
+  @@index([parentId])
+  @@index([channel, status])
+  @@map("parent_notification_logs")
+}
