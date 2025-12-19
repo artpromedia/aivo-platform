@@ -416,3 +416,238 @@ COMMENT ON TABLE threshold_overrides IS 'Per-tenant/learner threshold customizat
 COMMENT ON COLUMN personalization_signals.signal_value IS 'Typed JSONB - schema varies by signal_type';
 COMMENT ON COLUMN personalization_signals.confidence IS 'Score 0-1 based on sample size and data quality';
 COMMENT ON COLUMN personalization_decision_logs.reasoning IS 'Human-readable explanation of decision';
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- MOTOR ACCOMMODATION SCHEMA - ND-3.3
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 
+-- Tables for motor profile management and interaction logging.
+-- Supports learners with fine motor challenges, tremor, limited range of motion.
+--
+
+-- ───────────────────────────────────────────────────────────────────────────────
+-- MOTOR ENUMS
+-- ───────────────────────────────────────────────────────────────────────────────
+
+CREATE TYPE motor_ability_level AS ENUM (
+  'TYPICAL',
+  'MILD_DIFFICULTY',
+  'MODERATE_DIFFICULTY',
+  'SIGNIFICANT_DIFFICULTY',
+  'REQUIRES_FULL_SUPPORT'
+);
+
+CREATE TYPE haptic_intensity AS ENUM (
+  'none',
+  'light',
+  'normal',
+  'strong'
+);
+
+CREATE TYPE keyboard_type AS ENUM (
+  'standard',
+  'large',
+  'split',
+  'one_handed'
+);
+
+CREATE TYPE dwell_indicator_style AS ENUM (
+  'circle',
+  'shrink',
+  'fill'
+);
+
+CREATE TYPE switch_access_mode AS ENUM (
+  'auto_scan',
+  'manual',
+  'step_scan'
+);
+
+CREATE TYPE tremor_filter_algorithm AS ENUM (
+  'moving_average',
+  'kalman',
+  'exponential'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────────
+-- MOTOR_PROFILES TABLE
+-- ───────────────────────────────────────────────────────────────────────────────
+--
+-- Stores motor accommodation settings for learners with motor challenges.
+-- One profile per learner, created on demand.
+--
+
+CREATE TABLE IF NOT EXISTS motor_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id UUID NOT NULL UNIQUE,
+  tenant_id UUID NOT NULL,
+  
+  -- Motor ability assessment
+  fine_motor_level motor_ability_level NOT NULL DEFAULT 'TYPICAL',
+  gross_motor_level motor_ability_level NOT NULL DEFAULT 'TYPICAL',
+  
+  -- Specific challenges
+  has_tremor BOOLEAN NOT NULL DEFAULT FALSE,
+  tremor_severity SMALLINT CHECK (tremor_severity >= 1 AND tremor_severity <= 10),
+  has_limited_range BOOLEAN NOT NULL DEFAULT FALSE,
+  limited_range_side VARCHAR(10) CHECK (limited_range_side IN ('left', 'right', 'both')),
+  has_fatigue BOOLEAN NOT NULL DEFAULT FALSE,
+  fatigue_threshold_minutes SMALLINT,
+  
+  -- Touch accommodations
+  enlarged_touch_targets BOOLEAN NOT NULL DEFAULT FALSE,
+  touch_target_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.0,
+  touch_hold_duration SMALLINT NOT NULL DEFAULT 0,
+  accidental_touch_filter BOOLEAN NOT NULL DEFAULT FALSE,
+  edge_ignore_margin SMALLINT NOT NULL DEFAULT 0,
+  
+  -- Gesture accommodations
+  simplified_gestures BOOLEAN NOT NULL DEFAULT FALSE,
+  allow_single_finger_gestures BOOLEAN NOT NULL DEFAULT TRUE,
+  disable_multi_touch BOOLEAN NOT NULL DEFAULT FALSE,
+  disable_pinch_zoom BOOLEAN NOT NULL DEFAULT FALSE,
+  disable_swipe BOOLEAN NOT NULL DEFAULT FALSE,
+  swipe_distance_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.0,
+  
+  -- Drag & drop accommodations
+  drag_assist_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  drag_snap_to_grid BOOLEAN NOT NULL DEFAULT FALSE,
+  drag_grid_size SMALLINT NOT NULL DEFAULT 20,
+  drag_auto_complete BOOLEAN NOT NULL DEFAULT FALSE,
+  drag_auto_complete_threshold SMALLINT NOT NULL DEFAULT 30,
+  
+  -- Timing accommodations
+  extended_response_time BOOLEAN NOT NULL DEFAULT FALSE,
+  response_time_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.0,
+  disable_timed_elements BOOLEAN NOT NULL DEFAULT FALSE,
+  auto_advance_delay SMALLINT NOT NULL DEFAULT 0,
+  
+  -- Alternative input methods - Voice
+  voice_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  voice_input_for_text BOOLEAN NOT NULL DEFAULT TRUE,
+  voice_input_for_navigation BOOLEAN NOT NULL DEFAULT FALSE,
+  
+  -- Alternative input methods - Dwell selection
+  dwell_selection_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  dwell_time_ms SMALLINT NOT NULL DEFAULT 1000,
+  dwell_indicator_style dwell_indicator_style NOT NULL DEFAULT 'circle',
+  
+  -- Alternative input methods - Switch access
+  switch_access_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  switch_access_mode switch_access_mode NOT NULL DEFAULT 'auto_scan',
+  switch_scan_speed SMALLINT NOT NULL DEFAULT 1500,
+  
+  -- Handwriting alternatives
+  prefer_typing BOOLEAN NOT NULL DEFAULT FALSE,
+  prefer_voice_input BOOLEAN NOT NULL DEFAULT FALSE,
+  prefer_multiple_choice BOOLEAN NOT NULL DEFAULT FALSE,
+  show_word_prediction BOOLEAN NOT NULL DEFAULT TRUE,
+  enlarged_keyboard BOOLEAN NOT NULL DEFAULT FALSE,
+  keyboard_type keyboard_type NOT NULL DEFAULT 'standard',
+  
+  -- Visual feedback
+  enhanced_touch_feedback BOOLEAN NOT NULL DEFAULT FALSE,
+  haptic_feedback_intensity haptic_intensity NOT NULL DEFAULT 'normal',
+  show_touch_ripples BOOLEAN NOT NULL DEFAULT TRUE,
+  highlight_focused_element BOOLEAN NOT NULL DEFAULT TRUE,
+  
+  -- Tremor filtering
+  tremor_filter_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  tremor_filter_strength SMALLINT NOT NULL DEFAULT 50 CHECK (tremor_filter_strength >= 0 AND tremor_filter_strength <= 100),
+  tremor_filter_algorithm tremor_filter_algorithm NOT NULL DEFAULT 'moving_average',
+  
+  -- Fatigue management
+  auto_break_reminders BOOLEAN NOT NULL DEFAULT FALSE,
+  break_reminder_interval_minutes SMALLINT NOT NULL DEFAULT 15,
+  reduce_requirements_on_fatigue BOOLEAN NOT NULL DEFAULT FALSE,
+  
+  -- Custom gestures
+  custom_gestures JSONB,
+  
+  -- Metadata
+  assessed_by VARCHAR(20) CHECK (assessed_by IN ('self', 'parent', 'therapist', 'ot')),
+  assessed_at TIMESTAMPTZ,
+  accommodation_notes TEXT,
+  
+  -- Audit
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for motor_profiles
+CREATE INDEX idx_motor_profiles_tenant ON motor_profiles(tenant_id);
+CREATE INDEX idx_motor_profiles_learner ON motor_profiles(learner_id);
+CREATE INDEX idx_motor_profiles_fine_motor ON motor_profiles(fine_motor_level) WHERE fine_motor_level != 'TYPICAL';
+
+-- ───────────────────────────────────────────────────────────────────────────────
+-- MOTOR_INTERACTION_LOGS TABLE
+-- ───────────────────────────────────────────────────────────────────────────────
+--
+-- Tracks motor interactions for analysis and accommodation optimization.
+-- Used to suggest accommodation adjustments based on real usage patterns.
+--
+
+CREATE TABLE IF NOT EXISTS motor_interaction_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id UUID NOT NULL,
+  tenant_id UUID NOT NULL,
+  session_id UUID,
+  
+  -- Interaction details
+  interaction_type VARCHAR(20) NOT NULL CHECK (
+    interaction_type IN ('tap', 'double_tap', 'long_press', 'drag', 'swipe', 'pinch', 'type', 'voice', 'dwell', 'switch')
+  ),
+  target_element VARCHAR(255),
+  
+  -- Performance metrics
+  attempt_count SMALLINT NOT NULL DEFAULT 1,
+  success_on_attempt SMALLINT,
+  total_time_ms INTEGER,
+  
+  -- Accuracy metrics
+  target_hit_accuracy DECIMAL(4,3) CHECK (target_hit_accuracy >= 0 AND target_hit_accuracy <= 1),
+  drag_path_smoothness DECIMAL(4,3),
+  
+  -- Accommodations active during interaction
+  accommodations_active TEXT[] NOT NULL DEFAULT '{}',
+  
+  -- Outcome
+  successful BOOLEAN NOT NULL,
+  used_alternative BOOLEAN NOT NULL DEFAULT FALSE,
+  alternative_method VARCHAR(50),
+  
+  -- Timestamp
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for motor_interaction_logs
+CREATE INDEX idx_motor_logs_learner ON motor_interaction_logs(learner_id);
+CREATE INDEX idx_motor_logs_session ON motor_interaction_logs(session_id) WHERE session_id IS NOT NULL;
+CREATE INDEX idx_motor_logs_type ON motor_interaction_logs(interaction_type);
+CREATE INDEX idx_motor_logs_timestamp ON motor_interaction_logs(timestamp);
+CREATE INDEX idx_motor_logs_failed ON motor_interaction_logs(learner_id, timestamp) 
+  WHERE successful = FALSE;
+
+-- Trigger for motor_profiles updated_at
+CREATE TRIGGER trg_motor_profiles_updated_at
+  BEFORE UPDATE ON motor_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ───────────────────────────────────────────────────────────────────────────────
+-- MOTOR SCHEMA COMMENTS
+-- ───────────────────────────────────────────────────────────────────────────────
+
+COMMENT ON TABLE motor_profiles IS 'Motor accommodation settings for learners with motor challenges - ND-3.3';
+COMMENT ON TABLE motor_interaction_logs IS 'Motor interaction tracking for accommodation optimization';
+
+COMMENT ON COLUMN motor_profiles.fine_motor_level IS 'Assessment of fine motor ability for touch interactions';
+COMMENT ON COLUMN motor_profiles.touch_target_multiplier IS 'Multiplier for touch target sizes (1.0 = standard, 2.0 = double)';
+COMMENT ON COLUMN motor_profiles.touch_hold_duration IS 'Required hold duration in ms (0 = standard tap)';
+COMMENT ON COLUMN motor_profiles.dwell_time_ms IS 'Time to dwell before selection triggers';
+COMMENT ON COLUMN motor_profiles.tremor_filter_strength IS 'Tremor filter intensity 0-100';
+COMMENT ON COLUMN motor_profiles.assessed_by IS 'Who assessed the motor profile (self, parent, therapist, ot)';
+
+COMMENT ON COLUMN motor_interaction_logs.target_hit_accuracy IS 'How close to center of target (0-1)';
+COMMENT ON COLUMN motor_interaction_logs.drag_path_smoothness IS 'Smoothness metric for drag operations';
+COMMENT ON COLUMN motor_interaction_logs.accommodations_active IS 'List of active accommodation IDs during interaction';
