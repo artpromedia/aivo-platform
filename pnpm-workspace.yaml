@@ -1,5 +1,6 @@
 packages:
   - "apps/web-*"
+  - "apps/mobile-*"
   - "services/*"
   - "libs/ts-*"
   - "libs/ui-web"

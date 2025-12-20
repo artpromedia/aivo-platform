@@ -27,6 +27,11 @@ export default [
       "**/*.test.tsx",
       "**/__tests__/**",
       "**/*.config.mjs",
+      "**/*.config.js",
+      "**/*.config.cjs",
+      "**/next.config.js",
+      "**/postcss.config.js",
+      "**/docs/**",
       "**/tests/**",
       "**/prisma/seed.ts",
       "scripts/validate-schemas.ts"
