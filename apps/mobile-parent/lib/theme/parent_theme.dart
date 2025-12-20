@@ -1,100 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+// Import shared brand colors
+import 'package:flutter_common/theme/aivo_theme.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACCESSIBILITY STATE
 // ══════════════════════════════════════════════════════════════════════════════
 
-/// Accessibility settings state.
-@immutable
 class AccessibilityState {
+  final bool useDyslexiaFont;
+  final bool useHighContrast;
+  final double textScaleFactor;
+
   const AccessibilityState({
     this.useDyslexiaFont = false,
     this.useHighContrast = false,
     this.textScaleFactor = 1.0,
-    this.isLoaded = false,
   });
-
-  final bool useDyslexiaFont;
-  final bool useHighContrast;
-  final double textScaleFactor;
-  final bool isLoaded;
 
   AccessibilityState copyWith({
     bool? useDyslexiaFont,
     bool? useHighContrast,
     double? textScaleFactor,
-    bool? isLoaded,
   }) {
     return AccessibilityState(
       useDyslexiaFont: useDyslexiaFont ?? this.useDyslexiaFont,
       useHighContrast: useHighContrast ?? this.useHighContrast,
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
-      isLoaded: isLoaded ?? this.isLoaded,
     );
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════════
-
-/// Controller for accessibility settings.
 class AccessibilityController extends StateNotifier<AccessibilityState> {
-  AccessibilityController() : super(const AccessibilityState()) {
-    _loadSettings();
+  AccessibilityController() : super(const AccessibilityState());
+
+  void setDyslexiaFont(bool value) {
+    state = state.copyWith(useDyslexiaFont: value);
   }
 
-  static const _keyDyslexiaFont = 'a11y_dyslexia_font';
-  static const _keyHighContrast = 'a11y_high_contrast';
-  static const _keyTextScale = 'a11y_text_scale';
-
-  Future<void> _loadSettings() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      state = AccessibilityState(
-        useDyslexiaFont: prefs.getBool(_keyDyslexiaFont) ?? false,
-        useHighContrast: prefs.getBool(_keyHighContrast) ?? false,
-        textScaleFactor: prefs.getDouble(_keyTextScale) ?? 1.0,
-        isLoaded: true,
-      );
-    } catch (_) {
-      state = state.copyWith(isLoaded: true);
-    }
+  void setHighContrast(bool value) {
+    state = state.copyWith(useHighContrast: value);
   }
 
-  Future<void> setDyslexiaFont(bool enabled) async {
-    state = state.copyWith(useDyslexiaFont: enabled);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyDyslexiaFont, enabled);
-  }
-
-  Future<void> setHighContrast(bool enabled) async {
-    state = state.copyWith(useHighContrast: enabled);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyHighContrast, enabled);
-  }
-
-  Future<void> setTextScaleFactor(double scale) async {
-    state = state.copyWith(textScaleFactor: scale.clamp(0.8, 1.5));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_keyTextScale, state.textScaleFactor);
-  }
-
-  void resetToDefaults() async {
-    state = const AccessibilityState(isLoaded: true);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyDyslexiaFont);
-    await prefs.remove(_keyHighContrast);
-    await prefs.remove(_keyTextScale);
+  void setTextScaleFactor(double value) {
+    state = state.copyWith(textScaleFactor: value.clamp(0.8, 2.0));
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PROVIDERS
-// ══════════════════════════════════════════════════════════════════════════════
 
 final accessibilityControllerProvider =
     StateNotifierProvider<AccessibilityController, AccessibilityState>(
@@ -102,45 +55,61 @@ final accessibilityControllerProvider =
 );
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PARENT THEME
+// PARENT THEME COLORS
+// Aligned with Marketing Website - Professional variant
 // ══════════════════════════════════════════════════════════════════════════════
 
-/// Parent-specific colors - neutral and professional.
+/// Parent-specific colors using the AIVO brand palette.
+/// Slightly more subdued for professional/parent context.
 class _ParentColors {
-  static const primary = Color(0xFF2563EB); // Blue
-  static const secondary = Color(0xFF7C3AED); // Purple
-  static const background = Color(0xFFF8FAFC);
+  // Primary - AIVO Violet (slightly deeper for professionalism)
+  static const primary = Color(0xFF7C3AED); // primary-600 for more gravitas
+
+  // Secondary - Using violet-400 for softer secondary actions
+  static const secondary = Color(0xFFA78BFA); // primary-400
+
+  // CTA - Coral (same as marketing for consistency)
+  static const cta = Color(0xFFFF6B6B); // coral-500
+
+  // Backgrounds - Clean, professional
+  static const background = Color(0xFFFAFAFA); // gray-50
   static const surface = Colors.white;
-  static const surfaceMuted = Color(0xFFF1F5F9);
-  static const textPrimary = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF475569);
-  static const error = Color(0xFFDC2626);
-  // ignore: unused_field - part of color palette API
-  static const success = Color(0xFF16A34A);
-  // ignore: unused_field - part of color palette API
-  static const warning = Color(0xFFD97706);
+  static const surfaceMuted = Color(0xFFF4F4F5); // gray-100
+
+  // Text
+  static const textPrimary = Color(0xFF18181B); // gray-900
+  static const textSecondary = Color(0xFF52525B); // gray-600
+
+  // Semantic
+  static const error = Color(0xFFEF4444); // red-500
+  static const success = Color(0xFF10B981); // mint-500
+  static const warning = Color(0xFFFBBF24); // sunshine-400
+  static const info = Color(0xFF0EA5E9); // sky-500
 }
 
 /// High contrast variant for accessibility.
 class _HighContrastColors {
-  static const primary = Color(0xFF1E40AF); // Darker blue
-  static const secondary = Color(0xFF5B21B6); // Darker purple
+  static const primary = Color(0xFF5B21B6); // primary-800
+  static const secondary = Color(0xFF6D28D9); // primary-700
+  static const cta = Color(0xFFC92A2A); // coral-900
   static const background = Color(0xFFFFFFFF);
   static const surface = Colors.white;
-  static const surfaceMuted = Color(0xFFE2E8F0);
+  static const surfaceMuted = Color(0xFFE4E4E7); // gray-200
   static const textPrimary = Color(0xFF000000);
-  static const textSecondary = Color(0xFF1E293B);
-  static const error = Color(0xFFB91C1C);
+  static const textSecondary = Color(0xFF27272A); // gray-800
+  static const error = Color(0xFFB91C1C); // red-700
+  static const success = Color(0xFF047857); // mint-700
   // ignore: unused_field - part of color palette API
-  static const success = Color(0xFF15803D);
-  // ignore: unused_field - part of color palette API
-  static const warning = Color(0xFFB45309);
+  static const warning = Color(0xFFB45309); // sunshine-700
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEXT THEME
+// ══════════════════════════════════════════════════════════════════════════════
 
 /// Build text theme with optional dyslexia-friendly font.
 TextTheme _buildParentTextTheme({bool useDyslexiaFont = false}) {
-  // OpenDyslexic or similar dyslexia-friendly font
-  // Using Lexend as a more readable alternative available in Google Fonts
+  // Lexend is a more readable alternative available in Google Fonts
   final base = useDyslexiaFont
       ? GoogleFonts.lexendTextTheme()
       : GoogleFonts.interTextTheme();
@@ -149,199 +118,375 @@ TextTheme _buildParentTextTheme({bool useDyslexiaFont = false}) {
     displayLarge: base.displayLarge?.copyWith(
       fontSize: 32,
       fontWeight: FontWeight.w700,
-      letterSpacing: useDyslexiaFont ? 0.5 : 0,
+      letterSpacing: useDyslexiaFont ? 0.5 : -0.5,
+      color: _ParentColors.textPrimary,
     ),
     headlineMedium: base.headlineMedium?.copyWith(
       fontSize: 26,
       fontWeight: FontWeight.w700,
-      letterSpacing: useDyslexiaFont ? 0.3 : 0,
+      color: _ParentColors.textPrimary,
+    ),
+    headlineSmall: base.headlineSmall?.copyWith(
+      fontSize: 22,
+      fontWeight: FontWeight.w600,
+      color: _ParentColors.textPrimary,
     ),
     titleLarge: base.titleLarge?.copyWith(
       fontSize: 20,
       fontWeight: FontWeight.w600,
-      letterSpacing: useDyslexiaFont ? 0.2 : 0,
+      color: _ParentColors.textPrimary,
     ),
     titleMedium: base.titleMedium?.copyWith(
       fontSize: 18,
       fontWeight: FontWeight.w600,
-      letterSpacing: useDyslexiaFont ? 0.2 : 0,
-    ),
-    titleSmall: base.titleSmall?.copyWith(
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      letterSpacing: useDyslexiaFont ? 0.1 : 0,
+      color: _ParentColors.textPrimary,
     ),
     bodyLarge: base.bodyLarge?.copyWith(
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: FontWeight.w400,
-      height: useDyslexiaFont ? 1.6 : 1.5,
-      letterSpacing: useDyslexiaFont ? 0.2 : 0,
+      height: 1.6,
+      letterSpacing: useDyslexiaFont ? 0.5 : 0,
+      color: _ParentColors.textPrimary,
     ),
     bodyMedium: base.bodyMedium?.copyWith(
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: FontWeight.w400,
-      height: useDyslexiaFont ? 1.6 : 1.5,
-      letterSpacing: useDyslexiaFont ? 0.1 : 0,
-    ),
-    bodySmall: base.bodySmall?.copyWith(
-      fontSize: 12,
-      fontWeight: FontWeight.w400,
-      height: useDyslexiaFont ? 1.5 : 1.4,
-      letterSpacing: useDyslexiaFont ? 0.1 : 0,
+      height: 1.5,
+      letterSpacing: useDyslexiaFont ? 0.3 : 0,
+      color: _ParentColors.textSecondary,
     ),
     labelLarge: base.labelLarge?.copyWith(
       fontSize: 14,
       fontWeight: FontWeight.w600,
-      letterSpacing: useDyslexiaFont ? 0.2 : 0.1,
+      letterSpacing: 0.1,
+      color: _ParentColors.textPrimary,
+    ),
+    labelMedium: base.labelMedium?.copyWith(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: _ParentColors.textSecondary,
     ),
   );
 }
 
-/// Build parent theme with accessibility options.
+// ══════════════════════════════════════════════════════════════════════════════
+// THEME BUILDER
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Build the parent app theme with accessibility options.
 ThemeData buildParentTheme({
   bool useDyslexiaFont = false,
   bool useHighContrast = false,
 }) {
   final textTheme = _buildParentTextTheme(useDyslexiaFont: useDyslexiaFont);
 
+  // Select color palette based on contrast mode
+  final primary =
+      useHighContrast ? _HighContrastColors.primary : _ParentColors.primary;
+  final secondary =
+      useHighContrast ? _HighContrastColors.secondary : _ParentColors.secondary;
+  final cta = useHighContrast ? _HighContrastColors.cta : _ParentColors.cta;
+  final background = useHighContrast
+      ? _HighContrastColors.background
+      : _ParentColors.background;
+  final surface =
+      useHighContrast ? _HighContrastColors.surface : _ParentColors.surface;
+  final surfaceMuted = useHighContrast
+      ? _HighContrastColors.surfaceMuted
+      : _ParentColors.surfaceMuted;
+  final textPrimary = useHighContrast
+      ? _HighContrastColors.textPrimary
+      : _ParentColors.textPrimary;
+  final textSecondary = useHighContrast
+      ? _HighContrastColors.textSecondary
+      : _ParentColors.textSecondary;
+  final error =
+      useHighContrast ? _HighContrastColors.error : _ParentColors.error;
+  final success =
+      useHighContrast ? _HighContrastColors.success : _ParentColors.success;
+
   final colorScheme = ColorScheme.light(
-    primary: useHighContrast ? _HighContrastColors.primary : _ParentColors.primary,
-    secondary: useHighContrast ? _HighContrastColors.secondary : _ParentColors.secondary,
-    surface: useHighContrast ? _HighContrastColors.surface : _ParentColors.surface,
-    error: useHighContrast ? _HighContrastColors.error : _ParentColors.error,
+    primary: primary,
     onPrimary: Colors.white,
+    primaryContainer: primary.withOpacity(0.1),
+    onPrimaryContainer: primary,
+    secondary: secondary,
     onSecondary: Colors.white,
-    onSurface: useHighContrast ? _HighContrastColors.textPrimary : _ParentColors.textPrimary,
+    secondaryContainer: secondary.withOpacity(0.1),
+    onSecondaryContainer: secondary,
+    tertiary: cta, // Coral for CTAs
+    onTertiary: Colors.white,
+    error: error,
     onError: Colors.white,
-    surfaceContainerHighest: useHighContrast ? _HighContrastColors.surfaceMuted : _ParentColors.surfaceMuted,
+    errorContainer: error.withOpacity(0.1),
+    onErrorContainer: error,
+    surface: surface,
+    onSurface: textPrimary,
+    surfaceContainerHighest: surfaceMuted,
+    onSurfaceVariant: textSecondary,
+    outline:
+        useHighContrast ? const Color(0xFF71717A) : const Color(0xFFD4D4D8),
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: useHighContrast ? _HighContrastColors.background : _ParentColors.background,
+    scaffoldBackgroundColor: background,
     textTheme: textTheme,
+
+    // AppBar
     appBarTheme: AppBarTheme(
-      backgroundColor: useHighContrast ? _HighContrastColors.surface : _ParentColors.surface,
-      foregroundColor: useHighContrast ? _HighContrastColors.textPrimary : _ParentColors.textPrimary,
+      backgroundColor: surface,
+      foregroundColor: textPrimary,
       centerTitle: true,
-      elevation: useHighContrast ? 2 : 0,
-    ),
-    cardTheme: CardThemeData(
-      color: useHighContrast ? _HighContrastColors.surface : _ParentColors.surface,
-      elevation: useHighContrast ? 2 : 1,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: useHighContrast
-            ? const BorderSide(color: Color(0xFFCBD5E1), width: 1)
-            : BorderSide.none,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
       ),
     ),
-    dividerTheme: DividerThemeData(
-      color: useHighContrast ? const Color(0xFF94A3B8) : const Color(0xFFE2E8F0),
-      thickness: useHighContrast ? 2 : 1,
+
+    // Cards
+    cardTheme: CardThemeData(
+      color: surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: useHighContrast
+              ? const Color(0xFFA1A1AA)
+              : const Color(0xFFE4E4E7),
+          width: useHighContrast ? 2 : 1,
+        ),
+      ),
+      surfaceTintColor: Colors.transparent,
     ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: useHighContrast ? _HighContrastColors.primary : _ParentColors.primary,
+
+    // Primary Button (Violet)
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        minimumSize: const Size(48, 48), // Ensure touch target size
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        minimumSize: const Size(48, 52),
+        elevation: 0,
       ),
     ),
+
+    // CTA Button (Coral)
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: cta,
+        foregroundColor: Colors.white,
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        minimumSize: const Size(48, 52),
+      ),
+    ),
+
+    // Outline Button
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: useHighContrast ? _HighContrastColors.primary : _ParentColors.primary,
+        foregroundColor: primary,
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         side: BorderSide(
-          color: useHighContrast ? _HighContrastColors.primary : _ParentColors.primary,
-          width: useHighContrast ? 2 : 1,
+          color: primary,
+          width: useHighContrast ? 2 : 1.5,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        minimumSize: const Size(48, 52),
       ),
     ),
+
+    // Text Button
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: useHighContrast ? _HighContrastColors.primary : _ParentColors.primary,
-        textStyle: textTheme.labelLarge?.copyWith(
-          decoration: useHighContrast ? TextDecoration.underline : null,
-        ),
-        minimumSize: const Size(48, 48),
+        foregroundColor: primary,
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        minimumSize: const Size(48, 44),
       ),
     ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return useHighContrast ? _HighContrastColors.primary : _ParentColors.primary;
-        }
-        return const Color(0xFF94A3B8);
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return (useHighContrast ? _HighContrastColors.primary : _ParentColors.primary)
-              .withOpacity(0.3);
-        }
-        return const Color(0xFFE2E8F0);
-      }),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      fillColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return useHighContrast ? _HighContrastColors.primary : _ParentColors.primary;
-        }
-        return Colors.transparent;
-      }),
-      side: BorderSide(
-        color: useHighContrast ? _HighContrastColors.textSecondary : _ParentColors.textSecondary,
-        width: useHighContrast ? 2 : 1.5,
-      ),
-    ),
+
+    // Input Fields
     inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: surfaceMuted,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: useHighContrast ? const Color(0xFF64748B) : const Color(0xFFCBD5E1),
+          color: useHighContrast
+              ? const Color(0xFF71717A)
+              : const Color(0xFFD4D4D8),
           width: useHighContrast ? 2 : 1,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: useHighContrast ? const Color(0xFF64748B) : const Color(0xFFCBD5E1),
+          color: useHighContrast
+              ? const Color(0xFF71717A)
+              : const Color(0xFFD4D4D8),
           width: useHighContrast ? 2 : 1,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: useHighContrast ? _HighContrastColors.primary : _ParentColors.primary,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: useHighContrast ? _HighContrastColors.error : _ParentColors.error,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: error, width: useHighContrast ? 2 : 1),
       ),
-      filled: true,
-      fillColor: useHighContrast ? Colors.white : _ParentColors.surfaceMuted.withOpacity(0.5),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: error, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      hintStyle: textTheme.bodyMedium?.copyWith(
+        color: const Color(0xFFA1A1AA),
+      ),
     ),
+
+    // Bottom Navigation
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: surface,
+      selectedItemColor: primary,
+      unselectedItemColor: const Color(0xFFA1A1AA),
+      type: BottomNavigationBarType.fixed,
+      elevation: 0,
+      selectedLabelStyle:
+          textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+      unselectedLabelStyle: textTheme.labelMedium,
+    ),
+
+    // Floating Action Button (Coral CTA)
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: cta,
+      foregroundColor: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+
+    // Chips
+    chipTheme: ChipThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: surfaceMuted,
+      selectedColor: primary.withOpacity(0.15),
+      labelStyle: textTheme.labelMedium?.copyWith(color: textSecondary),
+      secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+        color: textPrimary,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    // Checkbox
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return primary;
+        }
+        return Colors.transparent;
+      }),
+      side: BorderSide(
+        color: textSecondary,
+        width: useHighContrast ? 2 : 1.5,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+    ),
+
+    // Switch
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return primary;
+        }
+        return const Color(0xFFA1A1AA);
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return primary.withOpacity(0.3);
+        }
+        return const Color(0xFFE4E4E7);
+      }),
+    ),
+
+    // Divider
+    dividerTheme: DividerThemeData(
+      color:
+          useHighContrast ? const Color(0xFFA1A1AA) : const Color(0xFFE4E4E7),
+      thickness: 1,
+    ),
+
+    // Progress Indicator
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: primary,
+      linearTrackColor: primary.withOpacity(0.1),
+    ),
+
+    // Snackbar
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: const Color(0xFF27272A),
+      contentTextStyle: textTheme.bodyMedium?.copyWith(color: Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      behavior: SnackBarBehavior.floating,
+    ),
+
+    // Dialog
+    dialogTheme: DialogThemeData(
+      backgroundColor: surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titleTextStyle: textTheme.headlineSmall,
+      contentTextStyle: textTheme.bodyMedium,
+    ),
+
+    // Bottom Sheet
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+    ),
+
+    // Extensions
+    extensions: [
+      AivoColors(
+        primary: primary,
+        secondary: secondary,
+        accent: cta,
+        background: background,
+        surface: surface,
+        surfaceVariant: surfaceMuted,
+        textPrimary: textPrimary,
+        textSecondary: textSecondary,
+        error: error,
+        success: success,
+        warning: _ParentColors.warning,
+        info: _ParentColors.info,
+        outline:
+            useHighContrast ? const Color(0xFF71717A) : const Color(0xFFD4D4D8),
+        coral: AivoBrandColors.coral,
+        mint: AivoBrandColors.mint,
+        sunshine: AivoBrandColors.sunshine,
+        sky: AivoBrandColors.sky,
+      ),
+    ],
   );
 }
 
-/// Provider for parent theme with accessibility settings applied.
+// ══════════════════════════════════════════════════════════════════════════════
+// THEME PROVIDER
+// ══════════════════════════════════════════════════════════════════════════════
+
 final parentThemeProvider = Provider<ThemeData>((ref) {
-  final a11y = ref.watch(accessibilityControllerProvider);
+  final accessibility = ref.watch(accessibilityControllerProvider);
   return buildParentTheme(
-    useDyslexiaFont: a11y.useDyslexiaFont,
-    useHighContrast: a11y.useHighContrast,
+    useDyslexiaFont: accessibility.useDyslexiaFont,
+    useHighContrast: accessibility.useHighContrast,
   );
 });
