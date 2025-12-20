@@ -2,7 +2,7 @@ const { fontFamily } = require('tailwindcss/defaultTheme');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
+  darkMode: ['class'],
   content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -13,7 +13,13 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: '1rem',
+      padding: {
+        DEFAULT: '1rem',
+        sm: '2rem',
+        lg: '4rem',
+        xl: '5rem',
+        '2xl': '6rem',
+      },
       screens: {
         sm: '640px',
         md: '768px',
@@ -24,231 +30,69 @@ module.exports = {
     },
     extend: {
       // ==========================================
-      // AIVO UNIFIED BRAND COLORS
-      // Aligned with Flutter apps (aivo_theme.dart & parent_theme.dart)
+      // AIVO BRAND COLORS
       // ==========================================
       colors: {
-        // ----------------------------------------
-        // PRIMARY BRAND COLOR (AIVO Blue)
-        // Source: Flutter aivo_theme.dart - K5/G6-8 primary
-        // ----------------------------------------
-        'aivo-primary': {
-          DEFAULT: '#2D6BFF',
-          50: '#EBF1FF',
-          100: '#D6E4FF',
-          200: '#ADC8FF',
-          300: '#85ADFF',
-          400: '#5C91FF',
-          500: '#2D6BFF', // Main brand blue
-          600: '#2458DB',
-          700: '#1B45B7',
-          800: '#133293',
-          900: '#0A1F6F',
-          950: '#051247',
-        },
-
-        // ----------------------------------------
-        // SECONDARY COLOR (AIVO Orange - for learner/CTA)
-        // Source: Flutter aivo_theme.dart - secondary
-        // ----------------------------------------
-        'aivo-orange': {
-          DEFAULT: '#FF9C32',
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#FF9C32', // Main brand orange
-          600: '#EA7C0C',
-          700: '#C2600C',
-          800: '#9A4A0D',
-          900: '#7C3A0E',
-          950: '#431E06',
-        },
-
-        // ----------------------------------------
-        // ACCENT COLOR (AIVO Purple - for parent app alignment)
-        // Source: Flutter parent_theme.dart - secondary
-        // ----------------------------------------
-        'aivo-purple': {
-          DEFAULT: '#7C3AED',
-          50: '#FAF5FF',
-          100: '#F3E8FF',
-          200: '#E9D5FF',
-          300: '#D8B4FE',
-          400: '#C084FC',
-          500: '#A855F7',
-          600: '#9333EA',
-          700: '#7C3AED', // Parent app purple
-          800: '#6B21A8',
-          900: '#581C87',
-          950: '#3B0764',
-        },
-
-        // ----------------------------------------
-        // SEMANTIC COLORS (Aligned with Flutter)
-        // ----------------------------------------
-
-        // Success - mint green (aligned with Flutter)
-        'aivo-success': {
-          DEFAULT: '#16A34A',
-          50: '#F0FDF4',
-          100: '#DCFCE7',
-          200: '#BBF7D0',
-          300: '#86EFAC',
-          400: '#4ADE80',
-          500: '#22C55E',
-          600: '#16A34A', // Flutter success
-          700: '#15803D',
-          800: '#166534',
-          900: '#14532D',
-        },
-
-        // Warning - amber (aligned with Flutter)
-        'aivo-warning': {
-          DEFAULT: '#D97706',
-          50: '#FFFBEB',
-          100: '#FEF3C7',
-          200: '#FDE68A',
-          300: '#FCD34D',
-          400: '#FBBF24',
-          500: '#F59E0B',
-          600: '#D97706', // Flutter warning
-          700: '#B45309',
-          800: '#92400E',
-          900: '#78350F',
-        },
-
-        // Error - red (aligned with Flutter)
-        'aivo-error': {
-          DEFAULT: '#DC2626',
-          50: '#FEF2F2',
-          100: '#FEE2E2',
-          200: '#FECACA',
-          300: '#FCA5A5',
-          400: '#F87171',
-          500: '#EF4444',
-          600: '#DC2626', // Flutter parent error
-          700: '#B91C1C',
-          800: '#991B1B',
-          900: '#7F1D1D',
-        },
-
-        // ----------------------------------------
-        // TEAL ACCENT (From Flutter G6-8 secondary)
-        // ----------------------------------------
-        'aivo-teal': {
-          DEFAULT: '#3FB4A5',
-          50: '#F0FDFA',
-          100: '#CCFBF1',
-          200: '#99F6E4',
-          300: '#5EEAD4',
-          400: '#2DD4BF',
-          500: '#3FB4A5', // Flutter G6-8 secondary
-          600: '#0D9488',
-          700: '#0F766E',
-          800: '#115E59',
-          900: '#134E4A',
-        },
-
-        // ----------------------------------------
-        // NEUTRAL GRAYS (Aligned with Flutter backgrounds)
-        // ----------------------------------------
-        'aivo-gray': {
-          50: '#F8FAFC', // Flutter parent background
-          100: '#F1F5F9', // Flutter surfaceMuted
-          200: '#E2E8F0',
-          300: '#CBD5E1',
-          400: '#94A3B8',
-          500: '#64748B',
-          600: '#475569', // Flutter textSecondary
-          700: '#334155',
-          800: '#1E293B',
-          900: '#0F172A', // Flutter textPrimary
-          950: '#020617',
-        },
-
-        // ----------------------------------------
-        // SURFACE COLORS (From Flutter)
-        // ----------------------------------------
-        'aivo-surface': {
-          DEFAULT: '#FFFFFF',
-          muted: '#F1F5F9', // Flutter surfaceMuted
-          variant: '#EEF5FF', // Flutter surfaceVariant
-        },
-
-        'aivo-background': {
-          DEFAULT: '#F8FAFC', // Flutter parent background
-          alt: '#F6F8FC', // Flutter G6-8 background
-        },
-
-        // ----------------------------------------
-        // LEGACY ALIASES (for backward compatibility)
-        // Map old names to new unified colors
-        // ----------------------------------------
+        // Primary Brand Colors (Violet/Lavender - Friendly, Accessible)
         'theme-primary': {
-          DEFAULT: '#2D6BFF',
-          50: '#EBF1FF',
-          100: '#D6E4FF',
-          200: '#ADC8FF',
-          300: '#85ADFF',
-          400: '#5C91FF',
-          500: '#2D6BFF',
-          600: '#2458DB',
-          700: '#1B45B7',
-          800: '#133293',
-          900: '#0A1F6F',
-          950: '#051247',
+          DEFAULT: '#8B5CF6', // violet-500
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C4B5FD',
+          400: '#A78BFA',
+          500: '#8B5CF6',
+          600: '#7C3AED',
+          700: '#6D28D9',
+          800: '#5B21B6',
+          900: '#4C1D95',
+          950: '#2E1065',
         },
 
-        // Coral -> Now maps to aivo-orange (CTA color)
+        // Secondary Colors (Coral/Salmon - Warm, Inviting)
         coral: {
-          DEFAULT: '#FF9C32',
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#FF9C32',
-          600: '#EA7C0C',
-          700: '#C2600C',
-          800: '#9A4A0D',
-          900: '#7C3A0E',
+          DEFAULT: '#FF6B6B',
+          50: '#FFF5F5',
+          100: '#FFE3E3',
+          200: '#FFC9C9',
+          300: '#FFA8A8',
+          400: '#FF8787',
+          500: '#FF6B6B',
+          600: '#FA5252',
+          700: '#F03E3E',
+          800: '#E03131',
+          900: '#C92A2A',
         },
-
-        // Salmon -> Secondary CTA accent
         salmon: {
-          DEFAULT: '#FF8C42',
-          50: '#FFF5EE',
-          100: '#FFE8D6',
-          200: '#FFD4B3',
-          300: '#FFBD8A',
-          400: '#FFA461',
-          500: '#FF8C42',
-          600: '#E67A35',
-          700: '#CC6828',
-          800: '#B3561B',
-          900: '#99440E',
+          DEFAULT: '#FA8072',
+          50: '#FFF5F3',
+          100: '#FFE8E4',
+          200: '#FFD4CC',
+          300: '#FFB8AA',
+          400: '#FF9A88',
+          500: '#FA8072',
+          600: '#F56565',
+          700: '#E53E3E',
+          800: '#C53030',
+          900: '#9B2C2C',
         },
 
-        // Mint -> Now maps to aivo-success
+        // Accent Colors
         mint: {
-          DEFAULT: '#16A34A',
-          50: '#F0FDF4',
-          100: '#DCFCE7',
-          200: '#BBF7D0',
-          300: '#86EFAC',
-          400: '#4ADE80',
-          500: '#22C55E',
-          600: '#16A34A',
-          700: '#15803D',
-          800: '#166534',
-          900: '#14532D',
+          DEFAULT: '#10B981',
+          50: '#ECFDF5',
+          100: '#D1FAE5',
+          200: '#A7F3D0',
+          300: '#6EE7B7',
+          400: '#34D399',
+          500: '#10B981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065F46',
+          900: '#064E3B',
         },
-
-        // Sunshine -> Now maps to aivo-warning
         sunshine: {
-          DEFAULT: '#D97706',
+          DEFAULT: '#FBBF24',
           50: '#FFFBEB',
           100: '#FEF3C7',
           200: '#FDE68A',
@@ -260,8 +104,6 @@ module.exports = {
           800: '#92400E',
           900: '#78350F',
         },
-
-        // Sky -> Keep for informational elements
         sky: {
           DEFAULT: '#0EA5E9',
           50: '#F0F9FF',
@@ -276,51 +118,41 @@ module.exports = {
           900: '#0C4A6E',
         },
 
-        // Semantic Colors (legacy)
-        success: '#16A34A',
-        warning: '#D97706',
-        error: '#DC2626',
+        // Semantic Colors
+        success: '#10B981',
+        warning: '#FBBF24',
+        error: '#EF4444',
         info: '#3B82F6',
+
+        // Neutral Colors
+        'aivo-gray': {
+          50: '#FAFAFA',
+          100: '#F4F4F5',
+          200: '#E4E4E7',
+          300: '#D4D4D8',
+          400: '#A1A1AA',
+          500: '#71717A',
+          600: '#52525B',
+          700: '#3F3F46',
+          800: '#27272A',
+          900: '#18181B',
+        },
       },
 
       // ==========================================
-      // TYPOGRAPHY (Aligned with Flutter - Inter)
+      // TYPOGRAPHY
       // ==========================================
       fontFamily: {
-        sans: ['Inter', 'var(--font-inter)', ...fontFamily.sans],
-        display: ['Space Grotesk', 'var(--font-space-grotesk)', ...fontFamily.sans],
+        sans: ['var(--font-inter)', ...fontFamily.sans],
+        display: ['var(--font-space-grotesk)', ...fontFamily.sans],
         mono: ['var(--font-mono)', ...fontFamily.mono],
-        // Add Lexend for dyslexia-friendly option (matches Flutter)
-        dyslexia: ['Lexend', 'var(--font-lexend)', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        // Match Flutter typography scale (G6-8 as default)
-        display: ['34px', { lineHeight: '1.2', fontWeight: '700' }],
-        headline: ['28px', { lineHeight: '1.3', fontWeight: '700' }],
-        title: ['22px', { lineHeight: '1.4', fontWeight: '600' }],
-        body: ['17px', { lineHeight: '1.6', fontWeight: '400' }],
-        label: ['14px', { lineHeight: '1.5', fontWeight: '600' }],
-        // Legacy sizes
-        'display-2xl': [
-          '4.5rem',
-          { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' },
-        ],
-        'display-xl': [
-          '3.75rem',
-          { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' },
-        ],
-        'display-lg': [
-          '3rem',
-          { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' },
-        ],
-        'display-md': [
-          '2.25rem',
-          { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' },
-        ],
-        'display-sm': [
-          '1.875rem',
-          { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' },
-        ],
+        'display-2xl': ['4.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-xl': ['3.75rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-lg': ['3rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-md': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'display-sm': ['1.875rem', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' }],
         'display-xs': ['1.5rem', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }],
       },
 
@@ -339,16 +171,10 @@ module.exports = {
       },
 
       // ==========================================
-      // BORDER RADIUS (Aligned with Flutter - 12px standard)
+      // BORDER RADIUS (Friendly, Rounded Aesthetic)
       // ==========================================
       borderRadius: {
-        aivo: '12px', // Flutter standard
-        'aivo-lg': '16px',
-        'aivo-xl': '20px',
-        'aivo-2xl': '24px',
-        'aivo-3xl': '32px',
-        // Legacy sizes
-        xl: '1rem',
+        'xl': '1rem',
         '2xl': '1.5rem',
         '3xl': '2rem',
         '4xl': '2.5rem',
@@ -356,42 +182,27 @@ module.exports = {
       },
 
       // ==========================================
-      // SHADOWS (Aligned with Flutter elevation)
+      // SHADOWS (Soft, Elevated Feel)
       // ==========================================
       boxShadow: {
-        // AIVO shadows (aligned with Flutter)
-        'aivo-sm': '0 1px 3px rgba(0, 0, 0, 0.08)',
-        aivo: '0 2px 8px rgba(0, 0, 0, 0.08)',
-        'aivo-md': '0 4px 12px rgba(0, 0, 0, 0.1)',
-        'aivo-lg': '0 8px 24px rgba(0, 0, 0, 0.12)',
-        'aivo-xl': '0 16px 48px rgba(0, 0, 0, 0.16)',
-
-        // Colored shadows for CTAs
-        'aivo-primary': '0 8px 24px rgba(45, 107, 255, 0.25)',
-        'aivo-orange': '0 8px 24px rgba(255, 156, 50, 0.3)',
-        'aivo-purple': '0 8px 24px rgba(124, 58, 237, 0.25)',
-
-        // Legacy shadows (kept for compatibility)
-        soft: '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'soft-lg':
-          '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.05)',
+        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+        'soft-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.05)',
         'soft-xl': '0 20px 50px -12px rgba(0, 0, 0, 0.15)',
         'soft-2xl': '0 25px 60px -15px rgba(0, 0, 0, 0.2)',
 
-        // Colored Shadows (updated to AIVO colors)
-        coral: '0 10px 40px -10px rgba(255, 156, 50, 0.4)',
-        'coral-lg': '0 20px 50px -12px rgba(255, 156, 50, 0.5)',
-        salmon: '0 10px 40px -10px rgba(255, 140, 66, 0.4)',
-        purple: '0 10px 40px -10px rgba(45, 107, 255, 0.4)',
-        'purple-lg': '0 20px 50px -12px rgba(45, 107, 255, 0.5)',
-        mint: '0 10px 40px -10px rgba(22, 163, 74, 0.4)',
-        sky: '0 10px 40px -10px rgba(14, 165, 233, 0.4)',
+        // Colored Shadows for Brand Elements
+        'coral': '0 10px 40px -10px rgba(255, 107, 107, 0.4)',
+        'coral-lg': '0 20px 50px -12px rgba(255, 107, 107, 0.5)',
+        'salmon': '0 10px 40px -10px rgba(250, 128, 114, 0.4)',
+        'purple': '0 10px 40px -10px rgba(139, 92, 246, 0.4)',
+        'purple-lg': '0 20px 50px -12px rgba(139, 92, 246, 0.5)',
+        'mint': '0 10px 40px -10px rgba(16, 185, 129, 0.4)',
+        'sky': '0 10px 40px -10px rgba(14, 165, 233, 0.4)',
 
         // Glass/Card Shadows
-        glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        card: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-        'card-hover':
-          '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        'glass': '0 8px 32px rgba(0, 0, 0, 0.08)',
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       },
 
       // ==========================================
@@ -524,33 +335,21 @@ module.exports = {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
 
-        // AIVO Gradients (aligned with Flutter)
-        'gradient-aivo-primary': 'linear-gradient(135deg, #2D6BFF 0%, #1B45B7 100%)',
-        'gradient-aivo-cta': 'linear-gradient(135deg, #FF9C32 0%, #2D6BFF 100%)',
-        'gradient-aivo-purple': 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
-        'gradient-aivo-teal': 'linear-gradient(135deg, #3FB4A5 0%, #0D9488 100%)',
-        'gradient-aivo-hero': 'linear-gradient(180deg, #EBF1FF 0%, #FFFFFF 100%)',
-        'gradient-aivo-section': 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
+        // Hero Gradients
+        'hero-gradient': 'linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(255, 255, 255, 1) 50%, rgba(251, 207, 232, 0.3) 100%)',
+        'hero-mesh': 'radial-gradient(at 40% 20%, rgba(139, 92, 246, 0.1) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(255, 107, 107, 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.1) 0px, transparent 50%)',
 
-        // Legacy Hero Gradients (updated to AIVO colors)
-        'hero-gradient':
-          'linear-gradient(135deg, rgba(45, 107, 255, 0.05) 0%, rgba(255, 255, 255, 1) 50%, rgba(255, 156, 50, 0.15) 100%)',
-        'hero-mesh':
-          'radial-gradient(at 40% 20%, rgba(45, 107, 255, 0.1) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(255, 156, 50, 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(22, 163, 74, 0.1) 0px, transparent 50%)',
-
-        // Button Gradients (legacy - updated)
-        'gradient-primary': 'linear-gradient(135deg, #2D6BFF 0%, #1B45B7 100%)',
-        'gradient-coral': 'linear-gradient(135deg, #FF9C32 0%, #EA7C0C 100%)',
-        'gradient-cta': 'linear-gradient(135deg, #FF9C32 0%, #EA7C0C 50%, #2D6BFF 100%)',
+        // Button Gradients
+        'gradient-primary': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
+        'gradient-coral': 'linear-gradient(135deg, #FF6B6B 0%, #FA8072 50%, #8B5CF6 100%)',
+        'gradient-cta': 'linear-gradient(135deg, #FF6B6B 0%, #FA5252 50%, #7C3AED 100%)',
 
         // Card Gradients
-        'gradient-card':
-          'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
-        'gradient-glass':
-          'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%)',
+        'gradient-card': 'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+        'gradient-glass': 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%)',
 
-        // Section Backgrounds (updated)
-        'gradient-section': 'linear-gradient(180deg, #FFFFFF 0%, #EBF1FF 50%, #FFFFFF 100%)',
+        // Section Backgrounds
+        'gradient-section': 'linear-gradient(180deg, #FFFFFF 0%, #F5F3FF 50%, #FFFFFF 100%)',
         'gradient-footer': 'linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%)',
       },
 
@@ -569,44 +368,24 @@ module.exports = {
     },
   },
   plugins: [
-    require('@tailwindcss/typography'),
     // Custom Plugin for Utilities
-    function ({ addUtilities }) {
-      // Text Gradient Utilities (AIVO aligned)
+    function({ addUtilities }) {
+      // Text Gradient Utilities
       addUtilities({
-        '.text-gradient-aivo': {
-          background: 'linear-gradient(135deg, #2D6BFF 0%, #3FB4A5 100%)',
-          '-webkit-background-clip': 'text',
-          '-webkit-text-fill-color': 'transparent',
-          'background-clip': 'text',
-        },
-        '.text-gradient-cta': {
-          background: 'linear-gradient(135deg, #FF9C32 0%, #2D6BFF 100%)',
-          '-webkit-background-clip': 'text',
-          '-webkit-text-fill-color': 'transparent',
-          'background-clip': 'text',
-        },
-        '.text-gradient-purple': {
-          background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
-          '-webkit-background-clip': 'text',
-          '-webkit-text-fill-color': 'transparent',
-          'background-clip': 'text',
-        },
-        // Legacy gradients (remapped)
         '.text-gradient-primary': {
-          background: 'linear-gradient(135deg, #2D6BFF 0%, #1B45B7 100%)',
+          'background': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
           '-webkit-background-clip': 'text',
           '-webkit-text-fill-color': 'transparent',
           'background-clip': 'text',
         },
         '.text-gradient-coral': {
-          background: 'linear-gradient(135deg, #FF9C32 0%, #EA7C0C 100%)',
+          'background': 'linear-gradient(135deg, #FF6B6B 0%, #FA8072 100%)',
           '-webkit-background-clip': 'text',
           '-webkit-text-fill-color': 'transparent',
           'background-clip': 'text',
         },
         '.text-gradient-rainbow': {
-          background: 'linear-gradient(90deg, #FF9C32, #FBBF24, #16A34A, #0EA5E9, #2D6BFF)',
+          'background': 'linear-gradient(90deg, #FF6B6B, #FBBF24, #10B981, #0EA5E9, #8B5CF6)',
           '-webkit-background-clip': 'text',
           '-webkit-text-fill-color': 'transparent',
           'background-clip': 'text',
