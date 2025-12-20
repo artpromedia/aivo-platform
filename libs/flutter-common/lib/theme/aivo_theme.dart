@@ -1,171 +1,165 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'aivo_brand.dart';
+
 // ══════════════════════════════════════════════════════════════════════════════
-// AIVO BRAND COLORS - Aligned with Marketing Website
+// AIVO BRAND COLORS - Re-exports from aivo_brand.dart
 // Source: apps/web-marketing/tailwind.config.cjs
 // ══════════════════════════════════════════════════════════════════════════════
 
 /// Brand color palette aligned with AIVO marketing website.
 ///
-/// These colors are the single source of truth for the AIVO brand.
+/// These colors reference the single source of truth in [AivoBrand].
 /// See: apps/web-marketing/tailwind.config.cjs for web equivalents.
 abstract class AivoBrandColors {
   // ----------------------------------------
   // PRIMARY BRAND COLOR (Violet/Purple)
-  // Marketing: theme-primary
   // ----------------------------------------
-  static const Color primary50 = Color(0xFFF5F3FF);
-  static const Color primary100 = Color(0xFFEDE9FE);
-  static const Color primary200 = Color(0xFFDDD6FE);
-  static const Color primary300 = Color(0xFFC4B5FD);
-  static const Color primary400 = Color(0xFFA78BFA);
-  static const Color primary500 = Color(0xFF8B5CF6); // Main brand color
-  static const Color primary600 = Color(0xFF7C3AED);
-  static const Color primary700 = Color(0xFF6D28D9);
-  static const Color primary800 = Color(0xFF5B21B6);
-  static const Color primary900 = Color(0xFF4C1D95);
-  static const Color primary = primary500;
+  static Color get primary50 => AivoBrand.primary[50]!;
+  static Color get primary100 => AivoBrand.primary[100]!;
+  static Color get primary200 => AivoBrand.primary[200]!;
+  static Color get primary300 => AivoBrand.primary[300]!;
+  static Color get primary400 => AivoBrand.primary[400]!;
+  static Color get primary500 => AivoBrand.primary[500]!;
+  static Color get primary600 => AivoBrand.primary[600]!;
+  static Color get primary700 => AivoBrand.primary[700]!;
+  static Color get primary800 => AivoBrand.primary[800]!;
+  static Color get primary900 => AivoBrand.primary[900]!;
+  static Color get primary => AivoBrand.primary;
 
   // ----------------------------------------
   // SECONDARY/CTA COLOR (Coral)
-  // Marketing: coral
   // ----------------------------------------
-  static const Color coral50 = Color(0xFFFFF5F5);
-  static const Color coral100 = Color(0xFFFFE3E3);
-  static const Color coral200 = Color(0xFFFFC9C9);
-  static const Color coral300 = Color(0xFFFFA8A8);
-  static const Color coral400 = Color(0xFFFF8787);
-  static const Color coral500 = Color(0xFFFF6B6B); // Main CTA color
-  static const Color coral600 = Color(0xFFFA5252);
-  static const Color coral700 = Color(0xFFF03E3E);
-  static const Color coral800 = Color(0xFFE03131);
-  static const Color coral900 = Color(0xFFC92A2A);
-  static const Color coral = coral500;
+  static Color get coral50 => AivoBrand.coral[50]!;
+  static Color get coral100 => AivoBrand.coral[100]!;
+  static Color get coral200 => AivoBrand.coral[200]!;
+  static Color get coral300 => AivoBrand.coral[300]!;
+  static Color get coral400 => AivoBrand.coral[400]!;
+  static Color get coral500 => AivoBrand.coral[500]!;
+  static Color get coral600 => AivoBrand.coral[600]!;
+  static Color get coral700 => AivoBrand.coral[700]!;
+  static Color get coral800 => AivoBrand.coral[800]!;
+  static Color get coral900 => AivoBrand.coral[900]!;
+  static Color get coral => AivoBrand.coral;
 
   // ----------------------------------------
   // ACCENT COLOR (Salmon)
-  // Marketing: salmon
   // ----------------------------------------
-  static const Color salmon50 = Color(0xFFFFF5F3);
-  static const Color salmon100 = Color(0xFFFFE8E4);
-  static const Color salmon200 = Color(0xFFFFD4CC);
-  static const Color salmon300 = Color(0xFFFFB8AA);
-  static const Color salmon400 = Color(0xFFFF9A88);
-  static const Color salmon500 = Color(0xFFFA8072); // Main salmon
-  static const Color salmon600 = Color(0xFFF56565);
-  static const Color salmon700 = Color(0xFFE53E3E);
-  static const Color salmon800 = Color(0xFFC53030);
-  static const Color salmon900 = Color(0xFF9B2C2C);
-  static const Color salmon = salmon500;
+  static Color get salmon50 => AivoBrand.salmon[50]!;
+  static Color get salmon100 => AivoBrand.salmon[100]!;
+  static Color get salmon200 => AivoBrand.salmon[200]!;
+  static Color get salmon300 => AivoBrand.salmon[300]!;
+  static Color get salmon400 => AivoBrand.salmon[400]!;
+  static Color get salmon500 => AivoBrand.salmon[500]!;
+  static Color get salmon600 => AivoBrand.salmon[600]!;
+  static Color get salmon700 => AivoBrand.salmon[700]!;
+  static Color get salmon800 => AivoBrand.salmon[800]!;
+  static Color get salmon900 => AivoBrand.salmon[900]!;
+  static Color get salmon => AivoBrand.salmon;
 
   // ----------------------------------------
   // SUCCESS COLOR (Mint)
-  // Marketing: mint
   // ----------------------------------------
-  static const Color mint50 = Color(0xFFECFDF5);
-  static const Color mint100 = Color(0xFFD1FAE5);
-  static const Color mint200 = Color(0xFFA7F3D0);
-  static const Color mint300 = Color(0xFF6EE7B7);
-  static const Color mint400 = Color(0xFF34D399);
-  static const Color mint500 = Color(0xFF10B981); // Main success
-  static const Color mint600 = Color(0xFF059669);
-  static const Color mint700 = Color(0xFF047857);
-  static const Color mint800 = Color(0xFF065F46);
-  static const Color mint900 = Color(0xFF064E3B);
-  static const Color mint = mint500;
-  static const Color success = mint500;
+  static Color get mint50 => AivoBrand.mint[50]!;
+  static Color get mint100 => AivoBrand.mint[100]!;
+  static Color get mint200 => AivoBrand.mint[200]!;
+  static Color get mint300 => AivoBrand.mint[300]!;
+  static Color get mint400 => AivoBrand.mint[400]!;
+  static Color get mint500 => AivoBrand.mint[500]!;
+  static Color get mint600 => AivoBrand.mint[600]!;
+  static Color get mint700 => AivoBrand.mint[700]!;
+  static Color get mint800 => AivoBrand.mint[800]!;
+  static Color get mint900 => AivoBrand.mint[900]!;
+  static Color get mint => AivoBrand.mint;
+  static Color get success => AivoBrand.success;
 
   // ----------------------------------------
   // WARNING COLOR (Sunshine)
-  // Marketing: sunshine
   // ----------------------------------------
-  static const Color sunshine50 = Color(0xFFFFFBEB);
-  static const Color sunshine100 = Color(0xFFFEF3C7);
-  static const Color sunshine200 = Color(0xFFFDE68A);
-  static const Color sunshine300 = Color(0xFFFCD34D);
-  static const Color sunshine400 = Color(0xFFFBBF24); // Main warning
-  static const Color sunshine500 = Color(0xFFF59E0B);
-  static const Color sunshine600 = Color(0xFFD97706);
-  static const Color sunshine700 = Color(0xFFB45309);
-  static const Color sunshine800 = Color(0xFF92400E);
-  static const Color sunshine900 = Color(0xFF78350F);
-  static const Color sunshine = sunshine400;
-  static const Color warning = sunshine400;
+  static Color get sunshine50 => AivoBrand.sunshine[50]!;
+  static Color get sunshine100 => AivoBrand.sunshine[100]!;
+  static Color get sunshine200 => AivoBrand.sunshine[200]!;
+  static Color get sunshine300 => AivoBrand.sunshine[300]!;
+  static Color get sunshine400 => AivoBrand.sunshine[400]!;
+  static Color get sunshine500 => AivoBrand.sunshine[500]!;
+  static Color get sunshine600 => AivoBrand.sunshine[600]!;
+  static Color get sunshine700 => AivoBrand.sunshine[700]!;
+  static Color get sunshine800 => AivoBrand.sunshine[800]!;
+  static Color get sunshine900 => AivoBrand.sunshine[900]!;
+  static Color get sunshine => AivoBrand.sunshine;
+  static Color get warning => AivoBrand.warning;
 
   // ----------------------------------------
   // INFO COLOR (Sky)
-  // Marketing: sky
   // ----------------------------------------
-  static const Color sky50 = Color(0xFFF0F9FF);
-  static const Color sky100 = Color(0xFFE0F2FE);
-  static const Color sky200 = Color(0xFFBAE6FD);
-  static const Color sky300 = Color(0xFF7DD3FC);
-  static const Color sky400 = Color(0xFF38BDF8);
-  static const Color sky500 = Color(0xFF0EA5E9); // Main info
-  static const Color sky600 = Color(0xFF0284C7);
-  static const Color sky700 = Color(0xFF0369A1);
-  static const Color sky800 = Color(0xFF075985);
-  static const Color sky900 = Color(0xFF0C4A6E);
-  static const Color sky = sky500;
-  static const Color info = sky500;
+  static Color get sky50 => AivoBrand.sky[50]!;
+  static Color get sky100 => AivoBrand.sky[100]!;
+  static Color get sky200 => AivoBrand.sky[200]!;
+  static Color get sky300 => AivoBrand.sky[300]!;
+  static Color get sky400 => AivoBrand.sky[400]!;
+  static Color get sky500 => AivoBrand.sky[500]!;
+  static Color get sky600 => AivoBrand.sky[600]!;
+  static Color get sky700 => AivoBrand.sky[700]!;
+  static Color get sky800 => AivoBrand.sky[800]!;
+  static Color get sky900 => AivoBrand.sky[900]!;
+  static Color get sky => AivoBrand.sky;
+  static Color get info => AivoBrand.info;
 
   // ----------------------------------------
   // ERROR COLOR
-  // Marketing: red-500
   // ----------------------------------------
-  static const Color error50 = Color(0xFFFEF2F2);
-  static const Color error100 = Color(0xFFFEE2E2);
-  static const Color error200 = Color(0xFFFECACA);
-  static const Color error300 = Color(0xFFFCA5A5);
-  static const Color error400 = Color(0xFFF87171);
-  static const Color error500 = Color(0xFFEF4444); // Main error
-  static const Color error600 = Color(0xFFDC2626);
-  static const Color error700 = Color(0xFFB91C1C);
-  static const Color error800 = Color(0xFF991B1B);
-  static const Color error900 = Color(0xFF7F1D1D);
-  static const Color error = error500;
+  static Color get error50 => AivoBrand.error[50]!;
+  static Color get error100 => AivoBrand.error[100]!;
+  static Color get error200 => AivoBrand.error[200]!;
+  static Color get error300 => AivoBrand.error[300]!;
+  static Color get error400 => AivoBrand.error[400]!;
+  static Color get error500 => AivoBrand.error[500]!;
+  static Color get error600 => AivoBrand.error[600]!;
+  static Color get error700 => AivoBrand.error[700]!;
+  static Color get error800 => AivoBrand.error[800]!;
+  static Color get error900 => AivoBrand.error[900]!;
+  static Color get error => AivoBrand.error;
 
   // ----------------------------------------
   // NEUTRAL GRAYS
-  // Marketing: aivo-gray / zinc
   // ----------------------------------------
-  static const Color gray50 = Color(0xFFFAFAFA);
-  static const Color gray100 = Color(0xFFF4F4F5);
-  static const Color gray200 = Color(0xFFE4E4E7);
-  static const Color gray300 = Color(0xFFD4D4D8);
-  static const Color gray400 = Color(0xFFA1A1AA);
-  static const Color gray500 = Color(0xFF71717A);
-  static const Color gray600 = Color(0xFF52525B); // Text secondary
-  static const Color gray700 = Color(0xFF3F3F46);
-  static const Color gray800 = Color(0xFF27272A);
-  static const Color gray900 = Color(0xFF18181B); // Text primary
-  static const Color gray950 = Color(0xFF09090B);
+  static Color get gray50 => AivoBrand.gray[50]!;
+  static Color get gray100 => AivoBrand.gray[100]!;
+  static Color get gray200 => AivoBrand.gray[200]!;
+  static Color get gray300 => AivoBrand.gray[300]!;
+  static Color get gray400 => AivoBrand.gray[400]!;
+  static Color get gray500 => AivoBrand.gray[500]!;
+  static Color get gray600 => AivoBrand.gray[600]!;
+  static Color get gray700 => AivoBrand.gray[700]!;
+  static Color get gray800 => AivoBrand.gray[800]!;
+  static Color get gray900 => AivoBrand.gray[900]!;
+  static Color get gray950 => AivoBrand.gray[950]!;
 
   // ----------------------------------------
   // SURFACE & BACKGROUND
   // ----------------------------------------
-  static const Color background = Color(0xFFFFFFFF);
-  static const Color backgroundAlt = Color(0xFFFAFAFA);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFF4F4F5);
-  static const Color surfaceVariant = Color(0xFFEDE9FE); // Primary tinted
+  static Color get background => AivoBrand.background;
+  static Color get backgroundAlt => AivoBrand.backgroundAlt;
+  static Color get surface => AivoBrand.surface;
+  static Color get surfaceMuted => AivoBrand.surfaceMuted;
+  static Color get surfaceVariant => AivoBrand.surfacePrimaryTint;
 
   // ----------------------------------------
   // TEXT COLORS
   // ----------------------------------------
-  static const Color textPrimary = gray900;
-  static const Color textSecondary = gray600;
-  static const Color textMuted = gray500;
+  static Color get textPrimary => AivoBrand.textPrimary;
+  static Color get textSecondary => AivoBrand.textSecondary;
+  static Color get textMuted => AivoBrand.textMuted;
   static const Color textOnPrimary = Color(0xFFFFFFFF);
   static const Color textOnCoral = Color(0xFFFFFFFF);
 
   // ----------------------------------------
   // BORDER & OUTLINE
   // ----------------------------------------
-  static const Color border = gray200;
-  static const Color borderLight = gray100;
-  static const Color outline = gray300;
+  static Color get border => AivoBrand.border;
+  static Color get borderLight => AivoBrand.borderLight;
+  static Color get outline => AivoBrand.gray[300]!;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
