@@ -27,6 +27,8 @@ dependencies:
   shared_preferences: ^2.3.5
   workmanager: ^0.5.2
   crypto: ^3.0.6
+  # SVG support
+  flutter_svg: ^2.0.10+1
   # JSON serialization
   json_annotation: ^4.9.0
 
@@ -37,4 +39,8 @@ dev_dependencies:
   drift_dev: ^2.22.1
   build_runner: ^2.4.13
   json_serializable: ^6.9.5
+
+flutter:
+  assets:
+    - assets/images/
 

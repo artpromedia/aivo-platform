@@ -52,7 +52,7 @@ export function AivoLogo({
           />
         )}
         <Image
-          src="/images/aivo-logo.png"
+          src="/images/aivo-logo.svg"
           alt="AIVO Learning"
           width={logoSize}
           height={logoSize}

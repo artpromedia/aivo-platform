@@ -24,6 +24,7 @@ export 'providers/providers.dart';
 export 'ui/ui.dart';
 
 // Widgets
+export 'widgets/aivo_logo.dart';
 export 'widgets/why_this.dart';
 export 'widgets/loading_widgets.dart';
 export 'widgets/error_widgets.dart' hide ErrorView, ErrorBanner;
