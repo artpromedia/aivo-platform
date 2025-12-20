@@ -2,97 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================
+ * CSS CUSTOM PROPERTIES (ALIGNED WITH FLUTTER)
+ * ========================================== */
 @layer base {
   :root {
-    /* CSS Variables for theming */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* AIVO Primary - Blue */
+    --aivo-primary: 45 107 255; /* #2D6BFF */
+    --aivo-primary-light: 173 200 255; /* #ADC8FF */
+    --aivo-primary-dark: 27 69 183; /* #1B45B7 */
+
+    /* AIVO Secondary - Orange (CTA) */
+    --aivo-orange: 255 156 50; /* #FF9C32 */
+    --aivo-orange-light: 254 215 170; /* #FED7AA */
+    --aivo-orange-dark: 194 96 12; /* #C2600C */
+
+    /* AIVO Accent - Purple (Parent) */
+    --aivo-purple: 124 58 237; /* #7C3AED */
+    --aivo-purple-light: 221 180 254; /* #DDB4FE */
+    --aivo-purple-dark: 91 33 182; /* #5B21B6 */
+
+    /* AIVO Accent - Teal (Learner) */
+    --aivo-teal: 63 180 165; /* #3FB4A5 */
+
+    /* Semantic Colors */
+    --aivo-success: 22 163 74; /* #16A34A */
+    --aivo-warning: 217 119 6; /* #D97706 */
+    --aivo-error: 220 38 38; /* #DC2626 */
+
+    /* Neutrals (from Flutter) */
+    --aivo-background: 248 250 252; /* #F8FAFC */
+    --aivo-surface: 255 255 255; /* #FFFFFF */
+    --aivo-surface-muted: 241 245 249; /* #F1F5F9 */
+    --aivo-text-primary: 15 23 42; /* #0F172A */
+    --aivo-text-secondary: 71 85 105; /* #475569 */
+    --aivo-border: 226 232 240; /* #E2E8F0 */
+
+    /* Radius (Flutter standard) */
+    --radius: 12px;
+
+    /* Legacy CSS Variables (mapped to AIVO) */
+    --background: 248 250 252;
+    --foreground: 15 23 42;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 262.1 83.3% 57.8%;
+    --primary: 221 100% 59%; /* AIVO Blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 33 100% 60%; /* AIVO Orange */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 263 70% 58%; /* AIVO Purple */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 1rem;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 100% 59%;
 
-    /* Brand Colors */
-    --coral: 0 100% 73%;
-    --salmon: 6 93% 71%;
-    --mint: 160 84% 39%;
-    --sunshine: 45 93% 58%;
+    /* Brand Colors (legacy) */
+    --coral: 33 100% 60%;
+    --salmon: 27 100% 63%;
+    --mint: 142 76% 36%;
+    --sunshine: 43 96% 56%;
+  }
+
+  /* High contrast mode (matches Flutter) */
+  .high-contrast {
+    --aivo-primary: 30 64 175; /* #1E40AF */
+    --aivo-purple: 91 33 182; /* #5B21B6 */
+    --aivo-text-primary: 0 0 0; /* #000000 */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 262.1 83.3% 57.8%;
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+    --card: 30 41 59;
+    --card-foreground: 248 250 252;
+    --popover: 30 41 59;
+    --popover-foreground: 248 250 252;
+    --primary: 221 100% 59%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --secondary: 33 100% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 263 70% 58%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262.1 83.3% 57.8%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 221 100% 59%;
   }
 
   * {
-    @apply border-border;
+    @apply border-aivo-gray-200;
   }
 
   html {
     @apply scroll-smooth antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings:
-      'rlig' 1,
-      'calt' 1;
+    @apply bg-aivo-background text-aivo-gray-900 font-sans;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
-  /* Custom Selection */
+  /* Reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Custom Selection (AIVO Blue) */
   ::selection {
-    @apply bg-theme-primary-200 text-theme-primary-900;
+    @apply bg-aivo-primary-200 text-aivo-primary-900;
   }
 
-  /* Focus Styles */
+  /* Focus Styles (accessibility) */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-theme-primary-500;
-  }
-
-  /* Border color variable */
-  .border-border {
-    border-color: hsl(var(--border));
-  }
-
-  /* Background color variable */
-  .bg-background {
-    background-color: hsl(var(--background));
-  }
-
-  /* Text color variable */
-  .text-foreground {
-    color: hsl(var(--foreground));
+    @apply outline-2 outline-offset-2 outline-aivo-primary-500;
   }
 }
 
@@ -113,93 +152,136 @@
   }
 
   /* ==========================================
-   * CARD COMPONENTS
+   * CARD COMPONENTS (Aligned with Flutter)
    * ========================================== */
   .card {
-    @apply bg-white rounded-3xl shadow-soft p-6 md:p-8;
+    @apply bg-white rounded-aivo shadow-aivo p-6 md:p-8;
+  }
+
+  .card-aivo {
+    @apply bg-white rounded-aivo border border-aivo-gray-100 shadow-aivo;
+  }
+
+  .card-aivo-elevated {
+    @apply bg-white rounded-aivo-lg shadow-aivo-md hover:shadow-aivo-lg transition-shadow;
+  }
+
+  .card-aivo-interactive {
+    @apply card-aivo-elevated hover:-translate-y-1 transition-all duration-300 cursor-pointer;
   }
 
   .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-soft-lg;
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-aivo-lg;
   }
 
   .card-glass {
-    @apply glass rounded-3xl p-6 md:p-8;
+    @apply glass rounded-aivo p-6 md:p-8;
   }
 
   .card-bordered {
-    @apply bg-white rounded-3xl border border-aivo-gray-200 p-6 md:p-8;
+    @apply bg-white rounded-aivo border border-aivo-gray-200 p-6 md:p-8;
   }
 
   /* ==========================================
-   * BUTTON COMPONENTS
+   * BUTTON COMPONENTS (Aligned with Flutter)
    * ========================================== */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-aivo font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
   }
 
+  /* Primary Button (AIVO Blue) */
   .btn-primary {
-    @apply btn bg-gradient-primary text-white px-6 py-3 hover:shadow-purple-lg hover:-translate-y-0.5 focus-visible:ring-theme-primary-500;
+    @apply btn bg-aivo-primary-500 text-white px-6 py-3 hover:bg-aivo-primary-600 hover:shadow-aivo-primary hover:-translate-y-0.5 focus-visible:ring-aivo-primary-500;
   }
 
-  .btn-coral {
-    @apply btn bg-gradient-coral text-white px-6 py-3 hover:shadow-coral-lg hover:-translate-y-0.5 focus-visible:ring-coral-500;
-  }
-
+  /* CTA Button (Orange - high conversion) */
   .btn-cta {
-    @apply btn bg-gradient-cta text-white px-8 py-4 text-lg hover:shadow-coral-lg hover:-translate-y-0.5 focus-visible:ring-coral-500;
+    @apply btn bg-gradient-to-r from-aivo-orange-500 to-aivo-orange-600 text-white px-8 py-4 text-lg hover:shadow-aivo-orange hover:-translate-y-0.5 focus-visible:ring-aivo-orange-500;
   }
 
+  /* Coral button (legacy - mapped to orange) */
+  .btn-coral {
+    @apply btn bg-aivo-orange-500 text-white px-6 py-3 hover:bg-aivo-orange-600 hover:shadow-aivo-orange hover:-translate-y-0.5 focus-visible:ring-aivo-orange-500;
+  }
+
+  /* Secondary Button (Purple - parent focused) */
+  .btn-secondary-purple {
+    @apply btn bg-aivo-purple-600 text-white px-6 py-3 hover:bg-aivo-purple-700 hover:shadow-aivo-purple hover:-translate-y-0.5 focus-visible:ring-aivo-purple-600;
+  }
+
+  /* Outline Button */
   .btn-outline {
-    @apply btn border-2 border-aivo-gray-200 bg-white text-aivo-gray-700 px-6 py-3 hover:border-theme-primary-500 hover:text-theme-primary-600 focus-visible:ring-theme-primary-500;
+    @apply btn border-2 border-aivo-gray-200 bg-white text-aivo-gray-700 px-6 py-3 hover:border-aivo-primary-500 hover:text-aivo-primary-600 focus-visible:ring-aivo-primary-500;
   }
 
+  /* Ghost Button */
   .btn-ghost {
-    @apply btn text-aivo-gray-600 hover:text-theme-primary-600 hover:bg-theme-primary-50 px-4 py-2;
+    @apply btn text-aivo-gray-600 hover:text-aivo-primary-600 hover:bg-aivo-primary-50 px-4 py-2;
   }
 
   .btn-secondary {
     @apply btn bg-aivo-gray-100 text-aivo-gray-900 px-6 py-3 hover:bg-aivo-gray-200 focus-visible:ring-aivo-gray-500;
   }
 
-  .btn-mint {
-    @apply btn bg-mint-500 text-white px-6 py-3 hover:bg-mint-600 hover:shadow-mint focus-visible:ring-mint-500;
+  /* Success Button */
+  .btn-success {
+    @apply btn bg-aivo-success-600 text-white px-6 py-3 hover:bg-aivo-success-700 hover:shadow-mint focus-visible:ring-aivo-success-600;
   }
 
-  /* Button Sizes */
+  .btn-mint {
+    @apply btn bg-aivo-success-600 text-white px-6 py-3 hover:bg-aivo-success-700 hover:shadow-mint focus-visible:ring-aivo-success-600;
+  }
+
+  /* Button Sizes (matching Flutter padding) */
   .btn-sm {
     @apply px-4 py-2 text-sm rounded-lg;
   }
 
   .btn-lg {
-    @apply px-8 py-4 text-lg rounded-2xl;
+    @apply px-8 py-4 text-lg rounded-aivo-lg;
   }
 
   .btn-xl {
-    @apply px-10 py-5 text-xl rounded-2xl;
+    @apply px-10 py-5 text-xl rounded-aivo-xl;
   }
 
   /* ==========================================
-   * BADGE COMPONENTS
+   * BADGE COMPONENTS (Aligned with Flutter)
    * ========================================== */
   .badge {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium;
   }
 
   .badge-primary {
-    @apply badge bg-theme-primary-100 text-theme-primary-700;
+    @apply badge bg-aivo-primary-100 text-aivo-primary-700;
+  }
+
+  .badge-orange {
+    @apply badge bg-aivo-orange-100 text-aivo-orange-700;
+  }
+
+  .badge-purple {
+    @apply badge bg-aivo-purple-100 text-aivo-purple-700;
   }
 
   .badge-success {
-    @apply badge bg-mint-100 text-mint-700;
+    @apply badge bg-aivo-success-100 text-aivo-success-700;
   }
 
   .badge-warning {
-    @apply badge bg-sunshine-100 text-sunshine-700;
+    @apply badge bg-aivo-warning-100 text-aivo-warning-700;
+  }
+
+  .badge-error {
+    @apply badge bg-aivo-error-100 text-aivo-error-700;
+  }
+
+  .badge-teal {
+    @apply badge bg-aivo-teal-100 text-aivo-teal-700;
   }
 
   .badge-coral {
-    @apply badge bg-coral-100 text-coral-700;
+    @apply badge bg-aivo-orange-100 text-aivo-orange-700;
   }
 
   .badge-sky {
@@ -245,22 +327,30 @@
    * LINK COMPONENTS
    * ========================================== */
   .link {
-    @apply text-theme-primary-600 hover:text-theme-primary-700 underline-offset-4 hover:underline transition-colors;
+    @apply text-aivo-primary-600 hover:text-aivo-primary-700 underline-offset-4 hover:underline transition-colors;
   }
 
   .link-subtle {
-    @apply text-aivo-gray-600 hover:text-theme-primary-600 transition-colors;
+    @apply text-aivo-gray-600 hover:text-aivo-primary-600 transition-colors;
   }
 
   /* ==========================================
-   * INPUT COMPONENTS
+   * INPUT COMPONENTS (Aligned with Flutter)
    * ========================================== */
   .input {
-    @apply w-full rounded-xl border border-aivo-gray-300 px-4 py-3 text-aivo-gray-900 placeholder:text-aivo-gray-400 focus:border-theme-primary-500 focus:ring-2 focus:ring-theme-primary-500/20 focus:outline-none transition-all;
+    @apply w-full rounded-aivo border border-aivo-gray-300 px-4 py-3 text-aivo-gray-900 placeholder:text-aivo-gray-400 focus:border-aivo-primary-500 focus:ring-2 focus:ring-aivo-primary-500/20 focus:outline-none transition-all;
+  }
+
+  .input-aivo {
+    @apply w-full px-4 py-3 rounded-aivo border border-aivo-gray-300 bg-white text-aivo-gray-900 placeholder:text-aivo-gray-400 focus:outline-none focus:ring-2 focus:ring-aivo-primary-500 focus:border-transparent transition-all;
+  }
+
+  .input-aivo-error {
+    @apply input-aivo border-aivo-error-500 focus:ring-aivo-error-500;
   }
 
   .input-lg {
-    @apply input px-5 py-4 text-lg rounded-2xl;
+    @apply input px-5 py-4 text-lg rounded-aivo-lg;
   }
 
   /* ==========================================
@@ -278,7 +368,7 @@
    * ICON CONTAINER
    * ========================================== */
   .icon-container {
-    @apply inline-flex items-center justify-center rounded-2xl;
+    @apply inline-flex items-center justify-center rounded-aivo;
   }
 
   .icon-container-sm {
@@ -301,7 +391,7 @@
   }
 
   .feature-card-icon {
-    @apply icon-container-lg bg-theme-primary-100 text-theme-primary-600 mb-4;
+    @apply icon-container-lg bg-aivo-primary-100 text-aivo-primary-600 mb-4;
   }
 
   /* ==========================================
@@ -323,22 +413,22 @@
   }
 
   .pricing-card-featured {
-    @apply pricing-card border-2 border-theme-primary-500 shadow-purple;
+    @apply pricing-card border-2 border-aivo-primary-500 shadow-aivo-primary;
   }
 
   .pricing-badge {
-    @apply absolute top-0 right-0 bg-gradient-primary text-white px-4 py-1 text-sm font-medium rounded-bl-xl;
+    @apply absolute top-0 right-0 bg-gradient-aivo-primary text-white px-4 py-1 text-sm font-medium rounded-bl-aivo;
   }
 
   /* ==========================================
    * NAVIGATION COMPONENTS
    * ========================================== */
   .nav-link {
-    @apply text-aivo-gray-600 hover:text-theme-primary-600 font-medium transition-colors px-3 py-2;
+    @apply text-aivo-gray-600 hover:text-aivo-primary-600 font-medium transition-colors px-3 py-2;
   }
 
   .nav-link-active {
-    @apply text-theme-primary-600 font-semibold;
+    @apply text-aivo-primary-600 font-semibold;
   }
 
   /* ==========================================
@@ -355,6 +445,26 @@
 
 @layer utilities {
   /* ==========================================
+   * GRADIENT TEXT UTILITIES
+   * ========================================== */
+  .text-gradient-aivo {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-aivo-primary-500 to-aivo-teal-500;
+  }
+
+  .text-gradient-cta {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-aivo-orange-500 to-aivo-primary-500;
+  }
+
+  .text-gradient-purple {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-aivo-purple-600 to-aivo-purple-400;
+  }
+
+  /* Legacy gradient text (remapped) */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-aivo-primary-500 to-aivo-primary-700;
+  }
+
+  /* ==========================================
    * ACCESSIBILITY
    * ========================================== */
   .sr-only {
@@ -370,7 +480,7 @@
   }
 
   /* ==========================================
-   * GRADIENT TEXT
+   * GRADIENT TEXT (Legacy)
    * ========================================== */
   .gradient-text {
     @apply bg-clip-text text-transparent;
@@ -419,30 +529,42 @@
   }
 
   /* ==========================================
-   * BACKGROUND PATTERNS
+   * BACKGROUND PATTERNS (Updated to AIVO colors)
    * ========================================== */
   .bg-grid-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232D6BFF' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   .bg-dots-pattern {
-    background-image: radial-gradient(circle, rgba(139, 92, 246, 0.1) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(45, 107, 255, 0.1) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
   /* ==========================================
-   * DECORATIVE BLOBS
+   * DECORATIVE BLOBS (Updated to AIVO colors)
    * ========================================== */
+  .blob-primary {
+    @apply absolute rounded-full bg-aivo-primary-200/30 blur-3xl;
+  }
+
   .blob-purple {
-    @apply absolute rounded-full bg-theme-primary-200/30 blur-3xl;
+    @apply absolute rounded-full bg-aivo-purple-200/30 blur-3xl;
+  }
+
+  .blob-orange {
+    @apply absolute rounded-full bg-aivo-orange-200/30 blur-3xl;
   }
 
   .blob-coral {
-    @apply absolute rounded-full bg-coral-200/30 blur-3xl;
+    @apply absolute rounded-full bg-aivo-orange-200/30 blur-3xl;
   }
 
   .blob-mint {
-    @apply absolute rounded-full bg-mint-200/30 blur-3xl;
+    @apply absolute rounded-full bg-aivo-success-200/30 blur-3xl;
+  }
+
+  .blob-teal {
+    @apply absolute rounded-full bg-aivo-teal-200/30 blur-3xl;
   }
 
   /* ==========================================
@@ -465,10 +587,10 @@
   }
 
   /* ==========================================
-   * FOCUS RING
+   * FOCUS RING (Updated to AIVO)
    * ========================================== */
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-500 focus-visible:ring-offset-2;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-aivo-primary-500 focus-visible:ring-offset-2;
   }
 
   /* ==========================================
