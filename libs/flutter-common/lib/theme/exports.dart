@@ -7,3 +7,4 @@
 
 export 'aivo_brand.dart';
 export 'aivo_theme.dart';
+export 'theme_extensions.dart';
