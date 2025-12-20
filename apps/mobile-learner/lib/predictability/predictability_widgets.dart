@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/aivo_brand.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'predictability_models.dart';
@@ -278,15 +279,15 @@ class _SessionProgressBar extends StatelessWidget {
   Color _getPhaseColor(SessionPhase phase) {
     switch (phase) {
       case SessionPhase.welcome:
-        return const Color(0xFF4CAF50);
+        return AivoBrand.sessionPhaseColors['welcome']!;
       case SessionPhase.checkin:
-        return const Color(0xFF2196F3);
+        return AivoBrand.sessionPhaseColors['checkin']!;
       case SessionPhase.main:
-        return const Color(0xFF9C27B0);
+        return AivoBrand.sessionPhaseColors['main']!;
       case SessionPhase.breakPhase:
-        return const Color(0xFF8BC34A);
+        return AivoBrand.sessionPhaseColors['break']!;
       case SessionPhase.goodbye:
-        return const Color(0xFFFFD700);
+        return AivoBrand.sessionPhaseColors['goodbye']!;
     }
   }
 }

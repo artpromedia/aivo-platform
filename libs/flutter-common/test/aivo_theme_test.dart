@@ -19,7 +19,8 @@ void main() {
     );
 
     final scheme = Theme.of(tester.element(find.text('hi'))).colorScheme;
-    expect(scheme.primary, const Color(0xFF2D6BFF));
+    // Violet-500 (brand primary for K-5)
+    expect(scheme.primary, const Color(0xFF8B5CF6));
   });
 
   testWidgets('Switching band updates provider theme', (tester) async {
@@ -50,12 +51,14 @@ void main() {
     );
 
     var scheme = Theme.of(tester.element(find.text('primary'))).colorScheme;
-    expect(scheme.primary, const Color(0xFF2F6AE6));
+    // G6-8 uses same Violet-500 as default
+    expect(scheme.primary, const Color(0xFF8B5CF6));
 
     await tester.tap(find.text('switch'));
     await tester.pump();
 
     scheme = Theme.of(tester.element(find.text('primary'))).colorScheme;
-    expect(scheme.primary, const Color(0xFF2648A6));
+    // G9-12 uses deeper Violet-600
+    expect(scheme.primary, const Color(0xFF7C3AED));
   });
 }

@@ -4,6 +4,7 @@
 /// in a calming, non-overwhelming way.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/aivo_brand.dart';
 
 import 'calming_intervention_widget.dart';
 import 'emotional_state_provider.dart';
@@ -257,8 +258,8 @@ class _InterventionOverlayState extends State<InterventionOverlay>
                   child: Container(
                     width: 120,
                     height: 120,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF4CAF50),
+                    decoration: BoxDecoration(
+                      color: AivoBrand.mint[500],
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -302,7 +303,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
+                backgroundColor: AivoBrand.mint[500],
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -323,14 +324,14 @@ class _InterventionOverlayState extends State<InterventionOverlay>
   Color _getUrgencyColor(String urgency) {
     switch (urgency) {
       case 'immediate':
-        return const Color(0xFFE53935);
+        return AivoBrand.anxietyColor(1); // Red
       case 'high':
-        return const Color(0xFFFF9800);
+        return AivoBrand.anxietyColor(2); // Orange
       case 'medium':
-        return const Color(0xFF2196F3);
+        return AivoBrand.calmingBlue; // Sky blue
       case 'low':
       default:
-        return const Color(0xFF4CAF50);
+        return AivoBrand.calmingGreen; // Mint
     }
   }
 

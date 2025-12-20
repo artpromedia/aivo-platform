@@ -597,7 +597,10 @@ class AivoColors extends ThemeExtension<AivoColors> {
     required this.mint,
     required this.sunshine,
     required this.sky,
-  });
+    Color? primaryContainer,
+    Color? onPrimaryContainer,
+  })  : _primaryContainer = primaryContainer,
+        _onPrimaryContainer = onPrimaryContainer;
 
   final Color primary;
   final Color secondary;
@@ -619,6 +622,17 @@ class AivoColors extends ThemeExtension<AivoColors> {
   final Color sunshine;
   final Color sky;
 
+  // Container colors (computed if not provided)
+  final Color? _primaryContainer;
+  final Color? _onPrimaryContainer;
+
+  /// Primary container color (12% opacity of primary if not set).
+  Color get primaryContainer =>
+      _primaryContainer ?? primary.withOpacity(0.12);
+
+  /// On-primary-container color (primary color if not set).
+  Color get onPrimaryContainer => _onPrimaryContainer ?? primary;
+
   @override
   AivoColors copyWith({
     Color? primary,
@@ -638,6 +652,8 @@ class AivoColors extends ThemeExtension<AivoColors> {
     Color? mint,
     Color? sunshine,
     Color? sky,
+    Color? primaryContainer,
+    Color? onPrimaryContainer,
   }) {
     return AivoColors(
       primary: primary ?? this.primary,
@@ -657,6 +673,8 @@ class AivoColors extends ThemeExtension<AivoColors> {
       mint: mint ?? this.mint,
       sunshine: sunshine ?? this.sunshine,
       sky: sky ?? this.sky,
+      primaryContainer: primaryContainer ?? _primaryContainer,
+      onPrimaryContainer: onPrimaryContainer ?? _onPrimaryContainer,
     );
   }
 
@@ -681,6 +699,31 @@ class AivoColors extends ThemeExtension<AivoColors> {
       mint: Color.lerp(mint, other.mint, t)!,
       sunshine: Color.lerp(sunshine, other.sunshine, t)!,
       sky: Color.lerp(sky, other.sky, t)!,
+      primaryContainer:
+          Color.lerp(primaryContainer, other.primaryContainer, t),
+      onPrimaryContainer:
+          Color.lerp(onPrimaryContainer, other.onPrimaryContainer, t),
     );
   }
+
+  /// Default light theme colors using brand tokens.
+  static AivoColors get light => AivoColors(
+        primary: AivoBrandColors.primary,
+        secondary: AivoBrandColors.coral,
+        accent: AivoBrandColors.sunshine,
+        background: AivoBrandColors.background,
+        surface: AivoBrandColors.surface,
+        surfaceVariant: AivoBrandColors.surfaceMuted,
+        textPrimary: AivoBrandColors.textPrimary,
+        textSecondary: AivoBrandColors.textSecondary,
+        error: AivoBrandColors.error,
+        success: AivoBrandColors.success,
+        warning: AivoBrandColors.warning,
+        info: AivoBrandColors.info,
+        outline: AivoBrandColors.border,
+        coral: AivoBrandColors.coral,
+        mint: AivoBrandColors.mint,
+        sunshine: AivoBrandColors.sunshine,
+        sky: AivoBrandColors.sky,
+      );
 }

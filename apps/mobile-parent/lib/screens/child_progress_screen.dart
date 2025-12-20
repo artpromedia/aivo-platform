@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/aivo_brand.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../analytics/analytics_controller.dart';
@@ -352,16 +353,7 @@ class _SubjectProgressCard extends StatelessWidget {
   }
 
   Color _getSubjectColor(String code) {
-    switch (code.toUpperCase()) {
-      case 'MATH':
-        return const Color(0xFF2D6BFF);
-      case 'ELA':
-        return const Color(0xFF9C27B0);
-      case 'SCIENCE':
-        return const Color(0xFF4CAF50);
-      default:
-        return const Color(0xFF607D8B);
-    }
+    return AivoBrand.subjectColor(code);
   }
 }
 

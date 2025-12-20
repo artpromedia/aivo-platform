@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/aivo_brand.dart';
 import '../theme/aivo_theme.dart';
 import '../shared_device/shared_device.dart';
 
@@ -288,14 +289,5 @@ class _LearnerCard extends StatelessWidget {
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
 
-  static const _avatarColors = [
-    Color(0xFF4CAF50), // Green
-    Color(0xFF2196F3), // Blue
-    Color(0xFFFF9800), // Orange
-    Color(0xFF9C27B0), // Purple
-    Color(0xFFE91E63), // Pink
-    Color(0xFF00BCD4), // Cyan
-    Color(0xFFFF5722), // Deep Orange
-    Color(0xFF607D8B), // Blue Grey
-  ];
+  static List<Color> get _avatarColors => AivoBrand.avatarColors;
 }

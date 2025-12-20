@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/aivo_brand.dart';
 
 import 'emotional_state_provider.dart';
 
@@ -204,13 +205,13 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF64B5F6),
-                      const Color(0xFF1976D2).withOpacity(0.6),
+                      AivoBrand.sky[400]!,
+                      AivoBrand.sky[600]!.withOpacity(0.6),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2196F3).withOpacity(0.4),
+                      color: AivoBrand.calmingBlue.withOpacity(0.4),
                       blurRadius: 30,
                       spreadRadius: 10,
                     ),
@@ -317,35 +318,35 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
       count: 5,
       instruction: 'Look around and name 5 things you can SEE',
       icon: Icons.visibility_rounded,
-      color: Color(0xFF2196F3),
+      color: AivoBrand.calmingBlue,
     ),
     _GroundingStep(
       sense: 'Touch',
       count: 4,
       instruction: 'Notice 4 things you can TOUCH',
       icon: Icons.touch_app_rounded,
-      color: Color(0xFF4CAF50),
+      color: AivoBrand.calmingGreen,
     ),
     _GroundingStep(
       sense: 'Hear',
       count: 3,
       instruction: 'Listen for 3 things you can HEAR',
       icon: Icons.hearing_rounded,
-      color: Color(0xFFFF9800),
+      color: AivoBrand.sunshine[500]!,
     ),
     _GroundingStep(
       sense: 'Smell',
       count: 2,
       instruction: 'Notice 2 things you can SMELL',
       icon: Icons.air_rounded,
-      color: Color(0xFF9C27B0),
+      color: AivoBrand.calmingPurple,
     ),
     _GroundingStep(
       sense: 'Taste',
       count: 1,
       instruction: 'Notice 1 thing you can TASTE',
       icon: Icons.restaurant_rounded,
-      color: Color(0xFFE91E63),
+      color: AivoBrand.coral[500]!,
     ),
   ];
 
@@ -588,13 +589,13 @@ class _MovementBreakWidgetState extends State<MovementBreakWidget> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withOpacity(0.2),
+              color: AivoBrand.calmingGreen.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
               activity.icon,
               size: 60,
-              color: const Color(0xFF4CAF50),
+              color: AivoBrand.calmingGreen,
             ),
           ),
           const SizedBox(height: 24),
@@ -602,10 +603,10 @@ class _MovementBreakWidgetState extends State<MovementBreakWidget> {
           // Countdown
           Text(
             '$_countdown',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 64,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF4CAF50),
+              color: AivoBrand.calmingGreen,
             ),
           ),
           const SizedBox(height: 16),

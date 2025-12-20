@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/aivo_brand.dart';
 import '../theme/aivo_theme.dart';
 import '../shared_device/shared_device.dart';
 
@@ -266,16 +267,7 @@ class _SharedPinEntryDialogState extends State<SharedPinEntryDialog> {
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
 
-  static const _avatarColors = [
-    Color(0xFF4CAF50),
-    Color(0xFF2196F3),
-    Color(0xFFFF9800),
-    Color(0xFF9C27B0),
-    Color(0xFFE91E63),
-    Color(0xFF00BCD4),
-    Color(0xFFFF5722),
-    Color(0xFF607D8B),
-  ];
+  static List<Color> get _avatarColors => AivoBrand.avatarColors;
 }
 
 /// Show the PIN entry dialog and return the result.

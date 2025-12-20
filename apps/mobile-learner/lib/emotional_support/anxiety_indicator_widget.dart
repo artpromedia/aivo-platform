@@ -4,6 +4,7 @@
 /// in a non-intrusive way for the learner.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/aivo_brand.dart';
 
 import 'emotional_state_provider.dart';
 
@@ -118,16 +119,16 @@ class AnxietyIndicatorWidget extends StatelessWidget {
   Color _getRiskColor(String level) {
     switch (level) {
       case 'critical':
-        return const Color(0xFFE53935); // Red
+        return AivoBrand.anxietyColor(1); // High stress - red
       case 'high':
-        return const Color(0xFFFF9800); // Orange
+        return AivoBrand.anxietyColor(2); // Elevated - orange
       case 'moderate':
-        return const Color(0xFFFFC107); // Amber
+        return AivoBrand.anxietyColor(3); // Moderate - sunshine
       case 'mild':
-        return const Color(0xFF8BC34A); // Light green
+        return AivoBrand.anxietyColor(4); // Mild - light mint
       case 'low':
       default:
-        return const Color(0xFF4CAF50); // Green
+        return AivoBrand.anxietyColor(5); // Calm - mint
     }
   }
 
@@ -188,13 +189,13 @@ class CompactAnxietyIndicator extends StatelessWidget {
 
     Color color;
     if (maxRisk >= 8) {
-      color = const Color(0xFFE53935);
+      color = AivoBrand.anxietyColor(1);
     } else if (maxRisk >= 6) {
-      color = const Color(0xFFFF9800);
+      color = AivoBrand.anxietyColor(2);
     } else if (maxRisk >= 4) {
-      color = const Color(0xFFFFC107);
+      color = AivoBrand.anxietyColor(3);
     } else {
-      color = const Color(0xFF4CAF50);
+      color = AivoBrand.anxietyColor(5);
     }
 
     return GestureDetector(

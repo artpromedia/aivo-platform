@@ -414,6 +414,90 @@ abstract class AivoBrand {
   static const double iconSizeMd = 24;
   static const double iconSizeLg = 32;
   static const double iconSizeXl = 48;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // AVATAR COLOR PALETTE
+  // Used for user avatars, learner profiles, and roster displays
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Avatar colors for consistent user identification.
+  /// Use with index % avatarColors.length for consistent assignment.
+  static const List<Color> avatarColors = [
+    Color(0xFF10B981), // Mint (success)
+    Color(0xFF0EA5E9), // Sky (info)
+    Color(0xFFFBBF24), // Sunshine (warning)
+    Color(0xFF8B5CF6), // Primary (violet)
+    Color(0xFFFF6B6B), // Coral (CTA)
+    Color(0xFF38BDF8), // Sky-400 (light blue)
+    Color(0xFFFA5252), // Coral-600 (deep coral)
+    Color(0xFF71717A), // Gray-500 (neutral)
+  ];
+
+  /// Get avatar color by index (wraps around).
+  static Color avatarColor(int index) =>
+      avatarColors[index % avatarColors.length];
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SUBJECT/CATEGORY COLORS
+  // Used for academic subjects, categories, and data visualization
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Subject colors for academic categories.
+  static const Map<String, Color> subjectColors = {
+    'MATH': Color(0xFF8B5CF6), // Primary violet
+    'ELA': Color(0xFF6D28D9), // Primary-700
+    'SCIENCE': Color(0xFF10B981), // Mint
+    'SOCIAL': Color(0xFF0EA5E9), // Sky
+    'ART': Color(0xFFFF6B6B), // Coral
+    'MUSIC': Color(0xFFFBBF24), // Sunshine
+    'PE': Color(0xFF34D399), // Mint-400
+    'DEFAULT': Color(0xFF71717A), // Gray-500
+  };
+
+  /// Get subject color by code (case-insensitive, falls back to DEFAULT).
+  static Color subjectColor(String code) =>
+      subjectColors[code.toUpperCase()] ?? subjectColors['DEFAULT']!;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SESSION PHASE COLORS
+  // Used for predictability/session structure indicators
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Session phase colors for predictability features.
+  static const Map<String, Color> sessionPhaseColors = {
+    'welcome': Color(0xFF10B981), // Mint - welcoming
+    'checkin': Color(0xFF0EA5E9), // Sky - calm check-in
+    'main': Color(0xFF8B5CF6), // Primary - focused work
+    'break': Color(0xFF34D399), // Mint-400 - refreshing break
+    'goodbye': Color(0xFFFBBF24), // Sunshine - positive ending
+  };
+
+  /// Get session phase color by phase name.
+  static Color sessionPhaseColor(String phase) =>
+      sessionPhaseColors[phase.toLowerCase()] ?? primary[500]!;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ANXIETY/EMOTIONAL STATE COLORS
+  // Used for emotional support and anxiety indicators
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Anxiety level colors (1=high stress, 5=calm).
+  static const List<Color> anxietyColors = [
+    Color(0xFFEF4444), // Level 1: High - Error red
+    Color(0xFFF97316), // Level 2: Elevated - Orange
+    Color(0xFFFBBF24), // Level 3: Moderate - Sunshine
+    Color(0xFF34D399), // Level 4: Low - Mint-400
+    Color(0xFF10B981), // Level 5: Calm - Mint
+  ];
+
+  /// Get anxiety color by level (1-5, clamped).
+  static Color anxietyColor(int level) =>
+      anxietyColors[(level.clamp(1, 5) - 1)];
+
+  /// Calming intervention colors.
+  static const calmingBlue = Color(0xFF0EA5E9); // Sky
+  static const calmingGreen = Color(0xFF10B981); // Mint
+  static const calmingPurple = Color(0xFF8B5CF6); // Primary
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
