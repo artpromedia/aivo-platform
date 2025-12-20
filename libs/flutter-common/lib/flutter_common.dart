@@ -1,8 +1,8 @@
 library flutter_common;
 
 // Theme
+export 'theme/theme.dart';
 export 'theme/app_theme.dart';
-export 'theme/aivo_theme.dart';
 export 'theme/grade_theme_controller.dart';
 
 // Localization
