@@ -12,20 +12,24 @@ export const config = {
     url: process.env.NATS_URL ?? 'nats://localhost:4222',
   },
   
-  // Push notifications
+  // Push notifications - FCM
   fcm: {
     enabled: process.env.FCM_ENABLED === 'true',
-    projectId: process.env.FCM_PROJECT_ID ?? '',
+    projectId: process.env.FIREBASE_PROJECT_ID ?? process.env.FCM_PROJECT_ID ?? '',
+    privateKey: process.env.FIREBASE_PRIVATE_KEY ?? '',
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? '',
     serviceAccountPath: process.env.FCM_SERVICE_ACCOUNT_PATH ?? '',
   },
   
+  // Push notifications - APNs
   apns: {
     enabled: process.env.APNS_ENABLED === 'true',
     keyId: process.env.APNS_KEY_ID ?? '',
     teamId: process.env.APNS_TEAM_ID ?? '',
+    privateKey: process.env.APNS_PRIVATE_KEY ?? '',
     keyPath: process.env.APNS_KEY_PATH ?? '',
     bundleId: process.env.APNS_BUNDLE_ID ?? '',
-    production: process.env.NODE_ENV === 'production',
+    production: process.env.APNS_ENVIRONMENT === 'production' || process.env.NODE_ENV === 'production',
   },
   
   // Email
@@ -51,5 +55,11 @@ export const config = {
     pushPerMinute: parseInt(process.env.PUSH_RATE_LIMIT ?? '100', 10),
     emailPerMinute: parseInt(process.env.EMAIL_RATE_LIMIT ?? '50', 10),
     smsPerMinute: parseInt(process.env.SMS_RATE_LIMIT ?? '10', 10),
+  },
+  
+  // Token cleanup
+  tokenCleanup: {
+    staleTokenDays: parseInt(process.env.STALE_TOKEN_DAYS ?? '60', 10),
+    maxDevicesPerUser: parseInt(process.env.MAX_DEVICES_PER_USER ?? '10', 10),
   },
 };

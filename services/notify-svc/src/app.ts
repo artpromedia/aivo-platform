@@ -5,7 +5,17 @@
 import Fastify, { FastifyInstance } from 'fastify';
 
 import { config } from './config.js';
-import { registerNotificationRoutes, registerPreferenceRoutes } from './routes/index.js';
+import { registerNotificationRoutes, registerPreferenceRoutes, registerDeviceRoutes } from './routes/index.js';
+import { initializePushService, shutdownPushService, setInvalidTokenCallback } from './channels/push/push-service.js';
+import { initializeNats, closeNats } from './events/notification-events.js';
+import { deactivateToken } from './repositories/device-token.repository.js';
+
+// Extend Fastify instance type
+declare module 'fastify' {
+  interface FastifyInstance {
+    apnsEnabled: boolean;
+  }
+}
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -19,6 +29,31 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // ════════════════════════════════════════════════════════════════════════════
+  // INITIALIZE SERVICES
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // Initialize push notification providers
+  const pushStatus = initializePushService();
+  app.decorate('apnsEnabled', pushStatus.apns);
+
+  // Set up invalid token callback
+  setInvalidTokenCallback(async (token: string) => {
+    await deactivateToken(token);
+  });
+
+  // Initialize NATS for events
+  await initializeNats();
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHUTDOWN HOOKS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  app.addHook('onClose', async () => {
+    await shutdownPushService();
+    await closeNats();
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
   // HEALTH CHECK
   // ════════════════════════════════════════════════════════════════════════════
 
@@ -27,6 +62,10 @@ export async function buildApp(): Promise<FastifyInstance> {
     service: 'notify-svc',
     version: '0.1.0',
     timestamp: new Date().toISOString(),
+    push: {
+      fcm: pushStatus.fcm ? 'enabled' : 'disabled',
+      apns: pushStatus.apns ? 'enabled' : 'disabled',
+    },
   }));
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -68,6 +107,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await registerNotificationRoutes(app);
   await registerPreferenceRoutes(app);
+  await registerDeviceRoutes(app);
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT

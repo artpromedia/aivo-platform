@@ -91,8 +91,25 @@ export interface DeliveryResult {
   channel: DeliveryChannel;
   success: boolean;
   providerMessageId?: string;
+  providerName?: string;
   errorCode?: string;
   errorMessage?: string;
+  shouldRemoveToken?: boolean;
+}
+
+export interface BatchDeliveryResult {
+  channel: DeliveryChannel;
+  totalSent: number;
+  totalFailed: number;
+  results: Array<{
+    token: string;
+    success: boolean;
+    messageId?: string;
+    errorCode?: string;
+    errorMessage?: string;
+    shouldRemoveToken?: boolean;
+  }>;
+  invalidTokens?: string[];
 }
 
 export interface PushPayload {
@@ -105,6 +122,16 @@ export interface PushPayload {
   badge?: number;
   sound?: string;
   priority?: 'high' | 'normal';
+  // Advanced options
+  channelId?: string;
+  clickAction?: string;
+  collapseKey?: string;
+  ttlSeconds?: number;
+  contentAvailable?: boolean;
+  mutableContent?: boolean;
+  threadId?: string;
+  category?: string;
+  icon?: string;
 }
 
 export interface EmailPayload {
