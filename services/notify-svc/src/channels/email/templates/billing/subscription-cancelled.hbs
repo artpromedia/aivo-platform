@@ -1,0 +1,129 @@
+{{!-- Subscription Cancelled Email Template --}}
+{{!-- Sent when a subscription is cancelled --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #f4f4f5; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">👋</span>
+  </div>
+</div>
+
+<h1 style="text-align: center;">{{t 'subscription_cancelled.title'}}</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  {{t 'subscription_cancelled.greeting' name=userName}}
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  {{t 'subscription_cancelled.intro'}}
+</p>
+
+<!-- Cancellation Details -->
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'subscription_cancelled.plan'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{planName}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'subscription_cancelled.cancelled_on'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{cancellationDate}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'subscription_cancelled.access_until'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <p style="margin: 0; font-weight: 600; color: #dc2626;">{{accessEndDate}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- What happens next -->
+<div style="background-color: #fef3c7; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h2 style="margin: 0 0 12px 0; color: #92400e;">{{t 'subscription_cancelled.what_happens'}}</h2>
+  <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 14px;">
+    <li style="padding: 6px 0;">{{t 'subscription_cancelled.happen1' date=accessEndDate}}</li>
+    <li style="padding: 6px 0;">{{t 'subscription_cancelled.happen2'}}</li>
+    <li style="padding: 6px 0;">{{t 'subscription_cancelled.happen3'}}</li>
+  </ul>
+</div>
+
+{{#if canReactivate}}
+<!-- Reactivation Option -->
+<div style="background-color: #eff6ff; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  <h2 style="margin: 0 0 8px 0; color: #1e40af;">{{t 'subscription_cancelled.change_mind'}}</h2>
+  <p style="margin: 0 0 16px 0; color: #3b82f6;">
+    {{t 'subscription_cancelled.reactivate_message' date=accessEndDate}}
+  </p>
+  <a href="{{reactivateUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'subscription_cancelled.reactivate_button'}}
+  </a>
+</div>
+{{/if}}
+
+{{#if specialOffer}}
+<!-- Special Offer to Stay -->
+<div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0 0 8px 0; font-size: 14px; color: #92400e;">{{t 'subscription_cancelled.special_offer'}}</p>
+  <h2 style="margin: 0 0 8px 0; color: #78350f;">{{specialOffer.title}}</h2>
+  <p style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: #b45309;">{{specialOffer.discount}}</p>
+  <a href="{{specialOffer.url}}" class="btn-primary" style="background-color: #b45309; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'subscription_cancelled.claim_offer'}}
+  </a>
+  <p style="margin: 12px 0 0 0; font-size: 12px; color: #92400e;">
+    {{t 'subscription_cancelled.offer_expires' date=specialOffer.expiryDate}}
+  </p>
+</div>
+{{/if}}
+
+{{#if feedbackUrl}}
+<!-- Feedback Request -->
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0 0 12px 0; color: #52525b;">
+    {{t 'subscription_cancelled.feedback_request'}}
+  </p>
+  <a href="{{feedbackUrl}}" style="color: {{brandColor}}; text-decoration: underline; font-weight: 500;">
+    {{t 'subscription_cancelled.share_feedback'}}
+  </a>
+</div>
+{{/if}}
+
+<!-- Data Export Option -->
+{{#if dataExportUrl}}
+<div style="margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #18181b;">
+    {{t 'subscription_cancelled.export_title'}}
+  </p>
+  <p style="margin: 0 0 12px 0; font-size: 14px; color: #52525b;">
+    {{t 'subscription_cancelled.export_message'}}
+  </p>
+  <a href="{{dataExportUrl}}" style="color: {{brandColor}}; text-decoration: underline;">
+    {{t 'subscription_cancelled.export_data'}}
+  </a>
+</div>
+{{/if}}
+
+<hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'subscription_cancelled.thank_you'}}<br>
+  {{t 'subscription_cancelled.welcome_back'}}
+</p>
+
+<p style="text-align: center; color: #71717a; font-size: 14px; margin-top: 16px;">
+  {{t 'subscription_cancelled.questions'}}
+  <a href="mailto:{{supportEmail}}" style="color: {{brandColor}};">{{supportEmail}}</a>
+</p>
+
+{{/layouts/base}}

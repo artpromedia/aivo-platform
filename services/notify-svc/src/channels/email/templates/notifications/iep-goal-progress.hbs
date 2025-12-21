@@ -1,0 +1,201 @@
+{{!-- IEP Goal Progress Email Template --}}
+{{!-- Sent to parents/guardians with updates on IEP goal progress --}}
+
+{{#> layouts/base coppaNotice=true}}
+
+<h1>{{t 'iep_progress.title'}}</h1>
+
+<p>{{t 'iep_progress.greeting' parentName=parentName}}</p>
+
+<p>{{t 'iep_progress.intro' studentName=studentName}}</p>
+
+<!-- Overall IEP Status -->
+<div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; color: #3b82f6;">{{t 'iep_progress.review_period'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 600; color: #1e40af;">{{reviewPeriod}}</p>
+      </td>
+      <td style="text-align: right;">
+        <p style="margin: 0; font-size: 14px; color: #3b82f6;">{{t 'iep_progress.next_review'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 600; color: #1e40af;">{{nextReviewDate}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Goals Progress -->
+<h2>{{t 'iep_progress.goals_title'}}</h2>
+
+{{#each goals}}
+<div style="margin: 20px 0; padding: 20px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <!-- Goal Header -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <span style="display: inline-block; padding: 4px 10px; background-color: #e0e7ff; color: #4338ca; border-radius: 4px; font-size: 12px; font-weight: 600;">
+          {{category}}
+        </span>
+      </td>
+      <td style="text-align: right;">
+        <span style="font-weight: 600; color: 
+          {{#if (gte progress 80)}}#059669{{/if}}
+          {{#if (and (gte progress 50) (lt progress 80))}}#d97706{{/if}}
+          {{#if (lt progress 50)}}#dc2626{{/if}}
+        ;">
+          {{progress}}%
+        </span>
+      </td>
+    </tr>
+  </table>
+  
+  <!-- Goal Name -->
+  <h3 style="margin: 12px 0 8px 0; color: #1e293b;">{{goalName}}</h3>
+  
+  <!-- Goal Description -->
+  <p style="margin: 0 0 16px 0; font-size: 14px; color: #64748b;">
+    {{description}}
+  </p>
+  
+  <!-- Progress Bar -->
+  <div style="background-color: #e2e8f0; border-radius: 4px; height: 10px; overflow: hidden; margin-bottom: 16px;">
+    <div style="height: 100%; border-radius: 4px; width: {{progress}}%;
+      background-color: {{#if (gte progress 80)}}#059669{{/if}}{{#if (and (gte progress 50) (lt progress 80))}}#d97706{{/if}}{{#if (lt progress 50)}}#dc2626{{/if}};
+    "></div>
+  </div>
+  
+  <!-- Benchmarks -->
+  {{#if benchmarks}}
+  <div style="background-color: #f8fafc; border-radius: 8px; padding: 12px;">
+    <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #475569;">
+      {{t 'iep_progress.benchmarks'}}
+    </p>
+    {{#each benchmarks}}
+    <div style="display: flex; align-items: center; padding: 4px 0;">
+      <span style="margin-right: 8px;">
+        {{#if completed}}✅{{else}}⬜{{/if}}
+      </span>
+      <span style="font-size: 13px; color: {{#if completed}}#059669{{else}}#64748b{{/if}};">
+        {{description}}
+      </span>
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+  
+  <!-- Recent Progress Notes -->
+  {{#if recentNotes}}
+  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+    <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #475569;">
+      {{t 'iep_progress.recent_notes'}}
+    </p>
+    {{#each recentNotes}}
+    <div style="padding: 8px 0; {{#unless @last}}border-bottom: 1px dashed #e2e8f0;{{/unless}}">
+      <p style="margin: 0; font-size: 12px; color: #94a3b8;">{{date}} - {{author}}</p>
+      <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">{{note}}</p>
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+</div>
+{{/each}}
+
+{{#if accommodations}}
+<!-- Current Accommodations -->
+<h2 style="margin-top: 32px;">{{t 'iep_progress.accommodations_title'}}</h2>
+
+<div style="background-color: #f0fdf4; border-radius: 8px; padding: 16px;">
+  <ul style="margin: 0; padding-left: 20px;">
+    {{#each accommodations}}
+    <li style="padding: 6px 0; color: #166534; font-size: 14px;">
+      {{this}}
+    </li>
+    {{/each}}
+  </ul>
+</div>
+{{/if}}
+
+{{#if dataPoints}}
+<!-- Data Collection Summary -->
+<h2 style="margin-top: 32px;">{{t 'iep_progress.data_summary'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+  <tr style="background-color: #f8fafc;">
+    <th style="padding: 12px; text-align: left; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">{{t 'iep_progress.skill'}}</th>
+    <th style="padding: 12px; text-align: center; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">{{t 'iep_progress.trials'}}</th>
+    <th style="padding: 12px; text-align: center; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">{{t 'iep_progress.accuracy'}}</th>
+    <th style="padding: 12px; text-align: center; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">{{t 'iep_progress.trend'}}</th>
+  </tr>
+  {{#each dataPoints}}
+  <tr>
+    <td style="padding: 12px; font-size: 14px; color: #1e293b; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">{{skill}}</td>
+    <td style="padding: 12px; text-align: center; font-size: 14px; color: #64748b; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">{{trials}}</td>
+    <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}
+      color: {{#if (gte accuracy 80)}}#059669{{else if (gte accuracy 50)}}#d97706{{else}}#dc2626{{/if}};">
+      {{accuracy}}%
+    </td>
+    <td style="padding: 12px; text-align: center; font-size: 18px; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">
+      {{#if (eq trend 'up')}}📈{{/if}}
+      {{#if (eq trend 'down')}}📉{{/if}}
+      {{#if (eq trend 'stable')}}➡️{{/if}}
+    </td>
+  </tr>
+  {{/each}}
+</table>
+{{/if}}
+
+{{#if teamComments}}
+<!-- Team Comments -->
+<div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #b45309;">
+    💬 {{t 'iep_progress.team_comments'}}
+  </p>
+  <p style="margin: 0; color: #92400e; font-style: italic;">
+    "{{teamComments}}"
+  </p>
+  <p style="margin: 8px 0 0 0; font-size: 12px; color: #d97706;">
+    — {{caseManager}}, {{t 'iep_progress.case_manager'}}
+  </p>
+</div>
+{{/if}}
+
+<!-- Action Items -->
+{{#if actionItems}}
+<h2 style="margin-top: 32px;">{{t 'iep_progress.action_items'}}</h2>
+
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 16px;">
+  {{#each actionItems}}
+  <div style="padding: 8px 0; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">
+    <p style="margin: 0; font-weight: 500; color: #1e293b;">{{title}}</p>
+    <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">
+      {{t 'iep_progress.responsible'}}: {{responsible}} | {{t 'iep_progress.due'}}: {{dueDate}}
+    </p>
+  </div>
+  {{/each}}
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{iepDashboardUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'iep_progress.view_full_iep'}}
+  </a>
+</div>
+
+<!-- Contact Information -->
+<div style="background-color: #f4f4f5; border-radius: 8px; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #18181b;">
+    {{t 'iep_progress.questions'}}
+  </p>
+  <p style="margin: 0; font-size: 14px; color: #52525b;">
+    {{t 'iep_progress.contact_case_manager'}}: <a href="mailto:{{caseManagerEmail}}" style="color: {{brandColor}};">{{caseManagerEmail}}</a>
+  </p>
+  {{#if scheduleMeetingUrl}}
+  <p style="margin: 8px 0 0 0; font-size: 14px;">
+    <a href="{{scheduleMeetingUrl}}" style="color: {{brandColor}};">{{t 'iep_progress.schedule_meeting'}}</a>
+  </p>
+  {{/if}}
+</div>
+
+{{/layouts/base}}

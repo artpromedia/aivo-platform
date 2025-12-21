@@ -1,0 +1,118 @@
+{{!-- Subscription Renewed Email Template --}}
+{{!-- Sent when a subscription is successfully renewed --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #dcfce7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">🔄</span>
+  </div>
+</div>
+
+<h1 style="text-align: center;">{{t 'subscription_renewed.title'}}</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  {{t 'subscription_renewed.greeting' name=userName}}
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  {{t 'subscription_renewed.intro' planName=planName}}
+</p>
+
+<!-- Subscription Details Card -->
+<div style="background: linear-gradient(135deg, {{brandColor}}, {{brandColorDark}}); border-radius: 12px; padding: 24px; margin: 24px 0; color: #ffffff;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; opacity: 0.9;">{{t 'subscription_renewed.plan'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700;">{{planName}}</p>
+      </td>
+      <td style="text-align: right;">
+        <p style="margin: 0; font-size: 14px; opacity: 0.9;">{{t 'subscription_renewed.amount'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700;">{{amount}}/{{billingPeriod}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Renewal Details -->
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'subscription_renewed.renewed_on'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{renewalDate}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'subscription_renewed.next_renewal'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{nextRenewalDate}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'subscription_renewed.payment_method'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{paymentMethod.brand}} •••• {{paymentMethod.last4}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+{{#if planFeatures}}
+<!-- Plan Features Reminder -->
+<h2>{{t 'subscription_renewed.features_title'}}</h2>
+
+<div style="background-color: #f0fdf4; border-radius: 8px; padding: 16px; margin: 24px 0;">
+  <ul style="margin: 0; padding-left: 20px;">
+    {{#each planFeatures}}
+    <li style="padding: 6px 0; color: #166534;">
+      <span style="margin-right: 8px;">✓</span> {{this}}
+    </li>
+    {{/each}}
+  </ul>
+</div>
+{{/if}}
+
+{{#if usage}}
+<!-- Usage Summary -->
+<h2>{{t 'subscription_renewed.usage_summary'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0;">
+  {{#each usage}}
+  <tr>
+    <td style="padding: 12px 0; {{#unless @last}}border-bottom: 1px solid #e4e4e7;{{/unless}}">
+      <p style="margin: 0; color: #1e293b;">{{name}}</p>
+    </td>
+    <td style="padding: 12px 0; text-align: right; {{#unless @last}}border-bottom: 1px solid #e4e4e7;{{/unless}}">
+      <p style="margin: 0; font-weight: 500; color: {{../brandColor}};">{{used}} / {{limit}}</p>
+    </td>
+  </tr>
+  {{/each}}
+</table>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{billingPortalUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'subscription_renewed.manage_subscription'}}
+  </a>
+</div>
+
+<div style="text-align: center; margin: 16px 0;">
+  <a href="{{invoiceUrl}}" style="color: {{brandColor}}; text-decoration: underline;">
+    {{t 'subscription_renewed.view_invoice'}}
+  </a>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'subscription_renewed.thank_you'}}
+</p>
+
+{{/layouts/base}}

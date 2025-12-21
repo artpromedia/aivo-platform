@@ -1,0 +1,167 @@
+{{!-- Payment Receipt Email Template --}}
+{{!-- Sent after a successful payment --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #dcfce7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">✓</span>
+  </div>
+</div>
+
+<h1 style="text-align: center; color: #059669;">{{t 'payment_receipt.title'}}</h1>
+
+<p style="text-align: center; font-size: 18px; margin-bottom: 32px;">
+  {{t 'payment_receipt.thank_you'}}
+</p>
+
+<!-- Receipt Card -->
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin: 24px 0;">
+  <!-- Receipt Header -->
+  <div style="background-color: #f1f5f9; padding: 16px 24px; border-bottom: 1px solid #e2e8f0;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td>
+          <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase;">{{t 'payment_receipt.receipt_number'}}</p>
+          <p style="margin: 4px 0 0 0; font-weight: 600; color: #1e293b;">{{receiptNumber}}</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase;">{{t 'payment_receipt.date'}}</p>
+          <p style="margin: 4px 0 0 0; font-weight: 600; color: #1e293b;">{{paymentDate}}</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+  
+  <!-- Receipt Body -->
+  <div style="padding: 24px;">
+    <!-- Line Items -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      {{#each lineItems}}
+      <tr>
+        <td style="padding: 8px 0; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">
+          <p style="margin: 0; color: #1e293b;">{{description}}</p>
+          {{#if period}}
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">{{period}}</p>
+          {{/if}}
+        </td>
+        <td style="padding: 8px 0; text-align: right; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">
+          <p style="margin: 0; font-weight: 500; color: #1e293b;">{{amount}}</p>
+        </td>
+      </tr>
+      {{/each}}
+    </table>
+    
+    {{#if discount}}
+    <!-- Discount -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #e2e8f0;">
+      <tr>
+        <td>
+          <p style="margin: 0; color: #059669;">{{discount.description}}</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="margin: 0; font-weight: 500; color: #059669;">-{{discount.amount}}</p>
+        </td>
+      </tr>
+    </table>
+    {{/if}}
+    
+    {{#if tax}}
+    <!-- Tax -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 12px;">
+      <tr>
+        <td>
+          <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'payment_receipt.tax'}}</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="margin: 0; font-size: 14px; color: #64748b;">{{tax}}</p>
+        </td>
+      </tr>
+    </table>
+    {{/if}}
+    
+    <!-- Total -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
+      <tr>
+        <td>
+          <p style="margin: 0; font-size: 18px; font-weight: 600; color: #1e293b;">{{t 'payment_receipt.total'}}</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="margin: 0; font-size: 24px; font-weight: 700; color: #059669;">{{total}}</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- Payment Method -->
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'payment_receipt.payment_method'}}</p>
+        <p style="margin: 4px 0 0 0; font-weight: 500; color: #1e293b;">
+          {{paymentMethod.brand}} •••• {{paymentMethod.last4}}
+        </p>
+      </td>
+      {{#if paymentMethod.icon}}
+      <td style="text-align: right;">
+        <img src="{{paymentMethod.icon}}" alt="{{paymentMethod.brand}}" width="40" height="25" style="max-width: 40px;">
+      </td>
+      {{/if}}
+    </tr>
+  </table>
+</div>
+
+<!-- Billing Details -->
+<div style="margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td width="50%" style="vertical-align: top; padding-right: 12px;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">{{t 'payment_receipt.billed_to'}}</p>
+        <p style="margin: 0; color: #1e293b;">{{billingDetails.name}}</p>
+        {{#if billingDetails.organization}}
+        <p style="margin: 0; color: #64748b;">{{billingDetails.organization}}</p>
+        {{/if}}
+        <p style="margin: 0; color: #64748b; font-size: 14px;">{{billingDetails.email}}</p>
+      </td>
+      {{#if billingDetails.address}}
+      <td width="50%" style="vertical-align: top; padding-left: 12px;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">{{t 'payment_receipt.billing_address'}}</p>
+        <p style="margin: 0; font-size: 14px; color: #64748b;">
+          {{billingDetails.address.line1}}<br>
+          {{#if billingDetails.address.line2}}{{billingDetails.address.line2}}<br>{{/if}}
+          {{billingDetails.address.city}}, {{billingDetails.address.state}} {{billingDetails.address.postal}}<br>
+          {{billingDetails.address.country}}
+        </p>
+      </td>
+      {{/if}}
+    </tr>
+  </table>
+</div>
+
+{{#if nextBillingDate}}
+<!-- Next Billing -->
+<div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0; color: #3b82f6;">
+    {{t 'payment_receipt.next_billing' date=nextBillingDate amount=nextBillingAmount}}
+  </p>
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{invoiceUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block; margin-right: 8px;">
+    {{t 'payment_receipt.download_invoice'}}
+  </a>
+  <a href="{{billingPortalUrl}}" class="btn-secondary" style="background-color: #ffffff; color: {{brandColor}}; text-decoration: none; padding: 14px 32px; border: 2px solid {{brandColor}}; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'payment_receipt.manage_billing'}}
+  </a>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'payment_receipt.questions'}}
+  <a href="mailto:{{supportEmail}}" style="color: {{brandColor}};">{{supportEmail}}</a>
+</p>
+
+{{/layouts/base}}

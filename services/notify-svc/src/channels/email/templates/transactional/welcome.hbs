@@ -1,0 +1,65 @@
+{{!-- Welcome Email Template --}}
+{{!-- Sent when a new user account is created --}}
+
+{{#> layouts/base}}
+
+<h1 style="text-align: center;">{{t 'welcome.title' name=userName}}</h1>
+
+<p style="text-align: center; font-size: 18px; color: #3f3f46;">
+  {{t 'welcome.subtitle' tenantName=tenantName}}
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{activationUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'welcome.activate_button'}}
+  </a>
+</div>
+
+{{#if features}}
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+  <tr>
+    <td>
+      <h2>{{t 'welcome.features_title'}}</h2>
+    </td>
+  </tr>
+  {{#each features}}
+  <tr>
+    <td style="padding: 12px 0; border-bottom: 1px solid #e4e4e7;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="48" style="vertical-align: top;">
+            <div style="width: 40px; height: 40px; background-color: {{../brandColor}}15; border-radius: 8px; text-align: center; line-height: 40px;">
+              {{icon}}
+            </div>
+          </td>
+          <td style="padding-left: 16px;">
+            <p style="margin: 0; font-weight: 600; color: #18181b;">{{title}}</p>
+            <p style="margin: 4px 0 0 0; color: #71717a; font-size: 14px;">{{description}}</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{/each}}
+</table>
+{{/if}}
+
+<div style="background-color: #fef3c7; border-radius: 8px; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0; color: #92400e;">
+    <strong>{{t 'welcome.link_expiry_title'}}</strong><br>
+    {{t 'welcome.link_expiry_message' hours=expiryHours}}
+  </p>
+</div>
+
+{{#if helpCenter}}
+<p style="text-align: center; margin-top: 32px;">
+  {{t 'welcome.need_help'}}
+  <a href="{{helpCenter}}" style="color: {{brandColor}}; text-decoration: underline;">{{t 'welcome.visit_help'}}</a>
+</p>
+{{/if}}
+
+<p style="text-align: center; color: #71717a; margin-top: 24px;">
+  {{t 'welcome.ignore_message'}}
+</p>
+
+{{/layouts/base}}

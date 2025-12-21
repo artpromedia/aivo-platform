@@ -490,3 +490,480 @@ model ParentNotificationLog {
   @@index([channel, status])
   @@map("parent_notification_logs")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EMAIL ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Email delivery status
+enum EmailStatus {
+  PENDING           // Queued for delivery
+  SENT              // Sent to provider
+  DELIVERED         // Confirmed delivered
+  OPENED            // Email opened
+  CLICKED           // Link clicked
+  BOUNCED           // Hard or soft bounce
+  DROPPED           // Dropped by provider
+  FAILED            // Send failed
+  COMPLAINED        // Marked as spam
+  UNSUBSCRIBED      // User unsubscribed
+
+  @@map("email_status")
+}
+
+/// Email provider
+enum EmailProvider {
+  SENDGRID          // SendGrid
+  SES               // AWS SES
+
+  @@map("email_provider")
+}
+
+/// Suppression reason
+enum SuppressionReason {
+  HARD_BOUNCE       // Permanent delivery failure
+  SOFT_BOUNCE       // Temporary delivery failure (repeated)
+  SPAM_COMPLAINT    // Marked as spam
+  UNSUBSCRIBED      // User unsubscribed
+  INVALID_EMAIL     // Invalid email format/domain
+  MANUAL            // Manually added
+
+  @@map("suppression_reason")
+}
+
+/// Email category
+enum EmailCategory {
+  TRANSACTIONAL     // Critical emails (password reset, verification)
+  NOTIFICATION      // Notifications (session summaries, progress)
+  MARKETING         // Marketing/promotional
+  BILLING           // Payment/billing related
+  ADMIN             // Admin/system emails
+
+  @@map("email_category")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EMAIL MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Email delivery log
+model EmailLog {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String?        @map("tenant_id") @db.Uuid
+  
+  // Recipient
+  toEmail           String         @map("to_email")
+  toUserId          String?        @map("to_user_id") @db.Uuid
+  
+  // Email content
+  subject           String
+  templateName      String?        @map("template_name")
+  category          EmailCategory  @default(NOTIFICATION)
+  
+  // Delivery details
+  provider          EmailProvider
+  messageId         String?        @map("message_id")
+  status            EmailStatus    @default(PENDING)
+  
+  // Tracking
+  sentAt            DateTime?      @map("sent_at") @db.Timestamptz
+  deliveredAt       DateTime?      @map("delivered_at") @db.Timestamptz
+  openedAt          DateTime?      @map("opened_at") @db.Timestamptz
+  clickedAt         DateTime?      @map("clicked_at") @db.Timestamptz
+  bouncedAt         DateTime?      @map("bounced_at") @db.Timestamptz
+  
+  // Error tracking
+  errorCode         String?        @map("error_code")
+  errorMessage      String?        @map("error_message")
+  
+  // Metadata
+  tags              String[]       @default([])
+  metadata          Json?
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([toEmail, createdAt(sort: Desc)])
+  @@index([toUserId])
+  @@index([messageId])
+  @@index([status])
+  @@index([templateName, createdAt(sort: Desc)])
+  @@map("email_logs")
+}
+
+/// Email suppression list
+model EmailSuppression {
+  id                String            @id @default(uuid()) @db.Uuid
+  
+  // Email (globally suppressed)
+  email             String            @unique
+  
+  // Suppression details
+  reason            SuppressionReason
+  source            String            // 'sendgrid_webhook', 'ses_webhook', 'manual', etc.
+  
+  // Original event details
+  originalMessageId String?           @map("original_message_id")
+  bounceType        String?           @map("bounce_type")
+  bounceSubType     String?           @map("bounce_sub_type")
+  diagnosticCode    String?           @map("diagnostic_code")
+  
+  // Timestamps
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime?         @updatedAt @map("updated_at") @db.Timestamptz
+  expiresAt         DateTime?         @map("expires_at") @db.Timestamptz
+
+  @@index([reason])
+  @@index([source])
+  @@index([expiresAt])
+  @@map("email_suppressions")
+}
+
+/// Email preferences (per-user email settings)
+model EmailPreference {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @map("tenant_id") @db.Uuid
+  userId            String         @unique @map("user_id") @db.Uuid
+  
+  // Global email toggle
+  emailEnabled      Boolean        @default(true) @map("email_enabled")
+  
+  // Category preferences
+  transactionalEnabled Boolean     @default(true) @map("transactional_enabled") // Cannot really disable
+  notificationEnabled  Boolean     @default(true) @map("notification_enabled")
+  marketingEnabled     Boolean     @default(false) @map("marketing_enabled")
+  billingEnabled       Boolean     @default(true) @map("billing_enabled")
+  
+  // Digest settings
+  digestEnabled     Boolean        @default(false) @map("digest_enabled")
+  digestFrequency   String?        @map("digest_frequency") // 'daily', 'weekly'
+  digestDayOfWeek   Int?           @map("digest_day_of_week") // 0-6 (Sunday-Saturday)
+  digestTime        String?        @map("digest_time") // "09:00"
+  digestTimezone    String?        @map("digest_timezone")
+  
+  // Preferred locale
+  preferredLocale   String         @default("en") @map("preferred_locale")
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, userId])
+  @@map("email_preferences")
+}
+
+/// Email template (stored templates for customization)
+model EmailTemplate {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String?        @map("tenant_id") @db.Uuid // null = global template
+  
+  // Template identity
+  name              String         // e.g., 'transactional/welcome'
+  locale            String         @default("en")
+  category          EmailCategory
+  
+  // Content
+  subject           String
+  htmlContent       String         @map("html_content") @db.Text
+  textContent       String?        @map("text_content") @db.Text
+  
+  // Metadata
+  description       String?
+  variables         String[]       @default([]) // List of expected variables
+  
+  // Provider templates (if using provider-hosted templates)
+  sendgridTemplateId String?       @map("sendgrid_template_id")
+  sesTemplateArn    String?        @map("ses_template_arn")
+  
+  // Status
+  isActive          Boolean        @default(true) @map("is_active")
+  version           Int            @default(1)
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, name, locale])
+  @@index([name, locale])
+  @@index([category])
+  @@map("email_templates")
+}
+
+/// Email webhook events (raw event log)
+model EmailWebhookEvent {
+  id                String         @id @default(uuid()) @db.Uuid
+  
+  // Provider info
+  provider          EmailProvider
+  eventId           String?        @map("event_id") // Provider's event ID
+  
+  // Event details
+  eventType         String         @map("event_type")
+  email             String
+  messageId         String?        @map("message_id")
+  timestamp         DateTime       @db.Timestamptz
+  
+  // Raw payload
+  rawPayload        Json           @map("raw_payload")
+  
+  // Processing status
+  processedAt       DateTime?      @map("processed_at") @db.Timestamptz
+  processingError   String?        @map("processing_error")
+  
+  // Created
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([provider, createdAt(sort: Desc)])
+  @@index([email])
+  @@index([messageId])
+  @@index([eventType])
+  @@map("email_webhook_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SMS ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// SMS message type
+enum SmsType {
+  OTP               // One-time password / 2FA
+  TRANSACTIONAL     // Critical transactional (password reset, security alerts)
+  REMINDER          // Session/class reminders
+  ALERT             // Parent alerts, attendance
+  MARKETING         // Marketing (requires explicit consent)
+  INBOUND           // Inbound message from user
+
+  @@map("sms_type")
+}
+
+/// SMS delivery status
+enum SmsStatus {
+  QUEUED            // Queued at provider
+  SENDING           // Being sent
+  SENT              // Sent to carrier
+  DELIVERED         // Confirmed delivered
+  UNDELIVERED       // Delivery failed (carrier issue)
+  FAILED            // Send failed (provider issue)
+  RECEIVED          // Inbound message received
+  READ              // Message read (if supported)
+  CANCELLED         // Message cancelled before send
+
+  @@map("sms_status")
+}
+
+/// SMS consent type
+enum SmsConsentType {
+  OPT_IN            // User opted in
+  OPT_OUT           // User opted out
+  IMPLICIT          // Implied consent (transactional relationship)
+  EXPLICIT          // Explicit written/digital consent
+  DOUBLE_OPT_IN     // Confirmed opt-in (2-step verification)
+
+  @@map("sms_consent_type")
+}
+
+/// SMS consent method
+enum SmsConsentMethod {
+  WEB_FORM          // Opted in via web form
+  MOBILE_APP        // Opted in via mobile app
+  SMS_KEYWORD       // Opted in via SMS keyword (START)
+  PAPER_FORM        // Physical form (keep record reference)
+  API               // Opted in via API call
+  IMPORTED          // Imported from external system
+
+  @@map("sms_consent_method")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SMS MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// SMS delivery log
+model SmsLog {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @map("tenant_id") @db.Uuid
+  
+  // User (optional - OTP may not have user context)
+  userId            String?        @map("user_id") @db.Uuid
+  
+  // Phone numbers
+  toPhone           String         @map("to_phone")
+  fromPhone         String         @map("from_phone")
+  
+  // Message content
+  body              String         @db.Text
+  type              SmsType
+  
+  // Message details
+  segments          Int            @default(1)
+  encoding          String?        // 'GSM-7', 'UCS-2'
+  
+  // Delivery details
+  provider          String         // 'twilio'
+  messageId         String?        @map("message_id")
+  messagingServiceSid String?      @map("messaging_service_sid")
+  status            SmsStatus      @default(QUEUED)
+  
+  // Timestamps
+  sentAt            DateTime?      @map("sent_at") @db.Timestamptz
+  deliveredAt       DateTime?      @map("delivered_at") @db.Timestamptz
+  failedAt          DateTime?      @map("failed_at") @db.Timestamptz
+  
+  // Error tracking
+  errorCode         String?        @map("error_code")
+  errorMessage      String?        @map("error_message")
+  
+  // Cost tracking
+  price             Decimal?       @db.Decimal(10, 6)
+  priceCurrency     String?        @map("price_currency") @default("USD")
+  
+  // Metadata
+  metadata          Json?
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([toPhone, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([messageId])
+  @@index([status])
+  @@index([type])
+  @@map("sms_logs")
+}
+
+/// SMS consent records (TCPA compliance)
+model SmsConsent {
+  id                String           @id @default(uuid()) @db.Uuid
+  
+  // Phone number (E.164 format)
+  phoneNumber       String           @map("phone_number")
+  
+  // Associated user/tenant
+  userId            String?          @map("user_id") @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  
+  // Consent details
+  consentType       SmsConsentType   @map("consent_type")
+  consentMethod     SmsConsentMethod @map("consent_method")
+  
+  // What they consented to receive
+  smsTypes          SmsType[]        @map("sms_types")
+  
+  // Consent metadata
+  consentedAt       DateTime         @map("consented_at") @db.Timestamptz
+  expiresAt         DateTime?        @map("expires_at") @db.Timestamptz
+  revokedAt         DateTime?        @map("revoked_at") @db.Timestamptz
+  revokedMethod     String?          @map("revoked_method")
+  
+  // Audit trail
+  ipAddress         String?          @map("ip_address")
+  userAgent         String?          @map("user_agent")
+  consentText       String?          @map("consent_text") @db.Text // The actual consent language shown
+  documentRef       String?          @map("document_ref") // Reference to paper form if applicable
+  
+  // Status
+  isActive          Boolean          @default(true) @map("is_active")
+  
+  // Timestamps
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([phoneNumber, tenantId])
+  @@index([phoneNumber])
+  @@index([tenantId, phoneNumber])
+  @@index([userId])
+  @@index([isActive, expiresAt])
+  @@map("sms_consents")
+}
+
+/// SMS webhook events (raw event log)
+model SmsWebhookEvent {
+  id                String         @id @default(uuid()) @db.Uuid
+  
+  // Provider info
+  provider          String         // 'twilio'
+  eventId           String?        @map("event_id")
+  
+  // Event details
+  eventType         String         @map("event_type") // 'status_callback', 'inbound'
+  phoneNumber       String         @map("phone_number")
+  messageId         String?        @map("message_id")
+  timestamp         DateTime       @db.Timestamptz
+  
+  // Raw payload
+  rawPayload        Json           @map("raw_payload")
+  
+  // Processing status
+  processedAt       DateTime?      @map("processed_at") @db.Timestamptz
+  processingError   String?        @map("processing_error")
+  
+  // Created
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([provider, createdAt(sort: Desc)])
+  @@index([phoneNumber])
+  @@index([messageId])
+  @@index([eventType])
+  @@map("sms_webhook_events")
+}
+
+/// SMS phone number validation cache
+model SmsPhoneCache {
+  id                String         @id @default(uuid()) @db.Uuid
+  
+  // Phone number (E.164 format)
+  phoneNumber       String         @unique @map("phone_number")
+  
+  // Validation results
+  isValid           Boolean        @map("is_valid")
+  phoneType         String?        @map("phone_type") // 'mobile', 'landline', 'voip', etc.
+  carrier           String?
+  countryCode       String?        @map("country_code")
+  nationalFormat    String?        @map("national_format")
+  
+  // Carrier lookup
+  carrierName       String?        @map("carrier_name")
+  carrierType       String?        @map("carrier_type")
+  mobileCountryCode String?        @map("mobile_country_code")
+  mobileNetworkCode String?        @map("mobile_network_code")
+  
+  // Error info
+  errorCode         String?        @map("error_code")
+  
+  // Cache control
+  lastLookupAt      DateTime       @map("last_lookup_at") @db.Timestamptz
+  expiresAt         DateTime       @map("expires_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([isValid])
+  @@index([expiresAt])
+  @@map("sms_phone_cache")
+}
+
+/// SMS global opt-out list (STOP across all tenants)
+model SmsGlobalOptOut {
+  id                String         @id @default(uuid()) @db.Uuid
+  
+  // Phone number (E.164 format)
+  phoneNumber       String         @unique @map("phone_number")
+  
+  // Opt-out details
+  optOutAt          DateTime       @map("opt_out_at") @db.Timestamptz
+  optOutMethod      String         @map("opt_out_method") // 'sms_keyword', 'api', 'manual'
+  
+  // Last message that triggered opt-out
+  lastMessageId     String?        @map("last_message_id")
+  lastTenantId      String?        @map("last_tenant_id") @db.Uuid
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("sms_global_opt_outs")
+}

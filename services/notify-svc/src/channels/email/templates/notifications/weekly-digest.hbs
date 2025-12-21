@@ -1,0 +1,191 @@
+{{!-- Weekly Digest Email Template --}}
+{{!-- Sent weekly to parents with a summary of their child's activity --}}
+
+{{#> layouts/base coppaNotice=true}}
+
+<h1>{{t 'weekly_digest.title'}}</h1>
+
+<p>{{t 'weekly_digest.greeting' parentName=parentName}}</p>
+
+<p>{{t 'weekly_digest.intro' studentName=studentName weekRange=weekRange}}</p>
+
+<!-- Week at a Glance -->
+<div style="background: linear-gradient(135deg, {{brandColor}}, {{brandColorDark}}); border-radius: 12px; padding: 24px; margin: 24px 0; color: #ffffff;">
+  <h2 style="margin: 0 0 16px 0; color: #ffffff; font-size: 18px;">{{t 'weekly_digest.at_a_glance'}}</h2>
+  
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td width="25%" style="text-align: center; padding: 8px;">
+        <p style="margin: 0; font-size: 32px; font-weight: 700;">{{stats.daysActive}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">{{t 'weekly_digest.days_active'}}</p>
+      </td>
+      <td width="25%" style="text-align: center; padding: 8px;">
+        <p style="margin: 0; font-size: 32px; font-weight: 700;">{{stats.totalMinutes}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">{{t 'weekly_digest.minutes'}}</p>
+      </td>
+      <td width="25%" style="text-align: center; padding: 8px;">
+        <p style="margin: 0; font-size: 32px; font-weight: 700;">{{stats.lessonsCompleted}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">{{t 'weekly_digest.lessons'}}</p>
+      </td>
+      <td width="25%" style="text-align: center; padding: 8px;">
+        <p style="margin: 0; font-size: 32px; font-weight: 700;">{{stats.pointsEarned}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">{{t 'weekly_digest.points'}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Activity Calendar -->
+{{#if activityDays}}
+<h2>{{t 'weekly_digest.activity_calendar'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0;">
+  <tr>
+    {{#each activityDays}}
+    <td style="width: 14.28%; text-align: center; padding: 8px;">
+      <p style="margin: 0; font-size: 12px; color: #71717a;">{{dayName}}</p>
+      <div style="width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 8px auto 0;
+        {{#if active}}background-color: {{../brandColor}}; color: #ffffff;{{else}}background-color: #f4f4f5; color: #a1a1aa;{{/if}}
+      ">
+        <span style="font-size: 14px; font-weight: 600;">{{dayNumber}}</span>
+      </div>
+      {{#if minutes}}
+      <p style="margin: 4px 0 0 0; font-size: 11px; color: {{../brandColor}};">{{minutes}}m</p>
+      {{/if}}
+    </td>
+    {{/each}}
+  </tr>
+</table>
+{{/if}}
+
+<!-- Top Subjects -->
+{{#if subjects}}
+<h2 style="margin-top: 32px;">{{t 'weekly_digest.subjects_worked'}}</h2>
+
+{{#each subjects}}
+<div style="margin: 12px 0; padding: 16px; background-color: #f8fafc; border-radius: 8px;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td width="48" style="vertical-align: top;">
+        <div style="width: 40px; height: 40px; background-color: {{color}}20; border-radius: 8px; text-align: center; line-height: 40px;">
+          <span style="font-size: 20px;">{{icon}}</span>
+        </div>
+      </td>
+      <td style="padding-left: 12px;">
+        <p style="margin: 0; font-weight: 600; color: #18181b;">{{name}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: #71717a;">
+          {{lessonsCompleted}} {{t 'weekly_digest.lessons_completed'}} · {{timeSpent}} {{t 'weekly_digest.time_spent'}}
+        </p>
+      </td>
+      <td style="text-align: right; vertical-align: top;">
+        <span style="display: inline-block; padding: 4px 10px; background-color: {{color}}20; color: {{color}}; border-radius: 12px; font-size: 13px; font-weight: 600;">
+          {{accuracy}}%
+        </span>
+      </td>
+    </tr>
+  </table>
+</div>
+{{/each}}
+{{/if}}
+
+<!-- Highlights -->
+{{#if highlights}}
+<h2 style="margin-top: 32px;">✨ {{t 'weekly_digest.highlights'}}</h2>
+
+<div style="background-color: #fef9c3; border-radius: 12px; padding: 20px;">
+  {{#each highlights}}
+  <div style="padding: 8px 0; {{#unless @last}}border-bottom: 1px solid #fde047;{{/unless}}">
+    <p style="margin: 0; color: #854d0e;">
+      <span style="font-size: 18px; margin-right: 8px;">{{icon}}</span>
+      {{text}}
+    </p>
+  </div>
+  {{/each}}
+</div>
+{{/if}}
+
+<!-- Achievements Earned This Week -->
+{{#if achievements}}
+<h2 style="margin-top: 32px;">🏆 {{t 'weekly_digest.achievements_earned'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+    {{#each achievements}}
+    <td width="33%" style="text-align: center; padding: 12px;">
+      <div style="width: 56px; height: 56px; background-color: #fef3c7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+        <span style="font-size: 28px;">{{icon}}</span>
+      </div>
+      <p style="margin: 8px 0 0 0; font-size: 13px; font-weight: 500; color: #854d0e;">{{name}}</p>
+    </td>
+    {{/each}}
+  </tr>
+</table>
+{{/if}}
+
+<!-- Struggling Areas (gentle framing) -->
+{{#if areasForGrowth}}
+<h2 style="margin-top: 32px;">🌱 {{t 'weekly_digest.growth_opportunities'}}</h2>
+
+<div style="background-color: #eff6ff; border-radius: 8px; padding: 16px;">
+  <p style="margin: 0 0 12px 0; font-size: 14px; color: #3b82f6;">
+    {{t 'weekly_digest.growth_intro'}}
+  </p>
+  {{#each areasForGrowth}}
+  <div style="padding: 8px 0;">
+    <p style="margin: 0; font-weight: 500; color: #1e40af;">{{topic}}</p>
+    <p style="margin: 4px 0 0 0; font-size: 13px; color: #3b82f6;">{{suggestion}}</p>
+  </div>
+  {{/each}}
+</div>
+{{/if}}
+
+<!-- Upcoming -->
+{{#if upcoming}}
+<h2 style="margin-top: 32px;">📅 {{t 'weekly_digest.upcoming'}}</h2>
+
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 16px;">
+  {{#each upcoming}}
+  <div style="padding: 8px 0; {{#unless @last}}border-bottom: 1px solid #e2e8f0;{{/unless}}">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td width="48" style="vertical-align: top;">
+          <div style="background-color: #e4e4e7; border-radius: 6px; padding: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 10px; color: #71717a; text-transform: uppercase;">{{month}}</p>
+            <p style="margin: 0; font-size: 18px; font-weight: 700; color: #18181b;">{{day}}</p>
+          </div>
+        </td>
+        <td style="padding-left: 12px;">
+          <p style="margin: 0; font-weight: 500; color: #18181b;">{{title}}</p>
+          <p style="margin: 2px 0 0 0; font-size: 13px; color: #71717a;">{{description}}</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+  {{/each}}
+</div>
+{{/if}}
+
+{{#if teacherMessage}}
+<!-- Teacher Message -->
+<div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #166534;">
+    💬 {{t 'weekly_digest.from_teacher' teacherName=teacherName}}
+  </p>
+  <p style="margin: 0; color: #15803d; font-style: italic;">
+    "{{teacherMessage}}"
+  </p>
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{dashboardUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'weekly_digest.view_dashboard'}}
+  </a>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'weekly_digest.keep_up'}}
+</p>
+
+{{/layouts/base}}

@@ -1,0 +1,190 @@
+{{!-- Tenant Created Email Template --}}
+{{!-- Sent when a new school/district tenant is created --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 80px; height: 80px; background: linear-gradient(135deg, {{brandColor}}, {{brandColorDark}}); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 36px;">🎉</span>
+  </div>
+</div>
+
+<h1 style="text-align: center;">{{t 'tenant_created.title'}}</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  {{t 'tenant_created.greeting' name=adminName}}
+</p>
+
+<p style="text-align: center; color: #52525b; font-size: 16px;">
+  {{t 'tenant_created.intro' tenantName=tenantName}}
+</p>
+
+<!-- Tenant Info Card -->
+<div style="background: linear-gradient(135deg, {{brandColor}}, {{brandColorDark}}); border-radius: 12px; padding: 24px; margin: 24px 0; color: #ffffff;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; opacity: 0.9;">{{t 'tenant_created.organization'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700;">{{tenantName}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding-top: 16px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td width="50%">
+              <p style="margin: 0; font-size: 12px; opacity: 0.8;">{{t 'tenant_created.tenant_id'}}</p>
+              <p style="margin: 4px 0 0 0; font-size: 14px; font-family: monospace;">{{tenantId}}</p>
+            </td>
+            <td width="50%">
+              <p style="margin: 0; font-size: 12px; opacity: 0.8;">{{t 'tenant_created.plan'}}</p>
+              <p style="margin: 4px 0 0 0; font-size: 14px;">{{planName}}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Account Details -->
+<h2>{{t 'tenant_created.account_details'}}</h2>
+
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'tenant_created.admin_email'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{adminEmail}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'tenant_created.subdomain'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: {{brandColor}};">{{subdomain}}.{{baseDomain}}</p>
+      </td>
+    </tr>
+    {{#if customDomain}}
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'tenant_created.custom_domain'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{customDomain}}</p>
+      </td>
+    </tr>
+    {{/if}}
+    <tr>
+      <td style="padding: 8px 0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'tenant_created.seats'}}</p>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <p style="margin: 0; font-weight: 500; color: #1e293b;">{{seatLimit}} {{t 'tenant_created.seats_label'}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Getting Started Steps -->
+<h2>{{t 'tenant_created.next_steps'}}</h2>
+
+<div style="margin: 24px 0;">
+  {{#each nextSteps}}
+  <div style="padding: 16px; margin-bottom: 12px; background-color: {{#if completed}}#f0fdf4{{else}}#f8fafc{{/if}}; border-radius: 8px; border-left: 4px solid {{#if completed}}#22c55e{{else}}{{../brandColor}}{{/if}};">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td width="32" style="vertical-align: top;">
+          <div style="width: 24px; height: 24px; border-radius: 50%; background-color: {{#if completed}}#22c55e{{else}}{{../brandColor}}{{/if}}; color: #ffffff; text-align: center; line-height: 24px; font-size: 14px; font-weight: 600;">
+            {{#if completed}}✓{{else}}{{stepNumber}}{{/if}}
+          </div>
+        </td>
+        <td style="padding-left: 12px;">
+          <p style="margin: 0; font-weight: 600; color: #1e293b;">{{title}}</p>
+          <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">{{description}}</p>
+          {{#if url}}
+          <a href="{{url}}" style="display: inline-block; margin-top: 8px; color: {{../brandColor}}; text-decoration: underline; font-size: 14px;">
+            {{actionLabel}} →
+          </a>
+          {{/if}}
+        </td>
+      </tr>
+    </table>
+  </div>
+  {{/each}}
+</div>
+
+<!-- Important Links -->
+<h2>{{t 'tenant_created.important_links'}}</h2>
+
+<div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    {{#each importantLinks}}
+    <tr>
+      <td style="padding: 8px 0; {{#unless @last}}border-bottom: 1px solid #bfdbfe;{{/unless}}">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td>
+              <span style="font-size: 18px; margin-right: 8px;">{{icon}}</span>
+              <span style="color: #1e40af; font-weight: 500;">{{label}}</span>
+            </td>
+            <td style="text-align: right;">
+              <a href="{{url}}" style="color: {{../brandColor}}; text-decoration: underline;">{{t 'tenant_created.open_link'}}</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    {{/each}}
+  </table>
+</div>
+
+{{#if temporaryPassword}}
+<!-- Temporary Password Notice -->
+<div style="background-color: #fee2e2; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #991b1b;">
+    🔐 {{t 'tenant_created.temp_password_title'}}
+  </p>
+  <p style="margin: 0 0 12px 0; font-size: 14px; color: #dc2626;">
+    {{t 'tenant_created.temp_password_message'}}
+  </p>
+  <div style="background-color: #ffffff; border: 1px dashed #fca5a5; border-radius: 4px; padding: 12px; text-align: center;">
+    <code style="font-size: 18px; letter-spacing: 2px; color: #991b1b;">{{temporaryPassword}}</code>
+  </div>
+  <p style="margin: 12px 0 0 0; font-size: 12px; color: #b91c1c;">
+    ⚠️ {{t 'tenant_created.change_password'}}
+  </p>
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{adminPortalUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 18px;">
+    {{t 'tenant_created.access_admin'}}
+  </a>
+</div>
+
+<!-- Support Info -->
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #18181b;">
+    {{t 'tenant_created.need_help'}}
+  </p>
+  <p style="margin: 0; font-size: 14px; color: #52525b;">
+    {{t 'tenant_created.support_available'}}
+  </p>
+  <div style="margin-top: 12px;">
+    <a href="mailto:{{supportEmail}}" style="color: {{brandColor}}; margin-right: 16px;">📧 {{supportEmail}}</a>
+    {{#if supportPhone}}
+    <a href="tel:{{supportPhone}}" style="color: {{brandColor}};">📞 {{supportPhone}}</a>
+    {{/if}}
+  </div>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'tenant_created.welcome_message'}}
+</p>
+
+{{/layouts/base}}

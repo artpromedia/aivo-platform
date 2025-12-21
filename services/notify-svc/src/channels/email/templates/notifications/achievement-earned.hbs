@@ -1,0 +1,118 @@
+{{!-- Achievement Earned Email Template --}}
+{{!-- Sent when a student earns an achievement or badge --}}
+
+{{#> layouts/base coppaNotice=true}}
+
+<div style="text-align: center;">
+  <!-- Achievement Badge -->
+  <div style="margin-bottom: 24px;">
+    {{#if achievementImage}}
+    <img src="{{achievementImage}}" alt="{{achievementName}}" width="120" height="120" style="max-width: 120px; height: auto;">
+    {{else}}
+    <div style="width: 120px; height: 120px; background: linear-gradient(135deg, #fef3c7, #fcd34d); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <span style="font-size: 48px;">{{achievementIcon}}</span>
+    </div>
+    {{/if}}
+  </div>
+  
+  <h1 style="color: {{brandColor}};">🎉 {{t 'achievement.title'}}</h1>
+  
+  <p style="font-size: 18px;">
+    {{t 'achievement.greeting' parentName=parentName}}
+  </p>
+  
+  <p style="font-size: 20px; color: #18181b;">
+    <strong>{{studentName}}</strong> {{t 'achievement.earned'}}
+  </p>
+</div>
+
+<!-- Achievement Card -->
+<div style="background: linear-gradient(135deg, #fef9c3, #fef3c7); border-radius: 16px; padding: 32px; margin: 24px 0; text-align: center; border: 2px solid #fcd34d;">
+  <h2 style="margin: 0 0 8px 0; color: #854d0e; font-size: 28px;">{{achievementName}}</h2>
+  <p style="margin: 0; color: #a16207; font-size: 16px;">{{achievementDescription}}</p>
+  
+  {{#if achievementRarity}}
+  <div style="margin-top: 16px;">
+    <span style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;
+      {{#if (eq achievementRarity 'common')}}background-color: #e4e4e7; color: #52525b;{{/if}}
+      {{#if (eq achievementRarity 'uncommon')}}background-color: #dcfce7; color: #166534;{{/if}}
+      {{#if (eq achievementRarity 'rare')}}background-color: #dbeafe; color: #1e40af;{{/if}}
+      {{#if (eq achievementRarity 'epic')}}background-color: #f3e8ff; color: #7c3aed;{{/if}}
+      {{#if (eq achievementRarity 'legendary')}}background-color: #fef3c7; color: #b45309;{{/if}}
+    ">
+      {{achievementRarity}}
+    </span>
+  </div>
+  {{/if}}
+</div>
+
+{{#if earnedFor}}
+<!-- What they did to earn it -->
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <p style="margin: 0 0 12px 0; font-weight: 600; color: #18181b;">
+    {{t 'achievement.how_earned'}}
+  </p>
+  <p style="margin: 0; color: #52525b;">
+    {{earnedFor}}
+  </p>
+</div>
+{{/if}}
+
+{{#if pointsAwarded}}
+<!-- Points Awarded -->
+<div style="text-align: center; margin: 24px 0;">
+  <div style="display: inline-block; padding: 16px 32px; background-color: #ecfdf5; border-radius: 8px;">
+    <p style="margin: 0; font-size: 14px; color: #065f46;">{{t 'achievement.points_awarded'}}</p>
+    <p style="margin: 4px 0 0 0; font-size: 32px; font-weight: 700; color: #059669;">+{{pointsAwarded}}</p>
+  </div>
+</div>
+{{/if}}
+
+{{#if achievements}}
+<!-- Achievement Progress -->
+<h2 style="margin-top: 32px; text-align: center;">{{t 'achievement.collection_title'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0;">
+  <tr>
+    {{#each achievements}}
+    <td width="25%" style="text-align: center; padding: 12px;">
+      <div style="width: 48px; height: 48px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;
+        {{#if earned}}background-color: #fef3c7;{{else}}background-color: #e4e4e7; opacity: 0.5;{{/if}}
+      ">
+        <span style="font-size: 24px;">{{icon}}</span>
+      </div>
+      <p style="margin: 8px 0 0 0; font-size: 11px; color: {{#if earned}}#854d0e{{else}}#a1a1aa{{/if}};">{{name}}</p>
+    </td>
+    {{/each}}
+  </tr>
+</table>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'achievement.progress' earned=achievementsEarned total=totalAchievements}}
+</p>
+{{/if}}
+
+{{#if shareEnabled}}
+<!-- Share Achievement -->
+<div style="text-align: center; margin: 32px 0; padding: 24px; background-color: #f4f4f5; border-radius: 8px;">
+  <p style="margin: 0 0 16px 0; font-weight: 500; color: #18181b;">
+    {{t 'achievement.share_prompt'}}
+  </p>
+  <a href="{{shareUrl}}" class="btn-secondary" style="background-color: #ffffff; color: {{brandColor}}; text-decoration: none; padding: 12px 24px; border: 2px solid {{brandColor}}; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'achievement.share_button'}}
+  </a>
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{dashboardUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'achievement.view_all'}}
+  </a>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'achievement.encouragement'}}
+</p>
+
+{{/layouts/base}}

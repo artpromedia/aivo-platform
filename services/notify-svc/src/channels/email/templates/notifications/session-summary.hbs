@@ -1,0 +1,128 @@
+{{!-- Session Summary Email Template --}}
+{{!-- Sent to parents after a student completes a learning session --}}
+
+{{#> layouts/base coppaNotice=true}}
+
+<h1>{{t 'session_summary.title'}}</h1>
+
+<p>{{t 'session_summary.greeting' parentName=parentName}}</p>
+
+<p>{{t 'session_summary.intro' studentName=studentName}}</p>
+
+<!-- Session Overview Card -->
+<div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #e2e8f0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'session_summary.date'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 600; color: #1e293b;">{{sessionDate}}</p>
+      </td>
+      <td style="padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'session_summary.duration'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 600; color: #1e293b;">{{sessionDuration}}</p>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2" style="padding-top: 16px;">
+        <p style="margin: 0; font-size: 14px; color: #64748b;">{{t 'session_summary.subject'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 500; color: #1e293b;">{{subjectName}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Progress Stats -->
+<h2>{{t 'session_summary.progress_title'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0;">
+  <tr>
+    <td width="33%" style="text-align: center; padding: 16px; background-color: #ecfdf5; border-radius: 8px 0 0 8px;">
+      <p style="margin: 0; font-size: 28px; font-weight: 700; color: #059669;">{{stats.activitiesCompleted}}</p>
+      <p style="margin: 4px 0 0 0; font-size: 12px; color: #065f46;">{{t 'session_summary.activities'}}</p>
+    </td>
+    <td width="34%" style="text-align: center; padding: 16px; background-color: #dbeafe;">
+      <p style="margin: 0; font-size: 28px; font-weight: 700; color: #2563eb;">{{stats.accuracy}}%</p>
+      <p style="margin: 4px 0 0 0; font-size: 12px; color: #1e40af;">{{t 'session_summary.accuracy'}}</p>
+    </td>
+    <td width="33%" style="text-align: center; padding: 16px; background-color: #fef3c7; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-size: 28px; font-weight: 700; color: #d97706;">{{stats.pointsEarned}}</p>
+      <p style="margin: 4px 0 0 0; font-size: 12px; color: #92400e;">{{t 'session_summary.points'}}</p>
+    </td>
+  </tr>
+</table>
+
+{{#if skills}}
+<!-- Skills Practiced -->
+<h2 style="margin-top: 32px;">{{t 'session_summary.skills_title'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  {{#each skills}}
+  <tr>
+    <td style="padding: 12px 0; border-bottom: 1px solid #e4e4e7;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td>
+            <p style="margin: 0; font-weight: 500; color: #18181b;">{{name}}</p>
+          </td>
+          <td style="text-align: right;">
+            <span style="display: inline-block; padding: 4px 12px; background-color: {{#if improved}}#dcfce7{{else}}#f4f4f5{{/if}}; border-radius: 12px; font-size: 13px; color: {{#if improved}}#166534{{else}}#52525b{{/if}};">
+              {{mastery}}%
+              {{#if improved}}<span style="color: #166534;">↑</span>{{/if}}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding-top: 8px;">
+            <!-- Progress bar -->
+            <div style="background-color: #e4e4e7; border-radius: 4px; height: 8px; overflow: hidden;">
+              <div style="background-color: {{../brandColor}}; width: {{mastery}}%; height: 100%; border-radius: 4px;"></div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{/each}}
+</table>
+{{/if}}
+
+{{#if achievements}}
+<!-- Achievements -->
+<div style="background-color: #fef9c3; border-radius: 12px; padding: 20px; margin: 24px 0;">
+  <h2 style="margin: 0 0 12px 0; color: #854d0e;">🏆 {{t 'session_summary.achievements_title'}}</h2>
+  {{#each achievements}}
+  <div style="display: flex; align-items: center; padding: 8px 0;">
+    <span style="font-size: 24px; margin-right: 12px;">{{icon}}</span>
+    <div>
+      <p style="margin: 0; font-weight: 600; color: #854d0e;">{{name}}</p>
+      <p style="margin: 2px 0 0 0; font-size: 14px; color: #a16207;">{{description}}</p>
+    </div>
+  </div>
+  {{/each}}
+</div>
+{{/if}}
+
+{{#if teacherNote}}
+<!-- Teacher Note -->
+<div style="background-color: #eff6ff; border-left: 4px solid {{brandColor}}; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #1e40af;">
+    📝 {{t 'session_summary.teacher_note'}} {{teacherName}}:
+  </p>
+  <p style="margin: 0; color: #3b82f6; font-style: italic;">
+    "{{teacherNote}}"
+  </p>
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{dashboardUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    {{t 'session_summary.view_dashboard'}}
+  </a>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'session_summary.encouragement'}}
+</p>
+
+{{/layouts/base}}

@@ -3,7 +3,7 @@
  */
 
 export const config = {
-  port: parseInt(process.env.PORT || '4060', 10),
+  port: Number.parseInt(process.env.PORT || '4060', 10),
   host: process.env.HOST || '0.0.0.0',
   databaseUrl:
     process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_billing',
@@ -18,9 +18,14 @@ export const config = {
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
   },
 
+  // NATS configuration for event publishing
+  nats: {
+    url: process.env.NATS_URL || 'nats://localhost:4222',
+  },
+
   // Trial configuration
-  defaultTrialDays: parseInt(process.env.DEFAULT_TRIAL_DAYS || '30', 10),
+  defaultTrialDays: Number.parseInt(process.env.DEFAULT_TRIAL_DAYS || '30', 10),
 
   // Grace period for past due subscriptions (days)
-  pastDueGraceDays: parseInt(process.env.PAST_DUE_GRACE_DAYS || '7', 10),
+  pastDueGraceDays: Number.parseInt(process.env.PAST_DUE_GRACE_DAYS || '7', 10),
 } as const;

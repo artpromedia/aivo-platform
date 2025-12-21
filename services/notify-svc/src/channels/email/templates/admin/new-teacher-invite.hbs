@@ -1,0 +1,138 @@
+{{!-- New Teacher Invite Email Template --}}
+{{!-- Sent when a teacher is invited to join a school/district --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 80px; height: 80px; background: linear-gradient(135deg, {{brandColor}}, {{brandColorDark}}); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 36px;">👋</span>
+  </div>
+</div>
+
+<h1 style="text-align: center;">{{t 'teacher_invite.title'}}</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  {{t 'teacher_invite.greeting' name=teacherName}}
+</p>
+
+<p style="text-align: center; color: #52525b; font-size: 16px;">
+  {{t 'teacher_invite.intro' inviterName=inviterName organizationName=organizationName}}
+</p>
+
+<!-- Organization Info Card -->
+<div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  {{#if organizationLogo}}
+  <img src="{{organizationLogo}}" alt="{{organizationName}}" width="120" style="max-width: 120px; height: auto; margin-bottom: 16px;">
+  {{/if}}
+  <h2 style="margin: 0 0 8px 0; color: #1e293b;">{{organizationName}}</h2>
+  {{#if organizationType}}
+  <p style="margin: 0; color: #64748b;">{{organizationType}}</p>
+  {{/if}}
+  {{#if organizationLocation}}
+  <p style="margin: 4px 0 0 0; font-size: 14px; color: #94a3b8;">📍 {{organizationLocation}}</p>
+  {{/if}}
+</div>
+
+<!-- Role Details -->
+<div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; color: #3b82f6;">{{t 'teacher_invite.your_role'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 600; color: #1e40af;">{{roleName}}</p>
+      </td>
+      {{#if classrooms}}
+      <td style="text-align: right;">
+        <p style="margin: 0; font-size: 14px; color: #3b82f6;">{{t 'teacher_invite.classrooms'}}</p>
+        <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 600; color: #1e40af;">{{classrooms}}</p>
+      </td>
+      {{/if}}
+    </tr>
+  </table>
+</div>
+
+{{#if features}}
+<!-- What you'll get -->
+<h2>{{t 'teacher_invite.features_title'}}</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0;">
+  {{#each features}}
+  <tr>
+    <td style="padding: 12px 0; {{#unless @last}}border-bottom: 1px solid #e4e4e7;{{/unless}}">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="48" style="vertical-align: top;">
+            <div style="width: 40px; height: 40px; background-color: {{../brandColor}}15; border-radius: 8px; text-align: center; line-height: 40px;">
+              <span style="font-size: 20px;">{{icon}}</span>
+            </div>
+          </td>
+          <td style="padding-left: 12px;">
+            <p style="margin: 0; font-weight: 600; color: #18181b;">{{title}}</p>
+            <p style="margin: 4px 0 0 0; font-size: 14px; color: #71717a;">{{description}}</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{/each}}
+</table>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{acceptUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 18px;">
+    {{t 'teacher_invite.accept_button'}}
+  </a>
+</div>
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'teacher_invite.decline_note'}}
+  <a href="{{declineUrl}}" style="color: #71717a; text-decoration: underline;">{{t 'teacher_invite.decline_link'}}</a>
+</p>
+
+<!-- Expiry Notice -->
+<div style="background-color: #fef3c7; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0; color: #92400e;">
+    ⏱️ {{t 'teacher_invite.expiry_notice' days=expiryDays}}
+  </p>
+</div>
+
+<!-- Getting Started -->
+{{#if gettingStartedUrl}}
+<div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0 0 12px 0; font-weight: 500; color: #18181b;">
+    {{t 'teacher_invite.getting_started'}}
+  </p>
+  <p style="margin: 0; font-size: 14px; color: #52525b;">
+    {{t 'teacher_invite.getting_started_desc'}}
+  </p>
+  <a href="{{gettingStartedUrl}}" style="display: inline-block; margin-top: 12px; color: {{brandColor}}; text-decoration: underline;">
+    {{t 'teacher_invite.view_guide'}}
+  </a>
+</div>
+{{/if}}
+
+<!-- Inviter Message -->
+{{#if personalMessage}}
+<div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0 0 8px 0; font-weight: 600; color: #166534;">
+    💬 {{t 'teacher_invite.message_from' name=inviterName}}
+  </p>
+  <p style="margin: 0; color: #15803d; font-style: italic;">
+    "{{personalMessage}}"
+  </p>
+</div>
+{{/if}}
+
+<hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  {{t 'teacher_invite.questions'}}<br>
+  <a href="mailto:{{inviterEmail}}" style="color: {{brandColor}};">{{inviterEmail}}</a>
+</p>
+
+<p style="text-align: center; color: #a1a1aa; font-size: 12px; margin-top: 16px;">
+  {{t 'teacher_invite.ignore_message'}}
+</p>
+
+{{/layouts/base}}

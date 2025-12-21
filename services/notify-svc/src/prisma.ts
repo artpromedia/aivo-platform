@@ -4,6 +4,8 @@
 
 import { PrismaClient } from '../generated/prisma-client/index.js';
 
+export type { PrismaClient } from '../generated/prisma-client/index.js';
+
 export const prisma = new PrismaClient({
   log:
     process.env.NODE_ENV === 'development'
@@ -18,6 +20,8 @@ export type {
   DeliveryLog,
   NotificationTemplate,
   NotificationQueue,
+  EmailLog,
+  EmailSuppression,
 } from '../generated/prisma-client/index.js';
 
 export {
@@ -25,4 +29,8 @@ export {
   DeliveryChannel,
   DeliveryStatus,
   NotificationPriority,
+  SuppressionReason,
+  EmailStatus,
+  EmailProvider,
+  EmailCategory,
 } from '../generated/prisma-client/index.js';
