@@ -18,6 +18,7 @@ import { getWarehousePool } from '../warehouse.js';
 import { validateUserAccess } from './accessGrantService.js';
 import { recordAuditLog, type AuditContext } from './auditService.js';
 import { DEFAULT_CONSTRAINTS, transformDataset, type PrivacyConstraints } from './privacyGuard.js';
+import { getS3Service } from './s3.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -254,11 +255,11 @@ export async function getProjectExportJobs(
 /**
  * Get an export job by ID
  */
-export async function getExportJob(jobId: string, userId: string) {
+export async function getExportJob(jobId: string, tenantId: string) {
   return prisma.researchExportJob.findFirst({
     where: {
       id: jobId,
-      requestedByUserId: userId,
+      tenantId,
     },
     include: {
       datasetDefinition: true,
@@ -303,9 +304,10 @@ export async function processExportJob(jobId: string): Promise<void> {
     // Execute export
     const result = await executeExport(job);
 
-    // Generate file and upload
-    const { storagePath, fileSizeBytes } = await generateAndUploadFile(
+    // Generate file and upload to S3
+    const { storagePath, fileSizeBytes, checksum } = await generateAndUploadFile(
       job.id,
+      job.tenantId,
       result.rows,
       job.format
     );
@@ -320,6 +322,7 @@ export async function processExportJob(jobId: string): Promise<void> {
         suppressedRowCount: result.suppressedRowCount,
         fileSizeBytes: BigInt(fileSizeBytes),
         storagePath,
+        checksum,
         storageExpiresAt: new Date(Date.now() + config.exportRetentionDays * 24 * 60 * 60 * 1000),
         kAnonymityPassed: true,
       },
@@ -332,6 +335,7 @@ export async function processExportJob(jobId: string): Promise<void> {
       rowCount: result.rowCount,
       fileSizeBytes,
       storagePath,
+      checksum,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -480,43 +484,74 @@ async function executeExport(job: {
 }
 
 /**
- * Generate file and upload to storage
+ * Generate file and upload to S3 storage
+ *
+ * Uses the S3 service for secure uploads with:
+ * - KMS encryption at rest
+ * - Compliance metadata tagging
+ * - Tenant-scoped keys
  */
 async function generateAndUploadFile(
   jobId: string,
+  tenantId: string,
   rows: Record<string, unknown>[],
   format: ExportFormat
-): Promise<{ storagePath: string; fileSizeBytes: number }> {
+): Promise<{ storagePath: string; fileSizeBytes: number; checksum: string }> {
+  const s3Service = getS3Service();
+
   let content: string;
-  let filename: string;
+  let contentType: string;
+  let formatKey: 'json' | 'csv' | 'parquet';
 
   switch (format) {
     case 'CSV':
       content = convertToCSV(rows);
-      filename = `${jobId}.csv`;
+      contentType = 'text/csv';
+      formatKey = 'csv';
       break;
     case 'JSON':
       content = JSON.stringify(rows, null, 2);
-      filename = `${jobId}.json`;
+      contentType = 'application/json';
+      formatKey = 'json';
       break;
     case 'PARQUET':
-      // In production, use a parquet library
+      // In production, use a parquet library (e.g., parquetjs)
+      // For now, store as JSON with parquet extension
       content = JSON.stringify(rows);
-      filename = `${jobId}.parquet.json`;
+      contentType = 'application/vnd.apache.parquet';
+      formatKey = 'parquet';
       break;
     default:
       content = JSON.stringify(rows);
-      filename = `${jobId}.json`;
+      contentType = 'application/json';
+      formatKey = 'json';
   }
 
-  // In production, upload to S3
-  // For now, we'll simulate storage
-  const storagePath = `s3://${config.s3Bucket}/exports/${filename}`;
-  const fileSizeBytes = Buffer.byteLength(content, 'utf8');
+  // Generate secure S3 key
+  const s3Key = s3Service.generateExportKey({
+    tenantId,
+    exportId: jobId,
+    format: formatKey,
+  });
 
-  console.log(`[Storage] Would upload ${fileSizeBytes} bytes to ${storagePath}`);
+  // Upload to S3 with encryption and compliance metadata
+  const uploadResult = await s3Service.upload(s3Key, content, {
+    contentType,
+    metadata: {
+      'export-job-id': jobId,
+      'tenant-id': tenantId,
+      format: format,
+      'row-count': String(rows.length),
+      compliance: 'ferpa-coppa',
+    },
+  });
 
-  return { storagePath, fileSizeBytes };
+  // Return the S3 key as the storage path
+  return {
+    storagePath: uploadResult.key,
+    fileSizeBytes: uploadResult.size,
+    checksum: uploadResult.checksum,
+  };
 }
 
 /**

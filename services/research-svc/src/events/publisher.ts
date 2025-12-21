@@ -1,6 +1,6 @@
 /**
  * NATS Event Publisher for Research Service
- * 
+ *
  * Publishes domain events for research governance actions.
  */
 
@@ -50,6 +50,7 @@ export interface ExportCompletedPayload {
   rowCount: number;
   fileSizeBytes: number;
   storagePath: string;
+  checksum?: string;
   timestamp: string;
 }
 

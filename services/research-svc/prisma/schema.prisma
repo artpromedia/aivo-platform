@@ -279,9 +279,10 @@ model ResearchExportJob {
   rowCount              Int?              @map("row_count")
   fileSizeBytes         BigInt?           @map("file_size_bytes")
   
-  /// Storage location (S3 path or signed URL)
+  /// Storage location and integrity
   storagePath           String?           @map("storage_path") @db.VarChar(1000)
   storageExpiresAt      DateTime?         @map("storage_expires_at")
+  checksum              String?           @map("checksum") @db.VarChar(128)  // SHA-256 hash for integrity verification
   
   /// Error details if failed
   errorMessage          String?           @map("error_message") @db.Text

@@ -2,6 +2,7 @@
  * Research Export Routes
  *
  * Export job creation, listing, and download management.
+ * Implements secure S3 presigned URLs for FERPA/COPPA compliant data exports.
  */
 
 import type { ExportJobStatus } from '@prisma/client';
@@ -16,6 +17,7 @@ import {
   getProjectExportJobs,
   recordDownload,
 } from '../services/exportService.js';
+import { getS3Service, S3ServiceError } from '../services/s3.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -171,16 +173,32 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
     // Record download access
     await recordDownload(id, user.sub, auditContext);
 
-    // In production, generate signed URL from S3
-    // For now, return the path
-    const signedUrl = await generateSignedDownloadUrl(job.storagePath);
+    // Generate presigned S3 download URL
+    try {
+      const { url, expiresIn, expiresAt } = await generateSignedDownloadUrl(
+        job.storagePath,
+        job.format
+      );
 
-    return reply.send({
-      url: signedUrl,
-      expiresIn: 3600, // 1 hour
-      filename: `export-${job.id}.${job.format.toLowerCase()}`,
-      // checksum field not available in schema
-    });
+      return reply.send({
+        url,
+        expiresIn,
+        expiresAt: expiresAt.toISOString(),
+        filename: `export-${job.id}.${job.format.toLowerCase()}`,
+      });
+    } catch (error) {
+      // Handle S3 errors gracefully
+      if (error instanceof S3ServiceError) {
+        if (error.code === 'NOT_FOUND' || error.statusCode === 404) {
+          return reply.status(404).send({ error: 'Export file not found in storage' });
+        }
+        return reply.status(500).send({
+          error: 'Failed to generate download URL',
+          code: error.code,
+        });
+      }
+      throw error;
+    }
   });
 
   /**
@@ -216,14 +234,49 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 // Helper Functions
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/** Default expiry for download URLs in seconds (1 hour) */
+const DOWNLOAD_URL_EXPIRY_SECONDS = 3600;
+
 /**
- * Generate a signed download URL for S3.
- * In production, use @aws-sdk/s3-request-presigner.
+ * Generate a presigned download URL for S3.
+ * Uses AWS SDK v3 S3 request presigner for secure, time-limited access.
  *
- * @param path - The S3 object path to generate a signed URL for
+ * @param storagePath - The S3 storage path (s3://bucket/key format or just key)
+ * @param format - The export format for proper content-type
  * @returns A presigned URL valid for 1 hour
+ * @throws S3ServiceError if the file doesn't exist or S3 access fails
  */
-async function generateSignedDownloadUrl(path: string): Promise<string> {
-  // Development placeholder - production should use @aws-sdk/s3-request-presigner
-  return `https://research-exports.aivo.com/download?path=${encodeURIComponent(path)}&expires=3600`;
+async function generateSignedDownloadUrl(
+  storagePath: string,
+  format: 'CSV' | 'JSON' | 'PARQUET' = 'CSV'
+): Promise<{ url: string; expiresIn: number; expiresAt: Date }> {
+  const s3Service = getS3Service();
+
+  // Extract the key from the storage path
+  // Format can be: s3://bucket/key or just key
+  let key = storagePath;
+  if (storagePath.startsWith('s3://')) {
+    // Parse s3://bucket/key format
+    const withoutProtocol = storagePath.slice(5);
+    const slashIndex = withoutProtocol.indexOf('/');
+    key = slashIndex >= 0 ? withoutProtocol.slice(slashIndex + 1) : withoutProtocol;
+  }
+
+  // Map format to content type
+  const contentTypes: Record<string, string> = {
+    CSV: 'text/csv',
+    JSON: 'application/json',
+    PARQUET: 'application/vnd.apache.parquet',
+  };
+
+  const { url, expiresAt } = await s3Service.getPresignedDownloadUrl(key, {
+    expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS,
+    contentType: contentTypes[format] ?? 'application/octet-stream',
+  });
+
+  return {
+    url,
+    expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS,
+    expiresAt,
+  };
 }

@@ -10,9 +10,15 @@ export const config = {
   // NATS
   natsUrl: process.env.NATS_URL ?? 'nats://localhost:4222',
 
-  // S3/Storage
-  s3Bucket: process.env.S3_BUCKET ?? 'aivo-research-exports',
-  s3Region: process.env.S3_REGION ?? 'us-east-1',
+  // S3/Storage Configuration
+  s3Bucket:
+    process.env.S3_RESEARCH_EXPORT_BUCKET ?? process.env.S3_BUCKET ?? 'aivo-research-exports',
+  s3Region: process.env.AWS_REGION ?? process.env.S3_REGION ?? 'us-east-1',
+  s3KmsKeyId: process.env.S3_KMS_KEY_ID ?? 'alias/aivo-research-exports',
+  s3Endpoint: process.env.S3_ENDPOINT, // Optional, for MinIO/LocalStack
+
+  // Presigned URL expiry (in hours, default 24)
+  exportUrlExpiryHours: Number.parseInt(process.env.RESEARCH_EXPORT_URL_EXPIRY_HOURS ?? '24', 10),
 
   // Privacy
   deidentificationSalt: process.env.RESEARCH_DEIDENTIFICATION_SALT ?? 'dev-salt',
