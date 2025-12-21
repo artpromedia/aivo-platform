@@ -2,6 +2,7 @@
  * AIVO Platform - Sandbox Service Seed Data
  *
  * Creates:
+ * - Admin users (SUPER_ADMIN for initial access)
  * - Sample partners (approved, pending)
  * - Partner applications
  * - Sandbox tenants with API keys
@@ -9,9 +10,23 @@
  * - Webhook endpoints
  */
 
-import { PrismaClient, PartnerStatus, ApiKeyStatus } from '@prisma/client';
+import { PrismaClient, PartnerStatus, ApiKeyStatus, AdminRole } from '@prisma/client';
+import { randomBytes, pbkdf2Sync } from 'node:crypto';
 
 const prisma = new PrismaClient();
+
+// ══════════════════════════════════════════════════════════════════════════
+// Helper Functions
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Hash password using PBKDF2 (same as AdminAuthService)
+ */
+function hashPassword(password: string): string {
+  const salt = randomBytes(32);
+  const hash = pbkdf2Sync(password, salt, 100000, 64, 'sha512');
+  return `${salt.toString('base64')}:${hash.toString('base64')}`;
+}
 
 // Partner IDs
 const EDTECH_PARTNER = '00000000-0000-0000-sb00-000000000001';
@@ -22,8 +37,61 @@ const PENDING_PARTNER = '00000000-0000-0000-sb00-000000000003';
 const EDTECH_SANDBOX = '00000000-0000-0000-sb10-000000000001';
 const RESEARCH_SANDBOX = '00000000-0000-0000-sb10-000000000002';
 
+// Admin IDs
+const SUPER_ADMIN_ID = '00000000-0000-0000-adm0-000000000001';
+const SANDBOX_ADMIN_ID = '00000000-0000-0000-adm0-000000000002';
+
 async function main() {
   console.log('🌱 Seeding sandbox-svc...');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 0. Create Admin Users
+  // ══════════════════════════════════════════════════════════════════════════
+
+  const adminPassword = process.env.INITIAL_ADMIN_PASSWORD ?? 'Admin123!@#';
+  const passwordHash = hashPassword(adminPassword);
+
+  const admins = [
+    {
+      id: SUPER_ADMIN_ID,
+      email: 'admin@aivo.local',
+      name: 'System Administrator',
+      passwordHash,
+      role: AdminRole.SUPER_ADMIN,
+      isActive: true,
+      mfaEnabled: false,
+    },
+    {
+      id: SANDBOX_ADMIN_ID,
+      email: 'sandbox-admin@aivo.local',
+      name: 'Sandbox Administrator',
+      passwordHash,
+      role: AdminRole.SANDBOX_ADMIN,
+      isActive: true,
+      mfaEnabled: false,
+    },
+  ];
+
+  for (const admin of admins) {
+    const existing = await prisma.sandboxAdmin.findUnique({
+      where: { id: admin.id },
+    });
+
+    if (!existing) {
+      await prisma.sandboxAdmin.create({ data: admin });
+      await prisma.adminPasswordHistory.create({
+        data: {
+          adminId: admin.id,
+          passwordHash: admin.passwordHash,
+        },
+      });
+    }
+  }
+  console.log(`  ✅ Created ${admins.length} admin users`);
+  console.log(`     📧 admin@aivo.local (SUPER_ADMIN)`);
+  console.log(`     📧 sandbox-admin@aivo.local (SANDBOX_ADMIN)`);
+  console.log(`     🔑 Password: ${adminPassword}`);
+  console.log(`     ⚠️  Change these passwords in production!\n`);
 
   // ══════════════════════════════════════════════════════════════════════════
   // 1. Create Partners

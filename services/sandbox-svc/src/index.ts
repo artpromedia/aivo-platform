@@ -1,6 +1,6 @@
 /**
  * Sandbox Service
- * 
+ *
  * Provides sandbox environment management for partner developers:
  * - Partner registration and approval
  * - Sandbox tenant provisioning
@@ -9,24 +9,25 @@
  * - Usage tracking
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { PrismaClient } from '@prisma/client';
-import { partnerRoutes } from './routes/partners.js';
-import { tenantRoutes } from './routes/tenants.js';
-import { publicApiRoutes } from './routes/public-api.js';
-import { webhookRoutes } from './routes/webhooks.js';
+import Fastify from 'fastify';
+
+import { adminAuthPlugin } from './middleware/admin-auth.middleware.js';
+import adminAuthRoutes from './routes/admin-auth.js';
 import { adminRoutes } from './routes/admin.js';
+import { partnerRoutes } from './routes/partners.js';
+import { publicApiRoutes } from './routes/public-api.js';
+import { tenantRoutes } from './routes/tenants.js';
+import { webhookRoutes } from './routes/webhooks.js';
 
 const prisma = new PrismaClient();
 
 const fastify = Fastify({
   logger: {
     level: process.env.LOG_LEVEL ?? 'info',
-    transport: process.env.NODE_ENV === 'development' 
-      ? { target: 'pino-pretty' } 
-      : undefined,
+    transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
   },
 });
 
@@ -44,11 +45,15 @@ await fastify.register(rateLimit, {
 // Decorate with Prisma
 fastify.decorate('prisma', prisma);
 
+// Register admin auth plugin
+await fastify.register(adminAuthPlugin);
+
 // Register routes
 await fastify.register(partnerRoutes, { prefix: '/api/partners' });
 await fastify.register(tenantRoutes, { prefix: '/api/tenants' });
 await fastify.register(publicApiRoutes, { prefix: '/api/public/v1' });
 await fastify.register(webhookRoutes, { prefix: '/api/webhooks' });
+await fastify.register(adminAuthRoutes, { prefix: '/api/admin' });
 await fastify.register(adminRoutes, { prefix: '/api/admin' });
 
 // Health check
@@ -57,7 +62,7 @@ fastify.get('/health', async () => {
 });
 
 // Graceful shutdown
-const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
+const signals = ['SIGINT', 'SIGTERM'] as const;
 
 signals.forEach((signal) => {
   process.on(signal, async () => {
@@ -74,7 +79,7 @@ const start = async () => {
     await prisma.$connect();
     const port = parseInt(process.env.PORT ?? '3011', 10);
     const host = process.env.HOST ?? '0.0.0.0';
-    
+
     await fastify.listen({ port, host });
     fastify.log.info(`Sandbox service running on http://${host}:${port}`);
   } catch (err) {
