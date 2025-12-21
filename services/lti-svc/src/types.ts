@@ -297,29 +297,29 @@ export type LaunchRequest = z.infer<typeof LaunchRequestSchema>;
 export interface ValidatedLaunch {
   toolId: string;
   tenantId: string;
-  linkId?: string;
+  linkId?: string | undefined;
 
   // User info
   lmsUserId: string;
-  lmsUserEmail?: string;
-  lmsUserName?: string;
+  lmsUserEmail?: string | undefined;
+  lmsUserName?: string | undefined;
   userRole: LtiUserRole;
 
   // Context info
-  lmsContextId?: string;
-  lmsContextTitle?: string;
-  lmsResourceLinkId?: string;
+  lmsContextId?: string | undefined;
+  lmsContextTitle?: string | undefined;
+  lmsResourceLinkId?: string | undefined;
 
   // Resolved Aivo entities
-  aivoUserId?: string;
-  aivoLearnerId?: string;
+  aivoUserId?: string | undefined;
+  aivoLearnerId?: string | undefined;
 
   // Activity target
-  targetActivityId?: string;
-  targetLoVersionId?: string;
+  targetActivityId?: string | undefined;
+  targetLoVersionId?: string | undefined;
 
   // Services
-  agsEndpoint?: LtiAgsEndpoint;
+  agsEndpoint?: LtiAgsEndpoint | undefined;
 
   // Full payload for storage
   payload: LtiIdTokenPayload;

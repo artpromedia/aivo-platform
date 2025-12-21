@@ -21,7 +21,11 @@ import { z } from 'zod';
 import { GradeService } from './grade-service.js';
 import { LaunchService } from './launch-service.js';
 import { generateToolJwks, LtiError } from './lti-auth.js';
-import { LtiToolConfigSchema, LtiLinkConfigSchema } from './types.js';
+import {
+  PlatformRegistrationService,
+  PlatformRegistrationSchema,
+} from './platform-registration-service.js';
+import { LtiToolConfigSchema, LtiLinkConfigSchema, LtiPlatformType } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -81,6 +85,10 @@ export function registerLtiRoutes(
 ) {
   const launchService = new LaunchService(prisma, { baseUrl: config.baseUrl });
   const gradeService = new GradeService(prisma, config.getPrivateKey);
+  const platformService = new PlatformRegistrationService(prisma, config.baseUrl, async () => ({
+    privateKeyRef: `kms://lti-keys/${crypto.randomUUID()}`,
+    publicKeyId: `kid-${Date.now()}`,
+  }));
 
   // ══════════════════════════════════════════════════════════════════════════
   // LTI LAUNCH FLOW
@@ -264,7 +272,7 @@ export function registerLtiRoutes(
     const query = ToolQuerySchema.parse(request.query);
 
     const tools = await prisma.ltiTool.findMany({
-      where: query.tenantId ? { tenantId: query.tenantId } : undefined,
+      ...(query.tenantId ? { where: { tenantId: query.tenantId } } : {}),
       orderBy: { createdAt: 'desc' },
     });
 
@@ -306,7 +314,14 @@ export function registerLtiRoutes(
       const parsed = LtiToolConfigSchema.parse(body);
 
       const tool = await prisma.ltiTool.create({
-        data: parsed,
+        data: {
+          ...parsed,
+          toolPublicKeyId: parsed.toolPublicKeyId ?? null,
+          lineItemsUrl: parsed.lineItemsUrl ?? null,
+          membershipsUrl: parsed.membershipsUrl ?? null,
+          deepLinkingUrl: parsed.deepLinkingUrl ?? null,
+          configJson: parsed.configJson as object,
+        },
       });
 
       return reply.status(201).send({
@@ -410,7 +425,20 @@ export function registerLtiRoutes(
       const parsed = LtiLinkConfigSchema.parse(body);
 
       const link = await prisma.ltiLink.create({
-        data: parsed,
+        data: {
+          ...parsed,
+          lmsContextId: parsed.lmsContextId ?? null,
+          lmsResourceLinkId: parsed.lmsResourceLinkId ?? null,
+          classroomId: parsed.classroomId ?? null,
+          loVersionId: parsed.loVersionId ?? null,
+          activityTemplateId: parsed.activityTemplateId ?? null,
+          subject: parsed.subject ?? null,
+          gradeBand: parsed.gradeBand ?? null,
+          description: parsed.description ?? null,
+          maxPoints: parsed.maxPoints ?? null,
+          lineItemId: parsed.lineItemId ?? null,
+          configJson: parsed.configJson as object,
+        },
       });
 
       return reply.status(201).send(link);
@@ -527,6 +555,159 @@ export function registerLtiRoutes(
     }
 
     return reply.send(launch);
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PLATFORM REGISTRATION
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get platform presets (configuration templates)
+   */
+  app.get('/lti/platforms/presets', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const presets = Object.values(LtiPlatformType).map((type) => ({
+      platformType: type,
+      preset: platformService.getPlatformPreset(type),
+    }));
+    return reply.send(presets);
+  });
+
+  /**
+   * Get tool configuration JSON for LMS setup
+   */
+  app.get('/lti/platforms/config', async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = request.query as { tenantId?: string; format?: string };
+
+    if (query.format === 'canvas') {
+      return reply.send(platformService.getCanvasDevKeyJson());
+    }
+
+    return reply.send(platformService.getToolConfiguration(query.tenantId || 'default'));
+  });
+
+  /**
+   * Register a new platform
+   */
+  app.post('/lti/platforms', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const body = request.body as Record<string, unknown>;
+      const parsed = PlatformRegistrationSchema.parse(body);
+      const result = await platformService.registerPlatform(parsed);
+
+      return reply.status(201).send({
+        tool: {
+          ...result.tool,
+          toolPrivateKeyRef: '[REDACTED]',
+        },
+        configuration: {
+          jwksUrl: result.jwksUrl,
+          loginUrl: result.loginUrl,
+          launchUrl: result.launchUrl,
+          deepLinkingUrl: result.deepLinkingUrl,
+        },
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid registration', details: error.errors });
+      }
+      if (error instanceof Error) {
+        return reply.status(400).send({ error: error.message });
+      }
+      throw error;
+    }
+  });
+
+  /**
+   * Build platform URLs from preset
+   */
+  app.post('/lti/platforms/build-urls', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as {
+      platformType: LtiPlatformType;
+      domain: string;
+      clientId?: string;
+    };
+
+    if (!body.platformType || !body.domain) {
+      return reply.status(400).send({ error: 'platformType and domain required' });
+    }
+
+    const urls = platformService.buildPlatformUrls(body.platformType, body.domain, body.clientId);
+    return reply.send(urls);
+  });
+
+  /**
+   * Get platforms for a tenant
+   */
+  app.get('/lti/platforms', async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = request.query as { tenantId?: string };
+
+    if (!query.tenantId) {
+      return reply.status(400).send({ error: 'tenantId required' });
+    }
+
+    const platforms = await platformService.getPlatforms(query.tenantId);
+    const sanitized = platforms.map((p) => ({
+      ...p,
+      toolPrivateKeyRef: '[REDACTED]',
+    }));
+
+    return reply.send(sanitized);
+  });
+
+  /**
+   * Update platform registration
+   */
+  app.patch('/lti/platforms/:platformId', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { platformId } = request.params as { platformId: string };
+    const body = request.body as Record<string, unknown>;
+
+    try {
+      const platform = await platformService.updatePlatform(
+        platformId,
+        body as Partial<typeof PlatformRegistrationSchema._type>
+      );
+      return reply.send({
+        ...platform,
+        toolPrivateKeyRef: '[REDACTED]',
+      });
+    } catch {
+      return reply.status(404).send({ error: 'Platform not found' });
+    }
+  });
+
+  /**
+   * Enable/disable platform
+   */
+  app.post(
+    '/lti/platforms/:platformId/toggle',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { platformId } = request.params as { platformId: string };
+      const body = request.body as { enabled: boolean };
+
+      try {
+        const platform = await platformService.setPlatformEnabled(platformId, body.enabled);
+        return reply.send({
+          ...platform,
+          toolPrivateKeyRef: '[REDACTED]',
+        });
+      } catch {
+        return reply.status(404).send({ error: 'Platform not found' });
+      }
+    }
+  );
+
+  /**
+   * Delete platform registration
+   */
+  app.delete('/lti/platforms/:platformId', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { platformId } = request.params as { platformId: string };
+
+    try {
+      await platformService.deletePlatform(platformId);
+      return reply.status(204).send();
+    } catch {
+      return reply.status(404).send({ error: 'Platform not found' });
+    }
   });
 
   // ══════════════════════════════════════════════════════════════════════════

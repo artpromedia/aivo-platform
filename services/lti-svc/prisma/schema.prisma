@@ -105,6 +105,7 @@ model LtiTool {
   links               LtiLink[]
   launches            LtiLaunch[]
   nonces              LtiNonce[]
+  userMappings        LtiUserMapping[]
 
   @@unique([tenantId, issuer, clientId, deploymentId])
   @@index([tenantId])
@@ -246,19 +247,65 @@ model LtiNonce {
 /// LTI User Mapping - links LMS users to Aivo users.
 /// Cached to avoid repeated lookups and enable offline resolution.
 model LtiUserMapping {
-  id             String   @id @default(uuid()) @db.Uuid
-  tenantId       String   @map("tenant_id") @db.Uuid
-  ltiToolId      String   @map("lti_tool_id") @db.Uuid
-  lmsUserId      String   @map("lms_user_id")
-  aivoUserId     String   @map("aivo_user_id") @db.Uuid
-  lmsEmail       String?  @map("lms_email")
-  lmsName        String?  @map("lms_name")
-  lastSeenAt     DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id             String       @id @default(uuid()) @db.Uuid
+  tenantId       String       @map("tenant_id") @db.Uuid
+  ltiToolId      String       @map("lti_tool_id") @db.Uuid
+  lmsUserId      String       @map("lms_user_id")
+  aivoUserId     String       @map("aivo_user_id") @db.Uuid
+  lmsEmail       String?      @map("lms_email")
+  lmsName        String?      @map("lms_name")
+  lmsRole        LtiUserRole? @map("lms_role")
+  isNewUser      Boolean      @default(false) @map("is_new_user")  // True if user was created during LTI launch
+  lastSeenAt     DateTime     @default(now()) @map("last_seen_at") @db.Timestamptz
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tool           LtiTool      @relation(fields: [ltiToolId], references: [id], onDelete: Cascade)
+  gradeSyncs     LtiGradeSync[]
 
   @@unique([ltiToolId, lmsUserId])
   @@index([tenantId])
   @@index([aivoUserId])
+  @@index([lmsEmail])
   @@map("lti_user_mappings")
+}
+
+/// LTI Grade Sync - tracks grade passback attempts and their status.
+/// Provides audit trail and retry capability for failed grade sync.
+model LtiGradeSync {
+  id               String         @id @default(uuid()) @db.Uuid
+  tenantId         String         @map("tenant_id") @db.Uuid
+  ltiLaunchId      String         @map("lti_launch_id") @db.Uuid
+  userMappingId    String         @map("user_mapping_id") @db.Uuid
+  lineItemId       String         @map("line_item_id")          // AGS line item URL
+  
+  // Score details
+  scoreGiven       Decimal        @map("score_given") @db.Decimal(10, 4)
+  scoreMaximum     Decimal        @map("score_maximum") @db.Decimal(10, 4)
+  activityProgress String         @map("activity_progress")      // Initialized, Started, InProgress, Submitted, Completed
+  gradingProgress  String         @map("grading_progress")       // FullyGraded, Pending, PendingManual, Failed, NotReady
+  comment          String?
+  
+  // Sync status
+  status           LtiGradeStatus @default(PENDING)
+  attemptCount     Int            @default(0) @map("attempt_count")
+  lastAttemptAt    DateTime?      @map("last_attempt_at") @db.Timestamptz
+  errorMessage     String?        @map("error_message")
+  httpStatus       Int?           @map("http_status")
+  
+  // Timestamps
+  scoredAt         DateTime       @map("scored_at") @db.Timestamptz  // When score was earned
+  syncedAt         DateTime?      @map("synced_at") @db.Timestamptz  // When successfully sent
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  userMapping      LtiUserMapping @relation(fields: [userMappingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([ltiLaunchId])
+  @@index([userMappingId])
+  @@index([status, attemptCount])
+  @@map("lti_grade_syncs")
 }

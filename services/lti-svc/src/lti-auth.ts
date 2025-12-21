@@ -143,7 +143,7 @@ export function createOidcAuthRequest(
     state,
     nonce,
     login_hint: loginRequest.login_hint,
-    lti_message_hint: loginRequest.lti_message_hint,
+    ...(loginRequest.lti_message_hint ? { lti_message_hint: loginRequest.lti_message_hint } : {}),
   };
 
   const authUrl = new URL(tool.authLoginUrl);
@@ -361,7 +361,7 @@ export function processLaunchPayload(
 
     // User info from token
     lmsUserId: payload.sub,
-    lmsUserEmail: payload.email,
+    lmsUserEmail: payload.email ?? undefined,
     lmsUserName:
       payload.name ||
       [payload.given_name, payload.family_name].filter(Boolean).join(' ') ||
@@ -369,12 +369,12 @@ export function processLaunchPayload(
     userRole: mapLtiRole(roles),
 
     // Context info
-    lmsContextId: context?.id,
-    lmsContextTitle: context?.title || context?.label,
-    lmsResourceLinkId: resourceLink?.id,
+    lmsContextId: context?.id ?? undefined,
+    lmsContextTitle: (context?.title || context?.label) ?? undefined,
+    lmsResourceLinkId: resourceLink?.id ?? undefined,
 
     // Services
-    agsEndpoint,
+    agsEndpoint: agsEndpoint ?? undefined,
 
     // Full payload
     payload,
@@ -395,6 +395,10 @@ export async function generateToolJwks(
 ): Promise<jose.JSONWebKeySet> {
   const privateKey = await jose.importPKCS8(privateKeyPem, 'RS256');
   const publicKey = await jose.exportJWK(privateKey);
+
+  if (!publicKey.n || !publicKey.e) {
+    throw new LtiError('Failed to export public key components', 'KEY_EXPORT_ERROR', 500);
+  }
 
   // Only include public components
   const publicJwk: jose.JWK = {

@@ -18,8 +18,23 @@ import {
   createOidcAuthRequest,
   LtiError,
 } from './lti-auth.js';
+import { LtiUserService, type LtiUserContext, type ResolvedUser } from './lti-user-service.js';
 import type { LtiIdTokenPayload } from './types.js';
 import { LtiUserRole, LtiLaunchStatus, LTI_CLAIMS } from './types.js';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * System user ID for automated operations.
+ * This is a well-known UUID used when no specific user context is available,
+ * such as when creating LTI links during initial launch before user resolution.
+ *
+ * Note: This should be a real system user in the auth service with limited permissions.
+ * TODO: Create dedicated system service account in auth-svc
+ */
+const SYSTEM_USER_ID = process.env.LTI_SYSTEM_USER_ID || '00000000-0000-0000-0000-000000000001';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -32,6 +47,8 @@ export interface LaunchServiceConfig {
   launchExpirySeconds?: number;
   /** Nonce expiry in seconds */
   nonceExpirySeconds?: number;
+  /** Auth service URL for user creation/lookup */
+  authServiceUrl?: string;
 }
 
 export interface OidcState {
@@ -45,7 +62,7 @@ export interface LaunchResult {
   launchId: string;
   status: LtiLaunchStatus;
   redirectUrl: string;
-  aivoSessionId?: string;
+  aivoSessionId?: string | undefined;
   userRole: LtiUserRole;
 }
 
@@ -75,6 +92,7 @@ setInterval(cleanExpiredStates, 5 * 60 * 1000);
 export class LaunchService {
   private readonly prisma: PrismaClient;
   private readonly config: LaunchServiceConfig;
+  private readonly ltiUserService: LtiUserService;
 
   constructor(prisma: PrismaClient, config: LaunchServiceConfig) {
     this.prisma = prisma;
@@ -83,6 +101,7 @@ export class LaunchService {
       nonceExpirySeconds: 600, // 10 minutes default
       ...config,
     };
+    this.ltiUserService = new LtiUserService(prisma, config.authServiceUrl);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -97,9 +116,9 @@ export class LaunchService {
     iss: string;
     login_hint: string;
     target_link_uri: string;
-    lti_message_hint?: string;
-    client_id?: string;
-    lti_deployment_id?: string;
+    lti_message_hint?: string | undefined;
+    client_id?: string | undefined;
+    lti_deployment_id?: string | undefined;
   }): Promise<{ redirectUrl: string }> {
     // Find matching tool registration
     const tool = await this.findTool(params.iss, params.client_id, params.lti_deployment_id);
@@ -123,7 +142,7 @@ export class LaunchService {
         iss: params.iss,
         login_hint: params.login_hint,
         target_link_uri: params.target_link_uri,
-        lti_message_hint: params.lti_message_hint,
+        ...(params.lti_message_hint ? { lti_message_hint: params.lti_message_hint } : {}),
       },
       tool as LtiToolRecord,
       redirectUri
@@ -147,7 +166,10 @@ export class LaunchService {
   /**
    * Handle LTI launch callback (id_token from LMS)
    */
-  async handleLaunch(params: { id_token: string; state?: string }): Promise<LaunchResult> {
+  async handleLaunch(params: {
+    id_token: string;
+    state?: string | undefined;
+  }): Promise<LaunchResult> {
     // Validate state if provided
     let storedState: OidcState | undefined;
     if (params.state) {
@@ -160,7 +182,7 @@ export class LaunchService {
 
     // Decode token header to get issuer (for tool lookup)
     const tokenParts = params.id_token.split('.');
-    if (tokenParts.length !== 3) {
+    if (tokenParts.length !== 3 || !tokenParts[1]) {
       throw new LtiError('Invalid JWT format', 'INVALID_TOKEN', 400);
     }
 
@@ -187,7 +209,7 @@ export class LaunchService {
 
     // Validate the id_token
     const payload = await validateIdToken(params.id_token, tool as LtiToolRecord, {
-      expectedNonce: storedState?.nonce,
+      ...(storedState?.nonce ? { expectedNonce: storedState.nonce } : {}),
       checkNonceUsed: (nonce) => this.checkNonceUsed(tool.id, nonce),
       markNonceUsed: (nonce, expiresAt) => this.markNonceUsed(tool.id, nonce, expiresAt),
     });
@@ -196,7 +218,7 @@ export class LaunchService {
     const launchData = processLaunchPayload(payload, tool as LtiToolRecord);
 
     // Resolve LTI link (if resource link provided)
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+
     let ltiLink: Awaited<ReturnType<typeof this.findOrCreateLink>> | null = null;
     const resourceLink = payload[LTI_CLAIMS.RESOURCE_LINK] as
       | { id?: string; title?: string }
@@ -211,18 +233,26 @@ export class LaunchService {
       );
     }
 
-    // Map LMS user to Aivo user
-    const userMapping = await this.mapUser(
-      tool.tenantId,
-      tool.id,
-      launchData.lmsUserId,
-      launchData.lmsUserEmail,
-      launchData.lmsUserName,
-      launchData.userRole
-    );
+    // Resolve or create AIVO user using the user service
+    const userContext: LtiUserContext = {
+      issuer: payload.iss,
+      clientId: Array.isArray(payload.aud) ? (payload.aud[0] ?? '') : payload.aud,
+      deploymentId: payload[LTI_CLAIMS.DEPLOYMENT_ID] || '',
+      sub: payload.sub,
+      ...(payload.email ? { email: payload.email } : {}),
+      ...(payload.given_name ? { givenName: payload.given_name } : {}),
+      ...(payload.family_name ? { familyName: payload.family_name } : {}),
+      ...(payload.name ? { name: payload.name } : {}),
+      roles: payload[LTI_CLAIMS.ROLES]! || [],
+      ...(payload[LTI_CLAIMS.CUSTOM] ? { customClaims: payload[LTI_CLAIMS.CUSTOM]! } : {}),
+      tenantId: tool.tenantId,
+      toolId: tool.id,
+    };
 
-    // Create launch record
-    const launch = await this.createLaunchRecord(tool, ltiLink, launchData, userMapping, payload);
+    const resolvedUser = await this.ltiUserService.resolveOrCreateUser(userContext);
+
+    // Create launch record with resolved user
+    const launch = await this.createLaunchRecord(tool, ltiLink, launchData, resolvedUser, payload);
 
     // Determine redirect URL based on role
     const redirectUrl = this.buildRedirectUrl(launch.id, launchData.userRole, ltiLink);
@@ -231,7 +261,7 @@ export class LaunchService {
       launchId: launch.id,
       status: launch.status as LtiLaunchStatus,
       redirectUrl,
-      aivoSessionId: launch.aivoSessionId || undefined,
+      ...(launch.aivoSessionId ? { aivoSessionId: launch.aivoSessionId } : {}),
       userRole: launchData.userRole,
     };
   }
@@ -300,72 +330,20 @@ export class LaunchService {
 
     if (!link) {
       // Create a new link (will be configured later by teacher)
+      // Uses system user since link is created before user is resolved
       link = await this.prisma.ltiLink.create({
         data: {
           tenantId,
           ltiToolId: toolId,
-          lmsContextId,
+          lmsContextId: lmsContextId ?? null,
           lmsResourceLinkId,
           title: title || 'Untitled Activity',
-          createdByUserId: '00000000-0000-0000-0000-000000000000', // System user
+          createdByUserId: SYSTEM_USER_ID,
         },
       });
     }
 
     return link;
-  }
-
-  /**
-   * Map LMS user to Aivo user
-   */
-  private async mapUser(
-    tenantId: string,
-    toolId: string,
-    lmsUserId: string,
-    lmsEmail?: string,
-    lmsName?: string,
-    _role?: LtiUserRole
-  ): Promise<{ aivoUserId?: string; aivoLearnerId?: string }> {
-    // Check for existing mapping
-    const existing = await this.prisma.ltiUserMapping.findUnique({
-      where: {
-        ltiToolId_lmsUserId: {
-          ltiToolId: toolId,
-          lmsUserId,
-        },
-      },
-    });
-
-    if (existing) {
-      // Update last seen
-      await this.prisma.ltiUserMapping.update({
-        where: { id: existing.id },
-        data: { lastSeenAt: new Date() },
-      });
-
-      return {
-        aivoUserId: existing.aivoUserId,
-        aivoLearnerId: undefined, // TODO: Look up learner from user
-      };
-    }
-
-    // Try to find Aivo user by email
-    // TODO: Call auth-svc to find/create user
-    // For now, store mapping without Aivo user ID
-    if (lmsEmail || lmsName) {
-      await this.prisma.ltiUserMapping.create({
-        data: {
-          tenantId,
-          ltiToolId: toolId,
-          lmsUserId,
-          lmsEmail,
-          lmsName,
-          aivoUserId: '00000000-0000-0000-0000-000000000000', // Placeholder
-        },
-      });
-    }
-
-    return {};
   }
 
   /**
@@ -375,7 +353,7 @@ export class LaunchService {
     tool: { id: string; tenantId: string },
     link: { id: string } | null,
     launchData: ReturnType<typeof processLaunchPayload>,
-    userMapping: { aivoUserId?: string; aivoLearnerId?: string },
+    resolvedUser: ResolvedUser,
     payload: LtiIdTokenPayload
   ) {
     const expirySeconds = this.config.launchExpirySeconds ?? 7200;
@@ -385,20 +363,20 @@ export class LaunchService {
       data: {
         tenantId: tool.tenantId,
         ltiToolId: tool.id,
-        ltiLinkId: link?.id,
+        ltiLinkId: link?.id ?? null,
         lmsUserId: launchData.lmsUserId,
-        lmsUserEmail: launchData.lmsUserEmail,
-        lmsUserName: launchData.lmsUserName,
+        lmsUserEmail: launchData.lmsUserEmail ?? null,
+        lmsUserName: launchData.lmsUserName ?? null,
         userRole: launchData.userRole,
-        aivoUserId: userMapping.aivoUserId,
-        aivoLearnerId: userMapping.aivoLearnerId,
-        lmsContextId: launchData.lmsContextId,
-        lmsContextTitle: launchData.lmsContextTitle,
-        lmsResourceLinkId: launchData.lmsResourceLinkId,
+        aivoUserId: resolvedUser.userId,
+        aivoLearnerId: resolvedUser.role === 'LEARNER' ? resolvedUser.userId : null, // Will be resolved by learner-model-svc
+        lmsContextId: launchData.lmsContextId ?? null,
+        lmsContextTitle: launchData.lmsContextTitle ?? null,
+        lmsResourceLinkId: launchData.lmsResourceLinkId ?? null,
         status: LtiLaunchStatus.ACTIVE,
         nonce: payload.nonce,
         expiresAt,
-        launchParamsJson: payload as unknown as Record<string, unknown>,
+        launchParamsJson: payload as object,
       },
     });
   }
@@ -471,7 +449,7 @@ export class LaunchService {
       data: {
         status: LtiLaunchStatus.COMPLETED,
         completedAt: new Date(),
-        aivoSessionId: sessionId,
+        aivoSessionId: sessionId ?? null,
       },
     });
   }

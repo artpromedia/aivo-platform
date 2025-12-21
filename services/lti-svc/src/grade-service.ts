@@ -156,7 +156,7 @@ export class GradeService {
         lineItemUrl = await this.findOrCreateLineItem(agsEndpoint.lineitems, accessToken, {
           scoreMaximum: Number(launch.link.maxPoints) || 100,
           label: launch.link.title,
-          resourceLinkId: launch.lmsResourceLinkId || undefined,
+          ...(launch.lmsResourceLinkId ? { resourceLinkId: launch.lmsResourceLinkId } : {}),
         });
       }
 
@@ -173,7 +173,7 @@ export class GradeService {
         scoreMaximum: Number(launch.link.maxPoints) || 100,
         activityProgress: completed ? 'Completed' : 'InProgress',
         gradingProgress: 'FullyGraded',
-        comment,
+        ...(comment ? { comment } : {}),
         timestamp: new Date().toISOString(),
       });
 
@@ -188,6 +188,20 @@ export class GradeService {
           gradeError: null,
         },
       });
+
+      // Record grade sync in history
+      await this.recordGradeSync(
+        launch.tenantId,
+        launchId,
+        launch.lmsUserId,
+        launch.ltiToolId,
+        lineItemUrl,
+        score,
+        Number(launch.link.maxPoints) || 100,
+        completed ? 'Completed' : 'InProgress',
+        'FullyGraded',
+        comment
+      );
 
       // Update link with line item ID for future use
       if (lineItemUrl && !launch.link.lineItemId) {
@@ -209,8 +223,88 @@ export class GradeService {
         },
       });
 
+      // Record failed grade sync attempt
+      try {
+        const userMapping = await this.prisma.ltiUserMapping.findFirst({
+          where: {
+            ltiToolId: launch.ltiToolId,
+            lmsUserId: launch.lmsUserId,
+          },
+        });
+
+        if (userMapping) {
+          await this.prisma.ltiGradeSync.create({
+            data: {
+              tenantId: launch.tenantId,
+              ltiLaunchId: launchId,
+              userMappingId: userMapping.id,
+              lineItemId: agsEndpoint.lineitem || 'unknown',
+              scoreGiven: score,
+              scoreMaximum: Number(launch.link?.maxPoints) || 100,
+              activityProgress: completed ? 'Completed' : 'InProgress',
+              gradingProgress: 'FullyGraded',
+              comment: comment ?? null,
+              status: LtiGradeStatus.FAILED,
+              attemptCount: 1,
+              lastAttemptAt: new Date(),
+              errorMessage,
+              scoredAt: new Date(),
+            },
+          });
+        }
+      } catch {
+        // Ignore errors in recording failure - don't mask original error
+      }
+
       return { success: false, error: errorMessage };
     }
+  }
+
+  /**
+   * Record successful grade sync in history
+   */
+  private async recordGradeSync(
+    tenantId: string,
+    launchId: string,
+    lmsUserId: string,
+    toolId: string,
+    lineItemId: string,
+    scoreGiven: number,
+    scoreMaximum: number,
+    activityProgress: string,
+    gradingProgress: string,
+    comment?: string
+  ): Promise<void> {
+    const userMapping = await this.prisma.ltiUserMapping.findFirst({
+      where: {
+        ltiToolId: toolId,
+        lmsUserId,
+      },
+    });
+
+    if (!userMapping) {
+      console.warn(`No user mapping found for grade sync: ${toolId}/${lmsUserId}`);
+      return;
+    }
+
+    await this.prisma.ltiGradeSync.create({
+      data: {
+        tenantId,
+        ltiLaunchId: launchId,
+        userMappingId: userMapping.id,
+        lineItemId,
+        scoreGiven,
+        scoreMaximum,
+        activityProgress,
+        gradingProgress,
+        comment: comment ?? null,
+        status: LtiGradeStatus.SENT,
+        attemptCount: 1,
+        lastAttemptAt: new Date(),
+        syncedAt: new Date(),
+        scoredAt: new Date(),
+      },
+    });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -307,8 +401,9 @@ export class GradeService {
 
       if (searchResponse.ok) {
         const items = (await searchResponse.json()) as AgsLineItem[];
-        if (items.length > 0 && items[0].id) {
-          return items[0].id;
+        const firstItem = items[0];
+        if (firstItem?.id) {
+          return firstItem.id;
         }
       }
     }
