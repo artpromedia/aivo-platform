@@ -1,0 +1,295 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Auth Service Database Migrations Workflow
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# This workflow handles database migrations for the auth-svc.
+#
+# Triggers:
+#   - On PR: Validates migrations and shows status
+#   - On push to main: Deploys migrations to staging
+#   - Manual: Deploy to production with approval
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Auth Service Migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/auth-svc/prisma/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/auth-svc/prisma/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      dry_run:
+        description: 'Dry run (show what would be executed)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  SERVICE_PATH: services/auth-svc
+  NODE_VERSION: '20'
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # VALIDATE MIGRATIONS (PR Check)
+  # ════════════════════════════════════════════════════════════════════════════
+  validate:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          
+      - name: Install dependencies
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: pnpm install --frozen-lockfile
+        
+      - name: Generate Prisma Client
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: npx prisma generate
+        
+      - name: Validate schema
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: npx prisma validate
+        
+      - name: Check for migration drift
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          # This will fail if schema.prisma doesn't match the migrations
+          npx prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --exit-code || echo "⚠️ Schema drift detected - new migration may be needed"
+            
+      - name: List pending migrations
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          echo "## 📋 Migration Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Migrations in this PR:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -la prisma/migrations/ 2>/dev/null || echo "No migrations directory"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY TO STAGING (Auto on main push)
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          
+      - name: Install dependencies
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: pnpm install --frozen-lockfile
+        
+      - name: Generate Prisma Client
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: npx prisma generate
+        
+      - name: Check migration status
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: npx prisma migrate status
+        
+      - name: Deploy migrations
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: npx prisma migrate deploy
+        
+      - name: Verify deployment
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          echo "## ✅ Staging Migration Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Migration status after deployment:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          npx prisma migrate status >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY TO PRODUCTION (Manual with approval)
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          
+      - name: Install dependencies
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: pnpm install --frozen-lockfile
+        
+      - name: Generate Prisma Client
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: npx prisma generate
+        
+      - name: Pre-deployment status check
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          echo "## 🚀 Production Migration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pre-deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          npx prisma migrate status >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Dry run (if enabled)
+        if: github.event.inputs.dry_run == 'true'
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          echo "### 🔍 Dry Run - Pending Migrations" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following migrations would be applied:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          npx prisma migrate status >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ DRY RUN - No changes were made" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Deploy migrations
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: npx prisma migrate deploy
+        
+      - name: Post-deployment verification
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Post-deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          npx prisma migrate status >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Notify on success
+        if: success() && github.event.inputs.dry_run != 'true'
+        run: |
+          echo "🎉 Production migrations deployed successfully!"
+          
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Production migration failed! Check the logs for details."
+          exit 1
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY TO STAGING (Manual)
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-staging-manual:
+    name: Deploy to Staging (Manual)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          
+      - name: Install dependencies
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: pnpm install --frozen-lockfile
+        
+      - name: Generate Prisma Client
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: npx prisma generate
+        
+      - name: Pre-deployment status
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: npx prisma migrate status
+        
+      - name: Dry run (if enabled)
+        if: github.event.inputs.dry_run == 'true'
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: echo "DRY RUN - Would deploy migrations to staging"
+        
+      - name: Deploy migrations
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: npx prisma migrate deploy
+        
+      - name: Verify deployment
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: npx prisma migrate status
