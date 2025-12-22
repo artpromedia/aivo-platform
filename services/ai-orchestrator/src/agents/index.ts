@@ -15,3 +15,7 @@ export {
   type CustomStoryScenario,
   type CalmingStrategySuggestion,
 } from './social-story-personalizer.js';
+
+// New agent exports
+export { BaseAgent, type AgentContext, type AgentResponse } from './base-agent.js';
+export { TutorAgent } from './tutor-agent.js';

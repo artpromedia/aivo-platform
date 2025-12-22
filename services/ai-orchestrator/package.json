@@ -18,9 +18,13 @@
   "dependencies": {
     "@aivo/ts-policy-engine": "workspace:*",
     "@aivo/ts-types": "workspace:*",
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@google/generative-ai": "^0.21.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "openai": "^4.73.1",
     "pg": "^8.13.1",
+    "tiktoken": "^1.0.17",
     "zod": "^3.23.8"
   },
   "devDependencies": {

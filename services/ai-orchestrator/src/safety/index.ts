@@ -27,3 +27,6 @@ export {
 
 // Re-export types from aiRequest
 export type { PreFilterResult, PostFilterResult } from '../types/aiRequest.js';
+
+// Export new safety filter v2
+export { SafetyFilter, createSafetyFilter, type SafetyCheckResult } from './safety-filter-v2.js';

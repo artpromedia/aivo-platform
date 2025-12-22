@@ -148,3 +148,22 @@ export {
 } from './failover.js';
 
 export { ProviderRouter, type ProviderInvocationResult } from './providerRouter.js';
+
+// New LLM Provider exports
+export type {
+  LLMMessage,
+  LLMCompletionOptions,
+  LLMCompletionResult,
+  LLMStreamChunk,
+  LLMProviderInterface,
+  LLMProviderConfig,
+  OpenAIConfig,
+  AnthropicConfig,
+  GoogleGeminiConfig,
+  LLMOrchestratorConfig,
+} from './llm-provider.interface.js';
+
+export { OpenAIProvider } from './openai.provider.js';
+export { AnthropicProvider } from './anthropic.provider.js';
+export { GoogleGeminiProvider } from './google-gemini.provider.js';
+export { LLMOrchestrator, createLLMOrchestratorFromEnv } from './llm-orchestrator.js';
