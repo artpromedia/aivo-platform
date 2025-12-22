@@ -144,7 +144,7 @@ export function Pricing() {
         <span
           className={cn(
             'text-sm font-medium transition-colors',
-            !isAnnual ? 'text-gray-900' : 'text-gray-500'
+            isAnnual ? 'text-gray-500' : 'text-gray-900'
           )}
         >
           Monthly
@@ -249,14 +249,14 @@ export function Pricing() {
 
               {/* Features */}
               <div className="space-y-3">
-                {tier.features.map((feature, i) => (
-                  <div key={i} className="flex items-start gap-3">
+                {tier.features.map((feature) => (
+                  <div key={feature} className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-mint-500 shrink-0 mt-0.5" />
                     <span className="text-gray-600 text-sm">{feature}</span>
                   </div>
                 ))}
-                {tier.notIncluded?.map((feature, i) => (
-                  <div key={i} className="flex items-start gap-3 opacity-50">
+                {tier.notIncluded?.map((feature) => (
+                  <div key={feature} className="flex items-start gap-3 opacity-50">
                     <X className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
                     <span className="text-gray-400 text-sm">{feature}</span>
                   </div>
@@ -287,8 +287,8 @@ export function Pricing() {
         <div className="bg-gradient-to-br from-theme-primary-50 to-coral-50 rounded-3xl p-8 text-center border border-theme-primary-100">
           {/* Stars */}
           <div className="flex items-center justify-center gap-1 mb-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="w-5 h-5 text-sunshine-500 fill-current" />
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star key={`star-${n}`} className="w-5 h-5 text-sunshine-500 fill-current" />
             ))}
           </div>
 
@@ -321,7 +321,7 @@ export function Pricing() {
         <div className="space-y-3">
           {faqs.map((faq, index) => (
             <motion.div
-              key={index}
+              key={faq.question}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

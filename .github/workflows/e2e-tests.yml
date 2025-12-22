@@ -1,0 +1,318 @@
+# AIVO Mobile E2E Tests
+# Runs Patrol E2E tests for all mobile apps
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/mobile-*/**'
+      - 'tests/e2e-mobile/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/mobile-*/**'
+      - 'tests/e2e-mobile/**'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App to test'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - parent
+          - teacher
+          - learner
+      test_tag:
+        description: 'Test tag to run'
+        required: false
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - regression
+          - critical
+          - all
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+  JAVA_VERSION: '17'
+  TEST_ENV: 'test'
+
+jobs:
+  # Build test backend
+  setup-backend:
+    name: Setup Test Backend
+    runs-on: ubuntu-latest
+    outputs:
+      backend-url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start test backend
+        id: deploy
+        run: |
+          docker-compose -f docker/docker-compose.test.yml up -d
+          echo "url=http://localhost:3000" >> $GITHUB_OUTPUT
+          
+      - name: Wait for backend ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/health | grep -q "ok"; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
+
+  # Android E2E Tests
+  android-e2e:
+    name: Android E2E - ${{ matrix.app }} (Shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    needs: setup-backend
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [parent, teacher, learner]
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Cache Patrol CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: patrol-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli
+
+      - name: Setup Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel_6
+          avd-name: test-avd
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect
+          script: echo "Emulator started"
+
+      - name: Build app for testing
+        working-directory: apps/mobile-${{ matrix.app }}
+        run: |
+          flutter pub get
+          patrol build android --flavor dev
+
+      - name: Run E2E tests
+        working-directory: tests/e2e-mobile
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          TOTAL_SHARDS: 4
+          TEST_APP: ${{ matrix.app }}
+          API_BASE_URL: ${{ needs.setup-backend.outputs.backend-url }}
+        run: |
+          patrol test \
+            --target integration_test/${{ matrix.app }}_app/ \
+            --flavor dev \
+            --dart-define=TEST_ENV=test \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 4
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshots-${{ matrix.app }}-shard${{ matrix.shard }}
+          path: tests/e2e-mobile/reports/screenshots/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-results-${{ matrix.app }}-shard${{ matrix.shard }}
+          path: tests/e2e-mobile/reports/
+          retention-days: 30
+
+  # iOS E2E Tests
+  ios-e2e:
+    name: iOS E2E - ${{ matrix.app }} (Shard ${{ matrix.shard }})
+    runs-on: macos-latest
+    needs: setup-backend
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [parent, teacher, learner]
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli
+
+      - name: Setup iOS Simulator
+        run: |
+          xcrun simctl boot "iPhone 15 Pro" || true
+          xcrun simctl bootstatus "iPhone 15 Pro" -b
+
+      - name: Build app for testing
+        working-directory: apps/mobile-${{ matrix.app }}
+        run: |
+          flutter pub get
+          patrol build ios --flavor dev --simulator
+
+      - name: Run E2E tests
+        working-directory: tests/e2e-mobile
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          TOTAL_SHARDS: 4
+          TEST_APP: ${{ matrix.app }}
+          API_BASE_URL: ${{ needs.setup-backend.outputs.backend-url }}
+        run: |
+          patrol test \
+            --target integration_test/${{ matrix.app }}_app/ \
+            --flavor dev \
+            --dart-define=TEST_ENV=test \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 4
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots-${{ matrix.app }}-shard${{ matrix.shard }}
+          path: tests/e2e-mobile/reports/screenshots/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-results-${{ matrix.app }}-shard${{ matrix.shard }}
+          path: tests/e2e-mobile/reports/
+          retention-days: 30
+
+  # Cross-app E2E Tests
+  cross-app-e2e:
+    name: Cross-App E2E Tests
+    runs-on: ubuntu-latest
+    needs: [android-e2e]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli
+
+      - name: Setup Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel_6
+          avd-name: test-avd
+          script: echo "Emulator started"
+
+      - name: Run cross-app tests
+        working-directory: tests/e2e-mobile
+        run: |
+          patrol test \
+            --target integration_test/cross_app/ \
+            --flavor dev \
+            --dart-define=TEST_ENV=test
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-app-results
+          path: tests/e2e-mobile/reports/
+          retention-days: 30
+
+  # Aggregate Results
+  report:
+    name: Generate Report
+    runs-on: ubuntu-latest
+    needs: [android-e2e, ios-e2e, cross-app-e2e]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/
+
+      - name: Generate combined report
+        run: |
+          # Combine JUnit reports
+          mkdir -p combined-reports
+          find reports/ -name "*.xml" -exec cp {} combined-reports/ \;
+          
+          # Generate summary
+          echo "# E2E Test Summary" > summary.md
+          echo "" >> summary.md
+          echo "## Results by Platform" >> summary.md
+          echo "" >> summary.md
+          
+          # Count results
+          android_passed=$(find reports/android-* -name "*.xml" -exec grep -l 'failures="0"' {} \; | wc -l)
+          android_failed=$(find reports/android-* -name "*.xml" -exec grep -L 'failures="0"' {} \; | wc -l)
+          ios_passed=$(find reports/ios-* -name "*.xml" -exec grep -l 'failures="0"' {} \; | wc -l)
+          ios_failed=$(find reports/ios-* -name "*.xml" -exec grep -L 'failures="0"' {} \; | wc -l)
+          
+          echo "| Platform | Passed | Failed |" >> summary.md
+          echo "|----------|--------|--------|" >> summary.md
+          echo "| Android  | $android_passed | $android_failed |" >> summary.md
+          echo "| iOS      | $ios_passed | $ios_failed |" >> summary.md
+
+      - name: Upload combined report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-combined-report
+          path: |
+            combined-reports/
+            summary.md
+          retention-days: 90
+
+      - name: Publish test report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: E2E Test Results
+          path: 'combined-reports/*.xml'
+          reporter: java-junit
+          fail-on-error: true

@@ -14,8 +14,7 @@ import Twilio from 'twilio';
 import { config } from '../../config.js';
 import { smsConsentService } from './sms-consent.js';
 import { renderSmsTemplate } from './sms-templates.js';
-import { twilioProvider } from './twilio.js';
-import type { TwilioStatusCallback, TwilioInboundSms, SmsWebhookEvent } from './types.js';
+import type { SmsWebhookEvent } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -128,9 +127,9 @@ async function handleStatusCallback(
         errorMessage: ErrorMessage,
         deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
         failedAt: status === 'FAILED' || status === 'UNDELIVERED' ? new Date() : undefined,
-        price: Price ? parseFloat(Price) : undefined,
+        price: Price ? Number.parseFloat(Price) : undefined,
         priceCurrency: PriceUnit,
-        segments: NumSegments ? parseInt(NumSegments, 10) : undefined,
+        segments: NumSegments ? Number.parseInt(NumSegments, 10) : undefined,
         updatedAt: new Date(),
       },
     });
@@ -454,11 +453,11 @@ export async function registerTwilioWebhooks(
  */
 function escapeXml(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -89,7 +89,6 @@ export interface AccessRevokedPayload {
 
 export async function publishProjectCreated(payload: ProjectCreatedPayload): Promise<void> {
   console.log('[NATS] research.project.created', JSON.stringify(payload));
-  // await natsClient.publish('research.project.created', payload);
 }
 
 export async function publishProjectApproved(payload: ProjectApprovedPayload): Promise<void> {

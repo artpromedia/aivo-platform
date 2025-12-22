@@ -130,7 +130,7 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/entitlements/can-add-learner', async (request: FastifyRequest, reply: FastifyReply) => {
     const ctx = getContext(request);
     const query = request.query as { currentCount?: string };
-    const currentCount = parseInt(query.currentCount || '0', 10);
+    const currentCount = Number.parseInt(query.currentCount || '0', 10);
 
     const canAdd = await entitlementsService.canAddLearner(ctx.tenantId, currentCount);
 
@@ -152,7 +152,7 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/entitlements/can-add-teacher', async (request: FastifyRequest, reply: FastifyReply) => {
     const ctx = getContext(request);
     const query = request.query as { currentCount?: string };
-    const currentCount = parseInt(query.currentCount || '0', 10);
+    const currentCount = Number.parseInt(query.currentCount || '0', 10);
 
     const canAdd = await entitlementsService.canAddTeacher(ctx.tenantId, currentCount);
 

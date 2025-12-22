@@ -4,9 +4,9 @@
  * Tests for user resolution and creation from LTI launches.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { LtiUserService, type LtiUserContext, type AivoUserRole } from '../src/lti-user-service';
+import { LtiUserService, type LtiUserContext } from '../src/lti-user-service';
 import { LTI_ROLES, LtiUserRole } from '../src/types';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -26,7 +26,7 @@ const mockPrisma = {
 
 // Mock fetch for auth service calls
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TEST DATA
@@ -447,8 +447,8 @@ describe('LTI User Service - Integration Scenarios', () => {
 
   describe('Multi-platform user', () => {
     it('should link same AIVO user from different LMS platforms via email', async () => {
-      // First login via Canvas
-      const canvasContext: LtiUserContext = {
+      // First login via Canvas - context used for documentation purposes
+      const _canvasContext: LtiUserContext = {
         issuer: 'https://canvas.school.edu',
         clientId: 'canvas-client',
         deploymentId: 'canvas-deploy',

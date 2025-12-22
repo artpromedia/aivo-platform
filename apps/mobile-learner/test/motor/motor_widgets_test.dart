@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_learner/motor/motor_models.dart';
 import 'package:mobile_learner/motor/motor_profile_provider.dart';
-import 'package:mobile_learner/motor/motor_accommodation_service.dart';
 import 'package:mobile_learner/motor/widgets/large_touch_target.dart';
 import 'package:mobile_learner/motor/widgets/dwell_selection.dart';
 import 'package:mobile_learner/motor/widgets/drag_assist.dart';

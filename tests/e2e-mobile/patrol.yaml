@@ -1,0 +1,118 @@
+# AIVO Mobile E2E Test Configuration
+# Patrol framework configuration for cross-platform testing
+
+app:
+  name: AIVO E2E Tests
+
+patrol:
+  # Maximum time for a single test to complete
+  test_timeout: 300 # 5 minutes per test
+  
+  # Maximum time to wait for app launch
+  app_launch_timeout: 60
+  
+  # Retry failed tests
+  retry_on_failure: 2
+  
+  # Capture screenshots on failure
+  screenshot_on_failure: true
+
+# Android-specific configuration
+android:
+  # Parent app
+  parent:
+    package_name: com.aivo.parent
+    flavor: dev
+  
+  # Teacher app  
+  teacher:
+    package_name: com.aivo.teacher
+    flavor: dev
+  
+  # Learner app
+  learner:
+    package_name: com.aivo.learner
+    flavor: dev
+
+# iOS-specific configuration
+ios:
+  # Parent app
+  parent:
+    bundle_id: com.aivo.parent
+    flavor: dev
+  
+  # Teacher app
+  teacher:
+    bundle_id: com.aivo.teacher
+    flavor: dev
+  
+  # Learner app
+  learner:
+    bundle_id: com.aivo.learner
+    flavor: dev
+
+# Test sharding for parallel execution
+sharding:
+  enabled: true
+  total_shards: 4
+  
+# Test tags for selective execution
+tags:
+  smoke: 
+    description: Quick smoke tests for CI
+    timeout: 120
+  regression:
+    description: Full regression suite
+    timeout: 600
+  critical:
+    description: Critical path tests
+    timeout: 300
+  offline:
+    description: Offline capability tests
+    timeout: 300
+  billing:
+    description: Payment and subscription tests
+    timeout: 300
+  accessibility:
+    description: Accessibility compliance tests
+    timeout: 300
+
+# Environment configuration
+environments:
+  test:
+    api_base_url: http://localhost:3000
+    auth_bypass: true
+    mock_payments: true
+  staging:
+    api_base_url: https://api-staging.aivo.com
+    auth_bypass: false
+    mock_payments: true
+  production:
+    api_base_url: https://api.aivo.com
+    auth_bypass: false
+    mock_payments: false
+
+# Device profiles for testing
+devices:
+  android:
+    - name: Pixel 6
+      api_level: 33
+    - name: Samsung Galaxy S21
+      api_level: 31
+    - name: Small Phone
+      api_level: 30
+      screen_size: small
+  ios:
+    - name: iPhone 15 Pro
+      ios_version: 17.0
+    - name: iPhone SE
+      ios_version: 17.0
+    - name: iPad Pro
+      ios_version: 17.0
+
+# Reporting configuration
+reporting:
+  format: junit
+  output_dir: reports/
+  include_screenshots: true
+  include_logs: true

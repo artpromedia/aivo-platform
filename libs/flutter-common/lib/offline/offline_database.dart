@@ -265,6 +265,18 @@ class OfflineDatabase extends _$OfflineDatabase {
   // CONTENT CACHE OPERATIONS
   // ════════════════════════════════════════════════════════════════════════════
 
+  /// Get all cached content.
+  Future<List<OfflineContent>> getAllContent() {
+    return select(offlineContentCache).get();
+  }
+
+  /// Get all cached content by type.
+  Future<List<OfflineContent>> getAllContentByType(String contentType) {
+    return (select(offlineContentCache)
+          ..where((t) => t.contentType.equals(contentType)))
+        .get();
+  }
+
   /// Get cached content by key.
   Future<OfflineContent?> getContent(String contentKey) async {
     final content = await (select(offlineContentCache)

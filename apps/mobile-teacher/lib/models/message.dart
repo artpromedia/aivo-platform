@@ -229,6 +229,32 @@ class Conversation {
     };
   }
 
+  Conversation copyWith({
+    String? id,
+    String? studentId,
+    String? studentName,
+    List<String>? participantIds,
+    List<String>? participantNames,
+    String? lastMessage,
+    DateTime? lastMessageAt,
+    int? unreadCount,
+    bool? isPinned,
+    bool? isMuted,
+  }) {
+    return Conversation(
+      id: id ?? this.id,
+      studentId: studentId ?? this.studentId,
+      studentName: studentName ?? this.studentName,
+      participantIds: participantIds ?? this.participantIds,
+      participantNames: participantNames ?? this.participantNames,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      unreadCount: unreadCount ?? this.unreadCount,
+      isPinned: isPinned ?? this.isPinned,
+      isMuted: isMuted ?? this.isMuted,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

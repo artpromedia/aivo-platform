@@ -162,13 +162,14 @@ class StripeWebhookController {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     logger: any
   ): Promise<void> {
+    // eslint-disable-next-line sonarjs/max-switch-cases -- Stripe webhook events naturally exceed 30 cases
     switch (event.type) {
       // ════════════════════════════════════════════════════════════════════════
       // CHECKOUT EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'checkout.session.completed':
         await this.handleCheckoutCompleted(
-          event.data.object as Stripe.Checkout.Session,
+          event.data.object,
           correlationId,
           logger
         );
@@ -176,7 +177,7 @@ class StripeWebhookController {
 
       case 'checkout.session.async_payment_succeeded':
         await this.handleCheckoutPaymentSucceeded(
-          event.data.object as Stripe.Checkout.Session,
+          event.data.object,
           correlationId,
           logger
         );
@@ -184,7 +185,7 @@ class StripeWebhookController {
 
       case 'checkout.session.async_payment_failed':
         await this.handleCheckoutPaymentFailed(
-          event.data.object as Stripe.Checkout.Session,
+          event.data.object,
           correlationId,
           logger
         );
@@ -192,7 +193,7 @@ class StripeWebhookController {
 
       case 'checkout.session.expired':
         await this.handleCheckoutExpired(
-          event.data.object as Stripe.Checkout.Session,
+          event.data.object,
           correlationId,
           logger
         );
@@ -203,7 +204,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'customer.subscription.created':
         await this.handleSubscriptionCreated(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           correlationId,
           logger
         );
@@ -211,7 +212,7 @@ class StripeWebhookController {
 
       case 'customer.subscription.updated':
         await this.handleSubscriptionUpdated(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           event.data.previous_attributes as Partial<Stripe.Subscription>,
           correlationId,
           logger
@@ -220,7 +221,7 @@ class StripeWebhookController {
 
       case 'customer.subscription.deleted':
         await this.handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           correlationId,
           logger
         );
@@ -228,7 +229,7 @@ class StripeWebhookController {
 
       case 'customer.subscription.paused':
         await this.handleSubscriptionPaused(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           correlationId,
           logger
         );
@@ -236,7 +237,7 @@ class StripeWebhookController {
 
       case 'customer.subscription.resumed':
         await this.handleSubscriptionResumed(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           correlationId,
           logger
         );
@@ -244,7 +245,7 @@ class StripeWebhookController {
 
       case 'customer.subscription.trial_will_end':
         await this.handleTrialWillEnd(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           correlationId,
           logger
         );
@@ -255,7 +256,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'invoice.created':
         await this.handleInvoiceCreated(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -263,7 +264,7 @@ class StripeWebhookController {
 
       case 'invoice.finalized':
         await this.handleInvoiceFinalized(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -271,7 +272,7 @@ class StripeWebhookController {
 
       case 'invoice.paid':
         await this.handleInvoicePaid(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -279,7 +280,7 @@ class StripeWebhookController {
 
       case 'invoice.payment_failed':
         await this.handleInvoicePaymentFailed(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -287,7 +288,7 @@ class StripeWebhookController {
 
       case 'invoice.payment_action_required':
         await this.handleInvoicePaymentActionRequired(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -295,7 +296,7 @@ class StripeWebhookController {
 
       case 'invoice.upcoming':
         await this.handleInvoiceUpcoming(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -303,7 +304,7 @@ class StripeWebhookController {
 
       case 'invoice.voided':
         await this.handleInvoiceVoided(
-          event.data.object as Stripe.Invoice,
+          event.data.object,
           correlationId,
           logger
         );
@@ -314,7 +315,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'payment_intent.succeeded':
         await this.handlePaymentIntentSucceeded(
-          event.data.object as Stripe.PaymentIntent,
+          event.data.object,
           correlationId,
           logger
         );
@@ -322,7 +323,7 @@ class StripeWebhookController {
 
       case 'payment_intent.payment_failed':
         await this.handlePaymentIntentFailed(
-          event.data.object as Stripe.PaymentIntent,
+          event.data.object,
           correlationId,
           logger
         );
@@ -330,7 +331,7 @@ class StripeWebhookController {
 
       case 'payment_intent.requires_action':
         await this.handlePaymentIntentRequiresAction(
-          event.data.object as Stripe.PaymentIntent,
+          event.data.object,
           correlationId,
           logger
         );
@@ -341,7 +342,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'charge.dispute.created':
         await this.handleDisputeCreated(
-          event.data.object as Stripe.Dispute,
+          event.data.object,
           correlationId,
           logger
         );
@@ -349,7 +350,7 @@ class StripeWebhookController {
 
       case 'charge.dispute.updated':
         await this.handleDisputeUpdated(
-          event.data.object as Stripe.Dispute,
+          event.data.object,
           correlationId,
           logger
         );
@@ -357,7 +358,7 @@ class StripeWebhookController {
 
       case 'charge.dispute.closed':
         await this.handleDisputeClosed(
-          event.data.object as Stripe.Dispute,
+          event.data.object,
           correlationId,
           logger
         );
@@ -368,7 +369,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'charge.refunded':
         await this.handleChargeRefunded(
-          event.data.object as Stripe.Charge,
+          event.data.object,
           correlationId,
           logger
         );
@@ -376,7 +377,7 @@ class StripeWebhookController {
 
       case 'charge.refund.updated':
         await this.handleRefundUpdated(
-          event.data.object as Stripe.Refund,
+          event.data.object,
           correlationId,
           logger
         );
@@ -387,7 +388,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'customer.created':
         await this.handleCustomerCreated(
-          event.data.object as Stripe.Customer,
+          event.data.object,
           correlationId,
           logger
         );
@@ -395,7 +396,7 @@ class StripeWebhookController {
 
       case 'customer.updated':
         await this.handleCustomerUpdated(
-          event.data.object as Stripe.Customer,
+          event.data.object,
           correlationId,
           logger
         );
@@ -414,7 +415,7 @@ class StripeWebhookController {
       // ════════════════════════════════════════════════════════════════════════
       case 'payment_method.attached':
         await this.handlePaymentMethodAttached(
-          event.data.object as Stripe.PaymentMethod,
+          event.data.object,
           correlationId,
           logger
         );
@@ -422,7 +423,7 @@ class StripeWebhookController {
 
       case 'payment_method.detached':
         await this.handlePaymentMethodDetached(
-          event.data.object as Stripe.PaymentMethod,
+          event.data.object,
           correlationId,
           logger
         );
@@ -430,7 +431,7 @@ class StripeWebhookController {
 
       case 'customer.source.expiring':
         await this.handlePaymentSourceExpiring(
-          event.data.object as Stripe.Card,
+          event.data.object,
           correlationId,
           logger
         );

@@ -5,7 +5,7 @@
  * @see https://www.imsglobal.org/spec/lti-ags/v2p0
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 import { LtiError, signToolJwt } from './lti-auth.js';
 import { LtiGradeStatus } from './types.js';

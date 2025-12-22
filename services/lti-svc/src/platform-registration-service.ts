@@ -5,7 +5,7 @@
  * and provides dynamic registration support for LTI 1.3.
  */
 
-import type { PrismaClient, LtiTool } from '@prisma/client';
+import type { PrismaClient, LtiTool } from '../generated/prisma-client/index.js';
 import { z } from 'zod';
 
 import { LtiPlatformType } from './types.js';

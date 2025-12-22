@@ -3,14 +3,14 @@
 /// Mock implementations for testing.
 library;
 
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide SyncStatus, SyncOperationType, SessionType;
 import 'package:mocktail/mocktail.dart';
 
-import '../lib/models/models.dart';
-import '../lib/repositories/repositories.dart';
-import '../lib/services/database/local_database.dart';
-import '../lib/services/sync/sync_service.dart';
-import '../lib/services/sync/connectivity_monitor.dart';
+import 'package:mobile_teacher/models/models.dart';
+import 'package:mobile_teacher/repositories/repositories.dart';
+import 'package:mobile_teacher/services/database/local_database.dart';
+import 'package:mobile_teacher/services/sync/sync_service.dart';
+import 'package:mobile_teacher/services/sync/connectivity_monitor.dart';
 
 // ============================================================================
 // Service Mocks
@@ -52,7 +52,9 @@ class TestDataFactory {
     String id = 'student-1',
     String firstName = 'John',
     String lastName = 'Doe',
-    String gradeLevel = '5',
+    String email = 'john.doe@example.com',
+    List<String> classIds = const ['class-1'],
+    int? gradeLevel = 5,
     bool hasIep = false,
     StudentStatus status = StudentStatus.active,
   }) {
@@ -60,6 +62,8 @@ class TestDataFactory {
       id: id,
       firstName: firstName,
       lastName: lastName,
+      email: email,
+      classIds: classIds,
       gradeLevel: gradeLevel,
       hasIep: hasIep,
       status: status,
@@ -73,6 +77,7 @@ class TestDataFactory {
       id: 'student-$i',
       firstName: 'Student',
       lastName: '${i + 1}',
+      email: 'student$i@example.com',
       hasIep: withIep && i % 2 == 0,
     ));
   }
@@ -155,12 +160,14 @@ class TestDataFactory {
 
   static Conversation createConversation({
     String id = 'conv-1',
+    String studentName = 'Student Name',
     List<String> participantNames = const ['Parent Name'],
     int unreadCount = 0,
   }) {
     return Conversation(
       id: id,
       studentId: 'student-1',
+      studentName: studentName,
       participantIds: ['parent-1'],
       participantNames: participantNames,
       unreadCount: unreadCount,
@@ -172,13 +179,14 @@ class TestDataFactory {
   static ClassGroup createClassGroup({
     String id = 'class-1',
     String name = 'Test Class',
+    String teacherId = 'teacher-1',
     int studentCount = 10,
   }) {
     return ClassGroup(
       id: id,
       name: name,
-      description: 'Test class description',
-      gradeLevel: '5',
+      teacherId: teacherId,
+      gradeLevel: 5,
       subject: 'Math',
       studentCount: studentCount,
       createdAt: DateTime.now(),

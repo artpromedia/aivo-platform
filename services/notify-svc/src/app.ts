@@ -22,9 +22,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     logger: {
       level: config.nodeEnv === 'production' ? 'info' : 'debug',
       transport:
-        config.nodeEnv !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
+        config.nodeEnv === 'production'
+          ? undefined
+          : { target: 'pino-pretty', options: { colorize: true } },
     },
   });
 

@@ -232,7 +232,7 @@ class TwilioProvider implements SmsProvider {
       }
 
       const message: MessageInstance = await this.client.messages.create(
-        messageParams as Parameters<typeof this.client.messages.create>[0]
+        messageParams
       );
 
       console.log('[TwilioProvider] SMS sent:', {
@@ -245,8 +245,8 @@ class TwilioProvider implements SmsProvider {
       return {
         success: true,
         messageId: message.sid,
-        segments: parseInt(message.numSegments || String(segments), 10),
-        price: message.price ? parseFloat(message.price) : undefined,
+        segments: Number.parseInt(message.numSegments || String(segments), 10),
+        price: message.price ? Number.parseFloat(message.price) : undefined,
         priceCurrency: message.priceUnit || 'USD',
         timestamp: new Date(),
         provider: this.name,

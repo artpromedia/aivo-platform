@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/providers.dart';
-import '../../models/models.dart';
 import 'widgets/widgets.dart';
 
 /// Main dashboard screen.

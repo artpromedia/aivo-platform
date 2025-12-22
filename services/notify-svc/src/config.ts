@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 export const config = {
   env: process.env.NODE_ENV ?? 'development',
-  port: parseInt(process.env.PORT ?? '4040', 10),
+  port: Number.parseInt(process.env.PORT ?? '4040', 10),
   host: process.env.HOST ?? '0.0.0.0',
   nodeEnv: process.env.NODE_ENV ?? 'development',
   databaseUrl: process.env.DATABASE_URL ?? '',
@@ -79,9 +79,9 @@ export const config = {
     
     // Rate limiting (per second)
     rateLimit: {
-      perSecond: parseInt(process.env.EMAIL_RATE_LIMIT_PER_SECOND ?? '100', 10),
-      perMinute: parseInt(process.env.EMAIL_RATE_LIMIT_PER_MINUTE ?? '1000', 10),
-      perHour: parseInt(process.env.EMAIL_RATE_LIMIT_PER_HOUR ?? '10000', 10),
+      perSecond: Number.parseInt(process.env.EMAIL_RATE_LIMIT_PER_SECOND ?? '100', 10),
+      perMinute: Number.parseInt(process.env.EMAIL_RATE_LIMIT_PER_MINUTE ?? '1000', 10),
+      perHour: Number.parseInt(process.env.EMAIL_RATE_LIMIT_PER_HOUR ?? '10000', 10),
     },
     
     // Validation settings
@@ -89,7 +89,7 @@ export const config = {
       checkMx: process.env.EMAIL_CHECK_MX !== 'false',
       checkDisposable: process.env.EMAIL_CHECK_DISPOSABLE !== 'false',
       checkRoleBased: process.env.EMAIL_CHECK_ROLE_BASED === 'true', // Default off for schools
-      mxTimeout: parseInt(process.env.EMAIL_MX_TIMEOUT ?? '5000', 10),
+      mxTimeout: Number.parseInt(process.env.EMAIL_MX_TIMEOUT ?? '5000', 10),
     },
     
     // Template settings
@@ -111,8 +111,8 @@ export const config = {
     
     // Provider health check settings
     healthCheck: {
-      intervalMs: parseInt(process.env.EMAIL_HEALTH_CHECK_INTERVAL ?? '30000', 10),
-      recoveryDelayMs: parseInt(process.env.EMAIL_RECOVERY_DELAY ?? '60000', 10),
+      intervalMs: Number.parseInt(process.env.EMAIL_HEALTH_CHECK_INTERVAL ?? '30000', 10),
+      recoveryDelayMs: Number.parseInt(process.env.EMAIL_RECOVERY_DELAY ?? '60000', 10),
     },
     
     // COPPA compliance
@@ -146,19 +146,19 @@ export const config = {
     
     // Rate limiting
     rateLimit: {
-      perPhonePerSecond: parseInt(process.env.SMS_RATE_PER_PHONE_SECOND ?? '0.1', 10), // 1 per 10 seconds
-      perPhonePerMinute: parseInt(process.env.SMS_RATE_PER_PHONE_MINUTE ?? '6', 10),
-      perTenantPerDay: parseInt(process.env.SMS_RATE_PER_TENANT_DAY ?? '1000', 10),
-      otpPerPhonePerMinute: parseInt(process.env.SMS_OTP_RATE_PER_PHONE_MINUTE ?? '10', 10),
+      perPhonePerSecond: Number.parseInt(process.env.SMS_RATE_PER_PHONE_SECOND ?? '0.1', 10), // 1 per 10 seconds
+      perPhonePerMinute: Number.parseInt(process.env.SMS_RATE_PER_PHONE_MINUTE ?? '6', 10),
+      perTenantPerDay: Number.parseInt(process.env.SMS_RATE_PER_TENANT_DAY ?? '1000', 10),
+      otpPerPhonePerMinute: Number.parseInt(process.env.SMS_OTP_RATE_PER_PHONE_MINUTE ?? '10', 10),
     },
-    dailyLimitPerTenant: parseInt(process.env.SMS_DAILY_LIMIT_PER_TENANT ?? '1000', 10),
+    dailyLimitPerTenant: Number.parseInt(process.env.SMS_DAILY_LIMIT_PER_TENANT ?? '1000', 10),
     
     // TCPA Compliance
     tcpa: {
-      consentExpiryMonths: parseInt(process.env.SMS_CONSENT_EXPIRY_MONTHS ?? '18', 10),
-      renewalWarningDays: parseInt(process.env.SMS_RENEWAL_WARNING_DAYS ?? '30', 10),
-      quietHoursStart: parseInt(process.env.SMS_QUIET_HOURS_START ?? '21', 10), // 9 PM
-      quietHoursEnd: parseInt(process.env.SMS_QUIET_HOURS_END ?? '8', 10), // 8 AM
+      consentExpiryMonths: Number.parseInt(process.env.SMS_CONSENT_EXPIRY_MONTHS ?? '18', 10),
+      renewalWarningDays: Number.parseInt(process.env.SMS_RENEWAL_WARNING_DAYS ?? '30', 10),
+      quietHoursStart: Number.parseInt(process.env.SMS_QUIET_HOURS_START ?? '21', 10), // 9 PM
+      quietHoursEnd: Number.parseInt(process.env.SMS_QUIET_HOURS_END ?? '8', 10), // 8 AM
       enforceQuietHours: process.env.SMS_ENFORCE_QUIET_HOURS !== 'false',
     },
     
@@ -166,14 +166,14 @@ export const config = {
     validation: {
       requireMobile: process.env.SMS_REQUIRE_MOBILE !== 'false',
       checkCarrier: process.env.SMS_CHECK_CARRIER === 'true',
-      carrierCacheTtlHours: parseInt(process.env.SMS_CARRIER_CACHE_TTL_HOURS ?? '24', 10),
+      carrierCacheTtlHours: Number.parseInt(process.env.SMS_CARRIER_CACHE_TTL_HOURS ?? '24', 10),
       supportedCountries: (process.env.SMS_SUPPORTED_COUNTRIES ?? 'US,CA,GB,AU,NZ,IE').split(','),
     },
     
     // Content filtering
     contentFilter: {
       enabled: process.env.SMS_CONTENT_FILTER !== 'false',
-      maxLength: parseInt(process.env.SMS_MAX_LENGTH ?? '1600', 10),
+      maxLength: Number.parseInt(process.env.SMS_MAX_LENGTH ?? '1600', 10),
     },
     
     // Feature flags
@@ -186,15 +186,15 @@ export const config = {
   
   // Rate limiting (legacy - use email.rateLimit for email)
   rateLimits: {
-    pushPerMinute: parseInt(process.env.PUSH_RATE_LIMIT ?? '100', 10),
-    emailPerMinute: parseInt(process.env.EMAIL_RATE_LIMIT ?? '50', 10),
-    smsPerMinute: parseInt(process.env.SMS_RATE_LIMIT ?? '10', 10),
+    pushPerMinute: Number.parseInt(process.env.PUSH_RATE_LIMIT ?? '100', 10),
+    emailPerMinute: Number.parseInt(process.env.EMAIL_RATE_LIMIT ?? '50', 10),
+    smsPerMinute: Number.parseInt(process.env.SMS_RATE_LIMIT ?? '10', 10),
   },
   
   // Token cleanup
   tokenCleanup: {
-    staleTokenDays: parseInt(process.env.STALE_TOKEN_DAYS ?? '60', 10),
-    maxDevicesPerUser: parseInt(process.env.MAX_DEVICES_PER_USER ?? '10', 10),
+    staleTokenDays: Number.parseInt(process.env.STALE_TOKEN_DAYS ?? '60', 10),
+    maxDevicesPerUser: Number.parseInt(process.env.MAX_DEVICES_PER_USER ?? '10', 10),
   },
 };
 

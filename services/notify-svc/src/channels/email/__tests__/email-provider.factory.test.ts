@@ -2,7 +2,7 @@
  * Email Provider Factory Tests
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { EmailProviderManager } from '../email-provider.factory.js';
 import type { EmailProvider, SendEmailOptions, EmailResult } from '../types.js';

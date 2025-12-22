@@ -27,7 +27,8 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 }));
 
 // Import after mocking
-import { S3Client, __mockSend } from '@aws-sdk/client-s3';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { __mockSend } = await vi.importMock<{ __mockSend: ReturnType<typeof vi.fn> }>('@aws-sdk/client-s3');
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   S3Service,

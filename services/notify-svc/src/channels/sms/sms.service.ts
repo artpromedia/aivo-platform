@@ -23,7 +23,6 @@ import type {
   SendSmsOptions,
   SmsResult,
   SendOtpOptions,
-  VerifyOtpOptions,
   SmsType,
   SmsTemplateContext,
 } from './types.js';
@@ -147,7 +146,13 @@ class SmsService {
 
     try {
       // Validate phone number
-      if (!serviceOptions.skipValidation) {
+      if (serviceOptions.skipValidation) {
+        // At minimum, normalize the number
+        const e164 = toE164(options.to);
+        if (e164) {
+          options.to = e164;
+        }
+      } else {
         const validation = await phoneValidationService.validate(options.to, {
           requireMobile: true,
         });
@@ -158,12 +163,6 @@ class SmsService {
 
         // Update to E.164 format
         options.to = validation.e164!;
-      } else {
-        // At minimum, normalize the number
-        const e164 = toE164(options.to);
-        if (e164) {
-          options.to = e164;
-        }
       }
 
       // Check consent (unless OTP or skipped)
@@ -401,7 +400,7 @@ class SmsService {
           hour12: false,
           timeZone: timezone,
         });
-        hour = parseInt(formatter.format(now), 10);
+        hour = Number.parseInt(formatter.format(now), 10);
       } catch {
         // Invalid timezone, use server time
       }

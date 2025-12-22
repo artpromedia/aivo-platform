@@ -374,29 +374,6 @@ class GoalRecommendation {
   }
 }
 
-/// DTO for recording progress.
-@immutable
-class RecordProgressDto {
-  const RecordProgressDto({
-    required this.goalId,
-    required this.value,
-    this.notes,
-    this.sessionId,
-  });
-
-  final String goalId;
-  final double value;
-  final String? notes;
-  final String? sessionId;
-
-  Map<String, dynamic> toJson() => {
-    'goalId': goalId,
-    'value': value,
-    if (notes != null) 'notes': notes,
-    if (sessionId != null) 'sessionId': sessionId,
-  };
-}
-
 /// Date range helper.
 @immutable
 class DateRange {

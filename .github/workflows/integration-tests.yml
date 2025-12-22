@@ -1,0 +1,766 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Run nightly at 2am UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Test scenario to run (empty for all)'
+        type: choice
+        options:
+          - all
+          - learner-journey
+          - teacher-classroom
+          - billing-subscription
+          - multi-tenant-isolation
+        default: all
+      verbose:
+        description: 'Enable verbose logging'
+        type: boolean
+        default: false
+
+concurrency:
+  group: integration-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Test database configuration
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aivo_integration_test
+  TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aivo_integration_test
+  
+  # Redis configuration
+  REDIS_URL: redis://localhost:6379
+  TEST_REDIS_URL: redis://localhost:6379
+  
+  # NATS configuration
+  NATS_URL: nats://localhost:4222
+  TEST_NATS_URL: nats://localhost:4222
+  
+  # JWT configuration for test tokens
+  JWT_SECRET: test-secret-key-for-ci-do-not-use-in-production
+  JWT_ALGORITHM: HS256
+  
+  # Service ports for integration tests
+  AI_ORCHESTRATOR_PORT: 4010
+  BASELINE_SVC_PORT: 4011
+  SESSION_SVC_PORT: 4020
+  AUTH_SVC_PORT: 4001
+  BILLING_SVC_PORT: 4030
+  CONTENT_SVC_PORT: 4040
+  PROFILE_SVC_PORT: 4050
+  ANALYTICS_SVC_PORT: 4060
+  
+  # Stripe test configuration
+  STRIPE_SECRET_KEY: sk_test_fake_key_for_ci
+  STRIPE_WEBHOOK_SECRET: whsec_test_fake_webhook_secret
+  
+  # Test configuration
+  NODE_ENV: test
+  LOG_LEVEL: ${{ github.event.inputs.verbose == 'true' && 'debug' || 'error' }}
+  CI: true
+
+jobs:
+  # ===========================================================================
+  # Pre-flight Checks
+  # ===========================================================================
+  preflight:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for relevant changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if any service, lib, or test files changed
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          
+          if echo "$CHANGED_FILES" | grep -qE '^(services/|libs/|tests/integration/)'; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ===========================================================================
+  # Build Services
+  # ===========================================================================
+  build:
+    name: Build Services
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: preflight
+    if: needs.preflight.outputs.has_changes == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-
+
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml', 'turbo.json') }}
+          restore-keys: turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build services
+        run: pnpm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            services/*/dist
+            libs/*/dist
+          retention-days: 1
+
+  # ===========================================================================
+  # Integration Tests - Learner Journey
+  # ===========================================================================
+  test-learner-journey:
+    name: Test - Learner Journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    if: |
+      needs.build.result == 'success' && 
+      (github.event.inputs.scenario == 'all' || 
+       github.event.inputs.scenario == 'learner-journey' ||
+       github.event.inputs.scenario == '')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aivo_integration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      nats:
+        image: nats:2.10
+        ports:
+          - 4222:4222
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8222/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d aivo_integration_test -f tests/integration/setup/init-db.sql
+
+      - name: Run learner journey tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/scenarios/learner-journey.integration.test.ts \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=test-results/learner-journey.json
+        env:
+          USE_MOCKS: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-learner-journey
+          path: test-results/
+          retention-days: 7
+
+  # ===========================================================================
+  # Integration Tests - Teacher Classroom
+  # ===========================================================================
+  test-teacher-classroom:
+    name: Test - Teacher Classroom
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    if: |
+      needs.build.result == 'success' && 
+      (github.event.inputs.scenario == 'all' || 
+       github.event.inputs.scenario == 'teacher-classroom' ||
+       github.event.inputs.scenario == '')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aivo_integration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      nats:
+        image: nats:2.10
+        ports:
+          - 4222:4222
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8222/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d aivo_integration_test -f tests/integration/setup/init-db.sql
+
+      - name: Run teacher classroom tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/scenarios/teacher-classroom.integration.test.ts \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=test-results/teacher-classroom.json
+        env:
+          USE_MOCKS: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-teacher-classroom
+          path: test-results/
+          retention-days: 7
+
+  # ===========================================================================
+  # Integration Tests - Billing & Subscription
+  # ===========================================================================
+  test-billing:
+    name: Test - Billing & Subscription
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    if: |
+      needs.build.result == 'success' && 
+      (github.event.inputs.scenario == 'all' || 
+       github.event.inputs.scenario == 'billing-subscription' ||
+       github.event.inputs.scenario == '')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aivo_integration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      stripe-mock:
+        image: stripe/stripe-mock:latest
+        ports:
+          - 12111:12111
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d aivo_integration_test -f tests/integration/setup/init-db.sql
+
+      - name: Run billing tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/scenarios/billing-subscription.integration.test.ts \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=test-results/billing-subscription.json
+        env:
+          USE_MOCKS: true
+          STRIPE_API_BASE: http://localhost:12111
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-billing
+          path: test-results/
+          retention-days: 7
+
+  # ===========================================================================
+  # Integration Tests - Multi-Tenant Isolation
+  # ===========================================================================
+  test-tenant-isolation:
+    name: Test - Multi-Tenant Isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    if: |
+      needs.build.result == 'success' && 
+      (github.event.inputs.scenario == 'all' || 
+       github.event.inputs.scenario == 'multi-tenant-isolation' ||
+       github.event.inputs.scenario == '')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aivo_integration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      nats:
+        image: nats:2.10
+        ports:
+          - 4222:4222
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8222/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d aivo_integration_test -f tests/integration/setup/init-db.sql
+
+      - name: Run tenant isolation tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/scenarios/multi-tenant-isolation.integration.test.ts \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=test-results/multi-tenant-isolation.json
+        env:
+          USE_MOCKS: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-tenant-isolation
+          path: test-results/
+          retention-days: 7
+
+  # ===========================================================================
+  # Aggregate Results and Report
+  # ===========================================================================
+  report:
+    name: Aggregate Results
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: 
+      - test-learner-journey
+      - test-teacher-classroom
+      - test-billing
+      - test-tenant-isolation
+    if: always()
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: all-test-results
+          merge-multiple: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate summary report
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          const resultsDir = 'all-test-results';
+          const results = [];
+          
+          if (fs.existsSync(resultsDir)) {
+            const files = fs.readdirSync(resultsDir).filter(f => f.endsWith('.json'));
+            
+            for (const file of files) {
+              try {
+                const content = JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf8'));
+                results.push({ file, content });
+              } catch (e) {
+                console.error(`Failed to parse ${file}:`, e.message);
+              }
+            }
+          }
+          
+          let totalTests = 0;
+          let totalPassed = 0;
+          let totalFailed = 0;
+          let totalSkipped = 0;
+          let totalDuration = 0;
+          
+          const scenarios = [];
+          
+          for (const { file, content } of results) {
+            const scenario = file.replace('.json', '');
+            const numTotalTests = content.numTotalTests || 0;
+            const numPassedTests = content.numPassedTests || 0;
+            const numFailedTests = content.numFailedTests || 0;
+            const numPendingTests = content.numPendingTests || 0;
+            
+            totalTests += numTotalTests;
+            totalPassed += numPassedTests;
+            totalFailed += numFailedTests;
+            totalSkipped += numPendingTests;
+            
+            const duration = (content.testResults || [])
+              .reduce((sum, r) => sum + (r.endTime - r.startTime), 0);
+            totalDuration += duration;
+            
+            const status = numFailedTests > 0 ? '❌' : '✅';
+            scenarios.push({ scenario, status, passed: numPassedTests, failed: numFailedTests, duration });
+          }
+          
+          // Generate GitHub Actions summary
+          let summary = '# Integration Test Results\n\n';
+          summary += '## Summary\n\n';
+          summary += `| Metric | Value |\n`;
+          summary += `|--------|-------|\n`;
+          summary += `| Total Tests | ${totalTests} |\n`;
+          summary += `| Passed | ${totalPassed} ✅ |\n`;
+          summary += `| Failed | ${totalFailed} ${totalFailed > 0 ? '❌' : ''} |\n`;
+          summary += `| Skipped | ${totalSkipped} |\n`;
+          summary += `| Duration | ${(totalDuration / 1000).toFixed(2)}s |\n\n`;
+          
+          summary += '## Scenarios\n\n';
+          summary += `| Scenario | Status | Passed | Failed | Duration |\n`;
+          summary += `|----------|--------|--------|--------|----------|\n`;
+          
+          for (const s of scenarios) {
+            summary += `| ${s.scenario} | ${s.status} | ${s.passed} | ${s.failed} | ${(s.duration / 1000).toFixed(2)}s |\n`;
+          }
+          
+          // Write to GitHub step summary
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+          
+          // Set output for Slack notification
+          const overallStatus = totalFailed > 0 ? 'failure' : 'success';
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=${overallStatus}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `total=${totalTests}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `passed=${totalPassed}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `failed=${totalFailed}\n`);
+          
+          console.log('Summary generated successfully');
+          console.log(`Total: ${totalTests}, Passed: ${totalPassed}, Failed: ${totalFailed}`);
+          
+          EOF
+
+      - name: Upload combined report
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-report
+          path: all-test-results/
+          retention-days: 30
+
+  # ===========================================================================
+  # Notifications
+  # ===========================================================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: 
+      - report
+      - test-learner-journey
+      - test-teacher-classroom
+      - test-billing
+      - test-tenant-isolation
+    if: |
+      always() && 
+      github.event_name != 'pull_request' &&
+      (needs.test-learner-journey.result == 'failure' ||
+       needs.test-teacher-classroom.result == 'failure' ||
+       needs.test-billing.result == 'failure' ||
+       needs.test-tenant-isolation.result == 'failure')
+    
+    steps:
+      - name: Send Slack notification on failure
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ vars.SLACK_CHANNEL_CI_ALERTS }}
+          payload: |
+            {
+              "text": "🚨 Integration Tests Failed",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚨 Integration Tests Failed",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered By:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  # ===========================================================================
+  # Final Status Check
+  # ===========================================================================
+  integration-tests-complete:
+    name: Integration Tests Complete
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: 
+      - test-learner-journey
+      - test-teacher-classroom
+      - test-billing
+      - test-tenant-isolation
+    if: always()
+    
+    steps:
+      - name: Check overall status
+        run: |
+          if [[ "${{ needs.test-learner-journey.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-teacher-classroom.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-billing.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-tenant-isolation.result }}" == "failure" ]]; then
+            echo "❌ Some integration tests failed"
+            exit 1
+          fi
+          
+          echo "✅ All integration tests passed!"

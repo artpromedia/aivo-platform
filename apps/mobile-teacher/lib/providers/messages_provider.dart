@@ -127,7 +127,7 @@ class MessagesNotifier extends StateNotifier<MessagesState> {
       return c.copyWith(unreadCount: 0);
     }).toList();
     
-    final newUnreadCount = updatedConversations.fold(0, (sum, c) => sum + c.unreadCount);
+    final newUnreadCount = updatedConversations.fold<int>(0, (int sum, Conversation c) => sum + c.unreadCount);
     
     state = state.copyWith(
       conversations: updatedConversations,

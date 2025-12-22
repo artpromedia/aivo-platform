@@ -7,7 +7,7 @@
  * @module @aivo/sandbox-svc/routes/admin
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 
 import type { PrismaClient } from '@prisma/client';
 import type { FastifyPluginAsync } from 'fastify';
@@ -203,8 +203,8 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       const [logs, total] = await Promise.all([
         prisma.adminAuditLog.findMany({
           where,
-          take: parseInt(limit, 10),
-          skip: parseInt(offset, 10),
+          take: Number.parseInt(limit, 10),
+          skip: Number.parseInt(offset, 10),
           orderBy: { createdAt: 'desc' },
           include: {
             admin: {
@@ -219,8 +219,8 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
         data: logs,
         pagination: {
           total,
-          limit: parseInt(limit, 10),
-          offset: parseInt(offset, 10),
+          limit: Number.parseInt(limit, 10),
+          offset: Number.parseInt(offset, 10),
         },
       };
     }
@@ -254,8 +254,8 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
       const partners = await prisma.partner.findMany({
         where,
-        take: parseInt(limit, 10),
-        skip: parseInt(offset, 10),
+        take: Number.parseInt(limit, 10),
+        skip: Number.parseInt(offset, 10),
         include: {
           applications: {
             orderBy: { createdAt: 'desc' },
@@ -282,7 +282,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
           latestApplication: p.applications[0] ?? null,
           sandboxTenants: p.sandboxTenants,
         })),
-        pagination: { total, limit: parseInt(limit, 10), offset: parseInt(offset, 10) },
+        pagination: { total, limit: Number.parseInt(limit, 10), offset: Number.parseInt(offset, 10) },
       };
     }
   );

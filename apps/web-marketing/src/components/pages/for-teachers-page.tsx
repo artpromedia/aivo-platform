@@ -27,6 +27,15 @@ import { Button } from '@/components/ui/button';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 
+/**
+ * Get progress bar color based on progress percentage
+ */
+function getProgressColor(progress: number): string {
+  if (progress >= 80) return 'bg-mint-500';
+  if (progress >= 50) return 'bg-sunshine-500';
+  return 'bg-coral-500';
+}
+
 // Benefits for teachers
 const benefits = [
   {
@@ -267,11 +276,7 @@ export function ForTeachersPage() {
                             <div
                               className={cn(
                                 'h-full rounded-full',
-                                student.progress >= 80
-                                  ? 'bg-mint-500'
-                                  : student.progress >= 50
-                                    ? 'bg-sunshine-500'
-                                    : 'bg-coral-500'
+                                getProgressColor(student.progress)
                               )}
                               style={{ width: `${student.progress}%` }}
                             />
@@ -403,8 +408,8 @@ export function ForTeachersPage() {
                 className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft"
               >
                 <div className="flex items-center gap-1 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-sunshine-500 fill-current" />
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star key={`star-${n}`} className="w-5 h-5 text-sunshine-500 fill-current" />
                   ))}
                 </div>
 

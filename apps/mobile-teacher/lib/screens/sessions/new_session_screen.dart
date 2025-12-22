@@ -78,7 +78,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
 
             // Session type
             DropdownButtonFormField<SessionType>(
-              value: _sessionType,
+              initialValue: _sessionType,
               decoration: const InputDecoration(
                 labelText: 'Session Type',
                 border: OutlineInputBorder(),
@@ -93,7 +93,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
 
             // Class selection
             DropdownButtonFormField<String?>(
-              value: _selectedClassId,
+              initialValue: _selectedClassId,
               decoration: const InputDecoration(
                 labelText: 'Class',
                 border: OutlineInputBorder(),
@@ -165,7 +165,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
 
             // Duration
             DropdownButtonFormField<int>(
-              value: _durationMinutes,
+              initialValue: _durationMinutes,
               decoration: const InputDecoration(
                 labelText: 'Duration',
                 border: OutlineInputBorder(),

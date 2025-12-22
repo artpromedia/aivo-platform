@@ -4,7 +4,7 @@
  * Tests for research export API endpoints including presigned URL generation.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the S3 service
 vi.mock('../src/services/s3.service.js', () => ({
@@ -67,7 +67,7 @@ describe('Export Routes', () => {
 
     // Add mock user to request
     app.decorateRequest('user', null);
-    app.addHook('preHandler', async (request) => {
+    app.addHook('preHandler', async (request: { user: { sub: string; email: string; tenantId: string } | null }) => {
       request.user = {
         sub: 'user-123',
         email: 'researcher@example.com',

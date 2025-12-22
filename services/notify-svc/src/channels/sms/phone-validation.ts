@@ -81,7 +81,7 @@ const SMS_CAPABLE_TYPES: Set<PhoneNumberType> = new Set([
 // ══════════════════════════════════════════════════════════════════════════════
 
 class PhoneValidationService {
-  private carrierCache = new Map<string, { result: CarrierLookupResult; timestamp: number }>();
+  private readonly carrierCache = new Map<string, { result: CarrierLookupResult; timestamp: number }>();
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
   /**
@@ -288,7 +288,7 @@ class PhoneValidationService {
    * Mask phone number for logging/display
    */
   maskPhoneNumber(phoneNumber: string): string {
-    const cleaned = phoneNumber.replace(/\D/g, '');
+    const cleaned = phoneNumber.replaceAll(/\D/g, '');
     if (cleaned.length < 4) return '****';
     return cleaned.substring(0, 3) + '****' + cleaned.substring(cleaned.length - 2);
   }
@@ -321,7 +321,7 @@ class PhoneValidationService {
     // Remove common formatting but keep + for international
     return phoneNumber
       .trim()
-      .replace(/[\s\-.()[\]]/g, '')
+      .replaceAll(/[\s\-.()[\]]/g, '')
       .replace(/^00/, '+'); // Convert 00 prefix to +
   }
 

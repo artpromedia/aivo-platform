@@ -11,7 +11,7 @@
  * @module @aivo/research-svc/services/s3
  */
 
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 
 import {
   S3Client,
@@ -19,7 +19,6 @@ import {
   GetObjectCommand,
   HeadObjectCommand,
   DeleteObjectCommand,
-  type ObjectCannedACL,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -433,7 +432,7 @@ export class S3Service {
         contentType: response.ContentType ?? 'application/octet-stream',
         lastModified: response.LastModified ?? new Date(),
         metadata: response.Metadata ?? {},
-        etag: response.ETag?.replace(/"/g, '') ?? '',
+        etag: response.ETag?.replaceAll('"', '') ?? '',
       };
     } catch (error) {
       throw this.wrapError(error, 'Failed to get object metadata');
@@ -646,9 +645,7 @@ let s3ServiceInstance: S3Service | null = null;
  * Get the singleton S3 service instance.
  */
 export function getS3Service(): S3Service {
-  if (!s3ServiceInstance) {
-    s3ServiceInstance = createS3Service();
-  }
+  s3ServiceInstance ??= createS3Service();
   return s3ServiceInstance;
 }
 

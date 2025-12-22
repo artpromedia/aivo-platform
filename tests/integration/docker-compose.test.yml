@@ -1,0 +1,211 @@
+# Integration Test Docker Compose
+#
+# Provides isolated infrastructure for integration tests including:
+# - PostgreSQL database for service data
+# - Redis for caching and sessions
+# - NATS for event streaming
+# - Mock external services (email, Stripe, AWS)
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   pnpm test:integration
+#   docker compose -f docker-compose.test.yml down -v
+
+version: '3.8'
+
+networks:
+  aivo-test:
+    driver: bridge
+
+volumes:
+  postgres-test-data:
+  redis-test-data:
+
+services:
+  # ============================================================================
+  # Core Infrastructure
+  # ============================================================================
+
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: aivo-postgres-test
+    environment:
+      POSTGRES_USER: aivo_test
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: aivo_test
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8'
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+      - ./setup/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - aivo-test
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aivo_test -d aivo_test']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: aivo-redis-test
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - '6380:6379'
+    volumes:
+      - redis-test-data:/data
+    networks:
+      - aivo-test
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  nats-test:
+    image: nats:2.10-alpine
+    container_name: aivo-nats-test
+    command:
+      - '--jetstream'
+      - '--http_port=8222'
+      - '--store_dir=/data'
+      - '--max_payload=8MB'
+    ports:
+      - '4223:4222' # Client connections
+      - '8223:8222' # HTTP monitoring
+    networks:
+      - aivo-test
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8222/healthz']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ============================================================================
+  # Mock External Services
+  # ============================================================================
+
+  # Email testing with MailHog
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: aivo-mailhog-test
+    ports:
+      - '1026:1025' # SMTP server
+      - '8026:8025' # Web UI
+    networks:
+      - aivo-test
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # Stripe API mock
+  stripe-mock:
+    image: stripe/stripe-mock:latest
+    container_name: aivo-stripe-mock
+    ports:
+      - '12111:12111' # HTTP
+      - '12112:12112' # HTTPS
+    networks:
+      - aivo-test
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:12111/v1/customers']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # AWS services mock (S3, SNS, SQS)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: aivo-localstack-test
+    environment:
+      SERVICES: s3,sns,sqs,ses
+      DEFAULT_REGION: us-east-1
+      EDGE_PORT: 4566
+      DEBUG: 0
+      DATA_DIR: /tmp/localstack/data
+      HOSTNAME_EXTERNAL: localhost
+      # Pre-create resources
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    ports:
+      - '4566:4566' # LocalStack Gateway
+      - '4510-4559:4510-4559' # External services port range
+    volumes:
+      - './setup/localstack-init.sh:/etc/localstack/init/ready.d/init-aws.sh:ro'
+    networks:
+      - aivo-test
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4566/_localstack/health']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ============================================================================
+  # Service Dependencies (optional, for full integration tests)
+  # ============================================================================
+
+  # Uncomment these if you need to run actual services instead of mocking
+
+  # auth-svc:
+  #   build:
+  #     context: ../../services/auth-svc
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     NODE_ENV: test
+  #     DATABASE_URL: postgresql://aivo_test:test_password@postgres-test:5432/aivo_test
+  #     REDIS_URL: redis://redis-test:6379
+  #     NATS_URL: nats://nats-test:4222
+  #   depends_on:
+  #     postgres-test:
+  #       condition: service_healthy
+  #     redis-test:
+  #       condition: service_healthy
+  #     nats-test:
+  #       condition: service_healthy
+  #   networks:
+  #     - aivo-test
+
+  # API Gateway for integration tests
+  # kong-test:
+  #   image: kong:3.4-alpine
+  #   environment:
+  #     KONG_DATABASE: 'off'
+  #     KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+  #     KONG_PROXY_ACCESS_LOG: /dev/stdout
+  #     KONG_ADMIN_ACCESS_LOG: /dev/stdout
+  #     KONG_PROXY_ERROR_LOG: /dev/stderr
+  #     KONG_ADMIN_ERROR_LOG: /dev/stderr
+  #   ports:
+  #     - '4000:8000'
+  #     - '4001:8001'
+  #   volumes:
+  #     - ./setup/kong.test.yml:/kong/kong.yml:ro
+  #   networks:
+  #     - aivo-test

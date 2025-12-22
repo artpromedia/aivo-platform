@@ -133,7 +133,7 @@ class OfflineSettingsScreen extends ConsumerWidget {
                   ),
                   ...syncState.conflicts.take(3).map((conflict) => ListTile(
                     title: Text(conflict.entityType),
-                    subtitle: Text(conflict.type.name),
+                    subtitle: Text(conflict.conflictType.name),
                     trailing: TextButton(
                       onPressed: () => _showResolveDialog(context, ref, conflict.operationId),
                       child: const Text('Resolve'),

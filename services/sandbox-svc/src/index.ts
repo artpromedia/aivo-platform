@@ -77,7 +77,7 @@ signals.forEach((signal) => {
 const start = async () => {
   try {
     await prisma.$connect();
-    const port = parseInt(process.env.PORT ?? '3011', 10);
+    const port = Number.parseInt(process.env.PORT ?? '3011', 10);
     const host = process.env.HOST ?? '0.0.0.0';
 
     await fastify.listen({ port, host });

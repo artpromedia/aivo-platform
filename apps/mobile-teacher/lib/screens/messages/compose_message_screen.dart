@@ -50,7 +50,7 @@ class _ComposeMessageScreenState extends ConsumerState<ComposeMessageScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: DropdownButtonFormField<String?>(
-              value: _selectedRecipient,
+              initialValue: _selectedRecipient,
               decoration: const InputDecoration(
                 labelText: 'To',
                 border: OutlineInputBorder(),

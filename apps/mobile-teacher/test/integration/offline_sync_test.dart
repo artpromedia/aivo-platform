@@ -6,7 +6,6 @@ import 'package:mocktail/mocktail.dart';
 
 import '../mocks/mocks.dart';
 import 'package:mobile_teacher/services/sync/sync_service.dart';
-import 'package:mobile_teacher/services/database/local_database.dart';
 import 'package:mobile_teacher/models/models.dart';
 
 void main() {

@@ -212,7 +212,7 @@ class _LiveSessionView extends StatelessWidget {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String?>(
-                            value: selectedStudentId,
+                            initialValue: selectedStudentId,
                             decoration: const InputDecoration(
                               labelText: 'Assign to student (optional)',
                               border: OutlineInputBorder(),

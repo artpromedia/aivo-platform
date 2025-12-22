@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_learner/motor/motor_models.dart';
 import 'package:mobile_learner/motor/motor_profile_provider.dart';
 import 'package:mobile_learner/motor/motor_accommodation_service.dart';
-import 'package:http/http.dart' as http;
 
 // Mock service for testing
 class MockMotorAccommodationService extends MotorAccommodationService {

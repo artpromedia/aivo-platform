@@ -1,0 +1,27 @@
+{
+  "name": "@aivo/e2e-mock-server",
+  "version": "1.0.0",
+  "description": "Mock API server for AIVO E2E tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed:e2e": "node scripts/seed-e2e.js",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "pg": "^8.11.5",
+    "redis": "^4.6.13",
+    "uuid": "^9.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

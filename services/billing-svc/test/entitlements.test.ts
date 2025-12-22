@@ -13,7 +13,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 import { EntitlementsService } from '../src/services/entitlements.service.js';
 import { prisma } from '../src/prisma.js';
-import { Plan, PLAN_ENTITLEMENTS } from '../src/config/plans.config.js';
 
 // Mock Prisma
 vi.mock('../src/prisma.js', () => ({

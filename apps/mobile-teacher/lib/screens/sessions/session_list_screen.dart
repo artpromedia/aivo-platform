@@ -212,6 +212,7 @@ class _StatusIndicator extends StatelessWidget {
     switch (status) {
       case SessionStatus.scheduled: return Colors.blue;
       case SessionStatus.active: return Colors.green;
+      case SessionStatus.paused: return Colors.orange;
       case SessionStatus.completed: return Colors.grey;
       case SessionStatus.cancelled: return Colors.red;
     }

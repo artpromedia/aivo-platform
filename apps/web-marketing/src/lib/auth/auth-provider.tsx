@@ -68,17 +68,17 @@ function buildUrl(base: string, path: string, params?: Record<string, string | u
 // ============================================
 
 function trackEvent(eventName: string, params?: Record<string, unknown>): void {
-  if (typeof window !== 'undefined') {
+  if (globalThis.window !== undefined) {
     // Google Analytics
     const gtag = (
-      window as unknown as { gtag?: (type: string, event: string, params?: unknown) => void }
+      globalThis as unknown as { gtag?: (type: string, event: string, params?: unknown) => void }
     ).gtag;
     if (gtag) {
       gtag('event', eventName, params);
     }
 
     // Vercel Analytics
-    const va = (window as unknown as { va?: (type: string, payload: unknown) => void }).va;
+    const va = (globalThis as unknown as { va?: (type: string, payload: unknown) => void }).va;
     if (va) {
       va('event', { name: eventName, data: params });
     }
@@ -94,7 +94,7 @@ function trackEvent(eventName: string, params?: Record<string, unknown>): void {
 // PROVIDER
 // ============================================
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [state, setState] = React.useState<AuthState>({
     user: null,
     subscription: null,
@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       source: 'marketing',
     });
 
-    window.location.href = url;
+    globalThis.location.href = url;
   }, []);
 
   // ----------------------------------------
@@ -183,14 +183,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     trackEvent('login_started', { source: 'marketing' });
 
-    window.location.href = url;
+    globalThis.location.href = url;
   }, []);
 
   // ----------------------------------------
   // Navigation: Dashboard
   // ----------------------------------------
   const navigateToDashboard = React.useCallback((path = '') => {
-    window.location.href = `${APP_URL}/dashboard${path}`;
+    globalThis.location.href = `${APP_URL}/dashboard${path}`;
   }, []);
 
   // ----------------------------------------
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
           if (response.data?.url) {
-            window.location.href = response.data.url;
+            globalThis.location.href = response.data.url;
             return;
           }
         } catch (error) {
@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (state.isAuthenticated) {
-      window.location.href = `${APP_URL}/settings/subscription`;
+      globalThis.location.href = `${APP_URL}/settings/subscription`;
     } else {
       navigateToRegister({ plan: 'pro', source: 'upgrade' });
     }
@@ -279,28 +279,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshAuth]);
 
   // ----------------------------------------
-  // Context value
+  // Context value - memoized to prevent unnecessary re-renders
   // ----------------------------------------
-  const value: AuthContextValue = {
-    ...state,
-    isPro,
-    isPremium,
-    isTrialing,
-    hasActiveSubscription,
-    refreshAuth,
-    logout,
-    checkAuth: refreshAuth, // Alias
-    navigateToRegister,
-    navigateToLogin,
-    navigateToDashboard,
-    navigateToCheckout,
-    navigateToUpgrade,
-    // Legacy aliases
-    goToRegister: navigateToRegister,
-    goToLogin: navigateToLogin,
-    goToDashboard: navigateToDashboard,
-    goToCheckout,
-  };
+  const value = React.useMemo<AuthContextValue>(
+    () => ({
+      ...state,
+      isPro,
+      isPremium,
+      isTrialing,
+      hasActiveSubscription,
+      refreshAuth,
+      logout,
+      checkAuth: refreshAuth, // Alias
+      navigateToRegister,
+      navigateToLogin,
+      navigateToDashboard,
+      navigateToCheckout,
+      navigateToUpgrade,
+      // Legacy aliases
+      goToRegister: navigateToRegister,
+      goToLogin: navigateToLogin,
+      goToDashboard: navigateToDashboard,
+      goToCheckout,
+    }),
+    [
+      state,
+      isPro,
+      isPremium,
+      isTrialing,
+      hasActiveSubscription,
+      refreshAuth,
+      logout,
+      navigateToRegister,
+      navigateToLogin,
+      navigateToDashboard,
+      navigateToCheckout,
+      navigateToUpgrade,
+      goToCheckout,
+    ]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

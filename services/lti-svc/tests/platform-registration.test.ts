@@ -132,6 +132,7 @@ describe('PlatformRegistrationService', () => {
       jwksUrl: 'https://springfield.instructure.com/api/lti/security/jwks',
       toolPrivateKeyRef: 'kms://my-key',
       enabled: true,
+      configJson: {},
     };
 
     it('should create a new platform registration', async () => {
@@ -174,7 +175,7 @@ describe('PlatformRegistrationService', () => {
         updatedAt: new Date(),
       });
 
-      const registrationWithoutKey = {
+      const _registrationWithoutKey = {
         ...validRegistration,
         toolPrivateKeyRef: '',
       };
@@ -312,7 +313,7 @@ describe('PlatformRegistrationService', () => {
     it('should enable platform', async () => {
       mockPrisma.ltiTool.update.mockResolvedValue({ id: 'tool-1', enabled: true });
 
-      const result = await service.setPlatformEnabled('tool-1', true);
+      await service.setPlatformEnabled('tool-1', true);
 
       expect(mockPrisma.ltiTool.update).toHaveBeenCalledWith({
         where: { id: 'tool-1' },

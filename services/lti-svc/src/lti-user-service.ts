@@ -14,7 +14,7 @@
  * - Tenant resolution from platform registration
  */
 
-import type { PrismaClient, LtiUserMapping } from '@prisma/client';
+import type { PrismaClient, LtiUserMapping } from '../generated/prisma-client/index.js';
 
 import { LtiUserRole, LTI_ROLES } from './types.js';
 

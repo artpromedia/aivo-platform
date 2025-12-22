@@ -226,7 +226,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize offline services

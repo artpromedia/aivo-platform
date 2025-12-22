@@ -59,6 +59,14 @@ class Student {
     return '$first$last';
   }
 
+  /// Whether the student needs attention (has IEP/504 or hasn't been active recently)
+  bool get needsAttention {
+    if (hasIep || has504) return true;
+    if (lastActiveAt == null) return false;
+    // Flag students who haven't been active in 7 days
+    return DateTime.now().difference(lastActiveAt!).inDays > 7;
+  }
+
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
       id: json['id'] as String,

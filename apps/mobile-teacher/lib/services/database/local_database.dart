@@ -6,12 +6,9 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_common/flutter_common.dart';
-import 'package:uuid/uuid.dart';
+import 'package:flutter_common/flutter_common.dart' hide SyncStatus, SyncOperationType;
 
 import '../../models/models.dart';
-
-const _uuid = Uuid();
 
 /// Local database for the Teacher app.
 /// 
@@ -79,8 +76,8 @@ class TeacherLocalDatabase {
   }
 
   Student _learnerToStudent(OfflineLearner learner) {
-    final metadata = learner.metadata != null
-        ? jsonDecode(learner.metadata!) as Map<String, dynamic>
+    final metadata = learner.preferencesJson != null
+        ? jsonDecode(learner.preferencesJson!) as Map<String, dynamic>
         : <String, dynamic>{};
 
     return Student(
@@ -100,8 +97,8 @@ class TeacherLocalDatabase {
               ?.map((e) => e as String)
               .toList() ??
           [],
-      lastActiveAt: learner.lastSyncedAt,
-      createdAt: learner.cachedAt,
+      lastActiveAt: DateTime.fromMillisecondsSinceEpoch(learner.lastSyncedAt * 1000),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(learner.lastSyncedAt * 1000),
     );
   }
 
@@ -119,11 +116,20 @@ class TeacherLocalDatabase {
     return OfflineLearner(
       learnerId: student.id,
       displayName: student.fullName,
+      gradeBand: _gradeToGradeBand(student.gradeLevel),
       avatarUrl: student.avatarUrl,
-      cachedAt: student.createdAt ?? DateTime.now(),
-      lastSyncedAt: student.lastActiveAt,
-      metadata: metadata,
+      tenantId: 'default',
+      lastSyncedAt: (student.lastActiveAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000,
+      preferencesJson: metadata,
     );
+  }
+
+  String _gradeToGradeBand(int? gradeLevel) {
+    if (gradeLevel == null) return 'K-2';
+    if (gradeLevel <= 2) return 'K-2';
+    if (gradeLevel <= 5) return '3-5';
+    if (gradeLevel <= 8) return '6-8';
+    return '9-12';
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -133,28 +139,36 @@ class TeacherLocalDatabase {
   /// Get all sessions.
   Future<List<Session>> getSessions() async {
     // Use the content cache for sessions
-    final cached = await _db.getAllCachedContent();
+    final cached = await _db.getAllContentByType('session');
     return cached
-        .where((c) => c.contentType == 'session')
-        .map((c) => Session.fromJson(jsonDecode(c.contentData) as Map<String, dynamic>))
+        .map((c) => Session.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
         .toList();
   }
 
   /// Get a session by ID.
   Future<Session?> getSession(String id) async {
-    final cached = await _db.getCachedContent(id);
+    final cached = await _db.getContent(id);
     if (cached == null || cached.contentType != 'session') return null;
-    return Session.fromJson(jsonDecode(cached.contentData) as Map<String, dynamic>);
+    return Session.fromJson(jsonDecode(cached.jsonPayload) as Map<String, dynamic>);
   }
 
   /// Cache sessions.
   Future<void> cacheSessions(List<Session> sessions) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final session in sessions) {
-      await _db.cacheContent(OfflineContentCacheCompanion.insert(
-        contentId: session.id,
+      final jsonData = jsonEncode(session.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: session.id,
         contentType: 'session',
-        contentData: jsonEncode(session.toJson()),
-        cachedAt: DateTime.now(),
+        subject: 'general',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
       ));
     }
   }
@@ -165,22 +179,30 @@ class TeacherLocalDatabase {
 
   /// Get IEP goals for a student.
   Future<List<IepGoal>> getIepGoals(String studentId) async {
-    final cached = await _db.getAllCachedContent();
+    final cached = await _db.getAllContentByType('iep_goal');
     return cached
-        .where((c) => c.contentType == 'iep_goal')
-        .map((c) => IepGoal.fromJson(jsonDecode(c.contentData) as Map<String, dynamic>))
+        .map((c) => IepGoal.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
         .where((g) => g.studentId == studentId)
         .toList();
   }
 
   /// Cache IEP goals.
   Future<void> cacheIepGoals(List<IepGoal> goals) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final goal in goals) {
-      await _db.cacheContent(OfflineContentCacheCompanion.insert(
-        contentId: goal.id,
+      final jsonData = jsonEncode(goal.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: goal.id,
         contentType: 'iep_goal',
-        contentData: jsonEncode(goal.toJson()),
-        cachedAt: DateTime.now(),
+        subject: 'iep',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
       ));
     }
   }
@@ -191,43 +213,59 @@ class TeacherLocalDatabase {
 
   /// Get conversations.
   Future<List<Conversation>> getConversations() async {
-    final cached = await _db.getAllCachedContent();
+    final cached = await _db.getAllContentByType('conversation');
     return cached
-        .where((c) => c.contentType == 'conversation')
-        .map((c) => Conversation.fromJson(jsonDecode(c.contentData) as Map<String, dynamic>))
+        .map((c) => Conversation.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
         .toList();
   }
 
   /// Get messages for a conversation.
   Future<List<Message>> getMessages(String conversationId) async {
-    final cached = await _db.getAllCachedContent();
+    final cached = await _db.getAllContentByType('message');
     return cached
-        .where((c) => c.contentType == 'message')
-        .map((c) => Message.fromJson(jsonDecode(c.contentData) as Map<String, dynamic>))
+        .map((c) => Message.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
         .where((m) => m.conversationId == conversationId)
         .toList();
   }
 
   /// Cache conversations.
   Future<void> cacheConversations(List<Conversation> conversations) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final conv in conversations) {
-      await _db.cacheContent(OfflineContentCacheCompanion.insert(
-        contentId: conv.id,
+      final jsonData = jsonEncode(conv.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: conv.id,
         contentType: 'conversation',
-        contentData: jsonEncode(conv.toJson()),
-        cachedAt: DateTime.now(),
+        subject: 'messaging',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
       ));
     }
   }
 
   /// Cache messages.
   Future<void> cacheMessages(List<Message> messages) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final msg in messages) {
-      await _db.cacheContent(OfflineContentCacheCompanion.insert(
-        contentId: msg.id,
+      final jsonData = jsonEncode(msg.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: msg.id,
         contentType: 'message',
-        contentData: jsonEncode(msg.toJson()),
-        cachedAt: DateTime.now(),
+        subject: 'messaging',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
       ));
     }
   }
@@ -238,50 +276,62 @@ class TeacherLocalDatabase {
 
   /// Add an operation to the sync queue.
   Future<void> addSyncOperation(SyncOperation operation) async {
-    await _db.addToSyncQueue(OfflineSyncQueueCompanion.insert(
-      operationId: operation.id,
+    final payload = jsonEncode({
+      'operationId': operation.id,
+      'entityType': operation.entityType,
+      'entityId': operation.entityId,
+      'data': operation.data,
+    });
+    await _db.enqueueSyncOperation(OfflineSyncQueueCompanion.insert(
       operationType: operation.type.name,
-      entityType: operation.entityType,
-      entityId: operation.entityId,
-      payload: jsonEncode(operation.data),
-      createdAt: operation.createdAt,
-      status: operation.status.name,
-      retryCount: operation.retryCount,
+      payloadJson: payload,
+      createdAt: operation.createdAt.millisecondsSinceEpoch ~/ 1000,
     ));
   }
 
   /// Get pending sync operations.
   Future<List<SyncOperation>> getPendingSyncOperations() async {
-    final queue = await _db.getPendingSyncOperations();
+    final queue = await _db.getNextSyncOperations(limit: 100);
     return queue.map(_queueItemToOperation).toList();
   }
 
   /// Get pending sync count.
   Future<int> getPendingSyncCount() async {
-    final queue = await _db.getPendingSyncOperations();
+    final queue = await _db.getNextSyncOperations(limit: 1000);
     return queue.length;
   }
 
   /// Get a sync operation by ID.
   Future<SyncOperation?> getSyncOperation(String id) async {
-    final items = await _db.getPendingSyncOperations();
-    final item = items.where((i) => i.operationId == id).firstOrNull;
+    final items = await _db.getNextSyncOperations(limit: 1000);
+    final intId = int.tryParse(id);
+    final item = items.where((i) => i.id == intId).firstOrNull;
     return item != null ? _queueItemToOperation(item) : null;
   }
 
   /// Mark operation as synced.
   Future<void> markSynced(String operationId) async {
-    await _db.updateSyncQueueStatus(operationId, 'synced');
+    final intId = int.tryParse(operationId);
+    if (intId != null) {
+      await _db.markSyncDone(intId);
+    }
   }
 
   /// Mark operation as failed.
   Future<void> markFailed(String operationId, String error) async {
-    await _db.updateSyncQueueStatus(operationId, 'failed');
+    final intId = int.tryParse(operationId);
+    if (intId != null) {
+      await _db.markSyncFailed(intId, error);
+    }
   }
 
   /// Mark operation as having a conflict.
   Future<void> markConflict(String operationId, String conflictData) async {
-    await _db.updateSyncQueueStatus(operationId, 'conflict');
+    // For now, treat conflicts as failures with the conflict data as error message
+    final intId = int.tryParse(operationId);
+    if (intId != null) {
+      await _db.markSyncFailed(intId, 'Conflict: $conflictData');
+    }
   }
 
   /// Update sync operation data.
@@ -295,27 +345,35 @@ class TeacherLocalDatabase {
 
   /// Remove a sync operation.
   Future<void> removeSyncOperation(String operationId) async {
-    await _db.removeFromSyncQueue(operationId);
+    // The OfflineDatabase doesn't have a delete by ID method for sync queue.
+    // Mark as done instead.
+    final intId = int.tryParse(operationId);
+    if (intId != null) {
+      await _db.markSyncDone(intId);
+    }
   }
 
-  SyncOperation _queueItemToOperation(OfflineSyncQueueData item) {
+  SyncOperation _queueItemToOperation(OfflineSyncQueueEntry item) {
+    final payload = jsonDecode(item.payloadJson) as Map<String, dynamic>;
     return SyncOperation(
-      id: item.operationId,
+      id: item.id.toString(),
       type: SyncOperationType.values.firstWhere(
         (e) => e.name == item.operationType,
         orElse: () => SyncOperationType.update,
       ),
-      entityType: item.entityType,
-      entityId: item.entityId,
-      data: jsonDecode(item.payload) as Map<String, dynamic>,
-      createdAt: item.createdAt,
+      entityType: payload['entityType'] as String? ?? 'unknown',
+      entityId: payload['entityId'] as String? ?? '',
+      data: payload['data'] as Map<String, dynamic>? ?? {},
+      createdAt: DateTime.fromMillisecondsSinceEpoch(item.createdAt * 1000),
       status: SyncStatus.values.firstWhere(
-        (e) => e.name == item.status,
+        (e) => e.name == item.status.toLowerCase(),
         orElse: () => SyncStatus.pending,
       ),
       retryCount: item.retryCount,
       lastError: item.errorMessage,
-      lastAttemptAt: item.lastAttemptAt,
+      lastAttemptAt: item.lastAttemptAt != null 
+          ? DateTime.fromMillisecondsSinceEpoch(item.lastAttemptAt! * 1000) 
+          : null,
     );
   }
 }

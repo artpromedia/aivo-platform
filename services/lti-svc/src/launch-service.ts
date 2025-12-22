@@ -9,7 +9,7 @@
  * 5. Deep linking to activity
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 import type { LtiToolRecord } from './lti-auth.js';
 import {

@@ -2,7 +2,7 @@
  * Template Engine Tests
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 

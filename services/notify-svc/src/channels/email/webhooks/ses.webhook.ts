@@ -124,26 +124,28 @@ async function fetchCertificate(url: string): Promise<string> {
 }
 
 function buildSignatureString(message: SNSMessage): string {
-  const fields: string[] = [];
+  let fields: string[];
 
   if (message.Type === 'Notification') {
-    fields.push('Message', message.Message);
-    fields.push('MessageId', message.MessageId);
-    if (message.Subject) {
-      fields.push('Subject', message.Subject);
-    }
-    fields.push('Timestamp', message.Timestamp);
-    fields.push('TopicArn', message.TopicArn);
-    fields.push('Type', message.Type);
+    fields = [
+      'Message', message.Message,
+      'MessageId', message.MessageId,
+      ...(message.Subject ? ['Subject', message.Subject] : []),
+      'Timestamp', message.Timestamp,
+      'TopicArn', message.TopicArn,
+      'Type', message.Type,
+    ];
   } else {
     // SubscriptionConfirmation or UnsubscribeConfirmation
-    fields.push('Message', message.Message);
-    fields.push('MessageId', message.MessageId);
-    fields.push('SubscribeURL', message.SubscribeURL || '');
-    fields.push('Timestamp', message.Timestamp);
-    fields.push('Token', message.Token || '');
-    fields.push('TopicArn', message.TopicArn);
-    fields.push('Type', message.Type);
+    fields = [
+      'Message', message.Message,
+      'MessageId', message.MessageId,
+      'SubscribeURL', message.SubscribeURL || '',
+      'Timestamp', message.Timestamp,
+      'Token', message.Token || '',
+      'TopicArn', message.TopicArn,
+      'Type', message.Type,
+    ];
   }
 
   return fields.join('\n') + '\n';
