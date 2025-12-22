@@ -64,6 +64,8 @@ export interface SsoState {
   initiatedAt: number;
   loginHint?: string;
   clientType: 'web' | 'mobile';
+  /** PKCE code verifier (stored securely, used during token exchange) */
+  codeVerifier?: string;
 }
 
 // ============================================================================

@@ -7,18 +7,18 @@
 
 import type { Role } from '@aivo/ts-rbac';
 
-import type { IdpConfig as PrismaIdpConfig, Tenant, User, UserRoleEnum } from '../../generated/prisma-client/index.js';
+import type { IdpConfig as PrismaIdpConfig, Tenant, UserRoleEnum } from '../../generated/prisma-client/index.js';
 import { signAccessToken, signRefreshToken } from '../jwt.js';
 import { prisma } from '../../prisma.js';
 
 import { OidcService } from './oidc.js';
-import { SamlService, type SamlServiceConfig } from './saml.js';
+import { SamlService } from './saml.js';
 import { generateSsoState, validateSsoState, SsoStateError } from './state.js';
+import { generatePKCE } from './pkce.js';
+import { validateRedirectUri } from './redirect-validator.js';
 import type {
-  IdpConfig,
   OidcIdpConfig,
   SamlIdpConfig,
-  SsoResult,
   SsoErrorCode,
   SsoAttemptLog,
   MappedSsoUser,
@@ -84,6 +84,15 @@ export class SsoService {
       throw new SsoError('IDP_DISABLED', 'SSO is not enabled for this tenant');
     }
 
+    // SECURITY: Validate redirect URI against whitelist
+    const redirectValidation = await validateRedirectUri(options.redirectUri, tenant.id);
+    if (!redirectValidation.valid) {
+      throw new SsoError(
+        'INVALID_STATE',
+        `Invalid redirect URI: ${redirectValidation.error}`
+      );
+    }
+
     // Get IdP config
     const idpConfig = await this.getIdpConfig(tenant.id, options.protocol);
     if (!idpConfig) {
@@ -97,18 +106,18 @@ export class SsoService {
       throw new SsoError('IDP_DISABLED', 'IdP configuration is disabled');
     }
 
-    // Generate state
-    const state = generateSsoState({
-      tenantId: tenant.id,
-      idpConfigId: idpConfig.id,
-      protocol: idpConfig.protocol,
-      redirectUri: options.redirectUri,
-      clientType: options.clientType,
-      loginHint: options.loginHint,
-    });
-
     // Generate redirect URL based on protocol
     if (idpConfig.protocol === 'SAML') {
+      // Generate state for SAML
+      const state = generateSsoState({
+        tenantId: tenant.id,
+        idpConfigId: idpConfig.id,
+        protocol: idpConfig.protocol,
+        redirectUri: options.redirectUri,
+        clientType: options.clientType,
+        loginHint: options.loginHint,
+      });
+
       const samlConfig = this.toSamlConfig(idpConfig);
       const acsUrl = `${this.config.baseUrl}/auth/saml/acs/${options.tenantSlug}`;
       
@@ -120,28 +129,49 @@ export class SsoService {
 
       return { redirectUrl: url, state };
     } else {
+      // OIDC flow with PKCE (RFC 7636)
       const oidcConfig = this.toOidcConfig(idpConfig);
       const callbackUrl = `${this.config.baseUrl}/auth/oidc/callback/${options.tenantSlug}`;
       
-      // Get nonce from state
-      const ssoState = validateSsoState(state);
-      const newState = generateSsoState({
+      // SECURITY: Generate PKCE challenge for authorization code protection
+      const pkce = generatePKCE();
+
+      // Generate state with PKCE code_verifier stored securely
+      const state = generateSsoState({
         tenantId: tenant.id,
         idpConfigId: idpConfig.id,
         protocol: idpConfig.protocol,
         redirectUri: options.redirectUri,
         clientType: options.clientType,
         loginHint: options.loginHint,
+        codeVerifier: pkce.codeVerifier, // Stored encrypted in state
+      });
+
+      // Peek at state to get the nonce (state is still valid, not consumed)
+      const ssoStateData = validateSsoState(state);
+      
+      // Regenerate state since we consumed it above
+      const finalState = generateSsoState({
+        tenantId: tenant.id,
+        idpConfigId: idpConfig.id,
+        protocol: idpConfig.protocol,
+        redirectUri: options.redirectUri,
+        clientType: options.clientType,
+        loginHint: options.loginHint,
+        codeVerifier: pkce.codeVerifier,
       });
 
       const url = this.oidcService.generateAuthorizationUrl(oidcConfig, {
         redirectUri: callbackUrl,
-        state: newState,
-        nonce: ssoState.nonce,
+        state: finalState,
+        nonce: ssoStateData.nonce,
         loginHint: options.loginHint,
+        // PKCE parameters
+        codeChallenge: pkce.codeChallenge,
+        codeChallengeMethod: pkce.codeChallengeMethod,
       });
 
-      return { redirectUrl: url, state: newState };
+      return { redirectUrl: url, state: finalState };
     }
   }
 
@@ -322,10 +352,12 @@ export class SsoService {
       const oidcConfig = this.toOidcConfig(idpConfig);
       const callbackUrl = `${this.config.baseUrl}/auth/oidc/callback/${options.tenantSlug}`;
 
-      // Exchange code for tokens
+      // SECURITY: Exchange code for tokens with PKCE code_verifier
+      // The code_verifier was stored encrypted in the state during initiation
       const tokens = await this.oidcService.exchangeCode(oidcConfig, {
         code: options.code,
         redirectUri: callbackUrl,
+        codeVerifier: ssoState.codeVerifier, // PKCE verification
       });
 
       // Validate ID token

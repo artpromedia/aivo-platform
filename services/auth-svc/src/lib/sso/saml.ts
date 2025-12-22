@@ -9,14 +9,12 @@
  * Security: Validates signatures, issuer, audience, and timestamps.
  */
 
-import { createHash, createVerify, randomBytes } from 'node:crypto';
-
-import { inflate, deflate } from 'node:zlib';
+import { createVerify, randomBytes } from 'node:crypto';
 import { promisify } from 'node:util';
+import { deflate } from 'node:zlib';
 
-import type { SamlIdpConfig, SsoUserClaims, SsoResult, SpMetadata } from './types.js';
+import type { SamlIdpConfig, SsoUserClaims, SsoResult } from './types.js';
 
-const inflateAsync = promisify(inflate);
 const deflateAsync = promisify(deflate);
 
 // ============================================================================
@@ -276,13 +274,14 @@ export class SamlService {
   private validateSignature(xml: string, certificate: string): boolean {
     try {
       // Extract signature value and signed info
-      const signatureValueMatch = xml.match(/<(?:ds:)?SignatureValue[^>]*>([^<]+)</i);
-      const signedInfoMatch = xml.match(/<(?:ds:)?SignedInfo[^>]*>[\s\S]*?<\/(?:ds:)?SignedInfo>/i);
+      const signatureValueMatch = /<(?:ds:)?SignatureValue[^>]*>([^<]+)</i.exec(xml);
+      const signedInfoMatch = /<(?:ds:)?SignedInfo[^>]*>[\s\S]*?<\/(?:ds:)?SignedInfo>/i.exec(xml);
 
       if (!signatureValueMatch || !signedInfoMatch) {
-        // No signature present - might be okay for some IdPs
-        console.warn('[SAML] No signature found in response');
-        return true; // In production, this should be configurable per IdP
+        // SECURITY FIX: Unsigned SAML responses MUST be rejected
+        // This prevents attackers from forging SAML assertions
+        console.error('[SAML] SECURITY: No signature found in response - rejecting');
+        return false; // Signatures are REQUIRED - never accept unsigned assertions
       }
 
       const signatureValue = signatureValueMatch[1].replace(/\s/g, '');
@@ -447,23 +446,17 @@ export interface ParsedSamlMetadata {
 export function parseSamlMetadata(metadataXml: string): ParsedSamlMetadata | null {
   try {
     // Extract EntityID
-    const entityIdMatch = metadataXml.match(/entityID="([^"]+)"/i);
+    const entityIdMatch = /entityID="([^"]+)"/i.exec(metadataXml);
     if (!entityIdMatch) return null;
 
     // Extract SSO URL (HTTP-Redirect or HTTP-POST binding)
-    const ssoUrlMatch = metadataXml.match(
-      /SingleSignOnService[^>]*Binding="[^"]*(Redirect|POST)"[^>]*Location="([^"]+)"/i
-    ) || metadataXml.match(
-      /SingleSignOnService[^>]*Location="([^"]+)"[^>]*Binding="[^"]*(Redirect|POST)"/i
-    );
+    const ssoUrlMatch = (/SingleSignOnService[^>]*Binding="[^"]*(Redirect|POST)"[^>]*Location="([^"]+)"/i.exec(metadataXml)) || (/SingleSignOnService[^>]*Location="([^"]+)"[^>]*Binding="[^"]*(Redirect|POST)"/i.exec(metadataXml));
 
     // Extract SLO URL (optional)
-    const sloUrlMatch = metadataXml.match(
-      /SingleLogoutService[^>]*Location="([^"]+)"/i
-    );
+    const sloUrlMatch = /SingleLogoutService[^>]*Location="([^"]+)"/i.exec(metadataXml);
 
     // Extract X.509 certificate
-    const certMatch = metadataXml.match(/<(?:ds:)?X509Certificate[^>]*>([^<]+)</i);
+    const certMatch = /<(?:ds:)?X509Certificate[^>]*>([^<]+)</i.exec(metadataXml);
 
     if (!ssoUrlMatch || !certMatch) return null;
 

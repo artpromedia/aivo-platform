@@ -78,6 +78,7 @@ export class OidcService {
 
   /**
    * Generate the OIDC authorization URL for initiating SSO.
+   * Now includes PKCE support for enhanced security.
    */
   generateAuthorizationUrl(
     idpConfig: OidcIdpConfig,
@@ -86,6 +87,10 @@ export class OidcService {
       state: string;
       nonce: string;
       loginHint?: string;
+      /** PKCE code challenge (required for security) */
+      codeChallenge?: string;
+      /** PKCE code challenge method (should be 'S256') */
+      codeChallengeMethod?: 'S256';
     }
   ): string {
     const url = new URL(idpConfig.authorizationEndpoint);
@@ -96,6 +101,12 @@ export class OidcService {
     url.searchParams.set('scope', idpConfig.scopes.join(' '));
     url.searchParams.set('state', options.state);
     url.searchParams.set('nonce', options.nonce);
+
+    // PKCE parameters (required for security)
+    if (options.codeChallenge) {
+      url.searchParams.set('code_challenge', options.codeChallenge);
+      url.searchParams.set('code_challenge_method', options.codeChallengeMethod ?? 'S256');
+    }
 
     if (options.loginHint) {
       url.searchParams.set('login_hint', options.loginHint);
@@ -113,23 +124,33 @@ export class OidcService {
 
   /**
    * Exchange authorization code for tokens.
+   * Now includes PKCE code_verifier support.
    */
   async exchangeCode(
     idpConfig: OidcIdpConfig,
     options: {
       code: string;
       redirectUri: string;
+      /** PKCE code verifier (required if code_challenge was sent) */
+      codeVerifier?: string;
     }
   ): Promise<OidcTokenResponse> {
     const clientSecret = await this.config.secretsResolver.getSecret(idpConfig.clientSecretRef);
 
-    const body = new URLSearchParams({
+    const bodyParams: Record<string, string> = {
       grant_type: 'authorization_code',
       code: options.code,
       redirect_uri: options.redirectUri,
       client_id: idpConfig.clientId,
       client_secret: clientSecret,
-    });
+    };
+
+    // Include PKCE code_verifier if provided
+    if (options.codeVerifier) {
+      bodyParams.code_verifier = options.codeVerifier;
+    }
+
+    const body = new URLSearchParams(bodyParams);
 
     const response = await fetch(idpConfig.tokenEndpoint, {
       method: 'POST',
@@ -170,7 +191,7 @@ export class OidcService {
   ): Promise<SsoResult> {
     try {
       // Get JWKS
-      const jwks = await this.getJwks(idpConfig.jwksUri);
+      const jwks = this.getJwks(idpConfig.jwksUri);
 
       // Verify the token
       const { payload } = await jwtVerify(idToken, jwks, {
@@ -325,7 +346,7 @@ export class OidcService {
   // PRIVATE HELPERS
   // ==========================================================================
 
-  private async getJwks(jwksUri: string): ReturnType<typeof createRemoteJWKSet> {
+  private getJwks(jwksUri: string): ReturnType<typeof createRemoteJWKSet> {
     const now = Date.now();
     const cached = this.jwksCache.get(jwksUri);
 

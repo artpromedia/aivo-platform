@@ -16,12 +16,67 @@ import type { SsoState } from './types.js';
 const STATE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const ALGORITHM = 'aes-256-gcm';
 
-// In production, this should come from env/secrets
-const STATE_ENCRYPTION_KEY =
-  process.env.SSO_STATE_ENCRYPTION_KEY || 'default-dev-key-change-in-production-32';
+/**
+ * Get the SSO state encryption key from environment.
+ * SECURITY: This key MUST be set in production - no fallback allowed.
+ */
+function getEncryptionKey(): Buffer {
+  const key = process.env.SSO_STATE_ENCRYPTION_KEY;
 
-// Derive a 32-byte key from the config
-const encryptionKey = createHash('sha256').update(STATE_ENCRYPTION_KEY).digest();
+  if (!key) {
+    // SECURITY FIX: Fail fast if encryption key is not configured
+    throw new Error(
+      'SECURITY ERROR: SSO_STATE_ENCRYPTION_KEY environment variable is required.\n' +
+        'Generate a secure key with: openssl rand -base64 32\n' +
+        'This is required for SSO state protection against CSRF and tampering attacks.'
+    );
+  }
+
+  // Reject obvious placeholder values
+  const placeholderPatterns = [
+    /default/i,
+    /change.*in.*prod/i,
+    /fallback/i,
+    /example/i,
+    /placeholder/i,
+    /^test$/i,
+    /^dev$/i,
+  ];
+
+  for (const pattern of placeholderPatterns) {
+    if (pattern.test(key)) {
+      throw new Error(
+        'SECURITY ERROR: SSO_STATE_ENCRYPTION_KEY appears to be a placeholder value.\n' +
+          'Generate a secure key with: openssl rand -base64 32'
+      );
+    }
+  }
+
+  // Require minimum key length (at least 32 characters before hashing)
+  if (key.length < 32) {
+    throw new Error(
+      'SECURITY ERROR: SSO_STATE_ENCRYPTION_KEY must be at least 32 characters.\n' +
+        'Generate a secure key with: openssl rand -base64 32'
+    );
+  }
+
+  // Derive a 32-byte key from the config
+  return createHash('sha256').update(key).digest();
+}
+
+// Initialize encryption key (will throw on startup if not configured)
+let encryptionKey: Buffer;
+try {
+  encryptionKey = getEncryptionKey();
+} catch (error) {
+  // In development, allow a dev-only key with warning
+  if (process.env.NODE_ENV === 'development' && process.env.SSO_DEV_INSECURE_MODE === 'true') {
+    console.warn('[SSO] WARNING: Using insecure development key. Never use in production!');
+    encryptionKey = createHash('sha256').update('insecure-dev-only-key').digest();
+  } else {
+    throw error;
+  }
+}
 
 // In-memory store (use Redis in production for multi-instance)
 const stateStore = new Map<string, { encrypted: string; expiresAt: number }>();

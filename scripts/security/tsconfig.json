@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/scripts/security",
+    "rootDir": ".",
+    "declaration": false,
+    "noEmit": true
+  },
+  "include": ["./**/*.ts"]
+}
