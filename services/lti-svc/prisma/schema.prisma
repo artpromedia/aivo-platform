@@ -310,3 +310,152 @@ model LtiGradeSync {
   @@index([status, attemptCount])
   @@map("lti_grade_syncs")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LTI 1.1 MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// LTI 1.1 Consumer (Tool Consumer) configuration
+/// Stores OAuth 1.0a credentials for legacy LMS platforms
+model Lti11Consumer {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  name          String                                    // Display name, e.g., "Springfield District Moodle"
+  consumerKey   String   @unique @map("consumer_key")     // OAuth consumer key
+  sharedSecret  String   @map("shared_secret")            // OAuth shared secret (should be encrypted at rest)
+  instanceGuid  String?  @map("instance_guid")            // tool_consumer_instance_guid from launches
+  isActive      Boolean  @default(true) @map("is_active")
+  settings      Json     @default("{}") @db.JsonB         // Additional configuration
+  
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  outcomeBindings Lti11OutcomeBinding[]
+  launchLogs      Lti11LaunchLog[]
+  nonces          Lti11Nonce[]
+  sessions        Lti11Session[]
+
+  @@index([tenantId])
+  @@map("lti11_consumers")
+}
+
+/// LTI 1.1 Outcome Service Binding
+/// Links a user's activity to the LMS gradebook for grade passback
+model Lti11OutcomeBinding {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  consumerId      String   @map("consumer_id") @db.Uuid
+  resourceLinkId  String   @map("resource_link_id")
+  serviceUrl      String   @map("service_url")            // lis_outcome_service_url
+  sourcedId       String   @map("sourced_id")             // lis_result_sourcedid
+  
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  consumer        Lti11Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+  outcomeLogs     Lti11OutcomeLog[]
+
+  @@unique([userId, consumerId, resourceLinkId], name: "userId_consumerId_resourceLinkId")
+  @@index([userId])
+  @@index([resourceLinkId])
+  @@map("lti11_outcome_bindings")
+}
+
+/// LTI 1.1 Outcome Log
+/// Tracks grade passback attempts for debugging and retry
+model Lti11OutcomeLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  bindingId       String   @map("binding_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  resourceLinkId  String   @map("resource_link_id")
+  operation       String                                   // replaceResult, readResult, deleteResult
+  score           Float?                                   // Score submitted (0.0-1.0)
+  success         Boolean
+  messageId       String?  @map("message_id")
+  description     String?
+  errorCode       String?  @map("error_code")
+  
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  binding         Lti11OutcomeBinding @relation(fields: [bindingId], references: [id], onDelete: Cascade)
+
+  @@index([bindingId, createdAt])
+  @@index([userId])
+  @@map("lti11_outcome_logs")
+}
+
+/// LTI 1.1 Nonce tracking
+/// Prevents OAuth replay attacks by tracking used nonces
+model Lti11Nonce {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique                             // consumerId:nonce
+  consumerId  String   @map("consumer_id") @db.Uuid
+  timestamp   DateTime @db.Timestamptz
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+  
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  consumer    Lti11Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("lti11_nonces")
+}
+
+/// LTI 1.1 Launch Log
+/// Records all LTI 1.1 launches for audit and debugging
+model Lti11LaunchLog {
+  id                    String   @id @default(uuid()) @db.Uuid
+  consumerId            String   @map("consumer_id") @db.Uuid
+  tenantId              String   @map("tenant_id") @db.Uuid
+  userId                String?  @map("user_id") @db.Uuid
+  messageType           String   @map("message_type")
+  resourceLinkId        String   @map("resource_link_id")
+  contextId             String?  @map("context_id")
+  contextTitle          String?  @map("context_title")
+  roles                 String?
+  outcomeServiceUrl     String?  @map("outcome_service_url")
+  customParams          Json?    @map("custom_params") @db.JsonB
+  launchData            Json     @map("launch_data") @db.JsonB  // Full launch payload
+  consumerInstanceGuid  String?  @map("consumer_instance_guid")
+  consumerInstanceName  String?  @map("consumer_instance_name")
+  productFamily         String?  @map("product_family")
+  productVersion        String?  @map("product_version")
+  
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  consumer              Lti11Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([consumerId])
+  @@index([userId])
+  @@map("lti11_launch_logs")
+}
+
+/// LTI 1.1 Session
+/// Active sessions from LTI 1.1 launches
+model Lti11Session {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  consumerId      String   @map("consumer_id") @db.Uuid
+  ltiVersion      String   @map("lti_version")
+  contextId       String?  @map("context_id")
+  resourceLinkId  String   @map("resource_link_id")
+  metadata        Json?    @db.JsonB
+  expiresAt       DateTime @map("expires_at") @db.Timestamptz
+  
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  consumer        Lti11Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("lti11_sessions")
+}
+

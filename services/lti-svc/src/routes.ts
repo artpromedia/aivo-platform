@@ -1,12 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /**
  * LTI API Routes
  *
- * Endpoints:
+ * LTI 1.3 Endpoints:
  * - POST /lti/login       - OIDC login initiation
  * - POST /lti/launch      - LTI launch callback
  * - GET  /lti/session/:id - Session page redirect
  * - GET  /lti/jwks        - Tool public keys
  * - POST /lti/grade       - Grade passback (internal)
+ *
+ * LTI 1.1 Endpoints (see lti11/routes.ts):
+ * - POST /lti/1.1/launch         - Basic LTI 1.1 launch
+ * - POST /lti/1.1/content-item   - Content-Item selection
+ * - POST /lti/1.1/outcomes/*     - Grade passback
+ * - GET  /lti/1.1/config.xml     - Configuration XML
  *
  * Admin endpoints:
  * - GET/POST /lti/tools        - Manage tool registrations
@@ -14,13 +21,15 @@
  * - GET      /lti/launches     - View launch history
  */
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 import { GradeService } from './grade-service.js';
 import { LaunchService } from './launch-service.js';
 import { generateToolJwks, LtiError } from './lti-auth.js';
+import { registerLti11Routes } from './lti11/index.js';
 import {
   PlatformRegistrationService,
   PlatformRegistrationSchema,
@@ -75,6 +84,7 @@ const LaunchQuerySchema = z.object({
 
 export interface LtiRoutesConfig {
   baseUrl: string;
+  appUrl?: string; // Frontend app URL for redirects (defaults to baseUrl)
   getPrivateKey: (keyRef: string) => Promise<string>;
 }
 
@@ -91,7 +101,17 @@ export function registerLtiRoutes(
   }));
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LTI LAUNCH FLOW
+  // LTI 1.1 ROUTES
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Register LTI 1.1 routes for legacy LMS support
+  registerLti11Routes(app, prisma, {
+    baseUrl: config.baseUrl,
+    appUrl: config.appUrl || config.baseUrl,
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LTI 1.3 LAUNCH FLOW
   // ══════════════════════════════════════════════════════════════════════════
 
   /**

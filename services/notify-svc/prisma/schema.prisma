@@ -200,6 +200,52 @@ model DeliveryLog {
   @@map("delivery_logs")
 }
 
+/// Learner notification settings (COPPA compliant, parent-controlled)
+model LearnerNotificationSettings {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  learnerId           String    @unique @map("learner_id") @db.Uuid
+  parentId            String    @map("parent_id") @db.Uuid
+  
+  // Parent-controlled notification types (only educational allowed)
+  remindersEnabled    Boolean   @default(true) @map("reminders_enabled")
+  achievementsEnabled Boolean   @default(true) @map("achievements_enabled")
+  streakRemindersEnabled Boolean @default(true) @map("streak_reminders_enabled")
+  encouragementEnabled Boolean  @default(true) @map("encouragement_enabled")
+  
+  // Delivery settings
+  soundsEnabled       Boolean   @default(true) @map("sounds_enabled")
+  vibrationEnabled    Boolean   @default(true) @map("vibration_enabled")
+  
+  // Quiet hours (stricter for children - recommended 8pm-8am)
+  quietHoursEnabled   Boolean   @default(true) @map("quiet_hours_enabled")
+  quietHoursStart     String    @default("20:00") @map("quiet_hours_start")
+  quietHoursEnd       String    @default("08:00") @map("quiet_hours_end")
+  
+  // Timestamps
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([parentId])
+  @@map("learner_notification_settings")
+}
+
+/// Topic subscriptions for FCM
+model TopicSubscription {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  
+  topic             String    // e.g., 'user_123', 'tenant_abc', 'class_456'
+  subscribedAt      DateTime  @default(now()) @map("subscribed_at") @db.Timestamptz
+  
+  @@unique([userId, topic])
+  @@index([tenantId])
+  @@index([topic])
+  @@map("topic_subscriptions")
+}
+
 /// Notification template
 model NotificationTemplate {
   id                String           @id @default(uuid()) @db.Uuid

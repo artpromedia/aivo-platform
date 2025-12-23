@@ -17,8 +17,12 @@ dependencies:
   google_fonts: ^6.2.1
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
   flutter_common:
     path: ../../libs/flutter-common
+  flutter_notifications:
+    path: ../../libs/flutter-notifications
 
 dev_dependencies:
   flutter_test:

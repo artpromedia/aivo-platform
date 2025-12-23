@@ -102,7 +102,11 @@ model VirtualBrain {
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  skillStates LearnerSkillState[]
+  skillStates        LearnerSkillState[]
+  bktSkillStates     BKTSkillState[]
+  engagements        LearnerEngagement[]
+  neurodiverseProfile NeurodiverseProfile?
+  learningSessions   LearningSession[]
 
   @@unique([tenantId, learnerId])
   @@index([tenantId, learnerId])
@@ -144,4 +148,186 @@ enum LearningObjectType {
   ASSESSMENT
 
   @@map("learning_object_type")
+}
+
+// ── Engagement State ─────────────────────────────────────────────────────────
+
+enum EngagementState {
+  FLOW
+  ENGAGED
+  BORED
+  FRUSTRATED
+  DISENGAGED
+
+  @@map("engagement_state")
+}
+
+// ── BKT State & Practice History ─────────────────────────────────────────────
+
+/// BKT parameters fitted for a learner's specific skill.
+/// These parameters are learned over time from practice outcomes.
+model BKTSkillState {
+  id               String   @id @default(uuid()) @db.Uuid
+  virtualBrainId   String   @map("virtual_brain_id") @db.Uuid
+  skillId          String   @map("skill_id") @db.Uuid
+  
+  // Core BKT parameters
+  pLearn           Decimal  @map("p_learn") @db.Decimal(6, 5)     // P(L₀) - initial knowledge probability
+  pTransit         Decimal  @map("p_transit") @db.Decimal(6, 5)   // P(T) - learning rate
+  pGuess           Decimal  @map("p_guess") @db.Decimal(6, 5)     // P(G) - guess probability
+  pSlip            Decimal  @map("p_slip") @db.Decimal(6, 5)      // P(S) - slip probability
+  
+  // Current knowledge state
+  pKnow            Decimal  @map("p_know") @db.Decimal(6, 5)      // P(L_n) - current knowledge probability
+  
+  // Performance Factor Analysis (PFA) state
+  pfaSuccesses     Int      @default(0) @map("pfa_successes")
+  pfaFailures      Int      @default(0) @map("pfa_failures")
+  pfaBeta          Decimal  @default(0) @map("pfa_beta") @db.Decimal(8, 4)
+  pfaGamma         Decimal  @default(0.1) @map("pfa_gamma") @db.Decimal(8, 4)
+  pfaRho           Decimal  @default(-0.1) @map("pfa_rho") @db.Decimal(8, 4)
+  
+  // Learning analytics
+  learningVelocity Decimal  @default(0) @map("learning_velocity") @db.Decimal(6, 4)
+  lastPracticeAt   DateTime? @map("last_practice_at") @db.Timestamptz
+  parametersVersion Int     @default(1) @map("parameters_version")
+  
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  virtualBrain     VirtualBrain @relation(fields: [virtualBrainId], references: [id], onDelete: Cascade)
+  practiceOutcomes PracticeOutcome[]
+
+  @@unique([virtualBrainId, skillId])
+  @@index([virtualBrainId])
+  @@map("bkt_skill_states")
+}
+
+/// Individual practice outcome for BKT updates.
+/// Each practice item creates one record; used for parameter fitting.
+model PracticeOutcome {
+  id               String   @id @default(uuid()) @db.Uuid
+  bktSkillStateId  String   @map("bkt_skill_state_id") @db.Uuid
+  learningObjectId String?  @map("learning_object_id") @db.Uuid
+  
+  // Outcome data
+  isCorrect        Boolean  @map("is_correct")
+  responseTimeMs   Int?     @map("response_time_ms")
+  hintsUsed        Int      @default(0) @map("hints_used")
+  attemptNumber    Int      @default(1) @map("attempt_number")
+  difficultyLevel  Int?     @map("difficulty_level") @db.SmallInt
+  
+  // Knowledge state at time of practice
+  priorPKnow       Decimal  @map("prior_p_know") @db.Decimal(6, 5)
+  posteriorPKnow   Decimal  @map("posterior_p_know") @db.Decimal(6, 5)
+  
+  // Contextual data
+  contextJson      Json?    @map("context_json")  // e.g., scaffolding level, time of day
+  
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  bktSkillState    BKTSkillState @relation(fields: [bktSkillStateId], references: [id], onDelete: Cascade)
+
+  @@index([bktSkillStateId, createdAt])
+  @@map("practice_outcomes")
+}
+
+/// Learner engagement and affective state tracking.
+/// Captures moment-to-moment engagement for interventions.
+model LearnerEngagement {
+  id               String          @id @default(uuid()) @db.Uuid
+  virtualBrainId   String          @map("virtual_brain_id") @db.Uuid
+  sessionId        String?         @map("session_id") @db.Uuid
+  
+  // Engagement scores (0-1)
+  frustrationScore Decimal         @map("frustration_score") @db.Decimal(4, 3)
+  boredomScore     Decimal         @map("boredom_score") @db.Decimal(4, 3)
+  engagementScore  Decimal         @map("engagement_score") @db.Decimal(4, 3)
+  flowScore        Decimal         @map("flow_score") @db.Decimal(4, 3)
+  
+  // Detected state
+  state            EngagementState
+  confidence       Decimal         @db.Decimal(4, 3)
+  
+  // Calibration data for neurodiverse learners
+  baselineResponseTimeMs  Int?     @map("baseline_response_time_ms")
+  responseTimeVarianceMs  Int?     @map("response_time_variance_ms")
+  
+  // Session context
+  activitiesCompleted Int          @default(0) @map("activities_completed")
+  sessionDurationMs   Int?         @map("session_duration_ms")
+  
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  virtualBrain     VirtualBrain    @relation(fields: [virtualBrainId], references: [id], onDelete: Cascade)
+
+  @@index([virtualBrainId, createdAt])
+  @@index([virtualBrainId, sessionId])
+  @@map("learner_engagements")
+}
+
+/// Neurodiverse learner profile for personalized thresholds.
+/// Stores calibrated parameters for BKT and engagement detection.
+model NeurodiverseProfile {
+  id                   String   @id @default(uuid()) @db.Uuid
+  virtualBrainId       String   @unique @map("virtual_brain_id") @db.Uuid
+  
+  // Condition indicators (from IEP or assessment)
+  hasAdhd              Boolean  @default(false) @map("has_adhd")
+  hasDyslexia          Boolean  @default(false) @map("has_dyslexia")
+  hasDyscalculia       Boolean  @default(false) @map("has_dyscalculia")
+  hasAsd               Boolean  @default(false) @map("has_asd")
+  hasProcessingDelay   Boolean  @default(false) @map("has_processing_delay")
+  
+  // Calibrated thresholds
+  masteryThreshold     Decimal  @default(0.95) @map("mastery_threshold") @db.Decimal(4, 3)
+  slipRateMultiplier   Decimal  @default(1.0) @map("slip_rate_multiplier") @db.Decimal(4, 2)
+  responseTimeMultiplier Decimal @default(1.0) @map("response_time_multiplier") @db.Decimal(4, 2)
+  
+  // Session preferences
+  maxSessionMinutes    Int      @default(45) @map("max_session_minutes")
+  breakFrequencyMinutes Int     @default(15) @map("break_frequency_minutes")
+  preferredInterleaving Boolean @default(true) @map("preferred_interleaving")
+  
+  // IEP goal tracking
+  iepGoalsJson         Json?    @map("iep_goals_json")
+  
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  virtualBrain         VirtualBrain @relation(fields: [virtualBrainId], references: [id], onDelete: Cascade)
+
+  @@map("neurodiverse_profiles")
+}
+
+/// Learning session record for session-based analytics.
+model LearningSession {
+  id               String   @id @default(uuid()) @db.Uuid
+  virtualBrainId   String   @map("virtual_brain_id") @db.Uuid
+  
+  // Session timing
+  startedAt        DateTime @map("started_at") @db.Timestamptz
+  endedAt          DateTime? @map("ended_at") @db.Timestamptz
+  
+  // Session outcomes
+  activitiesPlanned   Int   @default(0) @map("activities_planned")
+  activitiesCompleted Int   @default(0) @map("activities_completed")
+  correctResponses    Int   @default(0) @map("correct_responses")
+  totalResponses      Int   @default(0) @map("total_responses")
+  
+  // Engagement summary
+  avgEngagementScore  Decimal? @map("avg_engagement_score") @db.Decimal(4, 3)
+  frustrationEvents   Int      @default(0) @map("frustration_events")
+  breaksTaken         Int      @default(0) @map("breaks_taken")
+  
+  // Session plan (from activity sequencer)
+  sessionPlanJson     Json?    @map("session_plan_json")
+  
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  virtualBrain        VirtualBrain @relation(fields: [virtualBrainId], references: [id], onDelete: Cascade)
+
+  @@index([virtualBrainId, startedAt])
+  @@map("learning_sessions")
 }

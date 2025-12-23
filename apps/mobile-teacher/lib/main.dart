@@ -4,12 +4,16 @@
 /// track attendance, and log observations.
 library;
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_notifications/flutter_notifications.dart';
 
+import 'firebase_options.dart';
 import 'offline/offline.dart';
 import 'screens/login_screen.dart';
 import 'screens/classes_screen.dart';
@@ -18,6 +22,8 @@ import 'screens/session_plan_screen.dart';
 import 'screens/session_log_screen.dart';
 import 'screens/learner_detail_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/notification_settings_screen.dart';
+import 'services/teacher_notification_service.dart';
 
 /// Secure storage instance for tokens.
 const _secureStorage = FlutterSecureStorage(
@@ -211,6 +217,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         builder: (context, state) => const TeacherSettingsScreen(),
       ),
+      GoRoute(
+        path: '/notification-settings',
+        builder: (context, state) => const TeacherNotificationSettingsScreen(),
+      ),
     ],
     redirect: (context, state) {
       if (authState.isLoading) return null;
@@ -226,8 +236,55 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Background message handler - must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await firebaseMessagingBackgroundHandler(message);
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptioStatefulWidget {
+  const TeacherApp({super.key});
+
+  @override
+  ConsumerState<TeacherApp> createState() => _TeacherAppState();
+}
+
+class _TeacherAppState extends ConsumerState<TeacherApp> {
+  bool _notificationsInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for auth state changes to initialize notifications
+    ref.listenManual(teacherAuthProvider, (previous, next) {
+      if (next.isAuthenticated && !_notificationsInitialized) {
+        _initializeNotifications();
+      } else if (!next.isAuthenticated) {
+        _notificationsInitialized = false;
+      }
+    });
+  }
+
+  Future<void> _initializeNotifications() async {
+    if (_notificationsInitialized) return;
+
+    try {
+      final notificationService = ref.read(teacherNotificationServiceProvider);
+      await notificationService.initialize();
+      _notificationsInitialized = true;
+    } catch (e) {
+      debugPrint('Failed to initialize notifications: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext contextessagingBackgroundHandler);
 
   // Initialize offline services
   await initializeOfflineServices();

@@ -1876,6 +1876,9 @@ importers:
       fastify-plugin:
         specifier: ^4.5.1
         version: 4.5.1
+      ioredis:
+        specifier: ^5.4.2
+        version: 5.8.2
       jose:
         specifier: ^5.9.2
         version: 5.10.0

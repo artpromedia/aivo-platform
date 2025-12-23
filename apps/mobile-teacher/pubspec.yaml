@@ -12,8 +12,12 @@ dependencies:
   dio: ^5.7.0
   url_launcher: ^6.2.5
   intl: ^0.19.0
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
   flutter_common:
     path: ../../libs/flutter-common
+  flutter_notifications:
+    path: ../../libs/flutter-notifications
 
 dev_dependencies:
   flutter_test:

@@ -1,12 +1,18 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'auth/auth_controller.dart';
+import 'firebase_options.dart';
+import 'services/parent_notification_service.dart';
 import 'auth/auth_state.dart';
 import 'screens/accessibility_settings_screen.dart';
 import 'screens/add_child_screen.dart';
 import 'screens/baseline_result_screen.dart';
+import 'screens/child_notification_settings_screen.dart';
 import 'screens/consent_screen.dart';
 import 'screens/homework_focus_detail_screen.dart';
 import 'screens/login_screen.dart';
@@ -142,6 +148,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      // Child notification settings (COPPA compliant)
+      GoRoute(
+        path: '/child-notification-settings/:learnerId',
+        builder: (context, state) {
+          final learnerId = state.pathParameters['learnerId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return ChildNotificationSettingsScreen(
+            learnerId: learnerId,
+            learnerName: extra['learnerName']?.toString() ?? 'Child',
+          );
+        },
+      ),
     ],
     redirect: (context, state) {
       if (authState.status == AuthStatus.loading) return null;
@@ -154,15 +172,64 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-void main() {
+/// Background message handler - must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await firebaseMessagingBackgroundHandler(message);
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(const ProviderScope(child: ParentApp()));
 }
 
-class ParentApp extends ConsumerWidget {
+class ParentApp extends ConsumerStatefulWidget {
   const ParentApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ParentApp> createState() => _ParentAppState();
+}
+
+class _ParentAppState extends ConsumerState<ParentApp> {
+  bool _notificationsInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for auth state changes to initialize notifications
+    ref.listenManual(authControllerProvider, (previous, next) {
+      if (next.isAuthenticated && !_notificationsInitialized) {
+        _initializeNotifications();
+      } else if (!next.isAuthenticated) {
+        _notificationsInitialized = false;
+      }
+    });
+  }
+
+  Future<void> _initializeNotifications() async {
+    if (_notificationsInitialized) return;
+    
+    try {
+      final notificationService = ref.read(parentNotificationServiceProvider);
+      await notificationService.initialize();
+      _notificationsInitialized = true;
+    } catch (e) {
+      debugPrint('Failed to initialize notifications: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final router = ref.watch(_routerProvider);
     final theme = ref.watch(parentThemeProvider);

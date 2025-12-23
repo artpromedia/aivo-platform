@@ -1,14 +1,25 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /**
  * Fastify Application Setup
  */
 
-import Fastify, { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
 
+import {
+  initializePushService,
+  shutdownPushService,
+  setInvalidTokenCallback,
+} from './channels/push/push-service.js';
 import { config } from './config.js';
-import { registerNotificationRoutes, registerPreferenceRoutes, registerDeviceRoutes } from './routes/index.js';
-import { initializePushService, shutdownPushService, setInvalidTokenCallback } from './channels/push/push-service.js';
 import { initializeNats, closeNats } from './events/notification-events.js';
 import { deactivateToken } from './repositories/device-token.repository.js';
+import {
+  registerNotificationRoutes,
+  registerPreferenceRoutes,
+  registerDeviceRoutes,
+  registerLearnerSettingsRoutes,
+} from './routes/index.js';
 
 // Extend Fastify instance type
 declare module 'fastify' {
@@ -108,6 +119,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerNotificationRoutes(app);
   await registerPreferenceRoutes(app);
   await registerDeviceRoutes(app);
+  await registerLearnerSettingsRoutes(app);
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT
@@ -121,6 +133,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       notifications: '/notifications',
       preferences: '/preferences',
       devices: '/devices',
+      learnerSettings: '/learner-settings',
     },
   }));
 

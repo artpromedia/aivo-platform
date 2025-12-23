@@ -1,9 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'baseline/baseline_controller.dart';
+import 'firebase_options.dart';
 import 'focus/focus_service.dart';
 import 'offline/offline.dart';
 import 'pin/pin_controller.dart';
@@ -23,6 +27,7 @@ import 'screens/design_system_gallery_screen.dart';
 import 'screens/activity_screen.dart';
 import 'screens/session_feedback_screen.dart';
 import 'learner/theme_loader.dart';
+import 'services/learner_notification_service.dart';
 
 const bool _enableDesignSystemGallery = bool.fromEnvironment('AIVO_DESIGN_GALLERY', defaultValue: false);
 
@@ -146,8 +151,33 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Background message handler - must be top-level function
+/// 
+/// COPPA COMPLIANCE: This handler runs for child devices
+/// All notifications are validated for child-appropriateness
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Mark as child device before handling - COPPA compliance
+  await BackgroundHandlerConfig.setChildDevice(true);
+  
+  await firebaseMessagingBackgroundHandler(message);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Mark as child device for COPPA compliance
+  await BackgroundHandlerConfig.setChildDevice(true);
+
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   
   // Initialize offline services (database, connectivity monitoring)
   await initializeOfflineServices();
@@ -166,6 +196,7 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
   bool _themeLoaded = false;
   bool _baselineChecked = false;
   bool _offlinePreloaded = false;
+  bool _notificationsInitialized = false;
 
   @override
   void initState() {
@@ -176,6 +207,7 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
         _themeLoaded = false;
         _baselineChecked = false;
         _offlinePreloaded = false;
+        _notificationsInitialized = false;
         return;
       }
 
@@ -197,6 +229,12 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
           _offlinePreloaded = true;
           _preloadOfflineData(next.learnerId!);
         }
+
+        // Initialize notifications (COPPA compliant)
+        if (!_notificationsInitialized) {
+          _notificationsInitialized = true;
+          _initializeNotifications();
+        }
       }
     });
   }
@@ -210,6 +248,18 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
       debugPrint('Offline preload failed: $error');
       return PreloadResult.failure(error.toString());
     });
+  }
+
+  /// Initialize notifications with COPPA compliance
+  /// This uses parent-controlled settings for what notifications children receive
+  Future<void> _initializeNotifications() async {
+    try {
+      final notificationService = ref.read(learnerNotificationServiceProvider);
+      await notificationService.initialize();
+    } catch (e) {
+      // COPPA: Don't show notification errors to child, just log
+      debugPrint('Failed to initialize notifications: $e');
+    }
   }
 
   @override

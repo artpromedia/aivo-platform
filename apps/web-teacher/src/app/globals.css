@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Grade colors */
+.grade-a {
+  color: #059669;
+}
+.grade-b {
+  color: #2563eb;
+}
+.grade-c {
+  color: #d97706;
+}
+.grade-d {
+  color: #ea580c;
+}
+.grade-f {
+  color: #dc2626;
+}
+
+.bg-grade-a {
+  background-color: #d1fae5;
+}
+.bg-grade-b {
+  background-color: #dbeafe;
+}
+.bg-grade-c {
+  background-color: #fef3c7;
+}
+.bg-grade-d {
+  background-color: #ffedd5;
+}
+.bg-grade-f {
+  background-color: #fee2e2;
+}
+
+/* Gradebook cell styles */
+.gradebook-cell {
+  @apply border-r border-b px-2 py-1 text-center text-sm;
+}
+
+.gradebook-cell:focus-within {
+  @apply ring-2 ring-primary-500 ring-inset;
+}
+
+.gradebook-cell.missing {
+  @apply bg-red-50 text-red-600;
+}
+
+.gradebook-cell.excused {
+  @apply bg-gray-100 text-gray-500 italic;
+}
+
+/* Print styles for reports */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  .print-page-break {
+    page-break-before: always;
+  }
+}

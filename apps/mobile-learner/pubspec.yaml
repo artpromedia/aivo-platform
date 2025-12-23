@@ -19,8 +19,12 @@ dependencies:
   flutter_tts: ^4.0.2
   flutter_svg: ^2.0.10+1
   speech_to_text: ^7.0.0
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
   flutter_common:
     path: ../../libs/flutter-common
+  flutter_notifications:
+    path: ../../libs/flutter-notifications
 
 dev_dependencies:
   flutter_test:
