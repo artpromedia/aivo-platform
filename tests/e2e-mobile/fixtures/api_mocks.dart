@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../config/test_config.dart';
-import 'test_data.dart';
 
 /// API client for test backend interactions
 class TestApiClient {

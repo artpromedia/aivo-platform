@@ -735,3 +735,321 @@ model OAuthState {
   @@index([expiresAt])
   @@map("oauth_state")
 }
+
+// ============================================================================
+// Delta Sync Support
+// Models for efficient delta (incremental) sync with change detection
+// ============================================================================
+
+/// Delta sync state tracking for each provider
+model DeltaSyncState {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  providerId      String   @map("provider_id")
+  providerType    String   @map("provider_type")
+  
+  /// Last successful sync timestamp
+  lastSyncTime    DateTime @map("last_sync_time")
+  
+  /// Provider-specific delta token (used by Clever, Microsoft Graph, etc.)
+  lastDeltaToken  String?  @map("last_delta_token") @db.Text
+  
+  /// Last full sync timestamp (for providers that require periodic full syncs)
+  lastFullSyncTime DateTime? @map("last_full_sync_time")
+  
+  /// Cursors for each entity type (JSON object: { "student": "cursor123", ... })
+  entityCursors   Json     @map("entity_cursors")
+  
+  /// Current sync status
+  status          String   @default("idle") // idle, syncing, error, paused
+  
+  /// Error message if status is error
+  errorMessage    String?  @map("error_message") @db.Text
+  
+  /// Statistics from last sync
+  stats           Json?
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@unique([tenantId, providerId])
+  @@index([tenantId])
+  @@index([providerId])
+  @@index([status])
+  @@map("delta_sync_state")
+}
+
+/// Sync history for audit trail (FERPA compliance)
+model SyncHistory {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  entityType      String   @map("entity_type") // org, student, teacher, class, enrollment, etc.
+  entityId        String   @map("entity_id")
+  operation       String   // create, update, delete, link, unlink
+  sourceData      Json     @map("source_data")
+  timestamp       DateTime
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@index([tenantId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([timestamp])
+  @@map("sync_history")
+}
+
+/// Sync errors for debugging
+model SyncError {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  entityType      String   @map("entity_type")
+  sourceId        String   @map("source_id")
+  error           String   @db.Text
+  timestamp       DateTime
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@index([tenantId])
+  @@index([entityType])
+  @@index([timestamp])
+  @@map("sync_errors")
+}
+
+/// Sync conflicts for manual resolution
+model SyncConflict {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  entityType      String   @map("entity_type")
+  entityId        String   @map("entity_id")
+  field           String
+  sourceValue     Json?    @map("source_value")
+  targetValue     Json?    @map("target_value")
+  sourceSystem    String   @map("source_system")
+  status          String   @default("pending") // pending, resolved, dismissed
+  resolution      String?  // source, target, manual
+  resolvedValue   Json?    @map("resolved_value")
+  resolvedBy      String?  @map("resolved_by")
+  resolvedAt      DateTime? @map("resolved_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@index([tenantId])
+  @@index([entityType])
+  @@index([status])
+  @@map("sync_conflicts")
+}
+
+// ============================================================================
+// Parent-Student Relationships
+// ============================================================================
+
+/// Relationship type between parent and student
+enum RelationshipType {
+  PARENT
+  GUARDIAN
+  MOTHER
+  FATHER
+  STEPMOTHER
+  STEPFATHER
+  GRANDPARENT
+  AUNT
+  UNCLE
+  FOSTER_PARENT
+  OTHER
+
+  @@map("relationship_type")
+}
+
+/// Parent-student relationship from SIS
+model ParentStudentRelationship {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  
+  /// External IDs from SIS
+  parentExternalId    String   @map("parent_external_id")
+  studentExternalId   String   @map("student_external_id")
+  
+  /// Relationship details
+  relationshipType    String   @default("guardian") @map("relationship_type")
+  isPrimary           Boolean  @default(false) @map("is_primary")
+  legalGuardian       Boolean  @default(true) @map("legal_guardian")
+  emergencyContact    Boolean  @default(false) @map("emergency_contact")
+  pickupAuthorized    Boolean  @default(false) @map("pickup_authorized")
+  receivesMailing     Boolean  @default(true) @map("receives_mailing")
+  residesWithStudent  Boolean? @map("resides_with_student")
+  
+  /// Contact priority (1 = primary, 2 = secondary, etc.)
+  contactPriority     Int?     @map("contact_priority")
+  
+  /// Sync metadata
+  sourceSystem        String?  @map("source_system")
+  sourceId            String?  @map("source_id")
+  sourceHash          String?  @map("source_hash")
+  syncedAt            DateTime? @map("synced_at")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  
+  @@unique([tenantId, parentExternalId, studentExternalId])
+  @@index([tenantId])
+  @@index([parentExternalId])
+  @@index([studentExternalId])
+  @@map("parent_student_relationships")
+}
+
+// ============================================================================
+// Student Demographics
+// ============================================================================
+
+/// Student demographic information from SIS
+model StudentDemographic {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  studentExternalId   String   @map("student_external_id")
+  
+  /// Race/ethnicity (multiple values possible)
+  race                String[] @default([])
+  ethnicity           String?
+  hispanicLatino      Boolean? @map("hispanic_latino")
+  
+  /// Language
+  language            String?
+  homeLanguage        String?  @map("home_language")
+  
+  /// Origin
+  countryOfBirth      String?  @map("country_of_birth")
+  immigrantStatus     Boolean? @map("immigrant_status")
+  
+  /// Special education
+  section504          Boolean? @map("section_504")
+  iep                 Boolean? // Individualized Education Program
+  ell                 Boolean? // English Language Learner
+  
+  /// Economic status
+  homeless            Boolean?
+  migrant             Boolean?
+  freeReducedLunch    String?  @map("free_reduced_lunch") // free, reduced, paid, null
+  
+  /// Sync metadata
+  sourceSystem        String?  @map("source_system")
+  sourceId            String?  @map("source_id")
+  sourceHash          String?  @map("source_hash")
+  syncedAt            DateTime? @map("synced_at")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  
+  @@unique([tenantId, studentExternalId])
+  @@index([tenantId])
+  @@index([studentExternalId])
+  @@map("student_demographics")
+}
+
+// ============================================================================
+// Academic Terms
+// ============================================================================
+
+/// Academic term (semester, quarter, grading period)
+model AcademicTerm {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  
+  /// Term details
+  name            String
+  type            String   @default("semester") // semester, quarter, trimester, year, grading_period
+  schoolYear      Int      @map("school_year")
+  
+  /// Dates
+  beginDate       DateTime @map("begin_date") @db.Date
+  endDate         DateTime @map("end_date") @db.Date
+  
+  /// Parent term (for grading periods within semesters)
+  parentTermId    String?  @map("parent_term_id")
+  
+  /// Sync metadata
+  sourceSystem    String?  @map("source_system")
+  sourceId        String?  @map("source_id")
+  sourceHash      String?  @map("source_hash")
+  syncedAt        DateTime? @map("synced_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@index([tenantId])
+  @@index([schoolYear])
+  @@index([type])
+  @@map("academic_terms")
+}
+
+// ============================================================================
+// Webhook Configuration
+// ============================================================================
+
+/// Webhook configuration for real-time SIS updates
+model WebhookConfig {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  providerId      String   @map("provider_id")
+  provider        String   // clever, classlink, oneroster, edfi, google, microsoft, custom
+  
+  /// Webhook URL (our endpoint URL registered with provider)
+  url             String
+  
+  /// Secret for signature verification
+  webhookSecret   String   @map("webhook_secret")
+  
+  /// Which events to process
+  events          String[] @default([])
+  
+  /// Whether this webhook is active
+  enabled         Boolean  @default(true)
+  
+  /// Health tracking
+  lastReceivedAt  DateTime? @map("last_received_at")
+  failureCount    Int      @default(0) @map("failure_count")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@unique([tenantId, providerId])
+  @@index([tenantId])
+  @@index([enabled])
+  @@map("webhook_configs")
+}
+
+/// Webhook event log for debugging
+model WebhookLog {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  eventId         String   @map("event_id")
+  payload         String   @db.Text
+  status          String   // success, failed, ignored
+  error           String?  @db.Text
+  processedAt     DateTime @map("processed_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([processedAt])
+  @@map("webhook_logs")
+}
+
+/// Dead letter queue for failed webhooks
+model WebhookDeadLetter {
+  id              String   @id @default(cuid())
+  eventId         String   @map("event_id")
+  provider        String
+  payload         String   @db.Text
+  error           String   @db.Text
+  retryCount      Int      @default(0) @map("retry_count")
+  lastRetryAt     DateTime? @map("last_retry_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@index([provider])
+  @@index([retryCount])
+  @@index([createdAt])
+  @@map("webhook_dead_letters")
+}

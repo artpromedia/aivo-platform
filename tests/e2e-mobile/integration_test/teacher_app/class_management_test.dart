@@ -7,7 +7,6 @@ import 'package:patrol/patrol.dart';
 
 import '../common/base_test.dart';
 import '../common/actions.dart';
-import '../common/test_utils.dart';
 import '../config/test_users.dart';
 
 void main() {

@@ -9,7 +9,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile_teacher/models/student.dart';
 import 'package:mobile_teacher/repositories/student_repository.dart';
 
-import '../../mocks/mock_providers.dart';
 import '../../mocks/mock_api_client.dart';
 import '../../mocks/fixtures/fixtures.dart';
 

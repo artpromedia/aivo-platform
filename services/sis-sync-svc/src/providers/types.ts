@@ -5,17 +5,23 @@
  * must normalize their data into.
  */
 
+import type { SyncEntityType, DeltaFetchOptions, DeltaResponse } from '../sync/delta-sync-engine.js';
+
 // ============================================================================
 // Canonical SIS Entity Types
 // ============================================================================
 
 export interface SisSchool {
   /** External ID from the SIS provider (sourcedId in OneRoster) */
-  externalId: string;
+  sourceId: string;
+  /** @deprecated Use sourceId instead */
+  externalId?: string;
   /** School name */
   name: string;
   /** School number/identifier */
   schoolNumber?: string;
+  /** School type (elementary, middle, high, other) */
+  schoolType?: string;
   /** Address information */
   address?: {
     street?: string;
@@ -24,50 +30,82 @@ export interface SisSchool {
     zip?: string;
     country?: string;
   };
-  /** Grade levels offered (e.g., ['K', '1', '2', '3']) */
-  gradeLevels?: string[];
   /** Phone number */
   phone?: string;
-  /** School type (elementary, middle, high, etc.) */
-  schoolType?: string;
+  /** Principal name */
+  principal?: string;
+  /** Lowest grade level */
+  lowGrade?: string;
+  /** Highest grade level */
+  highGrade?: string;
+  /** NCES ID (National Center for Education Statistics) */
+  nces?: string;
+  /** State ID */
+  stateId?: string;
   /** Whether the school is active in the SIS */
-  isActive: boolean;
+  status: 'active' | 'inactive' | 'deleted';
+  /** @deprecated Use status instead */
+  isActive?: boolean;
+  /** Grade levels offered (e.g., ['K', '1', '2', '3']) */
+  gradeLevels?: string[];
   /** Raw data from the provider for debugging */
-  rawData: Record<string, unknown>;
+  rawData?: Record<string, unknown>;
 }
 
 export interface SisClass {
   /** External ID from the SIS provider */
-  externalId: string;
+  sourceId: string;
+  /** @deprecated Use sourceId instead */
+  externalId?: string;
   /** External ID of the parent school */
-  schoolExternalId: string;
+  schoolSourceId: string;
+  /** @deprecated Use schoolSourceId instead */
+  schoolExternalId?: string;
   /** Class/section name */
   name: string;
+  /** Section code/identifier */
+  sectionCode?: string;
   /** Course code */
   courseCode?: string;
-  /** Subject area (Math, ELA, Science, etc.) */
+  /** Course name */
+  courseName?: string;
+  /** Subject areas */
+  subjects?: string[];
+  /** @deprecated Use subjects instead */
   subject?: string;
-  /** Grade level */
+  /** Grade levels */
+  grades?: string[];
+  /** @deprecated Use grades instead */
   grade?: string;
   /** Section number/identifier */
   sectionNumber?: string;
+  /** Period/schedule slot */
+  period?: string;
+  /** Room number */
+  room?: string;
+  /** Associated term/session IDs */
+  termSourceIds?: string[];
   /** Term information */
   term?: {
     name?: string;
     startDate?: Date;
     endDate?: Date;
   };
-  /** Whether the class is active */
-  isActive: boolean;
+  /** Status */
+  status: 'active' | 'inactive' | 'deleted';
+  /** @deprecated Use status instead */
+  isActive?: boolean;
   /** Raw data from the provider */
-  rawData: Record<string, unknown>;
+  rawData?: Record<string, unknown>;
 }
 
 export type SisUserRole = 'teacher' | 'student' | 'administrator' | 'aide' | 'parent' | 'guardian';
 
 export interface SisUser {
   /** External ID from the SIS provider */
-  externalId: string;
+  sourceId: string;
+  /** @deprecated Use sourceId instead */
+  externalId?: string;
   /** User's role in the SIS */
   role: SisUserRole;
   /** Email address */
@@ -86,39 +124,93 @@ export interface SisUser {
   staffId?: string;
   /** Grade level (for students) */
   grade?: string;
+  /** Phone number */
+  phone?: string;
   /** Date of birth */
   dateOfBirth?: Date;
   /** Gender */
   gender?: string;
   /** Associated school external IDs */
-  schoolExternalIds: string[];
-  /** Whether the user is active */
-  isActive: boolean;
+  schoolSourceIds?: string[];
+  /** @deprecated Use schoolSourceIds instead */
+  schoolExternalIds?: string[];
+  /** Student demographics (from SIS) */
+  demographics?: {
+    birthDate?: Date;
+    gender?: 'male' | 'female' | 'non-binary';
+    race?: string[];
+    ethnicity?: string;
+  };
+  /** Status */
+  status: 'active' | 'inactive' | 'deleted';
+  /** @deprecated Use status instead */
+  isActive?: boolean;
   /** Raw data from the provider */
-  rawData: Record<string, unknown>;
+  rawData?: Record<string, unknown>;
 }
 
 export type EnrollmentRole = 'student' | 'teacher' | 'aide';
 
 export interface SisEnrollment {
   /** External ID from the SIS provider (if available) */
+  sourceId: string;
+  /** @deprecated Use sourceId instead */
   externalId?: string;
   /** External ID of the user */
-  userExternalId: string;
+  userSourceId: string;
+  /** @deprecated Use userSourceId instead */
+  userExternalId?: string;
   /** External ID of the class */
-  classExternalId: string;
+  classSourceId: string;
+  /** @deprecated Use classSourceId instead */
+  classExternalId?: string;
   /** Role in the enrollment */
   role: EnrollmentRole;
   /** Whether this is the primary assignment (for teachers) */
-  isPrimary: boolean;
+  primary: boolean;
+  /** @deprecated Use primary instead */
+  isPrimary?: boolean;
   /** Start date of the enrollment */
+  beginDate?: Date;
+  /** @deprecated Use beginDate instead */
   startDate?: Date;
   /** End date of the enrollment */
   endDate?: Date;
-  /** Whether the enrollment is active */
-  isActive: boolean;
+  /** Status */
+  status: 'active' | 'inactive' | 'deleted';
+  /** @deprecated Use status instead */
+  isActive?: boolean;
   /** Raw data from the provider */
-  rawData: Record<string, unknown>;
+  rawData?: Record<string, unknown>;
+}
+
+// ============================================================================
+// Parent-Student Relationships
+// ============================================================================
+
+export interface SisParentStudentRelationship {
+  /** External ID from the SIS provider */
+  sourceId: string;
+  /** Parent/guardian external ID */
+  parentSourceId: string;
+  /** Student external ID */
+  studentSourceId: string;
+  /** Relationship type */
+  relationshipType: 'parent' | 'guardian' | 'mother' | 'father' | 'grandparent' | 'other';
+  /** Whether this is the primary contact */
+  isPrimary: boolean;
+  /** Whether they have legal guardianship */
+  legalGuardian: boolean;
+  /** Whether they are an emergency contact */
+  emergencyContact: boolean;
+  /** Whether they are authorized for pickup */
+  pickupAuthorized: boolean;
+  /** Whether they receive mailings */
+  receivesMailing: boolean;
+  /** Whether they reside with the student */
+  residesWithStudent?: boolean;
+  /** Contact priority (1 = primary) */
+  contactPriority?: number;
 }
 
 // ============================================================================
@@ -329,30 +421,90 @@ export type SisProviderTypeId =
   | 'ONEROSTER_API' 
   | 'ONEROSTER_CSV'
   | 'GOOGLE_WORKSPACE'
-  | 'MICROSOFT_ENTRA';
+  | 'MICROSOFT_ENTRA'
+  | 'EDFI';
+
+/**
+ * Credentials for provider authentication
+ */
+export interface SisProviderCredentials {
+  clientId?: string;
+  clientSecret?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  sftpUsername?: string;
+  sftpPassword?: string;
+  sftpPrivateKey?: string;
+  serviceAccountKey?: string;
+  apiKey?: string;
+}
 
 export interface ISisProvider {
   /** Provider type identifier */
-  readonly providerType: SisProviderTypeId;
+  readonly type: string;
   
-  /** Initialize the provider with configuration */
-  initialize(config: ProviderConfig): Promise<void>;
+  /** Human-readable provider name */
+  readonly name?: string;
+  
+  /** Whether this provider supports delta/incremental sync */
+  readonly supportsDelta?: boolean;
+  
+  /** Whether this provider can detect deletions */
+  readonly supportsDeletionDetection?: boolean;
+  
+  /** Rate limit delay in ms between requests */
+  readonly rateLimitDelay?: number;
+  
+  /** @deprecated Use type instead */
+  readonly providerType?: SisProviderTypeId;
+  
+  /** Initialize the provider with credentials */
+  initialize(credentials: SisProviderCredentials): Promise<void>;
   
   /** Test the connection to the SIS provider */
-  testConnection(): Promise<{ success: boolean; message: string }>;
+  testConnection?(): Promise<{ success: boolean; message: string }>;
   
   /** Fetch all schools */
-  fetchSchools(cursor?: string): Promise<SyncEntityResult<SisSchool>>;
+  fetchSchools(cursor?: string): Promise<SisSchool[]>;
   
   /** Fetch all classes */
-  fetchClasses(cursor?: string): Promise<SyncEntityResult<SisClass>>;
+  fetchClasses(cursor?: string): Promise<SisClass[]>;
   
   /** Fetch all users (teachers and students) */
-  fetchUsers(cursor?: string): Promise<SyncEntityResult<SisUser>>;
+  fetchUsers(cursor?: string): Promise<SisUser[]>;
   
   /** Fetch all enrollments */
-  fetchEnrollments(cursor?: string): Promise<SyncEntityResult<SisEnrollment>>;
+  fetchEnrollments(cursor?: string): Promise<SisEnrollment[]>;
+  
+  /**
+   * Fetch delta (changes since last sync)
+   * Only available if supportsDelta is true
+   */
+  fetchDelta?(
+    entityType: SyncEntityType,
+    options: DeltaFetchOptions
+  ): Promise<DeltaResponse>;
+  
+  /**
+   * Get all source IDs for an entity type (for deletion detection)
+   * Only available if supportsDeletionDetection is true
+   */
+  getAllSourceIds?(
+    entityType: SyncEntityType,
+    options?: { filters?: Record<string, unknown> }
+  ): Promise<string[]>;
+  
+  /**
+   * Fetch parent-student relationships
+   */
+  fetchRelationships?(): Promise<SisParentStudentRelationship[]>;
   
   /** Clean up resources */
-  cleanup(): Promise<void>;
+  cleanup?(): Promise<void>;
 }
+
+// ============================================================================
+// Legacy sync result types (for backward compatibility)
+// ============================================================================
+
+// SyncEntityResult already defined above
