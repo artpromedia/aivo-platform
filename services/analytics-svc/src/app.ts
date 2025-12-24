@@ -3,23 +3,26 @@ import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import { auditRoutes } from './routes/auditRoutes.js';
 import { classroomAnalyticsRoutes } from './routes/classroomAnalytics.js';
 import { collaborationAnalyticsRoutes } from './routes/collaborationAnalytics.js';
+import dashboardRoutes from './routes/dashboards.routes.js';
 import { eventsAdminRoutes } from './routes/events-admin.js';
+import eventsRoutes from './routes/events.routes.js';
 import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
 import { explanationRoutes } from './routes/explanationRoutes.js';
 import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
 import { modelCardsRoutes } from './routes/modelCardsRoutes.js';
 import { parentAnalyticsRoutes } from './routes/parentAnalytics.js';
 import { researchExportRoutes } from './routes/researchExports.js';
+import teacherAnalyticsV2Routes from './routes/teacher-analytics.routes.js';
 import { teacherAnalyticsRoutes } from './routes/teacherAnalytics.js';
 import { tenantAnalyticsRoutes } from './routes/tenantAnalytics.js';
 
 // New analytics service routes
-import analyticsRoutes from './routes/analytics.routes.js';
-import eventsRoutes from './routes/events.routes.js';
-import dashboardRoutes from './routes/dashboards.routes.js';
+
+// V2 Teacher Analytics routes (new comprehensive dashboards)
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -67,6 +70,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(analyticsRoutes, { prefix: '/v2/analytics' });
   await app.register(eventsRoutes, { prefix: '/v2/events' });
   await app.register(dashboardRoutes, { prefix: '/v2/dashboards' });
+
+  // Register V2 teacher analytics routes (comprehensive dashboards)
+  await app.register(teacherAnalyticsV2Routes, { prefix: '/v2/teacher-analytics' });
 
   return app;
 }

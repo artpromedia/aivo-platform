@@ -699,3 +699,263 @@ model LearningPathAnalytics {
   @@index([tenantId, pathId], name: "idx_path_analytics_tenant")
   @@map("learning_path_analytics")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEACHER ANALYTICS - IEP & ENGAGEMENT TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum IEPGoalStatus {
+  ON_TRACK
+  BEHIND
+  AT_RISK
+  COMPLETED
+  DISCONTINUED
+
+  @@map("iep_goal_status")
+}
+
+enum IEPGoalCategory {
+  READING
+  MATH
+  WRITING
+  COMMUNICATION
+  SOCIAL_EMOTIONAL
+  BEHAVIOR
+  MOTOR_SKILLS
+  DAILY_LIVING
+  OTHER
+
+  @@map("iep_goal_category")
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("risk_level")
+}
+
+enum MasteryLevel {
+  NOT_STARTED
+  BEGINNING
+  DEVELOPING
+  PROFICIENT
+  MASTERED
+
+  @@map("mastery_level")
+}
+
+/// IEP Goals for students with Individualized Education Programs
+model IEPGoal {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  learnerId            String            @map("learner_id") @db.Uuid
+  classId              String?           @map("class_id") @db.Uuid
+  
+  description          String
+  category             IEPGoalCategory
+  status               IEPGoalStatus     @default(ON_TRACK)
+  
+  targetDate           DateTime          @map("target_date") @db.Date
+  currentProgress      Float             @default(0) @map("current_progress")
+  expectedProgress     Float             @default(0) @map("expected_progress")
+  
+  relatedSkillId       String?           @map("related_skill_id") @db.Uuid
+  relatedSkillName     String?           @map("related_skill_name")
+  
+  createdBy            String            @map("created_by") @db.Uuid
+  lastModifiedBy       String?           @map("last_modified_by") @db.Uuid
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  progressRecords      IEPProgressRecord[]
+
+  @@index([tenantId, learnerId, status])
+  @@index([tenantId, classId, status])
+  @@index([learnerId, category])
+  @@index([targetDate])
+  @@map("iep_goals")
+}
+
+/// Progress records for IEP goals
+model IEPProgressRecord {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  goalId               String            @map("goal_id") @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  learnerId            String            @map("learner_id") @db.Uuid
+  
+  progressValue        Float             @map("progress_value")
+  notes                String?
+  
+  recordedBy           String            @map("recorded_by") @db.Uuid
+  recordedAt           DateTime          @default(now()) @map("recorded_at") @db.Timestamptz
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  goal                 IEPGoal           @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, recordedAt(sort: Desc)])
+  @@index([tenantId, learnerId, recordedAt(sort: Desc)])
+  @@map("iep_progress_records")
+}
+
+/// Learner model snapshots for tracking mastery/engagement over time
+model LearnerModelSnapshot {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  learnerId            String            @map("learner_id") @db.Uuid
+  classId              String?           @map("class_id") @db.Uuid
+  
+  snapshotDate         DateTime          @map("snapshot_date") @db.Date
+  
+  // Mastery metrics
+  overallMastery       Float             @map("overall_mastery")
+  masteryLevel         MasteryLevel      @map("mastery_level")
+  skillsMastered       Int               @default(0) @map("skills_mastered")
+  skillsInProgress     Int               @default(0) @map("skills_in_progress")
+  skillsNotStarted     Int               @default(0) @map("skills_not_started")
+  
+  // Engagement metrics
+  engagementScore      Float             @map("engagement_score")
+  totalTimeMinutes     Int               @default(0) @map("total_time_minutes")
+  sessionsCompleted    Int               @default(0) @map("sessions_completed")
+  avgSessionDuration   Float?            @map("avg_session_duration")
+  
+  // Risk assessment
+  riskLevel            RiskLevel         @map("risk_level")
+  riskFactors          Json              @default("[]") @map("risk_factors") @db.JsonB
+  
+  // Detailed skill breakdown (JSON for flexibility)
+  skillBreakdown       Json              @default("[]") @map("skill_breakdown") @db.JsonB
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, snapshotDate], name: "uq_learner_snapshot")
+  @@index([tenantId, classId, snapshotDate(sort: Desc)])
+  @@index([learnerId, snapshotDate(sort: Desc)])
+  @@index([tenantId, riskLevel, snapshotDate(sort: Desc)])
+  @@map("learner_model_snapshots")
+}
+
+/// Class analytics summary - aggregated metrics per class
+model ClassAnalyticsSummary {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  classId              String            @map("class_id") @db.Uuid
+  teacherId            String            @map("teacher_id") @db.Uuid
+  
+  summaryDate          DateTime          @map("summary_date") @db.Date
+  
+  // Student counts
+  totalStudents        Int               @default(0) @map("total_students")
+  studentsWithIEP      Int               @default(0) @map("students_with_iep")
+  
+  // Mastery distribution
+  masteredCount        Int               @default(0) @map("mastered_count")
+  proficientCount      Int               @default(0) @map("proficient_count")
+  developingCount      Int               @default(0) @map("developing_count")
+  beginningCount       Int               @default(0) @map("beginning_count")
+  
+  avgClassMastery      Float             @default(0) @map("avg_class_mastery")
+  masteryTrend         Float             @default(0) @map("mastery_trend")
+  
+  // Engagement metrics
+  avgEngagement        Float             @default(0) @map("avg_engagement")
+  engagementTrend      Float             @default(0) @map("engagement_trend")
+  totalTimeMinutes     Int               @default(0) @map("total_time_minutes")
+  
+  // Risk distribution
+  lowRiskCount         Int               @default(0) @map("low_risk_count")
+  mediumRiskCount      Int               @default(0) @map("medium_risk_count")
+  highRiskCount        Int               @default(0) @map("high_risk_count")
+  criticalRiskCount    Int               @default(0) @map("critical_risk_count")
+  
+  // IEP summary
+  iepGoalsOnTrack      Int               @default(0) @map("iep_goals_on_track")
+  iepGoalsAtRisk       Int               @default(0) @map("iep_goals_at_risk")
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, classId, summaryDate], name: "uq_class_summary")
+  @@index([teacherId, summaryDate(sort: Desc)])
+  @@index([tenantId, summaryDate(sort: Desc)])
+  @@map("class_analytics_summaries")
+}
+
+/// Teacher contact log - tracks parent/guardian communications
+model TeacherContactLog {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  teacherId            String            @map("teacher_id") @db.Uuid
+  learnerId            String            @map("learner_id") @db.Uuid
+  classId              String?           @map("class_id") @db.Uuid
+  
+  contactType          String            @map("contact_type") @db.VarChar(50)
+  contactMethod        String            @map("contact_method") @db.VarChar(50)
+  subject              String
+  notes                String?
+  
+  contactDate          DateTime          @map("contact_date") @db.Timestamptz
+  followUpDate         DateTime?         @map("follow_up_date") @db.Date
+  followUpCompleted    Boolean           @default(false) @map("follow_up_completed")
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, teacherId, contactDate(sort: Desc)])
+  @@index([tenantId, learnerId, contactDate(sort: Desc)])
+  @@index([followUpDate, followUpCompleted])
+  @@map("teacher_contact_logs")
+}
+
+/// Student accommodations - special support requirements
+model StudentAccommodation {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  learnerId            String            @map("learner_id") @db.Uuid
+  
+  accommodationType    String            @map("accommodation_type") @db.VarChar(100)
+  description          String
+  isActive             Boolean           @default(true) @map("is_active")
+  
+  effectiveFrom        DateTime          @map("effective_from") @db.Date
+  effectiveUntil       DateTime?         @map("effective_until") @db.Date
+  
+  createdBy            String            @map("created_by") @db.Uuid
+  lastModifiedBy       String?           @map("last_modified_by") @db.Uuid
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, isActive])
+  @@index([learnerId, accommodationType])
+  @@map("student_accommodations")
+}
+
+/// IEP Review schedule - upcoming reviews for students
+model IEPReviewSchedule {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String            @map("tenant_id") @db.Uuid
+  learnerId            String            @map("learner_id") @db.Uuid
+  classId              String?           @map("class_id") @db.Uuid
+  
+  reviewDate           DateTime          @map("review_date") @db.Date
+  reviewType           String            @map("review_type") @db.VarChar(50)
+  notes                String?
+  
+  isCompleted          Boolean           @default(false) @map("is_completed")
+  completedAt          DateTime?         @map("completed_at") @db.Timestamptz
+  completedBy          String?           @map("completed_by") @db.Uuid
+  
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, reviewDate, isCompleted])
+  @@index([tenantId, learnerId])
+  @@index([classId, reviewDate])
+  @@map("iep_review_schedules")
+}
