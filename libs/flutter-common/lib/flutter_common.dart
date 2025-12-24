@@ -55,3 +55,6 @@ export 'widgets/shared_pin_entry_dialog.dart';
 export 'widgets/shared_session_bar.dart';
 export 'widgets/shared_device_flow.dart';
 
+// Real-time communication
+export 'realtime/realtime.dart';
+

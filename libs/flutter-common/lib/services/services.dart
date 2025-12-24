@@ -12,5 +12,6 @@ export 'content_service.dart' hide QuestionOption;
 export 'engagement_service.dart';
 export 'notification_service.dart';
 export 'profile_service.dart';
+export 'realtime_service.dart';
 export 'session_service.dart';
 export 'token_manager.dart';

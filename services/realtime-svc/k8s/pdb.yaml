@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: realtime-svc-pdb
+  labels:
+    app: realtime-svc
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: realtime-svc

@@ -1,0 +1,36 @@
+config:
+  target: "ws://localhost:3003"
+  phases:
+    - duration: 60
+      arrivalRate: 500
+      name: "High connection rate"
+    - duration: 120
+      arrivalRate: 1000
+      name: "Stress test"
+  engines:
+    socketio-v3: {}
+  socketio:
+    path: "/socket.io"
+    transports:
+      - websocket
+
+scenarios:
+  - name: "Connection Stress Test"
+    engine: socketio-v3
+    flow:
+      - emit:
+          channel: "auth"
+          data:
+            token: "{{ $randomString(64) }}"
+      - think: 1
+      - emit:
+          channel: "room:join"
+          data:
+            roomId: "stress:room-{{ $randomNumber(1, 10) }}"
+            roomType: "class"
+      - think: 30
+      - emit:
+          channel: "presence:update"
+          data:
+            status: "online"
+      - think: 30

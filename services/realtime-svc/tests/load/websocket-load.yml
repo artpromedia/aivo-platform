@@ -1,0 +1,162 @@
+config:
+  target: "ws://localhost:3003"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 60
+      arrivalRate: 50
+      name: "Ramp up"
+    - duration: 120
+      arrivalRate: 100
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 200
+      name: "Peak load"
+    - duration: 30
+      arrivalRate: 10
+      name: "Cool down"
+  engines:
+    socketio-v3: {}
+  socketio:
+    path: "/socket.io"
+    transports:
+      - websocket
+
+scenarios:
+  - name: "Teacher Dashboard Session"
+    engine: socketio-v3
+    flow:
+      # Connect with auth
+      - emit:
+          channel: "auth"
+          data:
+            token: "{{ $randomString(64) }}"
+      - think: 1
+
+      # Join analytics room
+      - emit:
+          channel: "room:join"
+          data:
+            roomId: "analytics:class-{{ $randomNumber(1, 100) }}"
+            roomType: "analytics"
+          acknowledge:
+            match:
+              json: "$.success"
+              value: true
+      - think: 2
+
+      # Subscribe to analytics
+      - emit:
+          channel: "analytics:subscribe"
+          data:
+            classId: "class-{{ $randomNumber(1, 100) }}"
+            metrics:
+              - mastery
+              - engagement
+      - think: 5
+
+      # Sync presence
+      - emit:
+          channel: "presence:sync"
+          data:
+            roomId: "analytics:class-{{ $randomNumber(1, 100) }}"
+      - think: 3
+
+      # Update presence periodically
+      - loop:
+          - emit:
+              channel: "presence:update"
+              data:
+                status: "online"
+          - think: 15
+        count: 4
+
+      # Leave room
+      - emit:
+          channel: "room:leave"
+          data:
+            roomId: "analytics:class-{{ $randomNumber(1, 100) }}"
+      - think: 1
+
+  - name: "Collaborative Editing Session"
+    weight: 3
+    engine: socketio-v3
+    flow:
+      # Connect
+      - emit:
+          channel: "auth"
+          data:
+            token: "{{ $randomString(64) }}"
+      - think: 1
+
+      # Join document room
+      - emit:
+          channel: "room:join"
+          data:
+            roomId: "document:doc-{{ $randomNumber(1, 50) }}"
+            roomType: "document"
+      - think: 2
+
+      # Send cursor updates
+      - loop:
+          - emit:
+              channel: "collab:cursor"
+              data:
+                roomId: "document:doc-{{ $randomNumber(1, 50) }}"
+                documentId: "doc-{{ $randomNumber(1, 50) }}"
+                cursor:
+                  position: "{{ $randomNumber(0, 5000) }}"
+          - think: 0.1
+        count: 50
+
+      # Send operations
+      - loop:
+          - emit:
+              channel: "collab:operation"
+              data:
+                roomId: "document:doc-{{ $randomNumber(1, 50) }}"
+                documentId: "doc-{{ $randomNumber(1, 50) }}"
+                version: "{{ $loopIndex }}"
+                operation:
+                  type: "insert"
+                  position: "{{ $randomNumber(0, 1000) }}"
+                  text: "{{ $randomString(10) }}"
+          - think: 2
+        count: 10
+
+      - think: 5
+
+  - name: "Student Session Activity"
+    weight: 5
+    engine: socketio-v3
+    flow:
+      # Connect
+      - emit:
+          channel: "auth"
+          data:
+            token: "{{ $randomString(64) }}"
+      - think: 1
+
+      # Join session room
+      - emit:
+          channel: "room:join"
+          data:
+            roomId: "session:session-{{ $randomNumber(1, 500) }}"
+            roomType: "session"
+      - think: 2
+
+      # Simulate session progress
+      - loop:
+          - emit:
+              channel: "room:message"
+              data:
+                roomId: "session:session-{{ $randomNumber(1, 500) }}"
+                type: "progress"
+                data:
+                  progress: "{{ $loopIndex * 10 }}"
+                  currentSkill: "skill-{{ $randomNumber(1, 20) }}"
+          - think: 10
+        count: 10
+
+      - think: 3
