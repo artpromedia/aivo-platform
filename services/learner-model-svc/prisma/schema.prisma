@@ -331,3 +331,238 @@ model LearningSession {
   @@index([virtualBrainId, startedAt])
   @@map("learning_sessions")
 }
+
+// ── Risk Predictions & Interventions ─────────────────────────────────────────
+
+/// Risk levels for at-risk student predictions
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+
+  @@map("risk_level")
+}
+
+/// Risk trend direction
+enum RiskTrend {
+  INCREASING
+  STABLE
+  DECREASING
+
+  @@map("risk_trend")
+}
+
+/// Intervention status
+enum InterventionStatus {
+  PENDING_APPROVAL
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DECLINED
+
+  @@map("intervention_status")
+}
+
+/// Intervention type
+enum InterventionType {
+  ACADEMIC
+  ENGAGEMENT
+  BEHAVIORAL
+  SOCIAL_EMOTIONAL
+  PARENT_INVOLVEMENT
+  PEER_SUPPORT
+  TEACHER_CONTACT
+
+  @@map("intervention_type")
+}
+
+/// Risk predictions for students - stored for historical tracking and analytics.
+/// Each prediction represents a point-in-time assessment of student risk.
+model RiskPrediction {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  learnerId        String    @map("learner_id") @db.Uuid
+  virtualBrainId   String?   @map("virtual_brain_id") @db.Uuid
+  
+  // Prediction results
+  riskScore        Decimal   @map("risk_score") @db.Decimal(4, 3)   // 0.000 to 1.000
+  riskLevel        RiskLevel @map("risk_level")
+  confidence       Decimal   @db.Decimal(4, 3)                      // 0.000 to 1.000
+  
+  // Category breakdown
+  academicScore    Decimal   @map("academic_score") @db.Decimal(4, 3)
+  engagementScore  Decimal   @map("engagement_score") @db.Decimal(4, 3)
+  behavioralScore  Decimal   @map("behavioral_score") @db.Decimal(4, 3)
+  temporalScore    Decimal   @map("temporal_score") @db.Decimal(4, 3)
+  
+  // Trend analysis
+  riskTrend        RiskTrend @map("risk_trend")
+  previousScore    Decimal?  @map("previous_score") @db.Decimal(4, 3)
+  scoreChange      Decimal?  @map("score_change") @db.Decimal(5, 4)
+  
+  // Explainability - JSON arrays of risk/protective factors
+  riskFactorsJson       Json @map("risk_factors_json")
+  protectiveFactorsJson Json @map("protective_factors_json")
+  
+  // Model metadata
+  modelVersion     String    @map("model_version")
+  featureVersion   String    @default("1.0") @map("feature_version")
+  
+  // Audit
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  
+  // Associated interventions
+  interventions    Intervention[]
+
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@index([tenantId, riskLevel, createdAt(sort: Desc)])
+  @@index([virtualBrainId, createdAt(sort: Desc)])
+  @@map("risk_predictions")
+}
+
+/// Intervention assignments for at-risk students.
+/// Tracks the full lifecycle from recommendation to outcome.
+model Intervention {
+  id                  String            @id @default(uuid()) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  learnerId           String            @map("learner_id") @db.Uuid
+  riskPredictionId    String?           @map("risk_prediction_id") @db.Uuid
+  
+  // Intervention details
+  interventionCode    String            @map("intervention_code")
+  interventionType    InterventionType  @map("intervention_type")
+  name                String
+  description         String?
+  
+  // Status tracking
+  status              InterventionStatus
+  recommendedAt       DateTime          @map("recommended_at") @db.Timestamptz
+  approvedAt          DateTime?         @map("approved_at") @db.Timestamptz
+  approvedBy          String?           @map("approved_by") @db.Uuid
+  startedAt           DateTime?         @map("started_at") @db.Timestamptz
+  completedAt         DateTime?         @map("completed_at") @db.Timestamptz
+  
+  // Expected outcomes
+  targetRiskFactors   String[]          @map("target_risk_factors")
+  successIndicators   String[]          @map("success_indicators")
+  estimatedDurationDays Int             @map("estimated_duration_days")
+  
+  // Consent tracking (FERPA compliance)
+  requiresParentConsent Boolean         @default(false) @map("requires_parent_consent")
+  parentConsentGiven   Boolean?         @map("parent_consent_given")
+  parentConsentAt      DateTime?        @map("parent_consent_at") @db.Timestamptz
+  
+  // Outcome tracking
+  initialRiskScore    Decimal           @map("initial_risk_score") @db.Decimal(4, 3)
+  finalRiskScore      Decimal?          @map("final_risk_score") @db.Decimal(4, 3)
+  effectivenessRating Decimal?          @map("effectiveness_rating") @db.Decimal(3, 2) // 0.00 to 1.00
+  educatorNotes       String?           @map("educator_notes")
+  outcomeDetailsJson  Json?             @map("outcome_details_json")
+  
+  // A/B testing
+  experimentGroup     String?           @map("experiment_group")
+  
+  // Audit
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  riskPrediction      RiskPrediction?   @relation(fields: [riskPredictionId], references: [id])
+
+  @@index([tenantId, learnerId, status])
+  @@index([tenantId, status, recommendedAt(sort: Desc)])
+  @@index([interventionCode, status])
+  @@index([experimentGroup, status])
+  @@map("interventions")
+}
+
+/// Bias severity levels
+enum BiasSeverity {
+  NONE
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+
+  @@map("bias_severity")
+}
+
+/// Bias analysis reports for fairness monitoring.
+/// Aggregated results - no individual student data.
+model BiasReport {
+  id                  String        @id @default(uuid()) @db.Uuid
+  tenantId            String        @map("tenant_id") @db.Uuid
+  
+  // Analysis period
+  periodStart         DateTime      @map("period_start") @db.Timestamptz
+  periodEnd           DateTime      @map("period_end") @db.Timestamptz
+  
+  // Summary
+  totalPredictions    Int           @map("total_predictions")
+  overallSeverity     BiasSeverity  @map("overall_severity")
+  confidenceScore     Decimal       @map("confidence_score") @db.Decimal(4, 3)
+  requiresReview      Boolean       @map("requires_review")
+  
+  // Model info
+  modelVersion        String        @map("model_version")
+  
+  // Detailed results (JSON for flexibility)
+  demographicCoverage Json          @map("demographic_coverage")
+  fairnessResultsJson Json          @map("fairness_results_json")
+  groupStatisticsJson Json          @map("group_statistics_json")
+  recommendationsJson Json          @map("recommendations_json")
+  
+  // Review tracking
+  reviewedAt          DateTime?     @map("reviewed_at") @db.Timestamptz
+  reviewedBy          String?       @map("reviewed_by") @db.Uuid
+  reviewNotes         String?       @map("review_notes")
+  
+  // Audit
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  alerts              BiasAlert[]
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, overallSeverity])
+  @@map("bias_reports")
+}
+
+/// Bias alerts requiring attention.
+/// Created when significant bias is detected in predictions.
+model BiasAlert {
+  id               String       @id @default(uuid()) @db.Uuid
+  tenantId         String       @map("tenant_id") @db.Uuid
+  biasReportId     String       @map("bias_report_id") @db.Uuid
+  
+  // Alert details
+  metric           String       // e.g., "statistical_parity", "disparate_impact"
+  attribute        String       // e.g., "race_ethnicity", "gender"
+  affectedGroup    String       @map("affected_group")
+  severity         BiasSeverity
+  description      String
+  impactEstimate   String       @map("impact_estimate")
+  
+  // Recommended actions (JSON array)
+  actionsJson      Json         @map("actions_json")
+  
+  // Resolution tracking
+  acknowledged     Boolean      @default(false)
+  acknowledgedAt   DateTime?    @map("acknowledged_at") @db.Timestamptz
+  acknowledgedBy   String?      @map("acknowledged_by") @db.Uuid
+  
+  resolved         Boolean      @default(false)
+  resolvedAt       DateTime?    @map("resolved_at") @db.Timestamptz
+  resolvedBy       String?      @map("resolved_by") @db.Uuid
+  resolutionNotes  String?      @map("resolution_notes")
+  
+  // Audit
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  biasReport       BiasReport   @relation(fields: [biasReportId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, resolved, severity])
+  @@index([biasReportId])
+  @@map("bias_alerts")
+}
