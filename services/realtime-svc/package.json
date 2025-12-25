@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
-    "@aivo/ts-observability": "workspace:*",
+    "@aivo/observability": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
     "@aivo/ts-resilience": "workspace:*",
     "@aivo/ts-types": "workspace:*",

@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aivo/ts-observability": "workspace:*",
+    "@aivo/observability": "workspace:*",
     "@aivo/ts-shared": "workspace:*",
     "fastify": "^4.28.1",
     "@fastify/cors": "^9.0.1",

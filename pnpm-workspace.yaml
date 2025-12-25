@@ -7,3 +7,4 @@ packages:
   - "libs/ts-data-access"
   - "libs/events"
   - "libs/billing-*"
+  - "packages/*"
