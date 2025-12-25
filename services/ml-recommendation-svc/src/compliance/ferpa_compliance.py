@@ -20,7 +20,7 @@ This module provides:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Optional
 import hashlib
@@ -172,7 +172,7 @@ class FERPAComplianceService:
         self.db = db_connection
         self.audit = audit_logger or logger
     
-    async def check_access(
+    def check_access(
         self,
         request: DataAccessRequest,
     ) -> tuple[bool, str, list[str]]:
@@ -192,7 +192,7 @@ class FERPAComplianceService:
             )
         
         # 2. Check if requestor has relationship with student
-        has_relationship = await self._check_relationship(
+        has_relationship = self._check_relationship(
             request.requestor_id,
             request.student_id,
         )
@@ -216,7 +216,7 @@ class FERPAComplianceService:
         ]
         
         if sensitive_requested:
-            consent = await self._check_consent(
+            consent = self._check_consent(
                 request.student_id,
                 ConsentType.EDUCATIONAL_PURPOSE,
                 sensitive_requested,
@@ -239,7 +239,7 @@ class FERPAComplianceService:
             )
         
         # 5. Log approved access
-        await self._log_approved_access(request, permitted)
+        self._log_approved_access(request, permitted)
         
         return (True, "Access granted", permitted)
     
@@ -267,7 +267,7 @@ class FERPAComplianceService:
             disclosure_reason=reason,
             data_disclosed=data_disclosed,
             purpose=purpose,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             consent_id=consent_id,
         )
         
@@ -281,7 +281,7 @@ class FERPAComplianceService:
         
         return record
     
-    async def get_disclosure_log(
+    def get_disclosure_log(
         self,
         student_id: str,
         requestor_id: str,
@@ -293,7 +293,7 @@ class FERPAComplianceService:
         the record of disclosures made from education records.
         """
         # Verify requestor is parent/guardian or eligible student
-        is_authorized = await self._check_disclosure_log_access(
+        is_authorized = self._check_disclosure_log_access(
             student_id, requestor_id
         )
         
@@ -302,7 +302,7 @@ class FERPAComplianceService:
                 "Only parents/guardians or eligible students can access disclosure logs"
             )
         
-        disclosures = await self._get_disclosures(student_id)
+        disclosures = self._get_disclosures(student_id)
         
         self.audit.info(
             f"Disclosure log accessed for student {student_id} by {requestor_id}"
@@ -331,7 +331,7 @@ class FERPAComplianceService:
             consent_type=consent_type,
             status=ConsentStatus.PENDING,
             scope=scope,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         await self._store_consent(record)
@@ -364,10 +364,10 @@ class FERPAComplianceService:
             raise PermissionError("Only the designated guardian can grant consent")
         
         record.status = ConsentStatus.GRANTED
-        record.granted_at = datetime.utcnow()
+        record.granted_at = datetime.now(timezone.utc)
         
         if duration_days:
-            record.expires_at = datetime.utcnow() + timedelta(days=duration_days)
+            record.expires_at = datetime.now(timezone.utc) + timedelta(days=duration_days)
         
         await self._update_consent(record)
         
@@ -395,7 +395,7 @@ class FERPAComplianceService:
             raise PermissionError("Only the designated guardian can withdraw consent")
         
         record.status = ConsentStatus.WITHDRAWN
-        record.withdrawn_at = datetime.utcnow()
+        record.withdrawn_at = datetime.now(timezone.utc)
         
         await self._update_consent(record)
         
@@ -516,7 +516,7 @@ class FERPAComplianceService:
         right to inspect and review education records.
         """
         # Verify requestor rights
-        is_authorized = await self._check_record_access_rights(
+        is_authorized = self._check_record_access_rights(
             student_id, requestor_id
         )
         
@@ -526,7 +526,7 @@ class FERPAComplianceService:
             )
         
         # Compile records
-        records = await self._compile_student_records(student_id)
+        records = self._compile_student_records(student_id)
         
         # Log access
         await self.log_disclosure(
@@ -555,7 +555,7 @@ class FERPAComplianceService:
         of records they believe are inaccurate or misleading.
         """
         # Verify requestor rights
-        is_authorized = await self._check_record_access_rights(
+        is_authorized = self._check_record_access_rights(
             student_id, requestor_id
         )
         
@@ -575,7 +575,7 @@ class FERPAComplianceService:
             "requested_change": requested_change,
             "reason": reason,
             "status": "pending",
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
         })
         
         self.audit.info(
@@ -593,36 +593,36 @@ class FERPAComplianceService:
     
     # Helper methods (placeholders - implement with actual DB)
     
-    async def _check_relationship(
+    def _check_relationship(
         self,
-        user_id: str,
-        student_id: str,
+        user_id: str,  # noqa: ARG002
+        student_id: str,  # noqa: ARG002
     ) -> bool:
         """Check if user has educational relationship with student"""
         # Query enrollments, class assignments, etc.
         return True  # Placeholder
     
-    async def _check_consent(
+    def _check_consent(
         self,
-        student_id: str,
-        consent_type: ConsentType,
-        data_types: list[str],
+        student_id: str,  # noqa: ARG002
+        consent_type: ConsentType,  # noqa: ARG002
+        data_types: list[str],  # noqa: ARG002
     ) -> bool:
         """Check if consent exists for data access"""
         return True  # Placeholder
     
-    async def _check_disclosure_log_access(
+    def _check_disclosure_log_access(
         self,
-        student_id: str,
-        requestor_id: str,
+        student_id: str,  # noqa: ARG002
+        requestor_id: str,  # noqa: ARG002
     ) -> bool:
         """Check if requestor can access disclosure log"""
         return True  # Placeholder
     
-    async def _check_record_access_rights(
+    def _check_record_access_rights(
         self,
-        student_id: str,
-        requestor_id: str,
+        student_id: str,  # noqa: ARG002
+        requestor_id: str,  # noqa: ARG002
     ) -> bool:
         """Check if requestor has rights to access records"""
         return True  # Placeholder
@@ -631,7 +631,10 @@ class FERPAComplianceService:
         """Store disclosure record"""
         pass
     
-    async def _get_disclosures(self, student_id: str) -> list[DisclosureRecord]:
+    def _get_disclosures(
+        self,
+        student_id: str,  # noqa: ARG002
+    ) -> list[DisclosureRecord]:
         """Get all disclosures for a student"""
         return []
     
@@ -657,7 +660,10 @@ class FERPAComplianceService:
         """Send consent request notification"""
         pass
     
-    async def _compile_student_records(self, student_id: str) -> dict:
+    def _compile_student_records(
+        self,
+        student_id: str,  # noqa: ARG002
+    ) -> dict:
         """Compile all education records for student"""
         return {}
     
@@ -688,7 +694,7 @@ class FERPAComplianceService:
             f"Access modified: {request.request_id} - {modification}"
         )
     
-    async def _log_approved_access(
+    def _log_approved_access(
         self,
         request: DataAccessRequest,
         permitted_data: list[str],

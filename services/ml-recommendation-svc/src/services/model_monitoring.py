@@ -13,7 +13,7 @@ Key responsibilities:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Optional
 import logging
@@ -134,7 +134,7 @@ class ModelMonitoringService:
         results.append(await self._check_database_health())
         
         # Check prediction volume
-        results.append(await self._check_prediction_volume())
+        results.append(self._check_prediction_volume())
         
         # Check feature store
         results.append(await self._check_feature_store())
@@ -148,7 +148,7 @@ class ModelMonitoringService:
         
         return results
     
-    async def detect_drift(
+    def detect_drift(
         self,
         tenant_id: Optional[str] = None,
         lookback_days: int = 7,
@@ -161,21 +161,21 @@ class ModelMonitoringService:
         - Prediction distribution shifts
         - Concept drift indicators
         """
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=lookback_days)
         
         # Get recent predictions and features
-        recent_data = await self._get_recent_prediction_data(
+        recent_data = self._get_recent_prediction_data(
             tenant_id, start_date, end_date
         )
         
         # Get baseline data (from model training or earlier period)
-        baseline_data = await self._get_baseline_data(tenant_id)
+        baseline_data = self._get_baseline_data(tenant_id)
         
         if not recent_data or not baseline_data:
             return DriftReport(
-                report_id=f"drift_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
-                generated_at=datetime.utcnow(),
+                report_id=f"drift_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+                generated_at=datetime.now(timezone.utc),
                 period_start=start_date,
                 period_end=end_date,
                 feature_drift_score=0.0,
@@ -212,8 +212,8 @@ class ModelMonitoringService:
         
         if high_drift_features:
             alerts.append(MonitoringAlert(
-                alert_id=f"drift_feature_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-                timestamp=datetime.utcnow(),
+                alert_id=f"drift_feature_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+                timestamp=datetime.now(timezone.utc),
                 severity=AlertSeverity.ERROR,
                 metric_type=MetricType.FEATURE_DRIFT,
                 title="Critical Feature Drift Detected",
@@ -238,8 +238,8 @@ class ModelMonitoringService:
         # Check for prediction drift
         if prediction_drift > self.CRITICAL_DISTRIBUTION_CHANGE:
             alerts.append(MonitoringAlert(
-                alert_id=f"drift_pred_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-                timestamp=datetime.utcnow(),
+                alert_id=f"drift_pred_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+                timestamp=datetime.now(timezone.utc),
                 severity=AlertSeverity.WARNING,
                 metric_type=MetricType.PREDICTION_DISTRIBUTION,
                 title="Prediction Distribution Shift",
@@ -265,8 +265,8 @@ class ModelMonitoringService:
             recommendations.append("No significant drift detected. Continue routine monitoring.")
         
         report = DriftReport(
-            report_id=f"drift_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
-            generated_at=datetime.utcnow(),
+            report_id=f"drift_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+            generated_at=datetime.now(timezone.utc),
             period_start=start_date,
             period_end=end_date,
             feature_drift_score=overall_feature_drift,
@@ -278,11 +278,11 @@ class ModelMonitoringService:
         )
         
         # Store report
-        await self._store_drift_report(report)
+        self._store_drift_report(report)
         
         # Send alerts if needed
         for alert in alerts:
-            await self._send_alert(alert)
+            self._send_alert(alert)
         
         return report
     
@@ -359,7 +359,7 @@ class ModelMonitoringService:
         except Exception:
             return 0.0
     
-    async def monitor_prediction_distribution(
+    def monitor_prediction_distribution(
         self,
         tenant_id: Optional[str] = None,
     ) -> dict:
@@ -372,10 +372,10 @@ class ModelMonitoringService:
         - Extreme predictions (too many critical or too few)
         """
         # Get recent predictions (last 24 hours)
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(hours=24)
         
-        predictions = await self._get_predictions_in_range(
+        predictions = self._get_predictions_in_range(
             tenant_id, start_date, end_date
         )
         
@@ -437,7 +437,7 @@ class ModelMonitoringService:
             "issues": issues,
         }
     
-    async def track_performance_metrics(
+    def track_performance_metrics(
         self,
         tenant_id: Optional[str] = None,
         lookback_days: int = 30,
@@ -450,11 +450,11 @@ class ModelMonitoringService:
         
         Note: Requires outcome data to be available (lagged by ~30 days).
         """
-        end_date = datetime.utcnow() - timedelta(days=30)  # Lagged for outcomes
+        end_date = datetime.now(timezone.utc) - timedelta(days=30)  # Lagged for outcomes
         start_date = end_date - timedelta(days=lookback_days)
         
         # Get predictions with outcomes
-        data = await self._get_predictions_with_outcomes(
+        data = self._get_predictions_with_outcomes(
             tenant_id, start_date, end_date
         )
         
@@ -508,13 +508,13 @@ class ModelMonitoringService:
         metrics["status"] = "healthy" if not issues else "degraded"
         
         # Store metrics
-        await self._store_performance_metrics(metrics)
+        self._store_performance_metrics(metrics)
         
         return metrics
     
     # Health check helpers
     
-    async def _check_model_availability(self) -> HealthCheckResult:
+    def _check_model_availability(self) -> HealthCheckResult:
         """Check if model is loaded and responding"""
         try:
             # Try a dummy prediction
@@ -531,7 +531,7 @@ class ModelMonitoringService:
                 message=f"Model unavailable: {str(e)}",
             )
     
-    async def _check_prediction_latency(self) -> HealthCheckResult:
+    def _check_prediction_latency(self) -> HealthCheckResult:
         """Check prediction latency"""
         # This would measure actual prediction time
         latency_ms = 50  # Placeholder
@@ -551,7 +551,7 @@ class ModelMonitoringService:
             details={"latency_ms": latency_ms},
         )
     
-    async def _check_database_health(self) -> HealthCheckResult:
+    def _check_database_health(self) -> HealthCheckResult:
         """Check database connectivity"""
         try:
             # Ping database
@@ -567,10 +567,10 @@ class ModelMonitoringService:
                 message=f"Database error: {str(e)}",
             )
     
-    async def _check_prediction_volume(self) -> HealthCheckResult:
+    def _check_prediction_volume(self) -> HealthCheckResult:
         """Check that predictions are being generated"""
         # Count predictions in last 24 hours
-        count = await self._count_recent_predictions(hours=24)
+        count = self._count_recent_predictions(hours=24)
         
         if count < self.MIN_DAILY_PREDICTIONS:
             return HealthCheckResult(
@@ -587,7 +587,7 @@ class ModelMonitoringService:
             details={"count": count},
         )
     
-    async def _check_feature_store(self) -> HealthCheckResult:
+    def _check_feature_store(self) -> HealthCheckResult:
         """Check feature store availability"""
         try:
             # Check feature store connection
@@ -605,49 +605,61 @@ class ModelMonitoringService:
     
     # Database helpers (placeholders)
     
-    async def _get_recent_prediction_data(
+    def _get_recent_prediction_data(
         self,
-        tenant_id: Optional[str],
-        start_date: datetime,
-        end_date: datetime,
+        tenant_id: Optional[str],  # noqa: ARG002
+        start_date: datetime,  # noqa: ARG002
+        end_date: datetime,  # noqa: ARG002
     ) -> Optional[dict]:
         """Get recent prediction data for drift analysis"""
         return None
     
-    async def _get_baseline_data(self, tenant_id: Optional[str]) -> Optional[dict]:
+    def _get_baseline_data(self, tenant_id: Optional[str]) -> Optional[dict]:  # noqa: ARG002
         """Get baseline data from model training"""
         return None
     
-    async def _get_predictions_in_range(
+    def _get_predictions_in_range(
         self,
-        tenant_id: Optional[str],
-        start_date: datetime,
-        end_date: datetime,
+        tenant_id: Optional[str],  # noqa: ARG002
+        start_date: datetime,  # noqa: ARG002
+        end_date: datetime,  # noqa: ARG002
     ) -> list[dict]:
         """Get predictions in date range"""
         return []
     
-    async def _get_predictions_with_outcomes(
+    def _get_predictions_with_outcomes(
         self,
-        tenant_id: Optional[str],
-        start_date: datetime,
-        end_date: datetime,
+        tenant_id: Optional[str],  # noqa: ARG002
+        start_date: datetime,  # noqa: ARG002
+        end_date: datetime,  # noqa: ARG002
     ) -> list[dict]:
         """Get predictions with actual outcomes"""
         return []
     
-    async def _count_recent_predictions(self, hours: int) -> int:
+    def _count_recent_predictions(
+        self,
+        hours: int,  # noqa: ARG002
+    ) -> int:
         """Count predictions in recent hours"""
         return 0
     
-    async def _store_drift_report(self, report: DriftReport) -> None:
+    def _store_drift_report(
+        self,
+        report: DriftReport,  # noqa: ARG002
+    ) -> None:
         """Store drift report"""
         pass
     
-    async def _store_performance_metrics(self, metrics: dict) -> None:
+    def _store_performance_metrics(
+        self,
+        metrics: dict,  # noqa: ARG002
+    ) -> None:
         """Store performance metrics"""
         pass
     
-    async def _send_alert(self, alert: MonitoringAlert) -> None:
+    def _send_alert(
+        self,
+        alert: MonitoringAlert,  # noqa: ARG002
+    ) -> None:
         """Send monitoring alert"""
-        logger.warning(f"Monitoring Alert: {alert.title} - {alert.description}")
+        pass

@@ -9,7 +9,7 @@ all demographic groups before training. See docs/ai/model-fairness.md
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 import hashlib
@@ -185,20 +185,21 @@ class RiskModelTrainer:
         
         # Scale features
         self.scaler = StandardScaler()
-        X_train_scaled = self.scaler.fit_transform(X_train)
-        X_test_scaled = self.scaler.transform(X_test)
+        x_train_scaled = self.scaler.fit_transform(X_train)
+        x_test_scaled = self.scaler.transform(X_test)
         
         # Hyperparameter tuning with cross-validation
         logger.info("Running hyperparameter search...")
-        best_params = self._hyperparameter_search(X_train_scaled, y_train)
+        best_params = self._hyperparameter_search(x_train_scaled, y_train)
         
         # Train final model with best params
         logger.info(f"Training final model with params: {best_params}")
         self.model = GradientBoostingClassifier(
             **best_params,
+            learning_rate=0.1,
             random_state=self.config.random_state,
         )
-        self.model.fit(X_train_scaled, y_train)
+        self.model.fit(x_train_scaled, y_train)
         
         # Calibrate probabilities for reliable confidence scores
         logger.info("Calibrating probabilities...")
@@ -207,11 +208,11 @@ class RiskModelTrainer:
             method="isotonic",
             cv="prefit",
         )
-        self.calibrator.fit(X_train_scaled, y_train)
+        self.calibrator.fit(x_train_scaled, y_train)
         
         # Evaluate on test set
         logger.info("Evaluating model performance...")
-        metrics = self._evaluate_model(X_test_scaled, y_test)
+        metrics = self._evaluate_model(x_test_scaled, y_test)
         
         # Evaluate fairness if demographic data provided
         if demographic_data:
@@ -226,7 +227,7 @@ class RiskModelTrainer:
                 )
             
             fairness_metrics = self._evaluate_fairness(
-                X_test_scaled, y_test, demo_test
+                x_test_scaled, y_test, demo_test
             )
             metrics.fairness_metrics = fairness_metrics
         
@@ -238,7 +239,7 @@ class RiskModelTrainer:
         
         # Cross-validation scores
         cv_scores = cross_val_score(
-            self.model, X_train_scaled, y_train,
+            self.model, x_train_scaled, y_train,
             cv=self.config.cv_folds,
             scoring="roc_auc",
         )
@@ -463,7 +464,7 @@ class RiskModelTrainer:
         model_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate model ID
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         model_id = f"{self.config.model_name}_{self.config.model_version}_{timestamp}"
         
         artifact_dir = model_dir / model_id
@@ -488,7 +489,7 @@ class RiskModelTrainer:
         artifact = ModelArtifact(
             model_id=model_id,
             model_version=self.config.model_version,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             metrics=metrics,
             config=self.config,
             feature_names=self.feature_names,

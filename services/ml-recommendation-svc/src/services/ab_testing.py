@@ -15,7 +15,7 @@ IMPORTANT: A/B testing in education requires:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Optional
 import hashlib
@@ -191,7 +191,7 @@ class ABTestingService:
         
         config.experiment_id = f"exp_{uuid.uuid4().hex[:12]}"
         config.created_by = creator_id
-        config.created_at = datetime.utcnow()
+        config.created_at = datetime.now(timezone.utc)
         config.status = ExperimentStatus.DRAFT
         
         # Store experiment
@@ -278,7 +278,7 @@ class ABTestingService:
             raise ValueError(f"Cannot start experiment in {config.status.value} status")
         
         config.status = ExperimentStatus.ACTIVE
-        config.start_date = datetime.utcnow()
+        config.start_date = datetime.now(timezone.utc)
         
         await self._update_experiment(config)
         self._active_experiments[experiment_id] = config
@@ -307,7 +307,7 @@ class ABTestingService:
             return None
         
         # Check existing assignment
-        existing = await self._get_assignment(experiment_id, student_id)
+        existing = self._get_assignment(experiment_id, student_id)
         if existing:
             return existing["variant_name"]
         
@@ -371,12 +371,14 @@ class ABTestingService:
     ) -> ExperimentVariant:
         """Pure random assignment based on weights"""
         weights = [v.weight for v in variants]
-        return np.random.choice(variants, p=weights)
+        # Using system entropy for randomness (no fixed seed for A/B testing)
+        rng = np.random.default_rng(seed=None)  # noqa: S311
+        return rng.choice(variants, p=weights)
     
     def _stratified_assignment(
         self,
         variants: list[ExperimentVariant],
-        stratification_data: Optional[dict],
+        stratification_data: Optional[dict],  # noqa: ARG002
     ) -> ExperimentVariant:
         """
         Stratified random assignment.
@@ -404,7 +406,7 @@ class ABTestingService:
         - mastery_improvement: Change in mastery level
         - intervention_completion_rate: % of intervention completed
         """
-        timestamp = timestamp or datetime.utcnow()
+        timestamp = timestamp or datetime.now(timezone.utc)
         
         await self._store_outcome(
             experiment_id=experiment_id,
@@ -413,6 +415,130 @@ class ABTestingService:
             value=value,
             timestamp=timestamp,
         )
+    
+    def _group_outcomes_by_variant(
+        self,
+        outcomes: list[dict],
+    ) -> dict[str, list[dict]]:
+        """Group outcomes by variant name."""
+        by_variant: dict[str, list[dict]] = {}
+        for outcome in outcomes:
+            variant = outcome["variant_name"]
+            if variant not in by_variant:
+                by_variant[variant] = []
+            by_variant[variant].append(outcome)
+        return by_variant
+    
+    def _calculate_metrics_by_variant(
+        self,
+        by_variant: dict[str, list[dict]],
+        metric_name: str,
+    ) -> tuple[dict[str, float], dict[str, int]]:
+        """Calculate metric values and participant counts by variant."""
+        metric_by_variant = {}
+        participants_by_variant = {}
+        
+        for variant, variant_outcomes in by_variant.items():
+            metric_values = [
+                o["value"] for o in variant_outcomes
+                if o["metric_name"] == metric_name
+            ]
+            if metric_values:
+                metric_by_variant[variant] = np.mean(metric_values)
+            participants_by_variant[variant] = len({o["student_id"] for o in variant_outcomes})
+        
+        return metric_by_variant, participants_by_variant
+    
+    def _get_control_treatment_names(
+        self,
+        variants: list,
+    ) -> tuple[str, str]:
+        """Identify control and treatment variant names."""
+        control_name = next(
+            (v.name for v in variants if v.name.lower() in ["control", "baseline"]),
+            variants[0].name
+        )
+        treatment_name = next(
+            (v.name for v in variants if v.name != control_name),
+            variants[-1].name
+        )
+        return control_name, treatment_name
+    
+    def _extract_metric_values(
+        self,
+        by_variant: dict[str, list[dict]],
+        variant_name: str,
+        metric_name: str,
+    ) -> list[float]:
+        """Extract metric values for a specific variant."""
+        return [
+            o["value"] for o in by_variant.get(variant_name, [])
+            if o["metric_name"] == metric_name
+        ]
+    
+    def _calculate_effect_size(
+        self,
+        control_outcomes: list[float],
+        treatment_outcomes: list[float],
+    ) -> tuple[float, float]:
+        """Calculate pooled std and Cohen's d effect size."""
+        pooled_std = np.sqrt(
+            (np.std(control_outcomes) ** 2 + np.std(treatment_outcomes) ** 2) / 2
+        )
+        effect_size = (
+            (np.mean(treatment_outcomes) - np.mean(control_outcomes)) / pooled_std
+            if pooled_std > 0 else 0
+        )
+        return pooled_std, effect_size
+    
+    def _calculate_confidence_interval(
+        self,
+        control_outcomes: list[float],
+        treatment_outcomes: list[float],
+        pooled_std: float,
+        significance_level: float,
+    ) -> tuple[float, float]:
+        """Calculate confidence interval for difference."""
+        se = pooled_std * np.sqrt(1 / len(control_outcomes) + 1 / len(treatment_outcomes))
+        z = stats.norm.ppf(1 - significance_level / 2)
+        diff = np.mean(treatment_outcomes) - np.mean(control_outcomes)
+        return (diff - z * se, diff + z * se)
+    
+    def _check_guardrails(
+        self,
+        by_variant: dict[str, list[dict]],
+        control_name: str,
+        treatment_name: str,
+        guardrail_metrics: list[str],
+        max_delta: float,
+    ) -> dict[str, str]:
+        """Check guardrail metrics."""
+        guardrail_status = {}
+        for guardrail in guardrail_metrics:
+            control_vals = self._extract_metric_values(by_variant, control_name, guardrail)
+            treatment_vals = self._extract_metric_values(by_variant, treatment_name, guardrail)
+            
+            if control_vals and treatment_vals:
+                delta = np.mean(treatment_vals) - np.mean(control_vals)
+                guardrail_status[guardrail] = "pass" if abs(delta) <= max_delta else "fail"
+        return guardrail_status
+    
+    def _generate_warnings(
+        self,
+        participants_by_variant: dict[str, int],
+        min_sample_size: int,
+        guardrail_status: dict[str, str],
+        interim: bool,
+    ) -> list[str]:
+        """Generate warning messages."""
+        warnings = []
+        if min(participants_by_variant.values()) < min_sample_size:
+            warnings.append("Sample size below target - results may not be reliable")
+        if any(s == "fail" for s in guardrail_status.values()):
+            warnings.append("One or more guardrail metrics failed - proceed with caution")
+        if interim:
+            warnings.append("Interim analysis - final results may differ")
+        return warnings
     
     async def analyze_results(
         self,
@@ -430,147 +556,96 @@ class ABTestingService:
             ExperimentResults with statistical analysis
         """
         config = await self._get_experiment(experiment_id)
-        
-        # Get all outcomes
-        outcomes = await self._get_experiment_outcomes(experiment_id)
+        outcomes = self._get_experiment_outcomes(experiment_id)
         
         if not outcomes:
             raise ValueError(f"No outcomes recorded for experiment {experiment_id}")
         
-        # Group by variant
-        by_variant: dict[str, list[dict]] = {}
-        for outcome in outcomes:
-            variant = outcome["variant_name"]
-            if variant not in by_variant:
-                by_variant[variant] = []
-            by_variant[variant].append(outcome)
-        
-        # Calculate primary metric by variant
-        primary_by_variant = {}
-        participants_by_variant = {}
-        
-        for variant, variant_outcomes in by_variant.items():
-            primary_values = [
-                o["value"] for o in variant_outcomes
-                if o["metric_name"] == config.primary_metric
-            ]
-            if primary_values:
-                primary_by_variant[variant] = np.mean(primary_values)
-            participants_by_variant[variant] = len(set(o["student_id"] for o in variant_outcomes))
-        
-        # Statistical test (control vs treatment)
-        control_name = next(
-            (v.name for v in config.variants if v.name.lower() in ["control", "baseline"]),
-            config.variants[0].name
+        by_variant = self._group_outcomes_by_variant(outcomes)
+        primary_by_variant, participants_by_variant = self._calculate_metrics_by_variant(
+            by_variant, config.primary_metric
         )
-        treatment_name = next(
-            (v.name for v in config.variants if v.name != control_name),
-            config.variants[-1].name
-        )
+        control_name, treatment_name = self._get_control_treatment_names(config.variants)
         
-        control_outcomes = [
-            o["value"] for o in by_variant.get(control_name, [])
-            if o["metric_name"] == config.primary_metric
-        ]
-        treatment_outcomes = [
-            o["value"] for o in by_variant.get(treatment_name, [])
-            if o["metric_name"] == config.primary_metric
-        ]
+        control_outcomes = self._extract_metric_values(by_variant, control_name, config.primary_metric)
+        treatment_outcomes = self._extract_metric_values(by_variant, treatment_name, config.primary_metric)
         
         if len(control_outcomes) < 10 or len(treatment_outcomes) < 10:
-            return ExperimentResults(
-                experiment_id=experiment_id,
-                generated_at=datetime.utcnow(),
-                total_participants=sum(participants_by_variant.values()),
-                participants_by_variant=participants_by_variant,
-                primary_metric_name=config.primary_metric,
-                primary_metric_by_variant=primary_by_variant,
-                p_value=1.0,
-                confidence_interval=(0.0, 0.0),
-                effect_size=0.0,
-                is_significant=False,
-                secondary_metrics={},
-                guardrail_status={},
-                recommendation="Insufficient data for analysis",
-                confidence="low",
-                warnings=["Sample size too small for reliable analysis"],
+            return self._insufficient_data_result(
+                experiment_id, config, participants_by_variant, primary_by_variant
             )
         
-        # T-test
-        t_stat, p_value = stats.ttest_ind(treatment_outcomes, control_outcomes)
-        
-        # Adjust for interim analysis (Bonferroni correction)
-        if interim:
-            significance = config.significance_level / 2  # Conservative adjustment
-        else:
-            significance = config.significance_level
-        
+        return await self._compute_full_results(
+            experiment_id, config, by_variant, participants_by_variant, primary_by_variant,
+            control_name, treatment_name, control_outcomes, treatment_outcomes, interim
+        )
+    
+    def _insufficient_data_result(
+        self,
+        experiment_id: str,
+        config,  # noqa: ANN001
+        participants_by_variant: dict[str, int],
+        primary_by_variant: dict[str, float],
+    ) -> ExperimentResults:
+        """Return result for insufficient data."""
+        return ExperimentResults(
+            experiment_id=experiment_id,
+            generated_at=datetime.now(timezone.utc),
+            total_participants=sum(participants_by_variant.values()),
+            participants_by_variant=participants_by_variant,
+            primary_metric_name=config.primary_metric,
+            primary_metric_by_variant=primary_by_variant,
+            p_value=1.0,
+            confidence_interval=(0.0, 0.0),
+            effect_size=0.0,
+            is_significant=False,
+            secondary_metrics={},
+            guardrail_status={},
+            recommendation="Insufficient data for analysis",
+            confidence="low",
+            warnings=["Sample size too small for reliable analysis"],
+        )
+    
+    async def _compute_full_results(
+        self,
+        experiment_id: str,
+        config,  # noqa: ANN001
+        by_variant: dict[str, list[dict]],
+        participants_by_variant: dict[str, int],
+        primary_by_variant: dict[str, float],
+        control_name: str,
+        treatment_name: str,
+        control_outcomes: list[float],
+        treatment_outcomes: list[float],
+        interim: bool,
+    ) -> ExperimentResults:
+        """Compute full experiment results with statistical analysis."""
+        _t_stat, p_value = stats.ttest_ind(treatment_outcomes, control_outcomes)
+        significance = config.significance_level / 2 if interim else config.significance_level
         is_significant = p_value < significance
         
-        # Effect size (Cohen's d)
-        pooled_std = np.sqrt(
-            (np.std(control_outcomes) ** 2 + np.std(treatment_outcomes) ** 2) / 2
+        pooled_std, effect_size = self._calculate_effect_size(control_outcomes, treatment_outcomes)
+        ci = self._calculate_confidence_interval(
+            control_outcomes, treatment_outcomes, pooled_std, config.significance_level
         )
-        effect_size = (np.mean(treatment_outcomes) - np.mean(control_outcomes)) / pooled_std if pooled_std > 0 else 0
         
-        # Confidence interval for difference
-        se = pooled_std * np.sqrt(1/len(control_outcomes) + 1/len(treatment_outcomes))
-        z = stats.norm.ppf(1 - config.significance_level / 2)
-        diff = np.mean(treatment_outcomes) - np.mean(control_outcomes)
-        ci = (diff - z * se, diff + z * se)
+        secondary_metrics = self._calculate_secondary_metrics(by_variant, config.secondary_metrics)
+        guardrail_status = self._check_guardrails(
+            by_variant, control_name, treatment_name,
+            config.guardrail_metrics, config.max_guardrail_delta
+        )
         
-        # Secondary metrics
-        secondary_metrics = {}
-        for metric in config.secondary_metrics:
-            metric_by_variant = {}
-            for variant, variant_outcomes in by_variant.items():
-                metric_values = [
-                    o["value"] for o in variant_outcomes
-                    if o["metric_name"] == metric
-                ]
-                if metric_values:
-                    metric_by_variant[variant] = np.mean(metric_values)
-            secondary_metrics[metric] = metric_by_variant
-        
-        # Guardrail checks
-        guardrail_status = {}
-        for guardrail in config.guardrail_metrics:
-            control_guardrail = [
-                o["value"] for o in by_variant.get(control_name, [])
-                if o["metric_name"] == guardrail
-            ]
-            treatment_guardrail = [
-                o["value"] for o in by_variant.get(treatment_name, [])
-                if o["metric_name"] == guardrail
-            ]
-            
-            if control_guardrail and treatment_guardrail:
-                delta = np.mean(treatment_guardrail) - np.mean(control_guardrail)
-                guardrail_status[guardrail] = (
-                    "pass" if abs(delta) <= config.max_guardrail_delta else "fail"
-                )
-        
-        # Generate recommendation
         recommendation, confidence = self._generate_recommendation(
-            is_significant=is_significant,
-            effect_size=effect_size,
-            guardrail_status=guardrail_status,
-            sample_sizes=participants_by_variant,
-            min_sample=config.min_sample_size,
+            is_significant, effect_size, guardrail_status,
+            participants_by_variant, config.min_sample_size
         )
-        
-        # Warnings
-        warnings = []
-        if min(participants_by_variant.values()) < config.min_sample_size:
-            warnings.append("Sample size below target - results may not be reliable")
-        if any(s == "fail" for s in guardrail_status.values()):
-            warnings.append("One or more guardrail metrics failed - proceed with caution")
-        if interim:
-            warnings.append("Interim analysis - final results may differ")
+        warnings = self._generate_warnings(
+            participants_by_variant, config.min_sample_size, guardrail_status, interim
+        )
         
         results = ExperimentResults(
             experiment_id=experiment_id,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
             total_participants=sum(participants_by_variant.values()),
             participants_by_variant=participants_by_variant,
             primary_metric_name=config.primary_metric,
@@ -586,11 +661,27 @@ class ABTestingService:
             warnings=warnings,
         )
         
-        # Store results
         await self._store_results(results)
-        
         return results
     
+    def _calculate_secondary_metrics(
+        self,
+        by_variant: dict[str, list[dict]],
+        secondary_metrics: list[str],
+    ) -> dict[str, dict[str, float]]:
+        """Calculate secondary metrics by variant."""
+        result = {}
+        for metric in secondary_metrics:
+            metric_by_variant, _ = self._calculate_metrics_by_variant(by_variant, metric)
+            result[metric] = metric_by_variant
+        return result
+            is_significant=is_significant,
+            effect_size=effect_size,
+            guardrail_status=guardrail_status,
+            sample_sizes=participants_by_variant,
+            min_sample=config.min_sample_size,
+        )
+        
     def _generate_recommendation(
         self,
         is_significant: bool,
@@ -659,7 +750,7 @@ class ABTestingService:
         else:
             config.status = ExperimentStatus.CANCELLED
         
-        config.end_date = datetime.utcnow()
+        config.end_date = datetime.now(timezone.utc)
         
         await self._update_experiment(config)
         
@@ -686,10 +777,10 @@ class ABTestingService:
         """Update experiment"""
         pass
     
-    async def _get_assignment(
+    def _get_assignment(
         self,
-        experiment_id: str,
-        student_id: str,
+        experiment_id: str,  # noqa: ARG002
+        student_id: str,  # noqa: ARG002
     ) -> Optional[dict]:
         """Get existing assignment"""
         return None
@@ -715,9 +806,9 @@ class ABTestingService:
         """Store outcome metric"""
         pass
     
-    async def _get_experiment_outcomes(
+    def _get_experiment_outcomes(
         self,
-        experiment_id: str,
+        experiment_id: str,  # noqa: ARG002
     ) -> list[dict]:
         """Get all outcomes for experiment"""
         return []

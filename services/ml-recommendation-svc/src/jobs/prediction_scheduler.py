@@ -13,7 +13,7 @@ to minimize database load impact on user experience.
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import logging
 
@@ -111,7 +111,7 @@ class PredictionScheduler:
         Can be run for a specific tenant or all tenants.
         Processes students in batches to manage memory and database load.
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         logger.info(f"Starting daily predictions at {start_time}")
         
         try:
@@ -119,7 +119,7 @@ class PredictionScheduler:
             if tenant_id:
                 tenants = [{"id": tenant_id}]
             else:
-                tenants = await self._get_active_tenants()
+                tenants = self._get_active_tenants()
             
             total_students = 0
             total_predictions = 0
@@ -134,8 +134,8 @@ class PredictionScheduler:
                 except Exception as e:
                     logger.error(f"Error processing tenant {tenant['id']}: {e}")
                     continue
-            
-            duration = (datetime.utcnow() - start_time).total_seconds()
+
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             logger.info(
                 f"Daily predictions complete. "
                 f"Tenants: {len(tenants)}, "
@@ -146,7 +146,7 @@ class PredictionScheduler:
             )
             
             # Record job metrics
-            await self._record_job_metrics("daily_predictions", {
+            self._record_job_metrics("daily_predictions", {
                 "tenants": len(tenants),
                 "students": total_students,
                 "predictions": total_predictions,
@@ -157,7 +157,7 @@ class PredictionScheduler:
             
         except Exception as e:
             logger.exception(f"Daily predictions job failed: {e}")
-            await self._record_job_metrics("daily_predictions", {
+            self._record_job_metrics("daily_predictions", {
                 "success": False,
                 "error": str(e),
             })
@@ -175,8 +175,8 @@ class PredictionScheduler:
         critical_alerts = 0
         
         while True:
-            students = await self._get_active_students(tenant_id, batch_size, offset)
-            
+            students = self._get_active_students(tenant_id, batch_size, offset)
+
             if not students:
                 break
             
@@ -192,7 +192,7 @@ class PredictionScheduler:
             
             # Store predictions
             for prediction in predictions:
-                await self._store_prediction(tenant_id, prediction)
+                self._store_prediction(tenant_id, prediction)
                 total_predictions += 1
                 
                 # Check for critical risk
@@ -227,7 +227,7 @@ class PredictionScheduler:
         """Handle critical risk alert - notify relevant staff"""
         try:
             # Get student's teachers and counselors
-            staff = await self._get_student_staff(prediction.student_id)
+            staff = self._get_student_staff(prediction.student_id)
             
             # Create alert notification
             alert_message = (
@@ -241,9 +241,9 @@ class PredictionScheduler:
                 alert_message += f"• {factor.description}\n"
             
             alert_message += (
-                f"\n⚠️ Please review this student's profile and consider "
-                f"appropriate interventions. This is a prediction to assist "
-                f"your judgment, not a diagnosis."
+                "\n⚠️ Please review this student's profile and consider "
+                "appropriate interventions. This is a prediction to assist "
+                "your judgment, not a diagnosis."
             )
             
             # Send notifications
@@ -265,16 +265,16 @@ class PredictionScheduler:
     
     async def run_weekly_bias_report(self):
         """Generate weekly bias analysis report"""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         logger.info(f"Starting weekly bias report at {start_time}")
         
         try:
-            tenants = await self._get_active_tenants()
+            tenants = self._get_active_tenants()
             
             for tenant in tenants:
                 try:
                     # Generate bias report for last 7 days
-                    end_date = datetime.utcnow()
+                    end_date = datetime.now(timezone.utc)
                     start_date = end_date - timedelta(days=7)
                     
                     report = await self.bias_service.generate_report(
@@ -300,8 +300,8 @@ class PredictionScheduler:
                     
                 except Exception as e:
                     logger.error(f"Error generating bias report for {tenant['id']}: {e}")
-            
-            duration = (datetime.utcnow() - start_time).total_seconds()
+
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             logger.info(f"Weekly bias report complete. Duration: {duration:.1f}s")
             
         except Exception as e:
@@ -311,7 +311,7 @@ class PredictionScheduler:
     async def _handle_bias_alert(self, tenant_id: str, report, alerts: list):
         """Handle critical bias alerts - notify ML team and admins"""
         # Get ML team and tenant admins
-        recipients = await self._get_ml_team_and_admins(tenant_id)
+        recipients = self._get_ml_team_and_admins(tenant_id)
         
         message = (
             f"⚠️ BIAS ALERT: Fairness issues detected in risk predictions\n\n"
@@ -324,8 +324,8 @@ class PredictionScheduler:
             message += f"• {alert.message}\n"
         
         message += (
-            f"\n📊 Please review the full bias report and take corrective action. "
-            f"Model predictions may need to be adjusted for affected populations."
+            "\n📊 Please review the full bias report and take corrective action. "
+            "Model predictions may need to be adjusted for affected populations."
         )
         
         await self.notification_service.send_system_alert(
@@ -335,27 +335,27 @@ class PredictionScheduler:
             alert_type="bias_detection",
         )
     
-    async def run_prediction_cleanup(self, retention_days: int = 90):
+    def run_prediction_cleanup(self, retention_days: int = 90):
         """Clean up old predictions to manage storage"""
-        cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
         
         try:
             # Delete old predictions (keep most recent per student)
-            deleted_count = await self._delete_old_predictions(cutoff_date)
+            deleted_count = self._delete_old_predictions(cutoff_date)
             logger.info(f"Cleaned up {deleted_count} predictions older than {retention_days} days")
             
         except Exception as e:
             logger.exception(f"Prediction cleanup failed: {e}")
             raise
     
-    async def run_model_monitoring(self):
+    def run_model_monitoring(self):
         """Monitor model health and performance"""
         logger.info("Running model health check")
         
         try:
             # Check prediction distribution (should be reasonable)
-            stats = await self._get_recent_prediction_stats()
-            
+            stats = self._get_recent_prediction_stats()
+
             # Alert if unusual patterns detected
             issues = []
             
@@ -381,7 +381,7 @@ class PredictionScheduler:
             
             if issues:
                 logger.warning(f"Model monitoring issues: {issues}")
-                await self._send_monitoring_alert(issues)
+                self._send_monitoring_alert(issues)
             else:
                 logger.info("Model health check passed")
             
@@ -390,42 +390,42 @@ class PredictionScheduler:
     
     # Database helper methods (placeholders - implement with actual ORM)
     
-    async def _get_active_tenants(self) -> list[dict]:
+    def _get_active_tenants(self) -> list[dict]:
         """Get list of active tenants"""
         # Placeholder - query tenants table
         return []
     
-    async def _get_active_students(
+    def _get_active_students(
         self,
-        tenant_id: str,
-        limit: int,
-        offset: int,
+        tenant_id: str,  # noqa: ARG002
+        limit: int,  # noqa: ARG002
+        offset: int,  # noqa: ARG002
     ) -> list[dict]:
         """Get active students for a tenant with pagination"""
         # Placeholder - query students
         return []
     
-    async def _store_prediction(self, tenant_id: str, prediction) -> None:
+    def _store_prediction(self, tenant_id: str, prediction) -> None:  # noqa: ARG002
         """Store a risk prediction"""
         # Placeholder - insert into risk_predictions
-        pass
+        _ = prediction  # Suppress unused variable warnings
     
-    async def _get_student_staff(self, student_id: str) -> list[dict]:
+    def _get_student_staff(self, student_id: str) -> list[dict]:  # noqa: ARG002
         """Get teachers and counselors for a student"""
         # Placeholder - query enrollments and staff
         return []
     
-    async def _get_ml_team_and_admins(self, tenant_id: str) -> list[dict]:
+    def _get_ml_team_and_admins(self, tenant_id: str) -> list[dict]:  # noqa: ARG002
         """Get ML team and tenant admins"""
         # Placeholder - query users with admin/ml roles
         return []
     
-    async def _delete_old_predictions(self, cutoff_date: datetime) -> int:
+    def _delete_old_predictions(self, cutoff_date: datetime) -> int:  # noqa: ARG002
         """Delete predictions older than cutoff"""
         # Placeholder - delete from risk_predictions
         return 0
     
-    async def _get_recent_prediction_stats(self) -> dict:
+    def _get_recent_prediction_stats(self) -> dict:
         """Get statistics on recent predictions"""
         # Placeholder - aggregate recent predictions
         return {
@@ -436,15 +436,22 @@ class PredictionScheduler:
             "low_rate": 0.0,
         }
     
-    async def _record_job_metrics(self, job_name: str, metrics: dict) -> None:
+    def _record_job_metrics(
+        self,
+        job_name: str,  # noqa: ARG002
+        metrics: dict,  # noqa: ARG002
+    ) -> None:
         """Record job execution metrics"""
         # Placeholder - log to metrics system
-        logger.info(f"Job metrics - {job_name}: {metrics}")
+        pass
     
-    async def _send_monitoring_alert(self, issues: list[str]) -> None:
+    def _send_monitoring_alert(
+        self,
+        issues: list[str],  # noqa: ARG002
+    ) -> None:
         """Send monitoring alert to ML team"""
         # Placeholder - send alert
-        logger.warning(f"Monitoring alert: {issues}")
+        pass
 
 
 # Convenience function to run predictions manually
