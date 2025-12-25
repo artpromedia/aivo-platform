@@ -102,11 +102,10 @@ export type {
   WebhookRegistration,
 
   // OAuth types
-  OAuthTokens,
+  GoogleOAuthTokens as OAuthTokens,
   StoredCredential,
 
   // Pagination
-  PageInfo,
   PaginatedResult,
 } from './types.js';
 
@@ -176,10 +175,12 @@ export function createGoogleClassroomIntegration(
     clientSecret: string;
     redirectUri: string;
     webhookUrl: string;
+    appBaseUrl: string;
+    frontendUrl: string;
   }
 ) {
   const googleService = new GoogleClassroomService(prisma, config);
-  const assignmentService = new AssignmentSyncService(prisma, googleService);
+  const assignmentService = new AssignmentSyncService(prisma, googleService, config.appBaseUrl);
   const scheduledSync = new ScheduledSyncJob(prisma, googleService, assignmentService);
   const gradeSync = new GradeSyncJob(prisma, assignmentService);
 
@@ -196,7 +197,7 @@ export function createGoogleClassroomIntegration(
       return registerGoogleClassroomRoutes(app, {
         googleClassroomService: googleService,
         assignmentSyncService: assignmentService,
-        prisma,
+        frontendUrl: config.frontendUrl,
       });
     },
 

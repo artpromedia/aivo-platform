@@ -7,7 +7,7 @@
  * @module google-classroom/assignment-sync
  */
 
-import type { EventEmitter } from 'events';
+import type { EventEmitter } from 'node:events';
 
 import type { PrismaClient } from '@prisma/client';
 
@@ -18,6 +18,36 @@ import type {
   BatchGradePassbackResult,
 } from './types.js';
 import { GoogleClassroomError } from './types.js';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+type AssignmentStatus = 'active' | 'deleted' | 'archived';
+
+interface LessonBlock {
+  settings?: {
+    scoring?: {
+      points?: number;
+    };
+  };
+}
+
+interface LessonForAssignment {
+  id: string;
+  title: string;
+  description?: string;
+  subject?: string;
+  settings?: {
+    estimatedDuration?: number;
+    maxPoints?: number;
+    skills?: string[];
+    objectives?: string[];
+    dueDate?: Date | null;
+    scheduledPublishTime?: Date | null;
+  };
+  blocks?: LessonBlock[];
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -212,9 +242,11 @@ export class AssignmentSyncService {
         link.googleCourseId,
         link.googleAssignmentId
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If already deleted in Classroom, continue
-      if (error.code !== 404) {
+      const errorCode =
+        error instanceof Error && 'code' in error ? (error as { code: number }).code : undefined;
+      if (errorCode !== 404) {
         throw error;
       }
     }
@@ -248,10 +280,10 @@ export class AssignmentSyncService {
       userId?: string;
       courseId?: string;
       lessonId?: string;
-      status?: 'active' | 'deleted' | 'archived';
+      status?: AssignmentStatus;
     } = {}
   ): Promise<AssignmentLinkRecord[]> {
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (filters.courseId) {
       where.googleCourseId = filters.courseId;
@@ -290,7 +322,7 @@ export class AssignmentSyncService {
       title: r.title ?? undefined,
       maxPoints: r.maxPoints ?? undefined,
       dueDate: r.dueDate ?? undefined,
-      status: r.status as 'active' | 'deleted' | 'archived',
+      status: r.status as AssignmentStatus,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       deletedAt: r.deletedAt ?? undefined,
@@ -315,7 +347,7 @@ export class AssignmentSyncService {
       title: record.title ?? undefined,
       maxPoints: record.maxPoints ?? undefined,
       dueDate: record.dueDate ?? undefined,
-      status: record.status as 'active' | 'deleted' | 'archived',
+      status: record.status as AssignmentStatus,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       deletedAt: record.deletedAt ?? undefined,
@@ -347,7 +379,7 @@ export class AssignmentSyncService {
       title: record.title ?? undefined,
       maxPoints: record.maxPoints ?? undefined,
       dueDate: record.dueDate ?? undefined,
-      status: record.status as 'active' | 'deleted' | 'archived',
+      status: record.status as AssignmentStatus,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       deletedAt: record.deletedAt ?? undefined,
@@ -407,6 +439,8 @@ export class AssignmentSyncService {
     // Scale grade to match assignment max points
     const maxPoints = link.maxPoints ?? DEFAULT_MAX_POINTS;
     const scaledGrade = Math.round((grade / 100) * maxPoints);
+    const scaledDraftGrade =
+      draftGrade === undefined ? undefined : Math.round((draftGrade / 100) * maxPoints);
 
     // Update grade
     await this.googleClassroom.updateGrade(userId, {
@@ -414,7 +448,7 @@ export class AssignmentSyncService {
       assignmentId: link.googleAssignmentId,
       submissionId: submission.id,
       grade: scaledGrade,
-      draftGrade: draftGrade !== undefined ? Math.round((draftGrade / 100) * maxPoints) : undefined,
+      draftGrade: scaledDraftGrade,
     });
 
     // Return submission if requested
@@ -497,14 +531,15 @@ export class AssignmentSyncService {
               success: true,
               grade: Math.round((grade / 100) * maxPoints),
             });
-          } catch (error: any) {
+          } catch (error: unknown) {
             results.failed++;
-            results.errors.push(`Student ${studentId}: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            results.errors.push(`Student ${studentId}: ${errorMessage}`);
             results.results.push({
               studentId,
               googleUserId: '',
               success: false,
-              error: error.message,
+              error: errorMessage,
             });
           }
         })
@@ -557,9 +592,10 @@ export class AssignmentSyncService {
         result.synced += syncResult.synced;
         result.failed += syncResult.failed;
         result.errors.push(...syncResult.errors);
-      } catch (error: any) {
+      } catch (error: unknown) {
         result.failed++;
-        result.errors.push(`Assignment ${link.id}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        result.errors.push(`Assignment ${link.id}: ${errorMessage}`);
       }
     }
 
@@ -669,8 +705,8 @@ export class AssignmentSyncService {
   /**
    * Generate assignment description from lesson content
    */
-  private generateDescription(lesson: any): string {
-    let description = lesson.description || '';
+  private generateDescription(lesson: LessonForAssignment): string {
+    let description = lesson.description ?? '';
 
     // Add estimated duration if available
     if (lesson.settings?.estimatedDuration) {
@@ -683,14 +719,14 @@ export class AssignmentSyncService {
     }
 
     // Add skill focus if available
-    if (lesson.settings?.skills?.length > 0) {
+    if (lesson.settings?.skills && lesson.settings.skills.length > 0) {
       description += `\n\nSkills covered: ${lesson.settings.skills.join(', ')}`;
     }
 
     // Add learning objectives if available
-    if (lesson.settings?.objectives?.length > 0) {
+    if (lesson.settings?.objectives && lesson.settings.objectives.length > 0) {
       description += '\n\nLearning objectives:';
-      lesson.settings.objectives.forEach((obj: string, i: number) => {
+      lesson.settings.objectives.forEach((obj, i) => {
         description += `\n${i + 1}. ${obj}`;
       });
     }
@@ -701,7 +737,7 @@ export class AssignmentSyncService {
   /**
    * Calculate max points based on lesson content
    */
-  private calculateMaxPoints(lesson: any): number {
+  private calculateMaxPoints(lesson: LessonForAssignment): number {
     // If lesson has explicit points setting, use it
     if (lesson.settings?.maxPoints) {
       return lesson.settings.maxPoints;

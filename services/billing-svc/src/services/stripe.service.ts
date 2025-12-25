@@ -49,6 +49,12 @@ function removeUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> 
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
+type ProrationBehavior = 'create_prorations' | 'none' | 'always_invoice';
+type PaymentBehavior = 'default_incomplete' | 'error_if_incomplete' | 'allow_incomplete';
+type CollectionMethod = 'charge_automatically' | 'send_invoice';
+type PauseCollectionBehavior = 'keep_as_draft' | 'mark_uncollectible' | 'void';
+type TaxExemptStatus = 'none' | 'exempt' | 'reverse';
+
 export interface CreateCustomerDto {
   email: string;
   name?: string;
@@ -64,7 +70,7 @@ export interface CreateCustomerDto {
     postalCode?: string;
     country?: string;
   };
-  taxExempt?: 'none' | 'exempt' | 'reverse';
+  taxExempt?: TaxExemptStatus;
 }
 
 export interface UpdateCustomerDto {
@@ -80,7 +86,7 @@ export interface UpdateCustomerDto {
     postalCode?: string;
     country?: string;
   };
-  taxExempt?: 'none' | 'exempt' | 'reverse';
+  taxExempt?: TaxExemptStatus;
   defaultPaymentMethodId?: string;
 }
 
@@ -90,22 +96,22 @@ export interface CreateSubscriptionDto {
   quantity?: number;
   trialDays?: number;
   metadata?: Record<string, string>;
-  paymentBehavior?: 'default_incomplete' | 'error_if_incomplete' | 'allow_incomplete';
-  prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
+  paymentBehavior?: PaymentBehavior;
+  prorationBehavior?: ProrationBehavior;
   idempotencyKey?: string;
   couponId?: string;
   promotionCodeId?: string;
-  collectionMethod?: 'charge_automatically' | 'send_invoice';
+  collectionMethod?: CollectionMethod;
   daysUntilDue?: number;
 }
 
 export interface UpdateSubscriptionDto {
   quantity?: number;
   metadata?: Record<string, string>;
-  prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
+  prorationBehavior?: ProrationBehavior;
   cancelAtPeriodEnd?: boolean;
   pauseCollection?: {
-    behavior: 'keep_as_draft' | 'mark_uncollectible' | 'void';
+    behavior: PauseCollectionBehavior;
     resumesAt?: number;
   } | null;
   trialEnd?: number | 'now';
@@ -379,7 +385,7 @@ class StripeService {
 
     if (data.pauseCollection !== undefined) {
       if (data.pauseCollection === null) {
-        params.pause_collection = '';  // Empty string clears the value
+        params.pause_collection = ''; // Empty string clears the value
       } else {
         params.pause_collection = data.pauseCollection;
       }
@@ -400,7 +406,15 @@ class StripeService {
     immediate = false,
     cancellationDetails?: {
       comment?: string;
-      feedback?: 'customer_service' | 'low_quality' | 'missing_features' | 'other' | 'switched_service' | 'too_complex' | 'too_expensive' | 'unused';
+      feedback?:
+        | 'customer_service'
+        | 'low_quality'
+        | 'missing_features'
+        | 'other'
+        | 'switched_service'
+        | 'too_complex'
+        | 'too_expensive'
+        | 'unused';
     }
   ): Promise<Stripe.Subscription> {
     if (immediate) {
@@ -437,7 +451,7 @@ class StripeService {
 
     // If paused, resume
     if (subscription.pause_collection) {
-      params.pause_collection = '';  // Empty string clears the value
+      params.pause_collection = ''; // Empty string clears the value
     }
 
     // If canceled at period end, uncancel
@@ -447,7 +461,9 @@ class StripeService {
 
     // If fully canceled, this won't work - need to create new subscription
     if (subscription.status === 'canceled') {
-      throw new Error('Cannot resume a fully canceled subscription. Please create a new subscription.');
+      throw new Error(
+        'Cannot resume a fully canceled subscription. Please create a new subscription.'
+      );
     }
 
     return stripe.subscriptions.update(subscriptionId, params);
@@ -609,7 +625,10 @@ class StripeService {
   /**
    * Attach a payment method to a customer
    */
-  async attachPaymentMethod(customerId: string, paymentMethodId: string): Promise<Stripe.PaymentMethod> {
+  async attachPaymentMethod(
+    customerId: string,
+    paymentMethodId: string
+  ): Promise<Stripe.PaymentMethod> {
     return stripe.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
@@ -625,7 +644,10 @@ class StripeService {
   /**
    * Set default payment method for a customer
    */
-  async setDefaultPaymentMethod(customerId: string, paymentMethodId: string): Promise<Stripe.Customer> {
+  async setDefaultPaymentMethod(
+    customerId: string,
+    paymentMethodId: string
+  ): Promise<Stripe.Customer> {
     return stripe.customers.update(customerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
@@ -668,7 +690,10 @@ class StripeService {
   /**
    * Get upcoming invoice preview
    */
-  async getUpcomingInvoice(customerId: string, subscriptionId?: string): Promise<Stripe.UpcomingInvoice> {
+  async getUpcomingInvoice(
+    customerId: string,
+    subscriptionId?: string
+  ): Promise<Stripe.UpcomingInvoice> {
     const params: Stripe.InvoiceRetrieveUpcomingParams = {
       customer: customerId,
     };
@@ -783,11 +808,7 @@ class StripeService {
       options.idempotencyKey = data.idempotencyKey;
     }
 
-    return stripe.subscriptionItems.createUsageRecord(
-      data.subscriptionItemId,
-      params,
-      options
-    );
+    return stripe.subscriptionItems.createUsageRecord(data.subscriptionItemId, params, options);
   }
 
   /**
@@ -847,11 +868,7 @@ class StripeService {
    * Construct and verify webhook event
    */
   constructWebhookEvent(payload: string | Buffer, signature: string): Stripe.Event {
-    return stripe.webhooks.constructEvent(
-      payload,
-      signature,
-      stripeConfig.webhook.secret
-    );
+    return stripe.webhooks.constructEvent(payload, signature, stripeConfig.webhook.secret);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -862,10 +879,7 @@ class StripeService {
    * Check if error is a resource not found error
    */
   private isResourceMissing(error: unknown): boolean {
-    return (
-      error instanceof Stripe.errors.StripeError &&
-      error.code === 'resource_missing'
-    );
+    return error instanceof Stripe.errors.StripeError && error.code === 'resource_missing';
   }
 
   /**

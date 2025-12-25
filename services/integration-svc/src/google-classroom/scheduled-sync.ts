@@ -175,10 +175,10 @@ export class ScheduledSyncJob {
         }
 
         // Register new webhook
-        const newRegistration = await this.googleClassroomService.registerPushNotifications(
+        await this.googleClassroomService.registerPushNotifications(
           credential.userId,
           registration.courseId,
-          registration.feedType as any
+          registration.feedType as 'COURSE_ROSTER_CHANGES' | 'COURSE_WORK_CHANGES'
         );
 
         // Deactivate old registration

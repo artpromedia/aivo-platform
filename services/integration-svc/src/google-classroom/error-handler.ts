@@ -324,54 +324,90 @@ function extractErrorMessage(error: unknown): string {
 }
 
 /**
+ * Message patterns mapped to error codes
+ */
+const MESSAGE_PATTERNS: { pattern: string; code: ErrorCode }[] = [
+  { pattern: 'token has been expired', code: ErrorCodes.TOKEN_EXPIRED },
+  { pattern: 'token has been revoked', code: ErrorCodes.TOKEN_REVOKED },
+  { pattern: 'invalid_grant', code: ErrorCodes.INVALID_GRANT },
+  { pattern: 'insufficient scope', code: ErrorCodes.INSUFFICIENT_SCOPES },
+  { pattern: 'not a member', code: ErrorCodes.NOT_COURSE_MEMBER },
+  { pattern: 'teacher in course', code: ErrorCodes.NOT_COURSE_TEACHER },
+  { pattern: 'already exists', code: ErrorCodes.ALREADY_EXISTS },
+];
+
+/**
+ * Check if message matches a known error pattern
+ */
+function matchMessagePattern(lowerMessage: string): ErrorCode | null {
+  for (const { pattern, code } of MESSAGE_PATTERNS) {
+    if (lowerMessage.includes(pattern)) {
+      return code;
+    }
+  }
+
+  // Check compound patterns
+  if (lowerMessage.includes('guardian') && lowerMessage.includes('disabled')) {
+    return ErrorCodes.GUARDIANS_DISABLED;
+  }
+  if (lowerMessage.includes('domain') && lowerMessage.includes('not allowed')) {
+    return ErrorCodes.DOMAIN_NOT_ALLOWED;
+  }
+
+  return null;
+}
+
+/**
+ * Determine error code for 404 status based on message
+ */
+function determine404ErrorCode(lowerMessage: string): ErrorCode {
+  if (lowerMessage.includes('course')) return ErrorCodes.COURSE_NOT_FOUND;
+  if (lowerMessage.includes('student')) return ErrorCodes.STUDENT_NOT_FOUND;
+  if (lowerMessage.includes('assignment') || lowerMessage.includes('coursework')) {
+    return ErrorCodes.ASSIGNMENT_NOT_FOUND;
+  }
+  if (lowerMessage.includes('submission')) return ErrorCodes.SUBMISSION_NOT_FOUND;
+  return ErrorCodes.UNKNOWN;
+}
+
+/**
+ * Map HTTP status code to error code
+ */
+function mapStatusToErrorCode(statusNum: number, lowerMessage: string): ErrorCode {
+  const statusMap: Record<number, ErrorCode> = {
+    400: ErrorCodes.UNKNOWN,
+    401: ErrorCodes.UNAUTHORIZED,
+    403: ErrorCodes.PERMISSION_DENIED,
+    409: ErrorCodes.CONFLICT,
+    429: ErrorCodes.RATE_LIMITED,
+    500: ErrorCodes.GOOGLE_SERVER_ERROR,
+    502: ErrorCodes.GOOGLE_UNAVAILABLE,
+    503: ErrorCodes.GOOGLE_UNAVAILABLE,
+    504: ErrorCodes.GOOGLE_UNAVAILABLE,
+  };
+
+  if (statusNum === 404) {
+    return determine404ErrorCode(lowerMessage);
+  }
+
+  return statusMap[statusNum] ?? ErrorCodes.UNKNOWN;
+}
+
+/**
  * Determine error code based on HTTP status and message
  */
 function determineErrorCode(status: number | string, message: string): ErrorCode {
   const lowerMessage = message.toLowerCase();
 
   // Check for specific error messages first
-  if (lowerMessage.includes('token has been expired')) return ErrorCodes.TOKEN_EXPIRED;
-  if (lowerMessage.includes('token has been revoked')) return ErrorCodes.TOKEN_REVOKED;
-  if (lowerMessage.includes('invalid_grant')) return ErrorCodes.INVALID_GRANT;
-  if (lowerMessage.includes('insufficient scope')) return ErrorCodes.INSUFFICIENT_SCOPES;
-  if (lowerMessage.includes('not a member')) return ErrorCodes.NOT_COURSE_MEMBER;
-  if (lowerMessage.includes('teacher in course')) return ErrorCodes.NOT_COURSE_TEACHER;
-  if (lowerMessage.includes('guardian') && lowerMessage.includes('disabled'))
-    return ErrorCodes.GUARDIANS_DISABLED;
-  if (lowerMessage.includes('already exists')) return ErrorCodes.ALREADY_EXISTS;
-  if (lowerMessage.includes('domain') && lowerMessage.includes('not allowed'))
-    return ErrorCodes.DOMAIN_NOT_ALLOWED;
+  const patternMatch = matchMessagePattern(lowerMessage);
+  if (patternMatch) {
+    return patternMatch;
+  }
 
   // Map by status code
-  const statusNum = typeof status === 'number' ? status : parseInt(status, 10);
-
-  switch (statusNum) {
-    case 400:
-      return ErrorCodes.UNKNOWN;
-    case 401:
-      return ErrorCodes.UNAUTHORIZED;
-    case 403:
-      return ErrorCodes.PERMISSION_DENIED;
-    case 404:
-      if (lowerMessage.includes('course')) return ErrorCodes.COURSE_NOT_FOUND;
-      if (lowerMessage.includes('student')) return ErrorCodes.STUDENT_NOT_FOUND;
-      if (lowerMessage.includes('assignment') || lowerMessage.includes('coursework'))
-        return ErrorCodes.ASSIGNMENT_NOT_FOUND;
-      if (lowerMessage.includes('submission')) return ErrorCodes.SUBMISSION_NOT_FOUND;
-      return ErrorCodes.UNKNOWN;
-    case 409:
-      return ErrorCodes.CONFLICT;
-    case 429:
-      return ErrorCodes.RATE_LIMITED;
-    case 500:
-      return ErrorCodes.GOOGLE_SERVER_ERROR;
-    case 502:
-    case 503:
-    case 504:
-      return ErrorCodes.GOOGLE_UNAVAILABLE;
-    default:
-      return ErrorCodes.UNKNOWN;
-  }
+  const statusNum = typeof status === 'number' ? status : Number.parseInt(status, 10);
+  return mapStatusToErrorCode(statusNum, lowerMessage);
 }
 
 /**

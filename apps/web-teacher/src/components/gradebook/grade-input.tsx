@@ -11,12 +11,12 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 interface GradeInputProps {
-  initialValue: number | null;
-  maxPoints: number;
-  onSubmit: (value: number | null) => void;
-  onCancel: () => void;
-  autoFocus?: boolean;
-  className?: string;
+  readonly initialValue: number | null;
+  readonly maxPoints: number;
+  readonly onSubmit: (value: number | null) => void;
+  readonly onCancel: () => void;
+  readonly autoFocus?: boolean;
+  readonly className?: string;
 }
 
 export function GradeInput({
@@ -61,9 +61,9 @@ export function GradeInput({
     }
 
     // Parse numeric value
-    const numValue = parseFloat(trimmed);
+    const numValue = Number.parseFloat(trimmed);
 
-    if (isNaN(numValue)) {
+    if (Number.isNaN(numValue)) {
       setError('Enter a valid number');
       return;
     }
@@ -96,14 +96,14 @@ export function GradeInput({
       case 'ArrowUp':
         e.preventDefault();
         setValue((prev) => {
-          const num = parseFloat(prev) || 0;
+          const num = Number.parseFloat(prev) || 0;
           return Math.min(maxPoints, num + 1).toString();
         });
         break;
       case 'ArrowDown':
         e.preventDefault();
         setValue((prev) => {
-          const num = parseFloat(prev) || 0;
+          const num = Number.parseFloat(prev) || 0;
           return Math.max(0, num - 1).toString();
         });
         break;
@@ -151,14 +151,14 @@ export function GradeInput({
  * Grade display with optional inline edit
  */
 interface GradeDisplayProps {
-  score: number | null;
-  maxPoints: number;
-  status?: 'graded' | 'missing' | 'late' | 'exempt' | 'pending';
-  editable?: boolean;
-  onEdit?: (score: number | null) => void;
-  size?: 'sm' | 'md' | 'lg';
-  showPercentage?: boolean;
-  className?: string;
+  readonly score: number | null;
+  readonly maxPoints: number;
+  readonly status?: 'graded' | 'missing' | 'late' | 'exempt' | 'pending';
+  readonly editable?: boolean;
+  readonly onEdit?: (score: number | null) => void;
+  readonly size?: 'sm' | 'md' | 'lg';
+  readonly showPercentage?: boolean;
+  readonly className?: string;
 }
 
 export function GradeDisplay({
@@ -212,37 +212,35 @@ export function GradeDisplay({
   };
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        'inline-flex items-center gap-1 rounded font-medium',
+        'inline-flex items-center gap-1 rounded font-medium border-0 bg-transparent',
         colorClass,
         sizeClasses[size],
         editable && 'cursor-pointer hover:ring-2 hover:ring-primary-300',
+        !editable && 'cursor-default',
         className
       )}
       onClick={() => {
         if (editable) setIsEditing(true);
       }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && editable) setIsEditing(true);
-      }}
-      tabIndex={editable ? 0 : undefined}
-      role={editable ? 'button' : undefined}
+      disabled={!editable}
     >
-      {score !== null ? (
+      {score === null ? (
+        <span className="text-gray-400">—</span>
+      ) : (
         <>
           <span>{score}</span>
           {showPercentage && percentage !== null && (
             <span className="text-gray-500">({percentage.toFixed(0)}%)</span>
           )}
         </>
-      ) : (
-        <span className="text-gray-400">—</span>
       )}
       {status !== 'graded' && statusIcons[status] && (
         <span title={status}>{statusIcons[status]}</span>
       )}
-    </div>
+    </button>
   );
 }
 

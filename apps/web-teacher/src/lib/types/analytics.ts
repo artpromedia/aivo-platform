@@ -24,15 +24,35 @@ export type RiskLevel = 'on-track' | 'watch' | 'at-risk' | 'critical';
  */
 export type EngagementLevel = 'highly-engaged' | 'engaged' | 'passive' | 'disengaged' | 'absent';
 
+/**
+ * Trend direction for skill mastery
+ */
+export type MasteryTrend = 'improving' | 'stable' | 'declining';
+
+/**
+ * Priority levels for recommendations and alerts
+ */
+export type PriorityLevel = 'high' | 'medium' | 'low';
+
+/**
+ * Severity levels for warnings
+ */
+export type SeverityLevel = 'high' | 'medium' | 'low';
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // TREND DATA
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
+ * Direction of a trend
+ */
+export type TrendDirection = 'up' | 'down' | 'stable';
+
+/**
  * Trend data for visualizing progress over time
  */
 export interface TrendData {
-  direction: 'up' | 'down' | 'stable';
+  direction: TrendDirection;
   percentChange: number;
   dataPoints: TrendDataPoint[];
 }
@@ -173,7 +193,7 @@ export interface SkillMasteryDetail {
   skillName: string;
   domain: string;
   mastery: number;
-  trend: 'improving' | 'stable' | 'declining';
+  trend: MasteryTrend;
   practiceCount: number;
   lastPracticed?: Date | string;
   estimatedTimeToMastery?: number; // minutes
@@ -197,7 +217,7 @@ export interface SessionSummary {
  */
 export interface StudentRecommendation {
   type: 'skill-focus' | 'engagement' | 'pacing' | 'intervention' | 'enrichment';
-  priority: 'high' | 'medium' | 'low';
+  priority: PriorityLevel;
   title: string;
   description: string;
   actionItems: string[];
@@ -234,7 +254,7 @@ export interface StudentSkillData {
 
 export interface SkillMasteryCell {
   mastery: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: TrendDirection;
   attempts: number;
 }
 
@@ -258,7 +278,7 @@ export interface EarlyWarningReport {
 
 export interface ClassLevelWarning {
   type: string;
-  severity: 'high' | 'medium' | 'low';
+  severity: SeverityLevel;
   message: string;
   affectedCount: number;
 }
@@ -443,7 +463,7 @@ export interface StudentEngagementData {
   studentName: string;
   engagementLevel: EngagementLevel;
   engagementScore: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: TrendDirection;
   lastActive: Date | string;
   sessionsThisPeriod: number;
 }

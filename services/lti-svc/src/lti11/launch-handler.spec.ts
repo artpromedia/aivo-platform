@@ -5,7 +5,7 @@
  * timestamp validation, and launch processing.
  */
 /* eslint-disable @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-assignment */
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 import type { FastifyRequest } from 'fastify';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -58,7 +58,7 @@ function generateOAuthSignature(
   // Sort and encode parameters
   const sortedParams = Object.keys(params)
     .filter((k) => k !== 'oauth_signature')
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k] ?? '')}`)
     .join('&');
 
@@ -355,7 +355,7 @@ describe('Lti11LaunchHandler', () => {
         id: 'nonce-id',
         nonce: replayedNonce,
         consumerId: testConsumer.id,
-        timestamp: parseInt(timestamp),
+        timestamp: Number.parseInt(timestamp, 10),
       });
 
       await expect(handler.handleLaunch(mockRequest)).rejects.toThrow(/nonce/i);

@@ -85,6 +85,12 @@ export const UpdateAssignmentSchema = z.object({
 
 export type UpdateAssignmentDto = z.infer<typeof UpdateAssignmentSchema>;
 
+export const DeleteAssignmentSchema = z.object({
+  deleteFromGoogle: z.boolean().optional().default(true),
+});
+
+export type DeleteAssignmentDto = z.infer<typeof DeleteAssignmentSchema>;
+
 export const ListAssignmentsSchema = z.object({
   courseId: z.string().optional(),
   lessonId: z.string().uuid().optional(),

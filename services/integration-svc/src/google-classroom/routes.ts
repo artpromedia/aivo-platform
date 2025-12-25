@@ -37,7 +37,7 @@ import type { GoogleClassroomService } from './google-classroom.service.js';
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-interface RouteOptions {
+export interface GoogleClassroomRouteOptions {
   googleClassroomService: GoogleClassroomService;
   assignmentSyncService: AssignmentSyncService;
   frontendUrl: string;
@@ -57,7 +57,7 @@ interface AuthenticatedRequest extends FastifyRequest {
 
 export async function registerGoogleClassroomRoutes(
   app: FastifyInstance,
-  options: RouteOptions
+  options: GoogleClassroomRouteOptions
 ): Promise<void> {
   const { googleClassroomService, assignmentSyncService, frontendUrl } = options;
 
@@ -111,8 +111,13 @@ export async function registerGoogleClassroomRoutes(
       }
 
       try {
-        const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
-        const { userId, tenantId, redirectUrl } = stateData;
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString()) as {
+          userId: string;
+          tenantId: string;
+          redirectUrl: string;
+          timestamp: number;
+        };
+        const { userId, redirectUrl } = stateData;
 
         // Verify timestamp (prevent replay attacks)
         const maxAge = 10 * 60 * 1000; // 10 minutes
@@ -121,7 +126,7 @@ export async function registerGoogleClassroomRoutes(
         }
 
         const tokens = await googleClassroomService.exchangeCodeForTokens(code);
-        await googleClassroomService.storeTokens(userId, tenantId, tokens);
+        await googleClassroomService.storeTokens(userId, tokens);
 
         return reply.redirect(`${redirectUrl}?connected=google_classroom`);
       } catch (err: any) {
@@ -146,16 +151,13 @@ export async function registerGoogleClassroomRoutes(
       }
 
       // Get credential details
-      // @ts-expect-error - accessing prisma through service
-      const credential = await googleClassroomService.prisma.googleClassroomCredential.findUnique({
-        where: { userId: request.user.id },
-      });
+      const credential = await googleClassroomService.getCredential(request.user.id);
 
       return {
         connected: true,
-        email: credential?.googleEmail,
+        email: credential?.email,
         scopes: credential?.scope?.split(' '),
-        expiresAt: credential?.expiresAt,
+        expiresAt: credential?.expiryDate ? new Date(Number(credential.expiryDate)) : null,
       };
     } catch {
       return { connected: false };

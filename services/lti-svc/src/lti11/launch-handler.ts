@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /**
  * LTI 1.1 Launch Handler
  *
@@ -15,7 +15,7 @@
  * @see https://www.imsglobal.org/specs/ltiv1p1
  */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 import type { FastifyRequest } from 'fastify';
 
@@ -23,7 +23,7 @@ import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import type { LtiUserService } from '../lti-user-service.js';
 
 import type { Lti11LaunchParams, Lti11Consumer, Lti11LaunchResult } from './types.js';
-import { LTI11_CONSTANTS, LEGACY_ROLE_MAP, LTI11_ROLE_URNS } from './types.js';
+import { LTI11_CONSTANTS, LEGACY_ROLE_MAP } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ERRORS
@@ -323,9 +323,9 @@ export class Lti11LaunchHandler {
    * RFC 3986 percent encoding
    */
   private percentEncode(str: string): string {
-    return encodeURIComponent(str).replace(
+    return encodeURIComponent(str).replaceAll(
       /[!'()*]/g,
-      (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+      (c) => `%${(c.codePointAt(0) ?? 0).toString(16).toUpperCase()}`
     );
   }
 
@@ -337,7 +337,7 @@ export class Lti11LaunchHandler {
     consumerId: string
   ): Promise<void> {
     // Validate timestamp
-    const timestamp = parseInt(params.oauth_timestamp, 10);
+    const timestamp = Number.parseInt(params.oauth_timestamp, 10);
     const now = Math.floor(Date.now() / 1000);
 
     if (Math.abs(now - timestamp) > LTI11_CONSTANTS.TIMESTAMP_TOLERANCE_SECONDS) {

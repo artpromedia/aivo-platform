@@ -11,7 +11,7 @@
  * @module google-classroom/service
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 import type { PrismaClient } from '@prisma/client';
 import type { OAuth2Client, Credentials } from 'google-auth-library';
@@ -66,10 +66,10 @@ export class GoogleClassroomService {
   private readonly eventEmitter: EventEmitter;
 
   // Rate limiting
-  private requestQueue: {
-    request: () => Promise<any>;
-    resolve: (value: any) => void;
-    reject: (error: any) => void;
+  private readonly requestQueue: {
+    request: () => Promise<unknown>;
+    resolve: (value: unknown) => void;
+    reject: (error: unknown) => void;
   }[] = [];
   private isProcessingQueue = false;
   private requestsThisSecond = 0;
@@ -154,7 +154,7 @@ export class GoogleClassroomService {
   /**
    * Store OAuth tokens for a user
    */
-  async storeTokens(userId: string, tenantId: string, tokens: Credentials): Promise<void> {
+  async storeTokens(userId: string, tokens: Credentials): Promise<void> {
     // Get user info from Google
     let googleUserId: string | undefined;
     let googleEmail: string | undefined;
@@ -174,26 +174,26 @@ export class GoogleClassroomService {
       where: { userId },
       create: {
         userId,
-        tenantId,
         accessToken: tokens.access_token!,
-        refreshToken: tokens.refresh_token!,
-        expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+        refreshToken: tokens.refresh_token,
+        expiryDate: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
         scope: tokens.scope || this.config.scopes.join(' '),
+        tokenType: tokens.token_type || 'Bearer',
         googleUserId,
-        googleEmail,
+        email: googleEmail,
       },
       update: {
         accessToken: tokens.access_token!,
         refreshToken: tokens.refresh_token || undefined,
-        expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+        expiryDate: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
         scope: tokens.scope || undefined,
+        tokenType: tokens.token_type || 'Bearer',
         googleUserId: googleUserId || undefined,
-        googleEmail: googleEmail || undefined,
-        updatedAt: new Date(),
+        email: googleEmail || undefined,
       },
     });
 
-    this.eventEmitter.emit('google-classroom.connected', { userId, tenantId });
+    this.eventEmitter.emit('google-classroom.connected', { userId });
   }
 
   /**
@@ -209,14 +209,18 @@ export class GoogleClassroomService {
     }
 
     // Check if token is expired or will expire soon
-    const isExpired =
-      credential.expiresAt && credential.expiresAt.getTime() < Date.now() + TOKEN_REFRESH_BUFFER_MS;
+    // expiryDate is stored as BigInt (milliseconds) in the database
+    const expiryMs = credential.expiryDate ? Number(credential.expiryDate) : null;
+    const isExpired = expiryMs && expiryMs < Date.now() + TOKEN_REFRESH_BUFFER_MS;
 
     if (isExpired) {
       console.log('Refreshing expired Google token', { userId });
 
+      if (!credential.refreshToken) {
+        throw new GoogleClassroomError('No refresh token available', 401, false);
+      }
       const newTokens = await this.refreshAccessToken(credential.refreshToken);
-      await this.storeTokens(userId, credential.tenantId, newTokens);
+      await this.storeTokens(userId, newTokens);
 
       return newTokens.access_token!;
     }
@@ -258,6 +262,15 @@ export class GoogleClassroomService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Get stored credentials for a user
+   */
+  async getCredential(userId: string) {
+    return this.prisma.googleClassroomCredential.findUnique({
+      where: { userId },
+    });
   }
 
   /**
@@ -1176,16 +1189,16 @@ export class GoogleClassroomService {
 
     // Add or update students
     for (const student of googleStudents) {
-      if (!localStudentGoogleIds.has(student.userId)) {
-        await this.createOrUpdateStudent(tenantId, localClassId, student);
-        added++;
-      } else {
+      if (localStudentGoogleIds.has(student.userId)) {
         // Check for updates
         const enrollment = localEnrollments.find((e) => e.googleUserId === student.userId);
         if (enrollment && this.studentNeedsUpdate(enrollment.student, student)) {
           await this.updateStudentFromGoogle(enrollment.studentId, student);
           updated++;
         }
+      } else {
+        await this.createOrUpdateStudent(tenantId, localClassId, student);
+        added++;
       }
     }
 
@@ -1243,8 +1256,9 @@ export class GoogleClassroomService {
           );
           if (created) added++;
         }
-      } catch (error) {
-        // Guardian access might fail for some students
+      } catch {
+        // Guardian access might fail for some students - this is expected behavior
+        // when guardians are disabled or student doesn't have guardians
         console.debug('Failed to sync guardians for student', {
           studentId: enrollment.studentId,
         });
@@ -1489,7 +1503,8 @@ export class GoogleClassroomService {
 
         const student = this.mapStudent(response.data);
         await this.createOrUpdateStudent(credential.tenantId, syncRecord.classId, student);
-      } catch (error) {
+      } catch {
+        // Student may have been removed before we could process the webhook
         console.error('Failed to add student from webhook', { courseId, studentUserId });
       }
     } else if (eventType === 'DELETED') {
