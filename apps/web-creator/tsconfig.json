@@ -9,7 +9,9 @@
     "module": "esnext",
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "paths": {},
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "plugins": [
       {
         "name": "next"
@@ -20,6 +22,7 @@
     "app/**/*",
     "components/**/*",
     "lib/**/*",
+    "src/**/*",
     "__tests__/**/*",
     "next-env.d.ts",
     ".next/types/**/*.ts",
