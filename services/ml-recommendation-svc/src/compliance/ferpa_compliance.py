@@ -419,6 +419,64 @@ class FERPAComplianceService:
         """
         return {k: v for k, v in data.items() if k in permitted_fields}
     
+    def _get_default_remove_fields(self) -> list[str]:
+        """Get default list of fields to remove for de-identification."""
+        return [
+            "student_id",
+            "name",
+            "email",
+            "ssn",
+            "address",
+            "phone",
+            "parent_name",
+            "date_of_birth",
+        ]
+    
+    def _generalize_zip_code(self, value: Any) -> str:
+        """Generalize zip code to first 3 digits."""
+        return str(value)[:3] + "XX" if value else ""
+    
+    def _generalize_birth_year(self, value: Any) -> str:
+        """Generalize birth year to 5-year range."""
+        if not value:
+            return ""
+        base = (value // 5) * 5
+        return f"{base}-{base + 4}"
+    
+    def _generalize_quasi_identifier(self, key: str, value: Any) -> Optional[str]:
+        """Generalize a quasi-identifier value."""
+        if key == "zip_code":
+            return self._generalize_zip_code(value)
+        if key == "birth_year":
+            return self._generalize_birth_year(value)
+        return None
+    
+    def _generate_record_id(self, record: dict) -> str:
+        """Generate anonymized record ID from record hash."""
+        return hashlib.sha256(
+            json.dumps(record, sort_keys=True, default=str).encode()
+        ).hexdigest()[:12]
+    
+    def _de_identify_record(
+        self,
+        record: dict,
+        remove_fields: list[str],
+        quasi_identifiers: list[str],
+    ) -> dict:
+        """De-identify a single record."""
+        cleaned = {}
+        for key, value in record.items():
+            if key in remove_fields:
+                continue
+            if key in quasi_identifiers:
+                generalized = self._generalize_quasi_identifier(key, value)
+                if generalized is not None:
+                    cleaned[key] = generalized
+            else:
+                cleaned[key] = value
+        cleaned["record_id"] = self._generate_record_id(record)
+        return cleaned
+    
     def de_identify_data(
         self,
         data: list[dict],
@@ -429,48 +487,13 @@ class FERPAComplianceService:
         
         Removes or hashes direct identifiers and quasi-identifiers.
         """
-        remove_fields = remove_fields or [
-            "student_id",
-            "name",
-            "email",
-            "ssn",
-            "address",
-            "phone",
-            "parent_name",
-            "date_of_birth",
+        remove_fields = remove_fields or self._get_default_remove_fields()
+        quasi_identifiers = ["zip_code", "birth_year"]
+        
+        return [
+            self._de_identify_record(record, remove_fields, quasi_identifiers)
+            for record in data
         ]
-        
-        quasi_identifiers = [
-            "zip_code",
-            "birth_year",
-        ]
-        
-        de_identified = []
-        
-        for record in data:
-            cleaned = {}
-            for key, value in record.items():
-                if key in remove_fields:
-                    continue
-                elif key in quasi_identifiers:
-                    # Generalize quasi-identifiers
-                    if key == "zip_code" and value:
-                        cleaned[key] = str(value)[:3] + "XX"  # First 3 digits only
-                    elif key == "birth_year":
-                        # Group into ranges
-                        if value:
-                            cleaned[key] = f"{(value // 5) * 5}-{(value // 5) * 5 + 4}"
-                else:
-                    cleaned[key] = value
-            
-            # Add random ID for tracking
-            cleaned["record_id"] = hashlib.sha256(
-                json.dumps(record, sort_keys=True, default=str).encode()
-            ).hexdigest()[:12]
-            
-            de_identified.append(cleaned)
-        
-        return de_identified
     
     def check_k_anonymity(
         self,

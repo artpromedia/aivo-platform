@@ -351,75 +351,93 @@ class RiskModelTrainer:
             cv_std=0.0,
         )
     
+    def _calculate_false_positive_rate(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+    ) -> float:
+        """Calculate false positive rate."""
+        tn = ((y_true == 0) & (y_pred == 0)).sum()
+        fp = ((y_true == 0) & (y_pred == 1)).sum()
+        return fp / (fp + tn) if (fp + tn) > 0 else 0.0
+    
+    def _calculate_group_metrics(
+        self,
+        group_y: np.ndarray,
+        group_pred: np.ndarray,
+        group_proba: np.ndarray,
+        n_samples: int,
+    ) -> dict:
+        """Calculate fairness metrics for a single group."""
+        return {
+            "n_samples": n_samples,
+            "selection_rate": float(group_pred.mean()),
+            "true_positive_rate": float(recall_score(group_y, group_pred, zero_division=0)),
+            "false_positive_rate": float(self._calculate_false_positive_rate(group_y, group_pred)),
+            "avg_predicted_probability": float(group_proba.mean()),
+        }
+    
+    def _calculate_disparities(
+        self,
+        group_metrics: dict[str, dict],
+    ) -> dict:
+        """Calculate disparity metrics across groups."""
+        selection_rates = [m["selection_rate"] for m in group_metrics.values()]
+        tprs = [m["true_positive_rate"] for m in group_metrics.values()]
+        fprs = [m["false_positive_rate"] for m in group_metrics.values()]
+        
+        max_sr = max(selection_rates)
+        min_sr = min(selection_rates)
+        
+        return {
+            "groups": group_metrics,
+            "selection_rate_disparity": max_sr - min_sr,
+            "tpr_disparity": max(tprs) - min(tprs),
+            "fpr_disparity": max(fprs) - min(fprs),
+            "disparate_impact_ratio": min_sr / max_sr if max_sr > 0 else 0.0,
+            "passes_80_percent_rule": min_sr / max_sr >= 0.8 if max_sr > 0 else True,
+        }
+    
+    def _evaluate_attribute_fairness(
+        self,
+        groups: np.ndarray,
+        y_test: np.ndarray,
+        y_pred: np.ndarray,
+        y_proba: np.ndarray,
+    ) -> Optional[dict]:
+        """Evaluate fairness for a single demographic attribute."""
+        unique_groups = np.unique(groups)
+        if len(unique_groups) < 2:
+            return None
+        
+        group_metrics = {}
+        for group in unique_groups:
+            mask = groups == group
+            if mask.sum() < 10:
+                continue
+            group_metrics[str(group)] = self._calculate_group_metrics(
+                y_test[mask], y_pred[mask], y_proba[mask], int(mask.sum())
+            )
+        
+        if len(group_metrics) < 2:
+            return None
+        return self._calculate_disparities(group_metrics)
+    
     def _evaluate_fairness(
         self,
         X_test: np.ndarray,
         y_test: np.ndarray,
         demographic_data: dict[str, np.ndarray],
     ) -> dict[str, Any]:
-        """Evaluate fairness across demographic groups"""
+        """Evaluate fairness across demographic groups."""
         y_pred = self.model.predict(X_test)
         y_proba = self.calibrator.predict_proba(X_test)[:, 1]
         
         fairness_results = {}
-        
         for attr, groups in demographic_data.items():
-            unique_groups = np.unique(groups)
-            
-            if len(unique_groups) < 2:
-                continue
-            
-            group_metrics = {}
-            
-            for group in unique_groups:
-                mask = groups == group
-                if mask.sum() < 10:
-                    continue
-                
-                group_y = y_test[mask]
-                group_pred = y_pred[mask]
-                group_proba = y_proba[mask]
-                
-                # Selection rate (demographic parity)
-                selection_rate = group_pred.mean()
-                
-                # True positive rate (equal opportunity)
-                tpr = recall_score(group_y, group_pred, zero_division=0)
-                
-                # False positive rate
-                tn = ((group_y == 0) & (group_pred == 0)).sum()
-                fp = ((group_y == 0) & (group_pred == 1)).sum()
-                fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
-                
-                # Average predicted probability (calibration)
-                avg_proba = group_proba.mean()
-                
-                group_metrics[str(group)] = {
-                    "n_samples": int(mask.sum()),
-                    "selection_rate": float(selection_rate),
-                    "true_positive_rate": float(tpr),
-                    "false_positive_rate": float(fpr),
-                    "avg_predicted_probability": float(avg_proba),
-                }
-            
-            # Calculate disparities
-            if len(group_metrics) >= 2:
-                selection_rates = [m["selection_rate"] for m in group_metrics.values()]
-                tprs = [m["true_positive_rate"] for m in group_metrics.values()]
-                fprs = [m["false_positive_rate"] for m in group_metrics.values()]
-                
-                fairness_results[attr] = {
-                    "groups": group_metrics,
-                    "selection_rate_disparity": max(selection_rates) - min(selection_rates),
-                    "tpr_disparity": max(tprs) - min(tprs),
-                    "fpr_disparity": max(fprs) - min(fprs),
-                    "disparate_impact_ratio": min(selection_rates) / max(selection_rates)
-                        if max(selection_rates) > 0 else 0,
-                    "passes_80_percent_rule": (
-                        min(selection_rates) / max(selection_rates) >= 0.8
-                        if max(selection_rates) > 0 else True
-                    ),
-                }
+            result = self._evaluate_attribute_fairness(groups, y_test, y_pred, y_proba)
+            if result is not None:
+                fairness_results[attr] = result
         
         return fairness_results
     
