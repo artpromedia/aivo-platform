@@ -397,30 +397,30 @@ class PredictionScheduler:
     
     def _get_active_students(
         self,
-        tenant_id: str,  # noqa: ARG002
-        limit: int,  # noqa: ARG002
-        offset: int,  # noqa: ARG002
+        _tenant_id: str,
+        _limit: int,
+        _offset: int,
     ) -> list[dict]:
         """Get active students for a tenant with pagination"""
         # Placeholder - query students
         return []
     
-    def _store_prediction(self, tenant_id: str, prediction) -> None:  # noqa: ARG002
+    def _store_prediction(self, _tenant_id: str, _prediction) -> None:
         """Store a risk prediction"""
         # Placeholder - insert into risk_predictions
-        _ = prediction  # Suppress unused variable warnings
+        pass
     
-    def _get_student_staff(self, student_id: str) -> list[dict]:  # noqa: ARG002
+    def _get_student_staff(self, _student_id: str) -> list[dict]:
         """Get teachers and counselors for a student"""
         # Placeholder - query enrollments and staff
         return []
     
-    def _get_ml_team_and_admins(self, tenant_id: str) -> list[dict]:  # noqa: ARG002
+    def _get_ml_team_and_admins(self, _tenant_id: str) -> list[dict]:
         """Get ML team and tenant admins"""
         # Placeholder - query users with admin/ml roles
         return []
     
-    def _delete_old_predictions(self, cutoff_date: datetime) -> int:  # noqa: ARG002
+    def _delete_old_predictions(self, _cutoff_date: datetime) -> int:
         """Delete predictions older than cutoff"""
         # Placeholder - delete from risk_predictions
         return 0
@@ -438,16 +438,16 @@ class PredictionScheduler:
     
     def _record_job_metrics(
         self,
-        job_name: str,  # noqa: ARG002
-        metrics: dict,  # noqa: ARG002
+        _job_name: str,
+        _metrics: dict,
     ) -> None:
         """Record job execution metrics"""
         # Placeholder - log to metrics system
         pass
-    
+
     def _send_monitoring_alert(
         self,
-        issues: list[str],  # noqa: ARG002
+        _issues: list[str],
     ) -> None:
         """Send monitoring alert to ML team"""
         # Placeholder - send alert

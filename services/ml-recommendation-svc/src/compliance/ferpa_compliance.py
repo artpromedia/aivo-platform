@@ -618,8 +618,8 @@ class FERPAComplianceService:
     
     def _check_relationship(
         self,
-        user_id: str,  # noqa: ARG002
-        student_id: str,  # noqa: ARG002
+        _user_id: str,
+        _student_id: str,
     ) -> bool:
         """Check if user has educational relationship with student"""
         # Query enrollments, class assignments, etc.
@@ -627,25 +627,25 @@ class FERPAComplianceService:
     
     def _check_consent(
         self,
-        student_id: str,  # noqa: ARG002
-        consent_type: ConsentType,  # noqa: ARG002
-        data_types: list[str],  # noqa: ARG002
+        _student_id: str,
+        _consent_type: ConsentType,
+        _data_types: list[str],
     ) -> bool:
         """Check if consent exists for data access"""
         return True  # Placeholder
     
     def _check_disclosure_log_access(
         self,
-        student_id: str,  # noqa: ARG002
-        requestor_id: str,  # noqa: ARG002
+        _student_id: str,
+        _requestor_id: str,
     ) -> bool:
         """Check if requestor can access disclosure log"""
         return True  # Placeholder
     
     def _check_record_access_rights(
         self,
-        student_id: str,  # noqa: ARG002
-        requestor_id: str,  # noqa: ARG002
+        _student_id: str,
+        _requestor_id: str,
     ) -> bool:
         """Check if requestor has rights to access records"""
         return True  # Placeholder
@@ -656,7 +656,7 @@ class FERPAComplianceService:
     
     def _get_disclosures(
         self,
-        student_id: str,  # noqa: ARG002
+        _student_id: str,
     ) -> list[DisclosureRecord]:
         """Get all disclosures for a student"""
         return []
@@ -685,7 +685,7 @@ class FERPAComplianceService:
     
     def _compile_student_records(
         self,
-        student_id: str,  # noqa: ARG002
+        _student_id: str,
     ) -> dict:
         """Compile all education records for student"""
         return {}

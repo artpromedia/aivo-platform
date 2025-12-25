@@ -607,59 +607,55 @@ class ModelMonitoringService:
     
     def _get_recent_prediction_data(
         self,
-        tenant_id: Optional[str],  # noqa: ARG002
-        start_date: datetime,  # noqa: ARG002
-        end_date: datetime,  # noqa: ARG002
+        _tenant_id: Optional[str],
+        _start_date: datetime,
+        _end_date: datetime,
     ) -> Optional[dict]:
         """Get recent prediction data for drift analysis"""
         return None
-    
-    def _get_baseline_data(self, tenant_id: Optional[str]) -> Optional[dict]:  # noqa: ARG002
+
+    def _get_baseline_data(self, _tenant_id: Optional[str]) -> Optional[dict]:
         """Get baseline data from model training"""
         return None
-    
+
     def _get_predictions_in_range(
         self,
-        tenant_id: Optional[str],  # noqa: ARG002
-        start_date: datetime,  # noqa: ARG002
-        end_date: datetime,  # noqa: ARG002
+        _tenant_id: Optional[str],
+        _start_date: datetime,
+        _end_date: datetime,
     ) -> list[dict]:
         """Get predictions in date range"""
         return []
-    
+
     def _get_predictions_with_outcomes(
         self,
-        tenant_id: Optional[str],  # noqa: ARG002
-        start_date: datetime,  # noqa: ARG002
-        end_date: datetime,  # noqa: ARG002
-    ) -> list[dict]:
-        """Get predictions with actual outcomes"""
+        _tenant_id: Optional[str],
+        _start_date: datetime,
+        _end_date: datetime,
         return []
     
     def _count_recent_predictions(
         self,
-        hours: int,  # noqa: ARG002
+        _hours: int,
     ) -> int:
         """Count predictions in recent hours"""
         return 0
-    
+
     def _store_drift_report(
         self,
-        report: DriftReport,  # noqa: ARG002
+        _report: DriftReport,
     ) -> None:
         """Store drift report"""
         pass
-    
+
     def _store_performance_metrics(
         self,
-        metrics: dict,  # noqa: ARG002
+        _metrics: dict,
     ) -> None:
         """Store performance metrics"""
         pass
-    
+
     def _send_alert(
         self,
-        alert: MonitoringAlert,  # noqa: ARG002
-    ) -> None:
-        """Send monitoring alert"""
+        _alert: MonitoringAlert,
         pass
