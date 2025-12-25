@@ -1,0 +1,535 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// GOOGLE CLASSROOM INTEGRATION MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+// 
+// This file contains additional Prisma schema models for Google Classroom 
+// integration. These should be added to the main schema.prisma file.
+//
+// Run `npx prisma migrate dev --name add_google_classroom` after adding.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Add these enums to the schema:
+
+enum EnrollmentRole {
+  STUDENT
+  TEACHER
+  OWNER
+  
+  @@map("enrollment_role")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  REMOVED
+  PENDING
+  SUSPENDED
+  
+  @@map("enrollment_status")
+}
+
+enum ClassStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+  
+  @@map("class_status")
+}
+
+enum SyncDirection {
+  google_to_aivo
+  aivo_to_google
+  bidirectional
+  
+  @@map("sync_direction")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OAUTH CREDENTIALS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Stores Google OAuth credentials for users with Classroom access
+model GoogleClassroomCredential {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @unique @db.Uuid
+  tenantId     String    @db.Uuid
+  
+  /// OAuth tokens
+  accessToken  String    /// Current access token (encrypted in production)
+  refreshToken String    /// Refresh token for getting new access tokens
+  expiresAt    DateTime? /// When the access token expires
+  scope        String    /// Granted OAuth scopes
+  
+  /// Google user info
+  googleUserId String?   /// Google's user ID
+  googleEmail  String?   /// User's Gmail address
+  
+  /// Metadata
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([tenantId])
+  @@index([googleEmail])
+  @@map("google_classroom_credentials")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SYNC TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks sync state for each Google Classroom course
+model GoogleClassroomSync {
+  id                  String    @id @default(uuid()) @db.Uuid
+  googleCourseId      String    @unique /// Google's course ID
+  classId             String    @db.Uuid /// AIVO class ID
+  
+  /// Sync status
+  lastSyncAt          DateTime?
+  syncInProgress      Boolean   @default(false)
+  lastError           String?   /// Last error message if sync failed
+  consecutiveFailures Int       @default(0) /// Track failures for backoff
+  
+  /// Sync configuration
+  autoSyncEnabled     Boolean   @default(true)
+  syncGuardians       Boolean   @default(true)
+  
+  /// Metadata
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  /// Relations
+  class               Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  
+  @@index([classId])
+  @@index([autoSyncEnabled])
+  @@map("google_classroom_sync")
+}
+
+/// Log of sync operations for history/debugging
+model GoogleClassroomSyncLog {
+  id              String    @id @default(uuid()) @db.Uuid
+  googleCourseId  String
+  classId         String    @db.Uuid
+  
+  /// Operation details
+  syncType        String    /// "full", "incremental", "webhook"
+  triggeredBy     String    /// "manual", "scheduled", "webhook"
+  
+  /// Results
+  success         Boolean
+  studentsAdded   Int       @default(0)
+  studentsRemoved Int       @default(0)
+  studentsUpdated Int       @default(0)
+  teachersAdded   Int       @default(0)
+  teachersRemoved Int       @default(0)
+  guardiansAdded  Int       @default(0)
+  errors          String[]  /// Array of error messages
+  warnings        String[]  /// Array of warning messages
+  
+  /// Timing
+  startedAt       DateTime
+  completedAt     DateTime?
+  durationMs      Int?
+  
+  /// For incremental sync
+  syncedSince     DateTime?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([googleCourseId])
+  @@index([classId])
+  @@index([createdAt])
+  @@map("google_classroom_sync_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSIGNMENT LINKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Links AIVO lessons to Google Classroom assignments
+model GoogleClassroomAssignment {
+  id                   String    @id @default(uuid()) @db.Uuid
+  lessonId             String    @db.Uuid
+  googleCourseId       String
+  googleAssignmentId   String
+  
+  /// Assignment details (cached from Classroom)
+  title                String?
+  maxPoints            Int?
+  dueDate              DateTime?
+  lessonUrl            String?   /// URL to the lesson in AIVO
+  
+  /// Status
+  status               String    @default("active") /// active, deleted, archived
+  
+  /// Metadata
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  
+  /// Relations
+  lesson               Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  gradePassbacks       GradePassbackLog[]
+  
+  @@unique([lessonId, googleCourseId])
+  @@index([googleCourseId])
+  @@index([googleAssignmentId])
+  @@index([status])
+  @@map("google_classroom_assignments")
+}
+
+/// Log of grade passback operations
+model GradePassbackLog {
+  id               String    @id @default(uuid()) @db.Uuid
+  assignmentLinkId String    @db.Uuid
+  studentId        String    @db.Uuid
+  googleUserId     String
+  
+  /// Grade details
+  aivoScore        Float     /// Original AIVO score (0-100)
+  googleGrade      Float     /// Scaled grade for Classroom
+  maxPoints        Int       /// Max points for the assignment
+  returned         Boolean   @default(false) /// Whether submission was returned
+  
+  /// Result
+  success          Boolean
+  error            String?
+  
+  /// Metadata
+  createdAt        DateTime  @default(now())
+  
+  /// Relations
+  assignmentLink   GoogleClassroomAssignment @relation(fields: [assignmentLinkId], references: [id], onDelete: Cascade)
+  
+  @@index([assignmentLinkId])
+  @@index([studentId])
+  @@index([createdAt])
+  @@map("grade_passback_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WEBHOOK REGISTRATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks active webhook registrations with Google Classroom
+model GoogleClassroomWebhookRegistration {
+  id              String    @id @default(uuid()) @db.Uuid
+  registrationId  String    @unique /// Google's registration ID
+  courseId        String
+  feedType        String    /// COURSE_ROSTER_CHANGES, COURSE_WORK_CHANGES
+  
+  /// Lifecycle
+  expiresAt       DateTime
+  renewedAt       DateTime?
+  active          Boolean   @default(true)
+  
+  /// Metadata
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([courseId])
+  @@index([expiresAt])
+  @@index([active])
+  @@map("google_classroom_webhook_registrations")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COURSE MAPPING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Maps AIVO classes to Google Classroom courses for manual linking
+model GoogleClassroomCourseMapping {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  aivoClassId     String         @db.Uuid
+  googleCourseId  String
+  
+  /// Sync settings
+  autoSync        Boolean        @default(true)
+  syncDirection   SyncDirection  @default(google_to_aivo)
+  
+  /// Tracking
+  lastSyncAt      DateTime?
+  
+  /// Metadata
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  /// Relations
+  class           Class          @relation(fields: [aivoClassId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, aivoClassId, googleCourseId])
+  @@index([tenantId])
+  @@index([googleCourseId])
+  @@map("google_classroom_course_mappings")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DOMAIN INSTALLATION (for Google Workspace Admins)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks domain-wide installations for Google Workspace
+model GoogleClassroomDomainInstallation {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tenantId             String    @db.Uuid
+  googleDomain         String    /// e.g., "school.edu"
+  
+  /// Admin info
+  adminEmail           String    /// Who installed the integration
+  adminGoogleId        String?
+  
+  /// Installation type
+  installationType     String    @default("individual") /// domain_wide, individual
+  
+  /// Status
+  status               String    @default("pending") /// active, pending, revoked
+  verifiedAt           DateTime?
+  
+  /// Service account (for domain-wide delegation)
+  serviceAccountEmail  String?
+  serviceAccountKeyRef String?   /// Reference to KMS-stored key
+  
+  /// Granted scopes
+  scopes               String[]
+  
+  /// Metadata
+  installedAt          DateTime  @default(now())
+  lastValidatedAt      DateTime?
+  revokedAt            DateTime?
+  revokedReason        String?
+  
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  @@unique([tenantId, googleDomain])
+  @@index([googleDomain])
+  @@index([status])
+  @@map("google_classroom_domain_installations")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLASS MODEL ADDITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Update the existing Class model to include Google Classroom fields:
+
+model Class {
+  id                String       @id @default(uuid()) @db.Uuid
+  tenantId          String       @db.Uuid
+  name              String
+  description       String?
+  section           String?
+  room              String?
+  
+  /// Google Classroom integration
+  googleCourseId    String?      @unique /// Linked Google course ID
+  googleCourseState String?      /// ACTIVE, ARCHIVED, etc.
+  sourceSystem      String?      /// google_classroom, manual, sis, etc.
+  
+  /// Status
+  status            ClassStatus  @default(ACTIVE)
+  
+  /// Metadata
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  
+  /// Relations
+  enrollments       Enrollment[]
+  googleSync        GoogleClassroomSync?
+  courseMappings    GoogleClassroomCourseMapping[]
+  
+  @@index([tenantId])
+  @@index([googleCourseId])
+  @@index([status])
+  @@map("classes")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENROLLMENT MODEL
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks student/teacher enrollment in classes
+model Enrollment {
+  id            String            @id @default(uuid()) @db.Uuid
+  
+  /// Foreign keys - use appropriate one based on role
+  userId        String?           @db.Uuid  /// For teachers
+  studentId     String?           @db.Uuid  /// For students
+  classId       String            @db.Uuid
+  
+  /// Role and status
+  role          EnrollmentRole
+  status        EnrollmentStatus  @default(ACTIVE)
+  
+  /// Google Classroom integration
+  googleUserId  String?           /// Google's user ID for this enrollment
+  
+  /// Removal tracking
+  removedAt     DateTime?
+  removedReason String?           /// google_classroom_sync, manual, etc.
+  
+  /// Metadata
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  /// Relations
+  class         Class             @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user          User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student       StudentProfile?   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, classId])
+  @@unique([studentId, classId])
+  @@index([classId])
+  @@index([googleUserId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STUDENT PROFILE ADDITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Update the existing StudentProfile model to include Google Classroom fields:
+
+model StudentProfile {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  
+  /// Personal info
+  email        String?
+  givenName    String
+  familyName   String
+  photoUrl     String?
+  
+  /// Google Classroom integration
+  googleId     String?   /// Google's user ID
+  
+  /// Source tracking
+  sourceSystem String?   /// google_classroom, manual, sis, etc.
+  
+  /// Metadata
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  /// Relations
+  enrollments  Enrollment[]
+  guardians    Guardian[]
+  learnerModel LearnerModel?
+  
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([googleId])
+  @@map("student_profiles")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GUARDIAN MODEL
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks guardian information from Google Classroom
+model Guardian {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @db.Uuid
+  studentId         String    @db.Uuid
+  
+  /// Contact info
+  email             String
+  givenName         String?
+  familyName        String?
+  
+  /// Google Classroom integration
+  googleGuardianId  String?   /// Google's guardian ID
+  
+  /// Source tracking
+  sourceSystem      String?   /// google_classroom, manual, sis, etc.
+  
+  /// Status
+  verified          Boolean   @default(false)
+  invitedAt         DateTime?
+  acceptedAt        DateTime?
+  
+  /// Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  /// Relations
+  student           StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([studentId, email])
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([googleGuardianId])
+  @@map("guardians")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// USER MODEL ADDITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Update the existing User model to include Google Classroom fields:
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  
+  /// Personal info
+  email        String
+  givenName    String
+  familyName   String
+  photoUrl     String?
+  
+  /// Auth
+  googleId     String?   /// Google OAuth ID
+  
+  /// Role and source
+  role         String    /// TEACHER, ADMIN, etc.
+  sourceSystem String?   /// google_classroom, manual, etc.
+  
+  /// Metadata
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  /// Relations
+  enrollments  Enrollment[]
+  
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([googleId])
+  @@map("users")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LESSON ATTEMPT ADDITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Add gradeSyncedAt field to LessonAttempt for tracking grade passback:
+
+model LessonAttempt {
+  id           String    @id @default(uuid()) @db.Uuid
+  lessonId     String    @db.Uuid
+  studentId    String    @db.Uuid
+  
+  /// Attempt details
+  status       String    /// IN_PROGRESS, COMPLETED, ABANDONED
+  score        Float?    /// Final score (0-100)
+  
+  /// Timing
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  
+  /// Grade passback tracking
+  gradeSyncedAt DateTime? /// When grade was synced to Google Classroom
+  
+  /// Metadata
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  /// Relations
+  lesson       Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@index([lessonId])
+  @@index([studentId])
+  @@index([status])
+  @@index([gradeSyncedAt])
+  @@map("lesson_attempts")
+}

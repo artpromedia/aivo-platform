@@ -357,3 +357,104 @@ model IntegrationSettings {
   
   @@map("integration_settings")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GOOGLE CLASSROOM INTEGRATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Stores OAuth credentials for Google Classroom integration
+model GoogleClassroomCredential {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @unique @db.Uuid // Internal user ID (teacher)
+  accessToken    String
+  refreshToken   String?
+  expiryDate     BigInt?
+  scope          String
+  tokenType      String?   @default("Bearer")
+  email          String?   // Google email address
+  googleUserId   String?   // Google user ID
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("google_classroom_credentials")
+}
+
+/// Maps internal courses/groups to Google Classroom courses
+model GoogleClassroomCourse {
+  id                 String    @id @default(uuid()) @db.Uuid
+  internalCourseId   String    @unique @db.Uuid // ID of the course in our system
+  googleCourseId     String    // ID from Google Classroom
+  name               String
+  section            String?
+  descriptionHeading String?
+  description        String?
+  room               String?
+  ownerId            String    // Google ID of the owner
+  enrollmentCode     String?
+  alternateLink      String?   // Link to course in Google Classroom
+  courseState        String    // ACTIVE, ARCHIVED, etc.
+  
+  lastSyncedAt       DateTime  @default(now())
+  
+  @@unique([googleCourseId])
+  @@map("google_classroom_courses")
+}
+
+/// Maps internal assignments to Google Classroom coursework
+model GoogleClassroomAssignment {
+  id                   String    @id @default(uuid()) @db.Uuid
+  internalAssignmentId String    @unique @db.Uuid
+  googleCourseId       String
+  googleCourseWorkId   String
+  title                String
+  description          String?
+  state                String?   // PUBLISHED, DRAFT, DELETED
+  alternateLink        String?
+  maxPoints            Float?
+  dueDate              DateTime?
+  
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  @@unique([googleCourseId, googleCourseWorkId])
+  @@map("google_classroom_assignments")
+}
+
+/// Maps internal submissions to Google Classroom student submissions
+model GoogleClassroomSubmission {
+  id                     String    @id @default(uuid()) @db.Uuid
+  internalSubmissionId   String    @unique @db.Uuid
+  googleCourseId         String
+  googleCourseWorkId     String
+  googleSubmissionId     String
+  userId                 String    @db.Uuid // Internal student ID
+  googleUserId           String    // Google student ID
+  state                  String    // NEW, CREATED, TURNED_IN, RETURNED, RECLAIMED_BY_STUDENT
+  assignedGrade          Float?
+  draftGrade             Float?
+  
+  lastSyncedAt           DateTime  @default(now())
+  
+  @@unique([googleCourseId, googleCourseWorkId, googleSubmissionId])
+  @@map("google_classroom_submissions")
+}
+
+/// Logs sync operations for auditing and debugging
+model GoogleClassroomSyncLog {
+  id             String    @id @default(uuid()) @db.Uuid
+  entityType     String    // COURSE, ROSTER, ASSIGNMENT, GRADE
+  entityId       String?   // ID of the entity being synced
+  status         String    // SUCCESS, FAILURE, PARTIAL
+  details        Json?     // Detailed results or error messages
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  durationMs     Int?
+  triggeredBy    String?   // SYSTEM, USER
+  
+  @@index([entityType])
+  @@index([status])
+  @@index([startedAt])
+  @@map("google_classroom_sync_logs")
+}
+

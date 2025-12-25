@@ -1,13 +1,16 @@
 /**
  * Integration Service Server
- * 
+ *
  * Fastify server setup for the integration service.
  */
 
-import Fastify, { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-import { registerRoutes } from './routes.js';
+import type { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
+
 import { ApiKeyService } from './api-key-service.js';
+import { createGoogleClassroomIntegration } from './google-classroom/index.js';
+import { registerRoutes } from './routes.js';
 import { WebhookDispatcher } from './webhook-dispatcher.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -19,6 +22,12 @@ export interface ServerConfig {
   host?: string;
   webhookWorkerIntervalMs?: number;
   webhookBatchSize?: number;
+  googleClassroom?: {
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+    webhookUrl: string;
+  };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -59,8 +68,16 @@ export async function createServer(config: ServerConfig): Promise<{
     webhookDispatcher,
   });
 
+  // Initialize Google Classroom integration if configured
+  let googleClassroom: ReturnType<typeof createGoogleClassroomIntegration> | null = null;
+  if (config.googleClassroom) {
+    googleClassroom = createGoogleClassroomIntegration(prisma, config.googleClassroom);
+    await googleClassroom.registerRoutes(app);
+    console.log('Google Classroom integration registered');
+  }
+
   // Webhook worker interval
-  let webhookWorkerInterval: NodeJS.Timeout | null = null;
+  let webhookWorkerInterval: ReturnType<typeof setTimeout> | null = null;
 
   const start = async () => {
     // Connect to database
@@ -81,12 +98,23 @@ export async function createServer(config: ServerConfig): Promise<{
 
     console.log(`Webhook worker started (interval: ${workerIntervalMs}ms, batch: ${batchSize})`);
 
+    // Start Google Classroom scheduled jobs if configured
+    if (googleClassroom) {
+      googleClassroom.startScheduledJobs();
+      console.log('Google Classroom scheduled jobs started');
+    }
+
     // Start server
     await app.listen({ port: config.port, host: config.host || '0.0.0.0' });
     console.log(`Integration service listening on port ${config.port}`);
   };
 
   const stop = async () => {
+    // Stop Google Classroom scheduled jobs
+    if (googleClassroom) {
+      googleClassroom.stopScheduledJobs();
+    }
+
     // Stop webhook worker
     if (webhookWorkerInterval) {
       clearInterval(webhookWorkerInterval);
