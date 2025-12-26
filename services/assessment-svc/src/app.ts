@@ -2,7 +2,14 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 
-import { assessmentRoutes, questionRoutes, attemptRoutes } from './routes/index.js';
+import {
+  assessmentRoutes,
+  questionRoutes,
+  attemptRoutes,
+  gradingRoutes,
+  analyticsRoutes,
+  securityRoutes,
+} from './routes/index.js';
 
 export function createApp() {
   const app = express();
@@ -30,6 +37,9 @@ export function createApp() {
   app.use('/api/v1/assessments', assessmentRoutes);
   app.use('/api/v1/questions', questionRoutes);
   app.use('/api/v1/attempts', attemptRoutes);
+  app.use('/api/v1', gradingRoutes);      // /api/v1/rubrics, /api/v1/grading
+  app.use('/api/v1', analyticsRoutes);    // /api/v1/analytics
+  app.use('/api/v1', securityRoutes);     // /api/v1/security
 
   // 404 handler
   app.use((_req, res) => {

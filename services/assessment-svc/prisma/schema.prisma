@@ -68,6 +68,50 @@ enum AttemptStatus {
   @@map("attempt_status")
 }
 
+enum RubricType {
+  HOLISTIC   // Single overall score
+  ANALYTIC   // Multiple criteria scored separately
+  SINGLE_POINT // Single criteria with meets/does not meet
+
+  @@map("rubric_type")
+}
+
+enum GradeReleasePolicy {
+  IMMEDIATELY      // Show grades right after submission
+  AFTER_DUE_DATE   // Show after assignment due date
+  AFTER_ALL_GRADED // Show after all submissions graded
+  MANUAL           // Teacher manually releases grades
+
+  @@map("grade_release_policy")
+}
+
+enum AccommodationType {
+  EXTENDED_TIME    // Extra time percentage
+  READ_ALOUD       // Text-to-speech enabled
+  LARGE_TEXT       // Enlarged font size
+  HIGH_CONTRAST    // High contrast mode
+  REDUCED_DISTRACTION // Simplified UI
+  BREAKS_ALLOWED   // Pause timer for breaks
+  SEPARATE_SETTING // Proctored separately
+
+  @@map("accommodation_type")
+}
+
+enum SecurityViolationType {
+  TAB_SWITCH       // Switched browser tabs
+  WINDOW_BLUR      // Left browser window
+  COPY_ATTEMPT     // Tried to copy content
+  PASTE_ATTEMPT    // Tried to paste content
+  SCREENSHOT       // Screenshot attempt detected
+  RIGHT_CLICK      // Right-click context menu
+  DEV_TOOLS        // Developer tools opened
+  FULLSCREEN_EXIT  // Exited fullscreen mode
+  SECOND_DEVICE    // Multiple device detected
+  OTHER            // Other suspicious activity
+
+  @@map("security_violation_type")
+}
+
 // ============================================================================
 // ASSESSMENT MODELS
 // ============================================================================
@@ -96,6 +140,15 @@ model Assessment {
   /// Relationships
   questions        AssessmentQuestion[]
   attempts         Attempt[]
+  configSettings   AssessmentSettings?
+  questionPools    AssessmentQuestionPool[]
+  standards        AssessmentStandard[]
+  analytics        AssessmentAnalytics?
+
+  /// Versioning
+  version          Int              @default(1)
+  clonedFrom       String?          @map("cloned_from") @db.Uuid
+  passingScore     Float?           @map("passing_score") // Percentage to pass
 
   /// Audit
   authorId         String           @map("author_id") @db.Uuid
@@ -120,18 +173,39 @@ model Question {
 
   /// Content
   stem          String       @db.Text // Question text (supports markdown)
+  stemHtml      String?      @map("stem_html") @db.Text // Rich text HTML version
   stemMedia     Json?        @map("stem_media") // { type: 'image'|'audio'|'video', url: string }
   options       Json?        // For choice-based questions
   correctAnswer Json         @map("correct_answer") // Flexible based on question type
+  correctAnswers String[]    @default([]) @map("correct_answers") // For multi-select
+  blanks        Json?        // For fill-in-blank: [{ acceptedAnswers: string[], allowFuzzyMatch: boolean }]
+  pairs         Json?        // For matching: [{ left: string, right: string }]
+  correctOrder  String[]     @default([]) @map("correct_order") // For ordering questions
+  correctRegion Json?        @map("correct_region") // For hotspot: { type, centerX, centerY, radius | x, y, width, height | points }
+  tolerance     Float?       // For numeric: acceptable tolerance
+  acceptedAnswers String[]   @default([]) @map("accepted_answers") // For fill-blank and short answer
   explanation   String?      @db.Text // Shown after answering
   hints         String[]     @default([])
+  feedback      Json?        // { correct: string, incorrect: string, partialCredit: string }
+
+  /// Scoring
+  partialCredit Boolean      @default(false) @map("partial_credit")
+  rubricId      String?      @map("rubric_id") @db.Uuid
 
   /// Metadata
   subjectId     String?      @map("subject_id") @db.Uuid
   topicId       String?      @map("topic_id") @db.Uuid
+  gradeLevel    String?      @map("grade_level") @db.VarChar(20)
   difficulty    Difficulty   @default(MEDIUM)
   points        Int          @default(1)
   tags          String[]     @default([])
+
+  /// Sharing & Versioning
+  isPublic      Boolean      @default(false) @map("is_public")
+  status        String       @default("active") // active, superseded, archived
+  version       Int          @default(1)
+  previousVersionId String?  @map("previous_version_id") @db.Uuid
+  replacedById  String?      @map("replaced_by_id") @db.Uuid
 
   /// Statistics (updated over time)
   /// { timesAnswered, correctRate, averageTimeSeconds, discriminationIndex }
@@ -140,6 +214,9 @@ model Question {
   /// Relationships
   assessments   AssessmentQuestion[]
   responses     QuestionResponse[]
+  rubric        Rubric?      @relation("QuestionRubric", fields: [rubricId], references: [id])
+  standards     QuestionStandard[]
+  analytics     QuestionAnalytics?
 
   /// Audit
   authorId      String       @map("author_id") @db.Uuid
@@ -152,6 +229,8 @@ model Question {
   @@index([type])
   @@index([difficulty])
   @@index([authorId])
+  @@index([isPublic])
+  @@index([status])
   @@map("questions")
 }
 
@@ -188,12 +267,22 @@ model Attempt {
   startedAt        DateTime      @default(now()) @map("started_at") @db.Timestamptz
   submittedAt      DateTime?     @map("submitted_at") @db.Timestamptz
   timeSpentSeconds Int           @default(0) @map("time_spent_seconds")
+  timeLimit        Int?          @map("time_limit") // Minutes (may include accommodations)
+  expiresAt        DateTime?     @map("expires_at") @db.Timestamptz
 
   /// Scoring
   score            Float?        // Percentage 0-100
   pointsEarned     Int?          @map("points_earned")
   pointsPossible   Int?          @map("points_possible")
   passed           Boolean?
+
+  /// Randomization
+  questionOrder    String[]      @default([]) @map("question_order") @db.Uuid // Shuffled question order
+  answerOrders     Json?         @map("answer_orders") // { questionId: [shuffled option order] }
+
+  /// Security
+  securityToken    String?       @map("security_token") @db.VarChar(100)
+  violationCount   Int           @default(0) @map("violation_count")
 
   /// Metadata
   /// { browser, device, ipAddress, proctored }
@@ -202,10 +291,14 @@ model Attempt {
   /// Relationships
   assessment       Assessment    @relation(fields: [assessmentId], references: [id])
   responses        QuestionResponse[]
+  securityViolations AttemptSecurityViolation[]
+  accommodations   AttemptAccommodation[]
+  sessions         AttemptSession[]
 
   /// Grading
   gradedBy         String?       @map("graded_by") @db.Uuid
   gradedAt         DateTime?     @map("graded_at") @db.Timestamptz
+  gradesReleasedAt DateTime?     @map("grades_released_at") @db.Timestamptz
   feedback         String?       @db.Text // Overall feedback
 
   @@index([assessmentId])
@@ -229,7 +322,16 @@ model QuestionResponse {
   /// Scoring
   isCorrect        Boolean?  @map("is_correct")
   pointsEarned     Float?    @map("points_earned")
+  maxPoints        Float     @default(1) @map("max_points")
   partialCredit    Boolean   @default(false) @map("partial_credit")
+  autoGraded       Boolean   @default(false) @map("auto_graded")
+
+  /// Status
+  status           String    @default("not_answered") // not_answered, answered, graded, flagged
+  flagged          Boolean   @default(false)
+
+  /// Rubric scoring
+  rubricScores     Json?     @map("rubric_scores") // [{ criterionId, levelId, points, comment }]
 
   /// Timing
   startedAt        DateTime  @default(now()) @map("started_at") @db.Timestamptz
@@ -242,13 +344,19 @@ model QuestionResponse {
   /// Feedback
   feedback         String?   @db.Text // Auto or manual feedback
 
+  /// Grading
+  gradedBy         String?   @map("graded_by") @db.Uuid
+  gradedAt         DateTime? @map("graded_at") @db.Timestamptz
+
   /// Relationships
   attempt          Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question         Question  @relation(fields: [questionId], references: [id])
+  gradingRecords   GradingRecord[]
 
   @@unique([attemptId, questionId])
   @@index([attemptId])
   @@index([questionId])
+  @@index([status])
   @@map("question_responses")
 }
 
@@ -268,6 +376,360 @@ model QuestionPool {
 
   @@index([tenantId])
   @@map("question_pools")
+}
+
+// ============================================================================
+// RUBRIC MODELS
+// ============================================================================
+
+/// Rubric for subjective grading
+model Rubric {
+  id          String      @id @default(uuid()) @db.Uuid
+  tenantId    String      @map("tenant_id") @db.Uuid
+  name        String      @db.VarChar(200)
+  description String?     @db.Text
+  type        RubricType  @default(ANALYTIC)
+  maxPoints   Int         @map("max_points")
+  isPublic    Boolean     @default(false) @map("is_public")
+
+  /// Relationships
+  criteria    RubricCriterion[]
+  questions   Question[]        @relation("QuestionRubric")
+
+  /// Audit
+  createdBy   String      @map("created_by") @db.Uuid
+  clonedFrom  String?     @map("cloned_from") @db.Uuid
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([createdBy])
+  @@index([isPublic])
+  @@map("rubrics")
+}
+
+/// Rubric Criterion (row in rubric)
+model RubricCriterion {
+  id          String   @id @default(uuid()) @db.Uuid
+  rubricId    String   @map("rubric_id") @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  orderIndex  Int      @map("order_index") @db.SmallInt
+  maxPoints   Int      @map("max_points")
+  weight      Float    @default(1.0)
+
+  /// Relationships
+  rubric      Rubric   @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  levels      RubricLevel[]
+
+  @@index([rubricId])
+  @@map("rubric_criteria")
+}
+
+/// Rubric Level (column/performance level)
+model RubricLevel {
+  id          String   @id @default(uuid()) @db.Uuid
+  criterionId String   @map("criterion_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  description String   @db.Text
+  points      Int
+  orderIndex  Int      @map("order_index") @db.SmallInt
+  feedback    String?  @db.Text
+
+  /// Relationships
+  criterion   RubricCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@index([criterionId])
+  @@map("rubric_levels")
+}
+
+// ============================================================================
+// ASSESSMENT SETTINGS
+// ============================================================================
+
+/// Assessment Settings (detailed configuration)
+model AssessmentSettings {
+  id                     String              @id @default(uuid()) @db.Uuid
+  assessmentId           String              @unique @map("assessment_id") @db.Uuid
+
+  // Timing
+  timeLimit              Int?                @map("time_limit")
+  timeLimitEnforced      Boolean             @default(true) @map("time_limit_enforced")
+  lateSubmissionPolicy   String              @default("prevent") @map("late_submission_policy")
+  lateDeductionPercent   Int?                @map("late_deduction_percent")
+
+  // Attempts
+  attemptsAllowed        Int                 @default(1) @map("attempts_allowed")
+  scoringMethod          String              @default("highest") @map("scoring_method")
+
+  // Randomization
+  shuffleQuestions       Boolean             @default(false) @map("shuffle_questions")
+  shuffleAnswers         Boolean             @default(false) @map("shuffle_answers")
+  questionPoolEnabled    Boolean             @default(false) @map("question_pool_enabled")
+
+  // Display
+  questionsPerPage       String              @default("all") @map("questions_per_page")
+  allowBackNavigation    Boolean             @default(true) @map("allow_back_navigation")
+  showQuestionNumbers    Boolean             @default(true) @map("show_question_numbers")
+  showProgressBar        Boolean             @default(true) @map("show_progress_bar")
+
+  // Feedback & Results
+  showResults            String              @default("after_submission") @map("show_results")
+  showCorrectAnswers     Boolean             @default(true) @map("show_correct_answers")
+  showFeedback           Boolean             @default(true) @map("show_feedback")
+  showPointsPerQuestion  Boolean             @default(true) @map("show_points_per_question")
+  gradeReleasePolicy     GradeReleasePolicy  @default(IMMEDIATELY) @map("grade_release_policy")
+  gradeReleaseDate       DateTime?           @map("grade_release_date") @db.Timestamptz
+
+  // Security
+  requireLockdownBrowser Boolean             @default(false) @map("require_lockdown_browser")
+  lockdownBrowserPassword String?            @map("lockdown_browser_password")
+  webcamRequired         Boolean             @default(false) @map("webcam_required")
+  preventCopyPaste       Boolean             @default(true) @map("prevent_copy_paste")
+  preventRightClick      Boolean             @default(true) @map("prevent_right_click")
+  detectTabSwitch        Boolean             @default(true) @map("detect_tab_switch")
+  requireFullscreen      Boolean             @default(false) @map("require_fullscreen")
+  maxViolationsAllowed   Int                 @default(3) @map("max_violations_allowed")
+  ipRestriction          String[]            @default([]) @map("ip_restriction")
+
+  // Proctoring
+  proctoringEnabled      Boolean             @default(false) @map("proctoring_enabled")
+  proctoringProvider     String?             @map("proctoring_provider")
+  proctoringSettings     Json?               @map("proctoring_settings")
+
+  // Availability
+  availableFrom          DateTime?           @map("available_from") @db.Timestamptz
+  availableUntil         DateTime?           @map("available_until") @db.Timestamptz
+  password               String?             @db.VarChar(100)
+
+  /// Relationships
+  assessment             Assessment          @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("assessment_settings")
+}
+
+// ============================================================================
+// ASSESSMENT QUESTION POOLS
+// ============================================================================
+
+/// Assessment Question Pool Configuration
+model AssessmentQuestionPool {
+  id                String     @id @default(uuid()) @db.Uuid
+  assessmentId      String     @map("assessment_id") @db.Uuid
+  name              String     @db.VarChar(200)
+  orderIndex        Int        @map("order_index") @db.SmallInt
+  pickCount         Int        @map("pick_count")
+  pointsPerQuestion Int        @map("points_per_question")
+
+  questionIds       String[]   @map("question_ids") @db.Uuid
+  tags              String[]   @default([])
+  difficulty        String?
+  topicIds          String[]   @default([]) @map("topic_ids") @db.Uuid
+
+  /// Relationships
+  assessment        Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([assessmentId])
+  @@map("assessment_question_pools")
+}
+
+// ============================================================================
+// SECURITY & ACCOMMODATIONS
+// ============================================================================
+
+/// Security violations during attempt
+model AttemptSecurityViolation {
+  id          String                @id @default(uuid()) @db.Uuid
+  attemptId   String                @map("attempt_id") @db.Uuid
+  type        SecurityViolationType
+  details     Json?
+  timestamp   DateTime              @default(now()) @db.Timestamptz
+  ipAddress   String?               @map("ip_address") @db.VarChar(45)
+  userAgent   String?               @map("user_agent") @db.Text
+
+  attempt     Attempt               @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([type])
+  @@map("attempt_security_violations")
+}
+
+/// Attempt accommodations granted
+model AttemptAccommodation {
+  id              String            @id @default(uuid()) @db.Uuid
+  attemptId       String            @map("attempt_id") @db.Uuid
+  type            AccommodationType
+  value           String?
+  grantedBy       String            @map("granted_by") @db.Uuid
+  grantedAt       DateTime          @default(now()) @map("granted_at") @db.Timestamptz
+  reason          String?           @db.Text
+
+  attempt         Attempt           @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@map("attempt_accommodations")
+}
+
+/// Session tracking for attempt
+model AttemptSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  attemptId   String   @map("attempt_id") @db.Uuid
+  startedAt   DateTime @default(now()) @map("started_at") @db.Timestamptz
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  userAgent   String?  @map("user_agent") @db.Text
+  deviceInfo  Json?    @map("device_info")
+
+  attempt     Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@map("attempt_sessions")
+}
+
+// ============================================================================
+// GRADING RECORDS
+// ============================================================================
+
+/// Manual grading record for a response
+model GradingRecord {
+  id            String   @id @default(uuid()) @db.Uuid
+  responseId    String   @map("response_id") @db.Uuid
+  graderId      String   @map("grader_id") @db.Uuid
+  score         Float
+  maxPoints     Float    @map("max_points")
+  feedback      String?  @db.Text
+  rubricScores  Json?    @map("rubric_scores")
+  isOverride    Boolean  @default(false) @map("is_override")
+  gradedAt      DateTime @default(now()) @map("graded_at") @db.Timestamptz
+
+  response      QuestionResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@index([responseId])
+  @@index([graderId])
+  @@map("grading_records")
+}
+
+// ============================================================================
+// STANDARDS ALIGNMENT
+// ============================================================================
+
+/// Educational Standard
+model Standard {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  framework   String   @db.VarChar(100)
+  subject     String   @db.VarChar(50)
+  gradeLevel  String   @map("grade_level") @db.VarChar(20)
+  domain      String?  @db.VarChar(100)
+  cluster     String?  @db.VarChar(200)
+  parentId    String?  @map("parent_id") @db.Uuid
+
+  parent      Standard?  @relation("StandardHierarchy", fields: [parentId], references: [id])
+  children    Standard[] @relation("StandardHierarchy")
+  questions   QuestionStandard[]
+  assessments AssessmentStandard[]
+
+  @@unique([framework, code])
+  @@index([framework])
+  @@index([subject])
+  @@index([gradeLevel])
+  @@map("standards")
+}
+
+/// Question-Standard alignment
+model QuestionStandard {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  standardId String   @map("standard_id") @db.Uuid
+  alignment  String   @default("primary")
+
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  standard   Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, standardId])
+  @@map("question_standards")
+}
+
+/// Assessment-Standard alignment
+model AssessmentStandard {
+  id           String     @id @default(uuid()) @db.Uuid
+  assessmentId String     @map("assessment_id") @db.Uuid
+  standardId   String     @map("standard_id") @db.Uuid
+
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  standard     Standard   @relation(fields: [standardId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, standardId])
+  @@map("assessment_standards")
+}
+
+// ============================================================================
+// ANALYTICS
+// ============================================================================
+
+/// Aggregated question statistics
+model QuestionAnalytics {
+  id                   String   @id @default(uuid()) @db.Uuid
+  questionId           String   @unique @map("question_id") @db.Uuid
+  
+  timesUsed            Int      @default(0) @map("times_used")
+  timesAnswered        Int      @default(0) @map("times_answered")
+  timesSkipped         Int      @default(0) @map("times_skipped")
+  
+  averageScore         Float?   @map("average_score")
+  averageTimeSeconds   Int?     @map("average_time_seconds")
+  correctRate          Float?   @map("correct_rate")
+  
+  difficultyIndex      Float?   @map("difficulty_index")
+  discriminationIndex  Float?   @map("discrimination_index")
+  pointBiserial        Float?   @map("point_biserial")
+  
+  distractorAnalysis   Json?    @map("distractor_analysis")
+  answerDistribution   Json?    @map("answer_distribution")
+  
+  lastCalculated       DateTime @default(now()) @map("last_calculated") @db.Timestamptz
+
+  question             Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("question_analytics")
+}
+
+/// Assessment-level analytics
+model AssessmentAnalytics {
+  id                  String     @id @default(uuid()) @db.Uuid
+  assessmentId        String     @unique @map("assessment_id") @db.Uuid
+  
+  totalAttempts       Int        @default(0) @map("total_attempts")
+  completedAttempts   Int        @default(0) @map("completed_attempts")
+  averageTimeMinutes  Float?     @map("average_time_minutes")
+  completionRate      Float?     @map("completion_rate")
+  
+  averageScore        Float?     @map("average_score")
+  medianScore         Float?     @map("median_score")
+  highestScore        Float?     @map("highest_score")
+  lowestScore         Float?     @map("lowest_score")
+  standardDeviation   Float?     @map("standard_deviation")
+  passRate            Float?     @map("pass_rate")
+  
+  scoreDistribution   Json?      @map("score_distribution")
+  gradeDistribution   Json?      @map("grade_distribution")
+  
+  cronbachAlpha       Float?     @map("cronbach_alpha")
+  standardError       Float?     @map("standard_error")
+  
+  lastCalculated      DateTime   @default(now()) @map("last_calculated") @db.Timestamptz
+
+  assessment          Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("assessment_analytics")
 }
 
 // ============================================================================
