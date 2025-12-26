@@ -1,0 +1,432 @@
+// Prisma Schema for Gamification Service
+// This extends the base schema with gamification-specific models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// PLAYER PROFILE & XP
+// ============================================================================
+
+model PlayerProfile {
+  id                String   @id @default(cuid())
+  studentId         String   @unique
+  
+  // XP & Level
+  totalXp           Int      @default(0)
+  level             Int      @default(1)
+  currentLevelXp    Int      @default(0)
+  todayXp           Int      @default(0)
+  weekXp            Int      @default(0)
+  monthXp           Int      @default(0)
+  
+  // Currency
+  coins             Int      @default(0)
+  gems              Int      @default(0)
+  
+  // Streak
+  streakDays        Int      @default(0)
+  longestStreak     Int      @default(0)
+  lastActivityDate  DateTime?
+  streakFreezes     Int      @default(0)
+  timezone          String   @default("UTC")
+  
+  // Stats
+  dailyXpGoal       Int      @default(50)
+  lessonsCompleted  Int      @default(0)
+  quizzesCompleted  Int      @default(0)
+  perfectScores     Int      @default(0)
+  totalTimeMinutes  Int      @default(0)
+  
+  // Customization
+  equippedItems     EquippedItem[]
+  activeTitleId     String?
+  activeTitle       PlayerTitle?     @relation(fields: [activeTitleId], references: [id])
+  
+  // Settings
+  settings          Json     @default("{\"showOnLeaderboard\": true, \"celebrationsEnabled\": true, \"soundEnabled\": true, \"dailyReminders\": true}")
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  xpTransactions    XPTransaction[]
+  achievements      EarnedAchievement[]
+  dailyActivities   DailyActivity[]
+  dailyGoalRecords  DailyGoalRecord[]
+  dailyLogins       DailyLogin[]
+  activeChallenges  ActiveChallenge[]
+  streakFreezeUsages StreakFreezeUsage[]
+  activeBoosters    ActiveBooster[]
+  ownedItems        OwnedItem[]
+  ownedTitles       OwnedTitle[]
+  notifications     GamificationNotification[]
+  sessions          PlayerSession[]
+  
+  @@index([studentId])
+  @@index([totalXp])
+  @@index([level])
+  @@index([streakDays])
+}
+
+model XPTransaction {
+  id          String   @id @default(cuid())
+  studentId   String
+  profile     PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  amount      Int
+  activity    String
+  metadata    Json?
+  earnedAt    DateTime @default(now())
+  
+  @@index([studentId])
+  @@index([earnedAt])
+  @@index([activity])
+}
+
+// ============================================================================
+// ACHIEVEMENTS
+// ============================================================================
+
+model EarnedAchievement {
+  id            String   @id @default(cuid())
+  studentId     String
+  profile       PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  achievementId String
+  earnedAt      DateTime @default(now())
+  
+  @@unique([studentId, achievementId])
+  @@index([studentId])
+  @@index([achievementId])
+  @@index([earnedAt])
+}
+
+// ============================================================================
+// STREAKS & DAILY TRACKING
+// ============================================================================
+
+model DailyActivity {
+  id           String   @id @default(cuid())
+  studentId    String
+  profile      PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  date         DateTime @db.Date
+  activityType String
+  streakDay    Int
+  metadata     Json?
+  
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+}
+
+model DailyGoalRecord {
+  id          String   @id @default(cuid())
+  studentId   String
+  profile     PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  date        DateTime @db.Date
+  goal        Int
+  achieved    Int
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+}
+
+model DailyLogin {
+  id        String   @id @default(cuid())
+  studentId String
+  profile   PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  date      DateTime @db.Date
+  loginAt   DateTime @default(now())
+  
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+}
+
+model StreakFreezeUsage {
+  id                 String   @id @default(cuid())
+  studentId          String
+  profile            PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  usedAt             DateTime @default(now())
+  streakDayProtected Int
+  
+  @@index([studentId])
+  @@index([usedAt])
+}
+
+// ============================================================================
+// CHALLENGES
+// ============================================================================
+
+model ActiveChallenge {
+  id              String   @id @default(cuid())
+  studentId       String
+  profile         PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  templateId      String
+  name            String
+  description     String
+  type            String   // daily, weekly, monthly, special, class
+  category        String
+  metric          String
+  goal            Int
+  currentProgress Int      @default(0)
+  
+  xpReward        Int
+  coinReward      Int?
+  gemReward       Int?
+  iconUrl         String?
+  
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("active") // active, in_progress, completed, expired
+  completedAt     DateTime?
+  
+  @@unique([studentId, templateId, startDate])
+  @@index([studentId])
+  @@index([status])
+  @@index([endDate])
+  @@index([metric])
+}
+
+model ClassChallenge {
+  id              String   @id @default(cuid())
+  classId         String
+  createdBy       String
+  
+  name            String
+  description     String
+  metric          String
+  goal            Int
+  currentProgress Int      @default(0)
+  collaborative   Boolean  @default(false)
+  
+  xpReward        Int?
+  coinReward      Int?
+  gemReward       Int?
+  badgeReward     String?
+  
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("active")
+  completedAt     DateTime?
+  
+  participants    ClassChallengeParticipant[]
+  
+  @@index([classId])
+  @@index([status])
+}
+
+model ClassChallengeParticipant {
+  id           String   @id @default(cuid())
+  challengeId  String
+  challenge    ClassChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  
+  studentId    String
+  progress     Int      @default(0)
+  joinedAt     DateTime @default(now())
+  
+  @@unique([challengeId, studentId])
+  @@index([studentId])
+}
+
+// ============================================================================
+// LEADERBOARDS
+// ============================================================================
+
+model LeaderboardArchive {
+  id         String   @id @default(cuid())
+  type       String   // xp, lessons, streak, achievements
+  period     String   // weekly, monthly
+  scope      String   // global, school
+  scopeId    String?
+  periodKey  String   // e.g., "2024-W52" or "2024-12"
+  entries    Json
+  archivedAt DateTime @default(now())
+  
+  @@unique([type, period, scope, scopeId, periodKey])
+  @@index([periodKey])
+}
+
+// ============================================================================
+// REWARDS & SHOP
+// ============================================================================
+
+model ShopItem {
+  id                  String   @id @default(cuid())
+  name                String
+  description         String
+  category            String   // avatars, frames, backgrounds, effects, boosters, freezes, titles
+  type                String
+  imageUrl            String
+  previewUrl          String?
+  price               Int
+  currency            String   // coins, gems
+  rarity              String   @default("common")
+  
+  isLimited           Boolean  @default(false)
+  limitedUntil        DateTime?
+  requiredLevel       Int?
+  requiredAchievement String?
+  
+  metadata            Json?
+  isActive            Boolean  @default(true)
+  sortOrder           Int      @default(0)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  ownedItems          OwnedItem[]
+  
+  @@index([category])
+  @@index([isActive])
+}
+
+model OwnedItem {
+  id          String   @id @default(cuid())
+  studentId   String
+  profile     PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  itemId      String
+  item        ShopItem @relation(fields: [itemId], references: [id])
+  
+  purchasedAt DateTime @default(now())
+  
+  @@unique([studentId, itemId])
+  @@index([studentId])
+}
+
+model EquippedItem {
+  id        String   @id @default(cuid())
+  studentId String
+  profile   PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  slot      String   // avatar, frame, badge, background, effect
+  itemId    String
+  
+  equippedAt DateTime @default(now())
+  
+  @@unique([studentId, slot])
+  @@index([studentId])
+}
+
+model PlayerTitle {
+  id       String   @id @default(cuid())
+  name     String
+  color    String?
+  source   String   // level, achievement, purchase, special
+  sourceId String?
+  
+  ownedTitles OwnedTitle[]
+  profiles    PlayerProfile[]
+  
+  @@index([source])
+}
+
+model OwnedTitle {
+  id        String   @id @default(cuid())
+  studentId String
+  profile   PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  titleId   String
+  title     PlayerTitle @relation(fields: [titleId], references: [id])
+  
+  earnedAt  DateTime @default(now())
+  
+  @@unique([studentId, titleId])
+  @@index([studentId])
+}
+
+model ActiveBooster {
+  id         String   @id @default(cuid())
+  studentId  String
+  profile    PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  type       String   // xp_2x, xp_3x, coin_2x
+  multiplier Float
+  expiresAt  DateTime
+  
+  createdAt  DateTime @default(now())
+  
+  @@index([studentId])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model GamificationNotification {
+  id        String   @id @default(cuid())
+  studentId String
+  profile   PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  type      String
+  title     String
+  message   String
+  iconUrl   String?
+  data      Json?
+  
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([studentId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// SESSION TRACKING (Anti-Addiction)
+// ============================================================================
+
+model PlayerSession {
+  id          String   @id @default(cuid())
+  studentId   String
+  profile     PlayerProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  durationMin Int?
+  
+  breaksTaken Int      @default(0)
+  activities  Int      @default(0)
+  xpEarned    Int      @default(0)
+  
+  @@index([studentId])
+  @@index([startTime])
+}
+
+// ============================================================================
+// CLASS GAMIFICATION SETTINGS
+// ============================================================================
+
+model ClassGamificationSettings {
+  id        String   @id @default(cuid())
+  classId   String   @unique
+  
+  enabled   Boolean  @default(true)
+  features  Json     @default("{\"xpEnabled\": true, \"achievementsEnabled\": true, \"streaksEnabled\": true, \"leaderboardEnabled\": true, \"leaderboardScope\": \"class\", \"challengesEnabled\": true, \"rewardsEnabled\": true, \"celebrationsEnabled\": true, \"soundEnabled\": true}")
+  
+  customXpMultiplier Float?
+  antiAddiction      Json     @default("{\"enforceTimeLimits\": false, \"enforceBreaks\": false}")
+  
+  updatedAt DateTime @updatedAt
+  updatedBy String
+  
+  @@index([classId])
+}

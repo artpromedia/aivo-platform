@@ -12,6 +12,7 @@ export * from './explainability.js';
 export * from './modelCards.js';
 export * from './audit.js';
 export * from './copy.js';
+export * from './gamification.types.js';
 
 // Event schemas (re-export all from events module)
 export * from './events/index.js';

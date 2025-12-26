@@ -13,6 +13,10 @@
     "./events": {
       "types": "./dist/events/index.d.ts",
       "import": "./dist/events/index.js"
+    },
+    "./gamification.types": {
+      "types": "./dist/gamification.types.d.ts",
+      "import": "./dist/gamification.types.js"
     }
   },
   "scripts": {
