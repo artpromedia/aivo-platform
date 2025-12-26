@@ -1,0 +1,374 @@
+// Rate Limiting Prisma Schema
+// Add these models to your main schema.prisma file
+
+// =============================================================================
+// RATE LIMITING MODELS
+// =============================================================================
+
+/// Rate limit rules configuration stored in database for dynamic management
+model RateLimitRule {
+  id            String   @id @default(cuid())
+  
+  /// Unique rule identifier (e.g., 'auth-login', 'api-default')
+  ruleId        String   @unique @map("rule_id")
+  
+  /// Human-readable name
+  name          String
+  
+  /// Description of what this rule protects
+  description   String?
+  
+  /// Path pattern to match (supports wildcards)
+  pathPattern   String   @map("path_pattern")
+  
+  /// HTTP methods this rule applies to (null = all methods)
+  methods       String[] @default([])
+  
+  /// Maximum requests allowed in window
+  limit         Int
+  
+  /// Time window in seconds
+  windowSeconds Int      @map("window_seconds")
+  
+  /// Burst limit for token bucket / leaky bucket
+  burstLimit    Int?     @map("burst_limit")
+  
+  /// Algorithm to use: sliding-window, token-bucket, fixed-window, leaky-bucket
+  algorithm     String   @default("sliding-window")
+  
+  /// Priority (higher = matched first)
+  priority      Int      @default(0)
+  
+  /// Scopes: user, ip, apiKey, tenant, endpoint, global
+  scopes        String[] @default(["user"])
+  
+  /// Action type: reject, queue, throttle
+  actionType    String   @default("reject") @map("action_type")
+  
+  /// HTTP status code for rejection
+  statusCode    Int      @default(429) @map("status_code")
+  
+  /// Custom error message
+  errorMessage  String?  @map("error_message")
+  
+  /// Queue timeout for queue action (ms)
+  queueTimeout  Int?     @map("queue_timeout")
+  
+  /// Whether this rule is active
+  isActive      Boolean  @default(true) @map("is_active")
+  
+  /// Tenant-specific rule (null = global)
+  tenantId      String?  @map("tenant_id")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id])
+  
+  @@index([tenantId])
+  @@index([pathPattern])
+  @@index([isActive])
+  @@map("rate_limit_rules")
+}
+
+/// Rate limit tiers for different user/tenant plans
+model RateLimitTier {
+  id                    String   @id @default(cuid())
+  
+  /// Tier name (e.g., 'free', 'basic', 'professional', 'enterprise')
+  name                  String   @unique
+  
+  /// Display name
+  displayName           String   @map("display_name")
+  
+  /// Description
+  description           String?
+  
+  /// Requests per minute
+  requestsPerMinute     Int      @map("requests_per_minute")
+  
+  /// Requests per hour
+  requestsPerHour       Int      @map("requests_per_hour")
+  
+  /// Requests per day
+  requestsPerDay        Int      @map("requests_per_day")
+  
+  /// Burst limit
+  burstLimit            Int      @map("burst_limit")
+  
+  /// Maximum concurrent requests
+  concurrentRequests    Int      @map("concurrent_requests")
+  
+  /// Daily quota limit
+  dailyQuota            Int?     @map("daily_quota")
+  
+  /// Monthly quota limit
+  monthlyQuota          Int?     @map("monthly_quota")
+  
+  /// Priority in queue (higher = processed first)
+  priority              Int      @default(1)
+  
+  /// Features enabled for this tier
+  features              String[] @default([])
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  overrides             RateLimitOverride[]
+  
+  @@map("rate_limit_tiers")
+}
+
+/// Rate limit overrides for specific users/tenants/API keys
+model RateLimitOverride {
+  id                String   @id @default(cuid())
+  
+  /// Type of entity being overridden
+  entityType        String   @map("entity_type") // user, tenant, apiKey
+  
+  /// ID of the entity
+  entityId          String   @map("entity_id")
+  
+  /// Optional tier to use instead of default
+  tierId            String?  @map("tier_id")
+  
+  /// Custom requests per minute (overrides tier)
+  requestsPerMinute Int?     @map("requests_per_minute")
+  
+  /// Custom requests per hour
+  requestsPerHour   Int?     @map("requests_per_hour")
+  
+  /// Custom requests per day
+  requestsPerDay    Int?     @map("requests_per_day")
+  
+  /// Custom burst limit
+  burstLimit        Int?     @map("burst_limit")
+  
+  /// Custom daily quota
+  dailyQuota        Int?     @map("daily_quota")
+  
+  /// Custom monthly quota
+  monthlyQuota      Int?     @map("monthly_quota")
+  
+  /// Whether to completely bypass rate limiting
+  bypass            Boolean  @default(false)
+  
+  /// Reason for the override
+  reason            String?
+  
+  /// When the override expires (null = permanent)
+  expiresAt         DateTime? @map("expires_at")
+  
+  /// Whether this override is active
+  isActive          Boolean  @default(true) @map("is_active")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdBy         String?  @map("created_by")
+  
+  tier              RateLimitTier? @relation(fields: [tierId], references: [id])
+  
+  @@unique([entityType, entityId])
+  @@index([entityType, entityId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("rate_limit_overrides")
+}
+
+/// API keys with rate limit configuration
+model ApiKey {
+  id              String   @id @default(cuid())
+  
+  /// The API key value (hashed)
+  keyHash         String   @unique @map("key_hash")
+  
+  /// Prefix shown to users (e.g., 'sk_live_abc...')
+  keyPrefix       String   @map("key_prefix")
+  
+  /// Human-readable name
+  name            String
+  
+  /// Description
+  description     String?
+  
+  /// Tenant this key belongs to
+  tenantId        String   @map("tenant_id")
+  
+  /// User who created the key
+  userId          String?  @map("user_id")
+  
+  /// Rate limit tier for this key
+  tierName        String   @default("basic") @map("tier_name")
+  
+  /// Scopes/permissions for this key
+  scopes          String[] @default([])
+  
+  /// Whether to bypass rate limiting
+  bypassRateLimit Boolean  @default(false) @map("bypass_rate_limit")
+  
+  /// Last time this key was used
+  lastUsedAt      DateTime? @map("last_used_at")
+  
+  /// IP addresses allowed to use this key
+  allowedIPs      String[] @default([]) @map("allowed_ips")
+  
+  /// When the key expires
+  expiresAt       DateTime? @map("expires_at")
+  
+  /// Whether the key is active
+  isActive        Boolean  @default(true) @map("is_active")
+  
+  /// Whether the key has been revoked
+  revokedAt       DateTime? @map("revoked_at")
+  revokedReason   String?   @map("revoked_reason")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  
+  @@index([tenantId])
+  @@index([keyPrefix])
+  @@index([isActive])
+  @@map("api_keys")
+}
+
+/// Rate limit events for analytics and monitoring
+model RateLimitEvent {
+  id            String   @id @default(cuid())
+  
+  /// Type of event: allowed, denied, queued
+  eventType     String   @map("event_type")
+  
+  /// The rate limit rule that was triggered
+  ruleId        String?  @map("rule_id")
+  
+  /// The key that was rate limited
+  rateLimitKey  String   @map("rate_limit_key")
+  
+  /// User ID if applicable
+  userId        String?  @map("user_id")
+  
+  /// Tenant ID if applicable
+  tenantId      String?  @map("tenant_id")
+  
+  /// API key ID if applicable
+  apiKeyId      String?  @map("api_key_id")
+  
+  /// IP address
+  ipAddress     String?  @map("ip_address")
+  
+  /// Request path
+  path          String?
+  
+  /// HTTP method
+  method        String?
+  
+  /// Current count at time of event
+  currentCount  Int      @map("current_count")
+  
+  /// Limit that was applied
+  appliedLimit  Int      @map("applied_limit")
+  
+  /// Time until reset
+  resetTime     DateTime @map("reset_time")
+  
+  /// User agent
+  userAgent     String?  @map("user_agent")
+  
+  /// Additional metadata
+  metadata      Json?
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@index([eventType])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([ruleId])
+  @@map("rate_limit_events")
+}
+
+/// Quota usage tracking (persistent, not in Redis)
+model QuotaUsage {
+  id            String   @id @default(cuid())
+  
+  /// Entity type: user, tenant, apiKey
+  entityType    String   @map("entity_type")
+  
+  /// Entity ID
+  entityId      String   @map("entity_id")
+  
+  /// Quota name (e.g., 'ai-requests', 'file-uploads')
+  quotaName     String   @map("quota_name")
+  
+  /// Period type: daily, weekly, monthly
+  periodType    String   @map("period_type")
+  
+  /// Period identifier (e.g., '2024-01-15', '2024-W03', '2024-01')
+  periodId      String   @map("period_id")
+  
+  /// Usage count in this period
+  used          Int      @default(0)
+  
+  /// Limit for this period
+  limit         Int
+  
+  /// When this period resets
+  resetAt       DateTime @map("reset_at")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  @@unique([entityType, entityId, quotaName, periodType, periodId])
+  @@index([entityType, entityId])
+  @@index([quotaName])
+  @@index([periodId])
+  @@index([resetAt])
+  @@map("quota_usage")
+}
+
+/// Circuit breaker state (persistent backup)
+model CircuitBreakerState {
+  id              String   @id @default(cuid())
+  
+  /// Circuit breaker name
+  name            String   @unique
+  
+  /// Current state: closed, open, half_open
+  state           String   @default("closed")
+  
+  /// Number of consecutive failures
+  failureCount    Int      @default(0) @map("failure_count")
+  
+  /// Number of consecutive successes (in half-open)
+  successCount    Int      @default(0) @map("success_count")
+  
+  /// Last failure timestamp
+  lastFailureAt   DateTime? @map("last_failure_at")
+  
+  /// Last state change timestamp
+  lastStateChange DateTime  @default(now()) @map("last_state_change")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@map("circuit_breaker_states")
+}
+
+// =============================================================================
+// TENANT MODEL (reference - may already exist in your schema)
+// =============================================================================
+
+// Note: If you already have a Tenant model, just add the relations below
+// model Tenant {
+//   id              String   @id @default(cuid())
+//   name            String
+//   // ... other fields
+//   
+//   rateLimitRules  RateLimitRule[]
+//   apiKeys         ApiKey[]
+//   
+//   @@map("tenants")
+// }
