@@ -10,10 +10,8 @@
  */
 
 import * as Y from 'yjs';
-import * as encoding from 'lib0/encoding';
-import * as decoding from 'lib0/decoding';
-import { getRedisClient, RedisKeys } from '../redis/index.js';
-import { config } from '../config.js';
+
+import { getRedisClient } from '../redis/index.js';
 
 /**
  * Document state in memory
@@ -58,8 +56,8 @@ export interface HistoryEntry {
  * Document Sync Service
  */
 export class SyncService {
-  private documents: Map<string, DocumentState> = new Map();
-  private persistQueue: Map<string, NodeJS.Timeout> = new Map();
+  private readonly documents = new Map<string, DocumentState>();
+  private readonly persistQueue = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly PERSIST_DELAY = 5000; // 5 seconds debounce
   private readonly DOC_TTL = 3600; // 1 hour cache
   private readonly MAX_HISTORY = 100;
@@ -217,7 +215,7 @@ export class SyncService {
    */
   async persistDocument(documentId: string): Promise<void> {
     const state = this.documents.get(documentId);
-    if (!state || !state.pendingPersist) {
+    if (!state?.pendingPersist) {
       return;
     }
 
@@ -274,7 +272,7 @@ export class SyncService {
   /**
    * Get document history
    */
-  async getHistory(documentId: string, limit: number = 50): Promise<HistoryEntry[]> {
+  async getHistory(documentId: string, limit = 50): Promise<HistoryEntry[]> {
     const redis = getRedisClient();
     const key = `doc:history:${documentId}`;
 
@@ -321,7 +319,10 @@ export class SyncService {
       console.log(`[Sync] Document ${documentId} restored to version ${targetVersion}`);
       return true;
     } catch (error) {
-      console.error(`[Sync] Failed to restore document ${documentId} to version ${targetVersion}:`, error);
+      console.error(
+        `[Sync] Failed to restore document ${documentId} to version ${targetVersion}:`,
+        error
+      );
       return false;
     }
   }
@@ -385,7 +386,7 @@ export class SyncService {
   private async getVersion(documentId: string): Promise<number> {
     const redis = getRedisClient();
     const version = await redis.get(`doc:version:${documentId}`);
-    return version ? parseInt(version, 10) : 0;
+    return version ? Number.parseInt(version, 10) : 0;
   }
 
   private async setVersion(documentId: string, version: number): Promise<void> {
@@ -473,7 +474,7 @@ export class SyncService {
     await this.persistAll();
 
     // Destroy all Y.Docs
-    for (const [documentId, state] of this.documents) {
+    for (const [_documentId, state] of this.documents) {
       state.doc.destroy();
     }
     this.documents.clear();

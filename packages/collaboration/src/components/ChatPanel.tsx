@@ -8,14 +8,11 @@
  * - Threaded replies
  */
 
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  CSSProperties,
-} from 'react';
+import type { CSSProperties } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import type { ChatMessage, ChatReaction, TypingUser } from '../types';
+
 import { TypingIndicator } from './TypingIndicator';
 
 interface ChatPanelProps {
@@ -56,12 +53,7 @@ function getInitials(name: string): string {
 }
 
 // Individual message component
-const Message: React.FC<MessageProps> = ({
-  message,
-  currentUserId,
-  onReaction,
-  showAvatar,
-}) => {
+const Message: React.FC<MessageProps> = ({ message, currentUserId, onReaction, showAvatar }) => {
   const [showReactions, setShowReactions] = useState(false);
   const isOwn = message.userId === currentUserId;
 
@@ -99,9 +91,7 @@ const Message: React.FC<MessageProps> = ({
     fontSize: 14,
     lineHeight: 1.4,
     position: 'relative',
-    ...(isOwn
-      ? { borderBottomRightRadius: 4 }
-      : { borderBottomLeftRadius: 4 }),
+    ...(isOwn ? { borderBottomRightRadius: 4 } : { borderBottomLeftRadius: 4 }),
   };
 
   const deletedStyle: CSSProperties = {
@@ -181,13 +171,15 @@ const Message: React.FC<MessageProps> = ({
         )}
       </div>
       <div>
-        {!isOwn && showAvatar && (
-          <div style={nameStyle}>{message.displayName}</div>
-        )}
+        {!isOwn && showAvatar && <div style={nameStyle}>{message.displayName}</div>}
         <div
           style={bubbleStyle}
-          onMouseEnter={() => setShowReactions(true)}
-          onMouseLeave={() => setShowReactions(false)}
+          onMouseEnter={() => {
+            setShowReactions(true);
+          }}
+          onMouseLeave={() => {
+            setShowReactions(false);
+          }}
         >
           {message.content}
           <div style={timeStyle}>
@@ -200,7 +192,9 @@ const Message: React.FC<MessageProps> = ({
               {QUICK_REACTIONS.map((emoji) => (
                 <button
                   key={emoji}
-                  onClick={() => onReaction(emoji)}
+                  onClick={() => {
+                    onReaction(emoji);
+                  }}
                   style={{
                     fontSize: 16,
                     padding: 4,
@@ -224,7 +218,9 @@ const Message: React.FC<MessageProps> = ({
               <button
                 key={reaction.emoji}
                 style={reactionStyle(reaction.userIds.includes(currentUserId))}
-                onClick={() => onReaction(reaction.emoji)}
+                onClick={() => {
+                  onReaction(reaction.emoji);
+                }}
               >
                 <span>{reaction.emoji}</span>
                 <span>{reaction.userIds.length}</span>
@@ -390,11 +386,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   return (
     <div style={containerStyle}>
-      <div
-        ref={messagesContainerRef}
-        style={messagesStyle}
-        onScroll={handleScroll}
-      >
+      <div ref={messagesContainerRef} style={messagesStyle} onScroll={handleScroll}>
         {isLoading && <div style={loadingStyle}>Loading messages...</div>}
 
         {messages.length === 0 && !isLoading ? (
@@ -406,7 +398,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 key={message.id}
                 message={message}
                 currentUserId={currentUserId}
-                onReaction={(emoji) => onReaction(message.id, emoji)}
+                onReaction={(emoji) => {
+                  onReaction(message.id, emoji);
+                }}
                 showAvatar={shouldShowAvatar(index)}
               />
             ))}
@@ -427,7 +421,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
           placeholder={placeholder}
           style={inputStyle}
         />

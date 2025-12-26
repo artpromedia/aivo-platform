@@ -8,7 +8,9 @@
  * - Infinite scroll
  */
 
-import React, { useCallback, useEffect, useRef, CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React, { useEffect, useRef } from 'react';
+
 import type { ActivityItem, ActivityType } from '../types';
 
 interface ActivityFeedProps {
@@ -115,7 +117,9 @@ const ActivityItemComponent: React.FC<{
       observer.observe(ref.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [activity.read, onRead]);
 
   const containerStyle: CSSProperties = {
@@ -174,14 +178,29 @@ const ActivityItemComponent: React.FC<{
     overflow: 'hidden',
   };
 
+  // Create an interactive wrapper if onClick is provided
+  const WrapperElement = onClick ? 'button' : 'article';
+  const wrapperProps = onClick
+    ? {
+        type: 'button' as const,
+        onClick,
+        style: {
+          ...containerStyle,
+          border: 'none',
+          background: 'transparent',
+          textAlign: 'left' as const,
+          font: 'inherit',
+          cursor: 'pointer',
+        },
+        'aria-label': activity.message,
+      }
+    : {
+        style: containerStyle,
+        'aria-label': activity.message,
+      };
+
   return (
-    <div
-      ref={ref}
-      style={containerStyle}
-      onClick={onClick}
-      role="article"
-      aria-label={activity.message}
-    >
+    <WrapperElement ref={ref as React.Ref<HTMLButtonElement & HTMLElement>} {...wrapperProps}>
       {activity.actorAvatarUrl ? (
         <div style={avatarStyle}>
           <img
@@ -218,7 +237,7 @@ const ActivityItemComponent: React.FC<{
           }}
         />
       )}
-    </div>
+    </WrapperElement>
   );
 };
 
@@ -251,7 +270,9 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       observer.observe(loadMoreRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [hasMore, isLoading, onLoadMore]);
 
   const groupedActivities = groupActivitiesByDate(activities);
@@ -349,8 +370,16 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             <ActivityItemComponent
               key={activity.id}
               activity={activity}
-              onRead={() => onMarkAsRead(activity.id)}
-              onClick={onActivityClick ? () => onActivityClick(activity) : undefined}
+              onRead={() => {
+                onMarkAsRead(activity.id);
+              }}
+              onClick={
+                onActivityClick
+                  ? () => {
+                      onActivityClick(activity);
+                    }
+                  : undefined
+              }
             />
           ))}
         </div>

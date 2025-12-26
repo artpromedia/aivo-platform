@@ -8,11 +8,12 @@
  * - Tenant isolation
  */
 
-import type { Socket } from 'socket.io';
 import * as jose from 'jose';
-import { getRedisClient } from '../redis/index.js';
+import type { Socket } from 'socket.io';
+
 import { config } from '../config.js';
-import type { JWTPayload, DeviceType } from '../types.js';
+import { getRedisClient } from '../redis/index.js';
+import type { DeviceType, JWTPayload } from '../types.js';
 
 /**
  * Authentication result
@@ -37,7 +38,8 @@ export interface RateLimitResult {
  * WebSocket Authentication Middleware
  */
 export class WsAuthMiddleware {
-  private jwtPublicKey: jose.KeyLike | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- jose.KeyLike type resolution
+  private jwtPublicKey: jose.KeyLike | Uint8Array | null = null;
   private readonly CONNECTION_RATE_LIMIT = 10; // Connections per window
   private readonly CONNECTION_RATE_WINDOW = 60; // 60 seconds
 
@@ -187,12 +189,12 @@ export class WsAuthMiddleware {
       sub: payload.sub as string,
       tenantId: (payload.tenantId || payload.tenant_id) as string,
       role: (payload.role || payload.roles?.[0] || 'user') as string,
-      displayName:
-        (payload.displayName || payload.display_name || payload.name || 'User') as string,
+      displayName: (payload.displayName ||
+        payload.display_name ||
+        payload.name ||
+        'User') as string,
       email: payload.email as string | undefined,
-      avatarUrl: (payload.avatarUrl || payload.avatar_url || payload.picture) as
-        | string
-        | undefined,
+      avatarUrl: (payload.avatarUrl || payload.avatar_url || payload.picture) as string | undefined,
       permissions: (payload.permissions || []) as string[],
       iat: payload.iat,
       exp: payload.exp,
@@ -217,9 +219,10 @@ export class WsAuthMiddleware {
     if (count >= this.CONNECTION_RATE_LIMIT) {
       // Get oldest entry to calculate reset time
       const oldest = await redis.zrange(key, 0, 0, 'WITHSCORES');
-      const resetAt = oldest.length >= 2
-        ? new Date(parseInt(oldest[1], 10) + this.CONNECTION_RATE_WINDOW * 1000)
-        : new Date(now + this.CONNECTION_RATE_WINDOW * 1000);
+      const resetAt =
+        oldest.length >= 2
+          ? new Date(parseInt(oldest[1], 10) + this.CONNECTION_RATE_WINDOW * 1000)
+          : new Date(now + this.CONNECTION_RATE_WINDOW * 1000);
 
       return {
         allowed: false,
@@ -251,7 +254,7 @@ export class WsAuthMiddleware {
   /**
    * Block a user from WebSocket connections
    */
-  async blockUser(userId: string, durationSeconds: number = 3600): Promise<void> {
+  async blockUser(userId: string, durationSeconds = 3600): Promise<void> {
     const redis = getRedisClient();
     await redis.setex(`ws:blocked:${userId}`, durationSeconds, 'true');
     console.log(`[Auth] User ${userId} blocked for ${durationSeconds} seconds`);
@@ -274,9 +277,7 @@ export class WsAuthMiddleware {
     const headers = socket.handshake.headers;
     const forwardedFor = headers['x-forwarded-for'];
     if (forwardedFor) {
-      const ips = Array.isArray(forwardedFor)
-        ? forwardedFor[0]
-        : forwardedFor.split(',')[0];
+      const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
       return ips.trim();
     }
 
@@ -307,7 +308,7 @@ export class WsAuthMiddleware {
   /**
    * Validate tenant access
    */
-  async validateTenantAccess(userId: string, tenantId: string): Promise<boolean> {
+  async validateTenantAccess(_userId: string, _tenantId: string): Promise<boolean> {
     // In a real implementation, this would check the database
     // For now, we trust the JWT claims
     return true;

@@ -10,9 +10,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
+
 import type { ChatMessage, ChatReaction, TypingUser } from '../types';
 
 interface UseChatOptions {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   roomId: string;
   userId: string;
@@ -40,19 +42,12 @@ interface UseChatResult {
 interface SendMessageOptions {
   replyTo?: string;
   threadId?: string;
-  attachments?: Array<{ type: string; url: string; name: string }>;
+  attachments?: { type: string; url: string; name: string }[];
   mentions?: string[];
 }
 
 export function useChat(options: UseChatOptions): UseChatResult {
-  const {
-    socket,
-    roomId,
-    userId,
-    displayName,
-    avatarUrl,
-    pageSize = 50,
-  } = options;
+  const { socket, roomId, userId, displayName, avatarUrl, pageSize = 50 } = options;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
@@ -60,7 +55,7 @@ export function useChat(options: UseChatOptions): UseChatResult {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
   const oldestMessageRef = useRef<string | null>(null);
 
@@ -206,7 +201,12 @@ export function useChat(options: UseChatOptions): UseChatResult {
           before: oldestMessageRef.current,
           limit: pageSize,
         },
-        (response: { success: boolean; messages?: ChatMessage[]; hasMore?: boolean; error?: string }) => {
+        (response: {
+          success: boolean;
+          messages?: ChatMessage[];
+          hasMore?: boolean;
+          error?: string;
+        }) => {
           setIsLoading(false);
 
           if (response.success && response.messages) {
@@ -260,17 +260,13 @@ export function useChat(options: UseChatOptions): UseChatResult {
     const handleMessageEdited = (message: ChatMessage) => {
       if (message.roomId !== roomId) return;
 
-      setMessages((prev) =>
-        prev.map((m) => (m.id === message.id ? message : m))
-      );
+      setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)));
     };
 
     // Message deleted
     const handleMessageDeleted = (data: { messageId: string }) => {
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === data.messageId ? { ...m, deleted: true, content: '' } : m
-        )
+        prev.map((m) => (m.id === data.messageId ? { ...m, deleted: true, content: '' } : m))
       );
     };
 

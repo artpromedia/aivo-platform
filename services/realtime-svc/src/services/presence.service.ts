@@ -9,8 +9,8 @@
  * - Grace period for reconnection handling
  */
 
-import { getRedisClient, RedisKeys } from '../redis/index.js';
 import { config } from '../config.js';
+import { getRedisClient, RedisKeys } from '../redis/index.js';
 import type { UserPresence, PresenceEntry, UserStatus, PresenceUpdatePayload } from '../types.js';
 
 /**
@@ -25,7 +25,7 @@ interface OfflineOptions {
  */
 export class PresenceService {
   private readonly serverId: string;
-  private cleanupTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.serverId = `server_${process.pid}_${Date.now()}`;
@@ -68,11 +68,7 @@ export class PresenceService {
   /**
    * Set user as offline (with optional grace period)
    */
-  async setOffline(
-    userId: string,
-    tenantId: string,
-    options?: OfflineOptions
-  ): Promise<void> {
+  async setOffline(userId: string, tenantId: string, options?: OfflineOptions): Promise<void> {
     const redis = getRedisClient();
 
     if (options?.gracePeriod) {
@@ -85,11 +81,7 @@ export class PresenceService {
         entry.presence.status = 'offline';
         entry.expiresAt = Date.now() + options.gracePeriod;
 
-        await redis.setex(
-          key,
-          Math.ceil(options.gracePeriod / 1000),
-          JSON.stringify(entry)
-        );
+        await redis.setex(key, Math.ceil(options.gracePeriod / 1000), JSON.stringify(entry));
       }
     } else {
       await this.removePresence(userId, tenantId);
@@ -248,27 +240,17 @@ export class PresenceService {
   /**
    * Get recently active users (for "who's typing" etc.)
    */
-  async getRecentlyActiveUsers(
-    tenantId: string,
-    withinMs: number = 30000
-  ): Promise<string[]> {
+  async getRecentlyActiveUsers(tenantId: string, withinMs = 30000): Promise<string[]> {
     const redis = getRedisClient();
     const cutoff = Date.now() - withinMs;
 
-    return await redis.zrangebyscore(
-      RedisKeys.presenceSorted(tenantId),
-      cutoff,
-      '+inf'
-    );
+    return await redis.zrangebyscore(RedisKeys.presenceSorted(tenantId), cutoff, '+inf');
   }
 
   /**
    * Bulk check online status
    */
-  async bulkIsOnline(
-    userIds: string[],
-    tenantId: string
-  ): Promise<Map<string, boolean>> {
+  async bulkIsOnline(userIds: string[], tenantId: string): Promise<Map<string, boolean>> {
     const redis = getRedisClient();
     const result = new Map<string, boolean>();
     const pipeline = redis.pipeline();

@@ -8,9 +8,11 @@
  * - Graceful degradation
  */
 
-import { nanoid } from 'nanoid';
-import { getRedisClient } from '../redis/index.js';
+import os from 'os';
+
 import type { Server, Socket } from 'socket.io';
+
+import { getRedisClient } from '../redis/index.js';
 
 /**
  * Connection state
@@ -74,11 +76,11 @@ export interface ServerHealth {
  */
 export class ConnectionStateManager {
   private readonly serverId: string;
-  private connections: Map<string, ConnectionInfo> = new Map();
-  private messageCount: number = 0;
+  private connections = new Map<string, ConnectionInfo>();
+  private messageCount = 0;
   private readonly startTime: Date;
-  private metricsInterval: NodeJS.Timeout | null = null;
-  private healthInterval: NodeJS.Timeout | null = null;
+  private metricsInterval: ReturnType<typeof setInterval> | null = null;
+  private healthInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.serverId = `server_${process.pid}_${Date.now()}`;
@@ -88,7 +90,7 @@ export class ConnectionStateManager {
   /**
    * Initialize the connection manager
    */
-  async initialize(io: Server): Promise<void> {
+  async initialize(_io: Server): Promise<void> {
     // Start metrics collection
     this.startMetricsCollection();
 
@@ -96,8 +98,8 @@ export class ConnectionStateManager {
     this.startHealthReporting();
 
     // Register for server shutdown
-    process.on('SIGTERM', () => this.shutdown());
-    process.on('SIGINT', () => this.shutdown());
+    process.on('SIGTERM', () => void this.shutdown());
+    process.on('SIGINT', () => void this.shutdown());
 
     console.log(`[ConnectionManager] Initialized on server ${this.serverId}`);
   }
@@ -126,7 +128,7 @@ export class ConnectionStateManager {
     };
 
     this.connections.set(socket.id, info);
-    this.updateRedisConnection(info);
+    void this.updateRedisConnection(info);
 
     return info;
   }
@@ -139,7 +141,7 @@ export class ConnectionStateManager {
     if (info) {
       info.state = state;
       info.lastActivity = new Date();
-      this.updateRedisConnection(info);
+      void this.updateRedisConnection(info);
     }
   }
 
@@ -152,7 +154,7 @@ export class ConnectionStateManager {
       info.reconnectCount++;
       info.state = 'connected';
       info.lastActivity = new Date();
-      this.updateRedisConnection(info);
+      void this.updateRedisConnection(info);
     }
   }
 
@@ -164,7 +166,7 @@ export class ConnectionStateManager {
     if (info && !info.rooms.includes(roomId)) {
       info.rooms.push(roomId);
       info.lastActivity = new Date();
-      this.updateRedisConnection(info);
+      void this.updateRedisConnection(info);
     }
   }
 
@@ -176,7 +178,7 @@ export class ConnectionStateManager {
     if (info) {
       info.rooms = info.rooms.filter((r) => r !== roomId);
       info.lastActivity = new Date();
-      this.updateRedisConnection(info);
+      void this.updateRedisConnection(info);
     }
   }
 
@@ -198,7 +200,7 @@ export class ConnectionStateManager {
     const info = this.connections.get(socketId);
     if (info) {
       this.connections.delete(socketId);
-      this.removeRedisConnection(socketId);
+      void this.removeRedisConnection(socketId);
     }
   }
 
@@ -220,9 +222,7 @@ export class ConnectionStateManager {
    * Get tenant connections count
    */
   getTenantConnectionCount(tenantId: string): number {
-    return Array.from(this.connections.values()).filter(
-      (c) => c.tenantId === tenantId
-    ).length;
+    return Array.from(this.connections.values()).filter((c) => c.tenantId === tenantId).length;
   }
 
   /**
@@ -251,16 +251,14 @@ export class ConnectionStateManager {
     let totalReconnects = 0;
 
     for (const conn of connections) {
-      connectionsByTenant[conn.tenantId] =
-        (connectionsByTenant[conn.tenantId] || 0) + 1;
+      connectionsByTenant[conn.tenantId] = (connectionsByTenant[conn.tenantId] || 0) + 1;
       connectionsByDevice[conn.device] = (connectionsByDevice[conn.device] || 0) + 1;
       totalDuration += now - conn.connectedAt.getTime();
       totalReconnects += conn.reconnectCount;
     }
 
     const avgConnectionDuration = totalConnections > 0 ? totalDuration / totalConnections : 0;
-    const reconnectionRate =
-      totalConnections > 0 ? totalReconnects / totalConnections : 0;
+    const reconnectionRate = totalConnections > 0 ? totalReconnects / totalConnections : 0;
 
     // Calculate messages per second (based on last 60 seconds)
     const uptimeSeconds = (now - this.startTime.getTime()) / 1000;
@@ -282,7 +280,7 @@ export class ConnectionStateManager {
    */
   async getServerHealth(): Promise<ServerHealth> {
     const memoryUsage = process.memoryUsage();
-    const totalMemory = require('os').totalmem();
+    const totalMemory = os.totalmem();
 
     return {
       serverId: this.serverId,
@@ -320,7 +318,7 @@ export class ConnectionStateManager {
   /**
    * Check if connection should be terminated (idle/stale)
    */
-  isConnectionStale(socketId: string, maxIdleMs: number = 300000): boolean {
+  isConnectionStale(socketId: string, maxIdleMs = 300000): boolean {
     const info = this.connections.get(socketId);
     if (!info) return true;
 
@@ -330,7 +328,7 @@ export class ConnectionStateManager {
   /**
    * Get stale connections
    */
-  getStaleConnections(maxIdleMs: number = 300000): ConnectionInfo[] {
+  getStaleConnections(maxIdleMs = 300000): ConnectionInfo[] {
     const now = Date.now();
     return Array.from(this.connections.values()).filter(
       (c) => now - c.lastActivity.getTime() > maxIdleMs
@@ -345,9 +343,7 @@ export class ConnectionStateManager {
     const headers = socket.handshake.headers;
     const forwardedFor = headers['x-forwarded-for'];
     if (forwardedFor) {
-      const ips = Array.isArray(forwardedFor)
-        ? forwardedFor[0]
-        : forwardedFor.split(',')[0];
+      const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
       return ips.trim();
     }
     return socket.handshake.address || 'unknown';
@@ -396,11 +392,7 @@ export class ConnectionStateManager {
       const health = await this.getServerHealth();
       const redis = getRedisClient();
 
-      await redis.setex(
-        `ws:server:health:${this.serverId}`,
-        60,
-        JSON.stringify(health)
-      );
+      await redis.setex(`ws:server:health:${this.serverId}`, 60, JSON.stringify(health));
     }, 15000); // Every 15 seconds
   }
 

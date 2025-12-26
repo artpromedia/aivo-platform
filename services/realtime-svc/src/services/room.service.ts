@@ -9,8 +9,9 @@
  */
 
 import { nanoid } from 'nanoid';
-import { getRedisClient, RedisKeys } from '../redis/index.js';
+
 import { config } from '../config.js';
+import { getRedisClient, RedisKeys } from '../redis/index.js';
 import type {
   RoomMember,
   RoomState,
@@ -185,11 +186,7 @@ export class RoomService {
       lastModified: new Date().toISOString(),
     };
 
-    await redis.setex(
-      RedisKeys.roomState(roomId),
-      config.room.ttl,
-      JSON.stringify(stateData)
-    );
+    await redis.setex(RedisKeys.roomState(roomId), config.room.ttl, JSON.stringify(stateData));
   }
 
   /**
@@ -207,7 +204,7 @@ export class RoomService {
   /**
    * Get room message history
    */
-  async getMessages(roomId: string, limit: number = 50): Promise<RoomMessage[]> {
+  async getMessages(roomId: string, limit = 50): Promise<RoomMessage[]> {
     const redis = getRedisClient();
     const key = RedisKeys.roomMessages(roomId);
     const messages = await redis.lrange(key, 0, limit - 1);
@@ -306,10 +303,7 @@ export class RoomService {
     if (clientOp.type === 'insert' && serverOp.type === 'delete') {
       if (serverOp.position! < clientOp.position!) {
         // Delete before insert, shift insert position
-        const shift = Math.min(
-          serverOp.length!,
-          clientOp.position! - serverOp.position!
-        );
+        const shift = Math.min(serverOp.length!, clientOp.position! - serverOp.position!);
         return {
           ...clientOp,
           position: clientOp.position! - shift,
@@ -330,10 +324,7 @@ export class RoomService {
     // If both are deletes
     if (clientOp.type === 'delete' && serverOp.type === 'delete') {
       if (serverOp.position! < clientOp.position!) {
-        const shift = Math.min(
-          serverOp.length!,
-          clientOp.position! - serverOp.position!
-        );
+        const shift = Math.min(serverOp.length!, clientOp.position! - serverOp.position!);
         return {
           ...clientOp,
           position: clientOp.position! - shift,
@@ -347,21 +338,16 @@ export class RoomService {
   /**
    * Apply operation to content
    */
-  private applyOperationToContent(
-    content: string,
-    operation: CollaborativeOperation
-  ): string {
+  private applyOperationToContent(content: string, operation: CollaborativeOperation): string {
     switch (operation.type) {
       case 'insert':
         return (
-          content.slice(0, operation.position!) +
-          operation.text! +
-          content.slice(operation.position!)
+          content.slice(0, operation.position) + operation.text! + content.slice(operation.position)
         );
 
       case 'delete':
         return (
-          content.slice(0, operation.position!) +
+          content.slice(0, operation.position) +
           content.slice(operation.position! + operation.length!)
         );
 
@@ -381,7 +367,7 @@ export class RoomService {
     elementId: string | undefined,
     userId: string,
     displayName: string,
-    duration: number = config.collaboration.lockDefaultTtl
+    duration = config.collaboration.lockDefaultTtl
   ): Promise<LockResult> {
     const redis = getRedisClient();
     const lockKey = elementId
@@ -418,7 +404,9 @@ export class RoomService {
 
     await redis.setex(lockKey, Math.ceil(duration / 1000), JSON.stringify(lock));
 
-    console.log(`[Room] Lock acquired on ${documentId}${elementId ? `:${elementId}` : ''} by ${userId}`);
+    console.log(
+      `[Room] Lock acquired on ${documentId}${elementId ? `:${elementId}` : ''} by ${userId}`
+    );
 
     return {
       acquired: true,
@@ -455,7 +443,9 @@ export class RoomService {
     }
 
     await redis.del(lockKey);
-    console.log(`[Room] Lock released on ${documentId}${elementId ? `:${elementId}` : ''} by ${userId}`);
+    console.log(
+      `[Room] Lock released on ${documentId}${elementId ? `:${elementId}` : ''} by ${userId}`
+    );
 
     return true;
   }

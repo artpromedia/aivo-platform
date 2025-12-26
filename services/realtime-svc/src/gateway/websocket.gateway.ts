@@ -9,32 +9,32 @@
  * - Horizontal scaling via Redis adapter
  */
 
-import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { nanoid } from 'nanoid';
-import * as jose from 'jose';
 import type { FastifyInstance } from 'fastify';
+import * as jose from 'jose';
+import { nanoid } from 'nanoid';
+import { Server, type Socket } from 'socket.io';
 
 import { config } from '../config.js';
 import { getRedisClient, getSubscriberClient, RedisKeys } from '../redis/index.js';
-import { PresenceService } from '../services/presence.service.js';
-import { RoomService } from '../services/room.service.js';
-import { MessageBrokerService } from '../services/message-broker.service.js';
+import type { MessageBrokerService } from '../services/message-broker.service.js';
+import type { PresenceService } from '../services/presence.service.js';
+import type { RoomService } from '../services/room.service.js';
 import {
   WSEventType,
-  SocketData,
-  JWTPayload,
-  DeviceType,
-  RoomJoinPayload,
-  RoomLeavePayload,
-  RoomMessagePayload,
-  PresenceUpdatePayload,
-  PresenceSyncPayload,
-  CollabOperationPayload,
-  CollabCursorPayload,
-  CollabLockPayload,
-  CollabUnlockPayload,
-  AnalyticsSubscribePayload,
+  type SocketData,
+  type JWTPayload,
+  type DeviceType,
+  type RoomJoinPayload,
+  type RoomLeavePayload,
+  type RoomMessagePayload,
+  type PresenceUpdatePayload,
+  type PresenceSyncPayload,
+  type CollabOperationPayload,
+  type CollabCursorPayload,
+  type CollabLockPayload,
+  type CollabUnlockPayload,
+  type AnalyticsSubscribePayload,
 } from '../types.js';
 
 // Color palette for collaborative cursors
@@ -57,8 +57,8 @@ const USER_COLORS = [
 export class WebSocketGateway {
   private io: Server;
   private readonly serverId: string;
-  private heartbeatTimers: Map<string, NodeJS.Timeout> = new Map();
-  private metricsInterval: NodeJS.Timeout | null = null;
+  private heartbeatTimers = new Map<string, ReturnType<typeof setInterval>>();
+  private metricsInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly presenceService: PresenceService,
@@ -216,7 +216,7 @@ export class WebSocketGateway {
         sub: payload.sub as string,
         tenantId: payload.tenantId as string,
         role: payload.role as string,
-        displayName: payload.displayName as string || payload.name as string || 'Unknown',
+        displayName: (payload.displayName as string) || (payload.name as string) || 'Unknown',
         email: payload.email as string | undefined,
       };
     } catch (error) {

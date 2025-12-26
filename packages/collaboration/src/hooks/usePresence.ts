@@ -10,9 +10,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
+
 import type { PresenceUser, UserStatus } from '../types';
 
 interface UsePresenceOptions {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   userId: string;
   displayName: string;
@@ -48,9 +50,9 @@ export function usePresence(options: UsePresenceOptions): UsePresenceResult {
   const [onlineUsers, setOnlineUsers] = useState<Map<string, PresenceUser>>(new Map());
 
   const lastActivityRef = useRef(Date.now());
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const awayTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const awayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const previousStatusRef = useRef<UserStatus>('online');
 
   // Send presence update to server

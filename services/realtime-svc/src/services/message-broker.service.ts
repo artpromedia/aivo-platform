@@ -15,7 +15,7 @@ type MessageHandler = (message: unknown) => void;
  * Message Broker Service
  */
 export class MessageBrokerService {
-  private handlers: Map<string, Set<MessageHandler>> = new Map();
+  private handlers = new Map<string, Set<MessageHandler>>();
   private isSubscribed = false;
 
   /**

@@ -7,7 +7,9 @@
  * - Last sync time
  */
 
-import React, { CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React from 'react';
+
 import type { SyncState } from '../types';
 
 interface SyncIndicatorProps {
@@ -75,21 +77,17 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
   };
 
   return (
-    <div style={containerStyle} role="status" aria-live="polite">
+    <output style={containerStyle} aria-live="polite">
       <span style={iconStyle}>{config.icon}</span>
       <span style={textStyle}>{config.text}</span>
-      {showLastSync && lastSync && (
-        <span style={metaStyle}>• {formatLastSync(lastSync)}</span>
-      )}
-      {showVersion && version > 0 && (
-        <span style={metaStyle}>• v{version}</span>
-      )}
+      {showLastSync && lastSync && <span style={metaStyle}>• {formatLastSync(lastSync)}</span>}
+      {showVersion && version > 0 && <span style={metaStyle}>• v{version}</span>}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </div>
+    </output>
   );
 };

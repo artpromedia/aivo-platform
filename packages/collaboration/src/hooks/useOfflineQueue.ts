@@ -22,6 +22,7 @@ interface QueuedOperation {
 }
 
 interface UseOfflineQueueOptions {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   userId: string;
   dbName?: string;
@@ -48,7 +49,7 @@ interface EnqueueOptions {
 
 // Simple ID generator
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueueResult {
@@ -75,7 +76,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(`${dbName}-${userId}`, 1);
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        reject(request.error ?? new Error('IndexedDB open failed'));
+      };
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
@@ -104,7 +107,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
       const store = transaction.objectStore(storeName);
       const request = store.getAll();
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        reject(request.error ?? new Error('IndexedDB getAll failed'));
+      };
       request.onsuccess = () => {
         const ops = request.result as QueuedOperation[];
         // Sort by priority (desc) then timestamp (asc)
@@ -138,7 +143,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
         const store = transaction.objectStore(storeName);
         const request = store.add(operation);
 
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+          reject(request.error ?? new Error('IndexedDB add failed'));
+        };
         request.onsuccess = async () => {
           const ops = await getAllOperations();
           setPendingOperations(ops);
@@ -160,7 +167,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
         const store = transaction.objectStore(storeName);
         const request = store.delete(operationId);
 
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+          reject(request.error ?? new Error('IndexedDB delete failed'));
+        };
         request.onsuccess = async () => {
           const ops = await getAllOperations();
           setPendingOperations(ops);
@@ -182,7 +191,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
         const store = transaction.objectStore(storeName);
         const getRequest = store.get(operationId);
 
-        getRequest.onerror = () => reject(getRequest.error);
+        getRequest.onerror = () => {
+          reject(getRequest.error ?? new Error('IndexedDB get failed'));
+        };
         getRequest.onsuccess = () => {
           const operation = getRequest.result as QueuedOperation | undefined;
           if (!operation) {
@@ -193,8 +204,12 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
           operation.retries = retries;
           const putRequest = store.put(operation);
 
-          putRequest.onerror = () => reject(putRequest.error);
-          putRequest.onsuccess = () => resolve();
+          putRequest.onerror = () => {
+            reject(putRequest.error ?? new Error('IndexedDB put failed'));
+          };
+          putRequest.onsuccess = () => {
+            resolve();
+          };
         };
       });
     },
@@ -217,20 +232,18 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
         }
 
         await new Promise<void>((resolve, reject) => {
-          socket.emit(
-            op.event,
-            op.data,
-            (response: { success?: boolean; error?: string }) => {
-              if (response?.success === false) {
-                reject(new Error(response.error || 'Operation failed'));
-              } else {
-                resolve();
-              }
+          socket.emit(op.event, op.data, (response: { success?: boolean; error?: string }) => {
+            if (response?.success === false) {
+              reject(new Error(response.error || 'Operation failed'));
+            } else {
+              resolve();
             }
-          );
+          });
 
           // Timeout after 10 seconds
-          setTimeout(() => reject(new Error('Operation timeout')), 10000);
+          setTimeout(() => {
+            reject(new Error('Operation timeout'));
+          }, 10000);
         });
 
         // Success - remove from queue
@@ -256,7 +269,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
       const store = transaction.objectStore(storeName);
       const request = store.clear();
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        reject(request.error ?? new Error('IndexedDB clear failed'));
+      };
       request.onsuccess = () => {
         setPendingOperations([]);
         setQueueSize(0);
@@ -275,8 +290,12 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
         const store = transaction.objectStore(storeName);
         const request = store.get(operationId);
 
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result as QueuedOperation | undefined);
+        request.onerror = () => {
+          reject(request.error ?? new Error('IndexedDB get failed'));
+        };
+        request.onsuccess = () => {
+          resolve(request.result as QueuedOperation | undefined);
+        };
       });
     },
     [initDB, storeName]
@@ -294,12 +313,12 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
       setIsOnline(false);
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    globalThis.addEventListener('online', handleOnline);
+    globalThis.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      globalThis.removeEventListener('online', handleOnline);
+      globalThis.removeEventListener('offline', handleOffline);
     };
   }, [flush]);
 

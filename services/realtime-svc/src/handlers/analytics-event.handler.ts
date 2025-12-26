@@ -5,10 +5,16 @@
  * and broadcasts them to connected teacher dashboards.
  */
 
+import type { WebSocketGateway } from '../gateway/websocket.gateway.js';
 import { RedisKeys } from '../redis/index.js';
-import { MessageBrokerService } from '../services/message-broker.service.js';
-import { WebSocketGateway } from '../gateway/websocket.gateway.js';
-import { WSEventType, LiveAnalyticsUpdate, LiveAlert, AlertType, AlertSeverity } from '../types.js';
+import type { MessageBrokerService } from '../services/message-broker.service.js';
+import {
+  WSEventType,
+  type LiveAnalyticsUpdate,
+  type LiveAlert,
+  type AlertType,
+  type AlertSeverity,
+} from '../types.js';
 
 interface AnalyticsEvent {
   type: 'update' | 'alert';
@@ -48,14 +54,15 @@ export class AnalyticsEventHandler {
     // Subscribe to analytics channel
     this.unsubscribeAnalytics = this.messageBroker.subscribe(
       RedisKeys.channels.analytics,
-      (message) => this.handleAnalyticsEvent(message as AnalyticsEvent)
+      (message) => {
+        this.handleAnalyticsEvent(message as AnalyticsEvent);
+      }
     );
 
     // Subscribe to alerts channel
-    this.unsubscribeAlerts = this.messageBroker.subscribe(
-      RedisKeys.channels.alerts,
-      (message) => this.handleAlertEvent(message as AlertEvent)
-    );
+    this.unsubscribeAlerts = this.messageBroker.subscribe(RedisKeys.channels.alerts, (message) => {
+      this.handleAlertEvent(message as AlertEvent);
+    });
 
     console.log('[AnalyticsEventHandler] Initialized');
   }
@@ -107,7 +114,9 @@ export class AnalyticsEventHandler {
     const analyticsRoom = `analytics:${event.classId}`;
     this.gateway.broadcastToRoom(analyticsRoom, WSEventType.ANALYTICS_ALERT, alert);
 
-    console.log(`[AnalyticsEventHandler] Broadcasted ${event.type} alert for student ${event.studentId}`);
+    console.log(
+      `[AnalyticsEventHandler] Broadcasted ${event.type} alert for student ${event.studentId}`
+    );
   }
 
   /**

@@ -4,11 +4,12 @@
  * HTTP server for health checks and WebSocket gateway initialization.
  */
 
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
+
 import { config } from './config.js';
 import { WebSocketGateway } from './gateway/index.js';
-import { PresenceService, RoomService, MessageBrokerService } from './services/index.js';
 import { SessionEventHandler, AnalyticsEventHandler } from './handlers/index.js';
+import { PresenceService, RoomService, MessageBrokerService } from './services/index.js';
 
 export interface AppServices {
   gateway: WebSocketGateway;

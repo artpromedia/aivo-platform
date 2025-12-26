@@ -8,7 +8,9 @@
  * - Overflow counter
  */
 
-import React, { useMemo, useState, CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React, { useMemo, useState } from 'react';
+
 import type { RoomUser, UserStatus } from '../types';
 
 interface CollaboratorAvatarsProps {
@@ -130,8 +132,12 @@ const Avatar: React.FC<AvatarProps> = ({
   return (
     <div
       style={containerStyle}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      onMouseEnter={() => {
+        setShowTooltip(true);
+      }}
+      onMouseLeave={() => {
+        setShowTooltip(false);
+      }}
       onClick={() => onClick?.(user)}
     >
       <div style={avatarStyle}>
@@ -140,7 +146,9 @@ const Avatar: React.FC<AvatarProps> = ({
             src={user.avatarUrl}
             alt={user.displayName}
             style={imageStyle}
-            onError={() => setImageError(true)}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         ) : (
           <span>{getInitials(user.displayName)}</span>
@@ -207,8 +215,12 @@ const OverflowCounter: React.FC<{
   return (
     <div
       style={containerStyle}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      onMouseEnter={() => {
+        setShowTooltip(true);
+      }}
+      onMouseLeave={() => {
+        setShowTooltip(false);
+      }}
     >
       <div style={counterStyle}>+{count}</div>
       <div style={tooltipStyle}>

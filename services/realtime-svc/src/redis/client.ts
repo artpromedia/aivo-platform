@@ -5,11 +5,14 @@
  */
 
 import Redis from 'ioredis';
+
 import { config } from '../config.js';
 
 type RedisInstance = InstanceType<typeof Redis>;
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- ioredis type resolution
 let redisClient: RedisInstance | null = null;
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- ioredis type resolution
 let subscriberClient: RedisInstance | null = null;
 
 /**

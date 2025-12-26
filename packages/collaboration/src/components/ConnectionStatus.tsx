@@ -7,7 +7,9 @@
  * - Latency display
  */
 
-import React, { CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React from 'react';
+
 import type { ConnectionState } from '../types';
 
 interface ConnectionStatusProps {
@@ -103,7 +105,8 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   const iconStyle: CSSProperties = {
     color: config.color,
     fontSize: 14,
-    animation: state === 'connecting' || state === 'reconnecting' ? 'spin 1s linear infinite' : 'none',
+    animation:
+      state === 'connecting' || state === 'reconnecting' ? 'spin 1s linear infinite' : 'none',
   };
 
   const textStyle: CSSProperties = {

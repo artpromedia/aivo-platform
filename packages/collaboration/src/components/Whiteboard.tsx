@@ -8,18 +8,14 @@
  * - Touch support
  */
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  CSSProperties,
-} from 'react';
+import type { CSSProperties } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
+
 import type { WhiteboardTool, WhiteboardElement, Position2D, CursorData } from '../types';
 
 interface WhiteboardProps {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   roomId: string;
   userId: string;
@@ -50,9 +46,21 @@ interface ToolbarProps {
 }
 
 const COLORS = [
-  '#000000', '#374151', '#EF4444', '#F97316', '#F59E0B',
-  '#84CC16', '#22C55E', '#14B8A6', '#0EA5E9', '#3B82F6',
-  '#6366F1', '#8B5CF6', '#A855F7', '#EC4899', '#FFFFFF',
+  '#000000',
+  '#374151',
+  '#EF4444',
+  '#F97316',
+  '#F59E0B',
+  '#84CC16',
+  '#22C55E',
+  '#14B8A6',
+  '#0EA5E9',
+  '#3B82F6',
+  '#6366F1',
+  '#8B5CF6',
+  '#A855F7',
+  '#EC4899',
+  '#FFFFFF',
 ];
 
 const STROKE_WIDTHS = [2, 4, 6, 8, 12];
@@ -108,15 +116,22 @@ const Toolbar: React.FC<ToolbarProps> = ({
     transition: 'all 150ms ease',
   });
 
-  const colorButtonStyle = (color: string, active: boolean): CSSProperties => ({
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    backgroundColor: color,
-    border: active ? '2px solid #3B82F6' : color === '#FFFFFF' ? '1px solid #E5E7EB' : 'none',
-    cursor: 'pointer',
-    boxShadow: active ? '0 0 0 2px white, 0 0 0 4px #3B82F6' : 'none',
-  });
+  const colorButtonStyle = (color: string, active: boolean): CSSProperties => {
+    const getBorder = (): string => {
+      if (active) return '2px solid #3B82F6';
+      if (color === '#FFFFFF') return '1px solid #E5E7EB';
+      return 'none';
+    };
+    return {
+      width: 24,
+      height: 24,
+      borderRadius: 4,
+      backgroundColor: color,
+      border: getBorder(),
+      cursor: 'pointer',
+      boxShadow: active ? '0 0 0 2px white, 0 0 0 4px #3B82F6' : 'none',
+    };
+  };
 
   const dividerStyle: CSSProperties = {
     width: 1,
@@ -132,7 +147,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           key={tool}
           style={buttonStyle(currentTool === tool)}
-          onClick={() => onToolChange(tool)}
+          onClick={() => {
+            onToolChange(tool);
+          }}
           title={label}
           aria-label={label}
         >
@@ -148,7 +165,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <button
             key={color}
             style={colorButtonStyle(color, currentColor === color)}
-            onClick={() => onColorChange(color)}
+            onClick={() => {
+              onColorChange(color);
+            }}
             title={color}
             aria-label={`Color ${color}`}
           />
@@ -160,11 +179,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
       {/* Stroke width */}
       <select
         value={strokeWidth}
-        onChange={(e) => onStrokeWidthChange(Number(e.target.value))}
+        onChange={(e) => {
+          onStrokeWidthChange(Number(e.target.value));
+        }}
         style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #E5E7EB' }}
       >
         {STROKE_WIDTHS.map((w) => (
-          <option key={w} value={w}>{w}px</option>
+          <option key={w} value={w}>
+            {w}px
+          </option>
         ))}
       </select>
 
@@ -345,35 +368,41 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   }, []);
 
   // Start drawing
-  const handlePointerDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (readOnly) return;
-    if (currentTool === 'select') return;
+  const handlePointerDown = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      if (readOnly) return;
+      if (currentTool === 'select') return;
 
-    const position = getPosition(e);
-    setIsDrawing(true);
-    setCurrentPath([position]);
+      const position = getPosition(e);
+      setIsDrawing(true);
+      setCurrentPath([position]);
 
-    // Save state for undo
-    setUndoStack((prev) => [...prev, elements]);
-    setRedoStack([]);
-  }, [readOnly, currentTool, getPosition, elements]);
+      // Save state for undo
+      setUndoStack((prev) => [...prev, elements]);
+      setRedoStack([]);
+    },
+    [readOnly, currentTool, getPosition, elements]
+  );
 
   // Continue drawing
-  const handlePointerMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    const position = getPosition(e);
+  const handlePointerMove = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      const position = getPosition(e);
 
-    // Broadcast cursor position
-    if (onCursorMove) {
-      onCursorMove(position);
-    }
+      // Broadcast cursor position
+      if (onCursorMove) {
+        onCursorMove(position);
+      }
 
-    if (!isDrawing || readOnly) return;
-    if (currentTool === 'select') return;
+      if (!isDrawing || readOnly) return;
+      if (currentTool === 'select') return;
 
-    if (currentTool === 'pen' || currentTool === 'eraser') {
-      setCurrentPath((prev) => [...prev, position]);
-    }
-  }, [isDrawing, readOnly, currentTool, getPosition, onCursorMove]);
+      if (currentTool === 'pen' || currentTool === 'eraser') {
+        setCurrentPath((prev) => [...prev, position]);
+      }
+    },
+    [isDrawing, readOnly, currentTool, getPosition, onCursorMove]
+  );
 
   // End drawing
   const handlePointerUp = useCallback(() => {
@@ -404,13 +433,25 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
 
     setIsDrawing(false);
     setCurrentPath([]);
-  }, [isDrawing, readOnly, currentPath, currentTool, currentColor, strokeWidth, userId, backgroundColor, socket, roomId]);
+  }, [
+    isDrawing,
+    readOnly,
+    currentPath,
+    currentTool,
+    currentColor,
+    strokeWidth,
+    userId,
+    backgroundColor,
+    socket,
+    roomId,
+  ]);
 
   // Undo
   const handleUndo = useCallback(() => {
     if (undoStack.length === 0) return;
 
-    const previousState = undoStack[undoStack.length - 1];
+    const previousState = undoStack.at(-1);
+    if (!previousState) return;
     setRedoStack((prev) => [...prev, elements]);
     setUndoStack((prev) => prev.slice(0, -1));
     setElements(previousState);
@@ -420,7 +461,8 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0) return;
 
-    const nextState = redoStack[redoStack.length - 1];
+    const nextState = redoStack.at(-1);
+    if (!nextState) return;
     setUndoStack((prev) => [...prev, elements]);
     setRedoStack((prev) => prev.slice(0, -1));
     setElements(nextState);
@@ -460,6 +502,12 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     };
   }, [socket, userId]);
 
+  const getCanvasCursor = (): string => {
+    if (currentTool === 'pen') return 'crosshair';
+    if (currentTool === 'eraser') return 'cell';
+    return 'default';
+  };
+
   const canvasContainerStyle: CSSProperties = {
     position: 'relative',
     width,
@@ -467,7 +515,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     border: '1px solid #E5E7EB',
     borderRadius: 8,
     overflow: 'hidden',
-    cursor: currentTool === 'pen' ? 'crosshair' : currentTool === 'eraser' ? 'cell' : 'default',
+    cursor: getCanvasCursor(),
   };
 
   const canvasStyle: CSSProperties = {

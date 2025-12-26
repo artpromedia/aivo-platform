@@ -9,9 +9,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Socket } from 'socket.io-client';
+
 import type { ActivityItem, ActivityScope, ActivityType } from '../types';
 
 interface UseActivityOptions {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   userId: string;
   scopes: ActivityScope[];
@@ -47,14 +49,7 @@ interface AggregatedActivity {
 }
 
 export function useActivity(options: UseActivityOptions): UseActivityResult {
-  const {
-    socket,
-    userId,
-    scopes,
-    scopeIds = {},
-    types,
-    pageSize = 20,
-  } = options;
+  const { socket, userId, scopes, scopeIds = {}, types, pageSize = 20 } = options;
 
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [aggregatedActivities, setAggregatedActivities] = useState<AggregatedActivity[]>([]);
@@ -118,9 +113,7 @@ export function useActivity(options: UseActivityOptions): UseActivityResult {
 
       socket.emit('activity:read', { activityId, userId });
 
-      setActivities((prev) =>
-        prev.map((a) => (a.id === activityId ? { ...a, read: true } : a))
-      );
+      setActivities((prev) => prev.map((a) => (a.id === activityId ? { ...a, read: true } : a)));
 
       setUnreadCount((prev) => Math.max(0, prev - 1));
     },

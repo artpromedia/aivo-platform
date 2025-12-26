@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
+
 import type {
   RoomState,
   RoomType,
@@ -21,6 +22,7 @@ import type {
 } from '../types';
 
 interface UseRoomOptions {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   roomId: string;
   roomType: RoomType;
@@ -97,7 +99,7 @@ export function useRoom(options: UseRoomOptions): UseRoomResult {
   const userColor = getUserColor(userId);
   const lastCursorEmitRef = useRef(0);
   const pendingCursorRef = useRef<{ position: CursorPosition; elementId?: string } | null>(null);
-  const cursorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cursorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Join the room
   const join = useCallback(async (): Promise<RoomState> => {

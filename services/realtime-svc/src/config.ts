@@ -23,7 +23,12 @@ const configSchema = z.object({
   }),
 
   // JWT
-  jwtSecret: z.string().min(32),
+  jwt: z.object({
+    secret: z.string().min(32),
+    publicKey: z.string().optional(),
+    issuer: z.string().default('aivo-auth'),
+    audience: z.string().default('aivo-services'),
+  }),
 
   // CORS
   corsOrigins: z.string().transform((val) => val.split(',')),
@@ -72,7 +77,12 @@ function loadConfig(): Config {
       port: process.env.REDIS_PORT,
       password: process.env.REDIS_PASSWORD,
     },
-    jwtSecret: process.env.JWT_SECRET,
+    jwt: {
+      secret: process.env.JWT_SECRET,
+      publicKey: process.env.JWT_PUBLIC_KEY,
+      issuer: process.env.JWT_ISSUER,
+      audience: process.env.JWT_AUDIENCE,
+    },
     corsOrigins: process.env.CORS_ORIGINS || 'http://localhost:3000',
     websocket: {
       pingInterval: process.env.WS_PING_INTERVAL,

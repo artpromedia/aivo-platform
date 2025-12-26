@@ -6,7 +6,9 @@
  * - User names
  */
 
-import React, { CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React from 'react';
+
 import type { TypingUser } from '../types';
 
 interface TypingIndicatorProps {
@@ -14,10 +16,7 @@ interface TypingIndicatorProps {
   maxNames?: number;
 }
 
-export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
-  users,
-  maxNames = 3,
-}) => {
+export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ users, maxNames = 3 }) => {
   if (users.length === 0) return null;
 
   const getTypingText = (): string => {

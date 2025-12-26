@@ -9,7 +9,8 @@
  */
 
 import { nanoid } from 'nanoid';
-import { getRedisClient, RedisKeys } from '../redis/index.js';
+
+import { getRedisClient } from '../redis/index.js';
 
 /**
  * Activity types
@@ -70,7 +71,7 @@ export interface ActivityItem {
 export interface AggregatedActivity {
   type: ActivityType;
   count: number;
-  actors: Array<{ id: string; name: string; avatarUrl?: string }>;
+  actors: { id: string; name: string; avatarUrl?: string }[];
   latestMessage: string;
   latestTimestamp: Date;
 }
@@ -136,11 +137,7 @@ export class ActivityService {
     await redis.expire(feedKey, this.ACTIVITY_TTL);
 
     // Store individual activity for quick lookup
-    await redis.setex(
-      `activity:${activityId}`,
-      this.ACTIVITY_TTL,
-      JSON.stringify(activity)
-    );
+    await redis.setex(`activity:${activityId}`, this.ACTIVITY_TTL, JSON.stringify(activity));
 
     // Update aggregation
     await this.updateAggregation(scope, scopeId, activity);
@@ -212,21 +209,18 @@ export class ActivityService {
     const data = await redis.hgetall(aggKey);
     let aggregations: AggregatedActivity[] = [];
 
-    for (const [type, value] of Object.entries(data)) {
+    for (const [_type, value] of Object.entries(data)) {
       aggregations.push(JSON.parse(value));
     }
 
     // Sort by latest timestamp
     aggregations.sort(
-      (a, b) =>
-        new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
+      (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
     );
 
     // Filter by types if specified
     if (options?.types?.length) {
-      aggregations = aggregations.filter((a) =>
-        options.types!.includes(a.type as ActivityType)
-      );
+      aggregations = aggregations.filter((a) => options.types!.includes(a.type));
     }
 
     return aggregations.slice(0, limit);
@@ -294,13 +288,8 @@ export class ActivityService {
   /**
    * Mark all activities as read
    */
-  async markAllAsRead(
-    userId: string,
-    scope: ActivityScope,
-    scopeId: string
-  ): Promise<void> {
+  async markAllAsRead(userId: string, scope: ActivityScope, scopeId: string): Promise<void> {
     const redis = getRedisClient();
-    const readKey = `activity:read:${userId}`;
     const timestampKey = `activity:read:timestamp:${userId}:${scope}:${scopeId}`;
 
     await redis.set(timestampKey, new Date().toISOString());
@@ -310,13 +299,8 @@ export class ActivityService {
   /**
    * Get unread count
    */
-  async getUnreadCount(
-    userId: string,
-    scope: ActivityScope,
-    scopeId: string
-  ): Promise<number> {
+  async getUnreadCount(userId: string, scope: ActivityScope, scopeId: string): Promise<number> {
     const redis = getRedisClient();
-    const readKey = `activity:read:${userId}`;
     const timestampKey = `activity:read:timestamp:${userId}:${scope}:${scopeId}`;
 
     const lastReadTimestamp = await redis.get(timestampKey);
@@ -328,9 +312,8 @@ export class ActivityService {
     }
 
     const lastRead = new Date(lastReadTimestamp);
-    return activities.filter(
-      (a) => a.actorId !== userId && new Date(a.createdAt) > lastRead
-    ).length;
+    return activities.filter((a) => a.actorId !== userId && new Date(a.createdAt) > lastRead)
+      .length;
   }
 
   /**
@@ -400,7 +383,7 @@ export class ActivityService {
         aggregation.latestTimestamp = now;
 
         // Add actor if not already present
-        if (!aggregation.actors.find((a) => a.id === activity.actorId)) {
+        if (!aggregation.actors.some((a) => a.id === activity.actorId)) {
           aggregation.actors.push({
             id: activity.actorId,
             name: activity.actorName,

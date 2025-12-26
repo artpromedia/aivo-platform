@@ -9,7 +9,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
 import type { ConnectionState, ConnectionInfo, SocketEvents } from '../types';
 
 interface UseSocketOptions {
@@ -25,6 +27,7 @@ interface UseSocketOptions {
 }
 
 interface UseSocketResult {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   connected: boolean;
   connectionState: ConnectionState;
@@ -50,8 +53,9 @@ export function useSocket(options: UseSocketOptions): UseSocketResult {
     transports = ['websocket', 'polling'],
   } = options;
 
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- Socket type from socket.io-client
   const socketRef = useRef<Socket | null>(null);
-  const latencyIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const latencyIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectAttemptRef = useRef(0);
 
   const [connected, setConnected] = useState(false);
@@ -204,6 +208,7 @@ export function useSocket(options: UseSocketOptions): UseSocketResult {
       const socket = socketRef.current;
       if (!socket) {
         console.warn('[useSocket] Cannot subscribe, socket not initialized');
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         return () => {};
       }
 
@@ -222,6 +227,7 @@ export function useSocket(options: UseSocketOptions): UseSocketResult {
       const socket = socketRef.current;
       if (!socket) {
         console.warn('[useSocket] Cannot subscribe, socket not initialized');
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         return () => {};
       }
 

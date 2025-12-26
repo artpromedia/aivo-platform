@@ -7,7 +7,9 @@
  * - Last seen time
  */
 
-import React, { CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React from 'react';
+
 import type { UserStatus } from '../types';
 
 interface PresenceIndicatorProps {
@@ -99,9 +101,7 @@ export const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
             {statusTextMap[status]}
             {status === 'offline' && lastSeen && ` • ${formatLastSeen(lastSeen)}`}
           </span>
-          {customStatus && (
-            <span style={customStatusStyle}> • {customStatus}</span>
-          )}
+          {customStatus && <span style={customStatusStyle}> • {customStatus}</span>}
         </div>
       )}
       <style>{`

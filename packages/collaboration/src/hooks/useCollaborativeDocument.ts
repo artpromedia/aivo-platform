@@ -9,12 +9,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import * as Y from 'yjs';
-import { Awareness } from 'y-protocols/awareness';
 import type { Socket } from 'socket.io-client';
+import { Awareness } from 'y-protocols/awareness';
+import * as Y from 'yjs';
+
 import type { SyncState, DocumentInfo } from '../types';
 
 interface UseCollaborativeDocumentOptions {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   documentId: string;
   userId: string;
@@ -39,6 +41,7 @@ interface AwarenessState {
 
 interface UseCollaborativeDocumentResult {
   doc: Y.Doc;
+
   awareness: Awareness;
   syncState: SyncState;
   documentInfo: DocumentInfo | null;
@@ -46,6 +49,7 @@ interface UseCollaborativeDocumentResult {
   hasPendingChanges: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T is the return type cast
   getContent: <T>(key: string, type: 'text' | 'array' | 'map') => T;
   getText: (key?: string) => Y.Text;
   getArray: <T>(key?: string) => Y.Array<T>;
@@ -61,18 +65,14 @@ interface UseCollaborativeDocumentResult {
 export function useCollaborativeDocument(
   options: UseCollaborativeDocumentOptions
 ): UseCollaborativeDocumentResult {
-  const {
-    socket,
-    documentId,
-    userId,
-    displayName,
-    color,
-    autoConnect = true,
-  } = options;
+  const { socket, documentId, userId, displayName, color, autoConnect = true } = options;
 
   // Y.js document and awareness - created once and persisted
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   const docRef = useRef<Y.Doc | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   const awarenessRef = useRef<Awareness | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
 
   // Initialize Y.Doc if not already
@@ -178,6 +178,7 @@ export function useCollaborativeDocument(
 
   // Get content by type
   const getContent = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T is the return type cast
     <T>(key: string, type: 'text' | 'array' | 'map'): T => {
       switch (type) {
         case 'text':
@@ -194,20 +195,11 @@ export function useCollaborativeDocument(
   );
 
   // Convenience getters
-  const getText = useCallback(
-    (key = 'content'): Y.Text => doc.getText(key),
-    [doc]
-  );
+  const getText = useCallback((key = 'content'): Y.Text => doc.getText(key), [doc]);
 
-  const getArray = useCallback(
-    <T>(key = 'items'): Y.Array<T> => doc.getArray(key),
-    [doc]
-  );
+  const getArray = useCallback(<T>(key = 'items'): Y.Array<T> => doc.getArray(key), [doc]);
 
-  const getMap = useCallback(
-    <T>(key = 'data'): Y.Map<T> => doc.getMap(key),
-    [doc]
-  );
+  const getMap = useCallback(<T>(key = 'data'): Y.Map<T> => doc.getMap(key), [doc]);
 
   // Undo/Redo
   const undo = useCallback(() => {
@@ -267,12 +259,15 @@ export function useCollaborativeDocument(
       // Don't send updates from remote
       if (origin === 'remote') return;
 
+      // Safely convert origin to string
+      const originStr = origin === null ? 'local' : typeof origin === 'string' ? origin : 'local';
+
       if (connectedRef.current && socket.connected) {
         // Send update to server
         socket.emit('doc:update', {
           documentId,
           update: Array.from(update),
-          origin: origin === null ? 'local' : String(origin),
+          origin: originStr,
           clientId: doc.clientID,
         });
         setSyncState((prev) => ({ ...prev, pending: true }));
@@ -318,10 +313,7 @@ export function useCollaborativeDocument(
     };
 
     // Handle awareness updates from server
-    const handleAwarenessUpdate = (data: {
-      clientId: number;
-      awareness: AwarenessState;
-    }) => {
+    const handleAwarenessUpdate = (data: { clientId: number; awareness: AwarenessState }) => {
       if (data.clientId === doc.clientID) return;
 
       // Update remote client awareness
@@ -333,9 +325,11 @@ export function useCollaborativeDocument(
     socket.on('doc:awareness-update', handleAwarenessUpdate);
 
     // Send local awareness updates
-    const handleLocalAwarenessChange = (
-      changed: { added: number[]; updated: number[]; removed: number[] }
-    ) => {
+    const handleLocalAwarenessChange = (changed: {
+      added: number[];
+      updated: number[];
+      removed: number[];
+    }) => {
       if (!socket.connected || !connectedRef.current) return;
 
       const localState = awareness.getLocalState();

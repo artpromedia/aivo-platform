@@ -5,10 +5,10 @@
  * them to connected clients for real-time dashboard updates.
  */
 
+import type { WebSocketGateway } from '../gateway/websocket.gateway.js';
 import { RedisKeys } from '../redis/index.js';
-import { MessageBrokerService } from '../services/message-broker.service.js';
-import { WebSocketGateway } from '../gateway/websocket.gateway.js';
-import { WSEventType, LiveSessionUpdate } from '../types.js';
+import type { MessageBrokerService } from '../services/message-broker.service.js';
+import { WSEventType, type LiveSessionUpdate } from '../types.js';
 
 interface SessionEvent {
   type: 'update' | 'activity' | 'progress' | 'complete';
@@ -41,10 +41,9 @@ export class SessionEventHandler {
    * Initialize the handler
    */
   initialize(): void {
-    this.unsubscribe = this.messageBroker.subscribe(
-      RedisKeys.channels.session,
-      (message) => this.handleSessionEvent(message as SessionEvent)
-    );
+    this.unsubscribe = this.messageBroker.subscribe(RedisKeys.channels.session, (message) => {
+      this.handleSessionEvent(message as SessionEvent);
+    });
 
     console.log('[SessionEventHandler] Initialized');
   }

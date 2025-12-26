@@ -11,8 +11,8 @@
  */
 
 import { nanoid } from 'nanoid';
-import { getRedisClient, RedisKeys } from '../redis/index.js';
-import { config } from '../config.js';
+
+import { getRedisClient } from '../redis/index.js';
 
 /**
  * Chat message structure
@@ -140,11 +140,7 @@ export class ChatService {
     await redis.expire(key, this.MESSAGE_TTL);
 
     // Store individual message for quick lookup
-    await redis.setex(
-      `chat:message:${messageId}`,
-      this.MESSAGE_TTL,
-      JSON.stringify(message)
-    );
+    await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
     // Update thread if this is a reply
     if (options?.threadId) {
@@ -194,11 +190,7 @@ export class ChatService {
     message.editedAt = new Date();
 
     // Save updated message
-    await redis.setex(
-      `chat:message:${messageId}`,
-      this.MESSAGE_TTL,
-      JSON.stringify(message)
-    );
+    await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
     console.log(`[Chat] Message ${messageId} edited`);
     return message;
@@ -227,11 +219,7 @@ export class ChatService {
     message.content = '[Message deleted]';
     message.attachments = [];
 
-    await redis.setex(
-      `chat:message:${messageId}`,
-      this.MESSAGE_TTL,
-      JSON.stringify(message)
-    );
+    await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
     console.log(`[Chat] Message ${messageId} deleted`);
     return true;
@@ -256,7 +244,7 @@ export class ChatService {
     let added = false;
 
     // Find or create reaction
-    let reaction = message.reactions.find((r) => r.emoji === emoji);
+    const reaction = message.reactions.find((r) => r.emoji === emoji);
 
     if (reaction) {
       const userIndex = reaction.userIds.indexOf(userId);
@@ -278,13 +266,11 @@ export class ChatService {
     }
 
     // Save updated message
-    await redis.setex(
-      `chat:message:${messageId}`,
-      this.MESSAGE_TTL,
-      JSON.stringify(message)
-    );
+    await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
-    console.log(`[Chat] Reaction ${emoji} ${added ? 'added to' : 'removed from'} message ${messageId}`);
+    console.log(
+      `[Chat] Reaction ${emoji} ${added ? 'added to' : 'removed from'} message ${messageId}`
+    );
     return { added, reactions: message.reactions };
   }
 
@@ -398,11 +384,7 @@ export class ChatService {
   /**
    * Mark message as read
    */
-  async markAsRead(
-    roomId: string,
-    userId: string,
-    messageId: string
-  ): Promise<void> {
+  async markAsRead(roomId: string, userId: string, messageId: string): Promise<void> {
     const redis = getRedisClient();
     const key = `chat:read:${roomId}:${userId}`;
 
@@ -428,7 +410,7 @@ export class ChatService {
 
     if (keys.length > 0) {
       const values = await redis.mget(keys);
-      values.forEach((value, index) => {
+      values.forEach((value) => {
         if (value) {
           const receipt: ReadReceipt = JSON.parse(value);
           receipts.set(receipt.userId, receipt);
@@ -452,11 +434,7 @@ export class ChatService {
   /**
    * Get thread messages
    */
-  async getThreadMessages(
-    roomId: string,
-    threadId: string,
-    limit: number = 50
-  ): Promise<ChatMessage[]> {
+  async getThreadMessages(roomId: string, threadId: string, limit = 50): Promise<ChatMessage[]> {
     const redis = getRedisClient();
     const key = `chat:thread:messages:${roomId}:${threadId}`;
     const messages = await redis.lrange(key, 0, limit - 1);
@@ -466,11 +444,7 @@ export class ChatService {
   /**
    * Search messages
    */
-  async searchMessages(
-    roomId: string,
-    query: string,
-    limit: number = 20
-  ): Promise<ChatMessage[]> {
+  async searchMessages(roomId: string, query: string, limit = 20): Promise<ChatMessage[]> {
     // Get all messages from room
     const messages = await this.getMessages(roomId, { limit: 500 });
 
@@ -503,9 +477,7 @@ export class ChatService {
       return 0;
     }
 
-    return messages
-      .slice(lastReadIndex + 1)
-      .filter((m) => m.userId !== userId).length;
+    return messages.slice(lastReadIndex + 1).filter((m) => m.userId !== userId).length;
   }
 
   // ============================================================================
@@ -525,15 +497,13 @@ export class ChatService {
     // Get or create thread
     let thread = await this.getThread(roomId, threadId);
 
-    if (!thread) {
-      thread = {
-        threadId,
-        parentMessageId: threadId,
-        replyCount: 0,
-        lastReply: new Date(),
-        participants: [],
-      };
-    }
+    thread ??= {
+      threadId,
+      parentMessageId: threadId,
+      replyCount: 0,
+      lastReply: new Date(),
+      participants: [],
+    };
 
     // Update thread
     thread.replyCount++;

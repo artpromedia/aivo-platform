@@ -4,8 +4,8 @@
  * Production-ready WebSocket service for real-time collaboration.
  */
 
+import { buildApp, type AppServices } from './app.js';
 import { config } from './config.js';
-import { buildApp, AppServices } from './app.js';
 import { closeRedisConnections } from './redis/index.js';
 
 let services: AppServices | null = null;

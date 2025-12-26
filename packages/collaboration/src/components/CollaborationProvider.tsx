@@ -8,24 +8,17 @@
  * - Document sync
  */
 
-import React, {
-  createContext,
-  useContext,
-  useMemo,
-  ReactNode,
-} from 'react';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { Socket } from 'socket.io-client';
-import { useSocket } from '../hooks/useSocket';
+
 import { usePresence } from '../hooks/usePresence';
-import type {
-  ConnectionState,
-  ConnectionInfo,
-  PresenceUser,
-  UserStatus,
-} from '../types';
+import { useSocket } from '../hooks/useSocket';
+import type { ConnectionState, ConnectionInfo, PresenceUser, UserStatus } from '../types';
 
 interface CollaborationContextValue {
   // Connection
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   socket: Socket | null;
   connected: boolean;
   connectionState: ConnectionState;
@@ -77,37 +70,24 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
   reconnectionDelay = 1000,
 }) => {
   // Socket connection
-  const {
-    socket,
-    connected,
-    connectionState,
-    connectionInfo,
-    latency,
-    connect,
-    disconnect,
-  } = useSocket({
-    url: serverUrl,
-    tenantId,
-    token,
-    autoConnect,
-    reconnectionAttempts,
-    reconnectionDelay,
-  });
+  const { socket, connected, connectionState, connectionInfo, latency, connect, disconnect } =
+    useSocket({
+      url: serverUrl,
+      tenantId,
+      token,
+      autoConnect,
+      reconnectionAttempts,
+      reconnectionDelay,
+    });
 
   // Presence tracking
-  const {
-    status,
-    customStatus,
-    onlineUsers,
-    setStatus,
-    setCustomStatus,
-    isUserOnline,
-  } = usePresence({
-    socket,
-    userId,
-    displayName,
-    avatarUrl,
-  });
+  const { status, customStatus, onlineUsers, setStatus, setCustomStatus, isUserOnline } =
+    usePresence({
+      socket,
+      userId,
+      displayName,
+      avatarUrl,
+    });
 
   const value = useMemo<CollaborationContextValue>(
     () => ({
@@ -155,20 +135,14 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
     ]
   );
 
-  return (
-    <CollaborationContext.Provider value={value}>
-      {children}
-    </CollaborationContext.Provider>
-  );
+  return <CollaborationContext.Provider value={value}>{children}</CollaborationContext.Provider>;
 };
 
 export function useCollaboration(): CollaborationContextValue {
   const context = useContext(CollaborationContext);
 
   if (!context) {
-    throw new Error(
-      'useCollaboration must be used within a CollaborationProvider'
-    );
+    throw new Error('useCollaboration must be used within a CollaborationProvider');
   }
 
   return context;

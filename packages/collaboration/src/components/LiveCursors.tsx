@@ -7,7 +7,9 @@
  * - Auto-fade on inactivity
  */
 
-import React, { useEffect, useState, useMemo, CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+
 import type { CursorData, Position2D } from '../types';
 
 interface LiveCursorsProps {
@@ -104,9 +106,7 @@ const Cursor: React.FC<CursorProps> = ({
       {cursorStyle === 'arrow' && <ArrowCursor color={cursor.color} />}
       {cursorStyle === 'pointer' && <ArrowCursor color={cursor.color} />}
       {cursorStyle === 'dot' && <DotCursor color={cursor.color} />}
-      {showLabel && (
-        <div style={labelStyle}>{cursor.displayName}</div>
-      )}
+      {showLabel && <div style={labelStyle}>{cursor.displayName}</div>}
     </div>
   );
 };
@@ -124,13 +124,17 @@ export const LiveCursors: React.FC<LiveCursorsProps> = ({
 
   // Update time every second for staleness check
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   // Filter out current user and get visible cursors
   const visibleCursors = useMemo(() => {
-    const result: Array<{ cursor: CursorData; isStale: boolean }> = [];
+    const result: { cursor: CursorData; isStale: boolean }[] = [];
 
     cursors.forEach((cursor) => {
       if (cursor.userId === currentUserId) return;
@@ -147,8 +151,8 @@ export const LiveCursors: React.FC<LiveCursorsProps> = ({
     return result;
   }, [cursors, currentUserId, now, cursorFadeMs]);
 
-  // Get container bounds for clipping
-  const containerBounds = useMemo(() => {
+  // Get container bounds for clipping (reserved for future clipping implementation)
+  const _containerBounds = useMemo(() => {
     if (!containerRef?.current) return null;
     return containerRef.current.getBoundingClientRect();
   }, [containerRef]);
