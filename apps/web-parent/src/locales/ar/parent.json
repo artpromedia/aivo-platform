@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "messages": "الرسائل",
+    "reports": "التقارير",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "dashboard": {
+    "title": "بوابة أولياء الأمور",
+    "welcome": "مرحباً بعودتك، {{name}}",
+    "selectChild": "اختر طفلاً لعرض تقدمه",
+    "weeklyProgress": "التقدم الأسبوعي",
+    "subjects": "المواد",
+    "recentActivity": "النشاط الأخير",
+    "upcomingAssignments": "الواجبات القادمة",
+    "teacherNotes": "ملاحظات المعلم",
+    "noNotes": "لا توجد ملاحظات جديدة",
+    "viewAll": "عرض الكل",
+    "downloadReport": "تحميل التقرير"
+  },
+  "progress": {
+    "timeSpent": "الوقت المستغرق",
+    "minutes": "دقائق",
+    "hours": "ساعات",
+    "activeDays": "أيام النشاط",
+    "avgScore": "متوسط الدرجة",
+    "completed": "مكتمل",
+    "activities": "أنشطة",
+    "trend": {
+      "up": "تحسن",
+      "down": "يحتاج اهتمام",
+      "stable": "مستقر"
+    }
+  },
+  "messages": {
+    "title": "الرسائل",
+    "newConversation": "محادثة جديدة",
+    "selectTeacher": "اختر معلماً",
+    "subject": "الموضوع",
+    "typeMessage": "اكتب رسالتك...",
+    "send": "إرسال",
+    "noMessages": "لا توجد رسائل بعد",
+    "unread": "غير مقروءة",
+    "archived": "مؤرشفة"
+  },
+  "consent": {
+    "title": "إدارة الموافقة",
+    "dataCollection": "جمع البيانات",
+    "dataSharing": "مشاركة البيانات",
+    "aiPersonalization": "التخصيص بالذكاء الاصطناعي",
+    "analytics": "تحليلات التعلم",
+    "marketing": "اتصالات التسويق",
+    "granted": "ممنوحة",
+    "denied": "مرفوضة",
+    "pending": "قيد الانتظار",
+    "updateConsent": "تحديث الموافقة",
+    "coppaNotice": "بموجب COPPA، مطلوب موافقة الوالدين للأطفال دون 13 عاماً.",
+    "ferpaNotice": "حقوقك محمية بموجب لوائح FERPA."
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "profile": "الملف الشخصي",
+    "notifications": "الإشعارات",
+    "privacy": "الخصوصية",
+    "language": "اللغة",
+    "save": "حفظ التغييرات",
+    "notificationPrefs": {
+      "email": "إشعارات البريد الإلكتروني",
+      "push": "الإشعارات الفورية",
+      "weeklyDigest": "ملخص أسبوعي",
+      "activityAlerts": "تنبيهات النشاط",
+      "gradeNotifications": "إشعارات الدرجات"
+    }
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "inviteCode": "رمز الدعوة",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "loginWithInvite": "تسجيل الدخول بدعوة من مدرسة طفلك"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ",
+    "retry": "إعادة المحاولة",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "save": "حفظ",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "back": "رجوع",
+    "next": "التالي",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "thisWeek": "هذا الأسبوع",
+    "lastWeek": "الأسبوع الماضي"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "대시보드",
+    "messages": "메시지",
+    "reports": "보고서",
+    "settings": "설정",
+    "logout": "로그아웃"
+  },
+  "dashboard": {
+    "title": "학부모 포털",
+    "welcome": "다시 오신 것을 환영합니다, {{name}}님",
+    "selectChild": "자녀를 선택하여 진도 확인",
+    "weeklyProgress": "주간 진도",
+    "subjects": "과목",
+    "recentActivity": "최근 활동",
+    "upcomingAssignments": "다가오는 과제",
+    "teacherNotes": "교사 메모",
+    "noNotes": "새 교사 메모 없음",
+    "viewAll": "모두 보기",
+    "downloadReport": "보고서 다운로드"
+  },
+  "progress": {
+    "timeSpent": "소요 시간",
+    "minutes": "분",
+    "hours": "시간",
+    "activeDays": "활동 일수",
+    "avgScore": "평균 점수",
+    "completed": "완료",
+    "activities": "활동",
+    "trend": {
+      "up": "향상 중",
+      "down": "주의 필요",
+      "stable": "안정적"
+    }
+  },
+  "messages": {
+    "title": "메시지",
+    "newConversation": "새 대화",
+    "selectTeacher": "선생님 선택",
+    "subject": "제목",
+    "typeMessage": "메시지를 입력하세요...",
+    "send": "보내기",
+    "noMessages": "메시지가 없습니다",
+    "unread": "읽지 않음",
+    "archived": "보관됨"
+  },
+  "consent": {
+    "title": "동의 관리",
+    "dataCollection": "데이터 수집",
+    "dataSharing": "데이터 공유",
+    "aiPersonalization": "AI 개인화",
+    "analytics": "학습 분석",
+    "marketing": "마케팅 커뮤니케이션",
+    "granted": "승인됨",
+    "denied": "거부됨",
+    "pending": "대기 중",
+    "updateConsent": "동의 업데이트",
+    "coppaNotice": "COPPA에 따라 13세 미만 아동에게는 부모 동의가 필요합니다.",
+    "ferpaNotice": "귀하의 권리는 FERPA 규정에 의해 보호됩니다."
+  },
+  "settings": {
+    "title": "설정",
+    "profile": "프로필",
+    "notifications": "알림",
+    "privacy": "개인정보",
+    "language": "언어",
+    "save": "변경사항 저장",
+    "notificationPrefs": {
+      "email": "이메일 알림",
+      "push": "푸시 알림",
+      "weeklyDigest": "주간 요약",
+      "activityAlerts": "활동 알림",
+      "gradeNotifications": "성적 알림"
+    }
+  },
+  "auth": {
+    "login": "로그인",
+    "register": "계정 만들기",
+    "email": "이메일",
+    "password": "비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "firstName": "이름",
+    "lastName": "성",
+    "inviteCode": "초대 코드",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "noAccount": "계정이 없으신가요?",
+    "hasAccount": "이미 계정이 있으신가요?",
+    "loginWithInvite": "자녀 학교의 초대로 로그인"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "retry": "다시 시도",
+    "cancel": "취소",
+    "confirm": "확인",
+    "save": "저장",
+    "edit": "편집",
+    "delete": "삭제",
+    "back": "뒤로",
+    "next": "다음",
+    "today": "오늘",
+    "yesterday": "어제",
+    "thisWeek": "이번 주",
+    "lastWeek": "지난 주"
+  }
+}

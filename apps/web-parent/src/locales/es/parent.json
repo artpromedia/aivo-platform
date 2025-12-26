@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "messages": "Mensajes",
+    "reports": "Informes",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión"
+  },
+  "dashboard": {
+    "title": "Panel de Padres",
+    "welcome": "Bienvenido de nuevo, {{name}}",
+    "selectChild": "Seleccione un hijo para ver su progreso",
+    "weeklyProgress": "Progreso Semanal",
+    "subjects": "Materias",
+    "recentActivity": "Actividad Reciente",
+    "upcomingAssignments": "Tareas Pendientes",
+    "teacherNotes": "Notas del Profesor",
+    "noNotes": "No hay nuevas notas del profesor",
+    "viewAll": "Ver Todo",
+    "downloadReport": "Descargar Informe"
+  },
+  "progress": {
+    "timeSpent": "Tiempo Dedicado",
+    "minutes": "minutos",
+    "hours": "horas",
+    "activeDays": "Días Activos",
+    "avgScore": "Puntuación Media",
+    "completed": "Completado",
+    "activities": "actividades",
+    "trend": {
+      "up": "Mejorando",
+      "down": "Necesita atención",
+      "stable": "Estable"
+    }
+  },
+  "messages": {
+    "title": "Mensajes",
+    "newConversation": "Nueva Conversación",
+    "selectTeacher": "Seleccionar profesor",
+    "subject": "Asunto",
+    "typeMessage": "Escribe tu mensaje...",
+    "send": "Enviar",
+    "noMessages": "Sin mensajes aún",
+    "unread": "No leídos",
+    "archived": "Archivados"
+  },
+  "consent": {
+    "title": "Gestión de Consentimiento",
+    "dataCollection": "Recopilación de Datos",
+    "dataSharing": "Compartir Datos",
+    "aiPersonalization": "Personalización IA",
+    "analytics": "Análisis de Aprendizaje",
+    "marketing": "Comunicaciones de Marketing",
+    "granted": "Concedido",
+    "denied": "Denegado",
+    "pending": "Pendiente",
+    "updateConsent": "Actualizar Consentimiento",
+    "coppaNotice": "Bajo COPPA, se requiere consentimiento parental para niños menores de 13 años.",
+    "ferpaNotice": "Sus derechos están protegidos bajo las regulaciones FERPA."
+  },
+  "settings": {
+    "title": "Configuración",
+    "profile": "Perfil",
+    "notifications": "Notificaciones",
+    "privacy": "Privacidad",
+    "language": "Idioma",
+    "save": "Guardar Cambios",
+    "notificationPrefs": {
+      "email": "Notificaciones por Email",
+      "push": "Notificaciones Push",
+      "weeklyDigest": "Resumen Semanal",
+      "activityAlerts": "Alertas de Actividad",
+      "gradeNotifications": "Notificaciones de Calificaciones"
+    }
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Crear Cuenta",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "inviteCode": "Código de Invitación",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "noAccount": "¿No tiene una cuenta?",
+    "hasAccount": "¿Ya tiene una cuenta?",
+    "loginWithInvite": "Inicie sesión con una invitación de la escuela de su hijo"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "thisWeek": "Esta Semana",
+    "lastWeek": "Semana Pasada"
+  }
+}

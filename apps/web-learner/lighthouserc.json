@@ -1,0 +1,44 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "url": [
+        "http://localhost:4173/",
+        "http://localhost:4173/login",
+        "http://localhost:4173/dashboard",
+        "http://localhost:4173/courses"
+      ],
+      "numberOfRuns": 3
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", {"minScore": 0.9}],
+        "categories:accessibility": ["error", {"minScore": 0.9}],
+        "categories:best-practices": ["error", {"minScore": 0.9}],
+        "categories:seo": ["warn", {"minScore": 0.8}],
+        "first-contentful-paint": ["error", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
+        "first-meaningful-paint": ["warn", {"maxNumericValue": 2000}],
+        "speed-index": ["warn", {"maxNumericValue": 4000}],
+        "interactive": ["error", {"maxNumericValue": 5000}],
+        "total-blocking-time": ["error", {"maxNumericValue": 300}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "max-potential-fid": ["warn", {"maxNumericValue": 100}],
+        "total-byte-weight": ["warn", {"maxNumericValue": 1500000}],
+        "mainthread-work-breakdown": ["warn", {"maxNumericValue": 4000}],
+        "bootup-time": ["warn", {"maxNumericValue": 2000}],
+        "uses-long-cache-ttl": ["warn", {"minScore": 0.8}],
+        "uses-optimized-images": ["warn", {"minScore": 0.9}],
+        "uses-webp-images": ["warn", {"minScore": 0.9}],
+        "uses-text-compression": ["error", {"minScore": 1}],
+        "render-blocking-resources": ["warn", {"maxNumericValue": 500}],
+        "unminified-javascript": ["error", {"minScore": 1}],
+        "unminified-css": ["error", {"minScore": 1}],
+        "unused-javascript": ["warn", {"maxNumericValue": 200000}]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

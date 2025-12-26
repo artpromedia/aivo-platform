@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "messages": "Messages",
+    "reports": "Reports",
+    "settings": "Settings",
+    "logout": "Log Out"
+  },
+  "dashboard": {
+    "title": "Parent Dashboard",
+    "welcome": "Welcome back, {{name}}",
+    "selectChild": "Select a child to view their progress",
+    "weeklyProgress": "Weekly Progress",
+    "subjects": "Subjects",
+    "recentActivity": "Recent Activity",
+    "upcomingAssignments": "Upcoming Assignments",
+    "teacherNotes": "Teacher Notes",
+    "noNotes": "No new teacher notes",
+    "viewAll": "View All",
+    "downloadReport": "Download Report"
+  },
+  "progress": {
+    "timeSpent": "Time Spent",
+    "minutes": "minutes",
+    "hours": "hours",
+    "activeDays": "Active Days",
+    "avgScore": "Average Score",
+    "completed": "Completed",
+    "activities": "activities",
+    "trend": {
+      "up": "Improving",
+      "down": "Needs attention",
+      "stable": "Stable"
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "newConversation": "New Conversation",
+    "selectTeacher": "Select a teacher",
+    "subject": "Subject",
+    "typeMessage": "Type your message...",
+    "send": "Send",
+    "noMessages": "No messages yet",
+    "unread": "Unread",
+    "archived": "Archived"
+  },
+  "consent": {
+    "title": "Consent Management",
+    "dataCollection": "Data Collection",
+    "dataSharing": "Data Sharing",
+    "aiPersonalization": "AI Personalization",
+    "analytics": "Learning Analytics",
+    "marketing": "Marketing Communications",
+    "granted": "Granted",
+    "denied": "Denied",
+    "pending": "Pending",
+    "updateConsent": "Update Consent",
+    "coppaNotice": "Under COPPA, parental consent is required for children under 13.",
+    "ferpaNotice": "Your rights are protected under FERPA regulations."
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "language": "Language",
+    "save": "Save Changes",
+    "notificationPrefs": {
+      "email": "Email Notifications",
+      "push": "Push Notifications",
+      "weeklyDigest": "Weekly Digest",
+      "activityAlerts": "Activity Alerts",
+      "gradeNotifications": "Grade Notifications"
+    }
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "inviteCode": "Invite Code",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginWithInvite": "Login with an invite from your child's school"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week"
+  }
+}

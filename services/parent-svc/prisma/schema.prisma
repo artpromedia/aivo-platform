@@ -1,0 +1,559 @@
+/**
+ * Parent Service Prisma Schema
+ *
+ * Database models for parent accounts, student linkage,
+ * messaging, consent management, and notifications.
+ */
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// PARENT ACCOUNT
+// ============================================================================
+
+model Parent {
+  id                      String                  @id @default(cuid())
+  email                   String                  @unique
+  passwordHash            String
+  givenName               String
+  familyName              String
+  phone                   String?
+  photoUrl                String?
+  language                String                  @default("en")
+  timezone                String                  @default("UTC")
+  status                  String                  @default("active") // pending, active, suspended, deactivated
+  emailVerified           Boolean                 @default(false)
+  digestFrequency         String                  @default("weekly") // daily, weekly, monthly, never
+  notificationPreferences Json                    @default("{}")
+  lastLoginAt             DateTime?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  // Relations
+  studentLinks            ParentStudentLink[]
+  invitesAccepted         ParentInvite[]          @relation("AcceptedInvites")
+  conversations           ParentConversation[]    @relation("ParentConversations")
+  messages                ParentMessage[]         @relation("ParentMessages")
+  consentRecords          ConsentRecord[]
+  notifications           ParentNotification[]
+  verificationTokens      EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  pushSubscriptions       PushSubscription[]
+  digestLogs              DigestLog[]
+  sessions                ParentSession[]
+
+  @@index([email])
+  @@index([status])
+  @@map("parents")
+}
+
+// ============================================================================
+// PARENT-STUDENT LINKAGE
+// ============================================================================
+
+model ParentStudentLink {
+  id                String          @id @default(cuid())
+  parentId          String
+  studentId         String
+  relationship      String          @default("parent") // parent, guardian, grandparent, foster_parent, other
+  isPrimary         Boolean         @default(false)
+  status            String          @default("active") // active, pending, revoked
+  consentStatus     String          @default("pending") // pending, granted, denied, not_required
+  consentGrantedAt  DateTime?
+  permissions       Json            @default("{}")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  parent            Parent          @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student           Profile         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  consentRecords    ConsentRecord[]
+
+  @@unique([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("parent_student_links")
+}
+
+model ParentInvite {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  studentId     String
+  parentEmail   String
+  parentName    String?
+  relationship  String    @default("parent")
+  invitedById   String
+  parentId      String?
+  status        String    @default("pending") // pending, accepted, expired, revoked
+  language      String    @default("en")
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  student       Profile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  invitedBy     Profile   @relation("InvitedByTeacher", fields: [invitedById], references: [id])
+  parent        Parent?   @relation("AcceptedInvites", fields: [parentId], references: [id])
+
+  @@index([code])
+  @@index([parentEmail])
+  @@index([studentId])
+  @@index([status])
+  @@map("parent_invites")
+}
+
+// ============================================================================
+// CONSENT MANAGEMENT (COPPA/FERPA)
+// ============================================================================
+
+model ConsentRecord {
+  id              String    @id @default(cuid())
+  parentId        String
+  studentId       String
+  linkId          String
+  consentType     String    // coppa, data_collection, communication, marketing
+  granted         Boolean
+  consentVersion  String
+  ipAddress       String?
+  userAgent       String?
+  grantedAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  parent          Parent            @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student         Profile           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  link            ParentStudentLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([parentId])
+  @@index([studentId])
+  @@index([consentType])
+  @@map("consent_records")
+}
+
+// ============================================================================
+// PARENT-TEACHER MESSAGING
+// ============================================================================
+
+model ParentConversation {
+  id                  String          @id @default(cuid())
+  parentId            String
+  teacherId           String
+  studentId           String
+  subject             String?
+  status              String          @default("active") // active, archived, blocked
+  parentLastReadAt    DateTime?
+  teacherLastReadAt   DateTime?
+  lastMessageAt       DateTime?
+  lastMessagePreview  String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  // Relations
+  parent              Parent          @relation("ParentConversations", fields: [parentId], references: [id], onDelete: Cascade)
+  teacher             Profile         @relation("TeacherConversations", fields: [teacherId], references: [id], onDelete: Cascade)
+  student             Profile         @relation("StudentConversations", fields: [studentId], references: [id], onDelete: Cascade)
+  messages            ParentMessage[]
+
+  @@index([parentId])
+  @@index([teacherId])
+  @@index([studentId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("parent_conversations")
+}
+
+model ParentMessage {
+  id              String              @id @default(cuid())
+  conversationId  String
+  senderId        String
+  senderType      String              // parent, teacher
+  content         String
+  contentHtml     String?
+  attachments     Json?
+  status          String              @default("sent") // sent, delivered, read, failed
+  moderationScore Float?
+  readAt          DateTime?
+  createdAt       DateTime            @default(now())
+
+  // Relations
+  conversation    ParentConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          Parent?             @relation("ParentMessages", fields: [senderId], references: [id])
+  reports         MessageReport[]
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("parent_messages")
+}
+
+model MessageReport {
+  id            String        @id @default(cuid())
+  messageId     String
+  reporterId    String
+  reporterType  String        // parent, teacher
+  reason        String
+  status        String        @default("pending") // pending, reviewed, resolved, dismissed
+  resolution    String?
+  resolvedAt    DateTime?
+  resolvedById  String?
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  message       ParentMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([status])
+  @@map("message_reports")
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model ParentNotification {
+  id          String    @id @default(cuid())
+  parentId    String
+  type        String    // achievement, progress_update, teacher_message, assignment_due, attendance_alert
+  title       String
+  body        String
+  data        Json?
+  read        Boolean   @default(false)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([parentId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("parent_notifications")
+}
+
+model PushSubscription {
+  id          String    @id @default(cuid())
+  parentId    String
+  endpoint    String
+  platform    String    // web, ios, android
+  token       String?
+  deviceId    String?
+  deviceName  String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, endpoint])
+  @@index([parentId])
+  @@index([platform])
+  @@map("push_subscriptions")
+}
+
+// ============================================================================
+// AUTHENTICATION TOKENS
+// ============================================================================
+
+model EmailVerificationToken {
+  id          String    @id @default(cuid())
+  parentId    String
+  token       String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([parentId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  parentId    String
+  token       String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([parentId])
+  @@map("password_reset_tokens")
+}
+
+model ParentSession {
+  id          String    @id @default(cuid())
+  parentId    String
+  token       String    @unique
+  deviceInfo  Json?
+  ipAddress   String?
+  expiresAt   DateTime
+  lastActiveAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([parentId])
+  @@index([expiresAt])
+  @@map("parent_sessions")
+}
+
+// ============================================================================
+// DIGEST & LOGS
+// ============================================================================
+
+model DigestLog {
+  id               String    @id @default(cuid())
+  parentId         String
+  type             String    // daily, weekly, monthly
+  sentAt           DateTime
+  childrenIncluded String[]
+  emailId          String?
+  createdAt        DateTime  @default(now())
+
+  // Relations
+  parent           Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([parentId])
+  @@index([type])
+  @@index([sentAt])
+  @@map("digest_logs")
+}
+
+// ============================================================================
+// TEACHER NOTES (visible to parents)
+// ============================================================================
+
+model TeacherNote {
+  id              String    @id @default(cuid())
+  studentId       String
+  teacherId       String
+  content         String
+  category        String?   // progress, behavior, achievement, concern
+  visibleToParent Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  student         Profile   @relation("StudentNotes", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher         Profile   @relation("TeacherNotes", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([visibleToParent])
+  @@map("teacher_notes")
+}
+
+// ============================================================================
+// EXISTING MODELS (referenced)
+// ============================================================================
+
+model Profile {
+  id              String    @id @default(cuid())
+  givenName       String
+  familyName      String
+  email           String?
+  phone           String?
+  photoUrl        String?
+  dateOfBirth     DateTime?
+  grade           String?
+  status          String    @default("active")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Parent relations
+  parentLinks           ParentStudentLink[]
+  parentInvites         ParentInvite[]
+  invitedParents        ParentInvite[]          @relation("InvitedByTeacher")
+  teacherConversations  ParentConversation[]    @relation("TeacherConversations")
+  studentConversations  ParentConversation[]    @relation("StudentConversations")
+  consentRecords        ConsentRecord[]
+  studentNotes          TeacherNote[]           @relation("StudentNotes")
+  teacherNotes          TeacherNote[]           @relation("TeacherNotes")
+
+  // Other relations
+  enrollments           Enrollment[]
+  learnerModel          LearnerModel?
+
+  @@map("profiles")
+}
+
+model Enrollment {
+  id        String    @id @default(cuid())
+  profileId String
+  classId   String
+  role      String    @default("student") // student, teacher
+  status    String    @default("active")
+  createdAt DateTime  @default(now())
+
+  profile   Profile   @relation(fields: [profileId], references: [id])
+  class     Class     @relation(fields: [classId], references: [id])
+
+  @@unique([profileId, classId])
+  @@map("enrollments")
+}
+
+model Class {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  status      String       @default("active")
+  createdAt   DateTime     @default(now())
+
+  enrollments Enrollment[]
+  assignments Assignment[]
+
+  @@map("classes")
+}
+
+model LearnerModel {
+  id              String    @id @default(cuid())
+  studentId       String    @unique
+  overallMastery  Float     @default(0)
+  lastActivityAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  student         Profile   @relation(fields: [studentId], references: [id])
+
+  @@map("learner_models")
+}
+
+model LearningSession {
+  id                String      @id @default(cuid())
+  studentId         String
+  lessonId          String
+  status            String      @default("in_progress") // in_progress, completed, abandoned
+  score             Float?
+  timeSpentSeconds  Int?
+  startedAt         DateTime    @default(now())
+  completedAt       DateTime?
+
+  lesson            Lesson      @relation(fields: [lessonId], references: [id])
+  responses         Response[]
+
+  @@index([studentId])
+  @@index([startedAt])
+  @@map("learning_sessions")
+}
+
+model Lesson {
+  id          String            @id @default(cuid())
+  title       String
+  subject     String
+  createdAt   DateTime          @default(now())
+
+  sessions        LearningSession[]
+  skills          LessonSkill[]
+  classAssignments ClassLessonAssignment[]
+
+  @@map("lessons")
+}
+
+model ClassLessonAssignment {
+  id        String   @id @default(cuid())
+  classId   String
+  lessonId  String
+  createdAt DateTime @default(now())
+
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+
+  @@map("class_lesson_assignments")
+}
+
+model Response {
+  id        String          @id @default(cuid())
+  sessionId String
+  createdAt DateTime        @default(now())
+
+  session   LearningSession @relation(fields: [sessionId], references: [id])
+
+  @@map("responses")
+}
+
+model Achievement {
+  id          String    @id @default(cuid())
+  studentId   String
+  name        String
+  description String
+  iconUrl     String?
+  earnedAt    DateTime  @default(now())
+
+  @@index([studentId])
+  @@index([earnedAt])
+  @@map("achievements")
+}
+
+model Skill {
+  id        String        @id @default(cuid())
+  name      String
+  subject   String
+  createdAt DateTime      @default(now())
+
+  lessons   LessonSkill[]
+  mastery   SkillMastery[]
+
+  @@map("skills")
+}
+
+model LessonSkill {
+  id        String   @id @default(cuid())
+  lessonId  String
+  skillId   String
+
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  skill     Skill    @relation(fields: [skillId], references: [id])
+
+  @@unique([lessonId, skillId])
+  @@map("lesson_skills")
+}
+
+model SkillMastery {
+  id            String    @id @default(cuid())
+  studentId     String
+  skillId       String
+  masteryLevel  Float     @default(0)
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  skill         Skill     @relation(fields: [skillId], references: [id])
+
+  @@unique([studentId, skillId])
+  @@index([studentId])
+  @@map("skill_mastery")
+}
+
+model Assignment {
+  id        String    @id @default(cuid())
+  classId   String
+  title     String
+  dueAt     DateTime
+  status    String    @default("active")
+  createdAt DateTime  @default(now())
+
+  class     Class     @relation(fields: [classId], references: [id])
+
+  @@index([classId])
+  @@index([dueAt])
+  @@map("assignments")
+}

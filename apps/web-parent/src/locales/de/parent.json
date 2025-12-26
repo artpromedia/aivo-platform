@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "messages": "Nachrichten",
+    "reports": "Berichte",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "dashboard": {
+    "title": "Eltern-Dashboard",
+    "welcome": "Willkommen zurück, {{name}}",
+    "selectChild": "Wählen Sie ein Kind aus, um den Fortschritt anzuzeigen",
+    "weeklyProgress": "Wöchentlicher Fortschritt",
+    "subjects": "Fächer",
+    "recentActivity": "Letzte Aktivität",
+    "upcomingAssignments": "Anstehende Aufgaben",
+    "teacherNotes": "Lehrernotizen",
+    "noNotes": "Keine neuen Lehrernotizen",
+    "viewAll": "Alle Anzeigen",
+    "downloadReport": "Bericht Herunterladen"
+  },
+  "progress": {
+    "timeSpent": "Verbrachte Zeit",
+    "minutes": "Minuten",
+    "hours": "Stunden",
+    "activeDays": "Aktive Tage",
+    "avgScore": "Durchschnittspunktzahl",
+    "completed": "Abgeschlossen",
+    "activities": "Aktivitäten",
+    "trend": {
+      "up": "Verbesserung",
+      "down": "Braucht Aufmerksamkeit",
+      "stable": "Stabil"
+    }
+  },
+  "messages": {
+    "title": "Nachrichten",
+    "newConversation": "Neue Konversation",
+    "selectTeacher": "Lehrer auswählen",
+    "subject": "Betreff",
+    "typeMessage": "Nachricht eingeben...",
+    "send": "Senden",
+    "noMessages": "Noch keine Nachrichten",
+    "unread": "Ungelesen",
+    "archived": "Archiviert"
+  },
+  "consent": {
+    "title": "Einwilligungsverwaltung",
+    "dataCollection": "Datenerhebung",
+    "dataSharing": "Datenweitergabe",
+    "aiPersonalization": "KI-Personalisierung",
+    "analytics": "Lernanalysen",
+    "marketing": "Marketing-Kommunikation",
+    "granted": "Erteilt",
+    "denied": "Verweigert",
+    "pending": "Ausstehend",
+    "updateConsent": "Einwilligung Aktualisieren",
+    "coppaNotice": "Gemäß COPPA ist die elterliche Zustimmung für Kinder unter 13 Jahren erforderlich.",
+    "ferpaNotice": "Ihre Rechte sind durch FERPA-Vorschriften geschützt."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "profile": "Profil",
+    "notifications": "Benachrichtigungen",
+    "privacy": "Datenschutz",
+    "language": "Sprache",
+    "save": "Änderungen Speichern",
+    "notificationPrefs": {
+      "email": "E-Mail-Benachrichtigungen",
+      "push": "Push-Benachrichtigungen",
+      "weeklyDigest": "Wöchentliche Zusammenfassung",
+      "activityAlerts": "Aktivitätswarnungen",
+      "gradeNotifications": "Notenbenachrichtigungen"
+    }
+  },
+  "auth": {
+    "login": "Anmelden",
+    "register": "Konto Erstellen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "confirmPassword": "Passwort Bestätigen",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "inviteCode": "Einladungscode",
+    "forgotPassword": "Passwort vergessen?",
+    "noAccount": "Noch kein Konto?",
+    "hasAccount": "Bereits ein Konto?",
+    "loginWithInvite": "Melden Sie sich mit einer Einladung der Schule Ihres Kindes an"
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Ein Fehler ist aufgetreten",
+    "retry": "Wiederholen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "save": "Speichern",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "thisWeek": "Diese Woche",
+    "lastWeek": "Letzte Woche"
+  }
+}

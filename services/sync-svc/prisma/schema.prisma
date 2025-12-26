@@ -1,0 +1,245 @@
+// Prisma Schema for Sync Service
+// This file defines the database schema for offline-first synchronization
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Core Sync Tables
+// =============================================================================
+
+/// Stores pending and historical sync conflicts
+model SyncConflict {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  userId              String   @map("user_id")
+  entityType          String   @map("entity_type")
+  entityId            String   @map("entity_id")
+  clientData          Json     @map("client_data")
+  serverData          Json     @map("server_data")
+  clientVersion       Int      @map("client_version")
+  serverVersion       Int      @map("server_version")
+  clientDeviceId      String   @map("client_device_id")
+  status              String   @default("pending")
+  suggestedResolution String   @map("suggested_resolution")
+  resolvedData        Json?    @map("resolved_data")
+  resolvedAt          DateTime? @map("resolved_at")
+  resolvedBy          String?  @map("resolved_by")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, userId, status])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("sync_conflicts")
+}
+
+/// Records sync history for analytics and debugging
+model SyncHistory {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  deviceId  String   @map("device_id")
+  type      String   // 'push' or 'pull'
+  stats     Json     // Statistics about the sync operation
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, userId])
+  @@index([timestamp])
+  @@map("sync_history")
+}
+
+/// Device sync state tracking
+model DeviceSyncState {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  userId            String   @map("user_id")
+  deviceId          String   @map("device_id")
+  lastSyncTimestamp DateTime @map("last_sync_timestamp")
+  lastSyncVersion   Int      @map("last_sync_version")
+  syncCursor        String?  @map("sync_cursor")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, userId, deviceId])
+  @@map("device_sync_states")
+}
+
+// =============================================================================
+// Syncable Entity Tables
+// =============================================================================
+
+/// Learning sessions - synced across devices
+model SyncLearningSession {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Session data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, userId])
+  @@index([updatedAt])
+  @@map("sync_learning_sessions")
+}
+
+/// Learner responses - synced across devices
+model SyncResponse {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Response data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, userId])
+  @@index([updatedAt])
+  @@map("sync_responses")
+}
+
+/// Progress tracking - synced across devices
+model SyncProgress {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Progress data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, userId])
+  @@index([updatedAt])
+  @@map("sync_progress")
+}
+
+/// Skill mastery data - synced across devices
+model SyncSkillMastery {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Mastery data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, userId])
+  @@index([updatedAt])
+  @@map("sync_skill_mastery")
+}
+
+/// User settings - synced across devices
+model SyncSettings {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Settings data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@unique([tenantId, userId])
+  @@map("sync_settings")
+}
+
+/// User bookmarks - synced across devices
+model SyncBookmark {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Bookmark data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, userId])
+  @@index([updatedAt])
+  @@map("sync_bookmarks")
+}
+
+/// User notes - synced across devices
+model SyncNote {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  userId    String    @map("user_id")
+  data      Json      // Note data
+  version   Int       @default(1)
+  deviceId  String?   @map("device_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  syncedAt  DateTime? @map("synced_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, userId])
+  @@index([updatedAt])
+  @@map("sync_notes")
+}
+
+// =============================================================================
+// Offline Content Tables
+// =============================================================================
+
+/// Tracks offline content availability
+model OfflineContent {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  userId        String    @map("user_id")
+  contentType   String    @map("content_type") // 'lesson', 'media', etc.
+  contentId     String    @map("content_id")
+  version       Int       @default(1)
+  sizeBytes     Int       @map("size_bytes")
+  downloadedAt  DateTime  @map("downloaded_at")
+  expiresAt     DateTime? @map("expires_at")
+  lastAccessedAt DateTime @map("last_accessed_at")
+  metadata      Json?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([tenantId, userId, contentType, contentId])
+  @@index([expiresAt])
+  @@map("offline_content")
+}
+
+/// Content version tracking for incremental updates
+model ContentVersion {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  contentType String   @map("content_type")
+  contentId   String   @map("content_id")
+  version     Int
+  checksum    String
+  deltaFrom   Int?     @map("delta_from")
+  deltaData   Bytes?   @map("delta_data")
+  fullData    Bytes?   @map("full_data")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([tenantId, contentType, contentId, version])
+  @@index([checksum])
+  @@map("content_versions")
+}

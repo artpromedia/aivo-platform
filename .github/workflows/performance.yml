@@ -1,0 +1,288 @@
+name: Performance Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '8'
+
+jobs:
+  # ==========================================================================
+  # BUNDLE SIZE ANALYSIS
+  # ==========================================================================
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with stats
+        run: pnpm --filter @aivo/web-learner build
+        env:
+          NODE_ENV: production
+
+      - name: Check bundle budgets
+        id: budget-check
+        run: |
+          node scripts/check-performance-budgets.js apps/web-learner/dist
+        continue-on-error: true
+
+      - name: Upload bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats
+          path: |
+            apps/web-learner/dist/stats.html
+            apps/web-learner/dist/stats.json
+          retention-days: 30
+
+      - name: Comment PR with bundle size
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const stats = JSON.parse(fs.readFileSync('apps/web-learner/dist/stats.json', 'utf8'));
+
+            const formatBytes = (bytes) => {
+              if (bytes < 1024) return `${bytes}B`;
+              if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+              return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
+            };
+
+            const totalSize = stats.reduce((sum, chunk) => sum + chunk.gzipSize, 0);
+            
+            const body = `## 📊 Bundle Size Report
+
+            | Metric | Size |
+            |--------|------|
+            | Total (gzipped) | ${formatBytes(totalSize)} |
+            | Chunks | ${stats.length} |
+
+            <details>
+            <summary>Chunk breakdown</summary>
+
+            | Chunk | Size | Gzip |
+            |-------|------|------|
+            ${stats.slice(0, 20).map(c => `| ${c.name} | ${formatBytes(c.size)} | ${formatBytes(c.gzipSize)} |`).join('\n')}
+
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Fail if budget exceeded
+        if: steps.budget-check.outcome == 'failure'
+        run: exit 1
+
+  # ==========================================================================
+  # LIGHTHOUSE CI
+  # ==========================================================================
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    needs: bundle-analysis
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @aivo/web-learner build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: ./apps/web-learner/lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # ==========================================================================
+  # PERFORMANCE REGRESSION TESTS
+  # ==========================================================================
+  performance-tests:
+    name: Performance Regression Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: aivo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build services
+        run: pnpm build
+
+      - name: Run database migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
+
+      - name: Run performance tests
+        run: pnpm test:performance
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: tests/performance/results/
+          retention-days: 30
+
+  # ==========================================================================
+  # LOAD TESTING (k6)
+  # ==========================================================================
+  load-testing:
+    name: Load Testing
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [bundle-analysis, performance-tests]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          k6 run tests/performance/load-test.k6.js \
+            --out json=tests/performance/results/k6-results.json \
+            --summary-export=tests/performance/results/k6-summary.json
+        env:
+          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+          API_BASE_URL: ${{ secrets.STAGING_API_URL }}
+
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: tests/performance/results/
+          retention-days: 30
+
+      - name: Check thresholds
+        run: |
+          node scripts/check-k6-thresholds.js tests/performance/results/k6-summary.json
+
+  # ==========================================================================
+  # CORE WEB VITALS TRACKING
+  # ==========================================================================
+  web-vitals:
+    name: Core Web Vitals
+    runs-on: ubuntu-latest
+    needs: bundle-analysis
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright
+        run: npx playwright install chromium
+
+      - name: Build and preview
+        run: |
+          pnpm --filter @aivo/web-learner build
+          pnpm --filter @aivo/web-learner preview &
+          sleep 5
+
+      - name: Measure Core Web Vitals
+        run: |
+          node scripts/measure-web-vitals.js http://localhost:4173
+
+      - name: Upload Web Vitals report
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-vitals-report
+          path: tests/performance/web-vitals-report.json
+          retention-days: 30

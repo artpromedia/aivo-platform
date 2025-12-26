@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "messages": "संदेश",
+    "reports": "रिपोर्ट",
+    "settings": "सेटिंग्स",
+    "logout": "लॉग आउट"
+  },
+  "dashboard": {
+    "title": "अभिभावक पोर्टल",
+    "welcome": "वापस स्वागत है, {{name}}",
+    "selectChild": "प्रगति देखने के लिए बच्चे का चयन करें",
+    "weeklyProgress": "साप्ताहिक प्रगति",
+    "subjects": "विषय",
+    "recentActivity": "हाल की गतिविधि",
+    "upcomingAssignments": "आगामी असाइनमेंट",
+    "teacherNotes": "शिक्षक की टिप्पणियाँ",
+    "noNotes": "कोई नई टिप्पणी नहीं",
+    "viewAll": "सभी देखें",
+    "downloadReport": "रिपोर्ट डाउनलोड करें"
+  },
+  "progress": {
+    "timeSpent": "बिताया समय",
+    "minutes": "मिनट",
+    "hours": "घंटे",
+    "activeDays": "सक्रिय दिन",
+    "avgScore": "औसत स्कोर",
+    "completed": "पूर्ण",
+    "activities": "गतिविधियाँ",
+    "trend": {
+      "up": "सुधार हो रहा है",
+      "down": "ध्यान की जरूरत",
+      "stable": "स्थिर"
+    }
+  },
+  "messages": {
+    "title": "संदेश",
+    "newConversation": "नई बातचीत",
+    "selectTeacher": "शिक्षक चुनें",
+    "subject": "विषय",
+    "typeMessage": "अपना संदेश लिखें...",
+    "send": "भेजें",
+    "noMessages": "अभी कोई संदेश नहीं",
+    "unread": "अपठित",
+    "archived": "संग्रहीत"
+  },
+  "consent": {
+    "title": "सहमति प्रबंधन",
+    "dataCollection": "डेटा संग्रह",
+    "dataSharing": "डेटा साझाकरण",
+    "aiPersonalization": "AI वैयक्तिकरण",
+    "analytics": "शिक्षण विश्लेषण",
+    "marketing": "मार्केटिंग संचार",
+    "granted": "प्रदान की गई",
+    "denied": "अस्वीकृत",
+    "pending": "लंबित",
+    "updateConsent": "सहमति अपडेट करें",
+    "coppaNotice": "COPPA के तहत, 13 वर्ष से कम उम्र के बच्चों के लिए माता-पिता की सहमति आवश्यक है।",
+    "ferpaNotice": "आपके अधिकार FERPA विनियमों द्वारा सुरक्षित हैं।"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "profile": "प्रोफ़ाइल",
+    "notifications": "सूचनाएं",
+    "privacy": "गोपनीयता",
+    "language": "भाषा",
+    "save": "परिवर्तन सहेजें",
+    "notificationPrefs": {
+      "email": "ईमेल सूचनाएं",
+      "push": "पुश सूचनाएं",
+      "weeklyDigest": "साप्ताहिक सारांश",
+      "activityAlerts": "गतिविधि अलर्ट",
+      "gradeNotifications": "ग्रेड सूचनाएं"
+    }
+  },
+  "auth": {
+    "login": "लॉग इन",
+    "register": "खाता बनाएं",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "firstName": "पहला नाम",
+    "lastName": "अंतिम नाम",
+    "inviteCode": "आमंत्रण कोड",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "खाता नहीं है?",
+    "hasAccount": "पहले से खाता है?",
+    "loginWithInvite": "अपने बच्चे के स्कूल से आमंत्रण के साथ लॉगिन करें"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "एक त्रुटि हुई",
+    "retry": "पुनः प्रयास करें",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "save": "सहेजें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "back": "वापस",
+    "next": "अगला",
+    "today": "आज",
+    "yesterday": "कल",
+    "thisWeek": "इस सप्ताह",
+    "lastWeek": "पिछले सप्ताह"
+  }
+}

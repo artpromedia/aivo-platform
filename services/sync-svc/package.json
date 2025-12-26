@@ -1,0 +1,45 @@
+{
+  "name": "@aivo/sync-svc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@aivo/events": "workspace:*",
+    "@aivo/ts-rbac": "workspace:*",
+    "@aivo/ts-resilience": "workspace:*",
+    "@aivo/ts-observability": "workspace:*",
+    "@prisma/client": "^5.22.0",
+    "@fastify/websocket": "^10.0.1",
+    "bullmq": "^5.12.12",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.4.1",
+    "jose": "^5.9.2",
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/supertest": "^2.0.16",
+    "@types/ws": "^8.5.12",
+    "@typescript-eslint/eslint-plugin": "^8.11.0",
+    "@typescript-eslint/parser": "^8.11.0",
+    "eslint": "^9.12.0",
+    "prisma": "^5.22.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}
