@@ -83,6 +83,7 @@ export {
 
 // Components
 export {
+  // Core UI Components
   LiveCursors,
   CollaboratorAvatars,
   PresenceIndicator,
@@ -94,4 +95,26 @@ export {
   ChatPanel,
   CollaborationProvider,
   useCollaboration,
+  // Advanced Components
+  CommentThread,
+  CollaborativeEditor,
+  ScreenShare,
+  NotificationProvider,
+  useNotifications,
+  useRealtimeNotifications,
+} from './components';
+
+// Re-export types from components
+export type {
+  Comment,
+  CommentReaction,
+  CommentThreadProps,
+  CollaborativeEditorProps,
+  CollaboratorInfo,
+  ScreenShareProps,
+  ShareQuality,
+  ShareState,
+  Notification,
+  NotificationType,
+  NotificationAction,
 } from './components';
