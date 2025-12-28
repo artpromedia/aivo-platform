@@ -57,5 +57,15 @@ export {
 // Context propagation helpers
 export { extractContext, injectContext, type TraceContext } from './context.js';
 
+// Default instances for convenience
+import { createLogger } from './logger.js';
+import { createMetricsRegistry } from './metrics/index.js';
+
+// Singleton logger for services that import directly
+export const logger = createLogger({ serviceName: 'default' });
+
+// Singleton metrics for services that import directly
+export const metrics = createMetricsRegistry({ serviceName: 'default' });
+
 // Standard attribute names
 export { AIVO_ATTRIBUTES, METRIC_NAMES } from './constants.js';

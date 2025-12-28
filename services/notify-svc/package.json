@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
-    "@aivo/observability": "workspace:*",
+    "@aivo/ts-observability": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
     "@aws-sdk/client-ses": "^3.700.0",
     "@parse/node-apn": "^6.0.1",

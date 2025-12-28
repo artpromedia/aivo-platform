@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@aivo/i18n": "workspace:*",
-    "@aivo/observability": "workspace:*",
+    "@aivo/ts-observability": "workspace:*",
     "@aivo/ts-shared": "workspace:*",
     "@google-cloud/translate": "^8.0.0",
     "@hono/node-server": "^1.8.0",
