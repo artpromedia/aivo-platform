@@ -148,8 +148,6 @@ void main() {
       // Arrange
       when(() => mockStudentRepository.getStudents())
           .thenAnswer((_) async => TestStudents.all);
-      when(() => mockStudentRepository.searchStudents('alex'))
-          .thenAnswer((_) async => [TestStudents.alex]);
 
       // Act
       await tester.pumpApp(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'accessibility_semantics.dart';
 import 'accessibility_announcer.dart';
 
 /// Accessible button with proper semantics

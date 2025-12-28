@@ -3,6 +3,7 @@
 /// Parent messaging with read status per child.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
@@ -158,8 +159,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
       newMessages[thread.id] = messages;
 
       state = state.copyWith(messages: newMessages);
-    } catch (_) {
-      // Silently fail for now
+    } catch (e) {
+      debugPrint('[MessagingNotifier] Error loading thread: $e');
     }
   }
 
@@ -173,7 +174,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
       // Reload thread
       await loadThread(childId);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[MessagingNotifier] Error sending message: $e');
       return false;
     }
   }
@@ -181,8 +183,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   Future<void> markAsRead(String messageId) async {
     try {
       await _apiClient.post(ApiEndpoints.markRead(messageId));
-    } catch (_) {
-      // Silently fail
+    } catch (e) {
+      debugPrint('[MessagingNotifier] Error marking as read: $e');
     }
   }
 }

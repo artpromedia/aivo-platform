@@ -14,6 +14,7 @@ enum SyncOperationType {
 
 /// Sync status.
 enum SyncStatus {
+  idle,
   pending,
   syncing,
   synced,

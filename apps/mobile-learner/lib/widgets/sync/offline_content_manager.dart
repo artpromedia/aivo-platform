@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../core/database/local_database.dart';
 import '../../core/network/connectivity_manager.dart';
 import '../../core/sync/sync_engine.dart';
-import '../../core/sync/sync_models.dart';
 import 'download_progress.dart';
 
 /// Offline Content Manager Screen
@@ -57,10 +56,16 @@ class _OfflineContentManagerState extends State<OfflineContentManager>
     try {
       final db = LocalDatabase.instance;
 
-      // Get downloaded lessons
-      final downloadedData = await db.getOfflineLessons();
-      _downloadedLessons = downloadedData
-          .map((data) => OfflineLesson.fromJson(data))
+      // Get downloaded lessons - convert Lesson to OfflineLesson
+      final downloadedLessons = await db.getOfflineLessons();
+      _downloadedLessons = downloadedLessons
+          .map((lesson) => OfflineLesson(
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description,
+                sizeBytes: 0,
+                downloadedAt: DateTime.now(),
+              ))
           .toList();
 
       // Get available lessons (would come from API normally)
@@ -101,7 +106,7 @@ class _OfflineContentManagerState extends State<OfflineContentManager>
 
   Future<void> _downloadLesson(OfflineLesson lesson) async {
     try {
-      await SyncEngine.instance.downloadForOffline(lesson.id);
+      await SyncEngine.instance.downloadForOffline(lessonId: lesson.id);
       _loadContent();
     } catch (e) {
       if (mounted) {

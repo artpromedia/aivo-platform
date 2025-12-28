@@ -3,6 +3,7 @@
 /// Manages consent grants and checks for parent app.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
@@ -185,7 +186,8 @@ class ConsentNotifier extends StateNotifier<ConsentState> {
       // Reload consents
       await loadConsents(learnerId);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ConsentService] Error granting consent: $e');
       return false;
     }
   }
@@ -201,7 +203,8 @@ class ConsentNotifier extends StateNotifier<ConsentState> {
       // Reload consents
       await loadConsents(learnerId);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ConsentService] Error revoking consent: $e');
       return false;
     }
   }

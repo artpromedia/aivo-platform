@@ -3,6 +3,7 @@
 /// Offline-first data access for sessions.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../models/models.dart';
@@ -56,7 +57,9 @@ class SessionRepository {
         final response = await api.get('/session/sessions/$id');
         session = Session.fromJson(response.data as Map<String, dynamic>);
         await db.cacheSessions([session]);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[SessionRepository] Error fetching session: $e');
+      }
     }
     
     return session;
@@ -191,7 +194,8 @@ class SessionRepository {
       
       await db.cacheSessions(sessions);
       return sessions;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[SessionRepository] Error refreshing sessions: $e');
       return db.getSessions();
     }
   }
@@ -205,6 +209,8 @@ class SessionRepository {
           .toList();
       
       await db.cacheSessions(sessions);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SessionRepository] Background refresh failed: $e');
+    }
   }
 }

@@ -279,6 +279,7 @@ class VoiceTextField extends StatefulWidget {
 
 class _VoiceTextFieldState extends State<VoiceTextField> {
   late TextEditingController _controller;
+  // ignore: unused_field
   bool _isListening = false;
 
   @override

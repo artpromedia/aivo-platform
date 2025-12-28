@@ -116,7 +116,12 @@ class ConnectivityManager {
           .first
           .timeout(timeout);
       return true;
-    } catch (_) {
+    } catch (e) {
+      // Timeout or other error - expected during network issues
+      assert(() {
+        debugPrint('[ConnectivityManager] Connection wait timed out: $e');
+        return true;
+      }());
       return false;
     }
   }

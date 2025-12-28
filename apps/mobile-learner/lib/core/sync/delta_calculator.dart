@@ -267,7 +267,9 @@ class DeltaCalculator {
 
       case FieldMergeStrategy.union:
         if (conflict.localValue is List && conflict.serverValue is List) {
-          final set = {...conflict.localValue, ...conflict.serverValue};
+          final localList = conflict.localValue as List;
+          final serverList = conflict.serverValue as List;
+          final set = <dynamic>{...localList, ...serverList};
           return set.toList();
         }
         return conflict.serverValue;

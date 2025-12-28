@@ -34,8 +34,6 @@ class LeaderboardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     // Separate top 3 and rest
     final top3 = entries.take(3).toList();
     final rest = entries.skip(3).toList();

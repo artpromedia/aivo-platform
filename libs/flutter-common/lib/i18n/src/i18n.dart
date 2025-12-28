@@ -89,15 +89,16 @@ class AivoI18n {
             'assets/locales/$baseCode/${namespace.name}.json',
           );
           _translations[key] = json.decode(jsonString) as Map<String, dynamic>;
-        } catch (_) {
+        } catch (baseE) {
           // Try English fallback
+          debugPrint('Failed to load $baseCode translations for ${namespace.name}: $baseE');
           try {
             final jsonString = await rootBundle.loadString(
               'assets/locales/en/${namespace.name}.json',
             );
             _translations[key] = json.decode(jsonString) as Map<String, dynamic>;
-          } catch (_) {
-            debugPrint('Failed to load translations for $key');
+          } catch (enE) {
+            debugPrint('Failed to load English fallback for $key: $enE');
             _translations[key] = {};
           }
         }
@@ -159,6 +160,7 @@ class AivoI18n {
     );
 
     return message.replaceAllMapped(pluralRegex, (match) {
+      // ignore: unused_local_variable
       final variable = match.group(1);
       final patterns = match.group(2) ?? '';
 

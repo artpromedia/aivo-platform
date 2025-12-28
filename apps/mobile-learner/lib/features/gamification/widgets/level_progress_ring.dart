@@ -6,7 +6,7 @@ library;
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'gamification_models.dart';
+import '../gamification_models.dart';
 
 /// Size variants for the level progress ring
 enum LevelRingSize { small, medium, large }

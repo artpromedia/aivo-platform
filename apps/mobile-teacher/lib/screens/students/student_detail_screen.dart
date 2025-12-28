@@ -10,9 +10,14 @@ import '../../models/models.dart';
 
 /// Screen showing student details.
 class StudentDetailScreen extends ConsumerWidget {
-  const StudentDetailScreen({super.key, required this.studentId});
+  const StudentDetailScreen({
+    super.key,
+    required this.studentId,
+    this.initialTab = 0,
+  });
 
   final String studentId;
+  final int initialTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,7 +73,7 @@ class _StudentDetailView extends ConsumerWidget {
           // Quick info cards
           Row(
             children: [
-              Expanded(child: _InfoCard(label: 'Grade', value: student.gradeLevel)),
+              Expanded(child: _InfoCard(label: 'Grade', value: student.gradeLevel?.toString() ?? 'N/A')),
               const SizedBox(width: 12),
               Expanded(child: _InfoCard(label: 'Status', value: student.status.name)),
             ],

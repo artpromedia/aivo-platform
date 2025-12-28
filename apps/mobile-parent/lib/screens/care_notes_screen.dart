@@ -3,6 +3,7 @@
 /// View and add care notes for team collaboration.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../collaboration/models.dart';
@@ -543,8 +544,8 @@ class _CareNoteCard extends ConsumerWidget {
       final service = ref.read(collaborationServiceProvider);
       await service.acknowledgeCareNote(learnerId, note.id);
       ref.invalidate(careNotesProvider(learnerId));
-    } catch (_) {
-      // Silent fail
+    } catch (e) {
+      debugPrint('[CareNotesScreen] Error acknowledging note: $e');
     }
   }
 }

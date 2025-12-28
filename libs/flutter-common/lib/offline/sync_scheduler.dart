@@ -8,6 +8,8 @@ library;
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+
 import 'offline_database.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -466,8 +468,12 @@ class SyncScheduler {
       if (json != null) {
         return SyncState.fromJson(json);
       }
-    } catch (_) {
-      // Ignore parse errors, use default
+    } catch (e) {
+      // Ignore parse errors, use default - but log in debug mode
+      assert(() {
+        debugPrint('[SyncScheduler] Failed to load state: $e');
+        return true;
+      }());
     }
     return SyncState.initial();
   }

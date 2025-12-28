@@ -43,6 +43,7 @@ class DragAssist<T extends Object> extends StatefulWidget {
 
 class _DragAssistState<T extends Object> extends State<DragAssist<T>> {
   Offset _dragPosition = Offset.zero;
+  // ignore: unused_field
   Offset _startPosition = Offset.zero;
   bool _isDragging = false;
   Offset? _snapTarget;

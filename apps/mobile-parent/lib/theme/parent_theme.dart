@@ -47,6 +47,10 @@ class AccessibilityController extends StateNotifier<AccessibilityState> {
   void setTextScaleFactor(double value) {
     state = state.copyWith(textScaleFactor: value.clamp(0.8, 2.0));
   }
+
+  void resetToDefaults() {
+    state = const AccessibilityState();
+  }
 }
 
 final accessibilityControllerProvider =

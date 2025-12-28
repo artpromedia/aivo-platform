@@ -80,7 +80,7 @@ extension PumpApp on WidgetTester {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     await pumpApp(widget, overrides: overrides);
-    await pumpAndSettle(const Duration(milliseconds: 100), timeout: timeout);
+    await pumpAndSettle(timeout);
   }
 
   /// Wait for async operations to complete.
@@ -88,7 +88,7 @@ extension PumpApp on WidgetTester {
     Duration duration = const Duration(milliseconds: 100),
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    await pumpAndSettle(duration, timeout: timeout);
+    await pumpAndSettle(timeout);
   }
 
   /// Pump and wait for a specific duration.
@@ -147,12 +147,18 @@ Widget testableWidget(
 }
 
 /// Create a testable widget with Riverpod providers.
-Widget testableWidgetWithProviders(
-  Widget child, {
+Widget testableWidgetWithProviders({
+  required Widget child,
   List<Override>? overrides,
   ThemeData? theme,
+  Brightness brightness = Brightness.light,
   bool withScaffold = true,
 }) {
+  final effectiveTheme = theme ?? 
+      (brightness == Brightness.dark 
+          ? ThemeData.dark(useMaterial3: true)
+          : ThemeData.light(useMaterial3: true));
+  
   return ProviderScope(
     overrides: [
       ...defaultMockProviders,
@@ -160,7 +166,7 @@ Widget testableWidgetWithProviders(
     ],
     child: testableWidget(
       child,
-      theme: theme,
+      theme: effectiveTheme,
       withScaffold: withScaffold,
     ),
   );

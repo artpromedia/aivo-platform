@@ -2,9 +2,9 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import '../types.dart';
-import '../i18n.dart';
-import '../constants.dart';
+import 'types.dart';
+import 'i18n.dart';
+import 'constants.dart';
 
 /// RTL support utilities
 class RtlUtils {

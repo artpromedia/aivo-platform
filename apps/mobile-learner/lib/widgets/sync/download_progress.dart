@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/sync/sync_models.dart';
 
 /// Download Progress Item
 ///

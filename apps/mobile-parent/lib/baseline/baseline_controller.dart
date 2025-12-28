@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' hide BaselineService, baselineServiceProvider;
 
@@ -98,7 +99,8 @@ class BaselineController extends StateNotifier<BaselineState> {
       }
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error loading baseline status: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to load baseline status');
     }
   }
@@ -110,8 +112,9 @@ class BaselineController extends StateNotifier<BaselineState> {
       state = state.copyWith(
         profiles: {...state.profiles, learnerId: profile},
       );
-    } catch (_) {
+    } catch (e) {
       // Silently fail on refresh
+      debugPrint('[BaselineController] Refresh profile failed: $e');
     }
   }
 
@@ -127,7 +130,8 @@ class BaselineController extends StateNotifier<BaselineState> {
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error starting baseline: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to start baseline');
       return null;
     }
@@ -144,7 +148,8 @@ class BaselineController extends StateNotifier<BaselineState> {
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error accepting results: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to accept results');
       return false;
     }
@@ -170,7 +175,8 @@ class BaselineController extends StateNotifier<BaselineState> {
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error requesting retest: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to request retest');
       return false;
     }
@@ -205,7 +211,8 @@ final childrenBaselineProvider =
   for (final learner in learners) {
     try {
       results[learner.id] = await service.getProfileByLearner(learner.id);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error loading profile for ${learner.id}: $e');
       results[learner.id] = null;
     }
   }

@@ -633,6 +633,12 @@ class AivoColors extends ThemeExtension<AivoColors> {
   /// On-primary-container color (primary color if not set).
   Color get onPrimaryContainer => _onPrimaryContainer ?? primary;
 
+  /// Error container color (12% opacity of error).
+  Color get errorContainer => error.withOpacity(0.12);
+
+  /// On-error-container color (error color).
+  Color get onErrorContainer => error;
+
   @override
   AivoColors copyWith({
     Color? primary,

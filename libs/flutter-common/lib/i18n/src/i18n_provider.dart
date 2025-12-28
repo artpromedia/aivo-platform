@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'types.dart';
+import 'types.dart' as types;
 import 'i18n.dart';
 
 /// InheritedWidget to provide i18n context
@@ -173,5 +174,3 @@ mixin I18nStateMixin<T extends StatefulWidget> on State<T> {
   bool get isRTL => i18n.isRTL;
 }
 
-// Import types with prefix to avoid conflict
-import 'types.dart' as types;

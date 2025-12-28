@@ -184,14 +184,16 @@ class SubscriptionController extends StateNotifier<SubscriptionState> {
 
       try {
         subscription = await _service.getSubscription(billingAccount.id);
-      } catch (_) {
+      } catch (e) {
         // No subscription yet
+        debugPrint('[SubscriptionController] No subscription found: $e');
       }
 
       try {
         paymentMethod = await _service.getDefaultPaymentMethod(billingAccount.id);
-      } catch (_) {
+      } catch (e) {
         // No payment method yet
+        debugPrint('[SubscriptionController] No payment method found: $e');
       }
 
       state = state.copyWith(

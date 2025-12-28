@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_service.dart';
@@ -46,7 +47,8 @@ class AuthController extends StateNotifier<AuthState> {
       state = AuthState.authenticated(userId: decoded.userId, tenantId: decoded.tenantId, roles: decoded.roles);
     } on AuthException catch (err) {
       state = AuthState.error(err.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AuthController] Login error: $e');
       state = AuthState.error('Login failed');
     }
   }

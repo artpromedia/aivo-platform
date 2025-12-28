@@ -8,6 +8,7 @@ library;
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:rxdart/rxdart.dart';
 
@@ -134,7 +135,12 @@ class ConnectivityService {
           .timeout(_healthCheckTimeout);
 
       return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (_) {
+    } catch (e) {
+      // Expected during network issues - logged in debug mode only
+      assert(() {
+        debugPrint('[ConnectivityService] Ping failed: $e');
+        return true;
+      }());
       return false;
     }
   }
@@ -214,8 +220,12 @@ Future<T> offlineAwareCall<T>({
   if (connectivityService.isOnline && useOnlineWhenAvailable) {
     try {
       return await onlineCall();
-    } catch (_) {
+    } catch (e) {
       // Fall back to offline on error
+      assert(() {
+        debugPrint('[offlineAwareCall] Online call failed, falling back: $e');
+        return true;
+      }());
       return await offlineFallback();
     }
   } else {
@@ -249,8 +259,12 @@ Future<void> queueableCall({
     try {
       await call();
       return;
-    } catch (_) {
+    } catch (e) {
       // Fall through to queue
+      assert(() {
+        debugPrint('[queueableCall] Call failed, queuing for later: $e');
+        return true;
+      }());
     }
   }
 

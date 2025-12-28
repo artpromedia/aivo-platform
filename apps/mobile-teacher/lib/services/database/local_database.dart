@@ -6,7 +6,8 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_common/flutter_common.dart' hide SyncStatus, SyncOperationType;
+import 'package:flutter_common/flutter_common.dart' 
+    hide SyncStatus, SyncOperationType, SyncConflict, ConflictType;
 
 import '../../models/models.dart';
 
@@ -351,6 +352,13 @@ class TeacherLocalDatabase {
     if (intId != null) {
       await _db.markSyncDone(intId);
     }
+  }
+
+  /// Get operations marked as conflicts.
+  Future<List<SyncConflict>> getConflicts() async {
+    // For now, return an empty list since conflict tracking
+    // would require additional database schema
+    return [];
   }
 
   SyncOperation _queueItemToOperation(OfflineSyncQueueEntry item) {

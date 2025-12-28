@@ -3,6 +3,7 @@
 /// Shows the learner's Virtual Brain visualization and stats.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
@@ -128,7 +129,8 @@ final virtualBrainProvider = FutureProvider.family<VirtualBrainData?, String>((r
     final data = response.data as Map<String, dynamic>?;
     if (data == null) return null;
     return VirtualBrainData.fromJson(data);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('[VirtualBrainProvider] Error loading data: $e');
     return null;
   }
 });

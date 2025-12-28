@@ -3,6 +3,7 @@
 /// Offline-first data access for IEP goals and progress.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../models/models.dart';
@@ -100,7 +101,8 @@ class IepRepository {
         'endDate': range.end.toIso8601String(),
       });
       return IepReport.fromJson(response.data as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[IepRepository] Error generating report: $e');
       return null;
     }
   }
@@ -117,7 +119,8 @@ class IepRepository {
       return data
           .map((json) => GoalRecommendation.fromJson(json as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[IepRepository] Error getting recommendations: $e');
       return [];
     }
   }
@@ -137,7 +140,8 @@ class IepRepository {
       
       await db.cacheIepGoals(goals);
       return goals;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[IepRepository] Error refreshing goals: $e');
       return db.getIepGoals(studentId);
     }
   }
@@ -151,6 +155,8 @@ class IepRepository {
           .toList();
       
       await db.cacheIepGoals(goals);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[IepRepository] Background refresh failed: $e');
+    }
   }
 }

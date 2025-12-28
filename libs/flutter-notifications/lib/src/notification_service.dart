@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show Color;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -217,7 +218,7 @@ class NotificationService {
               : null,
           ledColor: channel.lightColor != null
               ? Color(channel.lightColor!)
-              : const Color(0xFF2196F3),
+              : null,
         ),
       );
     }
@@ -454,8 +455,3 @@ class NotificationService {
   }
 }
 
-/// Color class for notification lights
-class Color {
-  final int value;
-  const Color(this.value);
-}

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'pin_service.dart';
@@ -46,7 +47,8 @@ class PinController extends StateNotifier<PinAuthState> {
       state = PinAuthState.authenticated(learnerId: decoded.learnerId, tenantId: decoded.tenantId);
     } on PinException catch (err) {
       state = PinAuthState.error(err.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[PinController] Unexpected error validating PIN: $e');
       state = PinAuthState.error('Invalid PIN');
     }
   }

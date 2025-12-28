@@ -3,6 +3,7 @@
 /// State management for offline sync.
 library;
 
+import 'package:flutter_common/flutter_common.dart' as common show SyncState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/models.dart';
@@ -12,6 +13,20 @@ import 'core_providers.dart';
 // ============================================================================
 // State Classes
 // ============================================================================
+
+/// Convert flutter_common SyncState to local SyncStatus.
+SyncStatus _mapSyncState(common.SyncState state) {
+  switch (state) {
+    case common.SyncState.idle:
+      return SyncStatus.idle;
+    case common.SyncState.syncing:
+      return SyncStatus.syncing;
+    case common.SyncState.offline:
+      return SyncStatus.pending;
+    case common.SyncState.error:
+      return SyncStatus.failed;
+  }
+}
 
 /// Sync state.
 class SyncState {
@@ -63,8 +78,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
   void _init() {
     // Listen to sync status changes
-    _syncService.statusStream.listen((status) {
-      state = state.copyWith(status: status);
+    _syncService.statusStream.listen((statusInfo) {
+      state = state.copyWith(status: _mapSyncState(statusInfo.state));
     });
     
     // Load initial state
@@ -95,9 +110,9 @@ class SyncNotifier extends StateNotifier<SyncState> {
   }
 
   /// Resolve a sync conflict.
-  Future<void> resolveConflict(String operationId, ResolutionStrategy strategy) async {
+  Future<void> resolveConflict(SyncConflict conflict, ResolutionStrategy strategy) async {
     try {
-      await _syncService.resolveConflict(operationId, strategy);
+      await _syncService.resolveConflict(conflict, strategy);
       await _loadConflicts();
       await _loadPendingCount();
     } catch (e) {
@@ -143,7 +158,7 @@ final hasPendingChangesProvider = Provider<bool>((ref) {
 /// Sync status stream provider.
 final syncStatusStreamProvider = StreamProvider<SyncStatus>((ref) {
   final syncService = ref.watch(syncServiceProvider);
-  return syncService.statusStream;
+  return syncService.statusStream.map((info) => _mapSyncState(info.state));
 });
 
 /// Last sync time provider.

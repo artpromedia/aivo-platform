@@ -851,3 +851,36 @@ class LocalChange {
     );
   }
 }
+
+// ============================================================================
+// STUB METHODS FOR OFFLINE CONTENT MANAGER
+// ============================================================================
+
+extension LocalDatabaseOfflineExtension on LocalDatabase {
+  /// Get storage info (stub)
+  Future<Map<String, int>> getStorageInfo() async {
+    // Placeholder - would calculate actual storage usage
+    return {
+      'usedBytes': 0,
+      'totalBytes': 1024 * 1024 * 1024, // 1GB
+    };
+  }
+
+  /// Delete offline lesson (stub)
+  Future<void> deleteOfflineLesson(String lessonId) async {
+    await db.update(
+      'lessons',
+      {'is_offline': 0},
+      where: 'id = ?',
+      whereArgs: [lessonId],
+    );
+  }
+
+  /// Clear all offline content (stub)
+  Future<void> clearOfflineContent() async {
+    await db.update(
+      'lessons',
+      {'is_offline': 0},
+    );
+  }
+}

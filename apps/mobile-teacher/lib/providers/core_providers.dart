@@ -18,7 +18,7 @@ import '../repositories/repositories.dart';
 
 /// API client provider.
 final apiClientProvider = Provider<AivoApiClient>((ref) {
-  return AivoApiClient(baseUrl: EnvConfig.apiBaseUrl);
+  return AivoApiClient.instance;
 });
 
 /// Offline database provider.
@@ -40,7 +40,7 @@ final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
 /// Connectivity monitor provider.
 final connectivityMonitorProvider = Provider<ConnectivityMonitor>((ref) {
   final service = ref.watch(connectivityServiceProvider);
-  return ConnectivityMonitor(service: service);
+  return ConnectivityMonitor(connectivityService: service);
 });
 
 /// Sync service provider.
@@ -50,8 +50,8 @@ final syncServiceProvider = Provider<SyncService>((ref) {
   final connectivity = ref.watch(connectivityMonitorProvider);
   
   final service = SyncService(
-    db: db,
-    api: api,
+    localDb: db,
+    apiClient: api,
     connectivity: connectivity,
   );
   
@@ -122,7 +122,7 @@ final classRepositoryProvider = Provider<ClassRepository>((ref) {
 // ============================================================================
 
 /// Current connectivity state provider.
-final connectivityStateProvider = StreamProvider<ConnectivityState>((ref) {
+final connectivityStateProvider = StreamProvider<bool>((ref) {
   final monitor = ref.watch(connectivityMonitorProvider);
   return monitor.stateStream;
 });
@@ -131,7 +131,7 @@ final connectivityStateProvider = StreamProvider<ConnectivityState>((ref) {
 final isOnlineProvider = Provider<bool>((ref) {
   final state = ref.watch(connectivityStateProvider);
   return state.maybeWhen(
-    data: (s) => s == ConnectivityState.online,
-    orElse: () => false,
+    data: (isOnline) => isOnline,
+    orElse: () => true, // Assume online by default
   );
 });

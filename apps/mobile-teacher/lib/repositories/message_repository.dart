@@ -3,6 +3,7 @@
 /// Offline-first data access for parent messaging.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../models/models.dart';
@@ -95,7 +96,7 @@ class MessageRepository {
   /// Get unread count.
   Future<int> getUnreadCount() async {
     final conversations = await getConversations();
-    return conversations.fold(0, (sum, c) => sum + c.unreadCount);
+    return conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
   }
 
   /// Get message templates.
@@ -110,7 +111,8 @@ class MessageRepository {
       return data
           .map((json) => MessageTemplate.fromJson(json as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[MessageRepository] Error fetching templates: $e');
       return _defaultTemplates;
     }
   }
@@ -130,7 +132,8 @@ class MessageRepository {
       
       await db.cacheConversations(conversations);
       return conversations;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[MessageRepository] Error refreshing conversations: $e');
       return db.getConversations();
     }
   }
@@ -144,7 +147,9 @@ class MessageRepository {
           .toList();
       
       await db.cacheConversations(conversations);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MessageRepository] Background conversation refresh failed: $e');
+    }
   }
 
   void _refreshMessagesInBackground(String conversationId) async {
@@ -156,7 +161,9 @@ class MessageRepository {
           .toList();
       
       await db.cacheMessages(messages);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MessageRepository] Background messages refresh failed: $e');
+    }
   }
 
   static const _defaultTemplates = [

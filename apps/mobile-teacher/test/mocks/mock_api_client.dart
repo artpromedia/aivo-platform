@@ -79,6 +79,7 @@ class MockApiClient extends Mock implements AivoApiClient {
     };
   }
 
+  // ignore: unused_element
   Future<T> _executeRequest<T>(
     String method,
     String path,

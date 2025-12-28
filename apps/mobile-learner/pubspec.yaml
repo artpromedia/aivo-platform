@@ -21,6 +21,9 @@ dependencies:
   speech_to_text: ^7.0.0
   firebase_core: ^2.24.2
   firebase_messaging: ^14.7.10
+  sqflite: ^2.3.3+2
+  hive_flutter: ^1.1.0
+  intl: ^0.20.2
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:

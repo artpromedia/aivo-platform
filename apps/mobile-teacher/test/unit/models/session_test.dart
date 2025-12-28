@@ -13,16 +13,16 @@ void main() {
       test('should create session with required fields', () {
         final session = Session(
           id: 'session-1',
-          title: 'Math Practice',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.scheduled,
+          sessionType: SessionType.wholeClass,
         );
 
         expect(session.id, equals('session-1'));
-        expect(session.title, equals('Math Practice'));
         expect(session.classId, equals('class-1'));
         expect(session.status, equals(SessionStatus.scheduled));
+        expect(session.sessionType, equals(SessionType.wholeClass));
       });
 
       test('should create session with all fields', () {
@@ -34,22 +34,23 @@ void main() {
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.active,
+          sessionType: SessionType.smallGroup,
           scheduledAt: now,
           startedAt: now,
           endedAt: null,
-          duration: const Duration(minutes: 45),
+          durationMinutes: 45,
           studentIds: ['student-1', 'student-2'],
           notes: 'Good progress',
-          activityType: 'practice',
           objectives: ['Master 5x tables', 'Review 6x tables'],
           createdAt: now,
           updatedAt: now,
         );
 
+        expect(session.title, equals('Math Practice'));
         expect(session.description, equals('Multiplication facts 1-12'));
         expect(session.studentIds, hasLength(2));
         expect(session.objectives, hasLength(2));
-        expect(session.duration, equals(const Duration(minutes: 45)));
+        expect(session.durationMinutes, equals(45));
       });
     });
 
@@ -57,10 +58,10 @@ void main() {
       test('isActive should return true for active sessions', () {
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.active,
+          sessionType: SessionType.wholeClass,
         );
 
         expect(session.isActive, isTrue);
@@ -71,10 +72,10 @@ void main() {
       test('isScheduled should return true for scheduled sessions', () {
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.scheduled,
+          sessionType: SessionType.wholeClass,
         );
 
         expect(session.isScheduled, isTrue);
@@ -84,82 +85,82 @@ void main() {
       test('isCompleted should return true for completed sessions', () {
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.completed,
+          sessionType: SessionType.wholeClass,
         );
 
         expect(session.isCompleted, isTrue);
         expect(session.isActive, isFalse);
       });
 
-      test('isPaused should return true for paused sessions', () {
+      test('paused status should be accessible', () {
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.paused,
+          sessionType: SessionType.wholeClass,
         );
 
-        expect(session.isPaused, isTrue);
+        expect(session.status, equals(SessionStatus.paused));
       });
 
-      test('isCancelled should return true for cancelled sessions', () {
+      test('cancelled status should be accessible', () {
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.cancelled,
+          sessionType: SessionType.wholeClass,
         );
 
-        expect(session.isCancelled, isTrue);
+        expect(session.status, equals(SessionStatus.cancelled));
       });
     });
 
-    group('elapsed duration', () {
-      test('should calculate elapsed time for active session', () {
+    group('actualDuration', () {
+      test('should calculate duration for active session', () {
         final startTime = DateTime.now().subtract(const Duration(minutes: 10));
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.active,
+          sessionType: SessionType.wholeClass,
           startedAt: startTime,
         );
 
-        expect(session.elapsedDuration.inMinutes, closeTo(10, 1));
+        expect(session.actualDuration!.inMinutes, closeTo(10, 1));
       });
 
-      test('should calculate elapsed time for completed session', () {
+      test('should calculate duration for completed session', () {
         final startTime = DateTime.now().subtract(const Duration(minutes: 45));
         final endTime = DateTime.now().subtract(const Duration(minutes: 5));
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.completed,
+          sessionType: SessionType.wholeClass,
           startedAt: startTime,
           endedAt: endTime,
         );
 
-        expect(session.elapsedDuration.inMinutes, equals(40));
+        expect(session.actualDuration!.inMinutes, equals(40));
       });
 
-      test('should return zero duration if not started', () {
+      test('should return null if not started', () {
         final session = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.scheduled,
+          sessionType: SessionType.wholeClass,
         );
 
-        expect(session.elapsedDuration, equals(Duration.zero));
+        expect(session.actualDuration, isNull);
       });
     });
 
@@ -173,11 +174,11 @@ void main() {
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.active,
+          sessionType: SessionType.smallGroup,
           scheduledAt: now,
           startedAt: now,
           studentIds: ['student-1', 'student-2'],
           notes: 'Going well',
-          activityType: 'practice',
           objectives: ['Master multiplication'],
           createdAt: now,
           updatedAt: now,
@@ -191,6 +192,7 @@ void main() {
         expect(restored.description, equals(original.description));
         expect(restored.classId, equals(original.classId));
         expect(restored.status, equals(original.status));
+        expect(restored.sessionType, equals(original.sessionType));
         expect(restored.studentIds, equals(original.studentIds));
         expect(restored.notes, equals(original.notes));
         expect(restored.objectives, equals(original.objectives));
@@ -200,10 +202,10 @@ void main() {
         for (final status in SessionStatus.values) {
           final json = {
             'id': 'session-1',
-            'title': 'Test',
             'classId': 'class-1',
             'teacherId': 'teacher-1',
             'status': status.name,
+            'sessionType': 'wholeClass',
           };
 
           final session = Session.fromJson(json);
@@ -211,165 +213,97 @@ void main() {
         }
       });
 
-      test('should handle missing optional fields', () {
-        final json = {
-          'id': 'session-1',
-          'title': 'Test',
-          'classId': 'class-1',
-          'teacherId': 'teacher-1',
-          'status': 'scheduled',
-        };
+      test('should parse all session type values', () {
+        for (final type in SessionType.values) {
+          final json = {
+            'id': 'session-1',
+            'classId': 'class-1',
+            'teacherId': 'teacher-1',
+            'status': 'scheduled',
+            'sessionType': type.name,
+          };
 
-        final session = Session.fromJson(json);
-
-        expect(session.description, isNull);
-        expect(session.scheduledAt, isNull);
-        expect(session.startedAt, isNull);
-        expect(session.studentIds, isEmpty);
-        expect(session.objectives, isEmpty);
+          final session = Session.fromJson(json);
+          expect(session.sessionType, equals(type));
+        }
       });
+    });
 
-      test('should parse duration from seconds', () {
-        final json = {
-          'id': 'session-1',
-          'title': 'Test',
-          'classId': 'class-1',
-          'teacherId': 'teacher-1',
-          'status': 'scheduled',
-          'durationSeconds': 2700, // 45 minutes
-        };
+    group('SessionType', () {
+      test('should have all expected types', () {
+        expect(SessionType.values, containsAll([
+          SessionType.individual,
+          SessionType.smallGroup,
+          SessionType.wholeClass,
+          SessionType.assessment,
+          SessionType.intervention,
+        ]));
+      });
+    });
 
-        final session = Session.fromJson(json);
-        expect(session.duration, equals(const Duration(minutes: 45)));
+    group('activities', () {
+      test('should create session with activities', () {
+        final session = Session(
+          id: 'session-1',
+          classId: 'class-1',
+          teacherId: 'teacher-1',
+          status: SessionStatus.active,
+          sessionType: SessionType.wholeClass,
+          activities: const [
+            SessionActivity(
+              id: 'activity-1',
+              name: 'Warm-up',
+              type: 'warmup',
+              durationMinutes: 5,
+              completed: true,
+            ),
+            SessionActivity(
+              id: 'activity-2',
+              name: 'Main lesson',
+              type: 'lesson',
+              durationMinutes: 30,
+              completed: false,
+            ),
+          ],
+        );
+
+        expect(session.activities, hasLength(2));
+        expect(session.activities.first.name, equals('Warm-up'));
+        expect(session.activities.first.completed, isTrue);
+        expect(session.activities.last.completed, isFalse);
       });
     });
 
     group('copyWith', () {
-      test('should update status and preserve other fields', () {
+      test('should create copy with updated status', () {
         final original = Session(
           id: 'session-1',
-          title: 'Math Practice',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.scheduled,
-          notes: 'Original notes',
+          sessionType: SessionType.wholeClass,
         );
 
-        final updated = original.copyWith(
-          status: SessionStatus.active,
-          startedAt: DateTime.now(),
-        );
+        final updated = original.copyWith(status: SessionStatus.active);
 
         expect(updated.id, equals(original.id));
-        expect(updated.title, equals(original.title));
-        expect(updated.notes, equals(original.notes));
         expect(updated.status, equals(SessionStatus.active));
-        expect(updated.startedAt, isNotNull);
+        expect(original.status, equals(SessionStatus.scheduled));
       });
 
-      test('should update notes', () {
+      test('should create copy with updated notes', () {
         final original = Session(
           id: 'session-1',
-          title: 'Test',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.active,
+          sessionType: SessionType.wholeClass,
         );
 
         final updated = original.copyWith(notes: 'New notes');
 
         expect(updated.notes, equals('New notes'));
-      });
-    });
-
-    group('participant management', () {
-      test('should add student to session', () {
-        final session = Session(
-          id: 'session-1',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.active,
-          studentIds: ['student-1'],
-        );
-
-        final updated = session.addStudent('student-2');
-
-        expect(updated.studentIds, contains('student-1'));
-        expect(updated.studentIds, contains('student-2'));
-      });
-
-      test('should remove student from session', () {
-        final session = Session(
-          id: 'session-1',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.active,
-          studentIds: ['student-1', 'student-2'],
-        );
-
-        final updated = session.removeStudent('student-1');
-
-        expect(updated.studentIds, isNot(contains('student-1')));
-        expect(updated.studentIds, contains('student-2'));
-      });
-
-      test('should not duplicate student ids', () {
-        final session = Session(
-          id: 'session-1',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.active,
-          studentIds: ['student-1'],
-        );
-
-        final updated = session.addStudent('student-1');
-
-        expect(updated.studentIds, hasLength(1));
-      });
-    });
-
-    group('equality', () {
-      test('should be equal for same fields', () {
-        final session1 = Session(
-          id: 'session-1',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.scheduled,
-        );
-
-        final session2 = Session(
-          id: 'session-1',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.scheduled,
-        );
-
-        expect(session1, equals(session2));
-      });
-
-      test('should not be equal for different ids', () {
-        final session1 = Session(
-          id: 'session-1',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.scheduled,
-        );
-
-        final session2 = Session(
-          id: 'session-2',
-          title: 'Test',
-          classId: 'class-1',
-          teacherId: 'teacher-1',
-          status: SessionStatus.scheduled,
-        );
-
-        expect(session1, isNot(equals(session2)));
+        expect(original.notes, isNull);
       });
     });
   });

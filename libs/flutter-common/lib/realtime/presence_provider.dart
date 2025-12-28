@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:flutter_common/realtime/websocket_client.dart';
 import 'package:flutter_common/realtime/realtime_types.dart';
 

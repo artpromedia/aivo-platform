@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../l10n/app_localizations.dart';
-import '../../../core/theme.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/subject_progress_chart.dart';

@@ -3,6 +3,7 @@
 /// Provides user context for multi-child (parent) and multi-class (teacher) scenarios.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api.dart';
@@ -113,7 +114,8 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
         return true;
       }
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ChildrenNotifier] Failed to add child: $e');
       return false;
     }
   }
@@ -132,7 +134,8 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
       // Refresh children list
       await loadChildren();
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ChildrenNotifier] Failed to update child $childId: $e');
       return false;
     }
   }

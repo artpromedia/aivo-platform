@@ -1,7 +1,7 @@
 /// Translation components for AIVO Flutter apps
 library;
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'types.dart';
 import 'i18n.dart';
 import 'i18n_provider.dart';

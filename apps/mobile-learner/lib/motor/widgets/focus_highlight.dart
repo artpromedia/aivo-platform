@@ -4,6 +4,7 @@
 /// to help learners track their current focus position.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -251,6 +252,7 @@ class _FocusTrackerState extends State<FocusTracker>
     super.dispose();
   }
 
+  // ignore: unused_element
   void _updateFocusRect(Rect? rect) {
     if (rect != _focusRect) {
       setState(() => _focusRect = rect);
@@ -332,6 +334,7 @@ class FocusableRow extends StatefulWidget {
 }
 
 class _FocusableRowState extends State<FocusableRow> {
+  // ignore: unused_field
   late int _currentIndex;
   late List<FocusNode> _focusNodes;
 

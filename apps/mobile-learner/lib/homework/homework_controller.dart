@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' hide HomeworkStep;
 
@@ -191,8 +192,12 @@ class HomeworkController extends StateNotifier<HomeworkState> {
       state = state.copyWith(
         session: session.copyWith(isComplete: true),
       );
-    } catch (_) {
+    } catch (e) {
       // Non-critical - session already effectively complete
+      assert(() {
+        debugPrint('[HomeworkController] Error completing homework: $e');
+        return true;
+      }());
     }
   }
 

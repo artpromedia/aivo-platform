@@ -3,6 +3,7 @@
 /// Offline-first data access for students.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../models/models.dart';
@@ -59,7 +60,8 @@ class StudentRepository {
         final response = await api.get('/students/$id');
         student = Student.fromJson(response.data as Map<String, dynamic>);
         await db.cacheStudents([student]);
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[StudentRepository] Error fetching student: $e');
         // Return null if fetch fails
       }
     }
@@ -112,8 +114,8 @@ class StudentRepository {
           .toList();
       
       await db.cacheStudents(students);
-    } catch (_) {
-      // Silently fail - we have cached data
+    } catch (e) {
+      debugPrint('[StudentRepository] Background refresh failed: $e');
     }
   }
 
@@ -126,8 +128,8 @@ class StudentRepository {
           .toList();
       
       await db.cacheStudents(students);
-    } catch (_) {
-      // Silently fail
+    } catch (e) {
+      debugPrint('[StudentRepository] Background class refresh failed: $e');
     }
   }
 }

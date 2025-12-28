@@ -7,126 +7,107 @@ import 'package:mobile_teacher/models/models.dart';
 
 /// Test messages for testing.
 class TestMessages {
+  /// Sample conversation.
+  static final sampleConversation = Conversation(
+    id: 'conv-1',
+    studentId: 'student-alex',
+    studentName: 'Alex Johnson',
+    participantIds: ['parent-johnson', 'teacher-1'],
+    participantNames: ['Sarah Johnson', 'Test Teacher'],
+    lastMessage: 'Thank you for the update!',
+    lastMessageAt: DateTime.now().subtract(const Duration(hours: 2)),
+    unreadCount: 1,
+  );
+
+  /// Second conversation.
+  static final secondConversation = Conversation(
+    id: 'conv-2',
+    studentId: 'student-jordan',
+    studentName: 'Jordan Williams',
+    participantIds: ['parent-williams', 'teacher-1'],
+    participantNames: ['James Williams', 'Test Teacher'],
+    lastMessage: 'See you at the conference.',
+    lastMessageAt: DateTime.now().subtract(const Duration(days: 1)),
+    unreadCount: 0,
+  );
+
+  /// All conversations.
+  static final conversations = [
+    sampleConversation,
+    secondConversation,
+  ];
+
   /// Message from parent.
   static final parentMessage = Message(
     id: 'msg-1',
+    conversationId: 'conv-1',
     senderId: 'parent-johnson',
     senderName: 'Sarah Johnson',
-    senderRole: 'parent',
-    recipientId: 'teacher-1',
-    subject: 'Question about Alex\'s homework',
-    body: 'Hi, I wanted to ask about the math homework assigned yesterday. Alex seems confused about the multiplication problems.',
-    isRead: false,
+    content: 'Hi, I wanted to ask about the math homework assigned yesterday.',
     createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-    updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
+    isFromTeacher: false,
+    status: MessageStatus.delivered,
   );
 
   /// Reply from teacher.
   static final teacherReply = Message(
     id: 'msg-2',
+    conversationId: 'conv-1',
     senderId: 'teacher-1',
     senderName: 'Test Teacher',
-    senderRole: 'teacher',
-    recipientId: 'parent-johnson',
-    subject: 'Re: Question about Alex\'s homework',
-    body: 'Hi Sarah, Thank you for reaching out. The homework focuses on multiplication facts 6-9. I\'ve attached some practice resources.',
-    threadId: 'msg-1',
-    isRead: true,
+    content: 'Hi Sarah, Thank you for reaching out. The homework focuses on multiplication facts 6-9.',
     createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-    updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
+    isFromTeacher: true,
+    status: MessageStatus.read,
   );
 
-  /// System notification.
-  static final systemNotification = Message(
+  /// Progress report message.
+  static final progressReport = Message(
     id: 'msg-3',
-    senderId: 'system',
-    senderName: 'System',
-    senderRole: 'system',
-    recipientId: 'teacher-1',
-    subject: 'IEP Goal Update Reminder',
-    body: 'This is a reminder to update progress on IEP goals for Alex Johnson. The next review is scheduled for next week.',
-    isRead: false,
-    isSystemMessage: true,
+    conversationId: 'conv-1',
+    senderId: 'teacher-1',
+    senderName: 'Test Teacher',
+    content: 'Weekly progress report for Alex. Great improvements in reading comprehension!',
     createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-  );
-
-  /// Message about student concern.
-  static final concernMessage = Message(
-    id: 'msg-4',
-    senderId: 'counselor-1',
-    senderName: 'School Counselor',
-    senderRole: 'staff',
-    recipientId: 'teacher-1',
-    subject: 'Check-in about Jordan',
-    body: 'I wanted to follow up on our conversation about Jordan. How has he been doing in class this week?',
-    isRead: true,
-    priority: MessagePriority.high,
-    createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-  );
-
-  /// Old read message.
-  static final oldMessage = Message(
-    id: 'msg-5',
-    senderId: 'parent-williams',
-    senderName: 'James Williams',
-    senderRole: 'parent',
-    recipientId: 'teacher-1',
-    subject: 'Thank you',
-    body: 'Thank you for helping Emma with her science project. She really enjoyed it!',
-    isRead: true,
-    createdAt: DateTime.now().subtract(const Duration(days: 7)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 7)),
+    isFromTeacher: true,
+    type: MessageType.progressReport,
+    status: MessageStatus.read,
   );
 
   /// All test messages.
   static final all = [
     parentMessage,
     teacherReply,
-    systemNotification,
-    concernMessage,
-    oldMessage,
+    progressReport,
   ];
 
   /// Unread messages.
-  static final unread = all.where((m) => !m.isRead).toList();
+  static final unread = all.where((m) => m.status != MessageStatus.read).toList();
 
   /// Unread count.
   static int get unreadCount => unread.length;
 
-  /// Messages by thread.
-  static List<Message> thread(String threadId) =>
-      all.where((m) => m.id == threadId || m.threadId == threadId).toList();
-
-  /// High priority messages.
-  static final highPriority =
-      all.where((m) => m.priority == MessagePriority.high).toList();
-
   /// Create a custom message.
   static Message create({
     String? id,
-    String senderId = 'sender-1',
-    String senderName = 'Test Sender',
-    String senderRole = 'parent',
-    String recipientId = 'teacher-1',
-    String subject = 'Test Subject',
-    String body = 'Test message body',
-    bool isRead = false,
-    MessagePriority priority = MessagePriority.normal,
+    String conversationId = 'conv-1',
+    String senderId = 'teacher-1',
+    String senderName = 'Test Teacher',
+    String content = 'Test message content',
+    bool isFromTeacher = true,
+    MessageStatus status = MessageStatus.sent,
+    MessageType type = MessageType.text,
   }) {
     return Message(
       id: id ?? 'msg-${DateTime.now().millisecondsSinceEpoch}',
+      conversationId: conversationId,
       senderId: senderId,
       senderName: senderName,
-      senderRole: senderRole,
-      recipientId: recipientId,
-      subject: subject,
-      body: body,
-      isRead: isRead,
-      priority: priority,
+      content: content,
       createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      isFromTeacher: isFromTeacher,
+      status: status,
+      type: type,
     );
   }
 }

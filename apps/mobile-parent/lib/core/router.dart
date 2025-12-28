@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/auth/presentation/login_screen.dart';
-import '../features/auth/presentation/register_screen.dart';
+import '../screens/login_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/messages/presentation/messages_screen.dart';
 import '../features/messages/presentation/conversation_screen.dart';
 import '../features/consent/presentation/consent_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
-import '../features/auth/providers/auth_provider.dart';
+import '../auth/auth_controller.dart';
+import '../auth/auth_state.dart';
 import '../shared/widgets/main_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authState = ref.watch(authControllerProvider);
   
   return GoRouter(
     initialLocation: '/dashboard',
     redirect: (context, state) {
-      final isLoggedIn = authState.isAuthenticated;
+      final isLoggedIn = authState.status == AuthStatus.authenticated;
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
       
       if (!isLoggedIn && !isAuthRoute) {
@@ -36,14 +36,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/auth/register',
-        name: 'register',
-        builder: (context, state) {
-          final inviteCode = state.uri.queryParameters['invite'];
-          return RegisterScreen(inviteCode: inviteCode);
-        },
       ),
       
       // Main app routes with bottom navigation
@@ -78,7 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/consent',
             name: 'consent',
-            builder: (context, state) => const ConsentScreen(),
+            builder: (context, state) => const ConsentManagementScreen(),
           ),
           GoRoute(
             path: '/settings',

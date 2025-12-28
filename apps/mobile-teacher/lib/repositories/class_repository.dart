@@ -3,6 +3,7 @@
 /// Data access for classes/groups.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../models/models.dart';
@@ -46,7 +47,8 @@ class ClassRepository {
       _cachedClasses = classes;
       _cacheTime = DateTime.now();
       return classes;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ClassRepository] Error fetching classes: $e');
       return _cachedClasses ?? [];
     }
   }
@@ -72,7 +74,8 @@ class ClassRepository {
         },
       );
       return ClassMetrics.fromJson(response.data as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ClassRepository] Error fetching metrics: $e');
       return null;
     }
   }
@@ -86,7 +89,8 @@ class ClassRepository {
     try {
       final response = await api.get('/analytics/classes/$classId/heatmap');
       return EngagementHeatmap.fromJson(response.data as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ClassRepository] Error fetching heatmap: $e');
       return null;
     }
   }
@@ -100,7 +104,8 @@ class ClassRepository {
     try {
       final response = await api.get('/analytics/classes/$classId/goals');
       return GoalProgressSummary.fromJson(response.data as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ClassRepository] Error fetching goal progress: $e');
       return null;
     }
   }
@@ -117,7 +122,8 @@ class ClassRepository {
       return data
           .map((json) => StudentAlert.fromJson(json as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ClassRepository] Error fetching alerts: $e');
       return [];
     }
   }

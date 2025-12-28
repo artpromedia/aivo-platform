@@ -6,6 +6,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -361,8 +362,12 @@ class AuthService {
   Future<void> logout() async {
     try {
       await _apiClient.post(ApiEndpoints.logout);
-    } catch (_) {
+    } catch (e) {
       // Ignore logout errors - we'll clear local state anyway
+      assert(() {
+        debugPrint('[AuthService] Logout API call failed: $e');
+        return true;
+      }());
     } finally {
       await _tokenManager.clearTokens();
       await _clearCachedUser();
@@ -438,8 +443,12 @@ class AuthService {
         final user = await getCurrentUser();
         _currentUser = user;
         _updateState(AuthStateAuthenticated(user));
-      } catch (_) {
-        // Ignore background refresh errors
+      } catch (e) {
+        // Ignore background refresh errors but log in debug mode
+        assert(() {
+          debugPrint('[AuthService] Background user refresh failed: $e');
+          return true;
+        }());
       }
     });
   }

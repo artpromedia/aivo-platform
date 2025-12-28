@@ -130,9 +130,10 @@ class _LiveSessionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final duration = session.startedAt != null
-        ? DateTime.now().difference(session.startedAt!)
-        : Duration.zero;
+    // Duration calculation available for future use:
+    // final duration = session.startedAt != null
+    //     ? DateTime.now().difference(session.startedAt!)
+    //     : Duration.zero;
 
     return Scaffold(
       appBar: AppBar(

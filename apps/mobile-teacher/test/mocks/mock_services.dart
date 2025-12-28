@@ -5,7 +5,7 @@ library;
 
 import 'dart:async';
 
-
+import 'package:flutter_common/flutter_common.dart' show SyncState;
 import 'package:mobile_teacher/models/models.dart';
 import 'package:mobile_teacher/services/sync/sync_service.dart';
 
@@ -206,88 +206,6 @@ class FakeApiClient {
 // ============================================================================
 // Sync Status and Result Types
 // ============================================================================
-
-/// Sync state enumeration.
-enum SyncState {
-  idle,
-  syncing,
-  offline,
-  error,
-}
-
-/// Sync status information.
-class SyncStatusInfo {
-  const SyncStatusInfo({
-    required this.state,
-    this.pendingOperations = 0,
-    this.lastSyncAt,
-    this.lastError,
-  });
-
-  final SyncState state;
-  final int pendingOperations;
-  final DateTime? lastSyncAt;
-  final String? lastError;
-
-  bool get hasPendingOperations => pendingOperations > 0;
-  bool get isOnline => state != SyncState.offline;
-  bool get isSyncing => state == SyncState.syncing;
-
-  SyncStatusInfo copyWith({
-    SyncState? state,
-    int? pendingOperations,
-    DateTime? lastSyncAt,
-    String? lastError,
-  }) {
-    return SyncStatusInfo(
-      state: state ?? this.state,
-      pendingOperations: pendingOperations ?? this.pendingOperations,
-      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-      lastError: lastError ?? this.lastError,
-    );
-  }
-}
-
-/// Sync result.
-class SyncResult {
-  const SyncResult({
-    required this.success,
-    this.operationsSynced = 0,
-    this.operationsFailed = 0,
-    this.conflicts = const [],
-    this.duration,
-    this.error,
-  });
-
-  final bool success;
-  final int operationsSynced;
-  final int operationsFailed;
-  final List<SyncConflict> conflicts;
-  final Duration? duration;
-  final String? error;
-
-  factory SyncResult.offline() => const SyncResult(
-        success: false,
-        error: 'Device is offline',
-      );
-}
-
-/// Sync conflict.
-class SyncConflict {
-  const SyncConflict({
-    required this.operationId,
-    required this.localData,
-    required this.serverData,
-    this.resolvedAt,
-    this.resolution,
-  });
-
-  final String operationId;
-  final Map<String, dynamic> localData;
-  final Map<String, dynamic> serverData;
-  final DateTime? resolvedAt;
-  final ConflictResolution? resolution;
-}
 
 /// Conflict resolution strategy.
 enum ConflictResolution {

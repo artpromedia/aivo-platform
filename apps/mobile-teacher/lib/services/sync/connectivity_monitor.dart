@@ -5,7 +5,8 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_common/offline/connectivity_service.dart';
 
 /// Monitors connectivity status for the app.
 class ConnectivityMonitor {
@@ -24,8 +25,9 @@ class ConnectivityMonitor {
   /// Current connectivity status.
   Future<bool> get isOnline async {
     try {
-      return await _connectivityService.isOnline();
-    } catch (_) {
+      return _connectivityService.isOnline;
+    } catch (e) {
+      debugPrint('[ConnectivityMonitor] Error checking connectivity: $e');
       return _isOnline;
     }
   }

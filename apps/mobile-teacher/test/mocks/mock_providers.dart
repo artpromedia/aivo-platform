@@ -5,18 +5,18 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide SyncStatusInfo, SyncResult, apiClientProvider, offlineDatabaseProvider, connectivityServiceProvider;
+import 'package:flutter_common/flutter_common.dart' as common show SyncState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile_teacher/models/models.dart';
-import 'package:mobile_teacher/providers/providers.dart';
+import 'package:mobile_teacher/providers/providers.dart' hide SyncState;
 import 'package:mobile_teacher/repositories/repositories.dart';
 import 'package:mobile_teacher/services/database/local_database.dart';
 import 'package:mobile_teacher/services/sync/sync_service.dart';
 import 'package:mobile_teacher/services/sync/connectivity_monitor.dart';
 
-import 'mock_services.dart';
 import 'fixtures/fixtures.dart';
 
 // ============================================================================
@@ -74,21 +74,20 @@ void setupDefaultMocks() {
 
 void _setupConnectivityMocks() {
   when(() => mockConnectivityMonitor.isOnline).thenAnswer((_) async => true);
-  when(() => mockConnectivityMonitor.isOnlineSync).thenReturn(true);
   when(() => mockConnectivityMonitor.stateStream)
       .thenAnswer((_) => Stream.value(true));
 
   when(() => mockConnectivityService.isOnline).thenReturn(true);
-  when(() => mockConnectivityService.onConnectivityChanged)
-      .thenAnswer((_) => Stream.value(true));
+  when(() => mockConnectivityService.stateStream)
+      .thenAnswer((_) => Stream.value(ConnectionState.online));
 }
 
 void _setupSyncMocks() {
   when(() => mockSyncService.status).thenReturn(
-    const SyncStatusInfo(state: SyncState.idle, pendingOperations: 0),
+    SyncStatusInfo(state: common.SyncState.idle, pendingOperations: 0),
   );
   when(() => mockSyncService.statusStream).thenAnswer(
-    (_) => Stream.value(const SyncStatusInfo(state: SyncState.idle)),
+    (_) => Stream.value(SyncStatusInfo(state: common.SyncState.idle)),
   );
   when(() => mockSyncService.syncPendingOperations())
       .thenAnswer((_) async => const SyncResult(success: true));
@@ -123,13 +122,6 @@ void _setupRepositoryMocks() {
   });
   when(() => mockStudentRepository.getStudentsByClass(any()))
       .thenAnswer((_) async => TestStudents.all);
-  when(() => mockStudentRepository.searchStudents(any()))
-      .thenAnswer((invocation) async {
-    final query = invocation.positionalArguments[0] as String;
-    return TestStudents.all
-        .where((s) => s.fullName.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-  });
 
   // Sessions
   when(() => mockSessionRepository.getSessions())
@@ -142,20 +134,16 @@ void _setupRepositoryMocks() {
       orElse: () => TestSessions.mathSession,
     );
   });
-  when(() => mockSessionRepository.getActiveSessions())
+  when(() => mockSessionRepository.getActiveSessions(any()))
       .thenAnswer((_) async => TestSessions.active);
   when(() => mockSessionRepository.getSessionsByClass(any()))
       .thenAnswer((_) async => TestSessions.all);
   when(() => mockSessionRepository.createSession(any()))
-      .thenAnswer((invocation) async {
-    final session = invocation.positionalArguments[0] as Session;
-    return session;
-  });
-  when(() => mockSessionRepository.updateSession(any()))
-      .thenAnswer((invocation) async {
-    final session = invocation.positionalArguments[0] as Session;
-    return session;
-  });
+      .thenAnswer((_) async => TestSessions.mathSession);
+  when(() => mockSessionRepository.startSession(any()))
+      .thenAnswer((_) async => TestSessions.mathSession);
+  when(() => mockSessionRepository.endSession(any(), notes: any(named: 'notes')))
+      .thenAnswer((_) async => TestSessions.mathSession);
 
   // Classes
   when(() => mockClassRepository.getClasses())
@@ -170,20 +158,19 @@ void _setupRepositoryMocks() {
   });
 
   // IEP Goals
-  when(() => mockIepRepository.getGoalsForStudent(any()))
+  when(() => mockIepRepository.getGoals(any()))
       .thenAnswer((_) async => TestIepGoals.all);
-  when(() => mockIepRepository.getGoal(any())).thenAnswer((invocation) async {
-    final id = invocation.positionalArguments[0] as String;
-    return TestIepGoals.all.firstWhere(
-      (g) => g.id == id,
-      orElse: () => TestIepGoals.multiplicationGoal,
-    );
-  });
-  when(() => mockIepRepository.updateProgress(any(), any(), any()))
-      .thenAnswer((_) async => TestIepGoals.multiplicationGoal);
+  when(() => mockIepRepository.getAllGoals())
+      .thenAnswer((_) async => TestIepGoals.all);
+  when(() => mockIepRepository.getGoalsAtRisk())
+      .thenAnswer((_) async => []);
+  when(() => mockIepRepository.recordProgress(any()))
+      .thenAnswer((_) async => TestIepGoals.sampleProgress);
 
   // Messages
-  when(() => mockMessageRepository.getMessages())
+  when(() => mockMessageRepository.getConversations())
+      .thenAnswer((_) async => TestMessages.conversations);
+  when(() => mockMessageRepository.getMessages(any()))
       .thenAnswer((_) async => TestMessages.all);
   when(() => mockMessageRepository.getUnreadCount())
       .thenAnswer((_) async => TestMessages.unreadCount);
@@ -216,18 +203,19 @@ List<Override> get defaultMockProviders {
 List<Override> mockProvidersWithOverrides({
   bool isOnline = true,
   bool isAuthenticated = true,
+  bool isLoading = false,
+  Object? throwError,
   List<Student>? students,
   List<Session>? sessions,
   List<ClassGroup>? classes,
   List<IepGoal>? iepGoals,
-  SyncState? syncState,
+  common.SyncState? syncState,
   int pendingOperations = 0,
 }) {
   setupDefaultMocks();
 
   // Override connectivity
   when(() => mockConnectivityMonitor.isOnline).thenAnswer((_) async => isOnline);
-  when(() => mockConnectivityMonitor.isOnlineSync).thenReturn(isOnline);
   when(() => mockConnectivityMonitor.stateStream)
       .thenAnswer((_) => Stream.value(isOnline));
 
@@ -236,6 +224,26 @@ List<Override> mockProvidersWithOverrides({
     when(() => mockSyncService.status).thenReturn(
       SyncStatusInfo(state: syncState, pendingOperations: pendingOperations),
     );
+  }
+
+  // Handle loading state - delay responses
+  if (isLoading) {
+    when(() => mockStudentRepository.getStudents())
+        .thenAnswer((_) => Future.delayed(const Duration(hours: 1), () => students ?? []));
+    when(() => mockSessionRepository.getSessions())
+        .thenAnswer((_) => Future.delayed(const Duration(hours: 1), () => sessions ?? []));
+    when(() => mockClassRepository.getClasses())
+        .thenAnswer((_) => Future.delayed(const Duration(hours: 1), () => classes ?? []));
+  }
+
+  // Handle error state
+  if (throwError != null) {
+    when(() => mockStudentRepository.getStudents())
+        .thenThrow(throwError);
+    when(() => mockSessionRepository.getSessions())
+        .thenThrow(throwError);
+    when(() => mockClassRepository.getClasses())
+        .thenThrow(throwError);
   }
 
   // Override students
@@ -248,7 +256,7 @@ List<Override> mockProvidersWithOverrides({
   if (sessions != null) {
     when(() => mockSessionRepository.getSessions())
         .thenAnswer((_) async => sessions);
-    when(() => mockSessionRepository.getActiveSessions())
+    when(() => mockSessionRepository.getActiveSessions(any()))
         .thenAnswer((_) async => sessions.where((s) => s.isActive).toList());
   }
 
@@ -260,7 +268,9 @@ List<Override> mockProvidersWithOverrides({
 
   // Override IEP goals
   if (iepGoals != null) {
-    when(() => mockIepRepository.getGoalsForStudent(any()))
+    when(() => mockIepRepository.getGoals(any()))
+        .thenAnswer((_) async => iepGoals);
+    when(() => mockIepRepository.getAllGoals())
         .thenAnswer((_) async => iepGoals);
   }
 
@@ -270,14 +280,14 @@ List<Override> mockProvidersWithOverrides({
 /// Create mock providers for offline testing.
 List<Override> get offlineMockProviders => mockProvidersWithOverrides(
       isOnline: false,
-      syncState: SyncState.offline,
+      syncState: common.SyncState.offline,
     );
 
 /// Create mock providers with pending sync operations.
 List<Override> mockProvidersWithPendingSync(int pendingCount) =>
     mockProvidersWithOverrides(
       pendingOperations: pendingCount,
-      syncState: SyncState.idle,
+      syncState: common.SyncState.idle,
     );
 
 // ============================================================================

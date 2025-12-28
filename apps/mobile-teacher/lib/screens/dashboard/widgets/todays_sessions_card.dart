@@ -110,6 +110,7 @@ class _SessionTile extends StatelessWidget {
     switch (session.status) {
       case SessionStatus.scheduled: return Colors.blue;
       case SessionStatus.active: return Colors.green;
+      case SessionStatus.paused: return Colors.orange;
       case SessionStatus.completed: return Colors.grey;
       case SessionStatus.cancelled: return Colors.red;
     }
@@ -119,6 +120,7 @@ class _SessionTile extends StatelessWidget {
     switch (session.status) {
       case SessionStatus.scheduled: return Icons.schedule;
       case SessionStatus.active: return Icons.play_arrow;
+      case SessionStatus.paused: return Icons.pause;
       case SessionStatus.completed: return Icons.check;
       case SessionStatus.cancelled: return Icons.close;
     }
@@ -148,6 +150,7 @@ class _StatusChip extends StatelessWidget {
     switch (status) {
       case SessionStatus.scheduled: return Colors.blue;
       case SessionStatus.active: return Colors.green;
+      case SessionStatus.paused: return Colors.orange;
       case SessionStatus.completed: return Colors.grey;
       case SessionStatus.cancelled: return Colors.red;
     }

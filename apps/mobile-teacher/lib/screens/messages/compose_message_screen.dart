@@ -21,6 +21,7 @@ class ComposeMessageScreen extends ConsumerStatefulWidget {
 class _ComposeMessageScreenState extends ConsumerState<ComposeMessageScreen> {
   final _messageController = TextEditingController();
   String? _selectedRecipient;
+  // ignore: unused_field
   MessageTemplate? _selectedTemplate;
 
   @override

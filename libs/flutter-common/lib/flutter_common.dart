@@ -33,7 +33,8 @@ export 'widgets/offline_widgets.dart' hide SyncStatus, OfflineBanner;
 // Services (hide conflicts with existing providers and data models)
 export 'services/services.dart' 
     hide AuthState, isAuthenticatedProvider, BaselineProfile, JwtClaims, 
-         SessionType, DeviceRegistration, TokenStorageKeys, ContentType;
+         SessionType, DeviceRegistration, TokenStorageKeys, ContentType,
+         ConnectionState; // Prefer ConnectionState from offline/connectivity_service.dart
 
 // Offline support
 export 'offline/offline.dart';
@@ -56,5 +57,5 @@ export 'widgets/shared_session_bar.dart';
 export 'widgets/shared_device_flow.dart';
 
 // Real-time communication
-export 'realtime/realtime.dart';
+export 'realtime/realtime.dart' hide UserPresence, ConnectionStatus, presenceProvider; // Prefer from services
 

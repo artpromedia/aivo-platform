@@ -11,20 +11,19 @@ class TestClasses {
   static final math5th = ClassGroup(
     id: 'class-math-5',
     name: 'Math 5th Period',
-    description: '5th grade mathematics',
     gradeLevel: 5,
     subject: 'math',
     teacherId: 'teacher-1',
     studentIds: ['student-alex', 'student-emma', 'student-jordan', 'student-marcus'],
+    studentCount: 4,
+    period: '5th',
+    room: 'Room 205',
     schedule: ClassSchedule(
-      dayOfWeek: [1, 2, 3, 4, 5], // Monday-Friday
+      daysOfWeek: [1, 2, 3, 4, 5], // Monday-Friday
       startTime: '10:00',
       endTime: '11:00',
-      room: 'Room 205',
     ),
-    academicYear: '2024-2025',
-    semester: 'Fall',
-    isActive: true,
+    schoolYear: '2024-2025',
     createdAt: DateTime(2024, 8, 1),
     updatedAt: DateTime.now().subtract(const Duration(days: 5)),
   );
@@ -33,20 +32,19 @@ class TestClasses {
   static final reading5th = ClassGroup(
     id: 'class-reading-5',
     name: 'Reading 3rd Period',
-    description: '5th grade reading and language arts',
     gradeLevel: 5,
     subject: 'reading',
     teacherId: 'teacher-1',
     studentIds: ['student-alex', 'student-emma', 'student-marcus', 'student-sofia'],
+    studentCount: 4,
+    period: '3rd',
+    room: 'Room 205',
     schedule: ClassSchedule(
-      dayOfWeek: [1, 2, 3, 4, 5],
+      daysOfWeek: [1, 2, 3, 4, 5],
       startTime: '09:00',
       endTime: '10:00',
-      room: 'Room 205',
     ),
-    academicYear: '2024-2025',
-    semester: 'Fall',
-    isActive: true,
+    schoolYear: '2024-2025',
     createdAt: DateTime(2024, 8, 1),
     updatedAt: DateTime.now().subtract(const Duration(days: 3)),
   );
@@ -55,20 +53,19 @@ class TestClasses {
   static final science5th = ClassGroup(
     id: 'class-science-5',
     name: 'Science 6th Period',
-    description: '5th grade science',
     gradeLevel: 5,
     subject: 'science',
     teacherId: 'teacher-1',
     studentIds: ['student-emma', 'student-jordan'],
+    studentCount: 2,
+    period: '6th',
+    room: 'Science Lab',
     schedule: ClassSchedule(
-      dayOfWeek: [2, 4], // Tuesday, Thursday
+      daysOfWeek: [2, 4], // Tuesday, Thursday
       startTime: '13:00',
       endTime: '14:00',
-      room: 'Science Lab',
     ),
-    academicYear: '2024-2025',
-    semester: 'Fall',
-    isActive: true,
+    schoolYear: '2024-2025',
     createdAt: DateTime(2024, 8, 1),
     updatedAt: DateTime.now().subtract(const Duration(days: 7)),
   );
@@ -77,24 +74,19 @@ class TestClasses {
   static final inactiveClass = ClassGroup(
     id: 'class-inactive',
     name: 'Math 5th Period (Spring)',
-    description: 'Previous semester class',
     gradeLevel: 5,
     subject: 'math',
     teacherId: 'teacher-1',
     studentIds: [],
+    studentCount: 0,
     schedule: null,
-    academicYear: '2023-2024',
-    semester: 'Spring',
-    isActive: false,
+    schoolYear: '2023-2024',
     createdAt: DateTime(2024, 1, 10),
     updatedAt: DateTime(2024, 6, 15),
   );
 
   /// All test classes.
   static final all = [math5th, reading5th, science5th];
-
-  /// Active classes.
-  static final active = all.where((c) => c.isActive).toList();
 
   /// Classes by subject.
   static List<ClassGroup> bySubject(String subject) =>
@@ -104,24 +96,20 @@ class TestClasses {
   static ClassGroup create({
     String? id,
     String name = 'Test Class',
-    String? description,
     int gradeLevel = 5,
     String subject = 'general',
     String teacherId = 'teacher-1',
     List<String> studentIds = const [],
-    bool isActive = true,
   }) {
     return ClassGroup(
       id: id ?? 'class-${DateTime.now().millisecondsSinceEpoch}',
       name: name,
-      description: description,
       gradeLevel: gradeLevel,
       subject: subject,
       teacherId: teacherId,
       studentIds: studentIds,
-      isActive: isActive,
-      academicYear: '2024-2025',
-      semester: 'Fall',
+      studentCount: studentIds.length,
+      schoolYear: '2024-2025',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

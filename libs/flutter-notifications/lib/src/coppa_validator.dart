@@ -83,6 +83,7 @@ class CoppaNotificationValidator {
   ];
 
   /// Allowed positive terms for child-appropriate messaging
+  // ignore: unused_field
   static const _encouragedTerms = [
     'great job',
     'well done',

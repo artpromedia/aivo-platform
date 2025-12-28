@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:golden_toolkit/golden_toolkit.dart';
 
 /// Device specifications for golden tests.
 class TestDevices {
@@ -13,6 +14,8 @@ class TestDevices {
     size: Size(375, 667),
     devicePixelRatio: 2.0,
   );
+  // Alias for backward compatibility
+  static const iPhoneSE = iphoneSE;
 
   /// iPhone 14 (standard phone).
   static const iphone14 = TestDevice(
@@ -20,6 +23,8 @@ class TestDevices {
     size: Size(390, 844),
     devicePixelRatio: 3.0,
   );
+  // Alias for backward compatibility
+  static const iPhone14 = iphone14;
 
   /// iPhone 14 Pro Max (large phone).
   static const iphone14ProMax = TestDevice(
@@ -27,6 +32,8 @@ class TestDevices {
     size: Size(430, 932),
     devicePixelRatio: 3.0,
   );
+  // Alias for backward compatibility
+  static const iPhone14ProMax = iphone14ProMax;
 
   /// iPad Mini (small tablet).
   static const ipadMini = TestDevice(
@@ -34,6 +41,8 @@ class TestDevices {
     size: Size(744, 1133),
     devicePixelRatio: 2.0,
   );
+  // Alias for backward compatibility
+  static const iPadMini = ipadMini;
 
   /// iPad Pro 11" (tablet).
   static const ipadPro11 = TestDevice(
@@ -48,6 +57,11 @@ class TestDevices {
     size: Size(1024, 1366),
     devicePixelRatio: 2.0,
   );
+  // Aliases for backward compatibility
+  static const iPadPro = ipadPro11;
+  static const ipadPro = ipadPro11;
+  static const iPadPro11 = ipadPro11;
+  static const iPadPro12 = ipadPro12;
 
   /// All phone devices.
   static const phones = [iphoneSE, iphone14, iphone14ProMax];
@@ -113,6 +127,16 @@ class TestDevice {
       textScaleFactor: 2.0,
       brightness: brightness,
       safeArea: safeArea,
+    );
+  }
+
+  /// Convert to golden_toolkit Device for multiScreenGolden.
+  Device toDevice() {
+    return Device(
+      name: name,
+      size: size,
+      devicePixelRatio: devicePixelRatio,
+      textScale: textScaleFactor,
     );
   }
 }

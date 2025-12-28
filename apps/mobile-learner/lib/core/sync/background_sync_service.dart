@@ -1,14 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../database/local_database.dart';
-import '../network/api_client.dart';
 import '../network/connectivity_manager.dart';
-import 'sync_engine.dart';
 
 /// Background task identifiers
 class BackgroundTaskIds {

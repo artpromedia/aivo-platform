@@ -6,8 +6,9 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_common/flutter_common.dart'
+    hide SyncOperationType, SyncResult, SyncConflict, ConflictType, SyncStatusInfo;
 import 'package:uuid/uuid.dart';
 
 import '../../models/sync_operation.dart';
@@ -275,7 +276,8 @@ class SyncService {
 
       await localDb.markConflict(operation.id, jsonEncode(conflict));
       return conflict;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[SyncService] Error detecting conflict: $e');
       return null;
     }
   }
@@ -342,6 +344,16 @@ class SyncService {
       }
     }
     return merged;
+  }
+
+  /// Get pending sync operations.
+  Future<List<SyncOperation>> getPendingOperations() async {
+    return localDb.getPendingSyncOperations();
+  }
+
+  /// Get sync conflicts.
+  Future<List<SyncConflict>> getConflicts() async {
+    return localDb.getConflicts();
   }
 
   /// Update status and notify listeners.

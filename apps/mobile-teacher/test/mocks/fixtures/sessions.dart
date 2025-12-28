@@ -28,18 +28,17 @@ class TestSessions {
     activities: [
       SessionActivity(
         id: 'activity-1',
-        title: 'Warm-up Quiz',
+        name: 'Warm-up Quiz',
         type: 'quiz',
         durationMinutes: 10,
-        status: ActivityStatus.completed,
-        completedAt: DateTime.now().subtract(const Duration(minutes: 35)),
+        completed: true,
       ),
       SessionActivity(
         id: 'activity-2',
-        title: 'Practice Problems',
+        name: 'Practice Problems',
         type: 'practice',
         durationMinutes: 30,
-        status: ActivityStatus.inProgress,
+        completed: false,
       ),
     ],
     createdAt: DateTime.now().subtract(const Duration(days: 1)),
@@ -67,10 +66,10 @@ class TestSessions {
     activities: [
       SessionActivity(
         id: 'activity-3',
-        title: 'Passage Reading',
+        name: 'Passage Reading',
         type: 'reading',
         durationMinutes: 20,
-        status: ActivityStatus.inProgress,
+        completed: false,
       ),
     ],
     createdAt: DateTime.now().subtract(const Duration(hours: 2)),
@@ -119,11 +118,10 @@ class TestSessions {
     activities: [
       SessionActivity(
         id: 'activity-4',
-        title: 'Practice',
+        name: 'Practice',
         type: 'practice',
         durationMinutes: 45,
-        status: ActivityStatus.completed,
-        completedAt: DateTime.now().subtract(const Duration(days: 2)),
+        completed: true,
       ),
     ],
     createdAt: DateTime.now().subtract(const Duration(days: 3)),

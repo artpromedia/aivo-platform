@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 const _baseUrl = String.fromEnvironment('AUTH_BASE_URL', defaultValue: 'http://localhost:4001');
 const _useAuthMock = bool.fromEnvironment('USE_AUTH_MOCK');
@@ -33,7 +34,8 @@ class AuthService {
           ? (err.response!.data as Map)['error'].toString()
           : 'Login failed';
       throw AuthException(message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AuthService] Login error: $e');
       throw const AuthException('Login failed');
     }
   }

@@ -22,10 +22,9 @@ class TestTeachers {
     phoneNumber: '555-123-4567',
     preferences: const TeacherPreferences(
       notificationsEnabled: true,
-      emailDigestFrequency: 'daily',
+      emailNotifications: true,
       theme: 'system',
       defaultSessionDuration: 60,
-      showStudentAvatars: true,
     ),
     createdAt: DateTime(2024, 1, 15),
     updatedAt: DateTime.now().subtract(const Duration(days: 30)),

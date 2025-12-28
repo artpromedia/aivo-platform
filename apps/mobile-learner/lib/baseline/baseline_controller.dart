@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
@@ -151,7 +152,8 @@ class LearnerBaselineController extends StateNotifier<LearnerBaselineState> {
       }
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error loading next question: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to load next question');
     }
   }
@@ -184,7 +186,8 @@ class LearnerBaselineController extends StateNotifier<LearnerBaselineState> {
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error submitting answer: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to submit answer');
       return false;
     }
@@ -204,7 +207,8 @@ class LearnerBaselineController extends StateNotifier<LearnerBaselineState> {
       );
     } on BaselineException catch (err) {
       state = state.copyWith(isLoading: false, error: err.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BaselineController] Error completing attempt: $e');
       state = state.copyWith(isLoading: false, error: 'Failed to complete assessment');
     }
   }

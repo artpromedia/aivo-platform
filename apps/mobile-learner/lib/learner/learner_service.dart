@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
@@ -23,7 +24,8 @@ class LearnerService {
           ? (err.response!.data as Map)['error'].toString()
           : 'Unable to load learner';
       throw LearnerException(message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[LearnerService] Unexpected error fetching learner $learnerId: $e');
       throw const LearnerException('Unable to load learner');
     }
   }

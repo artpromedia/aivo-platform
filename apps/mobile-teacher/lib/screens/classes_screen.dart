@@ -3,6 +3,7 @@
 /// Main screen showing teacher's classes/groups.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -118,7 +119,8 @@ class ClassesNotifier extends StateNotifier<ClassesState> {
       
       state = ClassesState(classes: updatedClasses);
       return sessionId;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ClassesNotifier] Error starting session: $e');
       return null;
     }
   }

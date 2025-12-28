@@ -1,6 +1,10 @@
 /// Core i18n types for AIVO Flutter apps
 library;
 
+// Re-export Flutter's Locale and TextDirection
+export 'dart:ui' show Locale, TextDirection;
+import 'dart:ui' show TextDirection, Locale;
+
 /// Supported locales in AIVO platform
 enum SupportedLocale {
   en('en', 'English', 'English', TextDirection.ltr),
@@ -74,12 +78,6 @@ enum SupportedLocale {
         : locale.languageCode;
     return fromCode(code);
   }
-}
-
-/// Text direction for locale
-enum TextDirection {
-  ltr,
-  rtl,
 }
 
 /// Translation namespace
@@ -173,5 +171,3 @@ typedef LocaleChangeCallback = void Function(SupportedLocale locale);
 /// Translation function type
 typedef TFunction = String Function(String key, [Map<String, dynamic>? args]);
 
-// Re-export Flutter's Locale
-export 'dart:ui' show Locale;

@@ -10,6 +10,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -322,7 +323,8 @@ class RealtimeClient {
     for (final roomId in _rooms.toList()) {
       try {
         await _emit('room:join', {'roomId': roomId, 'roomType': 'rejoin'});
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[RealtimeService] Failed to rejoin room $roomId: $e');
         _rooms.remove(roomId);
       }
     }

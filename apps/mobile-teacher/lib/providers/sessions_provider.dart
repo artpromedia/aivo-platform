@@ -194,7 +194,7 @@ final todaysSessionsProvider = Provider<List<Session>>((ref) {
   final today = DateTime.now();
   
   return state.sessions.where((s) {
-    final scheduled = s.scheduledAt ?? s.createdAt;
+    final scheduled = s.scheduledAt ?? s.createdAt ?? DateTime.now();
     return scheduled.year == today.year &&
            scheduled.month == today.month &&
            scheduled.day == today.day;
@@ -212,6 +212,9 @@ final upcomingSessionsProvider = Provider<List<Session>>((ref) {
            scheduled.isAfter(now) && 
            s.status == SessionStatus.scheduled;
   }).toList()
-    ..sort((a, b) => (a.scheduledAt ?? a.createdAt)
-        .compareTo(b.scheduledAt ?? b.createdAt));
+    ..sort((a, b) {
+      final aDate = a.scheduledAt ?? a.createdAt ?? DateTime.now();
+      final bDate = b.scheduledAt ?? b.createdAt ?? DateTime.now();
+      return aDate.compareTo(bDate);
+    });
 });

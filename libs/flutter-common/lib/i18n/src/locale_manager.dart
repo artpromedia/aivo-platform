@@ -2,7 +2,7 @@
 /// Handles locale detection, persistence, and switching
 library;
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'types.dart';
 import 'i18n.dart';

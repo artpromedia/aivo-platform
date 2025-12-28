@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:isolate';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../database/local_database.dart';
 import '../network/api_client.dart';
 import '../network/connectivity_manager.dart';
+import '../../widgets/sync/download_progress.dart' show DownloadInfo, DownloadState;
 import 'conflict_resolver.dart';
 import 'delta_calculator.dart';
 import 'sync_queue.dart';
@@ -40,6 +39,11 @@ class SyncEngine {
   // State
   final _syncStateController = StreamController<SyncState>.broadcast();
   Stream<SyncState> get syncState => _syncStateController.stream;
+
+  // Download progress tracking
+  final _downloadProgressController = StreamController<List<DownloadInfo>>.broadcast();
+  Stream<List<DownloadInfo>> get downloadProgress => _downloadProgressController.stream;
+  final _activeDownloads = <String, DownloadInfo>{};
 
   SyncState _currentState = SyncState.idle;
   SyncState get currentState => _currentState;
@@ -308,6 +312,78 @@ class SyncEngine {
   Future<void> removeOfflineContent(String lessonId) async {
     await _localDb.removeOfflineLesson(lessonId);
     await _clearCachedMedia(lessonId);
+  }
+
+  /// Cancel an active download
+  void cancelDownload(String lessonId) {
+    _activeDownloads.remove(lessonId);
+    _notifyDownloadProgress();
+    debugPrint('[SyncEngine] Download cancelled: $lessonId');
+  }
+
+  /// Retry a failed download
+  void retryDownload(String lessonId) {
+    final download = _activeDownloads[lessonId];
+    if (download != null) {
+      _activeDownloads[lessonId] = DownloadInfo(
+        id: download.id,
+        title: download.title,
+        subtitle: download.subtitle,
+        progress: download.progress,
+        state: DownloadState.downloading,
+        totalBytes: download.totalBytes,
+        downloadedBytes: download.downloadedBytes,
+        startedAt: download.startedAt,
+      );
+      _notifyDownloadProgress();
+      // Re-initiate download
+      downloadForOffline(lessonId: lessonId);
+    }
+    debugPrint('[SyncEngine] Download retry: $lessonId');
+  }
+
+  /// Pause an active download
+  void pauseDownload(String lessonId) {
+    final download = _activeDownloads[lessonId];
+    if (download != null) {
+      _activeDownloads[lessonId] = DownloadInfo(
+        id: download.id,
+        title: download.title,
+        subtitle: download.subtitle,
+        progress: download.progress,
+        state: DownloadState.paused,
+        totalBytes: download.totalBytes,
+        downloadedBytes: download.downloadedBytes,
+        startedAt: download.startedAt,
+      );
+      _notifyDownloadProgress();
+    }
+    debugPrint('[SyncEngine] Download paused: $lessonId');
+  }
+
+  /// Resume a paused download
+  void resumeDownload(String lessonId) {
+    final download = _activeDownloads[lessonId];
+    if (download != null) {
+      _activeDownloads[lessonId] = DownloadInfo(
+        id: download.id,
+        title: download.title,
+        subtitle: download.subtitle,
+        progress: download.progress,
+        state: DownloadState.downloading,
+        totalBytes: download.totalBytes,
+        downloadedBytes: download.downloadedBytes,
+        startedAt: download.startedAt,
+      );
+      _notifyDownloadProgress();
+      // Re-initiate download from where it left off
+      downloadForOffline(lessonId: lessonId);
+    }
+    debugPrint('[SyncEngine] Download resumed: $lessonId');
+  }
+
+  void _notifyDownloadProgress() {
+    _downloadProgressController.add(_activeDownloads.values.toList());
   }
 
   /// Get sync status for an entity

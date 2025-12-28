@@ -352,14 +352,14 @@ void main() {
         id: 'progress-1',
         goalId: 'goal-1',
         value: 75,
-        note: 'Improved this week',
+        notes: 'Improved this week',
         recordedAt: DateTime.now(),
         recordedBy: 'teacher-1',
       );
 
       expect(progress.id, equals('progress-1'));
       expect(progress.value, equals(75));
-      expect(progress.note, equals('Improved this week'));
+      expect(progress.notes, equals('Improved this week'));
     });
 
     test('should serialize to JSON', () {
@@ -367,7 +367,7 @@ void main() {
         id: 'progress-1',
         goalId: 'goal-1',
         value: 75,
-        note: 'Test note',
+        notes: 'Test note',
         recordedAt: DateTime(2024, 11, 1),
         recordedBy: 'teacher-1',
       );
@@ -377,7 +377,7 @@ void main() {
       expect(json['id'], equals('progress-1'));
       expect(json['goalId'], equals('goal-1'));
       expect(json['value'], equals(75));
-      expect(json['note'], equals('Test note'));
+      expect(json['notes'], equals('Test note'));
     });
 
     test('should deserialize from JSON', () {
@@ -385,7 +385,7 @@ void main() {
         'id': 'progress-1',
         'goalId': 'goal-1',
         'value': 75.0,
-        'note': 'Test note',
+        'notes': 'Test note',
         'recordedAt': '2024-11-01T00:00:00.000Z',
         'recordedBy': 'teacher-1',
       };
@@ -394,7 +394,7 @@ void main() {
 
       expect(progress.id, equals('progress-1'));
       expect(progress.value, equals(75));
-      expect(progress.note, equals('Test note'));
+      expect(progress.notes, equals('Test note'));
     });
   });
 }

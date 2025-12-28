@@ -83,11 +83,9 @@ class ChildNotificationSettingsState {
   /// Convert to LearnerNotificationSettings for the shared library
   LearnerNotificationSettings toLibrarySettings() {
     return LearnerNotificationSettings(
-      remindersEnabled: sessionRemindersEnabled,
-      achievementsEnabled: achievementAlertsEnabled,
+      sessionRemindersEnabled: sessionRemindersEnabled,
+      achievementNotificationsEnabled: achievementAlertsEnabled,
       encouragementEnabled: encouragementEnabled,
-      soundsEnabled: soundsEnabled,
-      parentControlled: true,
     );
   }
 }

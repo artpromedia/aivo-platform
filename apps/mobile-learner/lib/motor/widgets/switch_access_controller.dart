@@ -632,7 +632,7 @@ class _ExternalSwitchHandlerState extends State<ExternalSwitchHandler> {
   // In production, this would connect to HID devices or Bluetooth
   // For now, we map keyboard shortcuts
 
-  static const Map<LogicalKeyboardKey, int> _keyToSwitch = {
+  static final Map<LogicalKeyboardKey, int> _keyToSwitch = {
     LogicalKeyboardKey.digit1: 1,
     LogicalKeyboardKey.digit2: 2,
     LogicalKeyboardKey.digit3: 3,

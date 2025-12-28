@@ -20,7 +20,7 @@ import '../screens/reports/reports_screen.dart';
 import '../screens/reports/iep_reports_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/offline_settings_screen.dart';
-import '../screens/login_screen.dart';
+import '../screens/login_screen.dart' show TeacherLoginScreen;
 
 /// Application router.
 final GoRouter appRouter = GoRouter(
@@ -29,7 +29,7 @@ final GoRouter appRouter = GoRouter(
     // Auth
     GoRoute(
       path: '/login',
-      builder: (context, state) => const LoginScreen(),
+      builder: (context, state) => const TeacherLoginScreen(),
     ),
 
     // Dashboard

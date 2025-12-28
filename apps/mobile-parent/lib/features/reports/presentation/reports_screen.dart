@@ -59,7 +59,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           border: const OutlineInputBorder(),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
-                        value: _selectedChildId,
+                        initialValue: _selectedChildId,
                         items: kids.map((child) {
                           return DropdownMenuItem(
                             value: child.id,

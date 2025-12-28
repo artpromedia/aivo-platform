@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:flutter_common/flutter_common.dart' as common;
 
 import '../mocks/mocks.dart';
 import 'package:mobile_teacher/screens/dashboard/dashboard_screen.dart';
 import 'package:mobile_teacher/providers/providers.dart';
-import 'package:mobile_teacher/models/models.dart';
+import 'package:mobile_teacher/services/sync/sync_service.dart';
 
 void main() {
   late MockStudentRepository mockStudentRepo;
@@ -47,7 +48,7 @@ void main() {
     when(() => mockConnectivity.isOnline)
         .thenAnswer((_) async => true);
     when(() => mockSyncService.statusStream)
-        .thenAnswer((_) => Stream.value(SyncStatus.idle));
+        .thenAnswer((_) => Stream.value(SyncStatusInfo(state: common.SyncState.idle, pendingOperations: 0)));
     when(() => mockSyncService.getPendingOperations())
         .thenAnswer((_) async => []);
     when(() => mockSyncService.getConflicts())

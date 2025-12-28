@@ -38,7 +38,7 @@ class ErrorView extends StatelessWidget {
             Icon(
               icon ?? Icons.error_outline,
               size: 64,
-              color: colorScheme.error.withOpacity(0.7),
+              color: colorScheme.error.withValues(alpha: 0.7),
             ),
             const SizedBox(height: 16),
             if (title != null) ...[

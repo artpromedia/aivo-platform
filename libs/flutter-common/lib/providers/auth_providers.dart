@@ -6,6 +6,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api.dart';
@@ -138,7 +139,11 @@ class JwtClaims {
         ),
         email: claims['email']?.toString(),
       );
-    } catch (_) {
+    } catch (e) {
+      assert(() {
+        debugPrint('[JwtClaims] Failed to decode token: $e');
+        return true;
+      }());
       return JwtClaims(
         sub: '',
         tenantId: '',
@@ -286,7 +291,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         data: {'email': email},
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AuthNotifier] Password reset failed for $email: $e');
       return false;
     }
   }
@@ -295,8 +301,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     try {
       await _apiClient.post(ApiEndpoints.logout);
-    } catch (_) {
-      // Ignore logout errors
+    } catch (e) {
+      // Ignore logout errors but log in debug mode
+      assert(() {
+        debugPrint('[AuthNotifier] Logout call failed: $e');
+        return true;
+      }());
     } finally {
       await _apiClient.clearTokens();
       state = const AuthState.unauthenticated();

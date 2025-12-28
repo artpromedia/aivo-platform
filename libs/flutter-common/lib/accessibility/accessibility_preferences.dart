@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 /// Detects and provides user accessibility preferences
 class AccessibilityPreferences {
