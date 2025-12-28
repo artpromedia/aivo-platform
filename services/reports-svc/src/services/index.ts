@@ -1,2 +1,2 @@
 // Services module index
-export * from './report.service';
+export * from './report.service.js';

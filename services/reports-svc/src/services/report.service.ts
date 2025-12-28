@@ -55,6 +55,37 @@ export interface ReportRequest {
   error?: string;
 }
 
+/**
+ * Request object for generating reports (used by routes)
+ */
+export interface GenerateReportRequest {
+  id: string;
+  type: ReportType;
+  format?: ReportFormat | undefined;
+  tenantId: string;
+  requestedBy: string;
+  requestedAt?: Date | undefined;
+  parameters?: Record<string, unknown> | undefined;
+  dateRange?: {
+    startDate: Date;
+    endDate: Date;
+  } | undefined;
+  options?: {
+    subtitle?: string | undefined;
+    includeCharts?: boolean | undefined;
+    [key: string]: unknown;
+  } | undefined;
+}
+
+/**
+ * Result from generating a report
+ */
+export interface GenerateReportResult {
+  reportId: string;
+  downloadUrl: string;
+  expiresAt: string;
+}
+
 export interface ReportParameters {
   // Time range
   startDate: Date;
@@ -77,12 +108,12 @@ export interface ReportParameters {
 
 export interface ReportData {
   title: string;
-  subtitle?: string;
+  subtitle?: string | undefined;
   generatedAt: Date;
   generatedBy: string;
   period: { start: Date; end: Date };
   sections: ReportSection[];
-  summary?: ReportSummary;
+  summary?: ReportSummary | undefined;
   metadata: ReportMetadata;
 }
 
@@ -175,7 +206,7 @@ export interface ReportServiceConfig {
   enableEmailDelivery: boolean;
   fromEmail: string;
   companyName: string;
-  logoUrl?: string;
+  logoUrl?: string | undefined;
 }
 
 const DEFAULT_CONFIG: ReportServiceConfig = {
@@ -198,7 +229,7 @@ export class ReportService {
   private readonly config: ReportServiceConfig;
 
   constructor(
-    private readonly redis: Redis,
+    private readonly redis?: Redis,
     config?: Partial<ReportServiceConfig>
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -215,6 +246,114 @@ export class ReportService {
   // ============================================================================
   // REPORT GENERATION
   // ============================================================================
+
+  /**
+   * Generate report from a request object (used by routes)
+   */
+  async generateReportFromRequest(
+    request: GenerateReportRequest
+  ): Promise<GenerateReportResult> {
+    const data = await this.buildReportData(request);
+    const result = await this.generateReport(
+      request.type,
+      request.format ?? 'pdf',
+      data,
+      request.tenantId,
+      request.requestedBy
+    );
+    return {
+      reportId: result.id,
+      downloadUrl: result.downloadUrl ?? '',
+      expiresAt: result.expiresAt?.toISOString() ?? '',
+    };
+  }
+
+  /**
+   * Generate report buffer directly (for streaming without S3 upload)
+   */
+  async generateReportBuffer(
+    request: GenerateReportRequest
+  ): Promise<Buffer> {
+    const data = await this.buildReportData(request);
+    const format = request.format ?? 'pdf';
+
+    switch (format) {
+      case 'pdf':
+        return this.generatePDF(data);
+      case 'excel':
+        return this.generateExcel(data);
+      case 'csv':
+        return this.generateCSV(data);
+      case 'html':
+        return this.generateHTML(data);
+      case 'json':
+        return Buffer.from(JSON.stringify(data, null, 2));
+      default:
+        throw new Error(`Unsupported format: ${format}`);
+    }
+  }
+
+  /**
+   * Build ReportData from a GenerateReportRequest
+   */
+  private async buildReportData(request: GenerateReportRequest): Promise<ReportData> {
+    // Extract date range from request
+    const startDate = request.dateRange?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = request.dateRange?.endDate ?? new Date();
+    const format = request.format ?? 'pdf';
+
+    return {
+      title: `${request.type.replaceAll('_', ' ')} Report`,
+      subtitle: request.options?.subtitle,
+      generatedAt: new Date(),
+      generatedBy: request.requestedBy,
+      period: { start: startDate, end: endDate },
+      sections: [],
+      metadata: {
+        version: '1.0',
+        format,
+        complianceFlags: {
+          ferpaCompliant: true,
+          gdprCompliant: true,
+          piiRedacted: false,
+          dataMinimized: false,
+          retentionPolicy: 'standard',
+        },
+      },
+    };
+  }
+
+  /**
+   * Send batch report emails
+   */
+  async sendBatchReportEmail(
+    recipients: ReportRecipient[],
+    reports: Array<{ reportId: string; downloadUrl: string; type: string; format: string }>
+  ): Promise<void> {
+    for (const report of reports) {
+      await this.sendReportEmail(
+        {
+          id: report.reportId,
+          type: report.type as ReportType,
+          format: report.format as ReportFormat,
+          tenantId: '',
+          requestedBy: '',
+          parameters: { startDate: new Date(), endDate: new Date() },
+          status: 'completed',
+          createdAt: new Date(),
+          downloadUrl: report.downloadUrl,
+        },
+        recipients
+      );
+    }
+  }
+
+  /**
+   * Get a signed download URL for a report (public method for routes)
+   */
+  async getReportDownloadUrl(s3Key: string): Promise<string> {
+    return this.generateDownloadUrl(s3Key);
+  }
 
   /**
    * Generate a report
@@ -718,6 +857,20 @@ export class ReportService {
   }
 
   private renderExcelSummary(sheet: ExcelJS.Worksheet, data: ReportData): void {
+    this.renderExcelSummaryHeader(sheet, data);
+
+    // KPIs
+    if (data.summary) {
+      this.renderExcelSummaryKPIs(sheet, data.summary);
+    }
+
+    // Auto-fit columns
+    sheet.columns.forEach((column: Partial<ExcelJS.Column>) => {
+      column.width = 25;
+    });
+  }
+
+  private renderExcelSummaryHeader(sheet: ExcelJS.Worksheet, data: ReportData): void {
     // Title
     sheet.mergeCells('A1:F1');
     const titleCell = sheet.getCell('A1');
@@ -740,42 +893,36 @@ export class ReportService {
     dateCell.value = `${this.formatDate(data.period.start)} - ${this.formatDate(data.period.end)}`;
     dateCell.font = { size: 10, color: { argb: '888888' } };
     dateCell.alignment = { horizontal: 'center' };
+  }
 
-    // KPIs
-    if (data.summary) {
-      let row = 6;
-      sheet.getCell(`A${row}`).value = 'Key Metrics';
-      sheet.getCell(`A${row}`).font = { bold: true, size: 14 };
-      row += 2;
+  private renderExcelSummaryKPIs(sheet: ExcelJS.Worksheet, summary: ReportSummary): void {
+    let row = 6;
+    sheet.getCell(`A${row}`).value = 'Key Metrics';
+    sheet.getCell(`A${row}`).font = { bold: true, size: 14 };
+    row += 2;
 
-      for (const metric of data.summary.keyMetrics) {
-        sheet.getCell(`A${row}`).value = metric.label;
-        sheet.getCell(`B${row}`).value = metric.value;
-        if (metric.change !== undefined) {
-          sheet.getCell(`C${row}`).value = `${metric.change >= 0 ? '+' : ''}${metric.change}%`;
-          sheet.getCell(`C${row}`).font = {
-            color: { argb: metric.change >= 0 ? '28a745' : 'dc3545' },
-          };
-        }
-        row++;
+    for (const metric of summary.keyMetrics) {
+      sheet.getCell(`A${row}`).value = metric.label;
+      sheet.getCell(`B${row}`).value = metric.value;
+      if (metric.change !== undefined) {
+        const changeSign = metric.change >= 0 ? '+' : '';
+        const changeColor = metric.change >= 0 ? '28a745' : 'dc3545';
+        sheet.getCell(`C${row}`).value = `${changeSign}${metric.change}%`;
+        sheet.getCell(`C${row}`).font = { color: { argb: changeColor } };
       }
-
-      // Highlights
-      row += 2;
-      sheet.getCell(`A${row}`).value = 'Highlights';
-      sheet.getCell(`A${row}`).font = { bold: true, size: 14 };
-      row += 2;
-
-      for (const highlight of data.summary.highlights) {
-        sheet.getCell(`A${row}`).value = `• ${highlight}`;
-        row++;
-      }
+      row++;
     }
 
-    // Auto-fit columns
-    sheet.columns.forEach((column) => {
-      column.width = 25;
-    });
+    // Highlights
+    row += 2;
+    sheet.getCell(`A${row}`).value = 'Highlights';
+    sheet.getCell(`A${row}`).font = { bold: true, size: 14 };
+    row += 2;
+
+    for (const highlight of summary.highlights) {
+      sheet.getCell(`A${row}`).value = `• ${highlight}`;
+      row++;
+    }
   }
 
   private renderExcelTable(sheet: ExcelJS.Worksheet, section: ReportSection): void {
@@ -1353,26 +1500,40 @@ export class ReportService {
 
     switch (type) {
       case 'number':
-        return typeof value === 'number' ? value.toLocaleString() : String(value);
-      case 'percentage': {
-        const num = typeof value === 'number' ? value : Number.parseFloat(String(value));
-        return `${(num * 100).toFixed(1)}%`;
-      }
+        return this.formatNumberValue(value);
+      case 'percentage':
+        return this.formatPercentageValue(value);
       case 'date':
-        return value instanceof Date
-          ? this.formatDate(value)
-          : this.formatDate(new Date(String(value)));
-      case 'duration': {
-        const minutes = typeof value === 'number' ? value : Number.parseFloat(String(value));
-        const hours = Math.floor(minutes / 60);
-        const mins = Math.round(minutes % 60);
-        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-      }
+        return this.formatDateValue(value);
+      case 'duration':
+        return this.formatDurationValue(value);
       case 'boolean':
         return value ? 'Yes' : 'No';
       default:
         return typeof value === 'object' ? JSON.stringify(value) : String(value);
     }
+  }
+
+  private formatNumberValue(value: unknown): string {
+    return typeof value === 'number' ? value.toLocaleString() : String(value);
+  }
+
+  private formatPercentageValue(value: unknown): string {
+    const num = typeof value === 'number' ? value : Number.parseFloat(String(value));
+    return `${(num * 100).toFixed(1)}%`;
+  }
+
+  private formatDateValue(value: unknown): string {
+    return value instanceof Date
+      ? this.formatDate(value)
+      : this.formatDate(new Date(String(value)));
+  }
+
+  private formatDurationValue(value: unknown): string {
+    const minutes = typeof value === 'number' ? value : Number.parseFloat(String(value));
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   }
 
   private escapeHTML(str: string): string {

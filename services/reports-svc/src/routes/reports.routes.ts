@@ -8,8 +8,8 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import { ReportService } from '../services/report.service.js';
-import type { AuthenticatedUser, ReportFormat, ReportType } from '../types.js';
+import { ReportService, type ReportFormat, type ReportType } from '../services/report.service.js';
+import type { AuthenticatedUser } from '../types.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
@@ -156,7 +156,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
         type: body.type as ReportType,
         format: body.format as ReportFormat,
         tenantId: body.tenantId,
-        requestedBy: user.id,
+        requestedBy: user.sub,
         requestedAt: new Date(),
         parameters: body.parameters,
         dateRange: body.dateRange?.startDate && body.dateRange?.endDate ? {
@@ -166,7 +166,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
         options: body.options,
       };
 
-      const result = await reportService.generateReport(reportRequest);
+      const result = await reportService.generateReportFromRequest(reportRequest);
 
       return reply.send({
         success: true,
@@ -201,7 +201,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
         type: body.type as ReportType,
         format: body.format as ReportFormat,
         tenantId: body.tenantId,
-        requestedBy: user.id,
+        requestedBy: user.sub,
         requestedAt: new Date(),
         parameters: body.parameters,
         dateRange: body.dateRange?.startDate && body.dateRange?.endDate ? {
@@ -261,7 +261,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
           type: reportConfig.type as ReportType,
           format: reportConfig.format as ReportFormat,
           tenantId: reportConfig.tenantId,
-          requestedBy: user.id,
+          requestedBy: user.sub,
           requestedAt: new Date(),
           parameters: reportConfig.parameters,
           dateRange: reportConfig.dateRange?.startDate && reportConfig.dateRange?.endDate ? {
@@ -272,7 +272,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
         };
 
         try {
-          const result = await reportService.generateReport(reportRequest);
+          const result = await reportService.generateReportFromRequest(reportRequest);
           results.push({
             success: true,
             reportId: result.reportId,
@@ -294,8 +294,12 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
       if (body.delivery?.method !== 'download' && body.delivery?.recipients?.length) {
         const successfulReports = results.filter(r => r.success);
         if (successfulReports.length > 0) {
+          const recipientList = body.delivery.recipients.map(email => ({
+            email,
+            role: 'recipient',
+          }));
           await reportService.sendBatchReportEmail(
-            body.delivery.recipients,
+            recipientList,
             successfulReports as Array<{ reportId: string; downloadUrl: string; type: string; format: string }>
           );
         }
@@ -337,7 +341,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
         type: body.type,
         format: body.format,
         tenantId: body.tenantId,
-        createdBy: user.id,
+        createdBy: user.sub,
         createdAt: new Date(),
         schedule: body.schedule,
         delivery: body.delivery,
@@ -473,7 +477,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
       const _user = getUser(request);
 
       // Fetch from database and regenerate download URL
-      const downloadUrl = await reportService.generateDownloadUrl(reportId);
+      const downloadUrl = await reportService.getReportDownloadUrl(reportId);
 
       return reply.send({
         success: true,
@@ -595,8 +599,8 @@ async function validateReportAccess(
 
 function calculateNextRun(schedule: {
   frequency: string;
-  dayOfWeek?: number;
-  dayOfMonth?: number;
+  dayOfWeek?: number | undefined;
+  dayOfMonth?: number | undefined;
   time: string;
   timezone: string;
 }): Date {
@@ -604,7 +608,7 @@ function calculateNextRun(schedule: {
   const [hours, minutes] = schedule.time.split(':').map(Number);
   
   const next = new Date(now);
-  next.setHours(hours, minutes, 0, 0);
+  next.setHours(hours ?? 0, minutes ?? 0, 0, 0);
 
   // If the time has passed today, start from tomorrow
   if (next <= now) {
@@ -633,9 +637,9 @@ function calculateNextRun(schedule: {
       return next;
 
     case 'quarterly': {
-      const quarterMonths = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
+      const quarterMonths = [0, 3, 6, 9] as const; // Jan, Apr, Jul, Oct
       const currentMonth = now.getMonth();
-      const nextQuarterMonth = quarterMonths.find(m => m > currentMonth) ?? quarterMonths[0] + 12;
+      const nextQuarterMonth = quarterMonths.find(m => m > currentMonth) ?? (quarterMonths[0] + 12);
       next.setMonth(nextQuarterMonth % 12);
       if (nextQuarterMonth >= 12) {
         next.setFullYear(next.getFullYear() + 1);

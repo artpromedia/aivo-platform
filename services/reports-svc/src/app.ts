@@ -14,14 +14,15 @@ import { classroomReportRoutes } from './routes/classroomReport.js';
 import { parentReportRoutes } from './routes/parentReport.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
+  const isDevelopment = config.nodeEnv !== 'production';
+  
   const app = Fastify({
-    logger: {
-      level: config.nodeEnv === 'production' ? 'info' : 'debug',
-      transport:
-        config.nodeEnv !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
-    },
+    logger: isDevelopment
+      ? {
+          level: 'debug',
+          transport: { target: 'pino-pretty', options: { colorize: true } },
+        }
+      : { level: 'info' },
   });
 
   // Health check (unauthenticated)
