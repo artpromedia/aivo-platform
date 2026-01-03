@@ -30,6 +30,10 @@ pubspec.lock
 **/generated/
 **/generated/**
 
+# Node compile cache
+node-compile-cache/
+**/node-compile-cache/
+
 # Secrets
 config/secrets/*.pem
 config/secrets/*.env
