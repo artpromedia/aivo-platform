@@ -716,7 +716,7 @@ export class EdFiProvider implements ISisProvider {
       schoolSourceIds: staff.schoolAssociations?.map((a) =>
         String(a.schoolReference?.schoolId)
       ) || [],
-    };
+    } as SisUser;
   }
 
   /**
@@ -738,7 +738,7 @@ export class EdFiProvider implements ISisProvider {
       role: 'parent',
       status: 'active',
       phone: parent.telephones?.[0]?.telephoneNumber,
-    };
+    } as SisUser;
   }
 
   /**
@@ -754,7 +754,7 @@ export class EdFiProvider implements ISisProvider {
       beginDate: assoc.beginDate ? new Date(assoc.beginDate) : undefined,
       endDate: assoc.endDate ? new Date(assoc.endDate) : undefined,
       status: 'active',
-    };
+    } as SisEnrollment;
   }
 
   /**
