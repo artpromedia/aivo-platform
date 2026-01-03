@@ -57,8 +57,14 @@ export const config = {
   defaultRecentDays: 7,
   maxRecentDays: 90,
 
-  // JWT verification
-  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-change-in-production',
+  // JWT verification (required in production)
+  jwtSecret: (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret && process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET is required in production');
+    }
+    return secret || 'dev-only-secret';
+  })(),
   jwtIssuer: process.env.JWT_ISSUER ?? 'aivo-auth',
 };
 

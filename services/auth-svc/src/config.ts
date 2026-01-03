@@ -52,6 +52,12 @@ export const config = {
     process.env.SAML_SP_CERTIFICATE_PATH
   ),
 
-  // SSO State Encryption
-  ssoStateEncryptionKey: process.env.SSO_STATE_ENCRYPTION_KEY || 'dev-key-change-in-production',
+  // SSO State Encryption (required in production)
+  ssoStateEncryptionKey: (() => {
+    const key = process.env.SSO_STATE_ENCRYPTION_KEY;
+    if (!key && process.env.NODE_ENV === 'production') {
+      throw new Error('SSO_STATE_ENCRYPTION_KEY is required in production');
+    }
+    return key || 'dev-only-key-not-for-production';
+  })(),
 };

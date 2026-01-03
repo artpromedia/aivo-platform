@@ -2,18 +2,20 @@
  * SSO State Management
  *
  * Manages SSO flow state (CSRF protection, nonce, relay state).
- * Uses short-lived encrypted tokens stored in memory or Redis.
+ * Uses Redis for multi-instance support (with in-memory fallback for development).
  */
 
 import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'node:crypto';
 
 import type { SsoState } from './types.js';
+import { getRedisClient, RedisKeys } from '../redis/client.js';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
 const STATE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const STATE_TTL_SECONDS = Math.floor(STATE_TTL_MS / 1000); // 600 seconds
 const ALGORITHM = 'aes-256-gcm';
 
 /**
@@ -78,8 +80,89 @@ try {
   }
 }
 
-// In-memory store (use Redis in production for multi-instance)
-const stateStore = new Map<string, { encrypted: string; expiresAt: number }>();
+// In-memory fallback store (only used in development when Redis is unavailable)
+const memoryStore = new Map<string, { encrypted: string; expiresAt: number }>();
+
+// ============================================================================
+// STORAGE ABSTRACTION
+// ============================================================================
+
+interface StateStore {
+  set(stateId: string, encrypted: string, ttlMs: number): Promise<void>;
+  get(stateId: string): Promise<string | null>;
+  delete(stateId: string): Promise<void>;
+}
+
+/**
+ * Redis-backed state store for production use
+ */
+class RedisStateStore implements StateStore {
+  async set(stateId: string, encrypted: string, _ttlMs: number): Promise<void> {
+    const redis = getRedisClient();
+    if (!redis) {
+      throw new Error('Redis client not available');
+    }
+    await redis.setex(RedisKeys.ssoState(stateId), STATE_TTL_SECONDS, encrypted);
+  }
+
+  async get(stateId: string): Promise<string | null> {
+    const redis = getRedisClient();
+    if (!redis) {
+      throw new Error('Redis client not available');
+    }
+    return redis.get(RedisKeys.ssoState(stateId));
+  }
+
+  async delete(stateId: string): Promise<void> {
+    const redis = getRedisClient();
+    if (!redis) {
+      throw new Error('Redis client not available');
+    }
+    await redis.del(RedisKeys.ssoState(stateId));
+  }
+}
+
+/**
+ * In-memory state store for development fallback
+ */
+class MemoryStateStore implements StateStore {
+  async set(stateId: string, encrypted: string, ttlMs: number): Promise<void> {
+    memoryStore.set(stateId, {
+      encrypted,
+      expiresAt: Date.now() + ttlMs,
+    });
+    cleanupExpiredStates();
+  }
+
+  async get(stateId: string): Promise<string | null> {
+    const entry = memoryStore.get(stateId);
+    if (!entry || Date.now() > entry.expiresAt) {
+      return null;
+    }
+    return entry.encrypted;
+  }
+
+  async delete(stateId: string): Promise<void> {
+    memoryStore.delete(stateId);
+  }
+}
+
+/**
+ * Get the appropriate state store based on environment
+ */
+function getStateStore(): StateStore {
+  const redis = getRedisClient();
+  if (redis) {
+    return new RedisStateStore();
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Redis is required for SSO state storage in production');
+  }
+
+  console.warn('[SSO] Using in-memory state store - not suitable for multi-instance deployment');
+  return new MemoryStateStore();
+}
 
 // ============================================================================
 // STATE CREATION & VALIDATION
@@ -88,7 +171,7 @@ const stateStore = new Map<string, { encrypted: string; expiresAt: number }>();
 /**
  * Generate a new SSO state token.
  */
-export function generateSsoState(params: Omit<SsoState, 'nonce' | 'initiatedAt'>): string {
+export async function generateSsoState(params: Omit<SsoState, 'nonce' | 'initiatedAt'>): Promise<string> {
   const nonce = randomBytes(16).toString('hex');
   const state: SsoState = {
     ...params,
@@ -99,13 +182,8 @@ export function generateSsoState(params: Omit<SsoState, 'nonce' | 'initiatedAt'>
   const stateId = randomBytes(16).toString('hex');
   const encrypted = encryptState(state);
 
-  stateStore.set(stateId, {
-    encrypted,
-    expiresAt: Date.now() + STATE_TTL_MS,
-  });
-
-  // Cleanup expired states periodically
-  cleanupExpiredStates();
+  const store = getStateStore();
+  await store.set(stateId, encrypted, STATE_TTL_MS);
 
   return stateId;
 }
@@ -114,22 +192,19 @@ export function generateSsoState(params: Omit<SsoState, 'nonce' | 'initiatedAt'>
  * Validate and consume an SSO state token.
  * Returns the state if valid, throws if invalid or expired.
  */
-export function validateSsoState(stateId: string): SsoState {
-  const entry = stateStore.get(stateId);
+export async function validateSsoState(stateId: string): Promise<SsoState> {
+  const store = getStateStore();
+  const encrypted = await store.get(stateId);
 
-  if (!entry) {
-    throw new SsoStateError('STATE_NOT_FOUND', 'SSO state not found');
+  if (!encrypted) {
+    throw new SsoStateError('STATE_NOT_FOUND', 'SSO state not found or expired');
   }
 
-  // Remove the state (single-use)
-  stateStore.delete(stateId);
-
-  if (Date.now() > entry.expiresAt) {
-    throw new SsoStateError('STATE_EXPIRED', 'SSO state has expired');
-  }
+  // Remove the state (single-use) - do this before decryption to prevent replay
+  await store.delete(stateId);
 
   try {
-    return decryptState(entry.encrypted);
+    return decryptState(encrypted);
   } catch {
     throw new SsoStateError('STATE_INVALID', 'Failed to decrypt SSO state');
   }
@@ -138,13 +213,16 @@ export function validateSsoState(stateId: string): SsoState {
 /**
  * Get state without consuming it (for debugging/logging).
  */
-export function peekSsoState(stateId: string): SsoState | null {
-  const entry = stateStore.get(stateId);
-  if (!entry || Date.now() > entry.expiresAt) {
+export async function peekSsoState(stateId: string): Promise<SsoState | null> {
+  const store = getStateStore();
+  const encrypted = await store.get(stateId);
+
+  if (!encrypted) {
     return null;
   }
+
   try {
-    return decryptState(entry.encrypted);
+    return decryptState(encrypted);
   } catch {
     return null;
   }

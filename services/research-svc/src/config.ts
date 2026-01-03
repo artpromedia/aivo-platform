@@ -1,11 +1,19 @@
 import 'dotenv/config';
 
+function requireEnvInProduction(name: string, defaultValue?: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || defaultValue || '';
+}
+
 export const config = {
   port: Number.parseInt(process.env.PORT ?? '3040', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
-  // JWT
-  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret',
+  // JWT (required in production)
+  jwtSecret: requireEnvInProduction('JWT_SECRET', 'dev-only-secret'),
 
   // NATS
   natsUrl: process.env.NATS_URL ?? 'nats://localhost:4222',
@@ -20,8 +28,8 @@ export const config = {
   // Presigned URL expiry (in hours, default 24)
   exportUrlExpiryHours: Number.parseInt(process.env.RESEARCH_EXPORT_URL_EXPIRY_HOURS ?? '24', 10),
 
-  // Privacy
-  deidentificationSalt: process.env.RESEARCH_DEIDENTIFICATION_SALT ?? 'dev-salt',
+  // Privacy (required in production - critical for data protection)
+  deidentificationSalt: requireEnvInProduction('RESEARCH_DEIDENTIFICATION_SALT', 'dev-only-salt'),
   kAnonymityThreshold: Number.parseInt(process.env.K_ANONYMITY_THRESHOLD ?? '10', 10),
 
   // Export retention

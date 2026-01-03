@@ -253,6 +253,11 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
     // This endpoint serves an HTML page that redirects via deep link
     const { token, error } = request.query;
 
+    // SECURITY: Properly escape values to prevent XSS
+    // Use JSON.stringify for safe JavaScript string embedding
+    const safeError = error ? JSON.stringify(encodeURIComponent(error)) : null;
+    const safeToken = token ? JSON.stringify(encodeURIComponent(token)) : '""';
+
     const html = `
 <!DOCTYPE html>
 <html>
@@ -267,18 +272,34 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
 </head>
 <body>
   <div class="spinner">⏳</div>
-  <p>${error ? 'Authentication failed' : 'Redirecting to app...'}</p>
+  <p id="status">${error ? 'Authentication failed' : 'Redirecting to app...'}</p>
   <script>
-    const deepLink = '${error 
-      ? `aivo://auth/error?error=${encodeURIComponent(error)}`
-      : `aivo://auth/callback?token=${encodeURIComponent(token ?? '')}`
-    }';
-    window.location.href = deepLink;
-    
-    // Fallback: show manual link after 2 seconds
-    setTimeout(() => {
-      document.body.innerHTML = '<p>If you are not redirected, <a href="' + deepLink + '">tap here</a>.</p>';
-    }, 2000);
+    (function() {
+      // Build deep link safely using properly escaped values
+      var deepLink = ${safeError !== null
+        ? `'aivo://auth/error?error=' + ${safeError}`
+        : `'aivo://auth/callback?token=' + ${safeToken}`
+      };
+
+      window.location.href = deepLink;
+
+      // Fallback: show manual link after 2 seconds using DOM API (not innerHTML)
+      setTimeout(function() {
+        var body = document.body;
+        body.textContent = '';
+
+        var p = document.createElement('p');
+        p.textContent = 'If you are not redirected, ';
+
+        var link = document.createElement('a');
+        link.href = deepLink;
+        link.textContent = 'tap here';
+
+        p.appendChild(link);
+        p.appendChild(document.createTextNode('.'));
+        body.appendChild(p);
+      }, 2000);
+    })();
   </script>
 </body>
 </html>

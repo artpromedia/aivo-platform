@@ -65,31 +65,33 @@ enum NotificationPriority {
 model NotificationPreference {
   id                String            @id @default(uuid()) @db.Uuid
   tenantId          String            @map("tenant_id") @db.Uuid
-  userId            String            @unique @map("user_id") @db.Uuid
-  
+  userId            String            @map("user_id") @db.Uuid
+
   // Channel preferences
   inAppEnabled      Boolean           @default(true) @map("in_app_enabled")
   pushEnabled       Boolean           @default(true) @map("push_enabled")
   emailEnabled      Boolean           @default(true) @map("email_enabled")
   smsEnabled        Boolean           @default(false) @map("sms_enabled")
-  
+
   // Type preferences (JSON map of NotificationType -> enabled)
   typePreferences   Json              @default("{}") @map("type_preferences")
-  
+
   // Quiet hours (time strings like "22:00")
   quietHoursStart   String?           @map("quiet_hours_start")
   quietHoursEnd     String?           @map("quiet_hours_end")
   quietHoursTimezone String?          @map("quiet_hours_timezone")
-  
+
   // Digest preferences
   digestEnabled     Boolean           @default(false) @map("digest_enabled")
   digestFrequency   String?           @map("digest_frequency") // 'daily', 'weekly'
   digestTime        String?           @map("digest_time") // "09:00"
-  
+
   // Timestamps
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz
 
+  // TENANT ISOLATION: One preference per user per tenant
+  @@unique([tenantId, userId])
   @@index([tenantId, userId])
   @@map("notification_preferences")
 }
@@ -204,28 +206,30 @@ model DeliveryLog {
 model LearnerNotificationSettings {
   id                  String    @id @default(uuid()) @db.Uuid
   tenantId            String    @map("tenant_id") @db.Uuid
-  learnerId           String    @unique @map("learner_id") @db.Uuid
+  learnerId           String    @map("learner_id") @db.Uuid
   parentId            String    @map("parent_id") @db.Uuid
-  
+
   // Parent-controlled notification types (only educational allowed)
   remindersEnabled    Boolean   @default(true) @map("reminders_enabled")
   achievementsEnabled Boolean   @default(true) @map("achievements_enabled")
   streakRemindersEnabled Boolean @default(true) @map("streak_reminders_enabled")
   encouragementEnabled Boolean  @default(true) @map("encouragement_enabled")
-  
+
   // Delivery settings
   soundsEnabled       Boolean   @default(true) @map("sounds_enabled")
   vibrationEnabled    Boolean   @default(true) @map("vibration_enabled")
-  
+
   // Quiet hours (stricter for children - recommended 8pm-8am)
   quietHoursEnabled   Boolean   @default(true) @map("quiet_hours_enabled")
   quietHoursStart     String    @default("20:00") @map("quiet_hours_start")
   quietHoursEnd       String    @default("08:00") @map("quiet_hours_end")
-  
+
   // Timestamps
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
+  // TENANT ISOLATION: One settings per learner per tenant
+  @@unique([tenantId, learnerId])
   @@index([tenantId, learnerId])
   @@index([parentId])
   @@map("learner_notification_settings")
@@ -427,7 +431,8 @@ model ParentNotificationPreferences {
   createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  @@unique([parentId, learnerId])
+  // TENANT ISOLATION: One preferences per parent-learner pair per tenant
+  @@unique([tenantId, parentId, learnerId])
   @@index([tenantId])
   @@map("parent_notification_preferences")
 }
@@ -671,31 +676,33 @@ model EmailSuppression {
 model EmailPreference {
   id                String         @id @default(uuid()) @db.Uuid
   tenantId          String         @map("tenant_id") @db.Uuid
-  userId            String         @unique @map("user_id") @db.Uuid
-  
+  userId            String         @map("user_id") @db.Uuid
+
   // Global email toggle
   emailEnabled      Boolean        @default(true) @map("email_enabled")
-  
+
   // Category preferences
   transactionalEnabled Boolean     @default(true) @map("transactional_enabled") // Cannot really disable
   notificationEnabled  Boolean     @default(true) @map("notification_enabled")
   marketingEnabled     Boolean     @default(false) @map("marketing_enabled")
   billingEnabled       Boolean     @default(true) @map("billing_enabled")
-  
+
   // Digest settings
   digestEnabled     Boolean        @default(false) @map("digest_enabled")
   digestFrequency   String?        @map("digest_frequency") // 'daily', 'weekly'
   digestDayOfWeek   Int?           @map("digest_day_of_week") // 0-6 (Sunday-Saturday)
   digestTime        String?        @map("digest_time") // "09:00"
   digestTimezone    String?        @map("digest_timezone")
-  
+
   // Preferred locale
   preferredLocale   String         @default("en") @map("preferred_locale")
-  
+
   // Timestamps
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
 
+  // TENANT ISOLATION: One email preference per user per tenant
+  @@unique([tenantId, userId])
   @@index([tenantId, userId])
   @@map("email_preferences")
 }

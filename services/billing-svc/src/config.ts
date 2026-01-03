@@ -2,14 +2,22 @@
  * Billing Service Configuration
  */
 
+function requireEnvInProduction(name: string, defaultValue?: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || defaultValue || '';
+}
+
 export const config = {
   port: Number.parseInt(process.env.PORT || '4060', 10),
   host: process.env.HOST || '0.0.0.0',
   databaseUrl:
     process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_billing',
 
-  // JWT configuration
-  jwtSecret: process.env.JWT_SECRET || 'dev-secret-key-change-in-production',
+  // JWT configuration (required in production)
+  jwtSecret: requireEnvInProduction('JWT_SECRET', 'dev-only-secret'),
 
   // Stripe configuration (optional - only if using Stripe)
   stripe: {

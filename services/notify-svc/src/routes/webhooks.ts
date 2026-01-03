@@ -10,6 +10,11 @@ import { z } from 'zod';
 import { webhookService } from '../channels/webhook/webhook.service.js';
 import { DeliveryChannel } from '../prisma.js';
 import { deliveryTracker } from '../services/delivery-tracker.service.js';
+import {
+  verifySendGridSignature,
+  verifyTwilioSignature,
+  verifySnsSignature,
+} from '../lib/webhook-verification.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -147,10 +152,18 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
     },
     async (request: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) => {
       try {
-        // Verify webhook signature (if configured)
-        // TODO: Implement signature verification using SendGrid webhook signing secret
-        const _signature = request.headers['x-twilio-email-event-webhook-signature'] as string | undefined;
-        const _timestamp = request.headers['x-twilio-email-event-webhook-timestamp'] as string | undefined;
+        // Verify webhook signature
+        const rawBody = (request as FastifyRequest & { rawBody?: Buffer }).rawBody;
+        if (rawBody) {
+          const verification = verifySendGridSignature(request, rawBody);
+          if (!verification.valid) {
+            fastify.log.warn({ error: verification.error }, 'SendGrid webhook signature verification failed');
+            return reply.status(401).send({ error: 'Unauthorized', message: verification.error });
+          }
+        } else if (process.env.NODE_ENV === 'production') {
+          fastify.log.warn('SendGrid webhook missing raw body for signature verification');
+          return reply.status(400).send({ error: 'Missing raw body' });
+        }
 
         const events = Array.isArray(request.body) ? request.body : [request.body];
 
@@ -177,11 +190,23 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
       try {
         const body = request.body as SNSMessage;
 
+        // Verify SNS message authenticity
+        const verification = await verifySnsSignature(body as unknown as Record<string, unknown>);
+        if (!verification.valid) {
+          fastify.log.warn({ error: verification.error }, 'SNS message verification failed');
+          return reply.status(401).send({ error: 'Unauthorized', message: verification.error });
+        }
+
         // Handle SNS subscription confirmation
         if (body.Type === 'SubscriptionConfirmation') {
           fastify.log.info('SNS subscription confirmation received');
-          // Automatically confirm subscription
+          // Validate SubscribeURL is from AWS before following
           if (body.SubscribeURL) {
+            const url = new URL(body.SubscribeURL);
+            if (!url.hostname.endsWith('.amazonaws.com')) {
+              fastify.log.warn({ url: body.SubscribeURL }, 'Suspicious SNS SubscribeURL rejected');
+              return reply.status(400).send({ error: 'Invalid subscription URL' });
+            }
             await fetch(body.SubscribeURL);
             fastify.log.info('SNS subscription confirmed');
           }
@@ -208,11 +233,27 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
    */
   fastify.post(
     '/webhooks/twilio',
+    {
+      config: {
+        rawBody: true, // Need raw body for signature verification
+      },
+    },
     async (request: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) => {
       try {
-        // TODO: Implement Twilio signature verification
-        const body = request.body as TwilioEvent;
+        // Verify Twilio signature
+        const rawBody = (request as FastifyRequest & { rawBody?: Buffer }).rawBody;
+        if (rawBody) {
+          const verification = verifyTwilioSignature(request, rawBody);
+          if (!verification.valid) {
+            fastify.log.warn({ error: verification.error }, 'Twilio webhook signature verification failed');
+            return reply.status(401).send({ error: 'Unauthorized', message: verification.error });
+          }
+        } else if (process.env.NODE_ENV === 'production') {
+          fastify.log.warn('Twilio webhook missing raw body for signature verification');
+          return reply.status(400).send({ error: 'Missing raw body' });
+        }
 
+        const body = request.body as TwilioEvent;
         await processTwilioEvent(body);
 
         // Return TwiML response (empty for status callbacks)

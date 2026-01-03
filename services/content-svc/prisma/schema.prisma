@@ -545,8 +545,9 @@ model SocialStory {
 /// Learner preferences for social story presentation
 model LearnerStoryPreferences {
   id               String                    @id @default(uuid()) @db.Uuid
-  learnerId        String                    @unique @map("learner_id") @db.Uuid
-  
+  tenantId         String                    @map("tenant_id") @db.Uuid
+  learnerId        String                    @map("learner_id") @db.Uuid
+
   // Visual preferences
   preferredVisualStyle SocialStoryVisualStyle @default(CARTOON) @map("preferred_visual_style")
   preferredReadingLevel SocialStoryReadingLevel @default(DEVELOPING) @map("preferred_reading_level")
@@ -575,6 +576,9 @@ model LearnerStoryPreferences {
   createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
 
+  // TENANT ISOLATION: One preferences per learner per tenant
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
   @@map("learner_story_preferences")
 }
 
@@ -795,8 +799,8 @@ model ContentSensoryMetadata {
 /// Learner sensory profile for personalized content matching
 model LearnerSensoryProfile {
   id                       String           @id @default(uuid()) @db.Uuid
-  learnerId                String           @unique @map("learner_id") @db.Uuid
   tenantId                 String           @map("tenant_id") @db.Uuid
+  learnerId                String           @map("learner_id") @db.Uuid
   
   // Audio sensitivities (1-10, higher = more sensitive)
   audioSensitivity         Int              @default(5) @map("audio_sensitivity")
@@ -862,7 +866,9 @@ model LearnerSensoryProfile {
   
   // Relations
   incidents                SensoryIncident[]
-  
+
+  // TENANT ISOLATION: One sensory profile per learner per tenant
+  @@unique([tenantId, learnerId])
   @@index([tenantId])
   @@index([audioCategory, visualCategory, motionCategory])
   @@map("learner_sensory_profiles")
