@@ -503,10 +503,9 @@ export class AdminAuthService {
     await this.auditLog(admin.id, admin.email, 'password_reset_requested', context);
 
     // TODO: Send email with reset link
-    // For now, log the token in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Password reset token for ${email}: ${resetToken}`);
-    }
+    // Note: Reset tokens should NEVER be logged, even in development
+    // Use a proper email service or check database directly for debugging
+    console.log(`Password reset requested for ${email} - token generated (check database or email)`);
   }
 
   /**

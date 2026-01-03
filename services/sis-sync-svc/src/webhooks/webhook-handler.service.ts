@@ -610,7 +610,15 @@ export class WebhookHandlerService {
       headers['x-hub-signature-256'] ||
       headers['x-webhook-signature'];
 
-    if (!signature) return true; // No signature header, skip
+    if (!signature) {
+      // In production, reject webhooks without signatures
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('[WebhookHandler] Missing signature header - rejecting webhook');
+        return false;
+      }
+      console.warn('[WebhookHandler] Missing signature header - allowing in development only');
+      return true;
+    }
 
     const payload = typeof body === 'string' ? body : JSON.stringify(body);
     const [algo, hash] = signature.includes('=')

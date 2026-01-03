@@ -25,15 +25,15 @@ export function verifySendGridSignature(
 ): { valid: boolean; error?: string } {
   const verificationKey = config.email.sendgrid.webhookVerificationKey;
 
-  // Skip verification if no key is configured (log warning in production)
+  // Require verification key - reject if not configured
   if (!verificationKey) {
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('[Webhook] SECURITY WARNING: SendGrid webhook verification key not configured');
-      return { valid: false, error: 'Webhook verification not configured' };
+    console.warn('[Webhook] SECURITY WARNING: SendGrid webhook verification key not configured');
+    // Only allow bypass in development with explicit env var
+    if (process.env.NODE_ENV !== 'production' && process.env.SKIP_WEBHOOK_VERIFICATION === 'true') {
+      console.warn('[Webhook] SendGrid verification BYPASSED (SKIP_WEBHOOK_VERIFICATION=true)');
+      return { valid: true };
     }
-    // In development, allow unverified webhooks with warning
-    console.warn('[Webhook] SendGrid verification skipped (no key configured)');
-    return { valid: true };
+    return { valid: false, error: 'Webhook verification not configured' };
   }
 
   const signature = request.headers['x-twilio-email-event-webhook-signature'] as string | undefined;
@@ -99,14 +99,15 @@ export function verifyTwilioSignature(
 ): { valid: boolean; error?: string } {
   const authToken = config.sms.twilio.authToken;
 
-  // Skip verification if no auth token is configured
+  // Require auth token - reject if not configured
   if (!authToken) {
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('[Webhook] SECURITY WARNING: Twilio auth token not configured');
-      return { valid: false, error: 'Webhook verification not configured' };
+    console.warn('[Webhook] SECURITY WARNING: Twilio auth token not configured');
+    // Only allow bypass in development with explicit env var
+    if (process.env.NODE_ENV !== 'production' && process.env.SKIP_WEBHOOK_VERIFICATION === 'true') {
+      console.warn('[Webhook] Twilio verification BYPASSED (SKIP_WEBHOOK_VERIFICATION=true)');
+      return { valid: true };
     }
-    console.warn('[Webhook] Twilio verification skipped (no auth token configured)');
-    return { valid: true };
+    return { valid: false, error: 'Webhook verification not configured' };
   }
 
   const signature = request.headers['x-twilio-signature'] as string | undefined;

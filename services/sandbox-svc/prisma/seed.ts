@@ -90,7 +90,7 @@ async function main() {
   console.log(`  ✅ Created ${admins.length} admin users`);
   console.log(`     📧 admin@aivo.local (SUPER_ADMIN)`);
   console.log(`     📧 sandbox-admin@aivo.local (SANDBOX_ADMIN)`);
-  console.log(`     🔑 Password: ${adminPassword}`);
+  console.log(`     🔑 Password: [set via ADMIN_PASSWORD env var or check .env.example]`);
   console.log(`     ⚠️  Change these passwords in production!\n`);
 
   // ══════════════════════════════════════════════════════════════════════════

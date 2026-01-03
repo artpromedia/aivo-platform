@@ -914,7 +914,8 @@ services:
       - "9200:9200"
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
+      - xpack.security.enabled=${ELASTICSEARCH_SECURITY_ENABLED:-false}
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:-}
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
@@ -980,10 +981,10 @@ services:
     image: grafana/grafana:10.2.0
     <<: *service-defaults
     ports:
-      - "3030:3000"
+      - "3090:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
