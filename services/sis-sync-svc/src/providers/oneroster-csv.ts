@@ -96,8 +96,8 @@ export class OneRosterCsvProvider implements ISisProvider {
   private enrollmentsData: EnrollmentsRow[] = [];
   private dataLoaded = false;
 
-  async initialize(config: OneRosterCsvConfig): Promise<void> {
-    this.config = config;
+  async initialize(config: unknown): Promise<void> {
+    this.config = config as OneRosterCsvConfig;
     this.sftp = new Client();
   }
 

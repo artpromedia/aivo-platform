@@ -22,9 +22,10 @@
 
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { PrismaClient } from '@prisma/client';
-import type { DeltaSyncEngine, DeltaRecord, SyncEntityType } from '../sync/delta-sync-engine.js';
-import type { ISisProvider } from './types.js';
-import { ProviderFactory } from './factory.js';
+import type { ISisProvider, FieldMapping, SisProviderType } from '../providers/types';
+import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine';
+import { createProvider } from '../providers';
+import type { ProviderFactory } from '../providers/factory';
 
 /**
  * Supported webhook provider types
@@ -682,7 +683,7 @@ export class WebhookHandlerService {
         maxRetries: 3,
         conflictResolution: 'source_wins',
         enabledEntityTypes: [entityType],
-        fieldMappings: {},
+        fieldMappings: {} as Record<SyncEntityType, FieldMapping[]>,
         webhookEnabled: true,
       },
       deltaRecord,

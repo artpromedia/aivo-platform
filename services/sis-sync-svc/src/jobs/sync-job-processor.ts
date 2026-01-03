@@ -15,7 +15,8 @@
  * @author AIVO Platform Team
  */
 
-import { PrismaClient, SisProviderType, SyncStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import type { SisProviderType, SyncStatus } from '../providers/types.js';
 import cron from 'node-cron';
 import { DeltaSyncEngine, SyncEntityType, SyncStats, createEmptySyncStats } from '../sync/delta-sync-engine.js';
 import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';

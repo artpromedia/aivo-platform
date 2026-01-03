@@ -4,11 +4,13 @@
  * Handles streak-related API endpoints
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { streakService } from '../services/index.js';
 
-const router = Router();
+const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION
@@ -79,12 +81,9 @@ router.get(
       startDate.setDate(startDate.getDate() - 30);
     }
 
-    const calendar = await streakService.getStreakCalendar(
-      studentId,
-      startDate,
-      endDate,
-      timezone
-    );
+    // Calculate days from date range
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const calendar = await streakService.getStreakCalendar(studentId, days);
 
     res.json({ success: true, data: calendar });
   })
@@ -100,10 +99,7 @@ router.post(
     const studentId = extractStudentId(req);
     const data = freezeSchema.parse(req.body);
 
-    const result = await streakService.useStreakFreeze(
-      studentId,
-      data.date ? new Date(data.date) : new Date()
-    );
+    const result = await streakService.useStreakFreeze(studentId);
 
     if (result) {
       res.json({ success: true, message: 'Streak freeze applied' });

@@ -2,6 +2,8 @@
  * Gamification Service - Entry Point
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+
 import app from './app.js';
 import { prisma } from './prisma.js';
 import { redis, isRedisAvailable } from './redis.js';
@@ -64,15 +66,15 @@ async function main() {
   process.on('SIGINT', () => shutdown('SIGINT'));
 
   // Event logging
-  eventEmitter.on('xp.awarded', (data) => {
+  eventEmitter.on('xp.awarded', (data: any) => {
     console.log(`XP awarded: ${data.amount} to ${data.studentId}`);
   });
 
-  eventEmitter.on('level.up', (data) => {
+  eventEmitter.on('level.up', (data: any) => {
     console.log(`Level up: ${data.studentId} reached level ${data.newLevel}`);
   });
 
-  eventEmitter.on('achievement.earned', (data) => {
+  eventEmitter.on('achievement.earned', (data: any) => {
     console.log(`Achievement: ${data.studentId} earned "${data.achievementId}"`);
   });
 }

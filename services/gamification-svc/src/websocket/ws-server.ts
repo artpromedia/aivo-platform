@@ -4,6 +4,8 @@
  * Real-time notifications for gamification events
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+
 import { Server as HTTPServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { eventEmitter } from '../events/event-emitter.js';
@@ -86,7 +88,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   // ============================================================================
 
   // XP awarded
-  eventEmitter.on('xp.awarded', (data) => {
+  eventEmitter.on('xp.awarded', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'xp_awarded',
       data: {
@@ -99,7 +101,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Level up
-  eventEmitter.on('level.up', (data) => {
+  eventEmitter.on('level.up', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'level_up',
       data: {
@@ -112,7 +114,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Achievement earned
-  eventEmitter.on('achievement.earned', (data) => {
+  eventEmitter.on('achievement.earned', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'achievement_earned',
       data: {
@@ -127,7 +129,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Streak milestone
-  eventEmitter.on('streak.milestone', (data) => {
+  eventEmitter.on('streak.milestone', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'streak_milestone',
       data: {
@@ -139,7 +141,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Challenge completed
-  eventEmitter.on('challenge.completed', (data) => {
+  eventEmitter.on('challenge.completed', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'challenge_completed',
       data: {
@@ -152,7 +154,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Daily goal completed
-  eventEmitter.on('goal.dailyCompleted', (data) => {
+  eventEmitter.on('goal.dailyCompleted', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'daily_goal_completed',
       data: {
@@ -163,7 +165,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Break reminder
-  eventEmitter.on('session.breakReminder', (data) => {
+  eventEmitter.on('session.breakReminder', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'break_reminder',
       data: {
@@ -174,7 +176,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Shop purchase
-  eventEmitter.on('shop.purchase', (data) => {
+  eventEmitter.on('shop.purchase', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'purchase_complete',
       data: {
@@ -186,7 +188,7 @@ export function startWebSocketServer(server: HTTPServer): void {
   });
 
   // Leaderboard position change
-  eventEmitter.on('leaderboard.positionChange', (data) => {
+  eventEmitter.on('leaderboard.positionChange', (data: any) => {
     broadcastToStudent(data.studentId, {
       type: 'rank_change',
       data: {

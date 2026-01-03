@@ -13,7 +13,8 @@
  * @author AIVO Platform Team
  */
 
-import { PrismaClient, SyncStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { SyncStatus as SyncStatusValues } from '../providers/types';
 import { createHash } from 'crypto';
 import type { ISisProvider } from '../providers/types.js';
 
@@ -400,7 +401,7 @@ export class DeltaSyncEngine {
     for (const entityType of config.enabledEntityTypes) {
       // Get all source IDs from provider
       const sourceIds = await config.provider.getAllSourceIds(entityType, {
-        filters: config.filters,
+        filters: config.filters as Record<string, unknown>,
       });
 
       const sourceIdSet = new Set(sourceIds);
@@ -441,7 +442,7 @@ export class DeltaSyncEngine {
     const mappedData = this.applyFieldMappings(record.sourceData, mappings);
 
     // Add common fields
-    const entityData = {
+    const entityData: any = {
       ...mappedData,
       tenantId: config.tenantId,
       sourceSystem: config.provider.type,
@@ -530,7 +531,7 @@ export class DeltaSyncEngine {
     const mappings = config.fieldMappings[entityType] || [];
     const mappedData = this.applyFieldMappings(record.sourceData, mappings);
 
-    const updateData = {
+    const updateData: any = {
       ...mappedData,
       sourceHash: newHash,
       syncedAt: new Date(),
@@ -906,7 +907,7 @@ export class DeltaSyncEngine {
       '12': 12, '12th': 12, Twelfth: 12, Senior: 12,
     };
 
-    return gradeMap[grade] ?? parseInt(grade, 10) || 0;
+    return gradeMap[grade] ?? (parseInt(grade, 10) || 0);
   }
 
   /**

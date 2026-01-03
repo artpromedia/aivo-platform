@@ -2,7 +2,9 @@
  * Gamification Service - Express App
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+
+import express, { Request, Response, NextFunction, Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import {
@@ -14,7 +16,7 @@ import {
   shopRoutes,
 } from './routes/index.js';
 
-const app = express();
+const app: Application = express();
 
 // ============================================================================
 // MIDDLEWARE

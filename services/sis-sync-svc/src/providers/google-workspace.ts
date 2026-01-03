@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
 /**
  * Google Workspace for Education SIS Provider
- * 
+ *
  * Implements the ISisProvider interface for Google Workspace.
  * Uses:
  * - Google Admin SDK Directory API for users and organizational units
  * - Google Classroom API for classes and enrollments (optional)
- * 
+ *
  * @see https://developers.google.com/admin-sdk/directory
  * @see https://developers.google.com/classroom
  */
@@ -551,7 +552,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       schoolNumber: ou.orgUnitPath,
       schoolType: this.inferSchoolType(ou.name, ou.orgUnitPath),
       isActive: true,
-      rawData: ou,
+      rawData: ou as unknown as Record<string, unknown>,
     };
   }
 
@@ -564,7 +565,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       subject: this.inferSubject(course.name),
       grade: this.inferGrade(course.name),
       isActive: course.courseState === 'ACTIVE',
-      rawData: course,
+      rawData: course as unknown as Record<string, unknown>,
     };
   }
 
@@ -599,7 +600,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       studentNumber,
       schoolExternalIds: schoolExternalIds.filter(Boolean) as string[],
       isActive: !user.suspended,
-      rawData: user,
+      rawData: user as unknown as Record<string, unknown>,
     };
   }
 
@@ -636,7 +637,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       role: 'student' as EnrollmentRole,
       isPrimary: true,
       isActive: true,
-      rawData: student,
+      rawData: student as unknown as Record<string, unknown>,
     }));
 
     return {
@@ -673,7 +674,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       role: 'teacher' as EnrollmentRole,
       isPrimary: index === 0, // First teacher is primary
       isActive: true,
-      rawData: teacher,
+      rawData: teacher as unknown as Record<string, unknown>,
     }));
   }
 

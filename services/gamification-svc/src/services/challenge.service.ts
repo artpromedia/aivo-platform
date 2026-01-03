@@ -262,6 +262,7 @@ class ChallengeService {
     return challenges.map((c) => ({
       challengeId: c.id,
       challenge: c,
+      type: c.type,
       currentValue: c.currentProgress || 0,
       targetValue: c.goal,
       percentage: Math.min(100, Math.round(((c.currentProgress || 0) / c.goal) * 100)),

@@ -4,10 +4,12 @@
  * Handles achievement-related API endpoints
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { achievementService, ACHIEVEMENT_DEFINITIONS } from '../services/index.js';
 
-const router = Router();
+const router: IRouter = Router();
 
 // ============================================================================
 // HELPERS

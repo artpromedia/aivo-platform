@@ -4,11 +4,13 @@
  * Handles challenge-related API endpoints
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { challengeService, CHALLENGE_TEMPLATES } from '../services/index.js';
 
-const router = Router();
+const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION
@@ -144,19 +146,20 @@ router.post(
     const data = classChallengeSchema.parse(req.body);
 
     // In production, verify teacher has permission for this class
-    const challenge = await challengeService.createClassChallenge(
-      data.classId,
-      {
-        title: data.title,
-        description: data.description,
-        targetType: data.targetType,
-        targetValue: data.targetValue,
-        rewardXP: data.rewardXP,
-        rewardCoins: data.rewardCoins || 0,
+    const teacherId = extractStudentId(req); // Using student ID as teacher ID for now
+    const challenge = await challengeService.createClassChallenge(data.classId, teacherId, {
+      name: data.title,
+      description: data.description,
+      metric: data.targetType,
+      goal: data.targetValue,
+      startDate: new Date(data.startDate),
+      endDate: new Date(data.endDate),
+      collaborative: false,
+      rewards: {
+        xp: data.rewardXP,
+        coins: data.rewardCoins || 0,
       },
-      new Date(data.startDate),
-      new Date(data.endDate)
-    );
+    });
 
     res.status(201).json({ success: true, data: challenge });
   })

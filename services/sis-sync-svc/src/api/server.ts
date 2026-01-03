@@ -31,7 +31,18 @@ export async function createServer() {
   registerRoutes(app, prisma, scheduler);
   
   // Register OAuth routes for Google/Microsoft SSO
-  registerOAuthRoutes(app, prisma);
+  registerOAuthRoutes(app, prisma, {
+    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+    google: process.env.GOOGLE_CLIENT_ID ? {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    } : undefined,
+    microsoft: process.env.MICROSOFT_CLIENT_ID ? {
+      clientId: process.env.MICROSOFT_CLIENT_ID,
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
+      tenantId: process.env.MICROSOFT_TENANT_ID || 'common',
+    } : undefined,
+  });
 
   // Graceful shutdown
   const shutdown = async () => {

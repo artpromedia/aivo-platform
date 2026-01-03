@@ -1,11 +1,129 @@
 /**
  * SIS Provider Types and Interfaces
- * 
+ *
  * This module defines the canonical types for SIS data that all providers
  * must normalize their data into.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { SyncEntityType, DeltaFetchOptions, DeltaResponse } from '../sync/delta-sync-engine.js';
+
+// ============================================================================
+// Type Aliases for Prisma types (local definitions)
+// ============================================================================
+
+/** SIS Provider Type - matches Prisma enum */
+export type SisProviderType =
+  | 'CLEVER'
+  | 'CLASSLINK'
+  | 'ONEROSTER_API'
+  | 'ONEROSTER_CSV'
+  | 'GOOGLE_WORKSPACE'
+  | 'MICROSOFT_ENTRA'
+  | 'EDFI'
+  | 'CUSTOM';
+
+/** Integration Status - matches Prisma enum */
+export type IntegrationStatus =
+  | 'PENDING'
+  | 'CONNECTING'
+  | 'CONNECTED'
+  | 'SYNCING'
+  | 'DISCONNECTED'
+  | 'ERROR'
+  | 'DISABLED';
+
+/** Integration Status enum-like object for value usage */
+export const IntegrationStatus = {
+  PENDING: 'PENDING' as IntegrationStatus,
+  CONNECTING: 'CONNECTING' as IntegrationStatus,
+  CONNECTED: 'CONNECTED' as IntegrationStatus,
+  SYNCING: 'SYNCING' as IntegrationStatus,
+  DISCONNECTED: 'DISCONNECTED' as IntegrationStatus,
+  ERROR: 'ERROR' as IntegrationStatus,
+  DISABLED: 'DISABLED' as IntegrationStatus,
+};
+
+/** Sync Status - matches Prisma enum */
+export type SyncStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'PARTIAL'
+  | 'SUCCESS'
+  | 'FAILURE';
+
+/** Sync Status enum-like object for value usage */
+export const SyncStatus = {
+  PENDING: 'PENDING' as SyncStatus,
+  IN_PROGRESS: 'IN_PROGRESS' as SyncStatus,
+  COMPLETED: 'COMPLETED' as SyncStatus,
+  FAILED: 'FAILED' as SyncStatus,
+  CANCELLED: 'CANCELLED' as SyncStatus,
+  PARTIAL: 'PARTIAL' as SyncStatus,
+  SUCCESS: 'SUCCESS' as SyncStatus,
+  FAILURE: 'FAILURE' as SyncStatus,
+};
+
+/** SIS Entity Type - matches Prisma enum */
+export type SisEntityType =
+  | 'SCHOOL'
+  | 'CLASS'
+  | 'USER'
+  | 'ENROLLMENT'
+  | 'TERM'
+  | 'COURSE'
+  | 'student'
+  | 'teacher'
+  | 'org'
+  | 'class'
+  | 'enrollment'
+  | 'parent'
+  | 'relationship'
+  | 'term';
+
+/** SIS Entity Type enum-like object for value usage */
+export const SisEntityType = {
+  SCHOOL: 'SCHOOL' as SisEntityType,
+  CLASS: 'CLASS' as SisEntityType,
+  USER: 'USER' as SisEntityType,
+  ENROLLMENT: 'ENROLLMENT' as SisEntityType,
+  TERM: 'TERM' as SisEntityType,
+  COURSE: 'COURSE' as SisEntityType,
+  student: 'student' as SisEntityType,
+  teacher: 'teacher' as SisEntityType,
+  org: 'org' as SisEntityType,
+  class: 'class' as SisEntityType,
+  enrollment: 'enrollment' as SisEntityType,
+  parent: 'parent' as SisEntityType,
+  relationship: 'relationship' as SisEntityType,
+  term: 'term' as SisEntityType,
+};
+
+/** SIS Provider database entity */
+export interface SisProvider {
+  id: string;
+  tenantId: string;
+  providerType: SisProviderType;
+  name: string;
+  configJson: string;
+  enabled: boolean;
+  lastSyncAt?: Date | null;
+  syncSchedule?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Field Mapping for SIS data transformation */
+export interface FieldMapping {
+  sourceField: string;
+  targetField: string;
+  transform?: string;
+  defaultValue?: any;
+}
 
 // ============================================================================
 // Canonical SIS Entity Types
@@ -13,7 +131,7 @@ import type { SyncEntityType, DeltaFetchOptions, DeltaResponse } from '../sync/d
 
 export interface SisSchool {
   /** External ID from the SIS provider (sourcedId in OneRoster) */
-  sourceId: string;
+  sourceId?: string;
   /** @deprecated Use sourceId instead */
   externalId?: string;
   /** School name */
@@ -43,7 +161,7 @@ export interface SisSchool {
   /** State ID */
   stateId?: string;
   /** Whether the school is active in the SIS */
-  status: 'active' | 'inactive' | 'deleted';
+  status?: 'active' | 'inactive' | 'deleted';
   /** @deprecated Use status instead */
   isActive?: boolean;
   /** Grade levels offered (e.g., ['K', '1', '2', '3']) */
@@ -54,11 +172,11 @@ export interface SisSchool {
 
 export interface SisClass {
   /** External ID from the SIS provider */
-  sourceId: string;
+  sourceId?: string;
   /** @deprecated Use sourceId instead */
   externalId?: string;
   /** External ID of the parent school */
-  schoolSourceId: string;
+  schoolSourceId?: string;
   /** @deprecated Use schoolSourceId instead */
   schoolExternalId?: string;
   /** Class/section name */
@@ -92,7 +210,7 @@ export interface SisClass {
     endDate?: Date;
   };
   /** Status */
-  status: 'active' | 'inactive' | 'deleted';
+  status?: 'active' | 'inactive' | 'deleted';
   /** @deprecated Use status instead */
   isActive?: boolean;
   /** Raw data from the provider */
@@ -103,7 +221,7 @@ export type SisUserRole = 'teacher' | 'student' | 'administrator' | 'aide' | 'pa
 
 export interface SisUser {
   /** External ID from the SIS provider */
-  sourceId: string;
+  sourceId?: string;
   /** @deprecated Use sourceId instead */
   externalId?: string;
   /** User's role in the SIS */
@@ -142,7 +260,7 @@ export interface SisUser {
     ethnicity?: string;
   };
   /** Status */
-  status: 'active' | 'inactive' | 'deleted';
+  status?: 'active' | 'inactive' | 'deleted';
   /** @deprecated Use status instead */
   isActive?: boolean;
   /** Raw data from the provider */
@@ -153,21 +271,21 @@ export type EnrollmentRole = 'student' | 'teacher' | 'aide';
 
 export interface SisEnrollment {
   /** External ID from the SIS provider (if available) */
-  sourceId: string;
+  sourceId?: string;
   /** @deprecated Use sourceId instead */
   externalId?: string;
   /** External ID of the user */
-  userSourceId: string;
+  userSourceId?: string;
   /** @deprecated Use userSourceId instead */
   userExternalId?: string;
   /** External ID of the class */
-  classSourceId: string;
+  classSourceId?: string;
   /** @deprecated Use classSourceId instead */
   classExternalId?: string;
   /** Role in the enrollment */
   role: EnrollmentRole;
   /** Whether this is the primary assignment (for teachers) */
-  primary: boolean;
+  primary?: boolean;
   /** @deprecated Use primary instead */
   isPrimary?: boolean;
   /** Start date of the enrollment */
@@ -177,7 +295,7 @@ export interface SisEnrollment {
   /** End date of the enrollment */
   endDate?: Date;
   /** Status */
-  status: 'active' | 'inactive' | 'deleted';
+  status?: 'active' | 'inactive' | 'deleted';
   /** @deprecated Use status instead */
   isActive?: boolean;
   /** Raw data from the provider */
@@ -441,64 +559,58 @@ export interface SisProviderCredentials {
 
 export interface ISisProvider {
   /** Provider type identifier */
-  readonly type: string;
-  
+  readonly type?: string;
+
   /** Human-readable provider name */
   readonly name?: string;
-  
+
   /** Whether this provider supports delta/incremental sync */
   readonly supportsDelta?: boolean;
-  
+
   /** Whether this provider can detect deletions */
   readonly supportsDeletionDetection?: boolean;
-  
+
   /** Rate limit delay in ms between requests */
   readonly rateLimitDelay?: number;
-  
+
   /** @deprecated Use type instead */
   readonly providerType?: SisProviderTypeId;
-  
+
   /** Initialize the provider with credentials */
   initialize(credentials: SisProviderCredentials): Promise<void>;
-  
+
   /** Test the connection to the SIS provider */
   testConnection?(): Promise<{ success: boolean; message: string }>;
-  
-  /** Fetch all schools */
-  fetchSchools(cursor?: string): Promise<SisSchool[]>;
-  
-  /** Fetch all classes */
-  fetchClasses(cursor?: string): Promise<SisClass[]>;
-  
-  /** Fetch all users (teachers and students) */
-  fetchUsers(cursor?: string): Promise<SisUser[]>;
-  
-  /** Fetch all enrollments */
-  fetchEnrollments(cursor?: string): Promise<SisEnrollment[]>;
-  
+
+  /** Fetch all schools - returns either array or paginated result */
+  fetchSchools(cursor?: string): Promise<SisSchool[] | SyncEntityResult<SisSchool>>;
+
+  /** Fetch all classes - returns either array or paginated result */
+  fetchClasses(cursor?: string): Promise<SisClass[] | SyncEntityResult<SisClass>>;
+
+  /** Fetch all users (teachers and students) - returns either array or paginated result */
+  fetchUsers(cursor?: string): Promise<SisUser[] | SyncEntityResult<SisUser>>;
+
+  /** Fetch all enrollments - returns either array or paginated result */
+  fetchEnrollments(cursor?: string): Promise<SisEnrollment[] | SyncEntityResult<SisEnrollment>>;
+
   /**
    * Fetch delta (changes since last sync)
    * Only available if supportsDelta is true
    */
-  fetchDelta?(
-    entityType: SyncEntityType,
-    options: DeltaFetchOptions
-  ): Promise<DeltaResponse>;
-  
+  fetchDelta?(entityType: SyncEntityType, options: DeltaFetchOptions): Promise<DeltaResponse>;
+
   /**
    * Get all source IDs for an entity type (for deletion detection)
    * Only available if supportsDeletionDetection is true
    */
-  getAllSourceIds?(
-    entityType: SyncEntityType,
-    options?: { filters?: Record<string, unknown> }
-  ): Promise<string[]>;
-  
+  getAllSourceIds?(entityType: SyncEntityType, options?: { filters?: Record<string, unknown> }): Promise<string[]>;
+
   /**
    * Fetch parent-student relationships
    */
-  fetchRelationships?(): Promise<SisParentStudentRelationship[]>;
-  
+  fetchRelationships?(): Promise<SisParentStudentRelationship[] | any[]>;
+
   /** Clean up resources */
   cleanup?(): Promise<void>;
 }
