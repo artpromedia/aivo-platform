@@ -67,3 +67,9 @@ export 'analytics/analytics.dart';
 
 // Environment configuration
 export 'config/config.dart';
+
+// Error handling
+export 'error_handling/error_handling.dart';
+
+// Deep linking
+export 'deep_linking/deep_linking.dart';
