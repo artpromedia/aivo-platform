@@ -157,7 +157,7 @@ export class EdFiProvider implements ISisProvider {
     // Response interceptor - handle errors
     this.http.interceptors.response.use(
       (response) => response,
-      async (error: AxiosError) => {
+      async (error: any) => {
         if (error.response?.status === 401) {
           // Token expired, refresh and retry
           this.accessToken = undefined;

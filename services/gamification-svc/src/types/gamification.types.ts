@@ -116,6 +116,7 @@ export interface Achievement {
 
 export interface AchievementDefinition extends Achievement {
   requirement?: AchievementRequirement;
+  threshold?: number;
 }
 
 export interface AchievementRequirement {
@@ -252,6 +253,7 @@ export interface ChallengeDefinition {
 export interface ChallengeProgress {
   challengeId: string;
   challenge: Challenge;
+  type: ChallengeType;
   currentValue: number;
   targetValue: number;
   percentage: number;

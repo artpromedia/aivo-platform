@@ -6,7 +6,9 @@
  * and loading via upserts with soft deletes.
  */
 
-import { PrismaClient, SisProviderType, SyncStatus, SisEntityType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import type { SisProviderType, SyncStatus, SisEntityType } from '../providers/types';
+import { SyncStatus as SyncStatusValues, SisEntityType as SisEntityTypeValues } from '../providers/types';
 import {
   ISisProvider,
   SisSchool,
@@ -14,9 +16,25 @@ import {
   SisUser,
   SisEnrollment,
   SyncStats,
+  SyncEntityResult,
   createEmptySyncStats,
 } from '../providers/types';
 import { createAndInitializeProvider } from '../providers';
+
+/**
+ * Normalize fetch result to always be SyncEntityResult
+ */
+function normalizeResult<T>(result: T[] | SyncEntityResult<T>): SyncEntityResult<T> {
+  if (Array.isArray(result)) {
+    return {
+      entities: result,
+      count: result.length,
+      hasMore: false,
+      warnings: [],
+    };
+  }
+  return result;
+}
 
 export interface SyncEngineConfig {
   /** Batch size for database operations */
@@ -69,7 +87,7 @@ export class SyncEngine {
       data: {
         tenantId,
         providerId,
-        status: SyncStatus.IN_PROGRESS,
+        status: SyncStatusValues.IN_PROGRESS,
         triggeredBy,
         isManual,
       },
@@ -115,7 +133,7 @@ export class SyncEngine {
       await this.deactivateStaleRecords();
 
       // Update sync run with success
-      const status = this.errors.length > 0 ? SyncStatus.PARTIAL : SyncStatus.SUCCESS;
+      const status = this.errors.length > 0 ? SyncStatusValues.PARTIAL : SyncStatusValues.SUCCESS;
       await this.prisma.sisSyncRun.update({
         where: { id: syncRun.id },
         data: {
@@ -145,7 +163,7 @@ export class SyncEngine {
       await this.prisma.sisSyncRun.update({
         where: { id: syncRun.id },
         data: {
-          status: SyncStatus.FAILURE,
+          status: SyncStatusValues.FAILURE,
           completedAt: new Date(),
           statsJson: JSON.stringify(this.stats),
           errorMessage,
@@ -183,7 +201,7 @@ export class SyncEngine {
     });
 
     while (hasMore) {
-      const result = await this.provider.fetchSchools(cursor);
+      const result = normalizeResult(await this.provider.fetchSchools(cursor));
       this.stats.schools.fetched += result.count;
       this.warnings.push(...result.warnings);
 
@@ -263,7 +281,7 @@ export class SyncEngine {
     });
 
     while (hasMore) {
-      const result = await this.provider.fetchClasses(cursor);
+      const result = normalizeResult(await this.provider.fetchClasses(cursor));
       this.stats.classes.fetched += result.count;
       this.warnings.push(...result.warnings);
 
@@ -344,7 +362,7 @@ export class SyncEngine {
     });
 
     while (hasMore) {
-      const result = await this.provider.fetchUsers(cursor);
+      const result = normalizeResult(await this.provider.fetchUsers(cursor));
       this.stats.users.fetched += result.count;
       this.warnings.push(...result.warnings);
 
@@ -425,7 +443,7 @@ export class SyncEngine {
     });
 
     while (hasMore) {
-      const result = await this.provider.fetchEnrollments(cursor);
+      const result = normalizeResult(await this.provider.fetchEnrollments(cursor));
       this.stats.enrollments.fetched += result.count;
       this.warnings.push(...result.warnings);
 

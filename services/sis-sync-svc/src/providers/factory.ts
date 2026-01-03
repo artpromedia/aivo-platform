@@ -8,8 +8,8 @@
  * @author AIVO Platform Team
  */
 
-import { PrismaClient, SisProviderType } from '@prisma/client';
-import type { ISisProvider, SisProviderCredentials } from './types.js';
+import { PrismaClient } from '@prisma/client';
+import type { ISisProvider, SisProviderCredentials, SisProviderType } from './types.js';
 import { CleverProvider } from './clever.js';
 import { ClassLinkProvider } from './classlink.js';
 import { OneRosterApiProvider } from './oneroster-api.js';
@@ -183,14 +183,13 @@ export class ProviderFactory {
     parsedConfig: any,
     credentials: SisProviderCredentials
   ): Promise<ISisProvider> {
-    const provider = new CleverProvider({
+    const provider = new CleverProvider();
+    await provider.initialize({
       districtId: parsedConfig.districtId,
       clientId: credentials.clientId || parsedConfig.clientId,
       clientSecret: credentials.clientSecret || '',
       accessToken: credentials.accessToken,
-    });
-
-    await provider.initialize(credentials);
+    } as any);
     return provider;
   }
 
@@ -202,14 +201,13 @@ export class ProviderFactory {
     parsedConfig: any,
     credentials: SisProviderCredentials
   ): Promise<ISisProvider> {
-    const provider = new ClassLinkProvider({
+    const provider = new ClassLinkProvider();
+    await provider.initialize({
       tenantId: parsedConfig.tenantId,
       clientId: credentials.clientId || parsedConfig.clientId,
       clientSecret: credentials.clientSecret || '',
       accessToken: credentials.accessToken,
-    });
-
-    await provider.initialize(credentials);
+    } as any);
     return provider;
   }
 
@@ -221,14 +219,13 @@ export class ProviderFactory {
     parsedConfig: any,
     credentials: SisProviderCredentials
   ): Promise<ISisProvider> {
-    const provider = new OneRosterApiProvider({
+    const provider = new OneRosterApiProvider();
+    await provider.initialize({
       baseUrl: parsedConfig.baseUrl,
       version: parsedConfig.version || '1.1',
       clientId: credentials.clientId || parsedConfig.clientId,
       clientSecret: credentials.clientSecret || '',
-    });
-
-    await provider.initialize(credentials);
+    } as any);
     return provider;
   }
 
@@ -240,16 +237,17 @@ export class ProviderFactory {
     parsedConfig: any,
     credentials: SisProviderCredentials
   ): Promise<ISisProvider> {
-    const provider = new OneRosterCsvProvider({
-      sftpHost: parsedConfig.sftpHost,
-      sftpPort: parsedConfig.sftpPort || 22,
-      sftpUsername: credentials.sftpUsername || parsedConfig.sftpUsername,
-      sftpPassword: credentials.sftpPassword,
-      sftpPrivateKey: credentials.sftpPrivateKey,
+    const provider = new OneRosterCsvProvider();
+    await provider.initialize({
+      sftp: {
+        host: parsedConfig.sftpHost,
+        port: parsedConfig.sftpPort || 22,
+        username: credentials.sftpUsername || parsedConfig.sftpUsername,
+        password: credentials.sftpPassword,
+        privateKey: credentials.sftpPrivateKey,
+      },
       remotePath: parsedConfig.remotePath || '/',
-    });
-
-    await provider.initialize(credentials);
+    } as any);
     return provider;
   }
 
@@ -261,14 +259,14 @@ export class ProviderFactory {
     parsedConfig: any,
     credentials: SisProviderCredentials
   ): Promise<ISisProvider> {
-    const provider = new GoogleWorkspaceProvider({
+    const provider = new GoogleWorkspaceProvider();
+    await provider.initialize({
       domain: parsedConfig.domain,
       customerId: parsedConfig.customerId,
       adminEmail: parsedConfig.adminEmail,
       serviceAccountKey: credentials.serviceAccountKey,
-    });
-
-    await provider.initialize(credentials);
+      clientId: credentials.clientId || parsedConfig.clientId,
+    } as any);
     return provider;
   }
 
@@ -280,14 +278,13 @@ export class ProviderFactory {
     parsedConfig: any,
     credentials: SisProviderCredentials
   ): Promise<ISisProvider> {
-    const provider = new MicrosoftEntraProvider({
+    const provider = new MicrosoftEntraProvider();
+    await provider.initialize({
       tenantId: parsedConfig.tenantId,
       domain: parsedConfig.domain,
       clientId: credentials.clientId || parsedConfig.clientId,
       clientSecret: credentials.clientSecret || '',
-    });
-
-    await provider.initialize(credentials);
+    } as any);
     return provider;
   }
 

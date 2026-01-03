@@ -29,20 +29,9 @@ export function startScheduledJobs(): void {
   cron.schedule('0 0 * * *', async () => {
     console.log('Starting new daily challenges...');
     try {
-      const activePlayers = await prisma.playerProfile.findMany({
-        where: {
-          lastActivityDate: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Active in last 7 days
-          },
-        },
-        select: { studentId: true },
-      });
-
-      for (const player of activePlayers) {
-        await challengeService.startDailyChallenges(player.studentId);
-      }
-
-      console.log(`Daily challenges started for ${activePlayers.length} players`);
+      // The service method handles all players internally
+      await challengeService.startDailyChallenges();
+      console.log('Daily challenges started');
     } catch (error) {
       console.error('Error starting daily challenges:', error);
     }
@@ -67,20 +56,9 @@ export function startScheduledJobs(): void {
   cron.schedule('0 0 * * 0', async () => {
     console.log('Starting new weekly challenges...');
     try {
-      const activePlayers = await prisma.playerProfile.findMany({
-        where: {
-          lastActivityDate: {
-            gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // Active in last 14 days
-          },
-        },
-        select: { studentId: true },
-      });
-
-      for (const player of activePlayers) {
-        await challengeService.startWeeklyChallenges(player.studentId);
-      }
-
-      console.log(`Weekly challenges started for ${activePlayers.length} players`);
+      // The service method handles all players internally
+      await challengeService.startWeeklyChallenges();
+      console.log('Weekly challenges started');
     } catch (error) {
       console.error('Error starting weekly challenges:', error);
     }
@@ -105,20 +83,9 @@ export function startScheduledJobs(): void {
   cron.schedule('0 0 1 * *', async () => {
     console.log('Starting new monthly challenges...');
     try {
-      const activePlayers = await prisma.playerProfile.findMany({
-        where: {
-          lastActivityDate: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Active in last 30 days
-          },
-        },
-        select: { studentId: true },
-      });
-
-      for (const player of activePlayers) {
-        await challengeService.startMonthlyChallenges(player.studentId);
-      }
-
-      console.log(`Monthly challenges started for ${activePlayers.length} players`);
+      // The service method handles all players internally
+      await challengeService.startMonthlyChallenges();
+      console.log('Monthly challenges started');
     } catch (error) {
       console.error('Error starting monthly challenges:', error);
     }

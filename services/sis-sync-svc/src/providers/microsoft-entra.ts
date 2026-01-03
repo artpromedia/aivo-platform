@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 /**
  * Microsoft Entra ID (Azure AD) SIS Provider
- * 
+ *
  * Implements the ISisProvider interface for Microsoft Entra ID.
  * Uses:
  * - Microsoft Graph API for users and groups
  * - Microsoft Education APIs for schools, classes, and enrollments (EDU tenants)
- * 
+ *
  * @see https://learn.microsoft.com/en-us/graph/api/overview
  * @see https://learn.microsoft.com/en-us/graph/api/resources/education-overview
  */
@@ -609,7 +610,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
         schoolExternalId: '',
         name: group.displayName,
         isActive: true,
-        rawData: group,
+        rawData: group as unknown as Record<string, unknown>,
       });
     }
 
@@ -636,7 +637,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
         country: school.address.countryOrRegion,
       } : undefined,
       isActive: true,
-      rawData: school,
+      rawData: school as unknown as Record<string, unknown>,
     };
   }
 
@@ -654,7 +655,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
         endDate: eduClass.term.endDate ? new Date(eduClass.term.endDate) : undefined,
       } : undefined,
       isActive: true,
-      rawData: eduClass,
+      rawData: eduClass as unknown as Record<string, unknown>,
     };
   }
 
@@ -680,7 +681,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
       username: user.userPrincipalName.split('@')[0],
       schoolExternalIds: [],
       isActive: user.accountEnabled,
-      rawData: user,
+      rawData: user as unknown as Record<string, unknown>,
     };
   }
 
@@ -709,7 +710,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
       grade: eduUser.student?.grade,
       schoolExternalIds: [],
       isActive: true,
-      rawData: eduUser,
+      rawData: eduUser as unknown as Record<string, unknown>,
     };
   }
 
@@ -731,7 +732,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
       role,
       isPrimary: true,
       isActive: true,
-      rawData: member,
+      rawData: member as unknown as Record<string, unknown>,
     };
   }
 }

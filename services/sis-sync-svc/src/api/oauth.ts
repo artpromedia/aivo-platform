@@ -12,7 +12,8 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient, SisProviderType, IntegrationStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { SisProviderType, IntegrationStatus } from '../providers/types.js';
 import { z } from 'zod';
 import { randomBytes, createHash } from 'crypto';
 
@@ -32,6 +33,7 @@ interface OAuthConfig {
   microsoft?: {
     clientId: string;
     clientSecret: string;
+    tenantId?: string;
   };
   clever?: {
     clientId: string;
@@ -766,6 +768,9 @@ export function registerOAuthRoutes(
         linkable: !!config.azureTenantId,
       });
     }
+
+    // This should never be reached due to the check above, but TypeScript requires it
+    return reply.status(500).send({ error: 'Unknown provider type' });
   });
 
   // ==========================================================================

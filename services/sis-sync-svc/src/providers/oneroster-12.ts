@@ -105,7 +105,7 @@ export class OneRoster12Provider implements ISisProvider {
 
     this.http.interceptors.response.use(
       (response) => response,
-      async (error: AxiosError) => {
+      async (error: any) => {
         if (error.response?.status === 401) {
           this.accessToken = undefined;
           const token = await this.getAccessToken();

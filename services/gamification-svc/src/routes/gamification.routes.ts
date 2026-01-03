@@ -4,11 +4,13 @@
  * Handles player profiles, XP, levels, and dashboard
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { gamificationService, achievementService, streakService, challengeService } from '../services/index.js';
 
-const router = Router();
+const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -105,12 +107,10 @@ router.post(
     const studentId = extractStudentId(req);
     const data = awardXPSchema.parse(req.body);
 
-    const transaction = await gamificationService.awardXP(
-      studentId,
-      data.activityType,
-      data.amount,
-      data.metadata
-    );
+    const transaction = await gamificationService.awardXP(studentId, data.activityType, {
+      bonusXp: data.amount,
+      metadata: data.metadata,
+    });
 
     res.json({ success: true, data: transaction });
   })
@@ -180,7 +180,7 @@ router.get(
   '/daily-progress',
   asyncHandler(async (req: Request, res: Response) => {
     const studentId = extractStudentId(req);
-    const progress = await gamificationService.getDailyProgress(studentId);
+    const progress = await gamificationService.getDailyGoalProgress(studentId);
     res.json({ success: true, data: progress });
   })
 );

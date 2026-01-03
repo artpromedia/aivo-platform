@@ -4,7 +4,7 @@
  * Creates and initializes SIS providers based on type and configuration
  */
 
-import { SisProviderType } from '@prisma/client';
+import type { SisProviderType } from './types';
 import {
   ISisProvider,
   ProviderConfig,
@@ -19,17 +19,17 @@ import { MicrosoftEntraProvider } from './microsoft-entra';
 export function createProvider(providerType: SisProviderType): ISisProvider {
   switch (providerType) {
     case 'CLEVER':
-      return new CleverProvider();
+      return new CleverProvider() as ISisProvider;
     case 'CLASSLINK':
-      return new ClassLinkProvider();
+      return new ClassLinkProvider() as ISisProvider;
     case 'ONEROSTER_API':
-      return new OneRosterApiProvider();
+      return new OneRosterApiProvider() as ISisProvider;
     case 'ONEROSTER_CSV':
-      return new OneRosterCsvProvider();
+      return new OneRosterCsvProvider() as ISisProvider;
     case 'GOOGLE_WORKSPACE':
-      return new GoogleWorkspaceProvider();
+      return new GoogleWorkspaceProvider() as ISisProvider;
     case 'MICROSOFT_ENTRA':
-      return new MicrosoftEntraProvider();
+      return new MicrosoftEntraProvider() as ISisProvider;
     case 'CUSTOM':
       throw new Error('Custom providers must be implemented separately');
     default:
@@ -43,7 +43,7 @@ export async function createAndInitializeProvider(
 ): Promise<ISisProvider> {
   const provider = createProvider(providerType);
   const config = JSON.parse(configJson) as ProviderConfig;
-  await provider.initialize(config);
+  await provider.initialize(config as unknown);
   return provider;
 }
 

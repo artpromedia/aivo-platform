@@ -6,9 +6,11 @@
  */
 
 import * as cron from 'node-cron';
-import { PrismaClient, SisProvider, SyncStatus } from '@prisma/client';
-import { SyncEngine } from './engine';
-import { EntityTransformer, TransformConfig } from './transformer';
+import { PrismaClient } from '@prisma/client';
+import type { SisProvider, SyncStatus } from '../providers/types';
+import { SyncStatus as SyncStatusValues } from '../providers/types';
+import { SyncEngine } from '../sync/engine';
+import { EntityTransformer, TransformConfig } from '../sync/transformer';
 
 export interface SchedulerConfig {
   /** Whether to start scheduled jobs on initialization */
@@ -220,7 +222,7 @@ export class SyncScheduler {
     const latestRun = await this.prisma.sisSyncRun.findFirst({
       where: {
         providerId,
-        status: SyncStatus.IN_PROGRESS,
+        status: SyncStatusValues.IN_PROGRESS,
       },
       orderBy: { startedAt: 'desc' },
     });
@@ -229,7 +231,7 @@ export class SyncScheduler {
       await this.prisma.sisSyncRun.update({
         where: { id: latestRun.id },
         data: {
-          status: SyncStatus.CANCELLED,
+          status: SyncStatusValues.CANCELLED,
           completedAt: new Date(),
           errorMessage: 'Cancelled by user',
         },

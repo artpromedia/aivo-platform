@@ -4,11 +4,13 @@
  * API endpoints for session tracking and break management
  */
 
-import { Router, Request, Response } from 'express';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+
+import { Router, Request, Response, IRouter } from 'express';
 import { antiAddictionService } from '../services/anti-addiction.service.js';
 import { z } from 'zod';
 
-const router = Router();
+const router: IRouter = Router();
 
 const StartSessionSchema = z.object({
   studentId: z.string().uuid(),

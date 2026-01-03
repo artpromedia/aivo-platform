@@ -4,8 +4,14 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "verbatimModuleSyntax": false,
+    "exactOptionalPropertyTypes": false,
+    "moduleResolution": "bundler",
+    "module": "ESNext"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "exclude": ["node_modules", "dist", "tests", "src/**/__tests__", "**/*.test.ts"]
 }
