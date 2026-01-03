@@ -1,6 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "baseUrl": "../..",
     "paths": {
       "@aivo/ts-data-access": ["libs/ts-data-access/dist/index.d.ts"],

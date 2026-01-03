@@ -1,6 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "rootDir": ".",
     "outDir": "dist",
     "noEmit": false
