@@ -5,12 +5,12 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
-import type { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { createHash } from 'crypto';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    prisma: PrismaClient;
+    prisma: ExtendedPrismaClient;
   }
 }
 
@@ -64,7 +64,7 @@ type SandboxSyntheticEnrollment = {
 /**
  * API Key authentication hook
  */
-async function authenticateApiKey(request: any, reply: any, prisma: PrismaClient) {
+async function authenticateApiKey(request: any, reply: any, prisma: ExtendedPrismaClient) {
   const apiKey = request.headers['x-api-key'] as string;
   
   if (!apiKey) {

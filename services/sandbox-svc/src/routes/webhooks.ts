@@ -3,13 +3,13 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
-import type { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { createHmac, randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    prisma: PrismaClient;
+    prisma: ExtendedPrismaClient;
   }
 }
 

@@ -4,7 +4,7 @@
  * Generates realistic test data for sandbox environments
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Sample data pools
@@ -100,7 +100,7 @@ interface GenerateResult {
  * Generate synthetic data for a sandbox tenant
  */
 export async function generateSyntheticData(
-  prisma: PrismaClient,
+  prisma: ExtendedPrismaClient,
   tenantId: string,
   options: GenerateOptions
 ): Promise<GenerateResult> {

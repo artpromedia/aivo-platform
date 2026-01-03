@@ -44,10 +44,8 @@ import {
 
 type VersionState = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'RETIRED';
 
-type TransactionClient = Omit<
-  typeof prisma,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+// Import TransactionClient from prisma-types for type compatibility
+import type { TransactionClient } from '../prisma-types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS

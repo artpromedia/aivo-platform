@@ -1,3 +1,2 @@
-import { PrismaClient } from '@prisma/client';
-
-export const prisma = new PrismaClient();
+// Re-export from prisma-types for extended client
+export { prisma, type ExtendedPrismaClient, type TransactionClient } from './prisma-types.js';

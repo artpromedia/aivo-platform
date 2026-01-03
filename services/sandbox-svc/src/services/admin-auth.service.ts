@@ -13,7 +13,7 @@
 
 import { randomBytes, timingSafeEqual, createHmac, pbkdf2 as pbkdf2Async } from 'node:crypto';
 
-import type { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 
 // Type aliases since generated types might not be available
 type AdminRole = 'SUPER_ADMIN' | 'SANDBOX_ADMIN' | 'SALES_DEMO' | 'SUPPORT';
@@ -200,10 +200,10 @@ export class IpNotAllowedException extends Error {
  * Handles all admin authentication operations with security best practices.
  */
 export class AdminAuthService {
-  private readonly prisma: PrismaClient;
+  private readonly prisma: ExtendedPrismaClient;
   private readonly config: AdminAuthConfig;
 
-  constructor(prisma: PrismaClient, config?: Partial<AdminAuthConfig>) {
+  constructor(prisma: ExtendedPrismaClient, config?: Partial<AdminAuthConfig>) {
     this.prisma = prisma;
     this.config = {
       sessionDurationMs: 8 * 60 * 60 * 1000, // 8 hours
@@ -1549,7 +1549,7 @@ let adminAuthServiceInstance: AdminAuthService | null = null;
 /**
  * Get the singleton admin auth service instance
  */
-export function getAdminAuthService(prisma: PrismaClient): AdminAuthService {
+export function getAdminAuthService(prisma: ExtendedPrismaClient): AdminAuthService {
   if (!adminAuthServiceInstance) {
     adminAuthServiceInstance = new AdminAuthService(prisma);
   }

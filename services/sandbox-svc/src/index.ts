@@ -11,18 +11,16 @@
 
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { PrismaClient } from '@prisma/client';
 import Fastify from 'fastify';
 
 import { adminAuthPlugin } from './middleware/admin-auth.middleware.js';
+import { prisma } from './prisma-types.js';
 import adminAuthRoutes from './routes/admin-auth.js';
 import { adminRoutes } from './routes/admin.js';
 import { partnerRoutes } from './routes/partners.js';
 import { publicApiRoutes } from './routes/public-api.js';
 import { tenantRoutes } from './routes/tenants.js';
 import { webhookRoutes } from './routes/webhooks.js';
-
-const prisma = new PrismaClient();
 
 const fastify = Fastify({
   logger: {

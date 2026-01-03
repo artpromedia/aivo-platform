@@ -9,7 +9,7 @@
 
 import { randomBytes } from 'node:crypto';
 
-import type { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { generateSyntheticData } from '../data/generator.js';
@@ -23,7 +23,7 @@ import { getAdminAuthService } from '../services/admin-auth.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    prisma: PrismaClient;
+    prisma: ExtendedPrismaClient;
   }
 }
 
