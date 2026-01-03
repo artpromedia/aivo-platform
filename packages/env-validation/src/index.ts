@@ -5,7 +5,8 @@
  * fail-fast behavior. Ensures services don't start with invalid configuration.
  */
 
-import { z, ZodType, ZodError, ZodIssue } from 'zod';
+import type { ZodType, ZodError, ZodIssue } from 'zod';
+import { z } from 'zod';
 
 // Re-export zod for convenience
 export { z } from 'zod';
@@ -121,7 +122,9 @@ export function validateEnv<T extends ZodType>(
  * });
  * ```
  */
-export function requiredInProduction(defaultValue?: string): z.ZodString {
+export function requiredInProduction(
+  defaultValue?: string
+): z.ZodString | z.ZodDefault<z.ZodString> {
   if (isProduction()) {
     return z.string().min(1, 'Required in production');
   }
@@ -146,7 +149,7 @@ export function requiredInProduction(defaultValue?: string): z.ZodString {
  * });
  * ```
  */
-export function secret(defaultValue?: string): z.ZodString {
+export function secret(defaultValue?: string): z.ZodString | z.ZodDefault<z.ZodString> {
   return requiredInProduction(defaultValue);
 }
 
@@ -161,7 +164,7 @@ export function secret(defaultValue?: string): z.ZodString {
  * });
  * ```
  */
-export function port(defaultValue?: number): z.ZodNumber {
+export function port(defaultValue?: number): z.ZodNumber | z.ZodDefault<z.ZodNumber> {
   const base = z.coerce
     .number()
     .int()
@@ -182,7 +185,7 @@ export function port(defaultValue?: number): z.ZodNumber {
  * });
  * ```
  */
-export function url(defaultValue?: string): z.ZodString {
+export function url(defaultValue?: string): z.ZodString | z.ZodDefault<z.ZodString> {
   const base = z.string().url('Must be a valid URL');
   return defaultValue !== undefined ? base.default(defaultValue) : base;
 }
@@ -275,11 +278,10 @@ export function bool(defaultValue?: boolean): z.ZodBoolean {
  * });
  * ```
  */
-export function duration(defaultValue?: string): z.ZodString {
-  const base = z.string().regex(
-    /^\d+[smhdw]$/,
-    'Must be a duration string (e.g., 15m, 1h, 7d, 1w)'
-  );
+export function duration(defaultValue?: string): z.ZodString | z.ZodDefault<z.ZodString> {
+  const base = z
+    .string()
+    .regex(/^\d+[smhdw]$/, 'Must be a duration string (e.g., 15m, 1h, 7d, 1w)');
 
   return defaultValue !== undefined ? base.default(defaultValue) : base;
 }
@@ -298,7 +300,12 @@ export function duration(defaultValue?: string): z.ZodString {
 export function list(defaultValue?: string[]): z.ZodArray<z.ZodString> {
   const base = z
     .string()
-    .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean))
+    .transform((val) =>
+      val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
     .pipe(z.array(z.string()));
 
   return defaultValue !== undefined
@@ -317,7 +324,7 @@ export function list(defaultValue?: string[]): z.ZodArray<z.ZodString> {
  * });
  * ```
  */
-export function optional(defaultValue: string): z.ZodString {
+export function optional(defaultValue: string): z.ZodDefault<z.ZodString> {
   return z.string().default(defaultValue);
 }
 
@@ -335,7 +342,7 @@ export function optional(defaultValue: string): z.ZodString {
 export function enumValue<T extends string>(
   values: readonly [T, ...T[]],
   defaultValue?: T
-): z.ZodEnum<[T, ...T[]]> {
+): z.ZodEnum<[T, ...T[]]> | z.ZodDefault<z.ZodEnum<[T, ...T[]]>> {
   const base = z.enum(values);
   return defaultValue !== undefined ? base.default(defaultValue) : base;
 }
@@ -413,19 +420,18 @@ export const commonSchemas = {
 export function mergeSchemas<T extends z.ZodRawShape[]>(
   ...schemas: { [K in keyof T]: z.ZodObject<T[K]> }
 ): z.ZodObject<T[number]> {
-  return schemas.reduce(
-    (acc, schema) => acc.merge(schema),
-    z.object({})
-  ) as z.ZodObject<T[number]>;
+  return schemas.reduce((acc, schema) => acc.merge(schema), z.object({})) as z.ZodObject<T[number]>;
 }
 
 /**
  * Validates and returns a summary of which required variables are missing
  * Useful for debugging and health checks
  */
-export function getEnvStatus<T extends ZodType>(
-  schema: T
-): { valid: boolean; missing: string[]; present: string[] } {
+export function getEnvStatus(schema: ZodType): {
+  valid: boolean;
+  missing: string[];
+  present: string[];
+} {
   const result = schema.safeParse(process.env);
 
   if (result.success) {
@@ -440,9 +446,7 @@ export function getEnvStatus<T extends ZodType>(
     .filter((issue) => issue.code === 'invalid_type' && issue.received === 'undefined')
     .map((issue) => issue.path.join('.'));
 
-  const present = Object.keys(process.env).filter(
-    (key) => !missing.includes(key)
-  );
+  const present = Object.keys(process.env).filter((key) => !missing.includes(key));
 
   return {
     valid: false,

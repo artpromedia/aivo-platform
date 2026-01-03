@@ -23,7 +23,7 @@
     "bullmq": "^5.12.12",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
-    "fastify-plugin": "^4.5.1",
+    "fastify-plugin": "^5.0.1",
     "ioredis": "^5.4.1",
     "jose": "^5.9.2",
     "ws": "^8.18.0",

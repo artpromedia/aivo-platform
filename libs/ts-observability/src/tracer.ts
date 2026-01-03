@@ -159,10 +159,13 @@ export function createTracer(config: TracerConfig): AivoTracer {
   }
 
   // Create provider with span processors
-  const provider = new NodeTracerProvider({
+  const providerConfig: { resource: typeof resource; spanProcessors?: typeof spanProcessors } = {
     resource,
-    spanProcessors: spanProcessors.length > 0 ? spanProcessors : undefined,
-  });
+  };
+  if (spanProcessors.length > 0) {
+    providerConfig.spanProcessors = spanProcessors;
+  }
+  const provider = new NodeTracerProvider(providerConfig);
 
   if (enabled) {
     // Register as global provider

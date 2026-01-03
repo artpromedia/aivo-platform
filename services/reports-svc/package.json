@@ -19,7 +19,7 @@
     "@aws-sdk/s3-request-presigner": "^3.700.0",
     "exceljs": "^4.4.0",
     "fastify": "^4.28.1",
-    "fastify-plugin": "^4.5.1",
+    "fastify-plugin": "^5.0.1",
     "ioredis": "^5.4.1",
     "jose": "^5.9.2",
     "pdfkit": "^0.15.0",
