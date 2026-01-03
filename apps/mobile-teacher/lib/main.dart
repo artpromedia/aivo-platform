@@ -4,12 +4,20 @@
 /// track attendance, and log observations.
 library;
 
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_notifications/flutter_notifications.dart';
 
+import 'firebase_options.dart';
 import 'offline/offline.dart';
 import 'screens/login_screen.dart';
 import 'screens/classes_screen.dart';
@@ -226,16 +234,40 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Background message handler - must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await firebaseMessagingBackgroundHandler(message);
+}
+
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Run with Crashlytics error handling
+  await CrashlyticsService.runWithCrashlytics(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize offline services
-  await initializeOfflineServices();
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Initialize API client
-  AivoApiClient.instance.initialize();
+    // Initialize Crashlytics (disabled in debug mode)
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
 
-  runApp(const ProviderScope(child: TeacherApp()));
+    // Set custom key for app type
+    await FirebaseCrashlytics.instance.setCustomKey('app_type', 'teacher');
+
+    // Set up background message handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Initialize offline services
+    await initializeOfflineServices();
+
+    // Initialize API client
+    AivoApiClient.instance.initialize();
+
+    runApp(const ProviderScope(child: TeacherApp()));
+  });
 }
 
 class TeacherApp extends ConsumerWidget {

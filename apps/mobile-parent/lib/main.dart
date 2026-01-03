@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_common/flutter_common.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
@@ -179,18 +184,27 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await firebaseMessagingBackgroundHandler(message);
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> main() async {
+  // Run with Crashlytics error handling
+  await CrashlyticsService.runWithCrashlytics(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Set up background message handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    // Initialize Crashlytics (disabled in debug mode)
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
 
-  runApp(const ProviderScope(child: ParentApp()));
+    // Set custom key for app type
+    await FirebaseCrashlytics.instance.setCustomKey('app_type', 'parent');
+
+    // Set up background message handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    runApp(const ProviderScope(child: ParentApp()));
+  });
 }
 
 class ParentApp extends ConsumerStatefulWidget {

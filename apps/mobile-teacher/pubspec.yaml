@@ -14,6 +14,8 @@ dependencies:
   intl: ^0.20.2
   firebase_core: ^2.24.2
   firebase_messaging: ^14.7.10
+  firebase_crashlytics: ^3.5.7
+  firebase_analytics: ^10.10.7
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:

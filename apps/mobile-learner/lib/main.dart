@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -165,24 +169,34 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await firebaseMessagingBackgroundHandler(message);
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+Future<void> main() async {
+  // Run with Crashlytics error handling
+  await CrashlyticsService.runWithCrashlytics(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Mark as child device for COPPA compliance
-  await BackgroundHandlerConfig.setChildDevice(true);
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Set up background message handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  
-  // Initialize offline services (database, connectivity monitoring)
-  await initializeOfflineServices();
-  
-  runApp(const ProviderScope(child: LearnerApp()));
+    // Initialize Crashlytics (disabled in debug mode)
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+
+    // Set custom key for child device (COPPA compliant - no personal data)
+    await FirebaseCrashlytics.instance.setCustomKey('is_child_device', true);
+    await FirebaseCrashlytics.instance.setCustomKey('app_type', 'learner');
+
+    // Mark as child device for COPPA compliance
+    await BackgroundHandlerConfig.setChildDevice(true);
+
+    // Set up background message handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Initialize offline services (database, connectivity monitoring)
+    await initializeOfflineServices();
+
+    runApp(const ProviderScope(child: LearnerApp()));
+  });
 }
 
 class LearnerApp extends ConsumerStatefulWidget {

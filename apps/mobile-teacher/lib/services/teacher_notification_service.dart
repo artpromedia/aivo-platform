@@ -31,7 +31,7 @@ class TeacherNotificationService {
       onNotificationTapped: _handleNotificationTap,
       onNotificationReceived: _handleNotificationReceived,
       onTokenRefresh: _handleTokenRefresh,
-      analytics: ConsoleNotificationAnalytics(),
+      analytics: FirebaseNotificationAnalytics(),
     );
 
     await _subscribeToTopics();

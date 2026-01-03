@@ -30,7 +30,7 @@ class ParentNotificationService {
       onNotificationTapped: _handleNotificationTap,
       onNotificationReceived: _handleNotificationReceived,
       onTokenRefresh: _handleTokenRefresh,
-      analytics: ConsoleNotificationAnalytics(),
+      analytics: FirebaseNotificationAnalytics(),
     );
 
     // Subscribe to parent-specific topics

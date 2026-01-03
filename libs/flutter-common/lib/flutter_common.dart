@@ -59,3 +59,8 @@ export 'widgets/shared_device_flow.dart';
 // Real-time communication
 export 'realtime/realtime.dart' hide UserPresence, ConnectionStatus, presenceProvider; // Prefer from services
 
+// Firebase Crashlytics
+export 'crashlytics/crashlytics.dart';
+
+// Firebase Analytics
+export 'analytics/analytics.dart';
