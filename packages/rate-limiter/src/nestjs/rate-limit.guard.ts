@@ -24,15 +24,17 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RateLimiter } from '../rate-limiter';
-import { RateLimitContext, RateLimitResult } from '../types';
-import { RATE_LIMITER } from './rate-limit.module';
+
 import {
   RATE_LIMIT_KEY,
   RATE_LIMIT_SKIP_KEY,
   THROTTLE_KEY,
   RateLimitDecoratorOptions,
 } from '../decorators/rate-limit.decorator';
+import { RateLimiter } from '../rate-limiter';
+import { RateLimitContext, RateLimitResult } from '../types';
+
+import { RATE_LIMITER } from './rate-limit.module';
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
@@ -105,10 +107,7 @@ export class RateLimitGuard implements CanActivate {
   /**
    * Build rate limit context from request
    */
-  private buildContext(
-    request: any,
-    options?: RateLimitDecoratorOptions
-  ): RateLimitContext {
+  private buildContext(request: any, options?: RateLimitDecoratorOptions): RateLimitContext {
     const ip =
       request.ip ||
       request.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
@@ -120,16 +119,19 @@ export class RateLimitGuard implements CanActivate {
     const tier = request.user?.tier || request.user?.plan;
     const isInternal = request.headers['x-internal'] === 'true';
 
+    const path = request.path || request.url?.split('?')[0] || '/';
     return {
       ip,
       userId,
       tenantId,
       apiKey,
       tier,
-      endpoint: request.path,
+      path,
+      endpoint: path,
       method: request.method,
       isInternal,
       headers: request.headers,
+      timestamp: Date.now(),
     };
   }
 
@@ -183,8 +185,7 @@ export class RateLimitGuard implements CanActivate {
  */
 export class RateLimitExceededException extends HttpException {
   constructor(public readonly result: RateLimitResult) {
-    const message =
-      result.action?.message || 'Rate limit exceeded. Please try again later.';
+    const message = result.action?.message || 'Rate limit exceeded. Please try again later.';
 
     super(
       {

@@ -17,6 +17,14 @@ export interface RateLimitResult {
   headers: RateLimitHeaders;
   /** The rule that was applied */
   ruleId?: string;
+  /** The rate limit key used */
+  key?: string;
+  /** The rule that was applied */
+  rule?: RateLimitRule;
+  /** The tier name if applicable */
+  tier?: string;
+  /** The action to take if not allowed */
+  action?: RateLimitAction;
 }
 
 export interface RateLimitHeaders {
@@ -86,7 +94,8 @@ export type RateLimitAlgorithm =
   | 'token-bucket'
   | 'sliding-window'
   | 'fixed-window'
-  | 'leaky-bucket';
+  | 'leaky-bucket'
+  | 'adaptive';
 
 export interface RateLimitScopeObject {
   /** The type of scope */
@@ -102,6 +111,7 @@ export type RateLimitScopeType =
   | 'ip'
   | 'user'
   | 'api_key'
+  | 'apiKey'
   | 'tenant'
   | 'endpoint'
   | 'custom';
@@ -121,6 +131,10 @@ export interface RateLimitMatch {
   userRoles?: string[];
   /** Subscription tiers that match */
   tiers?: string[];
+  /** Subscription tier that matches (singular) */
+  tier?: string | string[];
+  /** Tenant IDs that match */
+  tenant?: string | string[];
   /** Custom matcher function */
   custom?: (context: RateLimitContext) => boolean | Promise<boolean>;
 }
@@ -153,19 +167,23 @@ export interface RateLimitContext {
   tier?: string;
   /** Request path */
   path: string;
+  /** Request endpoint (alias for path) */
+  endpoint?: string;
   /** HTTP method */
   method: string;
   /** Request headers */
   headers: Record<string, string | string[] | undefined>;
   /** Request timestamp */
   timestamp: number;
+  /** Whether this is an internal request (bypasses rate limiting) */
+  isInternal?: boolean;
   /** Additional metadata */
   metadata?: Record<string, unknown>;
 }
 
 export interface RateLimitTier {
-  /** Tier identifier */
-  id: string;
+  /** Tier identifier (optional, can use the key in Record) */
+  id?: string;
   /** Display name */
   name: string;
   /** Rate limits for this tier */
@@ -206,7 +224,28 @@ export interface TierQuotas {
   monthly?: { limit: number; resetAt: string };
 }
 
+export interface QuotaPeriodUsage {
+  /** Amount used */
+  used: number;
+  /** Total limit */
+  limit: number;
+  /** Amount remaining */
+  remaining: number;
+  /** When the quota resets (timestamp ms) */
+  reset: number;
+}
+
 export interface QuotaUsage {
+  /** Daily usage */
+  daily?: QuotaPeriodUsage;
+  /** Weekly usage */
+  weekly?: QuotaPeriodUsage;
+  /** Monthly usage */
+  monthly?: QuotaPeriodUsage;
+}
+
+/** Legacy QuotaUsage format for backward compatibility */
+export interface QuotaUsageLegacy {
   /** Amount used */
   used: number;
   /** Total limit */
@@ -219,9 +258,12 @@ export interface QuotaUsage {
   percentage: number;
 }
 
+/** Circuit state value type */
+export type CircuitStateValue = 'closed' | 'open' | 'half_open';
+
 export interface CircuitState {
   /** Current state of the circuit */
-  state: 'closed' | 'open' | 'half_open';
+  state: CircuitStateValue;
   /** Number of failures in current window */
   failures: number;
   /** Number of successes in half-open state */
@@ -241,6 +283,8 @@ export interface AlgorithmCheckResult {
   reset: number;
   /** Current count/tokens */
   current?: number;
+  /** Additional metadata (for adaptive algorithm) */
+  metadata?: Record<string, unknown>;
 }
 
 export interface AlgorithmOptions {

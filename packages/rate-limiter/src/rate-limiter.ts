@@ -26,10 +26,7 @@
  * ```
  */
 
-import { RateLimitStore } from './stores/types';
-import { MemoryStore } from './stores/memory-store';
-import {
-  createAlgorithm,
+import type {
   AlgorithmType,
   SlidingWindow,
   TokenBucket,
@@ -37,16 +34,51 @@ import {
   LeakyBucket,
   AdaptiveRateLimiter,
 } from './algorithms';
-import {
+import { createAlgorithm } from './algorithms';
+import type { RateLimiterLogger } from './logger';
+import { noopLogger, createLogger } from './logger';
+import { MemoryStore } from './stores/memory-store';
+import type { RateLimitStore } from './stores/types';
+import type {
   RateLimitResult,
   RateLimitContext,
   RateLimitRule,
   RateLimitTier,
   RateLimitMatch,
-  RateLimitAction,
   RateLimitHeaders,
+  RateLimitScope,
 } from './types';
-import { RateLimiterLogger, noopLogger, createLogger } from './logger';
+
+/**
+ * Normalize algorithm name to hyphenated format (AlgorithmType)
+ */
+function normalizeAlgorithmType(algorithm: string): AlgorithmType {
+  const mapping: Record<string, AlgorithmType> = {
+    token_bucket: 'token-bucket',
+    sliding_window: 'sliding-window',
+    fixed_window: 'fixed-window',
+    leaky_bucket: 'leaky-bucket',
+    'token-bucket': 'token-bucket',
+    'sliding-window': 'sliding-window',
+    'fixed-window': 'fixed-window',
+    'leaky-bucket': 'leaky-bucket',
+    adaptive: 'adaptive',
+  };
+  return mapping[algorithm] ?? 'sliding-window';
+}
+
+/**
+ * Convert scope to array format for iteration
+ */
+function getScopeArray(scope: RateLimitScope | undefined): string[] {
+  if (!scope) {
+    return ['user'];
+  }
+  if (Array.isArray(scope)) {
+    return scope;
+  }
+  return [scope.type];
+}
 
 export interface RateLimiterConfig {
   /** Storage backend for rate limit data */
@@ -357,7 +389,8 @@ export class RateLimiter {
       const key = this.buildKey(context, rule);
 
       // Get the algorithm
-      const algorithmType = rule.algorithm ?? this.defaultAlgorithm;
+      const rawAlgorithmType = rule.algorithm ?? this.defaultAlgorithm;
+      const algorithmType = normalizeAlgorithmType(rawAlgorithmType);
       const algorithm = this.algorithms.get(algorithmType);
 
       if (!algorithm) {
@@ -397,7 +430,7 @@ export class RateLimiter {
 
       return fullResult;
     } catch (error) {
-      this.logger.error('Rate limit check failed', error);
+      this.logger.error('Rate limit check failed', { error: String(error) });
 
       // Fail open if configured
       if (this.failOpen) {
@@ -411,7 +444,7 @@ export class RateLimiter {
   /**
    * Consume a request (increment counter)
    */
-  async consume(context: RateLimitContext, cost: number = 1): Promise<RateLimitResult> {
+  async consume(context: RateLimitContext, cost = 1): Promise<RateLimitResult> {
     const startTime = Date.now();
 
     try {
@@ -434,7 +467,8 @@ export class RateLimiter {
       const key = this.buildKey(context, rule);
 
       // Get the algorithm
-      const algorithmType = rule.algorithm ?? this.defaultAlgorithm;
+      const rawAlgorithmType = rule.algorithm ?? this.defaultAlgorithm;
+      const algorithmType = normalizeAlgorithmType(rawAlgorithmType);
       const algorithm = this.algorithms.get(algorithmType);
 
       if (!algorithm) {
@@ -476,7 +510,7 @@ export class RateLimiter {
 
       return fullResult;
     } catch (error) {
-      this.logger.error('Rate limit consume failed', error);
+      this.logger.error('Rate limit consume failed', { error: String(error) });
 
       if (this.failOpen) {
         return this.createBypassResult();
@@ -534,12 +568,10 @@ export class RateLimiter {
    */
   private findMatchingRule(context: RateLimitContext): RateLimitRule | undefined {
     // Sort rules by priority (highest first)
-    const sortedRules = [...this.rules].sort(
-      (a, b) => (b.priority ?? 0) - (a.priority ?? 0)
-    );
+    const sortedRules = [...this.rules].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
     for (const rule of sortedRules) {
-      if (this.matchesRule(context, rule.match)) {
+      if (this.matchesRule(context, rule.match ?? {})) {
         this.logger.debug('Found matching rule', { ruleId: rule.id });
         return rule;
       }
@@ -591,9 +623,7 @@ export class RateLimiter {
    */
   private matchPath(path: string, pattern: string): boolean {
     // Convert pattern to regex
-    const regexPattern = pattern
-      .replace(/\*/g, '.*')
-      .replace(/\//g, '\\/');
+    const regexPattern = pattern.replace(/\*/g, '.*').replace(/\//g, '\\/');
     const regex = new RegExp(`^${regexPattern}$`, 'i');
     return regex.test(path);
   }
@@ -605,16 +635,23 @@ export class RateLimiter {
     rule: RateLimitRule,
     tier?: RateLimitTier
   ): { limit: number; windowSeconds: number; burstLimit?: number } {
-    let limit = rule.limits.limit;
-    const windowSeconds = rule.limits.windowSeconds;
-    let burstLimit = rule.limits.burstLimit;
+    // Use rule.limits if available, otherwise fall back to defaults
+    const ruleLimits = rule.limits ?? {
+      limit: rule.limit ?? this.defaultLimits.limit,
+      windowSeconds: rule.window ?? this.defaultLimits.windowSeconds,
+      burstLimit: rule.burst,
+    };
+
+    let limit = ruleLimits.limit;
+    const windowSeconds = ruleLimits.windowSeconds;
+    let burstLimit = ruleLimits.burstLimit;
 
     // Apply tier multipliers if available
     if (tier) {
       // Scale limit based on tier's per-minute rate
       const tierMultiplier = tier.limits.requestsPerMinute / 60;
-      limit = Math.max(1, Math.floor(limit * (tierMultiplier / 100 * 60)));
-      
+      limit = Math.max(1, Math.floor(limit * ((tierMultiplier / 100) * 60)));
+
       if (burstLimit) {
         burstLimit = Math.max(1, Math.floor(burstLimit * (tier.limits.burstLimit / 10)));
       }
@@ -630,7 +667,7 @@ export class RateLimiter {
     const parts: string[] = [this.keyPrefix, rule.id];
 
     // Add scope-based parts
-    const scopes = rule.scope ?? ['user'];
+    const scopes = getScopeArray(rule.scope);
     for (const scope of scopes) {
       switch (scope) {
         case 'user':
@@ -690,19 +727,21 @@ export class RateLimiter {
     switch (type) {
       case 'sliding-window':
         return (algorithm as SlidingWindow).check(key, limit, windowSeconds, options);
-      case 'token-bucket':
+      case 'token-bucket': {
         // For token bucket, convert to capacity/refill rate
         const refillRate = limit / windowSeconds;
         return (algorithm as TokenBucket).check(key, limit, refillRate, options);
+      }
       case 'fixed-window':
         return (algorithm as FixedWindow).check(key, limit, windowSeconds, options);
-      case 'leaky-bucket':
+      case 'leaky-bucket': {
         const leakRate = limit / windowSeconds;
         return (algorithm as LeakyBucket).check(key, limit, leakRate, options);
+      }
       case 'adaptive':
         return (algorithm as AdaptiveRateLimiter).check(key, limit, windowSeconds, options);
       default:
-        throw new Error(`Unknown algorithm: ${type}`);
+        throw new Error(`Unknown algorithm: ${type as string}`);
     }
   }
 
@@ -721,18 +760,20 @@ export class RateLimiter {
     switch (type) {
       case 'sliding-window':
         return (algorithm as SlidingWindow).consume(key, cost, limit, windowSeconds, options);
-      case 'token-bucket':
+      case 'token-bucket': {
         const refillRate = limit / windowSeconds;
         return (algorithm as TokenBucket).consume(key, cost, limit, refillRate, options);
+      }
       case 'fixed-window':
         return (algorithm as FixedWindow).consume(key, cost, limit, windowSeconds, options);
-      case 'leaky-bucket':
+      case 'leaky-bucket': {
         const leakRate = limit / windowSeconds;
         return (algorithm as LeakyBucket).consume(key, cost, limit, leakRate, options);
+      }
       case 'adaptive':
         return (algorithm as AdaptiveRateLimiter).consume(key, cost, limit, windowSeconds, options);
       default:
-        throw new Error(`Unknown algorithm: ${type}`);
+        throw new Error(`Unknown algorithm: ${type as string}`);
     }
   }
 

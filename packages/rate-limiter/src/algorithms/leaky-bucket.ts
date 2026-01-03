@@ -9,8 +9,8 @@
  * Provides very smooth output rate, ideal for preventing sudden spikes.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { AlgorithmCheckResult, AlgorithmOptions } from '../types';
+import type { RateLimitStore } from '../stores/types';
+import type { AlgorithmCheckResult, AlgorithmOptions } from '../types';
 
 export interface LeakyBucketState {
   water: number;
@@ -55,19 +55,16 @@ export class LeakyBucket {
     const now = Date.now();
 
     // Use atomic Redis operation if available
-    const result = await this.store.leakyBucketConsume(
-      key,
-      capacity,
-      leakRate,
-      cost,
-      now
-    );
+    const result = await this.store.leakyBucketConsume(key, capacity, leakRate, cost, now);
+
+    const remaining = Math.max(0, capacity - Math.ceil(result.water));
+    const reset = this.calculateResetTime(result.water, leakRate, now);
 
     return {
-      allowed: result.allowed,
-      remaining: result.remaining,
-      reset: result.reset,
-      current: capacity - result.remaining,
+      allowed: result.success,
+      remaining,
+      reset,
+      current: Math.ceil(result.water),
     };
   }
 
@@ -103,11 +100,7 @@ export class LeakyBucket {
   /**
    * Calculate when bucket will be empty
    */
-  private calculateResetTime(
-    currentWater: number,
-    leakRate: number,
-    now: number
-  ): number {
+  private calculateResetTime(currentWater: number, leakRate: number, now: number): number {
     if (currentWater <= 0) {
       return now;
     }

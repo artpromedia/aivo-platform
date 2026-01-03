@@ -24,10 +24,11 @@
  * ```
  */
 
-import { RateLimitStore } from './stores/types';
+import type { RateLimiterLogger } from './logger';
+import { noopLogger } from './logger';
 import { MemoryStore } from './stores/memory-store';
-import { CircuitState } from './types';
-import { RateLimiterLogger, noopLogger } from './logger';
+import type { RateLimitStore } from './stores/types';
+import type { CircuitStateValue } from './types';
 
 export interface CircuitBreakerOptions {
   /** Name of the circuit (used for keys) */
@@ -57,7 +58,7 @@ export interface CircuitBreakerOptions {
 }
 
 interface CircuitBreakerState {
-  state: CircuitState;
+  state: CircuitStateValue;
   failures: number;
   successes: number;
   lastFailureTime: number;
@@ -80,7 +81,7 @@ export class CircuitBreaker {
 
   // Local cache for performance
   private localState: CircuitBreakerState;
-  private lastSync: number = 0;
+  private lastSync = 0;
   private readonly syncInterval: number = 1000; // 1 second
 
   constructor(options: CircuitBreakerOptions) {
@@ -199,9 +200,9 @@ export class CircuitBreaker {
   /**
    * Transition to a new state
    */
-  private async transitionTo(newState: CircuitState): Promise<void> {
+  private async transitionTo(newState: CircuitStateValue): Promise<void> {
     const oldState = this.localState.state;
-    
+
     if (oldState === newState) {
       return;
     }
@@ -250,7 +251,7 @@ export class CircuitBreaker {
   /**
    * Get current circuit state
    */
-  async getState(): Promise<CircuitState> {
+  async getState(): Promise<CircuitStateValue> {
     await this.syncState();
     return this.localState.state;
   }
@@ -304,7 +305,7 @@ export class CircuitBreaker {
    */
   async getStats(): Promise<{
     name: string;
-    state: CircuitState;
+    state: CircuitStateValue;
     failures: number;
     successes: number;
     lastFailureTime: number;
@@ -335,7 +336,7 @@ export class CircuitBreaker {
     try {
       const key = `cb:${this.name}:state`;
       const data = await this.store.get(key);
-      
+
       if (data) {
         const state = JSON.parse(data) as CircuitBreakerState;
         // Use remote state if it's newer
@@ -343,7 +344,7 @@ export class CircuitBreaker {
           this.localState = state;
         }
       }
-      
+
       this.lastSync = now;
     } catch (error) {
       this.logger.debug('Failed to sync circuit breaker state', { error });

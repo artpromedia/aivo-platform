@@ -93,7 +93,7 @@ export const noopLogger: Logger = {
 /**
  * Factory function to create a logger with a custom prefix
  */
-export function createLogger(prefix: string): Logger {
+export function createLogger(prefix = 'rate-limiter'): Logger {
   return {
     debug(message: string, meta?: Record<string, unknown>): void {
       if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {

@@ -4,9 +4,11 @@
  * Express/NestJS compatible middleware for rate limiting.
  */
 
-import { RateLimiter } from '../rate-limiter';
-import { RateLimitContext, RateLimitResult, RateLimitAction } from '../types';
-import { RateLimiterLogger, noopLogger } from '../logger';
+import type { RateLimiterLogger } from '../logger';
+import { noopLogger } from '../logger';
+import type { RateLimiter } from '../rate-limiter';
+import type { RateLimitContext, RateLimitResult } from '../types';
+import { RateLimitAction } from '../types';
 
 export interface RateLimitMiddlewareOptions {
   /** The rate limiter instance to use */
@@ -39,56 +41,40 @@ function defaultContextBuilder(req: any): RateLimitContext {
     req.socket?.remoteAddress;
 
   // Get user info from common auth patterns
-  const userId =
-    req.user?.id ||
-    req.user?.userId ||
-    req.auth?.userId ||
-    req.userId;
+  const userId = req.user?.id || req.user?.userId || req.auth?.userId || req.userId;
 
   // Get tenant info
-  const tenantId =
-    req.tenant?.id ||
-    req.tenantId ||
-    req.headers['x-tenant-id'];
+  const tenantId = req.tenant?.id || req.tenantId || req.headers['x-tenant-id'];
 
   // Get API key
-  const apiKey =
-    req.headers['x-api-key'] ||
-    req.headers['authorization']?.replace(/^Bearer /i, '');
+  const apiKey = req.headers['x-api-key'] || req.headers.authorization?.replace(/^Bearer /i, '');
 
   // Get tier from user or request
-  const tier =
-    req.user?.tier ||
-    req.user?.plan ||
-    req.tier ||
-    req.headers['x-tier'];
+  const tier = req.user?.tier || req.user?.plan || req.tier || req.headers['x-tier'];
 
   // Check if internal request
-  const isInternal =
-    req.headers['x-internal'] === 'true' ||
-    req.isInternal;
+  const isInternal = req.headers['x-internal'] === 'true' || req.isInternal;
 
+  const path = req.path || req.url?.split('?')[0] || '/';
   return {
     ip,
     userId,
     tenantId,
     apiKey,
     tier,
-    endpoint: req.path || req.url?.split('?')[0],
+    path,
+    endpoint: path,
     method: req.method,
     isInternal,
     headers: req.headers,
+    timestamp: Date.now(),
   };
 }
 
 /**
  * Default handler for rate limited requests
  */
-function defaultRateLimitedHandler(
-  _req: any,
-  res: any,
-  result: RateLimitResult
-): void {
+function defaultRateLimitedHandler(_req: any, res: any, result: RateLimitResult): void {
   const action = result.action || {
     type: 'reject',
     statusCode: 429,
@@ -127,13 +113,13 @@ export function createRateLimitMiddleware(
   return async (req: any, res: any, next: any): Promise<void> => {
     try {
       // Check if we should skip
-      if (skip && skip(req)) {
+      if (skip?.(req)) {
         logger.debug('Skipping rate limit check', { path: req.path });
         return next();
       }
 
       // Build context
-      let context = contextBuilder(req);
+      const context = contextBuilder(req);
 
       // Override key if key generator is provided
       if (keyGenerator) {
@@ -165,7 +151,8 @@ export function createRateLimitMiddleware(
           retryAfter: result.retryAfter,
         });
 
-        return onRateLimited(req, res, result);
+        onRateLimited(req, res, result);
+        return;
       }
 
       logger.debug('Request allowed', {
@@ -175,7 +162,7 @@ export function createRateLimitMiddleware(
 
       next();
     } catch (error) {
-      logger.error('Rate limit middleware error', error);
+      logger.error('Rate limit middleware error', { error: String(error) });
       // Continue to next middleware on error (fail open)
       next();
     }
@@ -185,8 +172,6 @@ export function createRateLimitMiddleware(
 /**
  * Express middleware factory
  */
-export function expressRateLimitMiddleware(
-  options: RateLimitMiddlewareOptions
-) {
+export function expressRateLimitMiddleware(options: RateLimitMiddlewareOptions) {
   return createRateLimitMiddleware(options);
 }

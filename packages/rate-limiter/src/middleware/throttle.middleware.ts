@@ -5,10 +5,11 @@
  * the full rate limiting infrastructure.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { MemoryStore } from '../stores/memory-store';
 import { SlidingWindow } from '../algorithms/sliding-window';
-import { RateLimiterLogger, noopLogger } from '../logger';
+import type { RateLimiterLogger } from '../logger';
+import { noopLogger } from '../logger';
+import { MemoryStore } from '../stores/memory-store';
+import type { RateLimitStore } from '../stores/types';
 
 export interface ThrottleOptions {
   /** Maximum requests allowed in the window */
@@ -44,11 +45,7 @@ function defaultKeyGenerator(req: any): string {
 /**
  * Default throttled handler
  */
-function defaultThrottledHandler(
-  _req: any,
-  res: any,
-  retryAfter: number
-): void {
+function defaultThrottledHandler(_req: any, res: any, retryAfter: number): void {
   res.status(429).json({
     error: 'Too Many Requests',
     message: 'Request throttled. Please slow down.',
@@ -78,7 +75,7 @@ export function createThrottleMiddleware(
   return async (req: any, res: any, next: any): Promise<void> => {
     try {
       // Check if we should skip
-      if (skip && skip(req)) {
+      if (skip?.(req)) {
         return next();
       }
 
@@ -98,7 +95,7 @@ export function createThrottleMiddleware(
       // Check if throttled
       if (!result.allowed) {
         const retryAfter = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
-        
+
         if (setHeaders) {
           res.setHeader('Retry-After', String(retryAfter));
         }
@@ -109,12 +106,13 @@ export function createThrottleMiddleware(
           retryAfter,
         });
 
-        return onThrottled(req, res, retryAfter);
+        onThrottled(req, res, retryAfter);
+        return;
       }
 
       next();
     } catch (error) {
-      logger.error('Throttle middleware error', error);
+      logger.error('Throttle middleware error', { error: String(error) });
       // Continue on error (fail open)
       next();
     }

@@ -15,23 +15,27 @@ import {
   Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RateLimiter } from '../rate-limiter';
+
 import { CircuitBreaker, CircuitBreakerOpenError } from '../circuit-breaker';
+import { RATE_LIMIT_SKIP_KEY } from '../decorators/rate-limit.decorator';
 import { QuotaManager } from '../quota-manager';
+import { RateLimiter } from '../rate-limiter';
 import { RateLimitContext, RateLimitResult } from '../types';
+
 import {
   GATEWAY_RATE_LIMITER,
   GATEWAY_CIRCUIT_BREAKER,
   GATEWAY_QUOTA_MANAGER,
 } from './gateway-rate-limit.module';
-import { RATE_LIMIT_SKIP_KEY } from '../decorators/rate-limit.decorator';
 
 @Injectable()
 export class GatewayRateLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     @Inject(GATEWAY_RATE_LIMITER) private readonly rateLimiter: RateLimiter,
-    @Optional() @Inject(GATEWAY_CIRCUIT_BREAKER) private readonly circuitBreaker: CircuitBreaker | null,
+    @Optional()
+    @Inject(GATEWAY_CIRCUIT_BREAKER)
+    private readonly circuitBreaker: CircuitBreaker | null,
     @Optional() @Inject(GATEWAY_QUOTA_MANAGER) private readonly quotaManager: QuotaManager | null
   ) {}
 
@@ -114,16 +118,19 @@ export class GatewayRateLimitGuard implements CanActivate {
     const tier = request.user?.tier || request.user?.plan;
     const isInternal = request.headers['x-internal'] === 'true';
 
+    const path = request.path || request.url?.split('?')[0] || '/';
     return {
       ip,
       userId,
       tenantId,
       apiKey,
       tier,
-      endpoint: request.path,
+      path,
+      endpoint: path,
       method: request.method,
       isInternal,
       headers: request.headers,
+      timestamp: Date.now(),
     };
   }
 
@@ -136,10 +143,7 @@ export class GatewayRateLimitGuard implements CanActivate {
 
     // Check AI quota for AI endpoints
     if (context.endpoint?.includes('/ai/')) {
-      const result = await this.quotaManager.check(
-        `user:${context.userId}`,
-        'ai-requests'
-      );
+      const result = await this.quotaManager.check(`user:${context.userId}`, 'ai-requests');
       if (!result.allowed) {
         return {
           allowed: false,
@@ -151,10 +155,7 @@ export class GatewayRateLimitGuard implements CanActivate {
 
     // Check upload quota for upload endpoints
     if (context.endpoint?.includes('/upload')) {
-      const result = await this.quotaManager.check(
-        `user:${context.userId}`,
-        'file-uploads'
-      );
+      const result = await this.quotaManager.check(`user:${context.userId}`, 'file-uploads');
       if (!result.allowed) {
         return {
           allowed: false,
@@ -173,8 +174,7 @@ export class GatewayRateLimitGuard implements CanActivate {
  */
 export class GatewayRateLimitExceededException extends HttpException {
   constructor(public readonly result: RateLimitResult) {
-    const message =
-      result.action?.message || 'Rate limit exceeded. Please try again later.';
+    const message = result.action?.message || 'Rate limit exceeded. Please try again later.';
 
     super(
       {

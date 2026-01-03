@@ -10,8 +10,8 @@
  * Excellent for handling bursts while maintaining a steady average rate.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { AlgorithmCheckResult, AlgorithmOptions } from '../types';
+import type { RateLimitStore } from '../stores/types';
+import type { AlgorithmCheckResult, AlgorithmOptions } from '../types';
 
 export interface TokenBucketState {
   tokens: number;
@@ -35,21 +35,11 @@ export class TokenBucket {
     const state = await this.getState(stateKey);
 
     // Calculate current token count
-    const currentTokens = this.calculateTokens(
-      state,
-      capacity,
-      refillRate,
-      now
-    );
+    const currentTokens = this.calculateTokens(state, capacity, refillRate, now);
 
     const allowed = currentTokens >= 1;
     const remaining = Math.floor(currentTokens);
-    const reset = this.calculateResetTime(
-      currentTokens,
-      capacity,
-      refillRate,
-      now
-    );
+    const reset = this.calculateResetTime(currentTokens, capacity, refillRate, now);
 
     return { allowed, remaining, reset, current: capacity - remaining };
   }
@@ -67,19 +57,16 @@ export class TokenBucket {
     const now = Date.now();
 
     // Use atomic Redis operation if available
-    const result = await this.store.tokenBucketConsume(
-      key,
-      capacity,
-      refillRate,
-      cost,
-      now
-    );
+    const result = await this.store.tokenBucketConsume(key, capacity, refillRate, cost, now);
+
+    const remaining = Math.floor(result.tokens);
+    const reset = this.calculateResetTime(result.tokens, capacity, refillRate, now);
 
     return {
-      allowed: result.allowed,
-      remaining: result.remaining,
-      reset: result.reset,
-      current: capacity - result.remaining,
+      allowed: result.success,
+      remaining,
+      reset,
+      current: capacity - remaining,
     };
   }
 
