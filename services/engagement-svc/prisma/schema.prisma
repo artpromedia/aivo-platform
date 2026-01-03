@@ -155,6 +155,8 @@ model EngagementEvent {
   @@index([tenantId, learnerId])
   @@index([tenantId, eventType])
   @@index([occurredAt])
+  @@index([learnerId, eventType, occurredAt(sort: Desc)]) // Learner-specific event type history
+  @@index([tenantId, learnerId, occurredAt(sort: Desc)]) // Recent events for a learner
   @@map("engagement_events")
 }
 
@@ -254,6 +256,8 @@ model Kudos {
   @@index([tenantId, learnerId])
   @@index([fromUserId])
   @@index([createdAt])
+  @@index([learnerId, readAt]) // Unread kudos lookup
+  @@index([tenantId, learnerId, visibleToLearner, createdAt(sort: Desc)]) // Visible kudos timeline
   @@map("kudos")
 }
 

@@ -151,6 +151,10 @@ model Session {
   @@index([tenantId, sessionType, startedAt(sort: Desc)], name: "idx_sessions_type_recent")
   // Uncompleted sessions (for resume functionality)
   @@index([tenantId, learnerId, endedAt], name: "idx_sessions_incomplete")
+  // Active sessions query (WHERE endedAt IS NULL)
+  @@index([endedAt], name: "idx_sessions_active")
+  // Origin-based analytics
+  @@index([tenantId, origin, startedAt(sort: Desc)], name: "idx_sessions_origin_recent")
 
   @@map("sessions")
 }
@@ -197,6 +201,10 @@ model SessionEvent {
   @@index([tenantId, learnerId, eventTime(sort: Desc)], name: "idx_events_learner_history")
   // Filter by event type (for specific analytics queries)
   @@index([tenantId, eventType, eventTime(sort: Desc)], name: "idx_events_type_recent")
+  // Event type alone (for global event type queries)
+  @@index([eventType], name: "idx_events_type")
+  // Learner-specific event type lookup
+  @@index([learnerId, eventType, eventTime(sort: Desc)], name: "idx_events_learner_type")
 
   @@map("session_events")
 }

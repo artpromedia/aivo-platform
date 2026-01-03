@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { CachePresets } from '@aivo/caching';
+
 import { getActivePolicySummary } from '../../../../lib/compliance-api';
 import { requirePlatformAdmin } from '../../../../lib/auth';
 
@@ -11,7 +13,12 @@ export async function GET() {
     }
 
     const summary = await getActivePolicySummary(auth.accessToken);
-    return NextResponse.json(summary);
+    // Cache policy summary for 5 minutes (private since it's admin-only)
+    return NextResponse.json(summary, {
+      headers: {
+        ...CachePresets.privateMedium,
+      },
+    });
   } catch (error) {
     console.error('Error fetching policy summary:', error);
     return NextResponse.json(

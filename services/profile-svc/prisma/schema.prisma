@@ -245,9 +245,12 @@ model LearnerAccommodation {
   profile             LearnerProfile?       @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, learnerId])
+  @@index([tenantId, learnerId, isActive]) // Optimized for active accommodations lookup
   @@index([profileId])
   @@index([category])
+  @@index([source]) // Filter by accommodation source
   @@index([isActive, effectiveFrom, effectiveTo])
+  @@index([tenantId, isCritical, isActive]) // Quick lookup for critical active accommodations
   @@map("learner_accommodations")
 }
 
@@ -309,6 +312,7 @@ model IepDocumentRef {
   deletedByUserId     String?             @map("deleted_by_user_id") @db.Uuid
 
   @@index([tenantId, learnerId])
+  @@index([tenantId, learnerId, isDeleted]) // Optimized for non-deleted docs lookup
   @@index([accessScope])
   @@map("iep_document_refs")
 }

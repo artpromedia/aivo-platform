@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { CachePresets } from '@aivo/caching';
+
 const DEVICE_MGMT_SVC_URL = process.env.DEVICE_MGMT_SVC_URL ?? 'http://localhost:3010';
 
 // GET /api/devices/policies - List all policies for a tenant
@@ -25,7 +27,13 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    // Cache policy list for 5 minutes with stale-while-revalidate
+    return NextResponse.json(data, {
+      headers: {
+        ...CachePresets.publicMedium,
+        Vary: 'Authorization',
+      },
+    });
   } catch (error) {
     console.error('Error fetching policies:', error);
     return NextResponse.json(

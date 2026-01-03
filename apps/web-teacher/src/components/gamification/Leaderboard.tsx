@@ -6,8 +6,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, ChevronUp, ChevronDown, Minus, Crown } from 'lucide-react';
+import { Trophy, ChevronUp, ChevronDown, Minus, Crown } from 'lucide-react';
 import type { LeaderboardEntry, LeaderboardScope, LeaderboardPeriod } from '@aivo/ts-types/gamification.types';
+import { OptimizedAvatar } from '../common/OptimizedAvatar';
 
 interface LeaderboardProps {
   entries: LeaderboardEntry[];
@@ -51,17 +52,13 @@ function PodiumPlace({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 |
     >
       {/* Avatar */}
       <div className="relative mb-2">
-        {entry.avatarUrl ? (
-          <img
-            src={entry.avatarUrl}
-            alt={entry.displayName}
-            className="w-12 h-12 rounded-full border-2 border-white shadow-lg"
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
-            {entry.displayName.charAt(0)}
-          </div>
-        )}
+        <OptimizedAvatar
+          src={entry.avatarUrl}
+          alt={entry.displayName}
+          size="lg"
+          className="border-2 border-white shadow-lg"
+          priority={place === 1}
+        />
         {place === 1 && (
           <motion.div
             className="absolute -top-3 left-1/2 -translate-x-1/2"
@@ -141,17 +138,11 @@ function LeaderboardRow({
       </div>
 
       {/* Avatar */}
-      {entry.avatarUrl ? (
-        <img
-          src={entry.avatarUrl}
-          alt={entry.displayName}
-          className="w-10 h-10 rounded-full"
-        />
-      ) : (
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
-          {entry.displayName.charAt(0)}
-        </div>
-      )}
+      <OptimizedAvatar
+        src={entry.avatarUrl}
+        alt={entry.displayName}
+        size="md"
+      />
 
       {/* Name & Level */}
       <div className="flex-1 min-w-0">
