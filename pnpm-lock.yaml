@@ -1007,10 +1007,10 @@ importers:
         version: 4.1.0
       lucide-react:
         specifier: ^0.562.0
-        version: 0.562.0(react@19.1.0)
+        version: 0.562.0(react@18.3.1)
       react:
         specifier: ^18.3.1
-        version: 19.1.0
+        version: 18.3.1
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
@@ -1147,6 +1147,25 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.1.0
+        version: 1.6.1(@types/node@20.19.26)(jsdom@26.1.0)(terser@5.44.1)
+
+  packages/env-validation:
+    dependencies:
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.26
+      tsup:
+        specifier: ^8.0.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.3.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.26)(jsdom@26.1.0)(terser@5.44.1)
 
   packages/i18n:
@@ -1513,6 +1532,12 @@ importers:
       '@aivo/billing-common':
         specifier: workspace:*
         version: link:../../libs/billing-common
+      '@aivo/env-validation':
+        specifier: workspace:*
+        version: link:../../packages/env-validation
+      '@aivo/rate-limiter':
+        specifier: workspace:*
+        version: link:../../packages/rate-limiter
       '@prisma/client':
         specifier: ^6.9.0
         version: 6.19.0(prisma@6.19.0(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
@@ -2592,6 +2617,9 @@ importers:
       '@aivo/events':
         specifier: workspace:*
         version: link:../../libs/events
+      '@aivo/rate-limiter':
+        specifier: workspace:*
+        version: link:../../packages/rate-limiter
       '@aivo/ts-observability':
         specifier: workspace:*
         version: link:../../libs/ts-observability
@@ -26311,9 +26339,9 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  lucide-react@0.562.0(react@19.1.0):
+  lucide-react@0.562.0(react@18.3.1):
     dependencies:
-      react: 19.1.0
+      react: 18.3.1
 
   luxon@3.5.0: {}
 

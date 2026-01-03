@@ -7,7 +7,6 @@
     "noEmit": true,
     "moduleResolution": "Bundler",
     "module": "esnext",
-    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {},
     "plugins": [

@@ -9,7 +9,6 @@
     "moduleResolution": "NodeNext",
     "types": ["node", "react"],
     "jsx": "react-jsx",
-    "ignoreDeprecations": "6.0",
     "baseUrl": "./src"
   },
   "include": ["src/**/*"],

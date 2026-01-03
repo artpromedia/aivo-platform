@@ -5,7 +5,8 @@
 // Events for content lifecycle: publishing, versioning, reviews, ingestion.
 
 import { z } from 'zod';
-import { AivoEventSchema } from './base.js';
+
+import { BaseEventSchema } from './base.js';
 
 // -----------------------------------------------------------------------------
 // Event Types
@@ -224,52 +225,52 @@ const IngestionFailedPayloadSchema = z.object({
 // Event Schemas
 // -----------------------------------------------------------------------------
 
-export const ContentPublishedSchema = AivoEventSchema.extend({
+export const ContentPublishedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.CONTENT_PUBLISHED),
   payload: ContentPublishedPayloadSchema,
 });
 
-export const ContentRetiredSchema = AivoEventSchema.extend({
+export const ContentRetiredSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.CONTENT_RETIRED),
   payload: ContentRetiredPayloadSchema,
 });
 
-export const VersionCreatedSchema = AivoEventSchema.extend({
+export const VersionCreatedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.VERSION_CREATED),
   payload: VersionCreatedPayloadSchema,
 });
 
-export const VersionSubmittedSchema = AivoEventSchema.extend({
+export const VersionSubmittedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.VERSION_SUBMITTED),
   payload: VersionSubmittedPayloadSchema,
 });
 
-export const VersionApprovedSchema = AivoEventSchema.extend({
+export const VersionApprovedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.VERSION_APPROVED),
   payload: VersionApprovedPayloadSchema,
 });
 
-export const VersionChangesRequestedSchema = AivoEventSchema.extend({
+export const VersionChangesRequestedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.VERSION_CHANGES_REQUESTED),
   payload: VersionChangesRequestedPayloadSchema,
 });
 
-export const VersionRejectedSchema = AivoEventSchema.extend({
+export const VersionRejectedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.VERSION_REJECTED),
   payload: VersionRejectedPayloadSchema,
 });
 
-export const IngestionStartedSchema = AivoEventSchema.extend({
+export const IngestionStartedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.INGESTION_STARTED),
   payload: IngestionStartedPayloadSchema,
 });
 
-export const IngestionCompletedSchema = AivoEventSchema.extend({
+export const IngestionCompletedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.INGESTION_COMPLETED),
   payload: IngestionCompletedPayloadSchema,
 });
 
-export const IngestionFailedSchema = AivoEventSchema.extend({
+export const IngestionFailedSchema = BaseEventSchema.extend({
   eventType: z.literal(CONTENT_EVENT_TYPES.INGESTION_FAILED),
   payload: IngestionFailedPayloadSchema,
 });

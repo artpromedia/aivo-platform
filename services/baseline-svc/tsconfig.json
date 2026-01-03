@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "baseUrl": "../..",
     "paths": {
       "@aivo/ts-rbac": ["libs/ts-rbac/dist/index.d.ts"]

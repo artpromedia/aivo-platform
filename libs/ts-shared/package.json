@@ -42,13 +42,29 @@
   },
   "peerDependencies": {
     "fastify": "^5.x",
-    "express": "^4.x || ^5.x"
+    "express": "^4.x || ^5.x",
+    "@tanstack/react-query": "^5.x",
+    "@nestjs/common": "^10.x",
+    "@nestjs/core": "^10.x",
+    "rxjs": "^7.x"
   },
   "peerDependenciesMeta": {
     "fastify": {
       "optional": true
     },
     "express": {
+      "optional": true
+    },
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/core": {
+      "optional": true
+    },
+    "rxjs": {
       "optional": true
     }
   },

@@ -31,20 +31,27 @@ export interface RateLimitRule {
   /** Unique identifier for the rule */
   id: string;
   /** Human-readable name */
-  name: string;
+  name?: string;
   /** Description of the rule */
   description?: string;
 
   /** What to limit (scope) */
-  scope: RateLimitScope;
+  scope?: RateLimitScope;
 
   /** Maximum requests allowed in the window */
-  limit: number;
+  limit?: number;
   /** Window duration in seconds */
-  window: number;
+  window?: number;
+
+  /** Limits configuration object (alternative to limit/window) */
+  limits?: {
+    limit: number;
+    windowSeconds: number;
+    burstLimit?: number;
+  };
 
   /** Algorithm to use */
-  algorithm: RateLimitAlgorithm;
+  algorithm?: RateLimitAlgorithm;
 
   /** Optional burst allowance (for token bucket) */
   burst?: number;
@@ -75,14 +82,20 @@ export type RateLimitAlgorithm =
   | 'token_bucket'
   | 'sliding_window'
   | 'fixed_window'
-  | 'leaky_bucket';
+  | 'leaky_bucket'
+  | 'token-bucket'
+  | 'sliding-window'
+  | 'fixed-window'
+  | 'leaky-bucket';
 
-export interface RateLimitScope {
+export interface RateLimitScopeObject {
   /** The type of scope */
   type: RateLimitScopeType;
   /** Custom key generator (for 'custom' type) */
   key?: string | ((context: RateLimitContext) => string | Promise<string>);
 }
+
+export type RateLimitScope = RateLimitScopeObject | RateLimitScopeType[];
 
 export type RateLimitScopeType =
   | 'global'
@@ -94,8 +107,12 @@ export type RateLimitScopeType =
   | 'custom';
 
 export interface RateLimitMatch {
+  /** URL path pattern (glob supported) */
+  path?: string;
   /** URL path patterns (glob supported) */
   paths?: string[];
+  /** HTTP method */
+  method?: string;
   /** HTTP methods */
   methods?: string[];
   /** Header conditions */
@@ -163,7 +180,7 @@ export interface RateLimitTier {
 
 export interface TierLimits {
   /** Requests per second */
-  requestsPerSecond: number;
+  requestsPerSecond?: number;
   /** Requests per minute */
   requestsPerMinute: number;
   /** Requests per hour */
@@ -172,6 +189,8 @@ export interface TierLimits {
   requestsPerDay: number;
   /** Burst limit (max concurrent) */
   burstLimit: number;
+  /** Maximum concurrent requests */
+  concurrentRequests?: number;
 }
 
 export interface TierQuotas {
@@ -181,6 +200,10 @@ export interface TierQuotas {
   monthlyRequests?: number;
   /** Maximum concurrent requests */
   concurrentRequests?: number;
+  /** Daily quota with reset info */
+  daily?: { limit: number; resetAt: string };
+  /** Monthly quota with reset info */
+  monthly?: { limit: number; resetAt: string };
 }
 
 export interface QuotaUsage {
