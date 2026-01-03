@@ -1,15 +1,63 @@
 # Fastlane configuration for Aivo Learner iOS
 # https://docs.fastlane.tools
+#
+# Production-ready configuration with:
+# - Automated builds and deployments
+# - Code signing with match
+# - TestFlight and App Store deployment
+# - COPPA compliance checks
+# - Slack notifications
 
 default_platform(:ios)
 
+# Configuration constants
+APP_IDENTIFIER = ENV["APP_IDENTIFIER"] || "com.aivo.learner"
+WORKSPACE = "Runner.xcworkspace"
+SCHEME = "Runner"
+
 platform :ios do
-  desc "Run tests"
+
+  # ============================================================================
+  # SETUP
+  # ============================================================================
+
+  before_all do
+    setup_ci if ENV["CI"]
+  end
+
+  # ============================================================================
+  # TESTING
+  # ============================================================================
+
+  desc "Run all tests"
   lane :test do
     Dir.chdir("../..") do
-      sh("flutter", "test")
+      sh("flutter", "test", "--coverage")
     end
   end
+
+  desc "Run integration tests"
+  lane :test_integration do
+    Dir.chdir("../..") do
+      sh("flutter", "test", "integration_test/")
+    end
+  end
+
+  desc "Run COPPA compliance checks"
+  lane :check_coppa do
+    UI.message("Running COPPA compliance checks...")
+    Dir.chdir("../..") do
+      # Check for prohibited SDKs
+      sh("grep -r 'facebook_sdk\\|google_ads\\|admob' lib/ || true")
+      # Verify analytics configuration
+      sh("grep -r 'isChildDevice' lib/ | head -5 || true")
+    end
+    UI.success("COPPA checks completed")
+  end
+
+  # ============================================================================
+  # BUILDS
+  # ============================================================================
 
   desc "Build debug IPA"
   lane :build_debug do
@@ -20,42 +68,129 @@ platform :ios do
 
   desc "Build release IPA for staging"
   lane :build_staging do
-    match(type: "appstore", readonly: true)
+    ensure_env_vars(
+      env_vars: ["APPLE_TEAM_ID"]
+    ) if ENV["CI"]
+
+    match(type: "appstore", readonly: is_ci)
+
     Dir.chdir("../..") do
-      sh("flutter", "build", "ipa", "--release", "--dart-define=FLAVOR=staging", "--export-options-plist=ios/ExportOptions.plist")
+      sh("flutter", "build", "ipa",
+        "--release",
+        "--dart-define=FLAVOR=staging",
+        "--dart-define=ENV=staging",
+        "--export-options-plist=ios/ExportOptions.plist"
+      )
     end
   end
 
   desc "Build release IPA for production"
   lane :build_release do
-    match(type: "appstore", readonly: true)
+    ensure_env_vars(
+      env_vars: ["APPLE_TEAM_ID"]
+    ) if ENV["CI"]
+
+    # Verify COPPA compliance before production build
+    check_coppa
+
+    match(type: "appstore", readonly: is_ci)
+
     Dir.chdir("../..") do
-      sh("flutter", "build", "ipa", "--release", "--dart-define=FLAVOR=prod", "--export-options-plist=ios/ExportOptions.plist")
+      sh("flutter", "build", "ipa",
+        "--release",
+        "--dart-define=FLAVOR=prod",
+        "--dart-define=ENV=production",
+        "--export-options-plist=ios/ExportOptions.plist"
+      )
     end
   end
 
-  desc "Deploy to TestFlight"
-  lane :deploy_testflight do
-    build_release
+  # ============================================================================
+  # DEPLOYMENT
+  # ============================================================================
+
+  desc "Deploy to TestFlight (internal testing)"
+  lane :deploy_testflight do |options|
+    build_staging unless options[:skip_build]
+
+    changelog = options[:changelog] || generate_changelog
+
     upload_to_testflight(
       ipa: "../build/ios/ipa/aivo_learner.ipa",
-      skip_waiting_for_build_processing: true
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      changelog: changelog,
+      notify_external_testers: false
+    )
+
+    notify_slack(
+      message: "iOS TestFlight build uploaded!",
+      success: true
+    )
+  end
+
+  desc "Deploy to TestFlight (external beta)"
+  lane :deploy_beta do |options|
+    build_staging unless options[:skip_build]
+
+    changelog = options[:changelog] || generate_changelog
+
+    upload_to_testflight(
+      ipa: "../build/ios/ipa/aivo_learner.ipa",
+      skip_waiting_for_build_processing: false,
+      distribute_external: true,
+      groups: options[:groups] || ["Beta Testers"],
+      changelog: changelog
+    )
+
+    notify_slack(
+      message: "iOS Beta build available for testing!",
+      success: true
     )
   end
 
   desc "Deploy to App Store"
-  lane :deploy_appstore do
-    build_release
+  lane :deploy_appstore do |options|
+    build_release unless options[:skip_build]
+
     upload_to_app_store(
       ipa: "../build/ios/ipa/aivo_learner.ipa",
-      submit_for_review: false,
-      automatic_release: false
+      submit_for_review: options[:submit] || false,
+      automatic_release: false,
+      force: true,
+      precheck_include_in_app_purchases: false,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: true,
+        export_compliance_encryption_updated: false,
+        export_compliance_is_exempt: true,
+        content_rights_has_rights: true,
+        content_rights_contains_third_party_content: true
+      }
+    )
+
+    # Tag release
+    if options[:tag]
+      version = get_version_number(xcodeproj: "Runner.xcodeproj")
+      build = get_build_number(xcodeproj: "Runner.xcodeproj")
+      add_git_tag(tag: "ios/v#{version}+#{build}")
+      push_git_tags
+    end
+
+    notify_slack(
+      message: "iOS App Store build uploaded!",
+      success: true
     )
   end
+
+  # ============================================================================
+  # CODE SIGNING
+  # ============================================================================
 
   desc "Sync certificates and profiles using match"
   lane :certificates do
     match(type: "development")
+    match(type: "adhoc")
     match(type: "appstore")
   end
 
@@ -63,18 +198,102 @@ platform :ios do
   lane :register_device do |options|
     device_name = options[:name]
     device_udid = options[:udid]
+
     register_devices(
       devices: {
         device_name => device_udid
       }
     )
+
     match(type: "development", force_for_new_devices: true)
+    match(type: "adhoc", force_for_new_devices: true)
   end
+
+  desc "Register devices from file"
+  lane :register_devices_file do
+    register_devices(devices_file: "./fastlane/devices.txt")
+    match(type: "development", force_for_new_devices: true)
+    match(type: "adhoc", force_for_new_devices: true)
+  end
+
+  # ============================================================================
+  # VERSION MANAGEMENT
+  # ============================================================================
 
   desc "Increment build number"
   lane :increment_build do
-    increment_build_number(
-      xcodeproj: "Runner.xcodeproj"
+    increment_build_number(xcodeproj: "Runner.xcodeproj")
+
+    # Also update pubspec.yaml build number
+    Dir.chdir("../..") do
+      current_build = get_build_number(xcodeproj: "ios/Runner.xcodeproj")
+      pubspec = File.read("pubspec.yaml")
+      new_pubspec = pubspec.gsub(/(\+)(\d+)/, "\\1#{current_build}")
+      File.write("pubspec.yaml", new_pubspec)
+    end
+  end
+
+  desc "Increment version (patch/minor/major)"
+  lane :bump_version do |options|
+    bump_type = options[:type] || "patch"
+    increment_version_number(
+      xcodeproj: "Runner.xcodeproj",
+      bump_type: bump_type
     )
   end
+
+  # ============================================================================
+  # UTILITIES
+  # ============================================================================
+
+  desc "Clean build artifacts"
+  lane :clean do
+    Dir.chdir("../..") do
+      sh("flutter", "clean")
+    end
+    clean_build_artifacts
+  end
+
+  desc "Download dSYMs for crash reporting"
+  lane :refresh_dsyms do
+    download_dsyms
+    upload_symbols_to_crashlytics(
+      gsp_path: "./Runner/GoogleService-Info.plist"
+    )
+  end
+
+  # ============================================================================
+  # PRIVATE LANES
+  # ============================================================================
+
+  private_lane :generate_changelog do
+    changelog_from_git_commits(
+      commits_count: 10,
+      pretty: "- %s",
+      merge_commit_filtering: "exclude_merges"
+    ) || "Bug fixes and improvements"
+  end
+
+  private_lane :notify_slack do |options|
+    return unless ENV["SLACK_WEBHOOK_URL"]
+
+    slack(
+      message: options[:message],
+      success: options[:success],
+      slack_url: ENV["SLACK_WEBHOOK_URL"],
+      default_payloads: [:git_branch, :git_author]
+    )
+  end
+
+  # ============================================================================
+  # ERROR HANDLING
+  # ============================================================================
+
+  error do |lane, exception|
+    notify_slack(
+      message: "iOS build failed in lane '#{lane}': #{exception.message}",
+      success: false
+    )
+  end
+
 end

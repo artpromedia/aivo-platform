@@ -1,5 +1,12 @@
 name: Mobile CI/CD
 
+# Production-ready CI/CD pipeline for AIVO mobile apps
+# - Automated testing with coverage
+# - COPPA compliance verification
+# - Android and iOS builds
+# - Staged deployments (internal -> beta -> production)
+# - Accessibility testing
+
 on:
   push:
     branches: [main, develop]
@@ -12,10 +19,32 @@ on:
     paths:
       - 'apps/mobile-*/**'
       - 'libs/flutter-*/**'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App to deploy'
+        required: true
+        default: 'mobile-learner'
+        type: choice
+        options:
+          - mobile-learner
+          - mobile-parent
+          - mobile-teacher
+          - all
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - beta
+          - production
 
 env:
-  FLUTTER_VERSION: '3.22.0'
+  FLUTTER_VERSION: '3.24.0'
   JAVA_VERSION: '17'
+  RUBY_VERSION: '3.2'
 
 jobs:
   # Detect which apps changed
@@ -244,3 +273,270 @@ jobs:
         run: |
           echo "Would deploy to Play Store internal track"
           # fastlane deploy_internal
+
+  # COPPA Compliance Check
+  coppa-check:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.learner == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for prohibited SDKs
+        working-directory: apps/mobile-learner
+        run: |
+          echo "Checking for prohibited advertising SDKs..."
+          if grep -r "facebook_sdk\|google_ads\|admob\|unity_ads" lib/ pubspec.yaml; then
+            echo "::error::Prohibited advertising SDK found - COPPA violation"
+            exit 1
+          fi
+          echo "✓ No prohibited advertising SDKs found"
+
+      - name: Verify analytics configuration
+        working-directory: apps/mobile-learner
+        run: |
+          echo "Checking analytics configuration for COPPA compliance..."
+          if ! grep -r "isChildDevice" lib/; then
+            echo "::warning::No isChildDevice flag found - ensure COPPA-compliant analytics"
+          fi
+          echo "✓ Analytics configuration check complete"
+
+      - name: Check data collection practices
+        working-directory: apps/mobile-learner
+        run: |
+          echo "Checking for personal data collection..."
+          # Check for proper data handling patterns
+          if grep -rE "birthday|age|location|email" lib/ | grep -v "//"; then
+            echo "::warning::Personal data fields detected - ensure COPPA consent is obtained"
+          fi
+          echo "✓ Data collection check complete"
+
+      - name: Check AndroidManifest permissions
+        working-directory: apps/mobile-learner/android
+        run: |
+          echo "Checking Android permissions for COPPA compliance..."
+          if grep -r "AD_ID\|ADVERTISING_ID" app/src/; then
+            echo "::error::Advertising ID permission found - COPPA violation"
+            exit 1
+          fi
+          echo "✓ Android permissions check complete"
+
+  # Accessibility Testing
+  accessibility-check:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.learner == 'true' || needs.changes.outputs.common == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Get dependencies
+        working-directory: apps/mobile-learner
+        run: flutter pub get
+
+      - name: Check Semantics usage
+        working-directory: apps/mobile-learner
+        run: |
+          echo "Checking for Semantics widget usage..."
+          SEMANTICS_COUNT=$(grep -r "Semantics\|semanticLabel" lib/ | wc -l)
+          echo "Found $SEMANTICS_COUNT Semantics annotations"
+          if [ "$SEMANTICS_COUNT" -lt 50 ]; then
+            echo "::warning::Low Semantics usage - consider adding more accessibility labels"
+          fi
+
+      - name: Check for hardcoded text
+        working-directory: apps/mobile-learner
+        run: |
+          echo "Checking for hardcoded strings (should use localization)..."
+          # Simple check for hardcoded strings in widgets
+          HARDCODED=$(grep -rE "Text\s*\(\s*['\"]" lib/ | grep -v "test\|example\|TODO" | wc -l)
+          echo "Found $HARDCODED potential hardcoded strings"
+          if [ "$HARDCODED" -gt 100 ]; then
+            echo "::warning::Many hardcoded strings found - consider using localization"
+          fi
+
+  # Deploy to Beta (manual)
+  deploy-beta:
+    runs-on: ubuntu-latest
+    needs: [build-android, coppa-check]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'beta'
+    environment: beta
+    strategy:
+      matrix:
+        app: ${{ github.event.inputs.app == 'all' && fromJson('["mobile-learner", "mobile-parent", "mobile-teacher"]') || fromJson(format('["{0}"]', github.event.inputs.app)) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.app }}-apk
+          path: artifacts
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+
+      - name: Install Fastlane
+        run: gem install fastlane
+
+      - name: Deploy to Play Store Beta
+        working-directory: apps/${{ matrix.app }}/android
+        env:
+          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+        run: |
+          if [ -n "$GOOGLE_PLAY_JSON_KEY" ]; then
+            echo "$GOOGLE_PLAY_JSON_KEY" > play-store-credentials.json
+            fastlane deploy_beta skip_build:true
+            rm play-store-credentials.json
+          else
+            echo "::warning::GOOGLE_PLAY_JSON_KEY not configured - skipping deployment"
+          fi
+
+      - name: Notify Slack
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🚀 ${{ matrix.app }} deployed to beta track!"}' \
+            $SLACK_WEBHOOK_URL
+
+  # Deploy to Production (manual with approval)
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [build-android, coppa-check]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment: production
+    strategy:
+      matrix:
+        app: ${{ github.event.inputs.app == 'all' && fromJson('["mobile-learner", "mobile-parent", "mobile-teacher"]') || fromJson(format('["{0}"]', github.event.inputs.app)) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.app }}-apk
+          path: artifacts
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+
+      - name: Install Fastlane
+        run: gem install fastlane
+
+      - name: Deploy to Play Store Production
+        working-directory: apps/${{ matrix.app }}/android
+        env:
+          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+        run: |
+          if [ -n "$GOOGLE_PLAY_JSON_KEY" ]; then
+            echo "$GOOGLE_PLAY_JSON_KEY" > play-store-credentials.json
+            fastlane deploy_production skip_build:true rollout:0.1
+            rm play-store-credentials.json
+          else
+            echo "::error::GOOGLE_PLAY_JSON_KEY not configured"
+            exit 1
+          fi
+
+      - name: Create Release Tag
+        run: |
+          VERSION=$(grep "version:" apps/${{ matrix.app }}/pubspec.yaml | sed 's/version: //')
+          git tag -a "android/${{ matrix.app }}/v${VERSION}" -m "Production release ${VERSION}"
+          git push origin "android/${{ matrix.app }}/v${VERSION}"
+
+      - name: Notify Slack
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🎉 ${{ matrix.app }} deployed to PRODUCTION (10% rollout)!"}' \
+            $SLACK_WEBHOOK_URL
+
+  # iOS TestFlight Deployment
+  deploy-ios-testflight:
+    runs-on: macos-latest
+    needs: [build-ios, coppa-check]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'internal'
+    environment: ${{ github.event.inputs.environment }}
+    strategy:
+      matrix:
+        app: ${{ github.event.inputs.app == 'all' && fromJson('["mobile-learner", "mobile-parent", "mobile-teacher"]') || fromJson(format('["{0}"]', github.event.inputs.app)) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+
+      - name: Install Fastlane
+        run: gem install fastlane
+
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      - name: Get Flutter dependencies
+        working-directory: apps/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/${{ matrix.app }}/ios
+        run: pod install
+
+      - name: Setup Match certificates
+        working-directory: apps/${{ matrix.app }}/ios
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$MATCH_GIT_URL" ]; then
+            fastlane certificates
+          else
+            echo "::warning::Match not configured - skipping code signing"
+          fi
+
+      - name: Build and Deploy to TestFlight
+        working-directory: apps/${{ matrix.app }}/ios
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$APP_STORE_CONNECT_API_KEY" ]; then
+            fastlane deploy_testflight
+          else
+            echo "::warning::App Store Connect credentials not configured"
+          fi
+
+      - name: Notify Slack
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🍎 ${{ matrix.app }} iOS build uploaded to TestFlight!"}' \
+            $SLACK_WEBHOOK_URL
