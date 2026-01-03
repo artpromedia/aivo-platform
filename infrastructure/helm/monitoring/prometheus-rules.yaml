@@ -1,0 +1,357 @@
+# ==============================================================================
+# AIVO Platform - Prometheus Alerting Rules
+# ==============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: aivo-platform-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+spec:
+  groups:
+    # ==========================================================================
+    # SERVICE AVAILABILITY
+    # ==========================================================================
+    - name: aivo.service.availability
+      interval: 30s
+      rules:
+        - alert: ServiceDown
+          expr: up{job=~"aivo-.*"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Service {{ $labels.job }} is down"
+            description: "Service {{ $labels.job }} in namespace {{ $labels.namespace }} has been down for more than 1 minute."
+            runbook_url: "https://runbooks.aivo.edu/service-down"
+
+        - alert: ServiceHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5..", job=~"aivo-.*"}[5m])) by (job)
+            /
+            sum(rate(http_requests_total{job=~"aivo-.*"}[5m])) by (job)
+            > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "High error rate in {{ $labels.job }}"
+            description: "Service {{ $labels.job }} has error rate of {{ $value | humanizePercentage }} (> 5%) for the last 5 minutes."
+            runbook_url: "https://runbooks.aivo.edu/high-error-rate"
+
+        - alert: ServiceHighLatency
+          expr: |
+            histogram_quantile(0.99, 
+              sum(rate(http_request_duration_seconds_bucket{job=~"aivo-.*"}[5m])) by (le, job)
+            ) > 2
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High latency in {{ $labels.job }}"
+            description: "Service {{ $labels.job }} p99 latency is {{ $value | humanizeDuration }} (> 2s) for the last 10 minutes."
+            runbook_url: "https://runbooks.aivo.edu/high-latency"
+
+        - alert: ServiceHighLatencyCritical
+          expr: |
+            histogram_quantile(0.99, 
+              sum(rate(http_request_duration_seconds_bucket{job=~"aivo-.*"}[5m])) by (le, job)
+            ) > 5
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Critical latency in {{ $labels.job }}"
+            description: "Service {{ $labels.job }} p99 latency is {{ $value | humanizeDuration }} (> 5s) for the last 5 minutes."
+            runbook_url: "https://runbooks.aivo.edu/high-latency"
+
+    # ==========================================================================
+    # POD HEALTH
+    # ==========================================================================
+    - name: aivo.pod.health
+      interval: 30s
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="aivo"}[15m]) * 60 * 15 > 0
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash looping"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting frequently."
+            runbook_url: "https://runbooks.aivo.edu/pod-crash-looping"
+
+        - alert: PodNotReady
+          expr: |
+            sum by (namespace, pod) (
+              max by(namespace, pod) (kube_pod_status_phase{namespace="aivo", phase=~"Pending|Unknown"}) * on(namespace, pod) group_left(owner_kind) 
+              max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})
+            ) > 0
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} is not ready"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in a non-ready state for more than 15 minutes."
+            runbook_url: "https://runbooks.aivo.edu/pod-not-ready"
+
+        - alert: ContainerOOMKilled
+          expr: |
+            kube_pod_container_status_last_terminated_reason{namespace="aivo", reason="OOMKilled"} == 1
+          for: 0m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Container {{ $labels.container }} was OOM killed"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} was terminated due to OOM."
+            runbook_url: "https://runbooks.aivo.edu/container-oom"
+
+    # ==========================================================================
+    # RESOURCE UTILIZATION
+    # ==========================================================================
+    - name: aivo.resources
+      interval: 60s
+      rules:
+        - alert: HighCPUUsage
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{namespace="aivo", container!=""}[5m])) by (pod, container)
+            /
+            sum(kube_pod_container_resource_limits{namespace="aivo", resource="cpu", container!=""}) by (pod, container)
+            > 0.9
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High CPU usage in {{ $labels.pod }}/{{ $labels.container }}"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of CPU limit."
+            runbook_url: "https://runbooks.aivo.edu/high-cpu"
+
+        - alert: HighMemoryUsage
+          expr: |
+            sum(container_memory_working_set_bytes{namespace="aivo", container!=""}) by (pod, container)
+            /
+            sum(kube_pod_container_resource_limits{namespace="aivo", resource="memory", container!=""}) by (pod, container)
+            > 0.9
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High memory usage in {{ $labels.pod }}/{{ $labels.container }}"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of memory limit."
+            runbook_url: "https://runbooks.aivo.edu/high-memory"
+
+        - alert: PVCAlmostFull
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="aivo"}
+            /
+            kubelet_volume_stats_capacity_bytes{namespace="aivo"}
+            > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "PVC {{ $labels.persistentvolumeclaim }} is almost full"
+            description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value | humanizePercentage }} full."
+            runbook_url: "https://runbooks.aivo.edu/pvc-full"
+
+    # ==========================================================================
+    # DATABASE
+    # ==========================================================================
+    - name: aivo.database
+      interval: 30s
+      rules:
+        - alert: DatabaseConnectionPoolExhausted
+          expr: |
+            pg_stat_activity_count{datname="aivo"} 
+            / 
+            pg_settings_max_connections 
+            > 0.8
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Database connection pool near exhaustion"
+            description: "PostgreSQL connection pool is {{ $value | humanizePercentage }} utilized."
+            runbook_url: "https://runbooks.aivo.edu/db-connections"
+
+        - alert: DatabaseReplicationLag
+          expr: |
+            pg_replication_lag_seconds > 10
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Database replication lag detected"
+            description: "PostgreSQL replication lag is {{ $value | humanizeDuration }}."
+            runbook_url: "https://runbooks.aivo.edu/db-replication-lag"
+
+        - alert: DatabaseSlowQueries
+          expr: |
+            rate(pg_stat_statements_seconds_total{datname="aivo"}[5m]) 
+            / 
+            rate(pg_stat_statements_calls_total{datname="aivo"}[5m]) 
+            > 1
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Slow database queries detected"
+            description: "Average query time is {{ $value | humanizeDuration }}."
+            runbook_url: "https://runbooks.aivo.edu/db-slow-queries"
+
+    # ==========================================================================
+    # REDIS
+    # ==========================================================================
+    - name: aivo.redis
+      interval: 30s
+      rules:
+        - alert: RedisHighMemoryUsage
+          expr: |
+            redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Redis memory usage high"
+            description: "Redis is using {{ $value | humanizePercentage }} of max memory."
+            runbook_url: "https://runbooks.aivo.edu/redis-memory"
+
+        - alert: RedisConnectionsHigh
+          expr: |
+            redis_connected_clients > 500
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High number of Redis connections"
+            description: "Redis has {{ $value }} connected clients."
+            runbook_url: "https://runbooks.aivo.edu/redis-connections"
+
+    # ==========================================================================
+    # SLO ALERTS
+    # ==========================================================================
+    - name: aivo.slo
+      interval: 30s
+      rules:
+        - alert: SLOAvailabilityBreach
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{status=~"5..", job=~"aivo-.*"}[24h]))
+              /
+              sum(rate(http_requests_total{job=~"aivo-.*"}[24h]))
+            ) < 0.999
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+            slo: availability
+          annotations:
+            summary: "SLO breach: Availability below 99.9%"
+            description: "24-hour availability is {{ $value | humanizePercentage }} (target: 99.9%)."
+            runbook_url: "https://runbooks.aivo.edu/slo-availability"
+
+        - alert: SLOLatencyBreach
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job=~"aivo-.*"}[24h])) by (le)
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+            slo: latency
+          annotations:
+            summary: "SLO breach: p95 latency above 500ms"
+            description: "24-hour p95 latency is {{ $value | humanizeDuration }} (target: 500ms)."
+            runbook_url: "https://runbooks.aivo.edu/slo-latency"
+
+        - alert: ErrorBudgetBurn
+          expr: |
+            sum(rate(http_requests_total{status=~"5..", job=~"aivo-.*"}[1h]))
+            /
+            sum(rate(http_requests_total{job=~"aivo-.*"}[1h]))
+            > 0.01
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+            slo: error_budget
+          annotations:
+            summary: "Error budget burning fast"
+            description: "Error rate in last hour is {{ $value | humanizePercentage }}, exceeding 10x error budget."
+            runbook_url: "https://runbooks.aivo.edu/error-budget"
+
+    # ==========================================================================
+    # SECURITY
+    # ==========================================================================
+    - name: aivo.security
+      interval: 60s
+      rules:
+        - alert: HighAuthFailureRate
+          expr: |
+            sum(rate(auth_login_failures_total[5m])) 
+            / 
+            sum(rate(auth_login_attempts_total[5m])) 
+            > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            team: security
+          annotations:
+            summary: "High authentication failure rate"
+            description: "Authentication failure rate is {{ $value | humanizePercentage }}."
+            runbook_url: "https://runbooks.aivo.edu/auth-failures"
+
+        - alert: SuspiciousActivity
+          expr: |
+            sum(rate(security_suspicious_requests_total[5m])) > 10
+          for: 5m
+          labels:
+            severity: critical
+            team: security
+          annotations:
+            summary: "Suspicious activity detected"
+            description: "{{ $value }} suspicious requests per second detected."
+            runbook_url: "https://runbooks.aivo.edu/suspicious-activity"
+
+        - alert: CertificateExpiringSoon
+          expr: |
+            (cert_manager_certificate_expiration_timestamp_seconds - time()) / 86400 < 30
+          for: 1h
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Certificate expiring soon"
+            description: "Certificate {{ $labels.name }} expires in {{ $value | humanizeDuration }}."
+            runbook_url: "https://runbooks.aivo.edu/cert-expiry"
+
+        - alert: CertificateExpiryCritical
+          expr: |
+            (cert_manager_certificate_expiration_timestamp_seconds - time()) / 86400 < 7
+          for: 1h
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Certificate expiring in less than 7 days"
+            description: "Certificate {{ $labels.name }} expires in {{ $value | humanizeDuration }}."
+            runbook_url: "https://runbooks.aivo.edu/cert-expiry"

@@ -1002,9 +1002,15 @@ importers:
 
   libs/ui-web:
     dependencies:
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      lucide-react:
+        specifier: ^0.562.0
+        version: 0.562.0(react@19.1.0)
       react:
         specifier: ^18.3.1
-        version: 18.3.1
+        version: 19.1.0
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
@@ -11634,6 +11640,11 @@ packages:
 
   lucide-react@0.561.0:
     resolution: {integrity: sha512-Y59gMY38tl4/i0qewcqohPdEbieBy7SovpBL9IFebhc2mDd8x4PZSOsiFRkpPcOq6bj1r/mjH/Rk73gSlIJP2A==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lucide-react@0.562.0:
+    resolution: {integrity: sha512-82hOAu7y0dbVuFfmO4bYF1XEwYk/mEbM5E+b1jgci/udUBEE/R7LF5Ip0CCEmXe8AybRM8L+04eP+LGZeDvkiw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -26299,6 +26310,10 @@ snapshots:
   lucide-react@0.561.0(react@18.3.1):
     dependencies:
       react: 18.3.1
+
+  lucide-react@0.562.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
 
   luxon@3.5.0: {}
 

@@ -16,6 +16,21 @@
       "require": "./dist/react/index.js",
       "types": "./dist/react/index.d.ts"
     },
+    "./rtl": {
+      "import": "./dist/rtl/index.mjs",
+      "require": "./dist/rtl/index.js",
+      "types": "./dist/rtl/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.mjs",
+      "require": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./formatters": {
+      "import": "./dist/formatters/index.mjs",
+      "require": "./dist/formatters/index.js",
+      "types": "./dist/formatters/index.d.ts"
+    },
     "./styles": {
       "import": "./dist/styles/index.mjs",
       "require": "./dist/styles/index.js",
@@ -23,8 +38,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/react/index.ts src/styles/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts src/react/index.ts src/styles/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts --format cjs,esm --dts --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/",

@@ -1,0 +1,433 @@
+# ==============================================================================
+# AIVO Platform - Deployment Pipeline
+# ==============================================================================
+# Multi-environment deployment with canary releases and blue-green deployments
+
+name: Deploy Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    branches: [main, develop]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      services:
+        description: 'Services to deploy (comma-separated or "all")'
+        required: false
+        default: 'all'
+      skip_tests:
+        description: 'Skip pre-deployment tests'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  HELM_VERSION: '3.13.0'
+
+jobs:
+  # ============================================================================
+  # DETERMINE ENVIRONMENT
+  # ============================================================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      services: ${{ steps.services.outputs.list }}
+      image-tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine services
+        id: services
+        run: |
+          SERVICES="${{ github.event.inputs.services || 'all' }}"
+          if [ "$SERVICES" = "all" ]; then
+            echo "list=auth-svc,content-svc,assessment-svc,analytics-svc,ai-orchestrator,notify-svc,billing-svc" >> $GITHUB_OUTPUT
+          else
+            echo "list=$SERVICES" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine image tag
+        id: tag
+        run: |
+          echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  # ============================================================================
+  # DEPLOY TO DEVELOPMENT
+  # ============================================================================
+  deploy-dev:
+    name: Deploy to Development
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'development'
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.aivo.edu
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name aivo-dev \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy services
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ needs.prepare.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            echo "Deploying $service..."
+            helm upgrade --install $service ./infrastructure/helm/services/$service \
+              --namespace aivo \
+              --create-namespace \
+              --values ./infrastructure/helm/services/$service/values-dev.yaml \
+              --set image.tag=${{ needs.prepare.outputs.image-tag }} \
+              --wait \
+              --timeout 10m
+          done
+
+      - name: Run smoke tests
+        run: |
+          kubectl run smoke-test \
+            --image=curlimages/curl:latest \
+            --restart=Never \
+            --rm \
+            --attach \
+            --namespace aivo \
+            --command -- curl -sf http://auth-svc.aivo.svc.cluster.local/health
+
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Development deployment completed'
+          channel: '#deployments'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ============================================================================
+  # DEPLOY TO STAGING
+  # ============================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.aivo.edu
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name aivo-staging \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy with canary
+        id: canary-deploy
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ needs.prepare.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            echo "Deploying $service with canary..."
+            
+            # Deploy canary (10% traffic)
+            helm upgrade --install $service-canary ./infrastructure/helm/services/$service \
+              --namespace aivo \
+              --values ./infrastructure/helm/services/$service/values-staging.yaml \
+              --set image.tag=${{ needs.prepare.outputs.image-tag }} \
+              --set canary.enabled=true \
+              --set canary.weight=10 \
+              --set nameOverride=$service-canary \
+              --wait \
+              --timeout 10m
+          done
+
+      - name: Wait for canary validation
+        run: sleep 300  # 5 minutes
+
+      - name: Check canary health
+        id: canary-check
+        run: |
+          # Check error rates from Prometheus
+          ERROR_RATE=$(kubectl exec -n monitoring deploy/prometheus-server -- \
+            wget -qO- 'http://localhost:9090/api/v1/query?query=sum(rate(http_requests_total{status=~"5.."}[5m]))/sum(rate(http_requests_total[5m]))' \
+            | jq -r '.data.result[0].value[1] // "0"')
+          
+          if [ "$(echo "$ERROR_RATE > 0.01" | bc -l 2>/dev/null || echo 0)" = "1" ]; then
+            echo "Canary failed: error rate too high ($ERROR_RATE)"
+            echo "rollback=true" >> $GITHUB_OUTPUT
+          else
+            echo "Canary passed: error rate acceptable ($ERROR_RATE)"
+            echo "rollback=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rollback canary
+        if: steps.canary-check.outputs.rollback == 'true'
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ needs.prepare.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            helm uninstall $service-canary -n aivo || true
+          done
+          exit 1
+
+      - name: Promote canary to stable
+        if: steps.canary-check.outputs.rollback != 'true'
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ needs.prepare.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            helm upgrade --install $service ./infrastructure/helm/services/$service \
+              --namespace aivo \
+              --values ./infrastructure/helm/services/$service/values-staging.yaml \
+              --set image.tag=${{ needs.prepare.outputs.image-tag }} \
+              --wait \
+              --timeout 10m
+            
+            # Remove canary
+            helm uninstall $service-canary -n aivo || true
+          done
+
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: 'Staging deployment ${{ job.status }}'
+          channel: '#deployments'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ============================================================================
+  # DEPLOY TO PRODUCTION
+  # ============================================================================
+  deploy-production:
+    name: Deploy to Production
+    needs: [prepare, deploy-staging]
+    if: needs.prepare.outputs.environment == 'production' || (needs.prepare.outputs.environment == 'staging' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.aivo.edu
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name aivo-prod \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Create deployment record
+        id: deployment
+        run: |
+          DEPLOYMENT_ID=$(uuidgen)
+          echo "id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          
+          aws dynamodb put-item \
+            --table-name aivo-deployments \
+            --item "{
+              \"id\": {\"S\": \"$DEPLOYMENT_ID\"},
+              \"timestamp\": {\"S\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"},
+              \"commit\": {\"S\": \"${{ github.sha }}\"},
+              \"services\": {\"S\": \"${{ needs.prepare.outputs.services }}\"},
+              \"status\": {\"S\": \"in_progress\"},
+              \"initiator\": {\"S\": \"${{ github.actor }}\"}
+            }"
+
+      - name: Blue-Green deployment
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ needs.prepare.outputs.services }}"
+          
+          for service in "${SERVICES[@]}"; do
+            echo "=== Deploying $service ==="
+            
+            # Determine current active color
+            CURRENT_COLOR=$(kubectl get svc $service -n aivo -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo "blue")
+            NEW_COLOR=$([[ "$CURRENT_COLOR" == "blue" ]] && echo "green" || echo "blue")
+            
+            echo "Current: $CURRENT_COLOR, New: $NEW_COLOR"
+            
+            # Deploy to new color
+            helm upgrade --install $service-$NEW_COLOR ./infrastructure/helm/services/$service \
+              --namespace aivo \
+              --values ./infrastructure/helm/services/$service/values-prod.yaml \
+              --set image.tag=${{ needs.prepare.outputs.image-tag }} \
+              --set deployment.color=$NEW_COLOR \
+              --set nameOverride=$service-$NEW_COLOR \
+              --wait \
+              --timeout 15m
+            
+            # Verify new deployment health
+            kubectl rollout status deployment/$service-$NEW_COLOR -n aivo --timeout=5m
+            
+            # Run health checks
+            for i in {1..10}; do
+              if kubectl exec -n aivo deploy/$service-$NEW_COLOR -- wget -qO- http://localhost:3000/health > /dev/null 2>&1; then
+                echo "Health check $i passed"
+              else
+                echo "Health check $i failed"
+                exit 1
+              fi
+              sleep 5
+            done
+            
+            # Switch traffic
+            kubectl patch svc $service -n aivo \
+              -p "{\"spec\":{\"selector\":{\"app.kubernetes.io/name\":\"$service\",\"color\":\"$NEW_COLOR\"}}}"
+            
+            echo "Traffic switched to $NEW_COLOR"
+            
+            # Wait for connections to drain
+            sleep 30
+            
+            # Scale down old deployment
+            kubectl scale deployment/$service-$CURRENT_COLOR -n aivo --replicas=1 || true
+          done
+
+      - name: Verify deployment
+        run: |
+          # Run production smoke tests
+          ./scripts/smoke-tests.sh production || exit 1
+          
+          # Verify metrics
+          sleep 60
+
+      - name: Update deployment record
+        if: always()
+        run: |
+          STATUS=${{ job.status == 'success' && 'completed' || 'failed' }}
+          
+          aws dynamodb update-item \
+            --table-name aivo-deployments \
+            --key "{\"id\": {\"S\": \"${{ steps.deployment.outputs.id }}\"}}" \
+            --update-expression "SET #s = :status, completed_at = :time" \
+            --expression-attribute-names '{"#s": "status"}' \
+            --expression-attribute-values "{
+              \":status\": {\"S\": \"$STATUS\"},
+              \":time\": {\"S\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}
+            }"
+
+      - name: Create GitHub release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: deploy-${{ github.run_number }}
+          name: Production Deployment ${{ github.run_number }}
+          body: |
+            ## Deployment Summary
+            
+            - **Commit:** ${{ github.sha }}
+            - **Services:** ${{ needs.prepare.outputs.services }}
+            - **Deployed by:** ${{ github.actor }}
+            - **Time:** ${{ github.event.head_commit.timestamp }}
+          generate_release_notes: true
+
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: |
+            Production deployment ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Services: ${{ needs.prepare.outputs.services }}
+          channel: '#deployments'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: PagerDuty alert on failure
+        if: failure()
+        run: |
+          curl -X POST https://events.pagerduty.com/v2/enqueue \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "routing_key": "${{ secrets.PAGERDUTY_ROUTING_KEY }}",
+              "event_action": "trigger",
+              "payload": {
+                "summary": "Production deployment failed",
+                "severity": "critical",
+                "source": "github-actions",
+                "custom_details": {
+                  "commit": "${{ github.sha }}",
+                  "services": "${{ needs.prepare.outputs.services }}",
+                  "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              }
+            }'

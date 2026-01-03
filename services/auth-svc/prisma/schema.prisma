@@ -268,3 +268,175 @@ model FailedLoginAttempt {
   @@index([ipAddress])
   @@index([attemptedAt])
 }
+
+// ============================================================================
+// CONSENT MANAGEMENT (COPPA/FERPA/GDPR)
+// ============================================================================
+
+enum ConsentType {
+  PARENTAL          // Parent consent for minor users (COPPA)
+  STUDENT           // Student consent for educational services
+  USER              // General user consent
+  MARKETING         // Marketing communications consent
+  ANALYTICS         // Analytics data collection consent
+  THIRD_PARTY       // Third-party data sharing consent
+}
+
+enum ConsentStatus {
+  PENDING           // Consent requested but not yet granted
+  GRANTED           // Consent actively granted
+  DENIED            // Consent explicitly denied
+  EXPIRED           // Consent has expired
+  REVOKED           // Consent was granted but later revoked
+}
+
+enum ConsentPurpose {
+  ACCOUNT_CREATION
+  EDUCATIONAL_SERVICES
+  PERSONALIZATION
+  ANALYTICS
+  MARKETING
+  THIRD_PARTY_SHARING
+  RESEARCH
+  AI_PROCESSING
+}
+
+/// Consent record for tracking user/parental consent
+model Consent {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @db.Uuid
+  tenantId        String          @db.Uuid
+  
+  // Consent details
+  consentType     ConsentType
+  purposes        ConsentPurpose[]
+  status          ConsentStatus   @default(PENDING)
+  
+  // Who granted consent (for parental consent, this is the parent)
+  grantedById     String?         @db.Uuid
+  grantedByEmail  String?
+  grantedByIp     String?
+  
+  // Version tracking for consent terms
+  termsVersion    String          @default("1.0")
+  termsDocument   String?         // Reference to the consent document shown
+  
+  // Timestamps
+  requestedAt     DateTime        @default(now())
+  grantedAt       DateTime?
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  revokedReason   String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Audit trail for consent changes
+  history         ConsentHistory[]
+  
+  @@unique([userId, consentType, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+/// Audit trail for consent changes
+model ConsentHistory {
+  id              String          @id @default(uuid()) @db.Uuid
+  consentId       String          @db.Uuid
+  
+  // Change details
+  previousStatus  ConsentStatus
+  newStatus       ConsentStatus
+  changedById     String?         @db.Uuid
+  changedByIp     String?
+  reason          String?
+  
+  createdAt       DateTime        @default(now())
+  
+  consent         Consent         @relation(fields: [consentId], references: [id], onDelete: Cascade)
+  
+  @@index([consentId])
+  @@index([createdAt])
+}
+
+/// Age verification records
+model AgeVerification {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @db.Uuid
+  tenantId        String          @db.Uuid
+  
+  // Verification details
+  dateOfBirth     DateTime?
+  verifiedAge     Int?            // Verified age at time of verification
+  isMinor         Boolean         @default(false)
+  coppaApplicable Boolean         @default(false) // Under 13
+  
+  // Verification method
+  method          String          // e.g., "self_declaration", "parent_verified", "document"
+  verifiedById    String?         @db.Uuid // Parent who verified, if applicable
+  
+  // Timestamps
+  verifiedAt      DateTime        @default(now())
+  expiresAt       DateTime?       // For periodic re-verification
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([isMinor])
+}
+
+/// MFA configuration for users
+model MfaConfig {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @db.Uuid
+  tenantId        String          @db.Uuid
+  
+  // MFA settings
+  enabled         Boolean         @default(false)
+  method          String          @default("totp") // totp, sms, email
+  
+  // TOTP secret (encrypted)
+  totpSecretEncrypted String?
+  totpVerifiedAt  DateTime?
+  
+  // Backup codes (hashed)
+  backupCodes     String[]        @default([])
+  backupCodesGeneratedAt DateTime?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+}
+
+/// MFA challenges for verification
+model MfaChallenge {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @db.Uuid
+  sessionId       String          @db.Uuid
+  
+  // Challenge details
+  method          String          // totp, sms, email
+  code            String?         // For SMS/email codes (hashed)
+  attempts        Int             @default(0)
+  maxAttempts     Int             @default(3)
+  
+  // Status
+  verified        Boolean         @default(false)
+  verifiedAt      DateTime?
+  
+  // Timestamps
+  expiresAt       DateTime
+  createdAt       DateTime        @default(now())
+  
+  @@index([userId])
+  @@index([sessionId])
+  @@index([expiresAt])
+}

@@ -27,5 +27,8 @@ export * from './formatters';
 // React integration
 export * from './react';
 
+// RTL utilities
+export * from './rtl';
+
 // RTL and style utilities
 export * from './styles';

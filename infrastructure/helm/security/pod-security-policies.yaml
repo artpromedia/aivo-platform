@@ -1,0 +1,312 @@
+# ==============================================================================
+# AIVO Platform - Pod Security Standards
+# ==============================================================================
+# Enforce restricted pod security standards
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aivo
+  labels:
+    name: aivo
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Disallow Privilege Escalation
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privilege-escalation
+  annotations:
+    policies.kyverno.io/title: Disallow Privilege Escalation
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - aivo
+      validate:
+        message: "Privilege escalation is disallowed."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+            initContainers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Require Read-Only Root Filesystem
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-ro-rootfs
+  annotations:
+    policies.kyverno.io/title: Require Read-Only Root Filesystem
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-readOnlyRootFilesystem
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - aivo
+      validate:
+        message: "Root filesystem must be read-only."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Require Non-Root User
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-run-as-non-root
+  annotations:
+    policies.kyverno.io/title: Require runAsNonRoot
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - aivo
+      validate:
+        message: "Containers must run as non-root user."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Drop All Capabilities
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: drop-all-capabilities
+  annotations:
+    policies.kyverno.io/title: Drop All Capabilities
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: drop-all-caps
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - aivo
+      validate:
+        message: "All capabilities must be dropped."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - ALL
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Require Resource Limits
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Require Resource Limits
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - aivo
+      validate:
+        message: "CPU and memory resource limits are required."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Require Labels
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: low
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-team-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+              namespaces:
+                - aivo
+      validate:
+        message: "The label 'team' is required."
+        pattern:
+          metadata:
+            labels:
+              team: "?*"
+    - name: require-app-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+              namespaces:
+                - aivo
+      validate:
+        message: "The label 'app.kubernetes.io/name' is required."
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Disallow Latest Tag
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - aivo
+      validate:
+        message: "Using 'latest' image tag is not allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+            initContainers:
+              - image: "!*:latest"
+---
+# ==============================================================================
+# Kyverno Cluster Policy - Require Probes
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+  annotations:
+    policies.kyverno.io/title: Require Probes
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-readiness-probe
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - aivo
+      validate:
+        message: "Readiness probe is required."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - readinessProbe:
+                      httpGet:
+                        path: "?*"
+                        port: "?*"
+    - name: require-liveness-probe
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - aivo
+      validate:
+        message: "Liveness probe is required."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - livenessProbe:
+                      httpGet:
+                        path: "?*"
+                        port: "?*"

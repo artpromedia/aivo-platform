@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "verbatimModuleSyntax": false,
     "declaration": true,
     "removeComments": true,

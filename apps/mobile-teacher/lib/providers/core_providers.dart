@@ -6,7 +6,6 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-import '../config/env_config.dart';
 import '../services/database/local_database.dart';
 import '../services/sync/sync_service.dart';
 import '../services/sync/connectivity_monitor.dart';

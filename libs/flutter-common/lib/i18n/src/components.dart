@@ -208,7 +208,7 @@ class LocaleDropdown extends StatelessWidget {
     final currentLocale = i18n.currentLocale;
     
     return DropdownButtonFormField<SupportedLocale>(
-      value: currentLocale,
+      initialValue: currentLocale,
       decoration: decoration ?? const InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

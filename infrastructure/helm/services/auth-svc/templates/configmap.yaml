@@ -1,0 +1,13 @@
+# ==============================================================================
+# AIVO Platform - Auth Service ConfigMap Template
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "auth-svc.fullname" . }}-config
+  labels:
+    {{- include "auth-svc.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

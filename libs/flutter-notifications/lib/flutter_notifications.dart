@@ -8,3 +8,5 @@ export 'src/models/notification_preferences.dart';
 export 'src/background_handler.dart';
 export 'src/coppa_validator.dart';
 export 'src/notification_analytics.dart';
+export 'src/in_app_notification_service.dart';
+export 'src/widgets/notification_widgets.dart';

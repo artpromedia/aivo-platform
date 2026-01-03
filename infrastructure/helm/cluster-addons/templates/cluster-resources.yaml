@@ -1,0 +1,230 @@
+# ==============================================================================
+# AIVO Platform - Cluster Secret Store
+# ==============================================================================
+# Configures External Secrets Operator to use AWS Secrets Manager
+
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: aws-secrets-manager
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: external-secrets
+            namespace: external-secrets
+---
+# ==============================================================================
+# Cluster Issuer for Let's Encrypt (Staging)
+# ==============================================================================
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: platform@aivo.edu
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+      - http01:
+          ingress:
+            class: alb
+---
+# ==============================================================================
+# Cluster Issuer for Let's Encrypt (Production)
+# ==============================================================================
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: platform@aivo.edu
+    privateKeySecretRef:
+      name: letsencrypt-production-key
+    solvers:
+      - http01:
+          ingress:
+            class: alb
+      - dns01:
+          route53:
+            region: us-east-1
+            hostedZoneID: ""  # Set via Terraform
+---
+# ==============================================================================
+# Karpenter Default Provisioner
+# ==============================================================================
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: default
+spec:
+  requirements:
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["on-demand", "spot"]
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["amd64"]
+    - key: node.kubernetes.io/instance-type
+      operator: In
+      values:
+        - m6i.large
+        - m6i.xlarge
+        - m6i.2xlarge
+        - m5.large
+        - m5.xlarge
+        - m5.2xlarge
+        - c6i.large
+        - c6i.xlarge
+        - r6i.large
+        - r6i.xlarge
+  limits:
+    resources:
+      cpu: 1000
+      memory: 2000Gi
+  providerRef:
+    name: default
+  ttlSecondsAfterEmpty: 30
+  ttlSecondsUntilExpired: 604800
+  consolidation:
+    enabled: true
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: default
+spec:
+  subnetSelector:
+    karpenter.sh/discovery: aivo-production-eks
+  securityGroupSelector:
+    karpenter.sh/discovery: aivo-production-eks
+  instanceProfile: aivo-production-karpenter-node
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        encrypted: true
+        deleteOnTermination: true
+  tags:
+    Environment: production
+    ManagedBy: karpenter
+---
+# ==============================================================================
+# Karpenter Spot Provisioner
+# ==============================================================================
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: spot
+spec:
+  requirements:
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["spot"]
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["amd64"]
+    - key: node.kubernetes.io/instance-type
+      operator: In
+      values:
+        - m6i.large
+        - m6i.xlarge
+        - m5.large
+        - m5.xlarge
+        - c6i.large
+        - c6i.xlarge
+  limits:
+    resources:
+      cpu: 500
+      memory: 1000Gi
+  providerRef:
+    name: default
+  taints:
+    - key: spot
+      value: "true"
+      effect: NoSchedule
+  ttlSecondsAfterEmpty: 30
+  consolidation:
+    enabled: true
+---
+# ==============================================================================
+# Priority Classes
+# ==============================================================================
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical
+value: 1000000
+globalDefault: false
+description: "Critical system workloads"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 100000
+globalDefault: false
+description: "High priority workloads"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: default-priority
+value: 10000
+globalDefault: true
+description: "Default priority for workloads"
+---
+# ==============================================================================
+# Resource Quotas for AIVO Namespace
+# ==============================================================================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: aivo-quota
+  namespace: aivo
+spec:
+  hard:
+    requests.cpu: "100"
+    requests.memory: 200Gi
+    limits.cpu: "200"
+    limits.memory: 400Gi
+    persistentvolumeclaims: "50"
+    services.loadbalancers: "10"
+---
+# ==============================================================================
+# Limit Range for AIVO Namespace
+# ==============================================================================
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: aivo-limits
+  namespace: aivo
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      max:
+        cpu: "4"
+        memory: 8Gi
+      min:
+        cpu: 10m
+        memory: 32Mi
+    - type: PersistentVolumeClaim
+      max:
+        storage: 100Gi
+      min:
+        storage: 1Gi

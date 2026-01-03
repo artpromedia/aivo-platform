@@ -1,0 +1,450 @@
+# ==============================================================================
+# AIVO Platform - Cluster Addons Values
+# ==============================================================================
+# Configuration for all cluster-level addons and operators
+
+# ==============================================================================
+# AWS Load Balancer Controller
+# ==============================================================================
+aws-load-balancer-controller:
+  enabled: true
+  clusterName: aivo-production-eks
+  serviceAccount:
+    create: true
+    name: aws-load-balancer-controller
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-alb-controller
+  region: us-east-1
+  vpcId: ""  # Set via Terraform output
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ==============================================================================
+# External DNS
+# ==============================================================================
+external-dns:
+  enabled: true
+  provider: aws
+  domainFilters:
+    - aivo.edu
+  txtOwnerId: aivo-production
+  policy: sync
+  serviceAccount:
+    create: true
+    name: external-dns
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-external-dns
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# ==============================================================================
+# External Secrets Operator
+# ==============================================================================
+external-secrets:
+  enabled: true
+  installCRDs: true
+  serviceAccount:
+    create: true
+    name: external-secrets
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-external-secrets
+  webhook:
+    port: 9443
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Cluster Secret Store for AWS Secrets Manager
+clusterSecretStore:
+  enabled: true
+  name: aws-secrets-manager
+  region: us-east-1
+
+# ==============================================================================
+# Cert Manager
+# ==============================================================================
+cert-manager:
+  enabled: true
+  installCRDs: true
+  serviceAccount:
+    create: true
+    name: cert-manager
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-cert-manager
+  prometheus:
+    enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Let's Encrypt ClusterIssuers
+clusterIssuers:
+  - name: letsencrypt-staging
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: platform@aivo.edu
+  - name: letsencrypt-production
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: platform@aivo.edu
+
+# ==============================================================================
+# Karpenter
+# ==============================================================================
+karpenter:
+  enabled: true
+  serviceAccount:
+    create: true
+    name: karpenter
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-karpenter
+  settings:
+    aws:
+      clusterName: aivo-production-eks
+      clusterEndpoint: ""  # Set via Terraform
+      interruptionQueueName: aivo-production-karpenter
+  controller:
+    resources:
+      limits:
+        cpu: 1
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# Karpenter Provisioners
+provisioners:
+  - name: default
+    requirements:
+      - key: "karpenter.sh/capacity-type"
+        operator: In
+        values: ["on-demand", "spot"]
+      - key: "kubernetes.io/arch"
+        operator: In
+        values: ["amd64"]
+      - key: "node.kubernetes.io/instance-type"
+        operator: In
+        values:
+          - m6i.large
+          - m6i.xlarge
+          - m6i.2xlarge
+          - m5.large
+          - m5.xlarge
+          - m5.2xlarge
+    limits:
+      resources:
+        cpu: 1000
+        memory: 2000Gi
+    ttlSecondsAfterEmpty: 30
+    ttlSecondsUntilExpired: 604800  # 7 days
+
+  - name: spot
+    requirements:
+      - key: "karpenter.sh/capacity-type"
+        operator: In
+        values: ["spot"]
+      - key: "kubernetes.io/arch"
+        operator: In
+        values: ["amd64"]
+    limits:
+      resources:
+        cpu: 500
+        memory: 1000Gi
+    taints:
+      - key: spot
+        value: "true"
+        effect: NoSchedule
+    ttlSecondsAfterEmpty: 30
+
+# ==============================================================================
+# Metrics Server
+# ==============================================================================
+metrics-server:
+  enabled: true
+  args:
+    - --kubelet-preferred-address-types=InternalIP
+    - --kubelet-insecure-tls
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+
+# ==============================================================================
+# Kube Prometheus Stack
+# ==============================================================================
+kube-prometheus-stack:
+  enabled: true
+  
+  # Prometheus
+  prometheus:
+    enabled: true
+    serviceAccount:
+      create: true
+      name: prometheus
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-prometheus
+    prometheusSpec:
+      retention: 15d
+      retentionSize: 50GB
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp3
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 100Gi
+      resources:
+        limits:
+          cpu: 2
+          memory: 8Gi
+        requests:
+          cpu: 500m
+          memory: 2Gi
+      podMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelectorNilUsesHelmValues: false
+      additionalScrapeConfigs:
+        - job_name: 'kubernetes-pods'
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+              action: keep
+              regex: true
+
+  # Grafana
+  grafana:
+    enabled: true
+    adminPassword: ""  # Managed via external secret
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClassName: gp3
+    ingress:
+      enabled: true
+      ingressClassName: alb
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internal
+        alb.ingress.kubernetes.io/target-type: ip
+      hosts:
+        - grafana.internal.aivo.edu
+    sidecar:
+      dashboards:
+        enabled: true
+        searchNamespace: ALL
+      datasources:
+        enabled: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+  # Alertmanager
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp3
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    config:
+      global:
+        resolve_timeout: 5m
+        slack_api_url: ""  # Set via secret
+      route:
+        receiver: 'default'
+        group_by: ['alertname', 'namespace', 'severity']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        routes:
+          - receiver: 'critical'
+            match:
+              severity: critical
+          - receiver: 'warning'
+            match:
+              severity: warning
+      receivers:
+        - name: 'default'
+          slack_configs:
+            - channel: '#alerts'
+              send_resolved: true
+        - name: 'critical'
+          slack_configs:
+            - channel: '#alerts-critical'
+              send_resolved: true
+          pagerduty_configs:
+            - routing_key: ""  # Set via secret
+        - name: 'warning'
+          slack_configs:
+            - channel: '#alerts-warning'
+              send_resolved: true
+
+# ==============================================================================
+# Loki Stack
+# ==============================================================================
+loki-stack:
+  enabled: true
+  
+  loki:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClassName: gp3
+    config:
+      auth_enabled: false
+      ingester:
+        chunk_idle_period: 3m
+        chunk_block_size: 262144
+        chunk_retain_period: 1m
+        max_transfer_retries: 0
+        lifecycler:
+          ring:
+            kvstore:
+              store: inmemory
+            replication_factor: 1
+      limits_config:
+        enforce_metric_name: false
+        reject_old_samples: true
+        reject_old_samples_max_age: 168h
+      schema_config:
+        configs:
+          - from: 2024-01-01
+            store: boltdb-shipper
+            object_store: s3
+            schema: v11
+            index:
+              prefix: loki_index_
+              period: 24h
+      storage_config:
+        aws:
+          s3: s3://us-east-1/aivo-production-loki
+        boltdb_shipper:
+          active_index_directory: /data/loki/boltdb-shipper-active
+          cache_location: /data/loki/boltdb-shipper-cache
+          shared_store: s3
+      compactor:
+        working_directory: /data/loki/boltdb-shipper-compactor
+        shared_store: s3
+    resources:
+      limits:
+        cpu: 1
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+  promtail:
+    enabled: true
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# ==============================================================================
+# Velero (Backup)
+# ==============================================================================
+velero:
+  enabled: true
+  serviceAccount:
+    server:
+      create: true
+      name: velero
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aivo-production-velero
+  initContainers:
+    - name: velero-plugin-for-aws
+      image: velero/velero-plugin-for-aws:v1.8.0
+      volumeMounts:
+        - mountPath: /target
+          name: plugins
+  configuration:
+    provider: aws
+    backupStorageLocation:
+      name: default
+      bucket: aivo-production-velero-backups
+      config:
+        region: us-east-1
+    volumeSnapshotLocation:
+      name: default
+      config:
+        region: us-east-1
+  schedules:
+    daily-backup:
+      disabled: false
+      schedule: "0 2 * * *"
+      template:
+        ttl: "720h"  # 30 days
+        includedNamespaces:
+          - aivo
+          - aivo-system
+        excludedResources:
+          - events
+    weekly-full-backup:
+      disabled: false
+      schedule: "0 3 * * 0"
+      template:
+        ttl: "4320h"  # 180 days
+        includeClusterResources: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+# ==============================================================================
+# VPA (Vertical Pod Autoscaler)
+# ==============================================================================
+vpa:
+  enabled: true
+  recommender:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  updater:
+    enabled: true
+  admissionController:
+    enabled: true

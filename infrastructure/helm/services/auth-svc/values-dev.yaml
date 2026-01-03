@@ -1,0 +1,140 @@
+# ==============================================================================
+# AIVO Platform - Auth Service Development Values
+# ==============================================================================
+
+replicaCount: 1
+
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+  hosts:
+    - host: auth.dev.aivo.edu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+startupProbe:
+  httpGet:
+    path: /health/live
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 30
+
+podDisruptionBudget:
+  enabled: false
+
+env: []
+
+envFrom:
+  - configMapRef:
+      name: auth-svc-config
+  - secretRef:
+      name: auth-svc-secrets
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: aws-secrets-manager
+  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: aivo/development/database
+        property: url
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: aivo/development/app
+        property: jwt_secret
+    - secretKey: REDIS_URL
+      remoteRef:
+        key: aivo/development/redis
+        property: url
+
+config:
+  NODE_ENV: development
+  PORT: "3000"
+  LOG_LEVEL: debug
+  CORS_ORIGINS: "*"
+  RATE_LIMIT_WINDOW_MS: "60000"
+  RATE_LIMIT_MAX: "1000"
+
+canary:
+  enabled: false
+
+networkPolicy:
+  enabled: false
