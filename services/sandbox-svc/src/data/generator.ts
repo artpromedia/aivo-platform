@@ -60,8 +60,11 @@ const sessionTypes = ['practice', 'assessment', 'baseline', 'review'];
 /**
  * Random helper functions
  */
-function randomChoice<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+function randomChoice<T>(arr: readonly T[]): T {
+  if (arr.length === 0) {
+    throw new Error('Cannot select from empty array');
+  }
+  return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
 function randomInt(min: number, max: number): number {

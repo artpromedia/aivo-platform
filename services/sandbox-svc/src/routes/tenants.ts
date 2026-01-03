@@ -2,9 +2,9 @@
  * Sandbox Tenant Management Routes
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { randomBytes, createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -103,7 +103,7 @@ export const tenantRoutes: FastifyPluginAsync = async (fastify) => {
       isActive: tenant.isActive,
       lastResetAt: tenant.lastResetAt,
       apiKeys: tenant.apiKeys,
-      webhookEndpoints: tenant.webhookEndpoints.map(ep => ({
+      webhookEndpoints: tenant.webhookEndpoints.map((ep: { id: string; name: string; url: string; eventTypes: string[]; isEnabled: boolean }) => ({
         id: ep.id,
         name: ep.name,
         url: ep.url,
@@ -271,15 +271,18 @@ export const tenantRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ error: 'tenant_not_found' });
     }
 
+    type WebhookEndpoint = typeof tenant.webhookEndpoints[number];
+    type Delivery = WebhookEndpoint['deliveries'][number];
+
     return {
       webhookSecret: tenant.webhookSecret,
-      endpoints: tenant.webhookEndpoints.map(ep => ({
+      endpoints: tenant.webhookEndpoints.map((ep: WebhookEndpoint) => ({
         id: ep.id,
         name: ep.name,
         url: ep.url,
         eventTypes: ep.eventTypes,
         isEnabled: ep.isEnabled,
-        recentDeliveries: ep.deliveries.map(d => ({
+        recentDeliveries: ep.deliveries.map((d: Delivery) => ({
           id: d.id,
           eventType: d.eventType,
           status: d.status,
@@ -366,7 +369,7 @@ export const tenantRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     return {
-      deliveries: deliveries.map(d => ({
+      deliveries: deliveries.map((d: typeof deliveries[number]) => ({
         id: d.id,
         eventType: d.eventType,
         payload: d.payloadJson,

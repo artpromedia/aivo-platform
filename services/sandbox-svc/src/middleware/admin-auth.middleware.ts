@@ -186,10 +186,10 @@ const adminAuthPluginAsync: FastifyPluginAsync = async (fastify) => {
   fastify.decorate('requirePermissions', requirePermissions);
 };
 
-export const adminAuthPlugin = fp(adminAuthPluginAsync, {
+export const adminAuthPlugin = fp(adminAuthPluginAsync as any, {
   name: 'admin-auth',
   dependencies: [],
-});
+}) as any;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Route Protection Helper

@@ -2,31 +2,118 @@
  * Motor Profile Types - ND-3.3
  *
  * Local type definitions for motor profile service.
- * Re-exports shared types and adds service-specific interfaces.
  */
 
-import type {
-  MotorProfile,
-  MotorProfileInput,
-  MotorAccommodations,
-  MotorInteractionLog,
-  MotorContentAdaptations,
-  AccommodationSuggestion,
-  MotorAbilityLevel,
-  MotorInteractionType,
-} from '@aivo/ts-shared';
+// Motor ability levels
+export type MotorAbilityLevel =
+  | 'typical'
+  | 'mild'
+  | 'moderate'
+  | 'significant'
+  | 'severe'
+  | 'TYPICAL'
+  | 'MILD_DIFFICULTY'
+  | 'MODERATE_DIFFICULTY'
+  | 'SIGNIFICANT_DIFFICULTY'
+  | 'REQUIRES_FULL_SUPPORT';
 
-// Re-export shared types
-export type {
-  MotorProfile,
-  MotorProfileInput,
-  MotorAccommodations,
-  MotorInteractionLog,
-  MotorContentAdaptations,
-  AccommodationSuggestion,
-  MotorAbilityLevel,
-  MotorInteractionType,
-};
+// Motor interaction types
+export type MotorInteractionType =
+  | 'tap'
+  | 'long_press'
+  | 'drag'
+  | 'swipe'
+  | 'pinch'
+  | 'type'
+  | 'voice_input'
+  | 'switch_selection';
+
+// Motor accommodations configuration (flexible to allow flat or nested properties)
+export interface MotorAccommodations {
+  // Allow any property - the actual structure varies
+  [key: string]: unknown;
+}
+
+// Motor content adaptations (flexible to allow any properties)
+export interface MotorContentAdaptations {
+  [key: string]: unknown;
+}
+
+// Motor profile (flexible - includes base properties plus any additional)
+export interface MotorProfile {
+  id: string;
+  learnerId: string;
+  tenantId: string;
+  fineMotorLevel: MotorAbilityLevel;
+  grossMotorLevel: MotorAbilityLevel;
+  hasTremor: boolean;
+  tremorSeverity: number | null;
+  hasLimitedRange: boolean;
+  limitedRangeSide: 'left' | 'right' | 'both' | null;
+  hasFatigue: boolean;
+  fatigueThresholdMinutes: number | null;
+  accommodations?: MotorAccommodations;
+  contentAdaptations?: MotorContentAdaptations;
+  assessedBy: string | null;
+  assessedAt: Date | null;
+  accommodationNotes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  // Allow additional properties
+  [key: string]: unknown;
+}
+
+// Motor profile input for creating/updating (flexible)
+export interface MotorProfileInput {
+  learnerId?: string;
+  tenantId?: string;
+  fineMotorLevel?: MotorAbilityLevel;
+  grossMotorLevel?: MotorAbilityLevel;
+  hasTremor?: boolean;
+  tremorSeverity?: number;
+  hasLimitedRange?: boolean;
+  limitedRangeSide?: 'left' | 'right' | 'both';
+  hasFatigue?: boolean;
+  fatigueThresholdMinutes?: number;
+  accommodations?: Partial<MotorAccommodations>;
+  contentAdaptations?: Partial<MotorContentAdaptations>;
+  assessedBy?: string;
+  accommodationNotes?: string;
+  // Allow additional properties
+  [key: string]: unknown;
+}
+
+// Motor interaction log
+export interface MotorInteractionLog {
+  id: string;
+  learnerId: string;
+  tenantId: string;
+  sessionId: string | null;
+  interactionType: MotorInteractionType;
+  targetElement: string | null;
+  attemptCount: number;
+  successOnAttempt: number | null;
+  totalTimeMs: number | null;
+  targetHitAccuracy: number | null;
+  dragPathSmoothness: number | null;
+  accommodationsActive: string[];
+  successful: boolean;
+  usedAlternative: boolean;
+  alternativeMethod: string | null;
+  timestamp: Date;
+}
+
+// Accommodation suggestion (flexible)
+export interface AccommodationSuggestion {
+  accommodationType?: string;
+  suggestedValue?: unknown;
+  currentValue?: unknown;
+  reason?: string;
+  confidence?: number;
+  basedOn?: string[];
+  // Allow additional properties
+  [key: string]: unknown;
+}
 
 /**
  * Database row representation for motor profiles

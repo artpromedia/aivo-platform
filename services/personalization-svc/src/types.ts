@@ -88,6 +88,17 @@ export type SignalSource =
   | 'ASSESSMENT';      // Derived from formal assessment
 
 /**
+ * Union of all possible signal value types.
+ */
+export type SignalValue =
+  | number
+  | NumericSignalValue
+  | DifficultySignalValue
+  | FocusSignalValue
+  | PreferenceSignalValue
+  | Record<string, unknown>;
+
+/**
  * The complete personalization signal record.
  */
 export interface PersonalizationSignal {
@@ -97,7 +108,7 @@ export interface PersonalizationSignal {
   date: string; // YYYY-MM-DD
   signalType: SignalType;
   signalKey: SignalKey;
-  signalValue: number | Record<string, unknown>;
+  signalValue: SignalValue;
   confidence: number; // 0-1, how confident we are in this signal
   source: SignalSource;
   metadata?: Record<string, unknown>;
@@ -173,10 +184,14 @@ export interface GetSignalsRequest {
  */
 export interface GetSignalsResponse {
   learnerId: string;
-  tenantId: string;
+  tenantId?: string;
   signals: PersonalizationSignal[];
-  summary: SignalSummary;
-  asOf: string; // ISO timestamp
+  summary?: SignalSummary;
+  asOf?: string; // ISO timestamp
+  fromDate?: string; // Query range start
+  toDate?: string; // Query range end
+  signalsByType?: Record<SignalType, PersonalizationSignal[]>;
+  count?: number; // Total count of signals
 }
 
 /**
@@ -216,7 +231,7 @@ export interface PersonalizationDecisionLog {
   decisionType: 'DIFFICULTY_ADJUSTMENT' | 'ACTIVITY_SELECTION' | 'FOCUS_STRATEGY' | 'MODULE_RECOMMENDATION';
   inputSignals: {
     signalKey: SignalKey;
-    signalValue: number | Record<string, unknown>;
+    signalValue: SignalValue;
   }[];
   decision: {
     action: string;

@@ -27,17 +27,17 @@ const prisma = new PrismaClient();
 const fastify = Fastify({
   logger: {
     level: process.env.LOG_LEVEL ?? 'info',
-    transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
+    ...(process.env.NODE_ENV === 'development' && { transport: { target: 'pino-pretty' } }),
   },
 });
 
 // Register plugins
-await fastify.register(cors, {
+await fastify.register(cors as any, {
   origin: process.env.CORS_ORIGIN ?? '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 });
 
-await fastify.register(rateLimit, {
+await fastify.register(rateLimit as any, {
   max: 100,
   timeWindow: '1 minute',
 });
@@ -46,15 +46,15 @@ await fastify.register(rateLimit, {
 fastify.decorate('prisma', prisma);
 
 // Register admin auth plugin
-await fastify.register(adminAuthPlugin);
+await fastify.register(adminAuthPlugin as any);
 
 // Register routes
-await fastify.register(partnerRoutes, { prefix: '/api/partners' });
-await fastify.register(tenantRoutes, { prefix: '/api/tenants' });
-await fastify.register(publicApiRoutes, { prefix: '/api/public/v1' });
-await fastify.register(webhookRoutes, { prefix: '/api/webhooks' });
-await fastify.register(adminAuthRoutes, { prefix: '/api/admin' });
-await fastify.register(adminRoutes, { prefix: '/api/admin' });
+await fastify.register(partnerRoutes as any, { prefix: '/api/partners' });
+await fastify.register(tenantRoutes as any, { prefix: '/api/tenants' });
+await fastify.register(publicApiRoutes as any, { prefix: '/api/public/v1' });
+await fastify.register(webhookRoutes as any, { prefix: '/api/webhooks' });
+await fastify.register(adminAuthRoutes as any, { prefix: '/api/admin' });
+await fastify.register(adminRoutes as any, { prefix: '/api/admin' });
 
 // Health check
 fastify.get('/health', async () => {

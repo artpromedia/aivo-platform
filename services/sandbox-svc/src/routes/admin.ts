@@ -91,7 +91,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       };
 
       const admin = await authService.createAdmin(
-        { email, name, password, role, allowedIPs },
+        { email, name, password, role, allowedIPs: allowedIPs ?? [] },
         session.adminId,
         context
       );
@@ -271,7 +271,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       const total = await prisma.partner.count({ where });
 
       return {
-        data: partners.map((p) => ({
+        data: partners.map((p: typeof partners[number]) => ({
           id: p.id,
           name: p.name,
           status: p.status,
@@ -628,16 +628,16 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       return {
         tenantCode,
         period: { startDate, endDate },
-        apiUsage: apiUsage.map((u) => ({
+        apiUsage: apiUsage.map((u: typeof apiUsage[number]) => ({
           endpoint: u.endpoint,
           method: u.method,
           count: u._count.id,
         })),
         dailyApiCalls: dailyUsage,
-        webhookDeliveries: webhookStats.reduce<Record<string, number>>((acc, s) => {
+        webhookDeliveries: webhookStats.reduce((acc: Record<string, number>, s: typeof webhookStats[number]) => {
           acc[s.status.toLowerCase()] = s._count.id;
           return acc;
-        }, {}),
+        }, {} as Record<string, number>),
       };
     }
   );

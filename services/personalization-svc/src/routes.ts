@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/restrict-plus-operands */
 
 // eslint-disable-next-line import/no-unresolved
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 // eslint-disable-next-line import/no-unresolved
 import { z } from 'zod';
 
@@ -242,19 +242,23 @@ async function getDecisionLog(
     id: row.id,
     tenantId: row.tenant_id,
     learnerId: row.learner_id,
-    sessionId: row.session_id,
+    timestamp: row.created_at.toISOString(),
     decisionType: row.decision_type,
-    agentName: row.agent_name,
-    agentVersion: row.agent_version,
-    inputSignalKeys: row.input_signal_keys,
-    inputContext: row.input_context,
-    outputDecision: row.output_decision,
-    reasoning: row.reasoning,
-    outcome: row.outcome,
-    outcomeRecordedAt: row.outcome_recorded_at?.toISOString(),
-    feedbackRating: row.feedback_rating,
-    feedbackComment: row.feedback_comment,
-    createdAt: row.created_at.toISOString(),
+    inputSignals: (row.input_signal_keys ?? []).map((key: string, idx: number) => ({
+      signalKey: key,
+      signalValue: (row.input_context as any)?.signalValues?.[idx] ?? 0,
+    })),
+    decision: {
+      action: row.output_decision?.action ?? 'NONE',
+      before: row.output_decision?.before,
+      after: row.output_decision?.after,
+    },
+    rationale: row.reasoning ?? '',
+    confidence: row.output_decision?.confidence ?? 0.5,
+    source: row.agent_name ?? 'VIRTUAL_BRAIN',
+    wasOverridden: row.outcome?.overridden ?? false,
+    overriddenBy: row.outcome?.overriddenBy,
+    overrideReason: row.outcome?.overrideReason,
   }));
 
   reply.send({

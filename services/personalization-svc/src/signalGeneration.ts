@@ -18,6 +18,7 @@ import type {
   SignalType,
   SignalKey,
   SignalSource,
+  SignalValue,
   NumericSignalValue,
   DifficultySignalValue,
   FocusSignalValue,
@@ -36,7 +37,7 @@ interface LearnerContext {
 interface SignalCandidate {
   signalType: SignalType;
   signalKey: SignalKey;
-  signalValue: number | Record<string, unknown>;
+  signalValue: SignalValue;
   confidence: number;
   source: SignalSource;
   metadata?: Record<string, unknown>;

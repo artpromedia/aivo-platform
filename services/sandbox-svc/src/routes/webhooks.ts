@@ -2,8 +2,8 @@
  * Webhook Testing Routes
  */
 
-import { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import type { FastifyPluginAsync } from 'fastify';
+import type { PrismaClient } from '@prisma/client';
 import { createHmac, randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -166,7 +166,10 @@ function generateSamplePayload(eventType: WebhookEventType, tenantCode: string):
       };
 
     default:
-      return basePayload as WebhookPayload;
+      return {
+        ...basePayload,
+        data: {},
+      };
   }
 }
 
@@ -338,7 +341,8 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
     const isValid = providedSignature === expectedSignature;
 
     // Check timestamp freshness (5 minute window)
-    const timestampAge = Date.now() - parseInt(timestamp, 10);
+    const timestampValue = timestamp ?? '0';
+    const timestampAge = Date.now() - parseInt(timestampValue, 10);
     const isFresh = timestampAge < 5 * 60 * 1000;
 
     return {

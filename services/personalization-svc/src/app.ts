@@ -7,7 +7,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument */
 
 // eslint-disable-next-line import/no-unresolved
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
+// eslint-disable-next-line import/no-unresolved
+import type { FastifyInstance } from 'fastify';
 // eslint-disable-next-line import/no-unresolved
 import cors from '@fastify/cors';
 import { config } from './config.js';
@@ -18,27 +20,28 @@ import { registerRoutes } from './routes.js';
 // ══════════════════════════════════════════════════════════════════════════════
 
 export async function buildApp(): Promise<FastifyInstance> {
+  const loggerOptions = process.env['NODE_ENV'] !== 'production'
+    ? {
+        level: 'info',
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss',
+            ignore: 'pid,hostname',
+          },
+        },
+      }
+    : { level: 'info' };
+
   const app = Fastify({
-    logger: {
-      level: config.logLevel,
-      transport:
-        process.env['NODE_ENV'] !== 'production'
-          ? {
-              target: 'pino-pretty',
-              options: {
-                colorize: true,
-                translateTime: 'HH:MM:ss',
-                ignore: 'pid,hostname',
-              },
-            }
-          : undefined,
-    },
+    logger: loggerOptions as any,
     requestIdHeader: 'x-request-id',
     requestIdLogLabel: 'reqId',
   });
 
   // CORS
-  await app.register(cors, {
+  await app.register(cors as any, {
     origin: process.env['NODE_ENV'] === 'production' ? false : true,
     credentials: true,
   });
@@ -123,9 +126,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Register routes
-  await registerRoutes(app);
+  await registerRoutes(app as any);
 
-  return app;
+  return app as any;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -1,11 +1,11 @@
 /**
  * Public API Routes - Sandbox versions of Aivo APIs
- * 
+ *
  * These endpoints mirror the production API but serve synthetic sandbox data
  */
 
-import { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import type { FastifyPluginAsync } from 'fastify';
+import type { PrismaClient } from '@prisma/client';
 import { createHash } from 'crypto';
 
 declare module 'fastify' {
@@ -13,6 +13,53 @@ declare module 'fastify' {
     prisma: PrismaClient;
   }
 }
+
+// Type aliases for prisma models
+type SandboxSyntheticLearner = {
+  id: string;
+  externalId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  gradeLevel: number;
+  metadataJson: unknown;
+};
+
+type SandboxSyntheticLearnerProgress = {
+  skillDomain: string;
+  skillId: string;
+  masteryLevel: number;
+  progressPct: number;
+  lastPracticed: Date | null;
+  recordedAt: Date;
+};
+
+type SandboxSyntheticSession = {
+  id: string;
+  sessionType: string;
+  skillDomain: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  durationSeconds: number | null;
+  questionsAttempted: number;
+  questionsCorrect: number;
+  accuracyPct: number | null;
+  xpEarned: number;
+  eventsJson: unknown;
+};
+
+type SandboxSyntheticClass = {
+  id: string;
+  externalId: string;
+  name: string;
+  subject: string;
+  gradeLevel: number;
+};
+
+type SandboxSyntheticEnrollment = {
+  role: string;
+  createdAt: Date;
+};
 
 /**
  * API Key authentication hook
@@ -120,7 +167,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
     const total = await prisma.sandboxSyntheticLearner.count({ where });
 
     return {
-      data: learners.map(l => ({
+      data: learners.map((l: SandboxSyntheticLearner) => ({
         id: l.id,
         externalId: l.externalId,
         firstName: l.firstName,
@@ -171,7 +218,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
       email: learner.email,
       gradeLevel: learner.gradeLevel,
       metadata: learner.metadataJson,
-      enrollments: learner.enrollments.map(e => ({
+      enrollments: learner.enrollments.map((e: SandboxSyntheticEnrollment & { class: { id: string; externalId: string; name: string } }) => ({
         classId: e.class.id,
         classExternalId: e.class.externalId,
         className: e.class.name,
@@ -219,7 +266,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
 
     return {
       learnerId: learner.id,
-      progress: progress.map(p => ({
+      progress: progress.map((p: SandboxSyntheticLearnerProgress) => ({
         skillDomain: p.skillDomain,
         skillId: p.skillId,
         masteryLevel: p.masteryLevel,
@@ -261,7 +308,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     return {
-      data: classes.map(c => ({
+      data: classes.map((c: SandboxSyntheticClass & { teacher: { id: string; firstName: string; lastName: string } | null; _count: { enrollments: number } }) => ({
         id: c.id,
         externalId: c.externalId,
         name: c.name,
@@ -319,7 +366,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
         lastName: cls.teacher.lastName,
         email: cls.teacher.email,
       } : null,
-      students: cls.enrollments.map(e => ({
+      students: cls.enrollments.map((e: SandboxSyntheticEnrollment & { learner: { id: string; externalId: string; firstName: string; lastName: string } }) => ({
         id: e.learner.id,
         externalId: e.learner.externalId,
         firstName: e.learner.firstName,
@@ -373,7 +420,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
     const total = await prisma.sandboxSyntheticSession.count({ where });
 
     return {
-      data: sessions.map(s => ({
+      data: sessions.map((s: SandboxSyntheticSession) => ({
         id: s.id,
         sessionType: s.sessionType,
         skillDomain: s.skillDomain,
@@ -473,22 +520,27 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ error: 'class_not_found' });
     }
 
-    // Calculate class-level metrics
-    const allSessions = cls.enrollments.flatMap(e => e.learner.sessions);
-    const allProgress = cls.enrollments.flatMap(e => e.learner.progress);
+    // Type aliases for the nested query result
+    type Enrollment = typeof cls.enrollments[number];
+    type Session = Enrollment['learner']['sessions'][number];
+    type Progress = Enrollment['learner']['progress'][number];
 
-    const totalMinutes = allSessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0) / 60, 0);
-    const totalQuestions = allSessions.reduce((sum, s) => sum + s.questionsAttempted, 0);
-    const totalCorrect = allSessions.reduce((sum, s) => sum + s.questionsCorrect, 0);
+    // Calculate class-level metrics
+    const allSessions = cls.enrollments.flatMap((e: Enrollment) => e.learner.sessions);
+    const allProgress = cls.enrollments.flatMap((e: Enrollment) => e.learner.progress);
+
+    const totalMinutes = allSessions.reduce((sum: number, s: Session) => sum + ((s.durationSeconds ?? 0) as number) / 60, 0);
+    const totalQuestions = allSessions.reduce((sum: number, s: Session) => sum + s.questionsAttempted, 0);
+    const totalCorrect = allSessions.reduce((sum: number, s: Session) => sum + s.questionsCorrect, 0);
 
     // Group progress by skill domain
     const skillDomainAverages: Record<string, { total: number; count: number }> = {};
-    allProgress.forEach(p => {
+    allProgress.forEach((p: Progress) => {
       if (!skillDomainAverages[p.skillDomain]) {
         skillDomainAverages[p.skillDomain] = { total: 0, count: 0 };
       }
-      skillDomainAverages[p.skillDomain].total += p.progressPct;
-      skillDomainAverages[p.skillDomain].count += 1;
+      skillDomainAverages[p.skillDomain]!.total += p.progressPct;
+      skillDomainAverages[p.skillDomain]!.count += 1;
     });
 
     return {
@@ -508,11 +560,11 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
         skillDomain: domain,
         avgProgress: Math.round(data.total / data.count),
       })),
-      studentSummaries: cls.enrollments.map(e => {
+      studentSummaries: cls.enrollments.map((e: Enrollment) => {
         const studentSessions = e.learner.sessions;
-        const studentMins = studentSessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0) / 60, 0);
-        const studentQuestions = studentSessions.reduce((sum, s) => sum + s.questionsAttempted, 0);
-        const studentCorrect = studentSessions.reduce((sum, s) => sum + s.questionsCorrect, 0);
+        const studentMins = studentSessions.reduce((sum: number, s: Session) => sum + ((s.durationSeconds ?? 0) as number) / 60, 0);
+        const studentQuestions = studentSessions.reduce((sum: number, s: Session) => sum + s.questionsAttempted, 0);
+        const studentCorrect = studentSessions.reduce((sum: number, s: Session) => sum + s.questionsCorrect, 0);
 
         return {
           learnerId: e.learner.id,

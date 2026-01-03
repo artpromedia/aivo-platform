@@ -75,6 +75,20 @@ export async function closeConnections(): Promise<void> {
 }
 
 /**
+ * Alias for backward compatibility.
+ */
+export const closePools = closeConnections;
+
+/**
+ * Initialize all pools (lazy - called on first getPool call).
+ */
+export function initPools(): void {
+  // Pools are initialized lazily on first access
+  getMainPool();
+  getWarehousePool();
+}
+
+/**
  * Execute a query in a transaction.
  */
 export async function withTransaction<T>(

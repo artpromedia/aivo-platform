@@ -171,9 +171,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           403: Type.Union([MfaRequiredResponse, ErrorResponse]),
           429: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Admin login',
-        description: 'Authenticate an admin user with email and password',
+        // summary: 'Admin login',
+        // description: 'Authenticate an admin user with email and password',
       },
     },
     async (request, reply) => {
@@ -182,7 +181,7 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
       const authService = getAdminAuthService(prisma);
 
       try {
-        const session = await authService.authenticate({ email, password, mfaCode }, context);
+        const session = await authService.authenticate({ email, password, ...(mfaCode && { mfaCode }) }, context);
 
         // Set secure cookie
         reply.header('Set-Cookie', buildSessionCookie(session.token, session.expiresAt));
@@ -216,9 +215,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           200: LoginResponse,
           401: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Verify MFA code',
-        description: 'Complete login with MFA code after receiving mfa_required response',
+        // summary: 'Verify MFA code',
+        // description: 'Complete login with MFA code after receiving mfa_required response',
       },
     },
     async (request, reply) => {
@@ -260,9 +258,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           200: Type.Object({ success: Type.Boolean() }),
           401: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Logout',
-        description: 'Invalidate the current admin session',
+        // summary: 'Logout',
+        // description: 'Invalidate the current admin session',
       },
     },
     async (request, reply) => {
@@ -291,9 +288,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           200: Type.Object({ success: Type.Boolean(), sessionsRevoked: Type.Number() }),
           401: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Logout all sessions',
-        description: 'Invalidate all sessions for the current admin',
+        // summary: 'Logout all sessions',
+        // description: 'Invalidate all sessions for the current admin',
       },
     },
     async (request, reply) => {
@@ -329,9 +325,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           }),
           401: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Get current admin',
-        description: 'Get information about the currently authenticated admin',
+        // summary: 'Get current admin',
+        // description: 'Get information about the currently authenticated admin',
       },
     },
     async (request, reply) => {
@@ -382,9 +377,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           401: ErrorResponse,
           400: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Setup MFA',
-        description: 'Generate MFA secret and QR code for authenticator app',
+        // summary: 'Setup MFA',
+        // description: 'Generate MFA secret and QR code for authenticator app',
       },
     },
     async (request, reply) => {
@@ -403,12 +397,12 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
         });
       }
 
-      const mfaSetup = await authService.setupMfa(session.adminId, context);
+      const mfaSetup = await authService.setupMfa(session.adminId);
 
       return {
         secret: mfaSetup.secret,
-        otpAuthUrl: mfaSetup.otpAuthUrl,
-        qrCode: mfaSetup.qrCodeDataUrl,
+        otpAuthUrl: mfaSetup.qrCodeUrl,
+        qrCode: mfaSetup.qrCodeUrl,
       };
     }
   );
@@ -430,9 +424,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           401: ErrorResponse,
           400: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Verify MFA setup',
-        description: 'Verify the MFA code from authenticator and enable MFA',
+        // summary: 'Verify MFA setup',
+        // description: 'Verify the MFA code from authenticator and enable MFA',
       },
     },
     async (request, reply) => {
@@ -469,9 +462,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           401: ErrorResponse,
           400: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Disable MFA',
-        description: 'Disable MFA for the current admin (SUPER_ADMIN only)',
+        // summary: 'Disable MFA',
+        // description: 'Disable MFA for the current admin (SUPER_ADMIN only)',
       },
     },
     async (request, reply) => {
@@ -507,9 +499,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           401: ErrorResponse,
           400: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Change password',
-        description: 'Change the current admin password',
+        // summary: 'Change password',
+        // description: 'Change the current admin password',
       },
     },
     async (request, reply) => {
@@ -538,9 +529,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
         response: {
           200: Type.Object({ success: Type.Boolean(), message: Type.String() }),
         },
-        tags: ['Admin Auth'],
-        summary: 'Request password reset',
-        description: 'Request a password reset email',
+        // summary: 'Request password reset',
+        // description: 'Request a password reset email',
       },
     },
     async (request, reply) => {
@@ -574,9 +564,8 @@ export default async function adminAuthRoutes(fastify: FastifyInstance): Promise
           400: ErrorResponse,
           401: ErrorResponse,
         },
-        tags: ['Admin Auth'],
-        summary: 'Reset password',
-        description: 'Complete password reset with token from email',
+        // summary: 'Reset password',
+        // description: 'Complete password reset with token from email',
       },
     },
     async (request, reply) => {

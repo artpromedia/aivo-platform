@@ -13,7 +13,31 @@
 
 import { randomBytes, timingSafeEqual, createHmac, pbkdf2 as pbkdf2Async } from 'node:crypto';
 
-import type { PrismaClient, AdminRole, SandboxAdmin } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+
+// Type aliases since generated types might not be available
+type AdminRole = 'SUPER_ADMIN' | 'SANDBOX_ADMIN' | 'SALES_DEMO' | 'SUPPORT';
+
+type SandboxAdmin = {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  role: AdminRole;
+  isActive: boolean;
+  mfaEnabled: boolean;
+  mfaSecret: string | null;
+  allowedIPs: string[];
+  lastLoginAt: Date | null;
+  passwordChangedAt: Date;
+  passwordResetToken: string | null;
+  passwordResetExpiry: Date | null;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string | null;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types

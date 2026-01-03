@@ -2,15 +2,42 @@
  * Partner Registration & Management Routes
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
   }
 }
+
+// Type aliases for prisma models (to work around missing generated types)
+type SandboxApiKey = {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  scopes: string[];
+  lastUsedAt: Date | null;
+  createdAt: Date;
+};
+
+type SandboxWebhookEndpoint = {
+  id: string;
+  name: string;
+  url: string;
+  eventTypes: string[];
+  isEnabled: boolean;
+};
+
+type SandboxTenant = {
+  id: string;
+  tenantCode: string;
+  name: string;
+  isActive: boolean;
+  apiKeys: SandboxApiKey[];
+  webhookEndpoints: SandboxWebhookEndpoint[];
+};
 
 const registerSchema = z.object({
   companyName: z.string().min(2).max(200),
@@ -113,13 +140,13 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       name: partner.name,
       status: partner.status,
       tier: partner.tier,
-      sandboxTenants: partner.sandboxTenants.map(tenant => ({
+      sandboxTenants: partner.sandboxTenants.map((tenant: SandboxTenant & { apiKeys: SandboxApiKey[]; webhookEndpoints: SandboxWebhookEndpoint[] }) => ({
         id: tenant.id,
         tenantCode: tenant.tenantCode,
         name: tenant.name,
         isActive: tenant.isActive,
         apiKeys: tenant.apiKeys,
-        webhookEndpoints: tenant.webhookEndpoints.map(ep => ({
+        webhookEndpoints: tenant.webhookEndpoints.map((ep: SandboxWebhookEndpoint) => ({
           id: ep.id,
           name: ep.name,
           url: ep.url,
