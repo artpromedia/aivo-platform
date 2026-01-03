@@ -89,7 +89,8 @@ export class QueryOptimizer {
    * Setup Prisma query logging middleware
    */
   private setupQueryLogging(): void {
-    this.prisma.$use(async (params: Prisma.MiddlewareParams, next) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.prisma.$use(async (params: any, next: any) => {
       const startTime = performance.now();
 
       try {

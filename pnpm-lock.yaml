@@ -1609,8 +1609,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ts-rbac
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/helmet':
         specifier: ^11.1.1
         version: 11.1.1
@@ -1701,8 +1701,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ts-utils
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@prisma/client':
         specifier: ^5.22.0
         version: 5.22.0(prisma@5.22.0)
@@ -1750,8 +1750,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ts-utils
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/multipart':
         specifier: ^8.3.1
         version: 8.3.1
@@ -2873,8 +2873,8 @@ importers:
   services/personalization-svc:
     dependencies:
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@prisma/client':
         specifier: ^6.1.0
         version: 6.19.0(prisma@6.19.0(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
@@ -3126,8 +3126,8 @@ importers:
         specifier: ^3.700.0
         version: 3.948.0
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/helmet':
         specifier: ^11.1.1
         version: 11.1.1
@@ -3233,8 +3233,8 @@ importers:
   services/sandbox-svc:
     dependencies:
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/rate-limit':
         specifier: ^9.1.0
         version: 9.1.0
@@ -3288,8 +3288,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ts-shared
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/helmet':
         specifier: ^11.1.1
         version: 11.1.1
@@ -5034,9 +5034,6 @@ packages:
 
   '@fastify/cors@8.5.0':
     resolution: {integrity: sha512-/oZ1QSb02XjP0IK1U0IXktEsw/dUBTxJOW7IpIeO8c/tNalw/KjoNSJv1Sf6eqoBPO+TDGkifq6ynFK3v68HFQ==}
-
-  '@fastify/cors@9.0.1':
-    resolution: {integrity: sha512-YY9Ho3ovI+QHIL2hW+9X4XqQjXLjJqsU+sMV/xFsxZkE8p3GNnYVFpoOxF7SsP5ZL76gwvbo3V9L+FIekBGU4Q==}
 
   '@fastify/deepmerge@2.0.2':
     resolution: {integrity: sha512-3wuLdX5iiiYeZWP6bQrjqhrcvBIf0NHbQH1Ur1WbHvoiuTYUEItgygea3zs8aHpiitn0lOB8gX20u1qO+FDm7Q==}
@@ -17834,11 +17831,6 @@ snapshots:
   '@fastify/busboy@3.2.0': {}
 
   '@fastify/cors@8.5.0':
-    dependencies:
-      fastify-plugin: 4.5.1
-      mnemonist: 0.39.6
-
-  '@fastify/cors@9.0.1':
     dependencies:
       fastify-plugin: 4.5.1
       mnemonist: 0.39.6

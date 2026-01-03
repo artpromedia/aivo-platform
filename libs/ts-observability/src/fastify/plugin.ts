@@ -10,7 +10,7 @@
 
 import { SpanStatusCode } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/api';
-import type { FastifyPluginCallback, FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import type { FastifyPluginCallback, FastifyPluginAsync, FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { AIVO_ATTRIBUTES } from '../constants.js';
@@ -297,7 +297,8 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
 };
 
 // Export as Fastify plugin
-export const observabilityPlugin = fp(observabilityPluginImpl, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const observabilityPlugin: any = fp(observabilityPluginImpl, {
   name: '@aivo/observability',
   fastify: '5.x',
 });
