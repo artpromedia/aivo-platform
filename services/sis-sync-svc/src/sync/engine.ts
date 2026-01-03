@@ -6,7 +6,7 @@
  * and loading via upserts with soft deletes.
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { SisProviderType, SyncStatus, SisEntityType } from '../providers/types';
 import { SyncStatus as SyncStatusValues, SisEntityType as SisEntityTypeValues } from '../providers/types';
 import {

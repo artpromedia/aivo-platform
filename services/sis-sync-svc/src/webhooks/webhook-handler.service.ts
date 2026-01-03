@@ -21,7 +21,7 @@
  */
 
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { ISisProvider, FieldMapping, SisProviderType } from '../providers/types';
 import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine';
 import { createProvider } from '../providers';

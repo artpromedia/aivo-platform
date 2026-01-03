@@ -8,7 +8,7 @@
  * @author AIVO Platform Team
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { ISisProvider, SisProviderCredentials, SisProviderType } from './types.js';
 import { CleverProvider } from './clever.js';
 import { ClassLinkProvider } from './classlink.js';

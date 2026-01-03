@@ -6,7 +6,7 @@
  * cross-service entity synchronization.
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { SisUserRole } from '../providers/types';
 
 export interface TransformConfig {

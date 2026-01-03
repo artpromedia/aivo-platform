@@ -6,7 +6,7 @@
  */
 
 import * as cron from 'node-cron';
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { SisProvider, SyncStatus } from '../providers/types';
 import { SyncStatus as SyncStatusValues } from '../providers/types';
 import { SyncEngine } from '../sync/engine';

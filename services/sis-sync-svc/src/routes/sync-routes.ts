@@ -13,7 +13,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { DeltaSyncEngine, SyncEntityType } from '../sync/delta-sync-engine.js';
 import { WebhookHandlerService, WebhookProviderType } from '../webhooks/webhook-handler.service.js';
 import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';

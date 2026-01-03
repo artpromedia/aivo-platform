@@ -3,13 +3,14 @@
  */
 
 import Fastify from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { registerRoutes } from './routes';
 import { registerOAuthRoutes } from './oauth';
 import { SyncScheduler } from '../scheduler';
 
 export async function createServer() {
-  const prisma = new PrismaClient();
+  const prisma = new BasePrismaClient() as unknown as ExtendedPrismaClient;
   
   const app = Fastify({
     logger: {

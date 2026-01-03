@@ -5,7 +5,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { SisProviderType } from '../providers/types.js';
 import { z } from 'zod';
 import { SyncScheduler, getSchedulePreset, isValidCronExpression } from '../scheduler';

@@ -13,7 +13,7 @@
  * @author AIVO Platform Team
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { SyncStatus as SyncStatusValues } from '../providers/types';
 import { createHash } from 'crypto';
 import type { ISisProvider } from '../providers/types.js';
