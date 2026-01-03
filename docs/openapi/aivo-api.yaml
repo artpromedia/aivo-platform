@@ -1,0 +1,2620 @@
+openapi: 3.1.0
+info:
+  title: AIVO Platform API
+  version: 2.0.0
+  description: |
+    # Introduction
+
+    Welcome to the AIVO Platform API documentation. This API enables you to build
+    powerful educational applications with features like:
+
+    - **Learning Content Management** - Create and manage lessons, courses, and assessments
+    - **Student Progress Tracking** - Monitor learning outcomes and skill mastery
+    - **Adaptive Learning** - AI-powered personalized learning paths
+    - **Gamification** - XP, achievements, leaderboards, and streaks
+    - **Analytics** - Comprehensive learning analytics and reporting
+
+    ## Getting Started
+
+    1. [Create a developer account](https://developers.aivo.edu/signup)
+    2. [Generate API keys](https://developers.aivo.edu/dashboard/api-keys)
+    3. [Explore the API playground](https://developers.aivo.edu/playground)
+
+    ## Authentication
+
+    The AIVO API uses API keys and OAuth 2.0 for authentication. Include your API key
+    in the `Authorization` header:
+
+    ```bash
+    curl -H "Authorization: Bearer YOUR_API_KEY" \
+         https://api.aivo.edu/v2/lessons
+    ```
+
+    ## Rate Limits
+
+    | Plan       | Requests/minute | Requests/day |
+    |------------|-----------------|--------------|
+    | Free       | 60              | 1,000        |
+    | Pro        | 600             | 50,000       |
+    | Enterprise | 6,000           | Unlimited    |
+
+    ## Versioning
+
+    The API is versioned via the URL path. The current version is `v2`.
+
+    ## COPPA Compliance
+
+    This API is designed for educational platforms serving children under 13.
+    All data handling complies with COPPA requirements.
+
+  termsOfService: https://aivo.edu/terms
+  contact:
+    name: AIVO Developer Support
+    url: https://developers.aivo.edu/support
+    email: developers@aivo.edu
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  x-logo:
+    url: https://developers.aivo.edu/img/logo.png
+    altText: AIVO Logo
+
+servers:
+  - url: https://api.aivo.edu/v2
+    description: Production API
+  - url: https://sandbox-api.aivo.edu/v2
+    description: Sandbox API (for testing)
+  - url: http://localhost:4000/api/v2
+    description: Local development
+
+security:
+  - bearerAuth: []
+  - apiKey: []
+
+tags:
+  - name: Authentication
+    description: Authentication and authorization endpoints
+  - name: Users
+    description: User management and profiles
+  - name: Lessons
+    description: Lesson content management
+  - name: Courses
+    description: Course and curriculum management
+  - name: Assessments
+    description: Assessment and quiz management
+  - name: Progress
+    description: Student progress and learning analytics
+  - name: Gamification
+    description: XP, achievements, and leaderboards
+  - name: Analytics
+    description: Learning analytics and reporting
+  - name: Webhooks
+    description: Webhook configuration and events
+  - name: Admin
+    description: Administrative operations
+  - name: Parental Controls
+    description: COPPA-compliant parental controls
+
+paths:
+  # ============================================================================
+  # AUTHENTICATION
+  # ============================================================================
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate user
+      description: |
+        Authenticate a user with email and password. Returns access and refresh tokens.
+
+        ## Token Expiration
+        - Access token: 15 minutes
+        - Refresh token: 7 days
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              basic:
+                summary: Basic login
+                value:
+                  email: student@school.edu
+                  password: securePassword123
+              with_mfa:
+                summary: Login with MFA
+                value:
+                  email: student@school.edu
+                  password: securePassword123
+                  mfaCode: "123456"
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token
+      description: Exchange a refresh token for a new access token.
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Logout user
+      description: Invalidate the current session and refresh token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/register:
+    post:
+      operationId: register
+      summary: Register new user
+      description: |
+        Register a new user account. For child accounts (under 13),
+        parental consent is required per COPPA regulations.
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ============================================================================
+  # USERS
+  # ============================================================================
+  /users:
+    get:
+      operationId: listUsers
+      summary: List users
+      description: Retrieve a paginated list of users. Requires admin permissions.
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [student, teacher, parent, admin]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user
+      description: Get the currently authenticated user's profile.
+      tags:
+        - Users
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      operationId: updateCurrentUser
+      summary: Update current user
+      description: Update the current user's profile.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      summary: Get user by ID
+      description: Retrieve a user's profile by their ID.
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [progress, achievements, enrollments]
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      operationId: updateUser
+      summary: Update user
+      description: Update a user's profile. Requires admin permissions.
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      operationId: deleteUser
+      summary: Delete user
+      description: |
+        Delete a user account and all associated data.
+        For COPPA compliance, parent-initiated deletion is processed immediately.
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /users/{userId}/progress:
+    get:
+      operationId: getUserProgress
+      summary: Get user progress
+      description: Retrieve comprehensive learning progress for a user.
+      tags:
+        - Users
+        - Progress
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, year, all]
+            default: all
+      responses:
+        '200':
+          description: User progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgress'
+
+  /users/{userId}/achievements:
+    get:
+      operationId: getUserAchievements
+      summary: Get user achievements
+      description: Retrieve achievements earned by a user.
+      tags:
+        - Users
+        - Gamification
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [earned, in_progress, locked]
+      responses:
+        '200':
+          description: User achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementList'
+
+  # ============================================================================
+  # LESSONS
+  # ============================================================================
+  /lessons:
+    get:
+      operationId: listLessons
+      summary: List lessons
+      description: Retrieve a paginated list of lessons with filtering and sorting.
+      tags:
+        - Lessons
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: subject
+          in: query
+          schema:
+            type: string
+            enum: [math, science, english, history, geography, art, music, coding]
+        - name: gradeLevel
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, archived]
+            default: published
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: createdAt:desc
+        - name: include
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [author, course, blocks, analytics]
+      responses:
+        '200':
+          description: List of lessons
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonListResponse'
+
+    post:
+      operationId: createLesson
+      summary: Create a lesson
+      description: Create a new lesson. The lesson is created as a draft by default.
+      tags:
+        - Lessons
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLessonRequest'
+      responses:
+        '201':
+          description: Lesson created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /lessons/{lessonId}:
+    get:
+      operationId: getLesson
+      summary: Get a lesson
+      description: Retrieve a lesson by ID with optional related resources.
+      tags:
+        - Lessons
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+        - name: include
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [author, course, blocks, analytics, progress]
+      responses:
+        '200':
+          description: Lesson details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      operationId: updateLesson
+      summary: Update a lesson
+      description: Update lesson properties. Only provided fields are updated.
+      tags:
+        - Lessons
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLessonRequest'
+      responses:
+        '200':
+          description: Lesson updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      operationId: deleteLesson
+      summary: Delete a lesson
+      description: Delete a lesson. This is a soft-delete by default.
+      tags:
+        - Lessons
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+        - name: permanent
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Lesson deleted
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /lessons/{lessonId}/publish:
+    post:
+      operationId: publishLesson
+      summary: Publish a lesson
+      description: Publish a draft lesson to make it available to students.
+      tags:
+        - Lessons
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+      responses:
+        '200':
+          description: Lesson published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '400':
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishValidationError'
+
+  /lessons/{lessonId}/start:
+    post:
+      operationId: startLesson
+      summary: Start a learning session
+      description: Start a new learning session for a lesson.
+      tags:
+        - Lessons
+        - Progress
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+      responses:
+        '201':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningSession'
+
+  /lessons/{lessonId}/complete:
+    post:
+      operationId: completeLesson
+      summary: Complete a lesson
+      description: Mark a lesson as complete and receive XP rewards.
+      tags:
+        - Lessons
+        - Progress
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteLessonRequest'
+      responses:
+        '200':
+          description: Lesson completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonCompletionResult'
+
+  /lessons/{lessonId}/blocks/{blockId}/answer:
+    post:
+      operationId: submitAnswer
+      summary: Submit answer to a question
+      description: Submit an answer to a question block in a lesson.
+      tags:
+        - Lessons
+        - Progress
+      parameters:
+        - $ref: '#/components/parameters/LessonIdParam'
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+      responses:
+        '200':
+          description: Answer evaluated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResult'
+
+  # ============================================================================
+  # COURSES
+  # ============================================================================
+  /courses:
+    get:
+      operationId: listCourses
+      summary: List courses
+      description: Retrieve a paginated list of courses.
+      tags:
+        - Courses
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: subject
+          in: query
+          schema:
+            type: string
+        - name: gradeLevel
+          in: query
+          schema:
+            type: string
+        - name: ageGroup
+          in: query
+          description: Filter by age group (COPPA)
+          schema:
+            type: string
+            enum: ['4-6', '6-8', '8-10', '10-12', '12-14', '14+']
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseListResponse'
+
+    post:
+      operationId: createCourse
+      summary: Create a course
+      description: Create a new course with lessons.
+      tags:
+        - Courses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCourseRequest'
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+
+  /courses/{courseId}:
+    get:
+      operationId: getCourse
+      summary: Get a course
+      description: Retrieve a course by ID.
+      tags:
+        - Courses
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [lessons, enrollments, analytics]
+      responses:
+        '200':
+          description: Course details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      operationId: updateCourse
+      summary: Update a course
+      description: Update course properties.
+      tags:
+        - Courses
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCourseRequest'
+      responses:
+        '200':
+          description: Course updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+
+    delete:
+      operationId: deleteCourse
+      summary: Delete a course
+      description: Delete a course.
+      tags:
+        - Courses
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Course deleted
+
+  /courses/{courseId}/enroll:
+    post:
+      operationId: enrollInCourse
+      summary: Enroll in a course
+      description: Enroll a user in a course.
+      tags:
+        - Courses
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: User ID (defaults to current user)
+      responses:
+        '200':
+          description: Enrollment successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+
+  # ============================================================================
+  # ASSESSMENTS
+  # ============================================================================
+  /assessments:
+    get:
+      operationId: listAssessments
+      summary: List assessments
+      description: Retrieve a paginated list of assessments.
+      tags:
+        - Assessments
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [quiz, test, exam, practice]
+        - name: courseId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of assessments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentListResponse'
+
+    post:
+      operationId: createAssessment
+      summary: Create an assessment
+      description: Create a new assessment.
+      tags:
+        - Assessments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssessmentRequest'
+      responses:
+        '201':
+          description: Assessment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+
+  /assessments/{assessmentId}:
+    get:
+      operationId: getAssessment
+      summary: Get an assessment
+      description: Retrieve an assessment by ID.
+      tags:
+        - Assessments
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assessment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /assessments/{assessmentId}/start:
+    post:
+      operationId: startAssessment
+      summary: Start an assessment attempt
+      description: Start a new attempt for an assessment.
+      tags:
+        - Assessments
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Attempt started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentAttempt'
+
+  /assessments/{assessmentId}/submit:
+    post:
+      operationId: submitAssessment
+      summary: Submit assessment answers
+      description: Submit answers for an assessment attempt.
+      tags:
+        - Assessments
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAssessmentRequest'
+      responses:
+        '200':
+          description: Assessment submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentResult'
+
+  # ============================================================================
+  # GAMIFICATION
+  # ============================================================================
+  /leaderboards/{leaderboardId}:
+    get:
+      operationId: getLeaderboard
+      summary: Get leaderboard
+      description: Retrieve leaderboard rankings.
+      tags:
+        - Gamification
+      parameters:
+        - name: leaderboardId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, alltime]
+            default: weekly
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [global, school, class]
+            default: global
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+      responses:
+        '200':
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+
+  /achievements:
+    get:
+      operationId: listAchievements
+      summary: List available achievements
+      description: Retrieve all available achievements.
+      tags:
+        - Gamification
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementList'
+
+  # ============================================================================
+  # ANALYTICS
+  # ============================================================================
+  /analytics/learning:
+    get:
+      operationId: getLearningAnalytics
+      summary: Get learning analytics
+      description: Retrieve learning analytics data.
+      tags:
+        - Analytics
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: classId
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: granularity
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: Learning analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningAnalytics'
+
+  /analytics/engagement:
+    get:
+      operationId: getEngagementAnalytics
+      summary: Get engagement analytics
+      description: Retrieve engagement metrics.
+      tags:
+        - Analytics
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Engagement analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngagementAnalytics'
+
+  /analytics/export:
+    post:
+      operationId: exportAnalytics
+      summary: Export analytics report
+      description: Generate and export an analytics report.
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportAnalyticsRequest'
+      responses:
+        '202':
+          description: Export started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+
+  # ============================================================================
+  # WEBHOOKS
+  # ============================================================================
+  /webhooks:
+    get:
+      operationId: listWebhooks
+      summary: List webhooks
+      description: Retrieve all webhook endpoints.
+      tags:
+        - Webhooks
+      responses:
+        '200':
+          description: List of webhooks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookList'
+
+    post:
+      operationId: createWebhook
+      summary: Create webhook
+      description: Create a new webhook endpoint.
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+
+  /webhooks/{webhookId}:
+    get:
+      operationId: getWebhook
+      summary: Get webhook
+      description: Retrieve a webhook by ID.
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      operationId: updateWebhook
+      summary: Update webhook
+      description: Update a webhook endpoint.
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+
+    delete:
+      operationId: deleteWebhook
+      summary: Delete webhook
+      description: Delete a webhook endpoint.
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Webhook deleted
+
+  /webhooks/{webhookId}/test:
+    post:
+      operationId: testWebhook
+      summary: Test webhook
+      description: Send a test event to a webhook endpoint.
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookTestResult'
+
+  # ============================================================================
+  # PARENTAL CONTROLS (COPPA)
+  # ============================================================================
+  /parental/children:
+    get:
+      operationId: listChildren
+      summary: List linked children
+      description: Retrieve children linked to the parent account.
+      tags:
+        - Parental Controls
+      responses:
+        '200':
+          description: List of children
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildList'
+
+  /parental/children/{childId}/activity:
+    get:
+      operationId: getChildActivity
+      summary: Get child activity
+      description: Retrieve activity data for a child.
+      tags:
+        - Parental Controls
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Child activity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildActivity'
+
+  /parental/children/{childId}/settings:
+    patch:
+      operationId: updateChildSettings
+      summary: Update child settings
+      description: Update parental control settings for a child.
+      tags:
+        - Parental Controls
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChildSettings'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildSettings'
+
+  /parental/consent:
+    post:
+      operationId: recordConsent
+      summary: Record parental consent
+      description: Record verifiable parental consent for COPPA compliance.
+      tags:
+        - Parental Controls
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParentalConsentRequest'
+      responses:
+        '200':
+          description: Consent recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentRecord'
+
+  /parental/children/{childId}/data:
+    delete:
+      operationId: deleteChildData
+      summary: Delete child data
+      description: Delete all data for a child (COPPA right to erasure).
+      tags:
+        - Parental Controls
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data deletion initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataDeletionResult'
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from authentication
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for server-to-server authentication
+
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      description: Pagination cursor
+      schema:
+        type: string
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    LessonIdParam:
+      name: lessonId
+      in: path
+      required: true
+      description: Lesson ID
+      schema:
+        type: string
+        pattern: '^les_[a-zA-Z0-9]+$'
+
+  schemas:
+    # Authentication
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        mfaCode:
+          type: string
+          pattern: '^\d{6}$'
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        name:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        parentEmail:
+          type: string
+          format: email
+          description: Required for users under 13 (COPPA)
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+        tokenType:
+          type: string
+          enum: [Bearer]
+        user:
+          $ref: '#/components/schemas/User'
+        requiresParentalConsent:
+          type: boolean
+          description: True if user is under 13 and consent pending
+
+    # Users
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: usr_abc123
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        givenName:
+          type: string
+        familyName:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+        role:
+          type: string
+          enum: [student, teacher, parent, admin]
+        isChild:
+          type: boolean
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, system]
+        language:
+          type: string
+        soundEnabled:
+          type: boolean
+        notificationsEnabled:
+          type: boolean
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        givenName:
+          type: string
+        familyName:
+          type: string
+        avatarUrl:
+          type: string
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    UserListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        pagination:
+          $ref: '#/components/schemas/CursorPagination'
+
+    # Progress
+    UserProgress:
+      type: object
+      properties:
+        userId:
+          type: string
+        level:
+          type: integer
+        xp:
+          type: integer
+        xpToNextLevel:
+          type: integer
+        lessonsCompleted:
+          type: integer
+        coursesCompleted:
+          type: integer
+        totalLearningTime:
+          type: integer
+          description: Total time in seconds
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        skillMastery:
+          type: object
+          additionalProperties:
+            type: number
+            minimum: 0
+            maximum: 100
+        weeklyProgress:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyProgress'
+
+    DailyProgress:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        xpEarned:
+          type: integer
+        lessonsCompleted:
+          type: integer
+        timeSpent:
+          type: integer
+
+    # Lessons
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        ageGroups:
+          type: array
+          items:
+            type: string
+        duration:
+          type: integer
+          description: Estimated duration in minutes
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        status:
+          type: string
+          enum: [draft, published, archived]
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentBlock'
+        objectives:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillReference'
+        author:
+          $ref: '#/components/schemas/User'
+        courseId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: string
+          format: date-time
+
+    ContentBlock:
+      type: object
+      required:
+        - id
+        - type
+        - data
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [text, heading, image, video, audio, question, interactive, code]
+        data:
+          type: object
+        order:
+          type: integer
+
+    CreateLessonRequest:
+      type: object
+      required:
+        - title
+        - subject
+        - gradeLevel
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        ageGroups:
+          type: array
+          items:
+            type: string
+        duration:
+          type: integer
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentBlock'
+        objectives:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        courseId:
+          type: string
+
+    UpdateLessonRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentBlock'
+        objectives:
+          type: array
+          items:
+            type: string
+
+    LessonListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+        pagination:
+          $ref: '#/components/schemas/CursorPagination'
+
+    LearningSession:
+      type: object
+      properties:
+        id:
+          type: string
+        lessonId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [in_progress, completed, abandoned]
+        currentBlockIndex:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    CompleteLessonRequest:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        timeSpent:
+          type: integer
+          description: Time in seconds
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+              answer:
+                type: string
+              correct:
+                type: boolean
+
+    LessonCompletionResult:
+      type: object
+      properties:
+        completed:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+        score:
+          type: integer
+        xpEarned:
+          type: integer
+        bonusXP:
+          type: integer
+        streak:
+          type: integer
+        achievements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+        nextLesson:
+          $ref: '#/components/schemas/Lesson'
+        courseProgress:
+          type: integer
+
+    SubmitAnswerRequest:
+      type: object
+      required:
+        - answer
+      properties:
+        answer:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+            - type: object
+        timeSpent:
+          type: integer
+
+    AnswerResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        score:
+          type: number
+        feedback:
+          type: string
+        explanation:
+          type: string
+        correctAnswer:
+          type: string
+        xpEarned:
+          type: integer
+
+    PublishValidationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+                enum: [error, warning]
+              message:
+                type: string
+              blockId:
+                type: string
+
+    SkillReference:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        weight:
+          type: number
+
+    # Courses
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+          format: uri
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        ageGroups:
+          type: array
+          items:
+            type: string
+        difficulty:
+          type: string
+        duration:
+          type: integer
+        lessonsCount:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+        status:
+          type: string
+          enum: [draft, published, archived]
+        enrolledCount:
+          type: integer
+        rating:
+          type: number
+        instructor:
+          $ref: '#/components/schemas/User'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCourseRequest:
+      type: object
+      required:
+        - title
+        - subject
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        ageGroups:
+          type: array
+          items:
+            type: string
+        lessonIds:
+          type: array
+          items:
+            type: string
+
+    UpdateCourseRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        lessonIds:
+          type: array
+          items:
+            type: string
+
+    CourseListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+        pagination:
+          $ref: '#/components/schemas/CursorPagination'
+
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        userId:
+          type: string
+        enrolledAt:
+          type: string
+          format: date-time
+        progress:
+          type: integer
+        completedAt:
+          type: string
+          format: date-time
+
+    # Assessments
+    Assessment:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [quiz, test, exam, practice]
+        timeLimit:
+          type: integer
+          description: Time limit in minutes
+        passingScore:
+          type: integer
+        questionsCount:
+          type: integer
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+        courseId:
+          type: string
+        lessonId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [multiple_choice, multiple_select, short_answer, essay, matching, ordering]
+        stem:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionOption'
+        points:
+          type: integer
+        explanation:
+          type: string
+
+    QuestionOption:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        correct:
+          type: boolean
+
+    CreateAssessmentRequest:
+      type: object
+      required:
+        - title
+        - type
+        - questions
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [quiz, test, exam, practice]
+        timeLimit:
+          type: integer
+        passingScore:
+          type: integer
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+        courseId:
+          type: string
+        lessonId:
+          type: string
+
+    AssessmentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assessment'
+        pagination:
+          $ref: '#/components/schemas/CursorPagination'
+
+    AssessmentAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+        assessmentId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [in_progress, submitted, graded]
+        startedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+        timeRemaining:
+          type: integer
+
+    SubmitAssessmentRequest:
+      type: object
+      required:
+        - answers
+      properties:
+        answers:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+
+    AssessmentResult:
+      type: object
+      properties:
+        attemptId:
+          type: string
+        score:
+          type: integer
+        passed:
+          type: boolean
+        totalPoints:
+          type: integer
+        earnedPoints:
+          type: integer
+        timeSpent:
+          type: integer
+        questionResults:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+              correct:
+                type: boolean
+              points:
+                type: integer
+              feedback:
+                type: string
+        xpEarned:
+          type: integer
+
+    # Gamification
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        iconUrl:
+          type: string
+          format: uri
+        category:
+          type: string
+        rarity:
+          type: string
+          enum: [common, rare, epic, legendary]
+        xpReward:
+          type: integer
+        earnedAt:
+          type: string
+          format: date-time
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    AchievementList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+
+    Leaderboard:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        period:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+        currentUserRank:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+        score:
+          type: integer
+        change:
+          type: integer
+
+    # Analytics
+    LearningAnalytics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        summary:
+          type: object
+          properties:
+            totalLearningTime:
+              type: integer
+            lessonsCompleted:
+              type: integer
+            averageScore:
+              type: number
+            xpEarned:
+              type: integer
+        timeline:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              learningTime:
+                type: integer
+              lessonsCompleted:
+                type: integer
+              xpEarned:
+                type: integer
+        skillProgress:
+          type: array
+          items:
+            type: object
+            properties:
+              skillId:
+                type: string
+              skillName:
+                type: string
+              startLevel:
+                type: number
+              endLevel:
+                type: number
+              improvement:
+                type: number
+
+    EngagementAnalytics:
+      type: object
+      properties:
+        activeUsers:
+          type: integer
+        sessionsCount:
+          type: integer
+        averageSessionDuration:
+          type: integer
+        retentionRate:
+          type: number
+        completionRate:
+          type: number
+
+    ExportAnalyticsRequest:
+      type: object
+      required:
+        - type
+        - format
+      properties:
+        type:
+          type: string
+          enum: [student_progress, class_summary, engagement, skills]
+        format:
+          type: string
+          enum: [csv, xlsx, pdf]
+        filters:
+          type: object
+          properties:
+            userId:
+              type: string
+            classId:
+              type: string
+            courseId:
+              type: string
+            dateRange:
+              type: object
+              properties:
+                start:
+                  type: string
+                  format: date
+                end:
+                  type: string
+                  format: date
+
+    ExportJob:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        downloadUrl:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+
+    # Webhooks
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+        active:
+          type: boolean
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    WebhookList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhook'
+
+    CreateWebhookRequest:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum:
+              - lesson.started
+              - lesson.completed
+              - assessment.submitted
+              - assessment.graded
+              - achievement.earned
+              - user.created
+              - user.updated
+              - enrollment.created
+              - enrollment.completed
+              - course.completed
+        description:
+          type: string
+
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+        description:
+          type: string
+
+    WebhookTestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        statusCode:
+          type: integer
+        responseTime:
+          type: integer
+        error:
+          type: string
+
+    # Parental Controls
+    ChildList:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildProfile'
+
+    ChildProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+        age:
+          type: integer
+        settings:
+          $ref: '#/components/schemas/ChildSettings'
+        stats:
+          type: object
+          properties:
+            totalTimeToday:
+              type: integer
+            lessonsCompletedToday:
+              type: integer
+            currentStreak:
+              type: integer
+        lastActive:
+          type: string
+          format: date-time
+
+    ChildSettings:
+      type: object
+      properties:
+        dailyTimeLimit:
+          type: integer
+          description: Time limit in minutes
+        allowedHours:
+          type: object
+          properties:
+            start:
+              type: string
+            end:
+              type: string
+        contentRestrictions:
+          type: array
+          items:
+            type: string
+        allowChat:
+          type: boolean
+        allowLeaderboard:
+          type: boolean
+
+    ChildActivity:
+      type: object
+      properties:
+        recentLessons:
+          type: array
+          items:
+            type: object
+            properties:
+              lessonId:
+                type: string
+              title:
+                type: string
+              completedAt:
+                type: string
+                format: date-time
+              score:
+                type: integer
+        totalTimeToday:
+          type: integer
+        weeklyProgress:
+          type: object
+          additionalProperties:
+            type: integer
+
+    ParentalConsentRequest:
+      type: object
+      required:
+        - childId
+        - consentType
+        - granted
+      properties:
+        childId:
+          type: string
+        consentType:
+          type: string
+          enum: [data_collection, marketing, third_party]
+        granted:
+          type: boolean
+        signature:
+          type: string
+
+    ConsentRecord:
+      type: object
+      properties:
+        consentRecorded:
+          type: boolean
+        consentId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        childId:
+          type: string
+        consentType:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    DataDeletionResult:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+        deletedAt:
+          type: string
+          format: date-time
+        dataTypes:
+          type: array
+          items:
+            type: string
+        retentionNotice:
+          type: string
+
+    # Pagination
+    CursorPagination:
+      type: object
+      properties:
+        cursor:
+          type: string
+        hasMore:
+          type: boolean
+        total:
+          type: integer
+
+    # Errors
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        requestId:
+          type: string
+
+    ValidationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+              code:
+                type: string
+
+  responses:
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    RateLimitError:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+x-tagGroups:
+  - name: Core
+    tags:
+      - Authentication
+      - Users
+  - name: Learning
+    tags:
+      - Lessons
+      - Courses
+      - Assessments
+      - Progress
+  - name: Engagement
+    tags:
+      - Gamification
+      - Analytics
+  - name: Integration
+    tags:
+      - Webhooks
+      - Admin
+  - name: Compliance
+    tags:
+      - Parental Controls

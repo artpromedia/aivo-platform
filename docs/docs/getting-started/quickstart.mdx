@@ -1,0 +1,398 @@
+---
+sidebar_position: 2
+title: Quickstart
+description: Get up and running with the AIVO API in 5 minutes
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Quickstart
+
+Get up and running with the AIVO API in just 5 minutes. This guide covers:
+
+1. Creating a developer account
+2. Generating API keys
+3. Making your first API call
+4. Building a simple integration
+
+## Prerequisites
+
+- A [developer account](https://developers.aivo.edu/signup)
+- Basic familiarity with REST APIs
+- Your preferred programming language
+
+## Step 1: Create Your Developer Account
+
+1. Go to [developers.aivo.edu/signup](https://developers.aivo.edu/signup)
+2. Fill in your details and verify your email
+3. Complete the onboarding wizard
+
+:::tip Free Tier
+The free tier includes 1,000 API calls per day—perfect for development and testing.
+:::
+
+## Step 2: Generate API Keys
+
+Navigate to the [API Keys](https://developers.aivo.edu/dashboard/api-keys) section:
+
+1. Click **Create API Key**
+2. Give your key a descriptive name (e.g., "Development Key")
+3. Select the appropriate scopes
+4. Copy and securely store your key
+
+:::danger Keep Your Keys Secret
+Never commit API keys to version control or expose them in client-side code.
+Use environment variables instead.
+:::
+
+## Step 3: Install the SDK
+
+<Tabs groupId="language">
+<TabItem value="javascript" label="JavaScript">
+
+```bash
+npm install @aivo/sdk
+# or
+yarn add @aivo/sdk
+# or
+pnpm add @aivo/sdk
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```bash
+pip install aivo-sdk
+```
+
+</TabItem>
+<TabItem value="ruby" label="Ruby">
+
+```bash
+gem install aivo-sdk
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```bash
+composer require aivo/sdk
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```xml
+<dependency>
+  <groupId>edu.aivo</groupId>
+  <artifactId>aivo-sdk</artifactId>
+  <version>2.0.0</version>
+</dependency>
+```
+
+</TabItem>
+<TabItem value="csharp" label="C#">
+
+```bash
+dotnet add package Aivo.Sdk
+```
+
+</TabItem>
+</Tabs>
+
+## Step 4: Initialize the Client
+
+<Tabs groupId="language">
+<TabItem value="javascript" label="JavaScript">
+
+```javascript title="index.js"
+import Aivo from '@aivo/sdk';
+
+const aivo = new Aivo({
+  apiKey: process.env.AIVO_API_KEY,
+  environment: 'sandbox', // Use sandbox for testing
+});
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python title="main.py"
+import aivo
+import os
+
+client = aivo.Client(
+    api_key=os.environ.get("AIVO_API_KEY"),
+    environment="sandbox"
+)
+```
+
+</TabItem>
+<TabItem value="ruby" label="Ruby">
+
+```ruby title="app.rb"
+require 'aivo'
+
+Aivo.configure do |config|
+  config.api_key = ENV['AIVO_API_KEY']
+  config.environment = :sandbox
+end
+
+client = Aivo::Client.new
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Set your API key as an environment variable
+export AIVO_API_KEY="your_api_key_here"
+
+# Make requests with the Authorization header
+curl -H "Authorization: Bearer $AIVO_API_KEY" \
+  https://sandbox-api.aivo.edu/v2/lessons
+```
+
+</TabItem>
+</Tabs>
+
+## Step 5: Make Your First API Call
+
+Let's fetch a list of lessons:
+
+<Tabs groupId="language">
+<TabItem value="javascript" label="JavaScript">
+
+```javascript title="index.js"
+// Fetch lessons
+const lessons = await aivo.lessons.list({
+  subject: 'math',
+  gradeLevel: '6',
+  limit: 10,
+});
+
+console.log(`Found ${lessons.data.length} lessons`);
+
+// Get a specific lesson
+const lesson = await aivo.lessons.get('les_abc123');
+console.log(`Lesson: ${lesson.title}`);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python title="main.py"
+# Fetch lessons
+lessons = client.lessons.list(
+    subject="math",
+    grade_level="6",
+    limit=10
+)
+
+print(f"Found {len(lessons.data)} lessons")
+
+# Get a specific lesson
+lesson = client.lessons.get("les_abc123")
+print(f"Lesson: {lesson.title}")
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Fetch lessons
+curl -X GET "https://sandbox-api.aivo.edu/v2/lessons?subject=math&gradeLevel=6&limit=10" \
+  -H "Authorization: Bearer $AIVO_API_KEY"
+
+# Get a specific lesson
+curl -X GET "https://sandbox-api.aivo.edu/v2/lessons/les_abc123" \
+  -H "Authorization: Bearer $AIVO_API_KEY"
+```
+
+</TabItem>
+</Tabs>
+
+## Step 6: Create a Lesson
+
+<Tabs groupId="language">
+<TabItem value="javascript" label="JavaScript">
+
+```javascript title="create-lesson.js"
+const lesson = await aivo.lessons.create({
+  title: 'Introduction to Fractions',
+  description: 'Learn the basics of fractions with interactive examples',
+  subject: 'math',
+  gradeLevel: '4',
+  duration: 30,
+  objectives: [
+    'Understand what fractions represent',
+    'Identify numerator and denominator',
+    'Compare simple fractions',
+  ],
+  blocks: [
+    {
+      type: 'heading',
+      data: { text: 'What is a Fraction?', level: 2 },
+    },
+    {
+      type: 'text',
+      data: {
+        content: `A fraction represents a part of a whole.
+          When we divide something into equal parts,
+          each part is a fraction of the whole.`,
+      },
+    },
+    {
+      type: 'image',
+      data: {
+        url: 'https://cdn.aivo.edu/images/fraction-pizza.png',
+        alt: 'Pizza divided into 8 equal slices',
+        caption: 'This pizza is divided into 8 equal parts',
+      },
+    },
+    {
+      type: 'question',
+      data: {
+        type: 'multiple_choice',
+        stem: 'If you eat 3 slices of the pizza, what fraction did you eat?',
+        options: [
+          { text: '3/8', correct: true },
+          { text: '8/3', correct: false },
+          { text: '3/5', correct: false },
+          { text: '5/8', correct: false },
+        ],
+        explanation: 'You ate 3 slices out of 8 total, so you ate 3/8 of the pizza.',
+        points: 10,
+      },
+    },
+  ],
+});
+
+console.log(`Created lesson: ${lesson.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+## Next Steps
+
+<div className="row">
+  <div className="col col--6">
+    <div className="card">
+      <div className="card__header">
+        <h3>📚 Guides</h3>
+      </div>
+      <div className="card__body">
+        <p>Learn how to build common integrations</p>
+      </div>
+      <div className="card__footer">
+        <a href="/docs/guides" className="button button--primary button--block">
+          View Guides
+        </a>
+      </div>
+    </div>
+  </div>
+  <div className="col col--6">
+    <div className="card">
+      <div className="card__header">
+        <h3>🔌 API Reference</h3>
+      </div>
+      <div className="card__body">
+        <p>Explore all available endpoints</p>
+      </div>
+      <div className="card__footer">
+        <a href="/docs/api-reference" className="button button--primary button--block">
+          API Reference
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="row margin-top--md">
+  <div className="col col--6">
+    <div className="card">
+      <div className="card__header">
+        <h3>🎮 API Playground</h3>
+      </div>
+      <div className="card__body">
+        <p>Test API calls interactively</p>
+      </div>
+      <div className="card__footer">
+        <a href="/playground" className="button button--secondary button--block">
+          Open Playground
+        </a>
+      </div>
+    </div>
+  </div>
+  <div className="col col--6">
+    <div className="card">
+      <div className="card__header">
+        <h3>💬 Community</h3>
+      </div>
+      <div className="card__body">
+        <p>Get help from other developers</p>
+      </div>
+      <div className="card__footer">
+        <a href="https://discord.gg/aivo" className="button button--secondary button--block">
+          Join Discord
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+## Common Issues
+
+<details>
+<summary>401 Unauthorized Error</summary>
+
+Make sure your API key is:
+
+- Correctly formatted
+- Not expired
+- Has the required scopes
+- Being sent in the `Authorization` header
+
+```bash
+# Correct format
+Authorization: Bearer YOUR_API_KEY
+```
+
+</details>
+
+<details>
+<summary>Rate Limit Exceeded</summary>
+
+If you're hitting rate limits:
+
+1. Implement exponential backoff
+2. Cache responses when possible
+3. Use webhooks instead of polling
+4. Consider upgrading your plan
+
+Check your current limits with:
+
+```bash
+curl -I https://api.aivo.edu/v2/lessons \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Look for `X-RateLimit-*` headers in the response.
+
+</details>
+
+<details>
+<summary>Sandbox vs Production</summary>
+
+| Feature     | Sandbox                | Production     |
+| ----------- | ---------------------- | -------------- |
+| URL         | `sandbox-api.aivo.edu` | `api.aivo.edu` |
+| Data        | Test data only         | Real data      |
+| Webhooks    | Simulated              | Real-time      |
+| Rate Limits | Lower                  | Higher         |
+
+Always test in sandbox first!
+
+</details>

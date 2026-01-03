@@ -1,0 +1,681 @@
+---
+sidebar_position: 1
+title: .NET SDK
+description: Official .NET SDK for the AIVO API
+---
+
+# .NET SDK
+
+The official .NET SDK for the AIVO API provides a modern, async-first interface for integrating AIVO into your .NET applications.
+
+## Requirements
+
+- .NET 6.0 or higher
+- .NET Standard 2.1 compatible
+
+## Installation
+
+### NuGet Package Manager
+
+```bash
+Install-Package Aivo.SDK
+```
+
+### .NET CLI
+
+```bash
+dotnet add package Aivo.SDK
+```
+
+### Package Reference
+
+```xml
+<PackageReference Include="Aivo.SDK" Version="1.0.0" />
+```
+
+## Quick Start
+
+```csharp
+using Aivo;
+using Aivo.Models;
+
+// Create client
+var client = new AivoClient(new AivoClientOptions
+{
+    ApiKey = Environment.GetEnvironmentVariable("AIVO_API_KEY")
+});
+
+// Create a user
+var user = await client.Users.CreateAsync(new UserCreateRequest
+{
+    Email = "student@example.com",
+    Name = "Alex Student",
+    Role = UserRole.Student
+});
+
+Console.WriteLine($"Created user: {user.Id}");
+```
+
+## Configuration
+
+### Client Options
+
+```csharp
+using Aivo;
+
+var client = new AivoClient(new AivoClientOptions
+{
+    // Required
+    ApiKey = Environment.GetEnvironmentVariable("AIVO_API_KEY"),
+
+    // Optional
+    Environment = AivoEnvironment.Production,
+    ApiVersion = "v1",
+    Timeout = TimeSpan.FromSeconds(30),
+    MaxRetries = 3
+});
+```
+
+### Dependency Injection
+
+```csharp
+// In Program.cs or Startup.cs
+services.AddAivo(options =>
+{
+    options.ApiKey = Configuration["Aivo:ApiKey"];
+    options.Environment = AivoEnvironment.Production;
+});
+```
+
+### appsettings.json
+
+```json
+{
+  "Aivo": {
+    "ApiKey": "aivo_sk_live_...",
+    "Environment": "Production",
+    "Timeout": "00:00:30"
+  }
+}
+```
+
+## Resources
+
+### Users
+
+```csharp
+// List users
+var users = await client.Users.ListAsync(new UserListRequest
+{
+    Page = 1,
+    PerPage = 20,
+    Role = UserRole.Student
+});
+
+foreach (var user in users.Data)
+{
+    Console.WriteLine($"{user.Name} ({user.Email})");
+}
+
+Console.WriteLine($"Total: {users.Pagination.Total}");
+
+// Get a user
+var user = await client.Users.RetrieveAsync("usr_123");
+
+// Create a user
+var newUser = await client.Users.CreateAsync(new UserCreateRequest
+{
+    Email = "student@example.com",
+    Name = "Alex Student",
+    Role = UserRole.Student,
+    Metadata = new Dictionary<string, string>
+    {
+        ["grade"] = "10",
+        ["school_id"] = "sch_456"
+    }
+});
+
+// Update a user
+var updated = await client.Users.UpdateAsync("usr_123", new UserUpdateRequest
+{
+    Name = "Alexander Student",
+    Metadata = new Dictionary<string, string> { ["grade"] = "11" }
+});
+
+// Delete a user
+await client.Users.DeleteAsync("usr_123");
+```
+
+### Lessons
+
+```csharp
+// List lessons
+var lessons = await client.Lessons.ListAsync(new LessonListRequest
+{
+    Status = LessonStatus.Published,
+    Subject = "mathematics",
+    GradeLevel = new[] { "9", "10" }
+});
+
+// Get lesson with content
+var lesson = await client.Lessons.RetrieveAsync("les_123", new RetrieveOptions
+{
+    Expand = new[] { "content", "author" }
+});
+
+// Create a lesson
+var newLesson = await client.Lessons.CreateAsync(new LessonCreateRequest
+{
+    Title = "Introduction to Algebra",
+    Description = "Learn the basics of algebraic expressions",
+    Subject = "mathematics",
+    GradeLevel = "9",
+    ContentBlocks = new List<ContentBlock>
+    {
+        new TextBlock { Content = "Algebra is the study of..." },
+        new VideoBlock
+        {
+            Url = "https://videos.aivo.edu/algebra-intro.mp4",
+            Duration = 300
+        }
+    }
+});
+
+// Publish a lesson
+var published = await client.Lessons.PublishAsync("les_123");
+```
+
+### Courses
+
+```csharp
+// List courses
+var courses = await client.Courses.ListAsync(new CourseListRequest
+{
+    Status = CourseStatus.Active
+});
+
+// Create a course
+var course = await client.Courses.CreateAsync(new CourseCreateRequest
+{
+    Title = "Algebra Fundamentals",
+    Description = "Complete algebra course",
+    Subject = "mathematics",
+    LessonIds = new[] { "les_123", "les_456", "les_789" }
+});
+
+// Enroll a user
+var enrollment = await client.Courses.EnrollAsync("crs_123", new EnrollmentRequest
+{
+    UserId = "usr_456",
+    Role = EnrollmentRole.Student
+});
+
+// Get course progress
+var progress = await client.Courses.GetProgressAsync("crs_123", new ProgressRequest
+{
+    UserId = "usr_456"
+});
+```
+
+### Assessments
+
+```csharp
+// Create an assessment
+var assessment = await client.Assessments.CreateAsync(new AssessmentCreateRequest
+{
+    Title = "Algebra Quiz 1",
+    LessonId = "les_123",
+    TimeLimit = 1800,
+    PassingScore = 70,
+    Questions = new List<Question>
+    {
+        new MultipleChoiceQuestion
+        {
+            Text = "What is 2x + 3 = 7? Solve for x.",
+            Options = new[] { "x = 1", "x = 2", "x = 3", "x = 4" },
+            CorrectAnswer = 1,
+            Points = 10
+        },
+        new ShortAnswerQuestion
+        {
+            Text = "Define a variable in algebra.",
+            Points = 10
+        }
+    }
+});
+
+// Submit an attempt
+var result = await client.Assessments.SubmitAttemptAsync("asmt_123", new AttemptRequest
+{
+    UserId = "usr_456",
+    Answers = new List<Answer>
+    {
+        new Answer { QuestionId = "q_1", Value = 1 },
+        new Answer { QuestionId = "q_2", Value = "A symbol representing an unknown value" }
+    }
+});
+
+Console.WriteLine($"Score: {result.Score}%");
+Console.WriteLine(result.Passed ? "Passed!" : "Try again");
+```
+
+### Analytics
+
+```csharp
+// Get user analytics
+var analytics = await client.Analytics.GetUserAnalyticsAsync("usr_123", new AnalyticsRequest
+{
+    StartDate = DateTime.Today.AddDays(-30),
+    EndDate = DateTime.Today,
+    Metrics = new[] { "time_spent", "lessons_completed", "assessment_scores" }
+});
+
+// Get organization analytics
+var orgAnalytics = await client.Analytics.GetOrganizationAnalyticsAsync(new OrgAnalyticsRequest
+{
+    StartDate = DateTime.Today.AddDays(-30),
+    EndDate = DateTime.Today,
+    GroupBy = GroupBy.Week
+});
+```
+
+## Error Handling
+
+```csharp
+using Aivo.Exceptions;
+
+try
+{
+    var user = await client.Users.RetrieveAsync("usr_invalid");
+}
+catch (NotFoundException ex)
+{
+    Console.WriteLine($"User not found: {ex.Message}");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine($"  {error.Field}: {error.Message}");
+    }
+}
+catch (AuthenticationException ex)
+{
+    Console.WriteLine($"Authentication failed: {ex.Message}");
+}
+catch (RateLimitException ex)
+{
+    Console.WriteLine($"Rate limited. Retry after: {ex.RetryAfter} seconds");
+}
+catch (AivoException ex)
+{
+    Console.WriteLine($"API error: {ex.Message} ({ex.Code})");
+}
+```
+
+## Webhooks
+
+### Signature Verification
+
+```csharp
+using Aivo.Webhooks;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("webhooks")]
+public class WebhookController : ControllerBase
+{
+    private readonly IConfiguration _config;
+
+    public WebhookController(IConfiguration config)
+    {
+        _config = config;
+    }
+
+    [HttpPost("aivo")]
+    public async Task<IActionResult> HandleWebhook()
+    {
+        using var reader = new StreamReader(Request.Body);
+        var payload = await reader.ReadToEndAsync();
+
+        var signature = Request.Headers["X-AIVO-Signature"].FirstOrDefault();
+        var timestamp = Request.Headers["X-AIVO-Timestamp"].FirstOrDefault();
+
+        try
+        {
+            var webhookEvent = WebhookUtility.ConstructEvent(
+                payload,
+                signature,
+                timestamp,
+                _config["Aivo:WebhookSecret"]
+            );
+
+            await ProcessEventAsync(webhookEvent);
+            return Ok();
+        }
+        catch (SignatureVerificationException)
+        {
+            return BadRequest();
+        }
+    }
+
+    private async Task ProcessEventAsync(WebhookEvent webhookEvent)
+    {
+        switch (webhookEvent.Type)
+        {
+            case "lesson.completed":
+                await HandleLessonCompletedAsync(webhookEvent.Data);
+                break;
+            case "assessment.submitted":
+                await HandleAssessmentSubmittedAsync(webhookEvent.Data);
+                break;
+            case "user.created":
+                await HandleUserCreatedAsync(webhookEvent.Data);
+                break;
+        }
+    }
+}
+```
+
+## ASP.NET Core Integration
+
+### Registration
+
+```csharp
+// Program.cs
+builder.Services.AddAivo(options =>
+{
+    options.ApiKey = builder.Configuration["Aivo:ApiKey"];
+    options.Environment = AivoEnvironment.Production;
+});
+
+// Or with configuration binding
+builder.Services.AddAivo(builder.Configuration.GetSection("Aivo"));
+```
+
+### Service Example
+
+```csharp
+public class LearningService
+{
+    private readonly IAivoClient _aivoClient;
+
+    public LearningService(IAivoClient aivoClient)
+    {
+        _aivoClient = aivoClient;
+    }
+
+    public async Task<User> SyncUserAsync(ApplicationUser localUser)
+    {
+        if (!string.IsNullOrEmpty(localUser.AivoId))
+        {
+            return await _aivoClient.Users.RetrieveAsync(localUser.AivoId);
+        }
+
+        return await _aivoClient.Users.CreateAsync(new UserCreateRequest
+        {
+            Email = localUser.Email,
+            Name = localUser.Name,
+            Role = UserRole.Student,
+            Metadata = new Dictionary<string, string>
+            {
+                ["local_id"] = localUser.Id.ToString()
+            }
+        });
+    }
+
+    public async Task<IEnumerable<Course>> GetActiveCoursesAsync()
+    {
+        var response = await _aivoClient.Courses.ListAsync(new CourseListRequest
+        {
+            Status = CourseStatus.Active
+        });
+
+        return response.Data;
+    }
+}
+```
+
+### Controller Example
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class CoursesController : ControllerBase
+{
+    private readonly LearningService _learningService;
+
+    public CoursesController(LearningService learningService)
+    {
+        _learningService = learningService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Course>>> GetCourses()
+    {
+        var courses = await _learningService.GetActiveCoursesAsync();
+        return Ok(courses);
+    }
+
+    [HttpPost("{courseId}/enroll")]
+    [Authorize]
+    public async Task<ActionResult<Enrollment>> Enroll(string courseId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var enrollment = await _learningService.EnrollAsync(userId, courseId);
+        return Ok(enrollment);
+    }
+}
+```
+
+### Background Service
+
+```csharp
+public class ProgressSyncService : BackgroundService
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ProgressSyncService> _logger;
+
+    public ProgressSyncService(
+        IServiceProvider serviceProvider,
+        ILogger<ProgressSyncService> logger)
+    {
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var aivoClient = scope.ServiceProvider.GetRequiredService<IAivoClient>();
+            var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+
+            var users = await userRepository.GetUsersNeedingSyncAsync();
+
+            foreach (var user in users)
+            {
+                try
+                {
+                    var progress = await aivoClient.Progress.GetUserProgressAsync(user.AivoId);
+                    await userRepository.UpdateProgressAsync(user.Id, progress);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to sync progress for user {UserId}", user.Id);
+                }
+            }
+
+            await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
+        }
+    }
+}
+```
+
+## Pagination
+
+### Async Enumerable
+
+```csharp
+// Stream through all users
+await foreach (var user in client.Users.ListAllAsync())
+{
+    Console.WriteLine(user.Name);
+}
+
+// With filtering
+await foreach (var user in client.Users.ListAllAsync(new UserListRequest
+{
+    Role = UserRole.Student
+}))
+{
+    await ProcessUserAsync(user);
+}
+```
+
+### Manual Pagination
+
+```csharp
+var page = 1;
+bool hasMore;
+
+do
+{
+    var response = await client.Users.ListAsync(new UserListRequest
+    {
+        Page = page,
+        PerPage = 100
+    });
+
+    foreach (var user in response.Data)
+    {
+        await ProcessUserAsync(user);
+    }
+
+    hasMore = response.Pagination.HasMore;
+    page++;
+}
+while (hasMore);
+```
+
+## Testing
+
+### xUnit Integration
+
+```csharp
+using Aivo.Testing;
+using Xunit;
+
+public class LearningServiceTests
+{
+    [Fact]
+    public async Task SyncUser_CreatesNewUser_WhenNotExists()
+    {
+        // Arrange
+        var mockClient = new MockAivoClient();
+        mockClient.Users.SetupCreate(new User
+        {
+            Id = "usr_123",
+            Email = "test@example.com",
+            Name = "Test User"
+        });
+
+        var service = new LearningService(mockClient);
+        var localUser = new ApplicationUser { Email = "test@example.com", Name = "Test User" };
+
+        // Act
+        var result = await service.SyncUserAsync(localUser);
+
+        // Assert
+        Assert.Equal("usr_123", result.Id);
+    }
+}
+```
+
+### Moq Integration
+
+```csharp
+using Moq;
+
+[Fact]
+public async Task GetActiveCourses_ReturnsCourses()
+{
+    // Arrange
+    var mockClient = new Mock<IAivoClient>();
+    var mockCourses = new Mock<ICoursesResource>();
+
+    mockCourses.Setup(c => c.ListAsync(It.IsAny<CourseListRequest>(), default))
+        .ReturnsAsync(new ListResponse<Course>
+        {
+            Data = new List<Course>
+            {
+                new Course { Id = "crs_1", Title = "Course 1" },
+                new Course { Id = "crs_2", Title = "Course 2" }
+            }
+        });
+
+    mockClient.Setup(c => c.Courses).Returns(mockCourses.Object);
+
+    var service = new LearningService(mockClient.Object);
+
+    // Act
+    var courses = await service.GetActiveCoursesAsync();
+
+    // Assert
+    Assert.Equal(2, courses.Count());
+}
+```
+
+## Logging
+
+### Microsoft.Extensions.Logging
+
+```csharp
+builder.Services.AddAivo(options =>
+{
+    options.ApiKey = builder.Configuration["Aivo:ApiKey"];
+})
+.AddLogging();
+
+// Logs will use the standard ILogger infrastructure
+```
+
+### Custom Logging
+
+```csharp
+var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole().SetMinimumLevel(LogLevel.Debug);
+});
+
+var client = new AivoClient(new AivoClientOptions
+{
+    ApiKey = Environment.GetEnvironmentVariable("AIVO_API_KEY"),
+    LoggerFactory = loggerFactory
+});
+```
+
+## Cancellation
+
+```csharp
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+try
+{
+    var users = await client.Users.ListAsync(cancellationToken: cts.Token);
+}
+catch (OperationCanceledException)
+{
+    Console.WriteLine("Request was cancelled");
+}
+```
+
+## Resources
+
+- [API Reference](/api-reference)
+- [.NET SDK on GitHub](https://github.com/aivo-edu/aivo-dotnet)
+- [NuGet Package](https://www.nuget.org/packages/Aivo.SDK)
+- [API Documentation](https://docs.aivo.edu/api)
+- [Changelog](https://github.com/aivo-edu/aivo-dotnet/blob/main/CHANGELOG.md)

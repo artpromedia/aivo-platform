@@ -1,0 +1,311 @@
+---
+sidebar_position: 1
+title: Python SDK
+description: Official AIVO SDK for Python
+---
+
+# Python SDK
+
+The official AIVO SDK for Python 3.8+. Supports both synchronous and asynchronous usage.
+
+## Features
+
+- 🐍 **Pythonic** - Idiomatic Python API design
+- ⚡ **Async Support** - Full async/await support with `aiohttp`
+- 🔄 **Auto-retry** - Automatic retries with exponential backoff
+- 📦 **Type Hints** - Complete type annotations for IDE support
+- 🧪 **Well Tested** - Comprehensive test coverage
+
+## Installation
+
+```bash
+pip install aivo-sdk
+
+# With async support
+pip install aivo-sdk[async]
+
+# With Django integration
+pip install aivo-sdk[django]
+
+# With Flask integration
+pip install aivo-sdk[flask]
+```
+
+## Quick Start
+
+```python
+import aivo
+import os
+
+# Initialize the client
+client = aivo.Client(api_key=os.environ["AIVO_API_KEY"])
+
+# List lessons
+lessons = client.lessons.list(subject="math", limit=10)
+for lesson in lessons.data:
+    print(f"{lesson.id}: {lesson.title}")
+
+# Create a lesson
+lesson = client.lessons.create(
+    title="Introduction to Fractions",
+    subject="math",
+    grade_level="4",
+    blocks=[
+        {"type": "heading", "data": {"text": "What are Fractions?"}},
+        {"type": "text", "data": {"content": "A fraction represents..."}},
+        {
+            "type": "question",
+            "data": {
+                "type": "multiple_choice",
+                "stem": "What is 1/2 + 1/4?",
+                "options": [
+                    {"text": "3/4", "correct": True},
+                    {"text": "2/6", "correct": False},
+                ],
+            },
+        },
+    ],
+)
+print(f"Created lesson: {lesson.id}")
+```
+
+## Async Usage
+
+```python
+import asyncio
+import aivo
+
+async def main():
+    # Initialize async client
+    client = aivo.AsyncClient(api_key=os.environ["AIVO_API_KEY"])
+
+    # Fetch lessons concurrently
+    math_lessons, science_lessons = await asyncio.gather(
+        client.lessons.list(subject="math"),
+        client.lessons.list(subject="science"),
+    )
+
+    print(f"Math: {len(math_lessons.data)}, Science: {len(science_lessons.data)}")
+
+    # Auto-pagination with async iterator
+    async for lesson in client.lessons.list_auto_paging(subject="math"):
+        print(lesson.title)
+
+asyncio.run(main())
+```
+
+## Configuration
+
+```python
+import aivo
+
+client = aivo.Client(
+    # Required: Your API key
+    api_key=os.environ["AIVO_API_KEY"],
+
+    # Optional: API environment
+    environment="sandbox",  # "production" or "sandbox"
+
+    # Optional: Custom base URL
+    base_url="https://api.aivo.edu/v2",
+
+    # Optional: Request timeout in seconds
+    timeout=30.0,
+
+    # Optional: Number of retries
+    max_retries=3,
+
+    # Optional: Custom headers
+    headers={"X-Custom-Header": "value"},
+)
+```
+
+## Resources
+
+### Lessons
+
+```python
+# List lessons with filtering
+lessons = client.lessons.list(
+    subject="math",
+    grade_level="6",
+    status="published",
+    search="fractions",
+    sort="created_at:desc",
+    limit=20,
+)
+
+# Auto-pagination
+for lesson in client.lessons.list_auto_paging(subject="math"):
+    print(lesson.title)
+
+# Get a specific lesson
+lesson = client.lessons.get(
+    "les_abc123",
+    include=["author", "blocks", "analytics"],
+)
+
+# Create a lesson
+lesson = client.lessons.create(
+    title="Lesson Title",
+    subject="science",
+    grade_level="5",
+    duration=30,
+    blocks=[...],
+)
+
+# Update a lesson
+lesson = client.lessons.update(
+    "les_abc123",
+    title="Updated Title",
+    description="New description",
+)
+
+# Publish a lesson
+lesson = client.lessons.publish("les_abc123")
+
+# Delete a lesson
+client.lessons.delete("les_abc123")
+```
+
+### Users
+
+```python
+# Get current user
+me = client.users.me()
+
+# Get user progress
+progress = client.users.get_progress("usr_abc123")
+print(f"Level: {progress.level}, XP: {progress.xp}")
+
+# Get achievements
+achievements = client.users.get_achievements("usr_abc123")
+for achievement in achievements.data:
+    print(f"🏆 {achievement.name}")
+```
+
+### Courses
+
+```python
+# List courses
+courses = client.courses.list(subject="math")
+
+# Create a course
+course = client.courses.create(
+    title="Algebra Fundamentals",
+    subject="math",
+    grade_level="7",
+    lesson_ids=["les_123", "les_456"],
+)
+
+# Enroll a user
+enrollment = client.courses.enroll("crs_abc123", user_id="usr_def456")
+```
+
+### Analytics
+
+```python
+# Get learning analytics
+analytics = client.analytics.get_learning_analytics(
+    user_id="usr_abc123",
+    start_date="2024-01-01",
+    end_date="2024-03-31",
+    granularity="day",
+)
+
+# Export report
+job = client.analytics.export_report(
+    type="student_progress",
+    format="csv",
+    filters={"class_id": "cls_abc123"},
+)
+```
+
+## Error Handling
+
+```python
+from aivo import (
+    AivoError,
+    AuthenticationError,
+    RateLimitError,
+    NotFoundError,
+    ValidationError,
+)
+
+try:
+    lesson = client.lessons.get("les_invalid")
+except NotFoundError:
+    print("Lesson not found")
+except AuthenticationError:
+    print("Invalid API key")
+except RateLimitError as e:
+    print(f"Rate limited. Retry after {e.retry_after} seconds")
+except ValidationError as e:
+    print(f"Validation errors: {e.errors}")
+except AivoError as e:
+    print(f"API error: {e.message} ({e.code})")
+```
+
+## Webhooks
+
+```python
+from aivo import verify_webhook_signature
+
+# Verify webhook signature
+is_valid = verify_webhook_signature(
+    payload=request.body,
+    signature=request.headers["X-AIVO-Signature"],
+    secret=webhook_secret,
+)
+
+if is_valid:
+    event = json.loads(request.body)
+    if event["type"] == "lesson.completed":
+        handle_lesson_completed(event["data"])
+```
+
+## Django Integration
+
+```python
+# settings.py
+AIVO_API_KEY = os.environ["AIVO_API_KEY"]
+AIVO_WEBHOOK_SECRET = os.environ["AIVO_WEBHOOK_SECRET"]
+
+# views.py
+from aivo.django import get_client, webhook_handler
+
+@webhook_handler
+def handle_webhook(event):
+    if event.type == "lesson.completed":
+        # Handle lesson completion
+        pass
+
+# Using the client
+def lesson_list(request):
+    client = get_client()
+    lessons = client.lessons.list(subject="math")
+    return render(request, "lessons.html", {"lessons": lessons.data})
+```
+
+## Flask Integration
+
+```python
+from flask import Flask
+from aivo.flask import Aivo, webhook_required
+
+app = Flask(__name__)
+aivo = Aivo(app)
+
+@app.route("/webhooks/aivo", methods=["POST"])
+@webhook_required
+def handle_webhook(event):
+    if event.type == "lesson.completed":
+        # Handle lesson completion
+        pass
+    return "", 200
+
+@app.route("/lessons")
+def lesson_list():
+    lessons = aivo.client.lessons.list(subject="math")
+    return render_template("lessons.html", lessons=lessons.data)
+```
