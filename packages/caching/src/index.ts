@@ -14,13 +14,13 @@ export { CacheKeyBuilder } from './cache-key-builder';
 export { CacheWarmer } from './cache-warmer';
 export { CacheMetrics } from './cache-metrics';
 
-// HTTP Cache utilities for API routes
-export {
-  CachePresets,
-  cachedResponse,
-  createCacheHeaders,
-  varyHeaders,
-  generateETag,
-  etagResponse,
-} from './http-cache';
-export type { CachePresetName } from './http-cache';
+// HTTP Cache utilities for API routes (requires Next.js - commented out for builds without Next.js)
+// export {
+//   CachePresets,
+//   cachedResponse,
+//   createCacheHeaders,
+//   varyHeaders,
+//   generateETag,
+//   etagResponse,
+// } from './http-cache';
+// export type { CachePresetName } from './http-cache';

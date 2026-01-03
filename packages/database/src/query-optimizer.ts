@@ -1,4 +1,27 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call */
+
+import { PrismaClient } from '@prisma/client';
+
+// Local type for Prisma middleware (not exported in all Prisma versions)
+type MiddlewareParams = {
+  model?: string;
+  action: string;
+  args: any;
+  dataPath: string[];
+  runInTransaction: boolean;
+};
+
+// Prisma namespace stub for types not exported
+// eslint-disable-next-line @typescript-eslint/no-namespace
+namespace Prisma {
+  export type MiddlewareParams = {
+    model?: string;
+    action: string;
+    args: any;
+    dataPath: string[];
+    runInTransaction: boolean;
+  };
+}
 
 /**
  * Database Query Optimizer

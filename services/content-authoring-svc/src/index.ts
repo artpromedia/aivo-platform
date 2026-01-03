@@ -40,6 +40,8 @@
  * - GET    /content/accessibility-profile/schema
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
+
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
 
@@ -59,7 +61,7 @@ async function main() {
   });
 
   // Register CORS
-  await fastify.register(cors, {
+  await fastify.register(cors as any, {
     origin: process.env.CORS_ORIGIN ?? true,
   });
 

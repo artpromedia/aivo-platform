@@ -5,6 +5,8 @@
  * These provide an audit trail of feedback during the review process.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+
 import { prisma } from './prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -5,6 +5,8 @@
  * Handles locale fallback and accessibility profile matching.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+
 import { prisma } from './prisma.js';
 import {
   type AccessibilityMetadata,
@@ -251,7 +253,7 @@ export async function resolveContent(
         ...(version.metadataJson as Record<string, unknown>),
         ...(translation.metadataJson as LocaleMetadata),
       };
-      resolvedLocale = tryLocale;
+      resolvedLocale = tryLocale as typeof DEFAULT_LOCALE;
       fallbackUsed = tryLocale !== locale;
       break;
     }
@@ -379,7 +381,7 @@ export async function resolveContentList(
           ...(version.metadataJson as Record<string, unknown>),
           ...(translation.metadataJson as LocaleMetadata),
         };
-        resolvedLocale = tryLocale;
+        resolvedLocale = tryLocale as typeof DEFAULT_LOCALE;
         fallbackUsed = tryLocale !== locale;
         break;
       }

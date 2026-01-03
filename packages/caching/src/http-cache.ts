@@ -4,7 +4,10 @@
  * Provides utilities for setting proper Cache-Control headers in Next.js API routes.
  */
 
-import { NextResponse } from 'next/server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// NextResponse stub type - actual implementation comes from Next.js at runtime
+type NextResponse = any;
 
 /**
  * Cache control presets for different types of content

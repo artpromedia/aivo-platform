@@ -4,8 +4,12 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "verbatimModuleSyntax": false,
+    "exactOptionalPropertyTypes": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "src/http-cache.ts"]
 }

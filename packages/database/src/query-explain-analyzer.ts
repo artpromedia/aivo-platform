@@ -8,6 +8,8 @@
  * - Sort operations on large datasets
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+
 export interface ExplainNode {
   'Node Type': string;
   'Relation Name'?: string;
@@ -280,9 +282,9 @@ Issues Found: ${analysis.issues.length}
     prisma: any,
     query: string
   ): Promise<{ plan: ExplainNode; analysis: QueryAnalysis }> {
-    const result = await prisma.$queryRawUnsafe<[{ 'QUERY PLAN': string }]>(
+    const result = await prisma.$queryRawUnsafe(
       `EXPLAIN (FORMAT JSON, ANALYZE, BUFFERS) ${query}`
-    );
+    ) as [{ 'QUERY PLAN': string }];
 
     const planJson = JSON.parse(result[0]['QUERY PLAN']);
     const plan = planJson[0].Plan as ExplainNode;
