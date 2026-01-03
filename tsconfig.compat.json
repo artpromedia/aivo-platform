@@ -12,7 +12,9 @@
     "noUncheckedIndexedAccess": false,
     "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "module": "ESNext"
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {}
   }
 }
