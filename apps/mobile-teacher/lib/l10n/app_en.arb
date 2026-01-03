@@ -1,0 +1,262 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2024-01-15T00:00:00.000Z",
+
+  "appTitle": "Aivo Teacher",
+  "@appTitle": {
+    "description": "The application title"
+  },
+
+  "dashboard": "Dashboard",
+  "students": "Students",
+  "sessions": "Sessions",
+  "messages": "Messages",
+  "reports": "Reports",
+  "settings": "Settings",
+  "gradebook": "Gradebook",
+  "assignments": "Assignments",
+
+  "loading": "Loading...",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "create": "Create",
+  "search": "Search",
+  "filter": "Filter",
+  "clear": "Clear",
+  "done": "Done",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "submit": "Submit",
+  "confirm": "Confirm",
+
+  "error": "Error",
+  "errorLoadingData": "Error loading data",
+  "noDataFound": "No data found",
+  "networkError": "Network error. Please check your connection.",
+  "unexpectedError": "An unexpected error occurred",
+  "tryAgain": "Try Again",
+
+  "searchStudents": "Search students...",
+  "filterStudents": "Filter Students",
+  "showIepOnly": "Show IEP students only",
+  "studentStatus": "Status",
+  "active": "Active",
+  "inactive": "Inactive",
+  "transferred": "Transferred",
+  "studentDetails": "Student Details",
+  "viewIep": "View IEP",
+  "gradeLevel": "Grade {level}",
+  "@gradeLevel": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+
+  "noStudents": "No students found",
+  "studentsNeedingAttention": "Students Needing Attention",
+  "studentsWithIep": "Students with IEP",
+
+  "searchAssignments": "Search assignments...",
+  "filterAssignments": "Filter Assignments",
+  "newAssignment": "New Assignment",
+  "assignmentDetails": "Assignment Details",
+  "assignmentType": "Type",
+  "pointsPossible": "Points Possible",
+  "dueDate": "Due Date",
+  "availableFrom": "Available From",
+  "locksAt": "Locks At",
+  "category": "Category",
+  "weight": "Weight",
+  "lateSubmissions": "Late Submissions",
+  "allowed": "Allowed",
+  "notAllowed": "Not Allowed",
+  "latePenalty": "Late Penalty",
+  "description": "Description",
+  "instructions": "Instructions",
+
+  "draft": "Draft",
+  "published": "Published",
+  "closed": "Closed",
+  "archived": "Archived",
+
+  "homework": "Homework",
+  "quiz": "Quiz",
+  "test": "Test",
+  "project": "Project",
+  "classwork": "Classwork",
+  "practice": "Practice",
+  "assessment": "Assessment",
+
+  "pastDue": "Past Due",
+  "noDueDate": "No due date",
+  "ungraded": "{count} ungraded",
+  "@ungraded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submissionProgress": "{submitted}/{total} submitted",
+  "@submissionProgress": {
+    "placeholders": {
+      "submitted": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "noAssignments": "No assignments yet",
+  "noAssignmentsMatch": "No assignments match filters",
+  "clearFilters": "Clear filters",
+  "createFirstAssignment": "Create your first assignment",
+  "needsGradingOnly": "Needs grading only",
+  "applyFilters": "Apply Filters",
+
+  "publishAssignment": "Publish Assignment",
+  "publishConfirmation": "Are you sure you want to publish this assignment? Students will be able to see it.",
+  "publish": "Publish",
+  "closeAssignment": "Close Assignment",
+  "duplicate": "Duplicate",
+  "deleteAssignment": "Delete Assignment",
+  "deleteConfirmation": "Are you sure? This action cannot be undone.",
+
+  "details": "Details",
+  "submissions": "Submissions",
+  "submissionsCount": "Submissions ({count})",
+  "@submissionsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "progress": "Progress",
+  "submitted": "Submitted",
+  "graded": "Graded",
+  "missing": "Missing",
+  "completionRate": "{percent}% completion rate",
+  "@completionRate": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+
+  "gradeAll": "Grade All ({count})",
+  "@gradeAll": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "markMissingZero": "Mark Missing 0",
+  "markMissingZeroConfirmation": "This will give all missing submissions a grade of 0. Continue?",
+  "noSubmissionsYet": "No submissions yet",
+
+  "notSubmitted": "Not submitted",
+  "submittedLate": "Submitted late",
+  "returned": "Returned",
+  "excused": "Excused",
+  "late": "Late",
+
+  "gradeSubmission": "Grade Submission",
+  "points": "Points",
+  "pointsOutOf": "Points (out of {max})",
+  "@pointsOutOf": {
+    "placeholders": {
+      "max": {"type": "String"}
+    }
+  },
+  "fullCredit": "Full",
+  "feedback": "Feedback",
+  "feedbackPlaceholder": "Enter feedback for the student...",
+  "excuseFromAssignment": "Excuse from assignment",
+  "excuseExplanation": "Grade will not count toward final grade",
+  "applyLatePenalty": "Apply late penalty",
+  "saveGrade": "Save Grade",
+  "saveAndNext": "Save & Grade Next",
+  "gradeSaved": "Grade saved",
+  "errorSavingGrade": "Error saving grade",
+
+  "overall": "Overall",
+  "overallGrade": "Overall Grade",
+  "gradedCount": "{graded}/{total} graded",
+  "@gradedCount": {
+    "placeholders": {
+      "graded": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "missingCount": "{count} missing",
+  "@missingCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "filterOptions": "Filter Options",
+  "showAtRiskOnly": "Show at-risk students only",
+  "atRiskDescription": "Students below 70%",
+
+  "exportGradebook": "Export Gradebook",
+  "recalculateGrades": "Recalculate Grades",
+  "gradebookExported": "Gradebook exported",
+
+  "quickGrade": "Quick Grade",
+  "excuse": "Excuse",
+
+  "integrations": "Integrations",
+  "googleClassroom": "Google Classroom",
+  "canvas": "Canvas",
+  "clever": "Clever",
+  "connected": "Connected",
+  "disconnected": "Disconnected",
+  "connecting": "Connecting...",
+  "connect": "Connect",
+  "disconnect": "Disconnect",
+  "lastSync": "Last sync: {time}",
+  "@lastSync": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "syncNow": "Sync Now",
+  "syncAll": "Sync All",
+  "syncHistory": "Sync History",
+  "gradePassback": "Grade Passback",
+  "pendingGrades": "Pending Grades",
+  "courseMappings": "Course Mappings",
+  "mapCourse": "Map Course",
+
+  "offlineMode": "Offline Mode",
+  "syncPending": "{count} changes pending sync",
+  "@syncPending": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "allChangesSynced": "All changes synced",
+  "syncingChanges": "Syncing changes...",
+
+  "notifications": "Notifications",
+  "notificationSettings": "Notification Settings",
+  "pushNotifications": "Push Notifications",
+  "emailNotifications": "Email Notifications",
+
+  "profile": "Profile",
+  "logout": "Logout",
+  "logoutConfirmation": "Are you sure you want to logout?",
+  "about": "About",
+  "version": "Version {version}",
+  "@version": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+  "help": "Help",
+  "support": "Support"
+}

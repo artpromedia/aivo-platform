@@ -1,0 +1,61 @@
+# Fastlane configuration for Aivo Parent iOS
+# https://docs.fastlane.tools
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Run tests"
+  lane :test do
+    Dir.chdir("../..") do
+      sh("flutter", "test")
+    end
+  end
+
+  desc "Build debug IPA"
+  lane :build_debug do
+    Dir.chdir("../..") do
+      sh("flutter", "build", "ios", "--debug", "--no-codesign", "--dart-define=FLAVOR=dev")
+    end
+  end
+
+  desc "Build release IPA for staging"
+  lane :build_staging do
+    match(type: "appstore", readonly: true)
+    Dir.chdir("../..") do
+      sh("flutter", "build", "ipa", "--release", "--dart-define=FLAVOR=staging", "--export-options-plist=ios/ExportOptions.plist")
+    end
+  end
+
+  desc "Build release IPA for production"
+  lane :build_release do
+    match(type: "appstore", readonly: true)
+    Dir.chdir("../..") do
+      sh("flutter", "build", "ipa", "--release", "--dart-define=FLAVOR=prod", "--export-options-plist=ios/ExportOptions.plist")
+    end
+  end
+
+  desc "Deploy to TestFlight"
+  lane :deploy_testflight do
+    build_release
+    upload_to_testflight(
+      ipa: "../build/ios/ipa/aivo_parent.ipa",
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Deploy to App Store"
+  lane :deploy_appstore do
+    build_release
+    upload_to_app_store(
+      ipa: "../build/ios/ipa/aivo_parent.ipa",
+      submit_for_review: false,
+      automatic_release: false
+    )
+  end
+
+  desc "Sync certificates and profiles using match"
+  lane :certificates do
+    match(type: "development")
+    match(type: "appstore")
+  end
+end

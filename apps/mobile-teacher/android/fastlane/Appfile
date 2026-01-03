@@ -1,0 +1,3 @@
+# App identifier for Google Play
+json_key_file(ENV["GOOGLE_PLAY_JSON_KEY"] || "play-store-credentials.json")
+package_name("com.aivo.teacher")

@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../gamification_models.dart';
+import '../../../accessibility/accessibility.dart';
 
 /// Main streak display widget
 class StreakWidget extends StatelessWidget {
@@ -36,8 +37,12 @@ class StreakWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return AccessibleStreak(
+      streakDays: currentStreak,
+      completedToday: completedToday,
+      freezesAvailable: freezesAvailable,
+      child: Container(
+        padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -132,6 +137,7 @@ class StreakWidget extends StatelessWidget {
             ],
           ),
         ],
+        ),
       ),
     );
   }

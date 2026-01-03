@@ -1,0 +1,15 @@
+# App Store Connect credentials
+app_identifier("com.aivo.learner")
+apple_id(ENV["APPLE_ID"] || "developer@aivo.com")
+itc_team_id(ENV["ITC_TEAM_ID"])
+team_id(ENV["APPLE_TEAM_ID"])
+
+# For CI/CD
+for_platform :ios do
+  for_lane :deploy_testflight do
+    app_identifier("com.aivo.learner")
+  end
+  for_lane :deploy_appstore do
+    app_identifier("com.aivo.learner")
+  end
+end

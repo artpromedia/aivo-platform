@@ -7,6 +7,7 @@ library;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../gamification_models.dart';
+import '../../../accessibility/accessibility.dart';
 
 /// Size variants for the level progress ring
 enum LevelRingSize { small, medium, large }
@@ -146,10 +147,15 @@ class _LevelProgressRingState extends State<LevelProgressRing>
     final levelConfig = GamificationConstants.getLevelConfig(widget.level);
     final theme = Theme.of(context);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedBuilder(
+    return AccessibleLevel(
+      level: widget.level,
+      levelTitle: widget.levelTitle,
+      currentXP: widget.currentXP,
+      xpToNextLevel: widget.xpToNextLevel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
           animation: _progressAnimation,
           builder: (context, child) {
             return SizedBox(
@@ -196,21 +202,26 @@ class _LevelProgressRingState extends State<LevelProgressRing>
         ),
         if (widget.showTitle) ...[
           const SizedBox(height: 8),
-          Text(
-            widget.levelTitle,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+          ExcludeSemantics(
+            child: Text(
+              widget.levelTitle,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
-          Text(
-            '${widget.currentXP} / ${widget.currentXP + widget.xpToNextLevel} XP',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey.shade600,
+          ExcludeSemantics(
+            child: Text(
+              '${widget.currentXP} / ${widget.currentXP + widget.xpToNextLevel} XP',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey.shade600,
+              ),
             ),
           ),
         ],
-      ],
+        ],
+      ),
     );
   }
 

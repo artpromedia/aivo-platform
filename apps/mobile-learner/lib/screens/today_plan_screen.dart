@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 
+import '../accessibility/accessibility.dart';
 import '../plan/plan_controller.dart';
 
 class TodayPlanScreen extends ConsumerStatefulWidget {
@@ -33,12 +34,16 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
       appBar: AppBar(
         title: Text(strings.todayPlan),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(planControllerProvider(widget.learnerId).notifier)
-                  .fetchTodaysPlan(forceRefresh: true);
-            },
+          Semantics(
+            label: A11yLabels.refreshButton,
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                ref.read(planControllerProvider(widget.learnerId).notifier)
+                    .fetchTodaysPlan(forceRefresh: true);
+              },
+            ),
           ),
         ],
       ),
@@ -48,7 +53,12 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
 
   Widget _buildBody(BuildContext context, PlanState planState) {
     if (planState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: AccessibleLoading(
+          label: A11yLabels.loadingActivities,
+          child: const CircularProgressIndicator(),
+        ),
+      );
     }
 
     if (planState.error != null) {
@@ -70,19 +80,26 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Semantics(
+              label: A11yLabels.errorIcon,
+              child: const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            ),
             const SizedBox(height: 16),
             Text('Failed to load plan', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(error, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () {
-                ref.read(planControllerProvider(widget.learnerId).notifier)
-                    .fetchTodaysPlan(forceRefresh: true);
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+            Semantics(
+              label: A11yLabels.retryButton,
+              button: true,
+              child: FilledButton.icon(
+                onPressed: () {
+                  ref.read(planControllerProvider(widget.learnerId).notifier)
+                      .fetchTodaysPlan(forceRefresh: true);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
             ),
           ],
         ),
@@ -140,6 +157,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
                 return _ActivityCard(
                   activity: plan.activities[index],
                   index: index + 1,
+                  total: plan.activities.length,
                 );
               },
             ),
@@ -163,16 +181,29 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
 
 /// Card widget displaying a single activity.
 class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.activity, required this.index});
+  const _ActivityCard({
+    required this.activity,
+    required this.index,
+    required this.total,
+  });
 
   final TodaysPlanActivity activity;
   final int index;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
+    final typeLabel = _getObjectTypeLabel(activity.objectType);
+
+    return AccessibleActivityCard(
+      title: activity.title,
+      type: typeLabel,
+      estimatedMinutes: activity.estimatedMinutes,
+      position: index,
+      total: total,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: ListTile(
         leading: CircleAvatar(
           backgroundColor: _getDomainColor(activity.domain),
           child: Text(
@@ -204,6 +235,7 @@ class _ActivityCard extends StatelessWidget {
           ],
         ),
         trailing: const Icon(Icons.chevron_right),
+        ),
       ),
     );
   }
@@ -268,21 +300,24 @@ class _DifficultyIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Difficulty: ',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-        ...List.generate(5, (index) {
-          return Icon(
-            Icons.circle,
-            size: 8,
-            color: index < level ? _getDifficultyColor(level) : Colors.grey[300],
-          );
-        }),
-      ],
+    return AccessibleDifficulty(
+      level: level,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Difficulty: ',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+          ...List.generate(5, (index) {
+            return Icon(
+              Icons.circle,
+              size: 8,
+              color: index < level ? _getDifficultyColor(level) : Colors.grey[300],
+            );
+          }),
+        ],
+      ),
     );
   }
 

@@ -1,0 +1,93 @@
+# Fastlane configuration for Aivo Learner Android
+# https://docs.fastlane.tools
+
+default_platform(:android)
+
+platform :android do
+  desc "Run tests"
+  lane :test do
+    Dir.chdir("../..") do
+      sh("flutter", "test")
+    end
+  end
+
+  desc "Build debug APK"
+  lane :build_debug do
+    Dir.chdir("../..") do
+      sh("flutter", "build", "apk", "--debug", "--dart-define=FLAVOR=dev")
+    end
+  end
+
+  desc "Build release APK for staging"
+  lane :build_staging do
+    Dir.chdir("../..") do
+      sh("flutter", "build", "apk", "--release", "--dart-define=FLAVOR=staging")
+    end
+  end
+
+  desc "Build release APK for production"
+  lane :build_release do
+    Dir.chdir("../..") do
+      sh("flutter", "build", "apk", "--release", "--dart-define=FLAVOR=prod")
+    end
+  end
+
+  desc "Build release App Bundle for production"
+  lane :build_bundle do
+    Dir.chdir("../..") do
+      sh("flutter", "build", "appbundle", "--release", "--dart-define=FLAVOR=prod")
+    end
+  end
+
+  desc "Deploy to internal testing track"
+  lane :deploy_internal do
+    build_bundle
+    upload_to_play_store(
+      track: "internal",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy to beta track"
+  lane :deploy_beta do
+    build_bundle
+    upload_to_play_store(
+      track: "beta",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy to production"
+  lane :deploy_production do
+    build_bundle
+    upload_to_play_store(
+      track: "production",
+      aab: "../build/app/outputs/bundle/release/app-release.aab"
+    )
+  end
+
+  desc "Increment version code"
+  lane :increment_version do
+    # Read current version from pubspec.yaml
+    Dir.chdir("../..") do
+      pubspec = File.read("pubspec.yaml")
+      version_match = pubspec.match(/version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
+      if version_match
+        major = version_match[1]
+        minor = version_match[2]
+        patch = version_match[3]
+        build = version_match[4].to_i + 1
+        new_version = "#{major}.#{minor}.#{patch}+#{build}"
+        new_pubspec = pubspec.gsub(/version:\s*\d+\.\d+\.\d+\+\d+/, "version: #{new_version}")
+        File.write("pubspec.yaml", new_pubspec)
+        UI.success("Version incremented to #{new_version}")
+      end
+    end
+  end
+end

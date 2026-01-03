@@ -4,8 +4,14 @@ publish_to: "none"
 description: Flutter app for teachers and therapists.
 environment:
   sdk: ">=3.3.0 <4.0.0"
+
+flutter:
+  generate: true
+
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^2.6.1
   go_router: ^14.2.0
@@ -32,3 +38,5 @@ dev_dependencies:
   patrol: ^3.6.1
   clock: ^1.1.1
   fake_async: ^1.3.1
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.0

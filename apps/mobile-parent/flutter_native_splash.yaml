@@ -1,0 +1,40 @@
+# Flutter Native Splash configuration
+# Run: flutter pub run flutter_native_splash:create
+# https://pub.dev/packages/flutter_native_splash
+
+flutter_native_splash:
+  # Logo image to display on splash screen
+  image: assets/splash/splash_logo.png
+
+  # Background color
+  color: "#FFFFFF"
+  color_dark: "#1E1E2E"
+
+  # Branding image (shown at bottom)
+  branding: assets/splash/branding.png
+  branding_dark: assets/splash/branding_dark.png
+  branding_mode: bottom
+
+  # Android 12+ settings
+  android_12:
+    image: assets/splash/splash_logo_android12.png
+    icon_background_color: "#FFFFFF"
+    icon_background_color_dark: "#1E1E2E"
+    branding: assets/splash/branding.png
+    branding_dark: assets/splash/branding_dark.png
+
+  # Android settings
+  android: true
+  android_gravity: center
+  android_screen_orientation: portrait
+  fullscreen: true
+
+  # iOS settings
+  ios: true
+  ios_content_mode: center
+
+  # Web settings
+  web: true
+  web_image_mode: center
+  web_background_color: "#FFFFFF"
+  web_background_color_dark: "#1E1E2E"

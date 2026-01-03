@@ -1,0 +1,35 @@
+# Flutter Launcher Icons configuration
+# Run: flutter pub run flutter_launcher_icons
+# https://pub.dev/packages/flutter_launcher_icons
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 21
+
+  # Adaptive icon configuration (Android 8.0+)
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icons/app_icon_monochrome.png"
+
+  # Android specific
+  android_icon_path: "android/app/src/main/res/mipmap-"
+
+  # iOS specific
+  remove_alpha_ios: true
+
+  # Web favicon
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon.png"
+    background_color: "#FFFFFF"
+    theme_color: "#10B981"
+
+  # Windows specific
+  windows:
+    generate: false
+
+  # macOS specific
+  macos:
+    generate: false
