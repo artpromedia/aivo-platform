@@ -1,39 +1,118 @@
 /**
  * Billing Service Configuration
+ *
+ * Uses @aivo/env-validation for fail-fast environment validation
  */
 
-function requireEnvInProduction(name: string, defaultValue?: string): string {
-  const value = process.env[name];
-  if (!value && process.env.NODE_ENV === 'production') {
-    throw new Error(`${name} is required in production`);
-  }
-  return value || defaultValue || '';
-}
+import {
+  z,
+  validateEnv,
+  port,
+  databaseUrl,
+  secret,
+  optional,
+  isProduction,
+} from '@aivo/env-validation';
 
-export const config = {
-  port: Number.parseInt(process.env.PORT || '4060', 10),
-  host: process.env.HOST || '0.0.0.0',
-  databaseUrl:
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_billing',
+/**
+ * Environment schema with production-aware validation
+ */
+const envSchema = z.object({
+  // Server configuration
+  PORT: port(4060),
+  HOST: z.string().default('0.0.0.0'),
+  NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  // Database
+  DATABASE_URL: databaseUrl('postgresql://postgres:postgres@localhost:5432/aivo_billing'),
 
   // JWT configuration (required in production)
-  jwtSecret: requireEnvInProduction('JWT_SECRET', 'dev-only-secret'),
+  JWT_SECRET: secret('dev-only-secret'),
 
-  // Stripe configuration (optional - only if using Stripe)
+  // Stripe configuration
+  // In production, at least secret key should be set for billing to work
+  STRIPE_SECRET_KEY: isProduction()
+    ? z.string().min(1, 'Stripe secret key is required in production')
+    : z.string().default(''),
+  STRIPE_WEBHOOK_SECRET: z.string().default(''),
+  STRIPE_PUBLISHABLE_KEY: z.string().default(''),
+
+  // NATS configuration for event publishing
+  NATS_URL: z.string().default('nats://localhost:4222'),
+  NATS_ENABLED: z
+    .string()
+    .transform((val) => val.toLowerCase() === 'true')
+    .default('true'),
+
+  // Redis for distributed locking/caching
+  REDIS_URL: z.string().optional(),
+
+  // Trial configuration
+  DEFAULT_TRIAL_DAYS: z.coerce.number().int().min(0).max(365).default(30),
+
+  // Grace period for past due subscriptions (days)
+  PAST_DUE_GRACE_DAYS: z.coerce.number().int().min(0).max(90).default(7),
+
+  // Service URLs
+  AUTH_SERVICE_URL: z.string().default('http://auth-svc:3000'),
+  TENANT_SERVICE_URL: z.string().default('http://tenant-svc:3000'),
+});
+
+/**
+ * Validated environment configuration
+ * Will fail fast in production if required variables are missing
+ */
+const env = validateEnv(envSchema, { serviceName: 'billing-svc' });
+
+/**
+ * Typed configuration object
+ */
+export const config = {
+  port: env.PORT,
+  host: env.HOST,
+  nodeEnv: env.NODE_ENV,
+  logLevel: env.LOG_LEVEL,
+  databaseUrl: env.DATABASE_URL,
+
+  // JWT configuration
+  jwtSecret: env.JWT_SECRET,
+
+  // Stripe configuration
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY || '',
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    secretKey: env.STRIPE_SECRET_KEY,
+    webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+    publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+    isConfigured: Boolean(env.STRIPE_SECRET_KEY),
   },
 
   // NATS configuration for event publishing
   nats: {
-    url: process.env.NATS_URL || 'nats://localhost:4222',
+    url: env.NATS_URL,
+    enabled: env.NATS_ENABLED,
+  },
+
+  // Redis
+  redis: {
+    url: env.REDIS_URL,
+    enabled: Boolean(env.REDIS_URL),
   },
 
   // Trial configuration
-  defaultTrialDays: Number.parseInt(process.env.DEFAULT_TRIAL_DAYS || '30', 10),
+  defaultTrialDays: env.DEFAULT_TRIAL_DAYS,
 
   // Grace period for past due subscriptions (days)
-  pastDueGraceDays: Number.parseInt(process.env.PAST_DUE_GRACE_DAYS || '7', 10),
+  pastDueGraceDays: env.PAST_DUE_GRACE_DAYS,
+
+  // Service URLs
+  services: {
+    auth: env.AUTH_SERVICE_URL,
+    tenant: env.TENANT_SERVICE_URL,
+  },
+
+  // Derived flags
+  isProduction: env.NODE_ENV === 'production',
+  isDevelopment: env.NODE_ENV === 'development',
 } as const;
+
+export type Config = typeof config;
