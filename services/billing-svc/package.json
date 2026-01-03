@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@aivo/billing-common": "workspace:*",
+    "@aivo/rate-limiter": "workspace:*",
     "@prisma/client": "^6.9.0",
     "fastify": "^4.29.1",
     "fastify-plugin": "^4.5.1",

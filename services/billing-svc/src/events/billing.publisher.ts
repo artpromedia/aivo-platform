@@ -11,9 +11,11 @@
  * - Tenant context for multi-tenancy
  * - Idempotency keys for deduplication
  *
- * Note: NATS integration is optional. When NATS is not available,
- * events are logged for development/debugging purposes.
+ * NATS JetStream integration is enabled when NATS_URL is configured.
+ * Falls back to in-memory handlers when NATS is not available.
  */
+
+import { connect, NatsConnection, JetStreamClient, StringCodec } from 'nats';
 
 // Simple logger using console
 const logger = {
@@ -312,18 +314,21 @@ interface PublishOptions {
 
 class BillingEventPublisher {
   private isInitialized = false;
-  // TODO: Enable NATS when dependencies are resolved
-  // private readonly natsEnabled = false;
+  private natsConnection: NatsConnection | null = null;
+  private jetstream: JetStreamClient | null = null;
+  private readonly natsUrl = process.env.NATS_URL;
+  private readonly streamName = 'BILLING';
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   // For deduplication
   private readonly processedEvents = new Map<string, number>();
   private readonly deduplicationWindowMs = 60000; // 60 seconds
+  private readonly stringCodec = StringCodec();
 
   /**
    * Initialize the publisher
-   * Note: NATS integration is disabled by default to avoid dependency issues.
-   * Events are emitted to in-memory handlers and logged.
+   * Connects to NATS JetStream if NATS_URL is configured.
+   * Falls back to in-memory handlers when NATS is not available.
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
@@ -335,8 +340,54 @@ class BillingEventPublisher {
       this.cleanupDeduplicationCache();
     }, this.deduplicationWindowMs);
 
+    // Initialize NATS if configured
+    if (this.natsUrl) {
+      try {
+        this.natsConnection = await connect({
+          servers: this.natsUrl,
+          name: 'billing-svc-publisher',
+          reconnect: true,
+          maxReconnectAttempts: -1, // Unlimited retries
+          reconnectTimeWait: 1000,
+        });
+
+        this.jetstream = this.natsConnection.jetstream();
+
+        // Ensure stream exists
+        const jsm = await this.natsConnection.jetstreamManager();
+        try {
+          await jsm.streams.info(this.streamName);
+          logger.info('NATS JetStream stream exists', { stream: this.streamName });
+        } catch {
+          // Create stream if it doesn't exist
+          await jsm.streams.add({
+            name: this.streamName,
+            subjects: ['billing.>'],
+            retention: 'limits',
+            max_msgs: 100000,
+            max_age: 7 * 24 * 60 * 60 * 1000000000, // 7 days in nanoseconds
+            storage: 'file',
+            replicas: 1,
+          });
+          logger.info('NATS JetStream stream created', { stream: this.streamName });
+        }
+
+        logger.info('NATS JetStream publisher initialized', { url: this.natsUrl });
+      } catch (error) {
+        logger.error('Failed to connect to NATS, falling back to in-memory mode', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        this.natsConnection = null;
+        this.jetstream = null;
+      }
+    } else {
+      logger.info('NATS_URL not configured, using in-memory mode');
+    }
+
     this.isInitialized = true;
-    logger.info('Billing event publisher initialized (in-memory mode)');
+    logger.info('Billing event publisher initialized', {
+      mode: this.jetstream ? 'nats-jetstream' : 'in-memory',
+    });
   }
 
   /**
@@ -452,8 +503,28 @@ class BillingEventPublisher {
       // Emit to in-memory handlers
       await emitToHandlers(event);
 
-      // TODO: Add NATS JetStream publishing when dependencies are resolved
-      // The natsEnabled flag can be used to toggle NATS integration
+      // Publish to NATS JetStream if available
+      if (this.jetstream) {
+        const subject = eventType; // e.g., "billing.subscription.created"
+        const payload = this.stringCodec.encode(JSON.stringify(event));
+
+        try {
+          const ack = await this.jetstream.publish(subject, payload, {
+            msgID: dedupeKey, // For deduplication in JetStream
+          });
+          logger.debug('Event published to NATS JetStream', {
+            type: eventType,
+            seq: ack.seq,
+            stream: ack.stream,
+          });
+        } catch (natsError) {
+          logger.error('Failed to publish to NATS JetStream', {
+            type: eventType,
+            error: natsError instanceof Error ? natsError.message : String(natsError),
+          });
+          // Don't throw - in-memory handlers have already been called
+        }
+      }
     } catch (error) {
       logger.error('Failed to publish billing event', {
         type: eventType,
@@ -479,6 +550,22 @@ class BillingEventPublisher {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
+
+    // Close NATS connection if it exists
+    if (this.natsConnection) {
+      try {
+        await this.natsConnection.drain();
+        await this.natsConnection.close();
+        logger.info('NATS connection closed');
+      } catch (error) {
+        logger.error('Error closing NATS connection', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      this.natsConnection = null;
+      this.jetstream = null;
+    }
+
     this.isInitialized = false;
     this.processedEvents.clear();
     eventHandlers.clear();

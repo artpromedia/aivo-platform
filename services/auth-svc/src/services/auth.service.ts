@@ -13,6 +13,7 @@ import type { Role } from '@aivo/ts-rbac';
 import type { PrismaClient, User, Session, UserRole } from '../generated/prisma-client/index.js';
 import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
 import { config } from '../config.js';
+import { notifyClient } from '../lib/notify-client.js';
 
 // ============================================================================
 // Types
@@ -402,7 +403,11 @@ export class AuthService {
   // Password Reset
   // --------------------------------------------------------------------------
 
-  async requestPasswordReset(email: string, tenantId?: string): Promise<void> {
+  async requestPasswordReset(
+    email: string,
+    tenantId?: string,
+    deviceInfo?: DeviceInfo
+  ): Promise<void> {
     const whereClause = tenantId
       ? { email, tenantId }
       : { email };
@@ -440,8 +445,22 @@ export class AuthService {
       },
     });
 
-    // TODO: Send password reset email via notification service
-    // await this.notifyService.sendPasswordResetEmail(user.email, token);
+    // Send password reset email via notification service
+    const emailResult = await notifyClient.sendPasswordResetEmail({
+      email: user.email,
+      resetToken: token,
+      expiryMinutes: 60,
+      requestInfo: deviceInfo ? {
+        ipAddress: deviceInfo.ip,
+        userAgent: deviceInfo.userAgent,
+        timestamp: new Date().toISOString(),
+      } : undefined,
+    });
+
+    if (!emailResult.success) {
+      console.error('[AuthService] Failed to send password reset email:', emailResult.error);
+      // Don't throw - we don't want to reveal email sending failures
+    }
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

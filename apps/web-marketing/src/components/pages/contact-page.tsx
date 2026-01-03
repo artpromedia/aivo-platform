@@ -121,11 +121,26 @@ export function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit form');
+      }
+
       setIsSubmitted(true);
     } catch (error) {
       console.error('Form submission error:', error);
+      setErrors({
+        ...errors,
+        message: error instanceof Error ? error.message : 'Failed to submit. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }

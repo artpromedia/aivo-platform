@@ -19,6 +19,9 @@ import {
   registerPreferenceRoutes,
   registerDeviceRoutes,
   registerLearnerSettingsRoutes,
+  registerInAppRoutes,
+  registerWebhookRoutes,
+  registerEmailRoutes,
 } from './routes/index.js';
 
 // Extend Fastify instance type
@@ -120,6 +123,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerPreferenceRoutes(app);
   await registerDeviceRoutes(app);
   await registerLearnerSettingsRoutes(app);
+  await registerInAppRoutes(app);
+  await registerWebhookRoutes(app);
+  await registerEmailRoutes(app);
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT

@@ -51,11 +51,11 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
         {children[0].avatar ? (
           <img
             src={children[0].avatar}
-            alt=""
+            alt={`${children[0].name}'s avatar`}
             className="w-6 h-6 rounded-full"
           />
         ) : (
-          <User className="w-5 h-5 text-gray-500" />
+          <User className="w-5 h-5 text-gray-500" aria-hidden="true" />
         )}
         <span className="font-medium text-gray-900">{children[0].name}</span>
       </div>
@@ -75,11 +75,11 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
         {selectedChild?.avatar ? (
           <img
             src={selectedChild.avatar}
-            alt=""
+            alt={`${selectedChild.name}'s avatar`}
             className="w-6 h-6 rounded-full"
           />
         ) : (
-          <User className="w-5 h-5 text-gray-500" />
+          <User className="w-5 h-5 text-gray-500" aria-hidden="true" />
         )}
         <span className="font-medium text-gray-900">
           {selectedChild?.name || 'Select child'}
@@ -117,9 +117,9 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
               }`}
             >
               {child.avatar ? (
-                <img src={child.avatar} alt="" className="w-6 h-6 rounded-full" />
+                <img src={child.avatar} alt={`${child.name}'s avatar`} className="w-6 h-6 rounded-full" />
               ) : (
-                <User className="w-5 h-5 text-gray-500" />
+                <User className="w-5 h-5 text-gray-500" aria-hidden="true" />
               )}
               <div>
                 <p className="font-medium text-gray-900">{child.name}</p>

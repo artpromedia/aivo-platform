@@ -60,4 +60,10 @@ export const config = {
     }
     return key || 'dev-only-key-not-for-production';
   })(),
+
+  // Service URLs
+  notifyServiceUrl: process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4040',
+
+  // Redis (for SSO state in multi-instance deployments)
+  redisUrl: process.env.REDIS_URL,
 };
