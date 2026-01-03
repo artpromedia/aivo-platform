@@ -1,0 +1,201 @@
+---
+sidebar_position: 1
+title: SDK Overview
+description: Official AIVO SDKs for popular programming languages
+---
+
+# Official SDKs
+
+AIVO provides official SDKs for the most popular programming languages. Each SDK provides:
+
+- 🔐 **Automatic authentication** - Handle token refresh automatically
+- 📦 **Type-safe** - Full TypeScript/typing support
+- ⚡ **Optimized** - Efficient HTTP handling with retries
+- 🧪 **Tested** - Comprehensive test coverage
+- 📖 **Documented** - Inline documentation and examples
+
+## Available SDKs
+
+| Language                  | Package             | Version                                                                                                                   | Docs                      |
+| ------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| **JavaScript/TypeScript** | `@aivo/sdk`         | [![npm](https://img.shields.io/npm/v/@aivo/sdk)](https://www.npmjs.com/package/@aivo/sdk)                                 | [View →](/sdk/javascript) |
+| **Python**                | `aivo-sdk`          | [![PyPI](https://img.shields.io/pypi/v/aivo-sdk)](https://pypi.org/project/aivo-sdk/)                                     | [View →](/sdk/python)     |
+| **Ruby**                  | `aivo-sdk`          | [![Gem](https://img.shields.io/gem/v/aivo-sdk)](https://rubygems.org/gems/aivo-sdk)                                       | [View →](/sdk/ruby)       |
+| **PHP**                   | `aivo/sdk`          | [![Packagist](https://img.shields.io/packagist/v/aivo/sdk)](https://packagist.org/packages/aivo/sdk)                      | [View →](/sdk/php)        |
+| **Java**                  | `edu.aivo:aivo-sdk` | [![Maven](https://img.shields.io/maven-central/v/edu.aivo/aivo-sdk)](https://search.maven.org/artifact/edu.aivo/aivo-sdk) | [View →](/sdk/java)       |
+| **.NET**                  | `Aivo.Sdk`          | [![NuGet](https://img.shields.io/nuget/v/Aivo.Sdk)](https://www.nuget.org/packages/Aivo.Sdk)                              | [View →](/sdk/dotnet)     |
+
+## Quick Installation
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs groupId="language">
+<TabItem value="javascript" label="JavaScript">
+
+```bash
+npm install @aivo/sdk
+```
+
+```javascript
+import Aivo from '@aivo/sdk';
+
+const aivo = new Aivo({ apiKey: process.env.AIVO_API_KEY });
+const lessons = await aivo.lessons.list();
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```bash
+pip install aivo-sdk
+```
+
+```python
+import aivo
+
+client = aivo.Client(api_key=os.environ["AIVO_API_KEY"])
+lessons = client.lessons.list()
+```
+
+</TabItem>
+<TabItem value="ruby" label="Ruby">
+
+```bash
+gem install aivo-sdk
+```
+
+```ruby
+require 'aivo'
+
+client = Aivo::Client.new(api_key: ENV['AIVO_API_KEY'])
+lessons = client.lessons.list
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```bash
+composer require aivo/sdk
+```
+
+```php
+use Aivo\Client;
+
+$aivo = new Client(['api_key' => getenv('AIVO_API_KEY')]);
+$lessons = $aivo->lessons->list();
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```xml
+<dependency>
+  <groupId>edu.aivo</groupId>
+  <artifactId>aivo-sdk</artifactId>
+  <version>2.0.0</version>
+</dependency>
+```
+
+```java
+import edu.aivo.Aivo;
+
+Aivo aivo = new Aivo(System.getenv("AIVO_API_KEY"));
+LessonList lessons = aivo.lessons().list();
+```
+
+</TabItem>
+<TabItem value="csharp" label="C#">
+
+```bash
+dotnet add package Aivo.Sdk
+```
+
+```csharp
+using Aivo;
+
+var aivo = new AivoClient(Environment.GetEnvironmentVariable("AIVO_API_KEY"));
+var lessons = await aivo.Lessons.ListAsync();
+```
+
+</TabItem>
+</Tabs>
+
+## Common Features
+
+All SDKs share these common features:
+
+### Authentication
+
+```javascript
+// API Key authentication
+const aivo = new Aivo({ apiKey: 'your_api_key' });
+
+// OAuth authentication
+const aivo = new Aivo({
+  clientId: 'your_client_id',
+  clientSecret: 'your_client_secret',
+});
+```
+
+### Pagination
+
+```javascript
+// Manual pagination
+const page1 = await aivo.lessons.list({ limit: 20 });
+const page2 = await aivo.lessons.list({ limit: 20, cursor: page1.pagination.cursor });
+
+// Auto-pagination (iterates through all pages)
+for await (const lesson of aivo.lessons.listAutoPaging()) {
+  console.log(lesson.title);
+}
+```
+
+### Error Handling
+
+```javascript
+import { AivoError, NotFoundError, RateLimitError } from '@aivo/sdk';
+
+try {
+  const lesson = await aivo.lessons.get('les_invalid');
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    console.log('Lesson not found');
+  } else if (error instanceof RateLimitError) {
+    console.log(`Retry after ${error.retryAfter} seconds`);
+  }
+}
+```
+
+### Webhooks
+
+```javascript
+import { verifyWebhookSignature } from '@aivo/sdk';
+
+// Verify webhook signature
+const isValid = verifyWebhookSignature(requestBody, signatureHeader, webhookSecret);
+```
+
+## Framework Integrations
+
+| Framework   | Package           | Docs                             |
+| ----------- | ----------------- | -------------------------------- |
+| React       | `@aivo/sdk/react` | [View →](/sdk/javascript/react)  |
+| Next.js     | `@aivo/sdk`       | [View →](/sdk/javascript/nextjs) |
+| Django      | `aivo-django`     | [View →](/sdk/python/django)     |
+| Flask       | `aivo-flask`      | [View →](/sdk/python/flask)      |
+| Rails       | `aivo-rails`      | [View →](/sdk/ruby/rails)        |
+| Laravel     | `aivo/laravel`    | [View →](/sdk/php/laravel)       |
+| Spring Boot | `aivo-spring`     | [View →](/sdk/java/spring-boot)  |
+| ASP.NET     | `Aivo.AspNetCore` | [View →](/sdk/dotnet/aspnet)     |
+
+## Contributing
+
+All SDKs are open source! Contributions are welcome:
+
+- [JavaScript SDK](https://github.com/artpromedia/aivo-sdk-js)
+- [Python SDK](https://github.com/artpromedia/aivo-sdk-python)
+- [Ruby SDK](https://github.com/artpromedia/aivo-sdk-ruby)
+- [PHP SDK](https://github.com/artpromedia/aivo-sdk-php)
+- [Java SDK](https://github.com/artpromedia/aivo-sdk-java)
+- [.NET SDK](https://github.com/artpromedia/aivo-sdk-dotnet)

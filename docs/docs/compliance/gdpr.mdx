@@ -1,0 +1,517 @@
+---
+sidebar_position: 3
+title: GDPR Compliance
+description: General Data Protection Regulation compliance guide
+---
+
+# GDPR Compliance
+
+The General Data Protection Regulation (GDPR) applies to processing personal data of EU/EEA residents. AIVO provides comprehensive GDPR compliance tools.
+
+## GDPR Principles
+
+| Principle                          | AIVO Implementation                       |
+| ---------------------------------- | ----------------------------------------- |
+| Lawfulness, fairness, transparency | Clear privacy notices, consent management |
+| Purpose limitation                 | Data use restrictions, purpose binding    |
+| Data minimization                  | Configurable data collection              |
+| Accuracy                           | Self-service data correction              |
+| Storage limitation                 | Automated retention policies              |
+| Integrity & confidentiality        | Encryption, access controls               |
+| Accountability                     | Audit logs, compliance reports            |
+
+## Legal Bases for Processing
+
+### Configuring Legal Basis
+
+```javascript
+// Configure processing activities with legal basis
+await aivo.admin.configureProcessing({
+  activities: [
+    {
+      name: 'core_learning_service',
+      description: 'Delivering educational content and tracking progress',
+      legalBasis: 'contract', // Necessary for service delivery
+      dataCategories: ['progress', 'assessments', 'preferences'],
+      retention: '3_years_after_account_closure',
+    },
+    {
+      name: 'service_improvement',
+      description: 'Analytics to improve learning outcomes',
+      legalBasis: 'legitimate_interest',
+      dataCategories: ['usage_patterns', 'aggregated_performance'],
+      lia: 'lia_service_improvement.pdf', // Legitimate Interest Assessment
+      retention: 'aggregated_indefinitely',
+    },
+    {
+      name: 'marketing_emails',
+      description: 'Promotional communications',
+      legalBasis: 'consent',
+      dataCategories: ['email', 'preferences'],
+      retention: 'until_consent_withdrawn',
+    },
+  ],
+});
+```
+
+### Consent Management
+
+```javascript
+// Record granular consent
+const consent = await aivo.consent.record({
+  userId: 'usr_123',
+  consents: [
+    {
+      purpose: 'marketing_emails',
+      granted: true,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      purpose: 'third_party_sharing',
+      granted: false,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      purpose: 'analytics_cookies',
+      granted: true,
+      timestamp: new Date().toISOString(),
+    },
+  ],
+  collectionContext: {
+    source: 'registration_form',
+    version: '2.1',
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+  },
+});
+```
+
+### Consent Withdrawal
+
+```javascript
+// Users can withdraw consent at any time
+await aivo.consent.withdraw({
+  userId: 'usr_123',
+  purpose: 'marketing_emails',
+  timestamp: new Date().toISOString(),
+});
+
+// System automatically stops processing for that purpose
+```
+
+## Data Subject Rights
+
+### Right of Access (Article 15)
+
+```javascript
+// Generate Subject Access Request (SAR) response
+const sarResponse = await aivo.gdpr.generateAccessReport({
+  userId: 'usr_123',
+  format: 'pdf', // or 'json' for machine-readable
+  includeCategories: [
+    'personal_data',
+    'processing_purposes',
+    'recipients',
+    'retention_periods',
+    'data_sources',
+    'automated_decisions',
+  ],
+});
+
+// Response includes all required information
+{
+  "generatedAt": "2024-01-15T10:30:00Z",
+  "dataSubject": {
+    "id": "usr_123",
+    "email": "user@example.com"
+  },
+  "personalData": {
+    "profile": {...},
+    "learningHistory": [...],
+    "assessments": [...],
+    "communications": [...]
+  },
+  "processingInfo": {
+    "purposes": ["service_delivery", "analytics"],
+    "legalBases": ["contract", "legitimate_interest"],
+    "recipients": ["cloud_provider", "analytics_processor"],
+    "retentionPeriods": {...},
+    "dataSourced": ["user_provided", "system_generated"]
+  },
+  "rights": {
+    "rectification": "https://aivo.edu/settings/profile",
+    "erasure": "https://aivo.edu/settings/privacy",
+    "portability": "https://aivo.edu/settings/export"
+  }
+}
+```
+
+### Right to Rectification (Article 16)
+
+```javascript
+// Users can update their data
+await aivo.users.update('usr_123', {
+  name: 'Corrected Name',
+  email: 'newemail@example.com',
+});
+
+// Rectification is logged
+// Changes propagate to all systems
+```
+
+### Right to Erasure (Article 17)
+
+```javascript
+// Process erasure request
+const erasureResult = await aivo.gdpr.processErasure({
+  userId: 'usr_123',
+  reason: 'withdrawal_of_consent',
+  verificationMethod: 'email_confirmation',
+});
+
+// Response
+{
+  "requestId": "erasure_abc123",
+  "status": "completed",
+  "erasedAt": "2024-01-15T10:30:00Z",
+  "dataErased": [
+    "personal_profile",
+    "learning_history",
+    "communications",
+    "preferences"
+  ],
+  "dataRetained": [
+    {
+      "category": "transaction_records",
+      "reason": "legal_obligation",
+      "retentionPeriod": "7_years",
+      "pseudonymized": true
+    }
+  ],
+  "thirdPartiesNotified": [
+    "analytics_provider",
+    "email_service"
+  ]
+}
+```
+
+### Right to Data Portability (Article 20)
+
+```javascript
+// Export data in machine-readable format
+const exportResult = await aivo.gdpr.exportData({
+  userId: 'usr_123',
+  format: 'json', // Structured, commonly used format
+  includeCategories: [
+    'profile',
+    'learning_progress',
+    'assessments',
+    'certificates',
+  ],
+});
+
+// Download link provided (expires in 24 hours)
+{
+  "downloadUrl": "https://exports.aivo.edu/...",
+  "expiresAt": "2024-01-16T10:30:00Z",
+  "format": "application/json",
+  "checksum": "sha256:abc123..."
+}
+```
+
+### Right to Restriction (Article 18)
+
+```javascript
+// Restrict processing while dispute is resolved
+await aivo.gdpr.restrictProcessing({
+  userId: 'usr_123',
+  reason: 'accuracy_contested',
+  restrictedPurposes: ['analytics', 'marketing'],
+  allowedPurposes: ['storage', 'legal_claims'],
+});
+```
+
+### Right to Object (Article 21)
+
+```javascript
+// Object to processing based on legitimate interest
+await aivo.gdpr.recordObjection({
+  userId: 'usr_123',
+  processingActivity: 'service_improvement_analytics',
+  grounds: 'particular_situation',
+  details: 'User explanation...',
+});
+
+// System evaluates compelling legitimate grounds
+// If no compelling grounds, processing must stop
+```
+
+## Data Protection by Design
+
+### Privacy Settings
+
+```javascript
+// Default privacy-protective settings
+const defaultSettings = {
+  dataMiniization: true,
+  purposeLimitation: true,
+  storageMinimization: true,
+  accessControls: 'strict',
+  encryptionAtRest: true,
+  encryptionInTransit: true,
+  pseudonymizationEnabled: true,
+  anonymizationForAnalytics: true,
+};
+```
+
+### Pseudonymization
+
+```javascript
+// Pseudonymize data for analytics
+const pseudonymizedData = await aivo.privacy.pseudonymize({
+  data: userData,
+  preserveFields: ['age_range', 'grade_level', 'region'],
+  removeFields: ['name', 'email', 'specific_location'],
+  tokenizeFields: ['user_id'],
+});
+```
+
+## International Transfers
+
+### Transfer Mechanisms
+
+```javascript
+// Configure data transfer safeguards
+await aivo.admin.configureTransfers({
+  defaultMechanism: 'standard_contractual_clauses',
+
+  transfers: [
+    {
+      recipient: 'Cloud Provider Inc.',
+      country: 'US',
+      mechanism: 'standard_contractual_clauses',
+      sccModule: 'controller_to_processor',
+      supplementaryMeasures: ['encryption', 'access_controls'],
+      tia: 'tia_cloud_provider.pdf', // Transfer Impact Assessment
+    },
+  ],
+
+  // EU data residency option
+  euDataResidency: {
+    enabled: true,
+    primaryRegion: 'eu-west-1',
+    backupRegion: 'eu-central-1',
+  },
+});
+```
+
+### EU Data Residency
+
+```javascript
+// Enable EU-only data storage for an organization
+await aivo.admin.updateDataResidency({
+  organizationId: 'org_eu_school',
+  region: 'eu',
+  restrictions: {
+    preventNonEuTransfers: true,
+    preventNonEuAccess: true,
+  },
+});
+```
+
+## Records of Processing
+
+### Maintaining Records (Article 30)
+
+```javascript
+// View processing records
+const records = await aivo.gdpr.getProcessingRecords();
+
+// Response (Article 30 compliant)
+{
+  "controllerDetails": {
+    "name": "Organization Name",
+    "contact": "dpo@organization.edu",
+    "representative": {...}
+  },
+  "processingActivities": [
+    {
+      "name": "Learning Management",
+      "purposes": ["Educational service delivery"],
+      "dataSubjectCategories": ["students", "teachers"],
+      "dataCategories": ["identity", "educational"],
+      "recipients": ["AIVO (processor)"],
+      "transfers": [...],
+      "retention": "Account lifetime + 3 years",
+      "securityMeasures": ["encryption", "access_control", "audit_logging"]
+    }
+  ]
+}
+```
+
+## Data Breach Notification
+
+### Breach Detection and Response
+
+```javascript
+// Report a potential breach
+const breach = await aivo.security.reportBreach({
+  discoveredAt: new Date().toISOString(),
+  description: 'Potential unauthorized access detected',
+  affectedSystems: ['user_database'],
+  potentialScope: {
+    usersAffected: 'unknown',
+    dataCategories: ['email', 'name'],
+  },
+});
+
+// AIVO's incident response team investigates
+// If confirmed, notifications sent within 72 hours
+```
+
+### Breach Notification (Article 33/34)
+
+```javascript
+// Check breach notification requirements
+const assessment = await aivo.security.assessBreachNotification({
+  breachId: 'breach_123',
+});
+
+// Response
+{
+  "notificationRequired": true,
+  "supervisoryAuthority": {
+    "required": true,
+    "deadline": "2024-01-18T10:30:00Z", // 72 hours
+    "authority": "Irish Data Protection Commission"
+  },
+  "dataSubjects": {
+    "required": true,
+    "reason": "high_risk_to_rights",
+    "recommendedMethod": "direct_email"
+  }
+}
+```
+
+## Data Protection Impact Assessment
+
+### When DPIA Required
+
+```javascript
+// Check if DPIA required for new processing
+const dpiaCheck = await aivo.gdpr.checkDpiaRequirement({
+  processingDescription: 'New AI-powered learning recommendations',
+  criteria: {
+    systematicEvaluation: true,
+    automatedDecisionMaking: true,
+    largeScale: true,
+    vulnerableDataSubjects: true, // children
+    newTechnology: true,
+  },
+});
+
+// Response
+{
+  "dpiaRequired": true,
+  "triggeringCriteria": [
+    "automated_decision_making",
+    "vulnerable_data_subjects",
+    "new_technology"
+  ],
+  "recommendation": "Conduct full DPIA before processing"
+}
+```
+
+### DPIA Template
+
+```javascript
+// Generate DPIA template
+const dpia = await aivo.gdpr.generateDpiaTemplate({
+  processingName: 'AI Learning Recommendations',
+  description: 'Machine learning system to personalize content',
+});
+```
+
+## Compliance Dashboard
+
+### Organization Settings
+
+```javascript
+// Configure GDPR settings for organization
+await aivo.admin.updateGdprSettings({
+  dpoContact: 'dpo@organization.edu',
+  supervisoryAuthority: 'irish_dpc',
+
+  // SAR response timeline
+  sarResponseDays: 30,
+  sarExtensionDays: 60,
+
+  // Automated processing
+  autoProcessSar: true,
+  autoProcessErasure: false, // Require manual review
+
+  // Retention policies
+  retentionPolicies: {
+    activeAccounts: 'indefinite',
+    inactiveAccounts: '2_years',
+    deletedAccounts: '30_days',
+    backups: '90_days',
+  },
+});
+```
+
+### Compliance Reports
+
+```javascript
+// Generate GDPR compliance report
+const report = await aivo.admin.generateComplianceReport({
+  type: 'gdpr',
+  period: 'quarterly',
+  includeMetrics: [
+    'sar_requests',
+    'erasure_requests',
+    'consent_rates',
+    'data_breaches',
+    'training_completion',
+  ],
+});
+```
+
+## Implementation Checklist
+
+### Technical Measures
+
+- [ ] Encryption at rest (AES-256)
+- [ ] Encryption in transit (TLS 1.3)
+- [ ] Access controls and authentication
+- [ ] Audit logging for all data access
+- [ ] Automated data retention enforcement
+- [ ] Pseudonymization capabilities
+- [ ] Secure data deletion procedures
+- [ ] Breach detection systems
+
+### Organizational Measures
+
+- [ ] Designate Data Protection Officer
+- [ ] Document processing activities (Article 30)
+- [ ] Create privacy notices
+- [ ] Implement consent management
+- [ ] Establish SAR response procedures
+- [ ] Create breach response plan
+- [ ] Conduct DPIAs where required
+- [ ] Train staff on GDPR requirements
+
+### Contractual Measures
+
+- [ ] Data Processing Agreements with processors
+- [ ] Standard Contractual Clauses for transfers
+- [ ] Joint Controller Agreements where applicable
+- [ ] Review and update vendor contracts
+
+## Resources
+
+- [GDPR Full Text](https://gdpr-info.eu/)
+- [European Data Protection Board](https://edpb.europa.eu/)
+- [ICO GDPR Guidance](https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/)
+- [AIVO Privacy Policy](https://aivo.edu/legal/privacy)
+- [AIVO DPA](https://aivo.edu/legal/dpa)

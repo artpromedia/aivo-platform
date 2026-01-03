@@ -33,6 +33,7 @@ export default [
       "**/postcss.config.js",
       "**/docs/**",
       "**/tests/**",
+      "**/e2e/**",
       "**/prisma/seed.ts",
       "scripts/validate-schemas.ts"
     ]

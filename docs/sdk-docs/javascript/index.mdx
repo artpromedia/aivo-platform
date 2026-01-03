@@ -1,0 +1,498 @@
+---
+sidebar_position: 1
+title: JavaScript SDK
+description: Official AIVO SDK for JavaScript and TypeScript
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# JavaScript SDK
+
+The official AIVO SDK for JavaScript and TypeScript. Works in Node.js, browsers, and edge runtimes.
+
+## Features
+
+- 🔒 **Type-safe** - Full TypeScript support with complete type definitions
+- ⚡ **Fast** - Minimal dependencies, optimized for performance
+- 🔄 **Auto-retry** - Automatic retries with exponential backoff
+- 📦 **Tree-shakable** - Import only what you need
+- 🌐 **Universal** - Works in Node.js, browsers, Deno, and edge runtimes
+
+## Installation
+
+<Tabs>
+<TabItem value="npm" label="npm">
+
+```bash
+npm install @aivo/sdk
+```
+
+</TabItem>
+<TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @aivo/sdk
+```
+
+</TabItem>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @aivo/sdk
+```
+
+</TabItem>
+<TabItem value="bun" label="bun">
+
+```bash
+bun add @aivo/sdk
+```
+
+</TabItem>
+</Tabs>
+
+## Quick Start
+
+```typescript
+import Aivo from '@aivo/sdk';
+
+// Initialize the client
+const aivo = new Aivo({
+  apiKey: process.env.AIVO_API_KEY!,
+});
+
+// List lessons
+const lessons = await aivo.lessons.list({
+  subject: 'math',
+  limit: 10,
+});
+
+// Create a lesson
+const lesson = await aivo.lessons.create({
+  title: 'Introduction to Algebra',
+  subject: 'math',
+  gradeLevel: '7',
+  blocks: [{ type: 'text', data: { content: 'Welcome to algebra!' } }],
+});
+
+// Start a learning session
+const session = await aivo.lessons.start(lesson.id);
+
+// Submit an answer
+const result = await aivo.lessons.submitAnswer(lesson.id, 'block_123', {
+  answer: 'x = 5',
+});
+
+console.log(`Correct: ${result.correct}, XP earned: ${result.xpEarned}`);
+```
+
+## Configuration
+
+### Client Options
+
+```typescript
+import Aivo from '@aivo/sdk';
+
+const aivo = new Aivo({
+  // Required: Your API key
+  apiKey: process.env.AIVO_API_KEY!,
+
+  // Optional: API environment
+  environment: 'production', // 'production' | 'sandbox'
+
+  // Optional: Custom base URL
+  baseUrl: 'https://api.aivo.edu/v2',
+
+  // Optional: Request timeout in milliseconds
+  timeout: 30000,
+
+  // Optional: Number of retries
+  maxRetries: 3,
+
+  // Optional: Custom fetch implementation
+  fetch: customFetch,
+
+  // Optional: Custom headers
+  headers: {
+    'X-Custom-Header': 'value',
+  },
+});
+```
+
+### Environment Variables
+
+The SDK automatically reads these environment variables:
+
+| Variable           | Description               |
+| ------------------ | ------------------------- |
+| `AIVO_API_KEY`     | Your API key              |
+| `AIVO_BASE_URL`    | Custom API base URL       |
+| `AIVO_ENVIRONMENT` | `production` or `sandbox` |
+
+## Resources
+
+### Lessons
+
+```typescript
+// List lessons with filtering
+const lessons = await aivo.lessons.list({
+  subject: 'math',
+  gradeLevel: '6',
+  status: 'published',
+  search: 'fractions',
+  sort: 'createdAt:desc',
+  limit: 20,
+  cursor: 'next_page_cursor',
+});
+
+// Iterate through all lessons (auto-pagination)
+for await (const lesson of aivo.lessons.listAutoPaging({ subject: 'math' })) {
+  console.log(lesson.title);
+}
+
+// Get a specific lesson
+const lesson = await aivo.lessons.get('les_abc123', {
+  include: ['author', 'blocks', 'analytics'],
+});
+
+// Create a lesson
+const newLesson = await aivo.lessons.create({
+  title: 'Lesson Title',
+  subject: 'science',
+  gradeLevel: '5',
+  duration: 30,
+  blocks: [
+    {
+      type: 'heading',
+      data: { text: 'Introduction', level: 1 },
+    },
+    {
+      type: 'text',
+      data: { content: 'Welcome to this lesson...' },
+    },
+    {
+      type: 'question',
+      data: {
+        type: 'multiple_choice',
+        stem: 'What is the capital of France?',
+        options: [
+          { text: 'London', correct: false },
+          { text: 'Paris', correct: true },
+          { text: 'Berlin', correct: false },
+        ],
+        points: 10,
+      },
+    },
+  ],
+});
+
+// Update a lesson
+const updated = await aivo.lessons.update('les_abc123', {
+  title: 'Updated Title',
+  description: 'New description',
+});
+
+// Publish a lesson
+const published = await aivo.lessons.publish('les_abc123');
+
+// Delete a lesson
+await aivo.lessons.delete('les_abc123');
+```
+
+### Users
+
+```typescript
+// Get current user
+const me = await aivo.users.me();
+
+// Get a user by ID
+const user = await aivo.users.get('usr_abc123');
+
+// Update user profile
+const updated = await aivo.users.update('usr_abc123', {
+  givenName: 'John',
+  familyName: 'Doe',
+  preferences: {
+    theme: 'dark',
+    notifications: true,
+  },
+});
+
+// Get user progress
+const progress = await aivo.users.getProgress('usr_abc123');
+console.log(`Level: ${progress.level}, XP: ${progress.xp}`);
+
+// Get user achievements
+const achievements = await aivo.users.getAchievements('usr_abc123');
+```
+
+### Courses
+
+```typescript
+// List courses
+const courses = await aivo.courses.list({
+  subject: 'math',
+  gradeLevel: '6-8',
+});
+
+// Get a course with lessons
+const course = await aivo.courses.get('crs_abc123', {
+  include: ['lessons', 'enrollments'],
+});
+
+// Create a course
+const newCourse = await aivo.courses.create({
+  title: 'Algebra Fundamentals',
+  description: 'A comprehensive introduction to algebra',
+  subject: 'math',
+  gradeLevel: '7',
+  lessonIds: ['les_123', 'les_456', 'les_789'],
+});
+
+// Enroll a user
+const enrollment = await aivo.courses.enroll('crs_abc123', {
+  userId: 'usr_def456',
+});
+```
+
+### Analytics
+
+```typescript
+// Get learning analytics
+const analytics = await aivo.analytics.getLearningAnalytics({
+  userId: 'usr_abc123',
+  startDate: '2024-01-01',
+  endDate: '2024-03-31',
+  granularity: 'day',
+});
+
+// Get class analytics
+const classAnalytics = await aivo.analytics.getClassAnalytics({
+  classId: 'cls_abc123',
+  metrics: ['completion_rate', 'average_score', 'time_spent'],
+});
+
+// Export analytics report
+const report = await aivo.analytics.exportReport({
+  type: 'student_progress',
+  format: 'csv',
+  filters: {
+    classId: 'cls_abc123',
+    dateRange: {
+      start: '2024-01-01',
+      end: '2024-03-31',
+    },
+  },
+});
+```
+
+### Webhooks
+
+```typescript
+// Create a webhook
+const webhook = await aivo.webhooks.create({
+  url: 'https://your-server.com/webhooks/aivo',
+  events: ['lesson.completed', 'achievement.earned'],
+  description: 'Production webhook',
+});
+
+// List webhooks
+const webhooks = await aivo.webhooks.list();
+
+// Verify webhook signature
+import { verifyWebhookSignature } from '@aivo/sdk';
+
+const isValid = verifyWebhookSignature(requestBody, signatureHeader, webhookSecret);
+```
+
+## Error Handling
+
+```typescript
+import Aivo, {
+  AivoError,
+  AuthenticationError,
+  RateLimitError,
+  NotFoundError,
+  ValidationError,
+} from '@aivo/sdk';
+
+try {
+  const lesson = await aivo.lessons.get('les_invalid');
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    console.log('Lesson not found');
+  } else if (error instanceof AuthenticationError) {
+    console.log('Invalid API key');
+  } else if (error instanceof RateLimitError) {
+    console.log(`Rate limited. Retry after ${error.retryAfter} seconds`);
+  } else if (error instanceof ValidationError) {
+    console.log('Validation errors:', error.errors);
+  } else if (error instanceof AivoError) {
+    console.log(`API error: ${error.message} (${error.code})`);
+  } else {
+    throw error;
+  }
+}
+```
+
+## TypeScript
+
+The SDK is written in TypeScript and provides complete type definitions:
+
+```typescript
+import Aivo, {
+  Lesson,
+  User,
+  Course,
+  CreateLessonParams,
+  LessonListParams,
+  ContentBlock,
+} from '@aivo/sdk';
+
+// Types are inferred automatically
+const lessons = await aivo.lessons.list({ subject: 'math' });
+// lessons is typed as { data: Lesson[]; pagination: Pagination }
+
+// Use parameter types for type-safe function calls
+function createMathLesson(params: Omit<CreateLessonParams, 'subject'>) {
+  return aivo.lessons.create({
+    ...params,
+    subject: 'math',
+  });
+}
+
+// Content block types
+const blocks: ContentBlock[] = [
+  { type: 'text', data: { content: 'Hello' } },
+  { type: 'question', data: { type: 'multiple_choice', stem: '...', options: [] } },
+];
+```
+
+## React Integration
+
+```tsx
+import { AivoProvider, useLessons, useUser, useProgress } from '@aivo/sdk/react';
+
+// Wrap your app with the provider
+function App() {
+  return (
+    <AivoProvider apiKey={process.env.NEXT_PUBLIC_AIVO_API_KEY!}>
+      <LessonList />
+    </AivoProvider>
+  );
+}
+
+// Use hooks in your components
+function LessonList() {
+  const {
+    data: lessons,
+    isLoading,
+    error,
+  } = useLessons({
+    subject: 'math',
+    limit: 10,
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {lessons?.data.map((lesson) => (
+        <li key={lesson.id}>{lesson.title}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Track user progress
+function UserProgress() {
+  const { data: user } = useUser();
+  const { data: progress } = useProgress(user?.id);
+
+  return (
+    <div>
+      <h2>Level {progress?.level}</h2>
+      <p>{progress?.xp} XP</p>
+      <p>{progress?.currentStreak} day streak</p>
+    </div>
+  );
+}
+```
+
+## Next.js Integration
+
+```typescript
+// app/api/lessons/route.ts
+import Aivo from '@aivo/sdk';
+import { NextResponse } from 'next/server';
+
+const aivo = new Aivo({
+  apiKey: process.env.AIVO_API_KEY!,
+});
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const subject = searchParams.get('subject');
+
+  const lessons = await aivo.lessons.list({
+    subject: subject || undefined,
+  });
+
+  return NextResponse.json(lessons);
+}
+```
+
+```tsx
+// app/lessons/page.tsx
+import Aivo from '@aivo/sdk';
+
+const aivo = new Aivo({
+  apiKey: process.env.AIVO_API_KEY!,
+});
+
+export default async function LessonsPage() {
+  const lessons = await aivo.lessons.list({
+    subject: 'math',
+    status: 'published',
+  });
+
+  return (
+    <div>
+      <h1>Math Lessons</h1>
+      <ul>
+        {lessons.data.map((lesson) => (
+          <li key={lesson.id}>
+            <a href={`/lessons/${lesson.id}`}>{lesson.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## Testing
+
+```typescript
+import { createMockClient } from '@aivo/sdk/testing';
+
+// Create a mock client for testing
+const mockAivo = createMockClient();
+
+// Mock specific responses
+mockAivo.lessons.list.mockResolvedValue({
+  data: [{ id: 'les_123', title: 'Test Lesson', subject: 'math' }],
+  pagination: { hasMore: false },
+});
+
+// Use in tests
+describe('LessonService', () => {
+  it('should fetch lessons', async () => {
+    const lessons = await mockAivo.lessons.list({ subject: 'math' });
+    expect(lessons.data).toHaveLength(1);
+    expect(mockAivo.lessons.list).toHaveBeenCalledWith({ subject: 'math' });
+  });
+});
+```

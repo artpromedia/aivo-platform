@@ -1,0 +1,393 @@
+---
+sidebar_position: 2
+title: SAML 2.0
+description: Configure SAML 2.0 Single Sign-On
+---
+
+# SAML 2.0 Integration
+
+AIVO supports SAML 2.0 for enterprise single sign-on with identity providers like Azure AD, Okta, OneLogin, ADFS, and more.
+
+## Quick Setup
+
+### 1. Get AIVO SAML Metadata
+
+Download AIVO's Service Provider metadata:
+
+```
+https://api.aivo.edu/saml/metadata/{organization_id}
+```
+
+Or retrieve programmatically:
+
+```javascript
+const metadata = await aivo.admin.sso.getSamlMetadata();
+console.log(metadata.entityId);
+console.log(metadata.acsUrl);
+console.log(metadata.certificate);
+```
+
+### 2. Configure Your IdP
+
+Add AIVO as a Service Provider in your IdP:
+
+| Setting        | Value                                                    |
+| -------------- | -------------------------------------------------------- |
+| Entity ID      | `https://api.aivo.edu/saml/{org_id}`                     |
+| ACS URL        | `https://api.aivo.edu/saml/{org_id}/acs`                 |
+| SLO URL        | `https://api.aivo.edu/saml/{org_id}/slo`                 |
+| Name ID Format | `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress` |
+
+### 3. Configure AIVO
+
+```javascript
+await aivo.admin.sso.configureSaml({
+  enabled: true,
+
+  // IdP Configuration
+  idp: {
+    entityId: 'https://idp.school.edu/saml',
+    ssoUrl: 'https://idp.school.edu/saml/sso',
+    sloUrl: 'https://idp.school.edu/saml/slo',
+    certificate: `-----BEGIN CERTIFICATE-----
+MIIDpDCCAoygAwIBAgIGAX...
+-----END CERTIFICATE-----`,
+  },
+
+  // Attribute mapping
+  attributeMapping: {
+    email: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+    firstName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname',
+    lastName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname',
+    displayName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+    groups: 'http://schemas.xmlsoap.org/claims/Group',
+  },
+});
+```
+
+## IdP-Specific Guides
+
+### Azure AD / Entra ID
+
+1. In Azure Portal, go to **Enterprise Applications**
+2. Create new application → **Non-gallery application**
+3. Go to **Single sign-on** → Select **SAML**
+4. Configure:
+
+```yaml
+Basic SAML Configuration:
+  Identifier (Entity ID): https://api.aivo.edu/saml/{org_id}
+  Reply URL (ACS): https://api.aivo.edu/saml/{org_id}/acs
+  Sign on URL: https://app.aivo.edu/login
+  Logout URL: https://api.aivo.edu/saml/{org_id}/slo
+
+Attributes & Claims:
+  emailaddress: user.mail
+  givenname: user.givenname
+  surname: user.surname
+  name: user.displayname
+  groups: user.groups
+```
+
+### Okta
+
+1. In Okta Admin, go to **Applications** → **Create App Integration**
+2. Select **SAML 2.0**
+3. Configure:
+
+```yaml
+General Settings:
+  App name: AIVO
+  App logo: (upload AIVO logo)
+
+SAML Settings:
+  Single sign on URL: https://api.aivo.edu/saml/{org_id}/acs
+  Audience URI: https://api.aivo.edu/saml/{org_id}
+  Name ID format: EmailAddress
+  Application username: Email
+
+Attribute Statements:
+  firstName: user.firstName
+  lastName: user.lastName
+  email: user.email
+
+Group Attribute Statements:
+  groups: Matches regex: .*
+```
+
+### OneLogin
+
+1. In OneLogin Admin, go to **Applications** → **Add App**
+2. Search for **SAML Custom Connector**
+3. Configure:
+
+```yaml
+Configuration:
+  Audience: https://api.aivo.edu/saml/{org_id}
+  Recipient: https://api.aivo.edu/saml/{org_id}/acs
+  ACS URL: https://api.aivo.edu/saml/{org_id}/acs
+  Single Logout URL: https://api.aivo.edu/saml/{org_id}/slo
+
+Parameters:
+  email: Email
+  firstName: First Name
+  lastName: Last Name
+```
+
+### Google Workspace
+
+1. In Google Admin Console, go to **Apps** → **Web and mobile apps**
+2. Click **Add app** → **Add custom SAML app**
+3. Configure:
+
+```yaml
+Service Provider Details:
+  ACS URL: https://api.aivo.edu/saml/{org_id}/acs
+  Entity ID: https://api.aivo.edu/saml/{org_id}
+  Start URL: https://app.aivo.edu
+  Name ID format: EMAIL
+  Name ID: Basic Information > Primary email
+
+Attribute Mapping:
+  firstName: First name
+  lastName: Last name
+  email: Primary email
+```
+
+### ADFS
+
+1. In ADFS Management, add a **Relying Party Trust**
+2. Import AIVO metadata or configure manually:
+
+```powershell
+# PowerShell configuration
+Add-AdfsRelyingPartyTrust `
+  -Name "AIVO" `
+  -Identifier "https://api.aivo.edu/saml/{org_id}" `
+  -SamlEndpoint @(
+    (New-AdfsSamlEndpoint -Binding POST -Protocol SAMLAssertionConsumer `
+      -Uri "https://api.aivo.edu/saml/{org_id}/acs")
+  ) `
+  -IssuanceTransformRules @"
+    @RuleTemplate = "LdapClaims"
+    @RuleName = "AIVO Claims"
+    c:[Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccountname"]
+    => issue(store = "Active Directory", types = (
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+    ), query = ";mail,givenName,sn;{0}", param = c.Value);
+"@
+```
+
+## Advanced Configuration
+
+### Signed Requests
+
+Enable request signing for enhanced security:
+
+```javascript
+await aivo.admin.sso.configureSaml({
+  security: {
+    signRequests: true,
+    signatureAlgorithm: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+    digestAlgorithm: 'http://www.w3.org/2001/04/xmlenc#sha256',
+  },
+});
+
+// Get signing certificate to add to IdP
+const spCert = await aivo.admin.sso.getSigningCertificate();
+```
+
+### Encrypted Assertions
+
+Request encrypted SAML assertions:
+
+```javascript
+await aivo.admin.sso.configureSaml({
+  security: {
+    wantAssertionsEncrypted: true,
+    encryptionAlgorithm: 'http://www.w3.org/2001/04/xmlenc#aes256-cbc',
+    keyTransportAlgorithm: 'http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p',
+  },
+});
+
+// Get encryption certificate for IdP
+const encCert = await aivo.admin.sso.getEncryptionCertificate();
+```
+
+### Multiple Certificates
+
+Support certificate rollover without downtime:
+
+```javascript
+await aivo.admin.sso.configureSaml({
+  idp: {
+    certificates: [
+      { certificate: '...current cert...', primary: true },
+      { certificate: '...new cert...', primary: false },
+    ],
+  },
+});
+```
+
+### Role Mapping
+
+Map IdP groups to AIVO roles:
+
+```javascript
+await aivo.admin.sso.configureSaml({
+  roleMapping: {
+    rules: [
+      {
+        attribute: 'groups',
+        value: 'Educators',
+        role: 'teacher',
+      },
+      {
+        attribute: 'groups',
+        value: 'Students',
+        role: 'student',
+      },
+      {
+        attribute: 'groups',
+        value: 'IT Admins',
+        role: 'admin',
+      },
+    ],
+    defaultRole: 'student',
+    allowMultipleRoles: false,
+  },
+});
+```
+
+## SP-Initiated vs IdP-Initiated
+
+### SP-Initiated SSO
+
+User starts at AIVO and is redirected to IdP:
+
+```javascript
+// Generate login URL
+const loginUrl = await aivo.auth.getSamlLoginUrl({
+  returnTo: 'https://app.aivo.edu/dashboard',
+});
+
+// Redirect user to loginUrl
+```
+
+### IdP-Initiated SSO
+
+User starts at IdP and is sent to AIVO:
+
+```javascript
+// Enable IdP-initiated SSO
+await aivo.admin.sso.configureSaml({
+  idpInitiated: {
+    enabled: true,
+    defaultRelayState: 'https://app.aivo.edu/dashboard',
+  },
+});
+```
+
+## Single Logout
+
+Configure single logout to sign out from both AIVO and IdP:
+
+```javascript
+await aivo.admin.sso.configureSaml({
+  singleLogout: {
+    enabled: true,
+    binding: 'redirect', // or 'post'
+  },
+});
+
+// Initiate logout
+const logoutUrl = await aivo.auth.getSamlLogoutUrl({
+  userId: 'usr_123',
+  returnTo: 'https://app.aivo.edu',
+});
+```
+
+## Testing
+
+### SAML Tracer
+
+Use browser extensions to debug SAML:
+
+- [SAML Tracer (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/saml-tracer/)
+- [SAML Chrome Panel](https://chrome.google.com/webstore/detail/saml-chrome-panel/)
+
+### Test Configuration
+
+```javascript
+// Validate SAML configuration
+const validation = await aivo.admin.sso.validateSamlConfig();
+
+if (!validation.valid) {
+  console.log('Configuration issues:');
+  validation.errors.forEach((error) => console.log(`  - ${error}`));
+}
+
+// Test SSO flow
+const testResult = await aivo.admin.sso.testSamlSso({
+  simulatedAssertion: '...base64 SAML response...',
+});
+
+console.log('Test user:', testResult.user);
+console.log('Mapped attributes:', testResult.attributes);
+```
+
+## Troubleshooting
+
+### Common Errors
+
+| Error               | Cause                | Solution                             |
+| ------------------- | -------------------- | ------------------------------------ |
+| `Invalid signature` | Certificate mismatch | Update IdP certificate in AIVO       |
+| `Assertion expired` | Clock skew           | Sync server time, increase tolerance |
+| `Unknown issuer`    | Wrong Entity ID      | Verify IdP Entity ID matches         |
+| `Invalid audience`  | Wrong SP Entity ID   | Check AIVO Entity ID in IdP          |
+| `Missing NameID`    | NameID not sent      | Configure NameID in IdP              |
+
+### Debug Logs
+
+```javascript
+// Enable detailed logging
+await aivo.admin.sso.configureSaml({
+  debug: {
+    enabled: true,
+    logLevel: 'verbose',
+    logAssertions: true,
+  },
+});
+
+// View recent SSO attempts
+const attempts = await aivo.admin.sso.getLoginAttempts({
+  status: 'failed',
+  limit: 50,
+});
+
+attempts.forEach((attempt) => {
+  console.log(`${attempt.timestamp}: ${attempt.error}`);
+  console.log(`  IdP: ${attempt.idpEntityId}`);
+  console.log(`  Email: ${attempt.email}`);
+});
+```
+
+## Security Checklist
+
+- [ ] Use SHA-256 signatures (not SHA-1)
+- [ ] Enable assertion encryption for sensitive data
+- [ ] Verify IdP certificate fingerprint
+- [ ] Set appropriate assertion lifetime (5 minutes recommended)
+- [ ] Enable replay protection
+- [ ] Restrict to verified domains
+- [ ] Test single logout functionality
+- [ ] Monitor for failed login attempts
+
+## Resources
+
+- [SAML 2.0 Specification](http://saml.xml.org/saml-specifications)
+- [OASIS Security Services TC](https://www.oasis-open.org/committees/security/)
+- [AIVO SAML Metadata](https://api.aivo.edu/saml/metadata)

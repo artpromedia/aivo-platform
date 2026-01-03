@@ -1,0 +1,625 @@
+---
+sidebar_position: 1
+title: PHP SDK
+description: Official PHP SDK for the AIVO API
+---
+
+# PHP SDK
+
+The official PHP SDK for the AIVO API provides a modern, PSR-compliant interface for integrating AIVO into your PHP applications.
+
+## Requirements
+
+- PHP 8.1 or higher
+- Composer
+- ext-json
+- ext-curl (recommended)
+
+## Installation
+
+```bash
+composer require aivo/aivo-php
+```
+
+## Quick Start
+
+```php
+<?php
+
+require_once 'vendor/autoload.php';
+
+use Aivo\AivoClient;
+
+// Create client
+$client = new AivoClient([
+    'api_key' => getenv('AIVO_API_KEY'),
+]);
+
+// Create a user
+$user = $client->users->create([
+    'email' => 'student@example.com',
+    'name' => 'Alex Student',
+    'role' => 'student',
+]);
+
+echo "Created user: " . $user->id . "\n";
+```
+
+## Configuration
+
+### Client Options
+
+```php
+use Aivo\AivoClient;
+
+$client = new AivoClient([
+    // Required
+    'api_key' => getenv('AIVO_API_KEY'),
+
+    // Optional
+    'environment' => 'production', // or 'sandbox'
+    'api_version' => 'v1',
+    'timeout' => 30,
+    'connect_timeout' => 10,
+    'retry' => [
+        'max_attempts' => 3,
+        'delay' => 1000, // milliseconds
+    ],
+]);
+```
+
+### Environment Variables
+
+```bash
+export AIVO_API_KEY="aivo_sk_live_..."
+export AIVO_ENVIRONMENT="production"
+```
+
+## Resources
+
+### Users
+
+```php
+// List users
+$users = $client->users->list([
+    'page' => 1,
+    'per_page' => 20,
+    'role' => 'student',
+]);
+
+foreach ($users->data as $user) {
+    echo $user->name . " (" . $user->email . ")\n";
+}
+
+echo "Total: " . $users->pagination->total . "\n";
+
+// Get a user
+$user = $client->users->retrieve('usr_123');
+
+// Create a user
+$user = $client->users->create([
+    'email' => 'student@example.com',
+    'name' => 'Alex Student',
+    'role' => 'student',
+    'metadata' => [
+        'grade' => '10',
+        'school_id' => 'sch_456',
+    ],
+]);
+
+// Update a user
+$user = $client->users->update('usr_123', [
+    'name' => 'Alexander Student',
+    'metadata' => ['grade' => '11'],
+]);
+
+// Delete a user
+$client->users->delete('usr_123');
+```
+
+### Lessons
+
+```php
+// List lessons
+$lessons = $client->lessons->list([
+    'status' => 'published',
+    'subject' => 'mathematics',
+    'grade_level' => ['9', '10'],
+]);
+
+// Get lesson with content
+$lesson = $client->lessons->retrieve('les_123', [
+    'expand' => ['content', 'author'],
+]);
+
+// Create a lesson
+$lesson = $client->lessons->create([
+    'title' => 'Introduction to Algebra',
+    'description' => 'Learn the basics of algebraic expressions',
+    'subject' => 'mathematics',
+    'grade_level' => '9',
+    'content_blocks' => [
+        [
+            'type' => 'text',
+            'content' => 'Algebra is the study of...',
+        ],
+        [
+            'type' => 'video',
+            'url' => 'https://videos.aivo.edu/algebra-intro.mp4',
+            'duration' => 300,
+        ],
+    ],
+]);
+
+// Publish a lesson
+$lesson = $client->lessons->publish('les_123');
+```
+
+### Courses
+
+```php
+// List courses
+$courses = $client->courses->list(['status' => 'active']);
+
+// Get course with lessons
+$course = $client->courses->retrieve('crs_123', [
+    'expand' => ['lessons', 'enrollments'],
+]);
+
+// Create a course
+$course = $client->courses->create([
+    'title' => 'Algebra Fundamentals',
+    'description' => 'Complete algebra course',
+    'subject' => 'mathematics',
+    'lesson_ids' => ['les_123', 'les_456', 'les_789'],
+]);
+
+// Enroll a user
+$enrollment = $client->courses->enroll('crs_123', [
+    'user_id' => 'usr_456',
+    'role' => 'student',
+]);
+
+// Get course progress
+$progress = $client->courses->getProgress('crs_123', [
+    'user_id' => 'usr_456',
+]);
+```
+
+### Assessments
+
+```php
+// Create an assessment
+$assessment = $client->assessments->create([
+    'title' => 'Algebra Quiz 1',
+    'lesson_id' => 'les_123',
+    'time_limit' => 1800,
+    'passing_score' => 70,
+    'questions' => [
+        [
+            'type' => 'multiple_choice',
+            'question' => 'What is 2x + 3 = 7? Solve for x.',
+            'options' => ['x = 1', 'x = 2', 'x = 3', 'x = 4'],
+            'correct_answer' => 1,
+            'points' => 10,
+        ],
+    ],
+]);
+
+// Submit an attempt
+$result = $client->assessments->submitAttempt('asmt_123', [
+    'user_id' => 'usr_456',
+    'answers' => [
+        ['question_id' => 'q_1', 'answer' => 1],
+    ],
+]);
+
+echo "Score: " . $result->score . "%\n";
+echo $result->passed ? "Passed!\n" : "Try again\n";
+```
+
+### Analytics
+
+```php
+// Get user analytics
+$analytics = $client->analytics->getUserAnalytics('usr_123', [
+    'start_date' => date('Y-m-d', strtotime('-30 days')),
+    'end_date' => date('Y-m-d'),
+    'metrics' => ['time_spent', 'lessons_completed', 'assessment_scores'],
+]);
+
+// Get organization analytics
+$orgAnalytics = $client->analytics->getOrganizationAnalytics([
+    'start_date' => date('Y-m-d', strtotime('-30 days')),
+    'end_date' => date('Y-m-d'),
+    'group_by' => 'week',
+]);
+```
+
+## Error Handling
+
+```php
+use Aivo\Exception\AivoException;
+use Aivo\Exception\NotFoundError;
+use Aivo\Exception\ValidationError;
+use Aivo\Exception\AuthenticationError;
+use Aivo\Exception\RateLimitError;
+
+try {
+    $user = $client->users->retrieve('usr_invalid');
+} catch (NotFoundError $e) {
+    echo "User not found: " . $e->getMessage() . "\n";
+} catch (ValidationError $e) {
+    echo "Validation failed: " . $e->getMessage() . "\n";
+    foreach ($e->getErrors() as $error) {
+        echo "  {$error['field']}: {$error['message']}\n";
+    }
+} catch (AuthenticationError $e) {
+    echo "Authentication failed: " . $e->getMessage() . "\n";
+} catch (RateLimitError $e) {
+    echo "Rate limited. Retry after: " . $e->getRetryAfter() . " seconds\n";
+} catch (AivoException $e) {
+    echo "API error: " . $e->getMessage() . " (" . $e->getCode() . ")\n";
+}
+```
+
+## Webhooks
+
+### Signature Verification
+
+```php
+use Aivo\Webhook;
+use Aivo\Exception\SignatureVerificationError;
+
+// Get raw request body
+$payload = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_AIVO_SIGNATURE'] ?? '';
+$timestamp = $_SERVER['HTTP_X_AIVO_TIMESTAMP'] ?? '';
+
+try {
+    $event = Webhook::constructEvent(
+        $payload,
+        $signature,
+        $timestamp,
+        getenv('AIVO_WEBHOOK_SECRET')
+    );
+
+    switch ($event->type) {
+        case 'lesson.completed':
+            handleLessonCompleted($event->data);
+            break;
+        case 'assessment.submitted':
+            handleAssessmentSubmitted($event->data);
+            break;
+        case 'user.created':
+            handleUserCreated($event->data);
+            break;
+        default:
+            error_log("Unhandled event type: " . $event->type);
+    }
+
+    http_response_code(200);
+} catch (SignatureVerificationError $e) {
+    http_response_code(400);
+    exit;
+}
+```
+
+## Laravel Integration
+
+### Service Provider
+
+Create `app/Providers/AivoServiceProvider.php`:
+
+```php
+<?php
+
+namespace App\Providers;
+
+use Aivo\AivoClient;
+use Illuminate\Support\ServiceProvider;
+
+class AivoServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->singleton(AivoClient::class, function ($app) {
+            return new AivoClient([
+                'api_key' => config('services.aivo.api_key'),
+                'environment' => config('services.aivo.environment', 'production'),
+            ]);
+        });
+    }
+}
+```
+
+### Configuration
+
+Add to `config/services.php`:
+
+```php
+'aivo' => [
+    'api_key' => env('AIVO_API_KEY'),
+    'environment' => env('AIVO_ENVIRONMENT', 'production'),
+    'webhook_secret' => env('AIVO_WEBHOOK_SECRET'),
+],
+```
+
+### Controller Example
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Aivo\AivoClient;
+use Illuminate\Http\Request;
+
+class LearningController extends Controller
+{
+    public function __construct(
+        private AivoClient $aivo
+    ) {}
+
+    public function courses()
+    {
+        $courses = $this->aivo->courses->list([
+            'status' => 'active',
+        ]);
+
+        return view('courses.index', compact('courses'));
+    }
+
+    public function enroll(Request $request, string $courseId)
+    {
+        $user = $request->user();
+
+        $enrollment = $this->aivo->courses->enroll($courseId, [
+            'user_id' => $user->aivo_id,
+            'role' => 'student',
+        ]);
+
+        return redirect()->route('courses.show', $courseId)
+            ->with('success', 'Successfully enrolled!');
+    }
+}
+```
+
+### Webhook Controller
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Aivo\Webhook;
+use Illuminate\Http\Request;
+
+class AivoWebhookController extends Controller
+{
+    public function handle(Request $request)
+    {
+        $payload = $request->getContent();
+        $signature = $request->header('X-AIVO-Signature');
+        $timestamp = $request->header('X-AIVO-Timestamp');
+
+        try {
+            $event = Webhook::constructEvent(
+                $payload,
+                $signature,
+                $timestamp,
+                config('services.aivo.webhook_secret')
+            );
+        } catch (\Exception $e) {
+            return response('Invalid signature', 400);
+        }
+
+        match ($event->type) {
+            'lesson.completed' => $this->handleLessonCompleted($event->data),
+            'assessment.submitted' => $this->handleAssessmentSubmitted($event->data),
+            default => null,
+        };
+
+        return response('OK', 200);
+    }
+
+    private function handleLessonCompleted(object $data): void
+    {
+        // Update local progress
+    }
+
+    private function handleAssessmentSubmitted(object $data): void
+    {
+        // Record assessment result
+    }
+}
+```
+
+### Job Queue Integration
+
+```php
+<?php
+
+namespace App\Jobs;
+
+use Aivo\AivoClient;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\SerializesModels;
+
+class SyncUserProgress implements ShouldQueue
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(
+        private int $userId
+    ) {}
+
+    public function handle(AivoClient $aivo): void
+    {
+        $user = User::findOrFail($this->userId);
+
+        $progress = $aivo->progress->getUserProgress($user->aivo_id);
+
+        $user->update([
+            'lessons_completed' => $progress->lessons_completed,
+            'total_time_spent' => $progress->total_time_spent,
+            'last_synced_at' => now(),
+        ]);
+    }
+}
+```
+
+## Pagination
+
+### Automatic Pagination
+
+```php
+// Iterate through all pages automatically
+foreach ($client->users->all() as $user) {
+    echo $user->name . "\n";
+}
+
+// With filters
+$allStudents = $client->users->all(['role' => 'student']);
+```
+
+### Manual Pagination
+
+```php
+$page = 1;
+$perPage = 100;
+
+do {
+    $users = $client->users->list([
+        'page' => $page,
+        'per_page' => $perPage,
+    ]);
+
+    foreach ($users->data as $user) {
+        processUser($user);
+    }
+
+    $page++;
+} while ($users->pagination->has_more);
+```
+
+## Testing
+
+### PHPUnit Integration
+
+```php
+<?php
+
+namespace Tests\Feature;
+
+use Aivo\AivoClient;
+use Aivo\Testing\MockClient;
+use Tests\TestCase;
+
+class LearningTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Use mock client in tests
+        $this->app->bind(AivoClient::class, function () {
+            return new MockClient();
+        });
+    }
+
+    public function test_can_list_courses(): void
+    {
+        $mock = $this->app->make(AivoClient::class);
+        $mock->courses->addMockResponse([
+            'data' => [
+                ['id' => 'crs_123', 'title' => 'Test Course'],
+            ],
+            'pagination' => ['total' => 1],
+        ]);
+
+        $response = $this->get('/courses');
+
+        $response->assertOk();
+        $response->assertSee('Test Course');
+    }
+}
+```
+
+### Mocking Responses
+
+```php
+use Aivo\Testing\MockClient;
+
+$mock = new MockClient();
+
+// Add mock response
+$mock->users->addMockResponse([
+    'id' => 'usr_123',
+    'email' => 'test@example.com',
+    'name' => 'Test User',
+]);
+
+// Make request
+$user = $mock->users->create([
+    'email' => 'test@example.com',
+    'name' => 'Test User',
+]);
+
+assert($user->id === 'usr_123');
+```
+
+## Logging
+
+### PSR-3 Logger Integration
+
+```php
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+$logger = new Logger('aivo');
+$logger->pushHandler(new StreamHandler('path/to/aivo.log', Logger::DEBUG));
+
+$client = new AivoClient([
+    'api_key' => getenv('AIVO_API_KEY'),
+    'logger' => $logger,
+]);
+```
+
+### Laravel Logging
+
+```php
+use Illuminate\Support\Facades\Log;
+
+$client = new AivoClient([
+    'api_key' => config('services.aivo.api_key'),
+    'logger' => Log::channel('aivo'),
+]);
+```
+
+## HTTP Client
+
+The SDK uses Guzzle by default but supports any PSR-18 HTTP client:
+
+```php
+use GuzzleHttp\Client as GuzzleClient;
+use Aivo\AivoClient;
+
+$httpClient = new GuzzleClient([
+    'verify' => '/path/to/cacert.pem',
+    'proxy' => 'http://proxy.example.com:8080',
+]);
+
+$client = new AivoClient([
+    'api_key' => getenv('AIVO_API_KEY'),
+    'http_client' => $httpClient,
+]);
+```
+
+## Resources
+
+- [API Reference](/api-reference)
+- [PHP SDK on GitHub](https://github.com/aivo-edu/aivo-php)
+- [Packagist](https://packagist.org/packages/aivo/aivo-php)
+- [Changelog](https://github.com/aivo-edu/aivo-php/blob/main/CHANGELOG.md)

@@ -1,0 +1,662 @@
+---
+sidebar_position: 1
+title: Java SDK
+description: Official Java SDK for the AIVO API
+---
+
+# Java SDK
+
+The official Java SDK for the AIVO API provides a type-safe, modern Java interface for integrating AIVO into your Java applications.
+
+## Requirements
+
+- Java 17 or higher
+- Maven or Gradle
+
+## Installation
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>edu.aivo</groupId>
+    <artifactId>aivo-java</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'edu.aivo:aivo-java:1.0.0'
+```
+
+## Quick Start
+
+```java
+import edu.aivo.AivoClient;
+import edu.aivo.model.User;
+
+public class QuickStart {
+    public static void main(String[] args) {
+        // Create client
+        AivoClient client = AivoClient.builder()
+            .apiKey(System.getenv("AIVO_API_KEY"))
+            .build();
+
+        // Create a user
+        User user = client.users().create(
+            UserCreateParams.builder()
+                .email("student@example.com")
+                .name("Alex Student")
+                .role(UserRole.STUDENT)
+                .build()
+        );
+
+        System.out.println("Created user: " + user.getId());
+    }
+}
+```
+
+## Configuration
+
+### Client Builder
+
+```java
+import edu.aivo.AivoClient;
+import edu.aivo.AivoEnvironment;
+
+AivoClient client = AivoClient.builder()
+    // Required
+    .apiKey(System.getenv("AIVO_API_KEY"))
+
+    // Optional
+    .environment(AivoEnvironment.PRODUCTION)
+    .apiVersion("v1")
+    .timeout(Duration.ofSeconds(30))
+    .connectTimeout(Duration.ofSeconds(10))
+    .maxRetries(3)
+    .build();
+```
+
+### Environment Variables
+
+```bash
+export AIVO_API_KEY="aivo_sk_live_..."
+export AIVO_ENVIRONMENT="production"
+```
+
+## Resources
+
+### Users
+
+```java
+import edu.aivo.model.*;
+import edu.aivo.param.*;
+
+// List users
+UserListResponse users = client.users().list(
+    UserListParams.builder()
+        .page(1)
+        .perPage(20)
+        .role(UserRole.STUDENT)
+        .build()
+);
+
+for (User user : users.getData()) {
+    System.out.println(user.getName() + " (" + user.getEmail() + ")");
+}
+
+System.out.println("Total: " + users.getPagination().getTotal());
+
+// Get a user
+User user = client.users().retrieve("usr_123");
+
+// Create a user
+User newUser = client.users().create(
+    UserCreateParams.builder()
+        .email("student@example.com")
+        .name("Alex Student")
+        .role(UserRole.STUDENT)
+        .metadata(Map.of("grade", "10", "school_id", "sch_456"))
+        .build()
+);
+
+// Update a user
+User updated = client.users().update("usr_123",
+    UserUpdateParams.builder()
+        .name("Alexander Student")
+        .metadata(Map.of("grade", "11"))
+        .build()
+);
+
+// Delete a user
+client.users().delete("usr_123");
+```
+
+### Lessons
+
+```java
+// List lessons
+LessonListResponse lessons = client.lessons().list(
+    LessonListParams.builder()
+        .status(LessonStatus.PUBLISHED)
+        .subject("mathematics")
+        .gradeLevel(List.of("9", "10"))
+        .build()
+);
+
+// Get lesson with content
+Lesson lesson = client.lessons().retrieve("les_123",
+    LessonRetrieveParams.builder()
+        .expand(List.of("content", "author"))
+        .build()
+);
+
+// Create a lesson
+Lesson newLesson = client.lessons().create(
+    LessonCreateParams.builder()
+        .title("Introduction to Algebra")
+        .description("Learn the basics of algebraic expressions")
+        .subject("mathematics")
+        .gradeLevel("9")
+        .contentBlocks(List.of(
+            ContentBlock.text("Algebra is the study of..."),
+            ContentBlock.video()
+                .url("https://videos.aivo.edu/algebra-intro.mp4")
+                .duration(300)
+                .build()
+        ))
+        .build()
+);
+
+// Publish a lesson
+Lesson published = client.lessons().publish("les_123");
+```
+
+### Courses
+
+```java
+// List courses
+CourseListResponse courses = client.courses().list(
+    CourseListParams.builder()
+        .status(CourseStatus.ACTIVE)
+        .build()
+);
+
+// Create a course
+Course course = client.courses().create(
+    CourseCreateParams.builder()
+        .title("Algebra Fundamentals")
+        .description("Complete algebra course")
+        .subject("mathematics")
+        .lessonIds(List.of("les_123", "les_456", "les_789"))
+        .build()
+);
+
+// Enroll a user
+Enrollment enrollment = client.courses().enroll("crs_123",
+    EnrollmentParams.builder()
+        .userId("usr_456")
+        .role(EnrollmentRole.STUDENT)
+        .build()
+);
+
+// Get course progress
+CourseProgress progress = client.courses().getProgress("crs_123",
+    ProgressParams.builder()
+        .userId("usr_456")
+        .build()
+);
+```
+
+### Assessments
+
+```java
+// Create an assessment
+Assessment assessment = client.assessments().create(
+    AssessmentCreateParams.builder()
+        .title("Algebra Quiz 1")
+        .lessonId("les_123")
+        .timeLimit(1800)
+        .passingScore(70)
+        .questions(List.of(
+            Question.multipleChoice()
+                .question("What is 2x + 3 = 7? Solve for x.")
+                .options(List.of("x = 1", "x = 2", "x = 3", "x = 4"))
+                .correctAnswer(1)
+                .points(10)
+                .build(),
+            Question.shortAnswer()
+                .question("Define a variable in algebra.")
+                .points(10)
+                .build()
+        ))
+        .build()
+);
+
+// Submit an attempt
+AttemptResult result = client.assessments().submitAttempt("asmt_123",
+    AttemptParams.builder()
+        .userId("usr_456")
+        .answers(List.of(
+            Answer.of("q_1", 1),
+            Answer.of("q_2", "A symbol representing an unknown value")
+        ))
+        .build()
+);
+
+System.out.println("Score: " + result.getScore() + "%");
+System.out.println(result.isPassed() ? "Passed!" : "Try again");
+```
+
+### Analytics
+
+```java
+// Get user analytics
+UserAnalytics analytics = client.analytics().getUserAnalytics("usr_123",
+    AnalyticsParams.builder()
+        .startDate(LocalDate.now().minusDays(30))
+        .endDate(LocalDate.now())
+        .metrics(List.of("time_spent", "lessons_completed", "assessment_scores"))
+        .build()
+);
+
+// Get organization analytics
+OrgAnalytics orgAnalytics = client.analytics().getOrganizationAnalytics(
+    OrgAnalyticsParams.builder()
+        .startDate(LocalDate.now().minusDays(30))
+        .endDate(LocalDate.now())
+        .groupBy(GroupBy.WEEK)
+        .build()
+);
+```
+
+## Error Handling
+
+```java
+import edu.aivo.exception.*;
+
+try {
+    User user = client.users().retrieve("usr_invalid");
+} catch (NotFoundException e) {
+    System.err.println("User not found: " + e.getMessage());
+} catch (ValidationException e) {
+    System.err.println("Validation failed: " + e.getMessage());
+    for (ValidationError error : e.getErrors()) {
+        System.err.println("  " + error.getField() + ": " + error.getMessage());
+    }
+} catch (AuthenticationException e) {
+    System.err.println("Authentication failed: " + e.getMessage());
+} catch (RateLimitException e) {
+    System.err.println("Rate limited. Retry after: " + e.getRetryAfter() + " seconds");
+} catch (AivoException e) {
+    System.err.println("API error: " + e.getMessage() + " (" + e.getCode() + ")");
+}
+```
+
+## Webhooks
+
+### Signature Verification
+
+```java
+import edu.aivo.webhook.Webhook;
+import edu.aivo.webhook.Event;
+
+// In your webhook handler
+public void handleWebhook(HttpServletRequest request) {
+    String payload = request.getReader().lines()
+        .collect(Collectors.joining());
+    String signature = request.getHeader("X-AIVO-Signature");
+    String timestamp = request.getHeader("X-AIVO-Timestamp");
+
+    try {
+        Event event = Webhook.constructEvent(
+            payload,
+            signature,
+            timestamp,
+            System.getenv("AIVO_WEBHOOK_SECRET")
+        );
+
+        switch (event.getType()) {
+            case "lesson.completed":
+                handleLessonCompleted(event.getData());
+                break;
+            case "assessment.submitted":
+                handleAssessmentSubmitted(event.getData());
+                break;
+            case "user.created":
+                handleUserCreated(event.getData());
+                break;
+            default:
+                log.info("Unhandled event type: " + event.getType());
+        }
+    } catch (SignatureVerificationException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+    }
+}
+```
+
+## Spring Boot Integration
+
+### Configuration
+
+Create `application.yml`:
+
+```yaml
+aivo:
+  api-key: ${AIVO_API_KEY}
+  environment: production
+  timeout: 30s
+  connect-timeout: 10s
+  max-retries: 3
+```
+
+### Auto-Configuration
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import edu.aivo.AivoClient;
+
+@Configuration
+public class AivoConfig {
+
+    @Bean
+    public AivoClient aivoClient(AivoProperties properties) {
+        return AivoClient.builder()
+            .apiKey(properties.getApiKey())
+            .environment(properties.getEnvironment())
+            .timeout(properties.getTimeout())
+            .connectTimeout(properties.getConnectTimeout())
+            .maxRetries(properties.getMaxRetries())
+            .build();
+    }
+}
+```
+
+### Service Example
+
+```java
+import edu.aivo.AivoClient;
+import edu.aivo.model.*;
+import org.springframework.stereotype.Service;
+
+@Service
+public class LearningService {
+
+    private final AivoClient aivoClient;
+
+    public LearningService(AivoClient aivoClient) {
+        this.aivoClient = aivoClient;
+    }
+
+    public User syncUser(LocalUser localUser) {
+        if (localUser.getAivoId() != null) {
+            return aivoClient.users().retrieve(localUser.getAivoId());
+        }
+
+        return aivoClient.users().create(
+            UserCreateParams.builder()
+                .email(localUser.getEmail())
+                .name(localUser.getName())
+                .role(UserRole.STUDENT)
+                .metadata(Map.of("local_id", localUser.getId().toString()))
+                .build()
+        );
+    }
+
+    public List<Course> getActiveCourses() {
+        return aivoClient.courses().list(
+            CourseListParams.builder()
+                .status(CourseStatus.ACTIVE)
+                .build()
+        ).getData();
+    }
+
+    public CourseProgress getProgress(String userId, String courseId) {
+        return aivoClient.courses().getProgress(courseId,
+            ProgressParams.builder()
+                .userId(userId)
+                .build()
+        );
+    }
+}
+```
+
+### Controller Example
+
+```java
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/learning")
+public class LearningController {
+
+    private final LearningService learningService;
+
+    public LearningController(LearningService learningService) {
+        this.learningService = learningService;
+    }
+
+    @GetMapping("/courses")
+    public List<Course> getCourses() {
+        return learningService.getActiveCourses();
+    }
+
+    @PostMapping("/courses/{courseId}/enroll")
+    public Enrollment enroll(@PathVariable String courseId,
+                             @AuthenticationPrincipal UserDetails user) {
+        return learningService.enrollUser(user.getUsername(), courseId);
+    }
+
+    @GetMapping("/courses/{courseId}/progress")
+    public CourseProgress getProgress(@PathVariable String courseId,
+                                      @AuthenticationPrincipal UserDetails user) {
+        return learningService.getProgress(user.getUsername(), courseId);
+    }
+}
+```
+
+### Webhook Controller
+
+```java
+import edu.aivo.webhook.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/webhooks")
+public class WebhookController {
+
+    private final String webhookSecret;
+
+    public WebhookController(@Value("${aivo.webhook-secret}") String webhookSecret) {
+        this.webhookSecret = webhookSecret;
+    }
+
+    @PostMapping("/aivo")
+    public ResponseEntity<Void> handleWebhook(
+            @RequestBody String payload,
+            @RequestHeader("X-AIVO-Signature") String signature,
+            @RequestHeader("X-AIVO-Timestamp") String timestamp) {
+
+        try {
+            Event event = Webhook.constructEvent(
+                payload, signature, timestamp, webhookSecret);
+
+            processEvent(event);
+            return ResponseEntity.ok().build();
+        } catch (SignatureVerificationException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    private void processEvent(Event event) {
+        switch (event.getType()) {
+            case "lesson.completed" -> handleLessonCompleted(event);
+            case "assessment.submitted" -> handleAssessmentSubmitted(event);
+            case "user.created" -> handleUserCreated(event);
+        }
+    }
+}
+```
+
+## Async Operations
+
+### CompletableFuture API
+
+```java
+import edu.aivo.AivoAsyncClient;
+
+AivoAsyncClient asyncClient = AivoAsyncClient.builder()
+    .apiKey(System.getenv("AIVO_API_KEY"))
+    .build();
+
+// Async user creation
+CompletableFuture<User> userFuture = asyncClient.users().create(
+    UserCreateParams.builder()
+        .email("student@example.com")
+        .name("Alex Student")
+        .build()
+);
+
+userFuture
+    .thenAccept(user -> System.out.println("Created: " + user.getId()))
+    .exceptionally(e -> {
+        System.err.println("Error: " + e.getMessage());
+        return null;
+    });
+
+// Parallel requests
+CompletableFuture<User> user1 = asyncClient.users().retrieve("usr_1");
+CompletableFuture<User> user2 = asyncClient.users().retrieve("usr_2");
+CompletableFuture<User> user3 = asyncClient.users().retrieve("usr_3");
+
+CompletableFuture.allOf(user1, user2, user3)
+    .thenRun(() -> {
+        System.out.println("All users loaded");
+    });
+```
+
+## Pagination
+
+### Stream API
+
+```java
+// Stream through all users
+client.users().list().stream()
+    .filter(user -> user.getRole() == UserRole.STUDENT)
+    .forEach(user -> System.out.println(user.getName()));
+
+// Collect all
+List<User> allUsers = client.users().list().stream()
+    .collect(Collectors.toList());
+```
+
+### Manual Pagination
+
+```java
+int page = 1;
+boolean hasMore = true;
+
+while (hasMore) {
+    UserListResponse response = client.users().list(
+        UserListParams.builder()
+            .page(page)
+            .perPage(100)
+            .build()
+    );
+
+    for (User user : response.getData()) {
+        processUser(user);
+    }
+
+    hasMore = response.getPagination().hasMore();
+    page++;
+}
+```
+
+## Testing
+
+### JUnit 5 Integration
+
+```java
+import edu.aivo.testing.MockAivoClient;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+@ExtendWith(AivoMockExtension.class)
+class LearningServiceTest {
+
+    @Mock
+    private AivoClient aivoClient;
+
+    @InjectMocks
+    private LearningService learningService;
+
+    @Test
+    void shouldCreateUser() {
+        User mockUser = User.builder()
+            .id("usr_123")
+            .email("test@example.com")
+            .name("Test User")
+            .build();
+
+        when(aivoClient.users().create(any()))
+            .thenReturn(mockUser);
+
+        User result = learningService.syncUser(localUser);
+
+        assertThat(result.getId()).isEqualTo("usr_123");
+    }
+}
+```
+
+### Mock Client
+
+```java
+import edu.aivo.testing.MockAivoClient;
+
+MockAivoClient mockClient = new MockAivoClient();
+
+// Set up mock response
+mockClient.users().whenCreate()
+    .thenReturn(User.builder()
+        .id("usr_123")
+        .email("test@example.com")
+        .build());
+
+// Use in tests
+User user = mockClient.users().create(params);
+assertThat(user.getId()).isEqualTo("usr_123");
+```
+
+## Logging
+
+### SLF4J Integration
+
+The SDK uses SLF4J for logging. Configure with your preferred implementation:
+
+```xml
+<!-- Logback -->
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>1.4.11</version>
+</dependency>
+```
+
+```xml
+<!-- logback.xml -->
+<configuration>
+    <logger name="edu.aivo" level="DEBUG"/>
+</configuration>
+```
+
+## Resources
+
+- [API Reference](/api-reference)
+- [Java SDK on GitHub](https://github.com/aivo-edu/aivo-java)
+- [Maven Central](https://search.maven.org/artifact/edu.aivo/aivo-java)
+- [Javadoc](https://javadoc.io/doc/edu.aivo/aivo-java)
+- [Changelog](https://github.com/aivo-edu/aivo-java/blob/main/CHANGELOG.md)

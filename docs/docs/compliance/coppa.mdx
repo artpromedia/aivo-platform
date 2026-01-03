@@ -1,0 +1,295 @@
+---
+sidebar_position: 2
+title: COPPA Compliance
+description: Children's Online Privacy Protection Act compliance guide
+---
+
+# COPPA Compliance
+
+The Children's Online Privacy Protection Act (COPPA) applies to operators of websites and online services that collect personal information from children under 13. AIVO is fully COPPA-compliant and provides tools to help you maintain compliance.
+
+## COPPA Requirements
+
+| Requirement                             | AIVO Implementation                     |
+| --------------------------------------- | --------------------------------------- |
+| Parental consent before collecting data | Verifiable Parental Consent (VPC) flow  |
+| Privacy policy disclosure               | Child-friendly privacy notices          |
+| Data minimization                       | Only collect necessary educational data |
+| Data security                           | Encryption, access controls, auditing   |
+| Parental access/control                 | Parent dashboard with full visibility   |
+| Right to deletion                       | One-click data deletion                 |
+| No behavioral advertising               | No third-party ad tracking              |
+
+## Verifiable Parental Consent
+
+Before collecting data from children under 13, AIVO requires verifiable parental consent.
+
+### Consent Methods
+
+| Method          | Verification Level | Best For                 |
+| --------------- | ------------------ | ------------------------ |
+| Email Plus      | Standard           | Low-risk data collection |
+| Credit Card     | High               | Paid services            |
+| Video Call      | High               | Sensitive data           |
+| Government ID   | High               | Required by policy       |
+| Knowledge-Based | Standard           | Re-consent               |
+
+### Implementation
+
+#### 1. Detect Child Users
+
+```javascript
+// During registration
+const user = await aivo.users.create({
+  email: 'child@example.com',
+  name: 'Alex',
+  dateOfBirth: '2015-06-15', // Under 13
+  parentEmail: 'parent@example.com',
+});
+
+// Response includes consent status
+console.log(user.requiresParentalConsent); // true
+console.log(user.consentStatus); // 'pending'
+```
+
+#### 2. Send Consent Request
+
+```javascript
+// Send consent email to parent
+await aivo.parental.sendConsentRequest({
+  childId: user.id,
+  parentEmail: 'parent@example.com',
+  consentTypes: ['data_collection', 'educational_use'],
+  expiresIn: 7 * 24 * 60 * 60, // 7 days
+});
+```
+
+#### 3. Record Consent
+
+```javascript
+// After parent completes verification
+const consent = await aivo.parental.recordConsent({
+  childId: user.id,
+  consentType: 'data_collection',
+  granted: true,
+  method: 'email_plus',
+  parentId: 'parent_abc123',
+  signature: 'Parent Name',
+  ipAddress: req.ip,
+  timestamp: new Date().toISOString(),
+});
+```
+
+### Consent Status
+
+```javascript
+const status = await aivo.parental.getConsentStatus(childId);
+
+// Response
+{
+  "childId": "usr_child123",
+  "consents": [
+    {
+      "type": "data_collection",
+      "granted": true,
+      "grantedAt": "2024-01-15T10:30:00Z",
+      "method": "email_plus",
+      "expiresAt": "2025-01-15T10:30:00Z"
+    }
+  ],
+  "canCollectData": true,
+  "pendingConsents": []
+}
+```
+
+## Parental Controls
+
+### Parent Dashboard
+
+Parents have full visibility and control over their child's account:
+
+```javascript
+// Get child's activity summary
+const activity = await aivo.parental.getChildActivity(childId);
+
+// Response
+{
+  "recentLessons": [...],
+  "totalTimeToday": 45, // minutes
+  "totalTimeThisWeek": 180,
+  "lessonsCompleted": 12,
+  "skillProgress": {...}
+}
+```
+
+### Time Limits
+
+```javascript
+// Set daily time limit
+await aivo.parental.updateChildSettings(childId, {
+  dailyTimeLimit: 60, // 60 minutes
+  allowedHours: {
+    start: '08:00',
+    end: '20:00',
+  },
+  weekendExtension: 30, // Extra 30 minutes on weekends
+});
+```
+
+### Content Restrictions
+
+```javascript
+// Configure content filtering
+await aivo.parental.updateChildSettings(childId, {
+  contentRestrictions: {
+    ageRating: 'E', // Everyone
+    blockedCategories: ['advanced_math', 'chemistry'],
+    requireApproval: ['external_content'],
+  },
+});
+```
+
+## Data Handling
+
+### Data Collected
+
+AIVO collects minimal data necessary for educational purposes:
+
+| Data Type          | Purpose             | Retention        |
+| ------------------ | ------------------- | ---------------- |
+| Name/Username      | Identification      | Account lifetime |
+| Progress data      | Learning tracking   | Account lifetime |
+| Assessment answers | Skill evaluation    | Account lifetime |
+| Usage analytics    | Product improvement | Aggregated only  |
+
+### Data NOT Collected
+
+AIVO does not collect from children:
+
+- ❌ Precise geolocation
+- ❌ Photos/videos
+- ❌ Voice recordings
+- ❌ Contact lists
+- ❌ Browsing history
+- ❌ Advertising identifiers
+
+## Data Deletion
+
+### Parent-Initiated Deletion
+
+Parents can request complete data deletion:
+
+```javascript
+// Delete all child data
+const result = await aivo.parental.deleteChildData(childId, {
+  reason: 'parent_request',
+  confirmation: true,
+});
+
+// Response
+{
+  "deleted": true,
+  "deletedAt": "2024-01-15T10:30:00Z",
+  "dataTypes": [
+    "profile",
+    "progress",
+    "assessments",
+    "analytics"
+  ],
+  "retentionNotice": "Some data retained for 30 days for legal compliance"
+}
+```
+
+### Automatic Deletion
+
+Configure automatic data deletion:
+
+```javascript
+// Organization settings
+await aivo.admin.updateSettings({
+  coppa: {
+    autoDeleteInactiveAccounts: true,
+    inactivityThreshold: 365, // days
+    retentionPeriod: 30, // days after deletion request
+  },
+});
+```
+
+## Implementation Checklist
+
+### Before Collecting Data
+
+- [ ] Determine if users may be under 13
+- [ ] Implement age gate or date of birth collection
+- [ ] Post a COPPA-compliant privacy policy
+- [ ] Set up parent notification system
+- [ ] Implement consent verification method
+
+### During Operation
+
+- [ ] Honor parental access requests
+- [ ] Process deletion requests within 48 hours
+- [ ] Maintain consent records
+- [ ] Audit third-party data sharing
+- [ ] Review data practices annually
+
+### Technical Requirements
+
+- [ ] Encrypt child PII at rest and in transit
+- [ ] Implement access controls for child data
+- [ ] Log all access to child data
+- [ ] Secure consent verification tokens
+- [ ] Enable parent account linking
+
+## Privacy Policy Requirements
+
+Your privacy policy must include:
+
+1. **Types of personal information collected**
+2. **How information is used**
+3. **Disclosure practices**
+4. **Parental rights**
+5. **Contact information**
+
+### Sample Disclosure
+
+```
+We collect [list data types] from child users for educational
+purposes. This information is used to [list purposes] and is
+not shared with third parties for marketing purposes.
+
+Parents may review their child's information, request deletion,
+and revoke consent at any time by contacting us at [contact info]
+or through the Parent Dashboard.
+```
+
+## Compliance Verification
+
+### Audit Logs
+
+```javascript
+// Get consent audit logs
+const logs = await aivo.admin.getAuditLogs({
+  type: 'coppa_consent',
+  startDate: '2024-01-01',
+  endDate: '2024-03-31',
+});
+```
+
+### Compliance Report
+
+```javascript
+// Generate COPPA compliance report
+const report = await aivo.admin.generateComplianceReport({
+  type: 'coppa',
+  period: 'quarter',
+  format: 'pdf',
+});
+```
+
+## Resources
+
+- [FTC COPPA Guidelines](https://www.ftc.gov/tips-advice/business-center/privacy-and-security/children%27s-privacy)
+- [COPPA Safe Harbor Programs](https://www.ftc.gov/safe-harbor-program)
+- [AIVO COPPA Policy](https://aivo.edu/legal/coppa)
+- [Parent Guide](https://aivo.edu/parents)

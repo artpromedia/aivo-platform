@@ -1,0 +1,504 @@
+---
+sidebar_position: 1
+title: Error Handling
+description: API error codes and handling strategies
+---
+
+# Error Handling
+
+This guide covers AIVO API error codes, response formats, and best practices for handling errors in your applications.
+
+## Error Response Format
+
+All API errors return a consistent JSON structure:
+
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "The request was invalid",
+    "status": 400,
+    "request_id": "req_abc123xyz",
+    "details": [
+      {
+        "field": "email",
+        "code": "invalid_format",
+        "message": "Email address is not valid"
+      }
+    ],
+    "documentation_url": "https://docs.aivo.edu/errors/validation_error"
+  }
+}
+```
+
+## HTTP Status Codes
+
+| Status | Description           | Common Causes                      |
+| ------ | --------------------- | ---------------------------------- |
+| 200    | OK                    | Successful request                 |
+| 201    | Created               | Resource successfully created      |
+| 204    | No Content            | Successful deletion                |
+| 400    | Bad Request           | Invalid request body or parameters |
+| 401    | Unauthorized          | Missing or invalid API key         |
+| 403    | Forbidden             | Insufficient permissions           |
+| 404    | Not Found             | Resource doesn't exist             |
+| 409    | Conflict              | Resource already exists            |
+| 422    | Unprocessable Entity  | Validation failed                  |
+| 429    | Too Many Requests     | Rate limit exceeded                |
+| 500    | Internal Server Error | Server-side error                  |
+| 502    | Bad Gateway           | Upstream service error             |
+| 503    | Service Unavailable   | Temporary outage                   |
+| 504    | Gateway Timeout       | Request timed out                  |
+
+## Error Codes
+
+### Authentication Errors
+
+| Code              | Description           | Resolution               |
+| ----------------- | --------------------- | ------------------------ |
+| `invalid_api_key` | API key is malformed  | Check API key format     |
+| `expired_api_key` | API key has expired   | Generate new API key     |
+| `revoked_api_key` | API key was revoked   | Generate new API key     |
+| `missing_api_key` | No API key provided   | Add Authorization header |
+| `invalid_token`   | JWT token is invalid  | Re-authenticate          |
+| `expired_token`   | JWT token has expired | Refresh token            |
+
+### Authorization Errors
+
+| Code                       | Description                       | Resolution               |
+| -------------------------- | --------------------------------- | ------------------------ |
+| `insufficient_permissions` | User lacks required permission    | Request appropriate role |
+| `resource_access_denied`   | Can't access this resource        | Check ownership/sharing  |
+| `organization_mismatch`    | Resource belongs to different org | Use correct org context  |
+| `feature_not_enabled`      | Feature not in your plan          | Upgrade plan             |
+
+### Validation Errors
+
+| Code               | Description               | Resolution                  |
+| ------------------ | ------------------------- | --------------------------- |
+| `validation_error` | Request validation failed | Check `details` array       |
+| `invalid_format`   | Field format is wrong     | Match expected format       |
+| `required_field`   | Required field missing    | Provide all required fields |
+| `invalid_value`    | Value not in allowed set  | Use valid enum value        |
+| `too_long`         | Value exceeds max length  | Shorten value               |
+| `too_short`        | Value below min length    | Lengthen value              |
+
+### Resource Errors
+
+| Code                 | Description                | Resolution                       |
+| -------------------- | -------------------------- | -------------------------------- |
+| `resource_not_found` | Resource doesn't exist     | Check ID, verify existence       |
+| `resource_deleted`   | Resource was deleted       | Can't access deleted resources   |
+| `resource_archived`  | Resource is archived       | Unarchive or use active resource |
+| `duplicate_resource` | Resource already exists    | Use existing resource or update  |
+| `resource_locked`    | Resource is being modified | Retry after brief delay          |
+
+### Rate Limit Errors
+
+| Code                  | Description                  | Resolution                |
+| --------------------- | ---------------------------- | ------------------------- |
+| `rate_limit_exceeded` | Too many requests            | Back off and retry        |
+| `quota_exceeded`      | Monthly quota reached        | Wait for reset or upgrade |
+| `concurrent_limit`    | Too many concurrent requests | Reduce parallelism        |
+
+## Handling Errors by Language
+
+### JavaScript/TypeScript
+
+```javascript
+import { AivoClient, AivoError, NotFoundError, ValidationError, RateLimitError } from 'aivo';
+
+const client = new AivoClient({ apiKey: process.env.AIVO_API_KEY });
+
+async function getUser(userId: string) {
+  try {
+    return await client.users.retrieve(userId);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      console.log(`User ${userId} not found`);
+      return null;
+    }
+
+    if (error instanceof ValidationError) {
+      console.log('Validation errors:', error.errors);
+      throw error;
+    }
+
+    if (error instanceof RateLimitError) {
+      console.log(`Rate limited. Retry after ${error.retryAfter}s`);
+      await sleep(error.retryAfter * 1000);
+      return getUser(userId); // Retry
+    }
+
+    if (error instanceof AivoError) {
+      console.error(`API error: ${error.code} - ${error.message}`);
+      console.error(`Request ID: ${error.requestId}`);
+    }
+
+    throw error;
+  }
+}
+```
+
+### Python
+
+```python
+from aivo import AivoClient
+from aivo.errors import (
+    AivoError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError,
+    AuthenticationError
+)
+import time
+
+client = AivoClient(api_key=os.environ['AIVO_API_KEY'])
+
+def get_user(user_id: str):
+    try:
+        return client.users.retrieve(user_id)
+    except NotFoundError:
+        print(f"User {user_id} not found")
+        return None
+    except ValidationError as e:
+        print(f"Validation errors: {e.errors}")
+        raise
+    except RateLimitError as e:
+        print(f"Rate limited. Retry after {e.retry_after}s")
+        time.sleep(e.retry_after)
+        return get_user(user_id)  # Retry
+    except AuthenticationError as e:
+        print(f"Auth error: {e.message}")
+        raise
+    except AivoError as e:
+        print(f"API error: {e.code} - {e.message}")
+        print(f"Request ID: {e.request_id}")
+        raise
+```
+
+### Ruby
+
+```ruby
+require 'aivo'
+
+client = Aivo::Client.new(api_key: ENV['AIVO_API_KEY'])
+
+def get_user(user_id)
+  client.users.retrieve(user_id)
+rescue Aivo::NotFoundError
+  puts "User #{user_id} not found"
+  nil
+rescue Aivo::ValidationError => e
+  puts "Validation errors: #{e.errors}"
+  raise
+rescue Aivo::RateLimitError => e
+  puts "Rate limited. Retry after #{e.retry_after}s"
+  sleep(e.retry_after)
+  get_user(user_id) # Retry
+rescue Aivo::AuthenticationError => e
+  puts "Auth error: #{e.message}"
+  raise
+rescue Aivo::APIError => e
+  puts "API error: #{e.code} - #{e.message}"
+  puts "Request ID: #{e.request_id}"
+  raise
+end
+```
+
+## Retry Strategies
+
+### Exponential Backoff
+
+```javascript
+async function withRetry(fn, options = {}) {
+  const { maxRetries = 3, baseDelay = 1000, maxDelay = 30000 } = options;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      // Don't retry client errors (except rate limits)
+      if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+        throw error;
+      }
+
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      // Calculate delay with jitter
+      const delay = Math.min(baseDelay * Math.pow(2, attempt) + Math.random() * 1000, maxDelay);
+
+      // Use Retry-After header if available
+      const retryAfter = error.retryAfter ? error.retryAfter * 1000 : delay;
+
+      console.log(`Retry ${attempt + 1}/${maxRetries} after ${retryAfter}ms`);
+      await sleep(retryAfter);
+    }
+  }
+}
+
+// Usage
+const user = await withRetry(() => client.users.retrieve('usr_123'));
+```
+
+### Circuit Breaker
+
+```javascript
+class CircuitBreaker {
+  constructor(options = {}) {
+    this.failureThreshold = options.failureThreshold || 5;
+    this.resetTimeout = options.resetTimeout || 30000;
+    this.failures = 0;
+    this.state = 'CLOSED';
+    this.nextAttempt = 0;
+  }
+
+  async call(fn) {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new Error('Circuit breaker is OPEN');
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failures = 0;
+    this.state = 'CLOSED';
+  }
+
+  onFailure() {
+    this.failures++;
+    if (this.failures >= this.failureThreshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.resetTimeout;
+    }
+  }
+}
+
+// Usage
+const breaker = new CircuitBreaker({ failureThreshold: 3 });
+const user = await breaker.call(() => client.users.retrieve('usr_123'));
+```
+
+## Validation Errors
+
+### Detailed Error Information
+
+```javascript
+try {
+  await client.users.create({
+    email: 'invalid-email',
+    name: '',
+  });
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.log('Validation failed:');
+
+    error.errors.forEach((err) => {
+      console.log(`  ${err.field}: ${err.message} (${err.code})`);
+    });
+
+    // Output:
+    // Validation failed:
+    //   email: Email address is not valid (invalid_format)
+    //   name: Name is required (required_field)
+  }
+}
+```
+
+### Form Integration
+
+```javascript
+function mapErrorsToForm(validationError) {
+  const fieldErrors = {};
+
+  validationError.errors.forEach((err) => {
+    fieldErrors[err.field] = err.message;
+  });
+
+  return fieldErrors;
+}
+
+// React example
+const [errors, setErrors] = useState({});
+
+async function handleSubmit(data) {
+  try {
+    await client.users.create(data);
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      setErrors(mapErrorsToForm(error));
+    }
+  }
+}
+```
+
+## Rate Limiting
+
+### Rate Limit Headers
+
+```
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+Retry-After: 60
+```
+
+### Handling Rate Limits
+
+```javascript
+async function withRateLimitHandling(fn) {
+  try {
+    return await fn();
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      // Log for monitoring
+      console.warn(`Rate limit hit. Request ID: ${error.requestId}`);
+
+      // Wait and retry
+      await sleep(error.retryAfter * 1000);
+      return fn();
+    }
+    throw error;
+  }
+}
+```
+
+### Proactive Rate Limit Management
+
+```javascript
+class RateLimitManager {
+  constructor() {
+    this.remaining = Infinity;
+    this.resetTime = 0;
+  }
+
+  updateFromHeaders(headers) {
+    this.remaining = parseInt(headers['x-ratelimit-remaining'] || '1000');
+    this.resetTime = parseInt(headers['x-ratelimit-reset'] || '0') * 1000;
+  }
+
+  async waitIfNeeded() {
+    if (this.remaining <= 10) {
+      const waitTime = Math.max(0, this.resetTime - Date.now());
+      if (waitTime > 0) {
+        console.log(`Rate limit low. Waiting ${waitTime}ms`);
+        await sleep(waitTime);
+      }
+    }
+  }
+}
+```
+
+## Error Monitoring
+
+### Logging Best Practices
+
+```javascript
+function logError(error, context = {}) {
+  const logData = {
+    timestamp: new Date().toISOString(),
+    error: {
+      code: error.code,
+      message: error.message,
+      status: error.status,
+      requestId: error.requestId,
+    },
+    context,
+  };
+
+  // Don't log sensitive data
+  if (error instanceof ValidationError) {
+    logData.error.fields = error.errors.map((e) => e.field);
+  }
+
+  console.error(JSON.stringify(logData));
+
+  // Send to monitoring service
+  sendToMonitoring(logData);
+}
+```
+
+### Alerting Thresholds
+
+```javascript
+const errorMetrics = {
+  count401: 0,
+  count429: 0,
+  count5xx: 0,
+  lastReset: Date.now(),
+};
+
+function trackError(error) {
+  // Reset counters every minute
+  if (Date.now() - errorMetrics.lastReset > 60000) {
+    Object.keys(errorMetrics).forEach((key) => {
+      if (key.startsWith('count')) errorMetrics[key] = 0;
+    });
+    errorMetrics.lastReset = Date.now();
+  }
+
+  if (error.status === 401) errorMetrics.count401++;
+  if (error.status === 429) errorMetrics.count429++;
+  if (error.status >= 500) errorMetrics.count5xx++;
+
+  // Alert on thresholds
+  if (errorMetrics.count401 > 10) {
+    alert('High 401 error rate - check API key configuration');
+  }
+  if (errorMetrics.count429 > 5) {
+    alert('Rate limiting active - reduce request rate');
+  }
+  if (errorMetrics.count5xx > 3) {
+    alert('Server errors detected - check AIVO status page');
+  }
+}
+```
+
+## Debugging
+
+### Request ID
+
+Every API response includes a unique request ID:
+
+```
+X-Request-Id: req_abc123xyz
+```
+
+Include this in support requests for faster debugging:
+
+```javascript
+catch (error) {
+  console.error(`Error ${error.code}. Request ID: ${error.requestId}`);
+  // Share requestId with support team
+}
+```
+
+### Debug Mode
+
+Enable debug logging in development:
+
+```javascript
+const client = new AivoClient({
+  apiKey: process.env.AIVO_API_KEY,
+  debug: process.env.NODE_ENV === 'development',
+});
+```
+
+## Resources
+
+- [API Status Page](https://status.aivo.edu)
+- [Rate Limits](/api-reference/rate-limits)
+- [Support Portal](https://support.aivo.edu)

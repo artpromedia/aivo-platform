@@ -1,0 +1,161 @@
+---
+sidebar_position: 1
+title: Introduction
+description: Welcome to the AIVO Platform API documentation
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Welcome to AIVO
+
+The AIVO Platform API enables you to build powerful educational experiences for learners of all ages. Whether you're building a learning management system, a tutoring app, or an educational game, our API provides everything you need.
+
+## What is AIVO?
+
+AIVO is a comprehensive educational platform that provides:
+
+- **Learning Content Management** - Create, organize, and deliver interactive lessons and courses
+- **Adaptive Learning** - AI-powered personalized learning paths based on student performance
+- **Progress Tracking** - Real-time monitoring of student progress and skill mastery
+- **Gamification** - XP, achievements, leaderboards, and streaks to keep learners engaged
+- **Analytics** - Comprehensive insights into learning outcomes and engagement
+- **Compliance** - Built-in COPPA, FERPA, and GDPR compliance
+
+## Key Features
+
+### 📚 Rich Content
+
+Create engaging lessons with:
+
+- Text, images, and videos
+- Interactive questions and quizzes
+- Code exercises with live execution
+- AI-generated practice problems
+
+### 📊 Powerful Analytics
+
+Track everything:
+
+- Learning time and engagement
+- Skill mastery progression
+- Assessment performance
+- Class and cohort comparisons
+
+### 🎮 Gamification
+
+Keep learners motivated:
+
+- Experience points (XP) system
+- Achievement badges
+- Daily streaks
+- Leaderboards
+
+### 🔒 Enterprise Security
+
+Built for education:
+
+- COPPA compliance for children under 13
+- FERPA compliance for student data
+- GDPR compliance for EU users
+- SOC 2 Type II certified
+
+## Getting Started
+
+<div className="row">
+  <div className="col col--4">
+    <div className="card">
+      <div className="card__header">
+        <h3>🚀 Quickstart</h3>
+      </div>
+      <div className="card__body">
+        <p>Make your first API call in 5 minutes</p>
+      </div>
+      <div className="card__footer">
+        <a href="./quickstart" className="button button--primary button--block">
+          Start Building
+        </a>
+      </div>
+    </div>
+  </div>
+  <div className="col col--4">
+    <div className="card">
+      <div className="card__header">
+        <h3>📖 API Reference</h3>
+      </div>
+      <div className="card__body">
+        <p>Explore all available endpoints</p>
+      </div>
+      <div className="card__footer">
+        <a href="/docs/api-reference" className="button button--secondary button--block">
+          View Reference
+        </a>
+      </div>
+    </div>
+  </div>
+  <div className="col col--4">
+    <div className="card">
+      <div className="card__header">
+        <h3>📦 SDKs</h3>
+      </div>
+      <div className="card__body">
+        <p>Use our official SDKs</p>
+      </div>
+      <div className="card__footer">
+        <a href="/sdk" className="button button--secondary button--block">
+          View SDKs
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+## API Environments
+
+| Environment    | Base URL                          | Purpose                 |
+| -------------- | --------------------------------- | ----------------------- |
+| **Production** | `https://api.aivo.edu/v2`         | Live production data    |
+| **Sandbox**    | `https://sandbox-api.aivo.edu/v2` | Testing and development |
+
+:::tip Always Use Sandbox First
+Develop and test your integration in the sandbox environment before going live.
+Sandbox data is reset weekly and doesn't affect real users.
+:::
+
+## Authentication
+
+The API supports two authentication methods:
+
+<Tabs>
+<TabItem value="bearer" label="Bearer Token" default>
+
+```bash
+curl -X GET "https://api.aivo.edu/v2/lessons" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+</TabItem>
+<TabItem value="apikey" label="API Key">
+
+```bash
+curl -X GET "https://api.aivo.edu/v2/lessons" \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+
+</TabItem>
+</Tabs>
+
+## Rate Limits
+
+| Plan       | Requests/min | Requests/day | Concurrent |
+| ---------- | ------------ | ------------ | ---------- |
+| Free       | 60           | 1,000        | 5          |
+| Pro        | 600          | 50,000       | 25         |
+| Enterprise | 6,000        | Unlimited    | 100        |
+
+## Need Help?
+
+- 📚 [Tutorials](/docs/tutorials) - Step-by-step guides
+- 💬 [Discord Community](https://discord.gg/aivo) - Chat with other developers
+- 📧 [Support](mailto:developers@aivo.edu) - Contact our team
+- 🐛 [GitHub Issues](https://github.com/artpromedia/aivo-platform/issues) - Report bugs

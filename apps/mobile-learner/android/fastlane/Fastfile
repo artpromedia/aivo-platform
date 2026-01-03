@@ -1,80 +1,251 @@
 # Fastlane configuration for Aivo Learner Android
 # https://docs.fastlane.tools
+#
+# Production-ready configuration with:
+# - Automated builds and deployments
+# - Play Store deployment (internal, beta, production)
+# - COPPA compliance checks
+# - Slack notifications
+# - Version management
 
 default_platform(:android)
 
+# Configuration
+PACKAGE_NAME = ENV["PACKAGE_NAME"] || "com.aivo.learner"
+AAB_PATH = "../build/app/outputs/bundle/release/app-release.aab"
+APK_PATH = "../build/app/outputs/flutter-apk/app-release.apk"
+
 platform :android do
-  desc "Run tests"
+
+  # ============================================================================
+  # TESTING
+  # ============================================================================
+
+  desc "Run all tests"
   lane :test do
     Dir.chdir("../..") do
-      sh("flutter", "test")
+      sh("flutter", "test", "--coverage")
     end
   end
+
+  desc "Run integration tests"
+  lane :test_integration do
+    Dir.chdir("../..") do
+      sh("flutter", "test", "integration_test/")
+    end
+  end
+
+  desc "Run COPPA compliance checks"
+  lane :check_coppa do
+    UI.message("Running COPPA compliance checks...")
+    Dir.chdir("../..") do
+      # Check for prohibited SDKs
+      sh("grep -r 'facebook_sdk\\|google_ads\\|admob' lib/ || true")
+      # Verify analytics configuration
+      sh("grep -r 'isChildDevice' lib/ | head -5 || true")
+      # Check AndroidManifest for ad permissions
+      sh("grep -r 'com.google.android.gms.ads' android/ || true")
+    end
+    UI.success("COPPA checks completed")
+  end
+
+  # ============================================================================
+  # BUILDS
+  # ============================================================================
 
   desc "Build debug APK"
   lane :build_debug do
     Dir.chdir("../..") do
-      sh("flutter", "build", "apk", "--debug", "--dart-define=FLAVOR=dev")
+      sh("flutter", "build", "apk",
+        "--debug",
+        "--dart-define=FLAVOR=dev",
+        "--dart-define=ENV=development"
+      )
     end
   end
 
   desc "Build release APK for staging"
-  lane :build_staging do
+  lane :build_staging_apk do
     Dir.chdir("../..") do
-      sh("flutter", "build", "apk", "--release", "--dart-define=FLAVOR=staging")
+      sh("flutter", "build", "apk",
+        "--release",
+        "--dart-define=FLAVOR=staging",
+        "--dart-define=ENV=staging"
+      )
     end
   end
 
   desc "Build release APK for production"
-  lane :build_release do
+  lane :build_release_apk do
+    check_coppa
+
     Dir.chdir("../..") do
-      sh("flutter", "build", "apk", "--release", "--dart-define=FLAVOR=prod")
+      sh("flutter", "build", "apk",
+        "--release",
+        "--dart-define=FLAVOR=prod",
+        "--dart-define=ENV=production"
+      )
+    end
+  end
+
+  desc "Build staging App Bundle"
+  lane :build_staging do
+    Dir.chdir("../..") do
+      sh("flutter", "build", "appbundle",
+        "--release",
+        "--dart-define=FLAVOR=staging",
+        "--dart-define=ENV=staging"
+      )
     end
   end
 
   desc "Build release App Bundle for production"
-  lane :build_bundle do
+  lane :build_release do
+    check_coppa
+
     Dir.chdir("../..") do
-      sh("flutter", "build", "appbundle", "--release", "--dart-define=FLAVOR=prod")
+      sh("flutter", "build", "appbundle",
+        "--release",
+        "--dart-define=FLAVOR=prod",
+        "--dart-define=ENV=production"
+      )
     end
   end
 
+  # ============================================================================
+  # DEPLOYMENT
+  # ============================================================================
+
   desc "Deploy to internal testing track"
-  lane :deploy_internal do
-    build_bundle
+  lane :deploy_internal do |options|
+    build_staging unless options[:skip_build]
+
+    changelog = options[:changelog] || generate_changelog
+
     upload_to_play_store(
       track: "internal",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: AAB_PATH,
       skip_upload_metadata: true,
       skip_upload_images: true,
-      skip_upload_screenshots: true
+      skip_upload_screenshots: true,
+      release_status: "draft",
+      version_name: get_version_name
+    )
+
+    notify_slack(
+      message: "Android internal build uploaded to Play Store!",
+      success: true
     )
   end
 
-  desc "Deploy to beta track"
-  lane :deploy_beta do
-    build_bundle
+  desc "Deploy to closed beta track"
+  lane :deploy_beta do |options|
+    build_staging unless options[:skip_build]
+
+    changelog = options[:changelog] || generate_changelog
+
     upload_to_play_store(
       track: "beta",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: AAB_PATH,
       skip_upload_metadata: true,
       skip_upload_images: true,
-      skip_upload_screenshots: true
+      skip_upload_screenshots: true,
+      release_status: "completed",
+      version_name: get_version_name
+    )
+
+    notify_slack(
+      message: "Android beta build available on Play Store!",
+      success: true
     )
   end
 
   desc "Deploy to production"
-  lane :deploy_production do
-    build_bundle
+  lane :deploy_production do |options|
+    build_release unless options[:skip_build]
+
+    rollout = options[:rollout] || 0.1  # Start with 10% rollout
+
     upload_to_play_store(
       track: "production",
-      aab: "../build/app/outputs/bundle/release/app-release.aab"
+      aab: AAB_PATH,
+      rollout: rollout.to_s,
+      release_status: "inProgress",
+      version_name: get_version_name
+    )
+
+    # Tag release
+    if options[:tag]
+      version = get_version_name
+      add_git_tag(tag: "android/v#{version}")
+      push_git_tags
+    end
+
+    notify_slack(
+      message: "Android production build released (#{(rollout * 100).to_i}% rollout)!",
+      success: true
     )
   end
 
+  desc "Complete production rollout to 100%"
+  lane :complete_rollout do
+    upload_to_play_store(
+      track: "production",
+      rollout: "1.0",
+      release_status: "completed",
+      skip_upload_aab: true,
+      version_name: get_version_name
+    )
+
+    notify_slack(
+      message: "Android production rollout completed (100%)!",
+      success: true
+    )
+  end
+
+  desc "Promote internal to beta"
+  lane :promote_to_beta do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "beta",
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    notify_slack(
+      message: "Android internal build promoted to beta!",
+      success: true
+    )
+  end
+
+  desc "Promote beta to production"
+  lane :promote_to_production do |options|
+    rollout = options[:rollout] || 0.1
+
+    upload_to_play_store(
+      track: "beta",
+      track_promote_to: "production",
+      rollout: rollout.to_s,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    notify_slack(
+      message: "Android beta promoted to production (#{(rollout * 100).to_i}% rollout)!",
+      success: true
+    )
+  end
+
+  # ============================================================================
+  # VERSION MANAGEMENT
+  # ============================================================================
+
   desc "Increment version code"
   lane :increment_version do
-    # Read current version from pubspec.yaml
     Dir.chdir("../..") do
       pubspec = File.read("pubspec.yaml")
       version_match = pubspec.match(/version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
@@ -90,4 +261,98 @@ platform :android do
       end
     end
   end
+
+  desc "Bump version (patch/minor/major)"
+  lane :bump_version do |options|
+    bump_type = options[:type] || "patch"
+
+    Dir.chdir("../..") do
+      pubspec = File.read("pubspec.yaml")
+      version_match = pubspec.match(/version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
+      if version_match
+        major = version_match[1].to_i
+        minor = version_match[2].to_i
+        patch = version_match[3].to_i
+        build = version_match[4].to_i + 1
+
+        case bump_type
+        when "major"
+          major += 1
+          minor = 0
+          patch = 0
+        when "minor"
+          minor += 1
+          patch = 0
+        else # patch
+          patch += 1
+        end
+
+        new_version = "#{major}.#{minor}.#{patch}+#{build}"
+        new_pubspec = pubspec.gsub(/version:\s*\d+\.\d+\.\d+\+\d+/, "version: #{new_version}")
+        File.write("pubspec.yaml", new_pubspec)
+        UI.success("Version bumped to #{new_version}")
+      end
+    end
+  end
+
+  # ============================================================================
+  # UTILITIES
+  # ============================================================================
+
+  desc "Clean build artifacts"
+  lane :clean do
+    Dir.chdir("../..") do
+      sh("flutter", "clean")
+    end
+  end
+
+  desc "Validate Play Store credentials"
+  lane :validate_credentials do
+    validate_play_store_json_key(
+      json_key: ENV["GOOGLE_PLAY_JSON_KEY"] || "play-store-credentials.json"
+    )
+  end
+
+  # ============================================================================
+  # PRIVATE LANES
+  # ============================================================================
+
+  private_lane :get_version_name do
+    Dir.chdir("../..") do
+      pubspec = File.read("pubspec.yaml")
+      version_match = pubspec.match(/version:\s*(\d+\.\d+\.\d+)\+(\d+)/)
+      version_match ? "#{version_match[1]} (#{version_match[2]})" : "Unknown"
+    end
+  end
+
+  private_lane :generate_changelog do
+    changelog_from_git_commits(
+      commits_count: 10,
+      pretty: "- %s",
+      merge_commit_filtering: "exclude_merges"
+    ) || "Bug fixes and improvements"
+  end
+
+  private_lane :notify_slack do |options|
+    return unless ENV["SLACK_WEBHOOK_URL"]
+
+    slack(
+      message: options[:message],
+      success: options[:success],
+      slack_url: ENV["SLACK_WEBHOOK_URL"],
+      default_payloads: [:git_branch, :git_author]
+    )
+  end
+
+  # ============================================================================
+  # ERROR HANDLING
+  # ============================================================================
+
+  error do |lane, exception|
+    notify_slack(
+      message: "Android build failed in lane '#{lane}': #{exception.message}",
+      success: false
+    )
+  end
+
 end

@@ -1,0 +1,421 @@
+---
+sidebar_position: 1
+title: FERPA Compliance
+description: Family Educational Rights and Privacy Act compliance guide
+---
+
+# FERPA Compliance
+
+The Family Educational Rights and Privacy Act (FERPA) protects the privacy of student education records. AIVO is designed to help educational institutions maintain FERPA compliance.
+
+## FERPA Overview
+
+| Requirement                    | AIVO Implementation            |
+| ------------------------------ | ------------------------------ |
+| Student consent for disclosure | Configurable consent workflows |
+| Directory information controls | Granular data classification   |
+| Access to education records    | Student/parent portals         |
+| Amendment rights               | Self-service data correction   |
+| Disclosure logging             | Complete audit trails          |
+| Minimum necessary standard     | Role-based access controls     |
+
+## Education Records
+
+### What FERPA Protects
+
+Education records under FERPA include any records directly related to a student that are maintained by an educational institution:
+
+```javascript
+// AIVO classifies data according to FERPA categories
+const dataClassification = {
+  educationRecords: {
+    grades: 'protected',
+    assessmentScores: 'protected',
+    progressReports: 'protected',
+    enrollmentStatus: 'protected',
+    disciplinaryRecords: 'protected',
+  },
+  directoryInformation: {
+    name: 'directory', // May be disclosed without consent
+    email: 'directory',
+    gradeLevel: 'directory',
+    enrollmentDates: 'directory',
+  },
+  excludedRecords: {
+    solelyPossessed: 'excluded', // Teacher's personal notes
+    lawEnforcement: 'excluded',
+    employmentRecords: 'excluded',
+    medicalRecords: 'excluded',
+  },
+};
+```
+
+### Data Access Controls
+
+```javascript
+// Configure FERPA-compliant access controls
+await aivo.admin.updateAccessPolicy({
+  educationRecords: {
+    // Who can access protected records
+    allowedRoles: ['teacher', 'administrator', 'counselor'],
+
+    // Legitimate educational interest required
+    requireJustification: true,
+
+    // Log all access
+    auditAllAccess: true,
+
+    // Restrict to assigned students only
+    scopeToAssignment: true,
+  },
+});
+```
+
+## Consent Management
+
+### Obtaining Consent
+
+Before disclosing education records to third parties, obtain written consent:
+
+```javascript
+// Create consent request
+const consent = await aivo.consent.create({
+  studentId: 'stu_123',
+  type: 'disclosure',
+  purpose: 'Share progress with tutoring service',
+  recipientOrganization: 'TutorCo Inc.',
+  recordTypes: ['grades', 'progress_reports'],
+  duration: 365, // days
+});
+
+// Send consent form to student/parent
+await aivo.consent.sendRequest(consent.id, {
+  recipientEmail: 'parent@example.com',
+  method: 'email',
+  includeRecordSample: true,
+});
+```
+
+### Consent Response
+
+```javascript
+// Response structure
+{
+  "id": "consent_abc123",
+  "status": "granted",
+  "grantedAt": "2024-01-15T10:30:00Z",
+  "grantedBy": "parent@example.com",
+  "signature": "Parent Name",
+  "expiresAt": "2025-01-15T10:30:00Z",
+  "recordTypes": ["grades", "progress_reports"],
+  "recipient": {
+    "organization": "TutorCo Inc.",
+    "purpose": "Share progress with tutoring service"
+  }
+}
+```
+
+### FERPA Exceptions
+
+Certain disclosures don't require consent:
+
+```javascript
+// Configure exception handling
+await aivo.admin.updateFerpaSettings({
+  exceptions: {
+    // School officials with legitimate educational interest
+    schoolOfficials: {
+      enabled: true,
+      requireJustification: true,
+      auditFrequency: 'quarterly',
+    },
+
+    // Directory information (if properly designated)
+    directoryInformation: {
+      enabled: true,
+      optOutPeriod: 30, // days at start of year
+    },
+
+    // Health or safety emergency
+    healthSafetyEmergency: {
+      enabled: true,
+      requireDocumentation: true,
+      notifyStudent: true,
+    },
+
+    // Judicial order or subpoena
+    judicialOrder: {
+      enabled: true,
+      requireNotification: true,
+      notificationDays: 5,
+    },
+  },
+});
+```
+
+## Directory Information
+
+### Designating Directory Information
+
+```javascript
+// Configure what constitutes directory information
+await aivo.admin.updateDirectoryPolicy({
+  includedFields: [
+    'name',
+    'email',
+    'grade_level',
+    'enrollment_status',
+    'participation_activities',
+    'awards_honors',
+  ],
+  excludedFields: ['social_security_number', 'student_id_number', 'grades', 'gpa'],
+
+  // Annual notification requirement
+  notificationSettings: {
+    sendAnnually: true,
+    optOutDeadlineDays: 30,
+    notificationTemplate: 'ferpa_directory_notice',
+  },
+});
+```
+
+### Opt-Out Handling
+
+```javascript
+// Process directory information opt-out
+await aivo.students.updatePrivacySettings(studentId, {
+  directoryInfoOptOut: true,
+  optOutDate: new Date().toISOString(),
+  optOutMethod: 'parent_form',
+});
+
+// Check opt-out status before disclosure
+const canDisclose = await aivo.privacy.checkDirectoryDisclosure(studentId);
+
+if (!canDisclose.allowed) {
+  console.log('Directory disclosure blocked:', canDisclose.reason);
+}
+```
+
+## Access Rights
+
+### Student/Parent Access
+
+Students (and parents of minors) have the right to inspect education records:
+
+```javascript
+// Request access to records
+const accessRequest = await aivo.records.requestAccess({
+  requesterId: 'parent_456',
+  studentId: 'stu_123',
+  recordTypes: ['all'],
+  format: 'pdf',
+});
+
+// Response within 45 days required
+// AIVO targets 5 business days
+
+// Generate comprehensive record export
+const records = await aivo.records.export({
+  studentId: 'stu_123',
+  includeTypes: ['enrollment', 'grades', 'assessments', 'progress', 'attendance'],
+  format: 'pdf',
+  watermark: true,
+});
+```
+
+### Amendment Requests
+
+```javascript
+// Submit amendment request
+const amendment = await aivo.records.requestAmendment({
+  studentId: 'stu_123',
+  requesterId: 'parent_456',
+  recordType: 'grade',
+  recordId: 'grade_789',
+  currentValue: 'B',
+  requestedValue: 'B+',
+  justification: 'Calculation error on final exam',
+  supportingDocuments: ['recalculation.pdf'],
+});
+
+// Institution must respond within reasonable time
+// If denied, student has right to hearing
+```
+
+## Audit Logging
+
+### Disclosure Log
+
+FERPA requires maintaining a record of disclosures:
+
+```javascript
+// All disclosures are automatically logged
+const disclosureLog = await aivo.audit.getDisclosures({
+  studentId: 'stu_123',
+  startDate: '2024-01-01',
+  endDate: '2024-12-31',
+});
+
+// Response
+{
+  "disclosures": [
+    {
+      "id": "disc_001",
+      "date": "2024-03-15T14:30:00Z",
+      "recipient": "State Education Department",
+      "recordTypes": ["enrollment", "grades"],
+      "purpose": "State reporting requirement",
+      "legalBasis": "state_law",
+      "disclosedBy": "admin@school.edu"
+    }
+  ],
+  "totalCount": 5
+}
+```
+
+### Access Log
+
+```javascript
+// View all access to student records
+const accessLog = await aivo.audit.getRecordAccess({
+  studentId: 'stu_123',
+  startDate: '2024-01-01',
+  endDate: '2024-12-31',
+  includeViews: true,
+  includeExports: true,
+  includeModifications: true,
+});
+```
+
+## School Official Access
+
+### Legitimate Educational Interest
+
+```javascript
+// Define legitimate educational interest criteria
+await aivo.admin.updateAccessPolicy({
+  legitimateEducationalInterest: {
+    criteria: [
+      'performing_instructional_duties',
+      'performing_administrative_duties',
+      'performing_supervisory_duties',
+      'providing_student_services',
+    ],
+
+    // Require acknowledgment
+    requireAcknowledgment: true,
+    acknowledgmentFrequency: 'annually',
+
+    // Scope access appropriately
+    scopeRules: {
+      teachers: 'enrolled_students_only',
+      counselors: 'assigned_students_only',
+      administrators: 'school_students_only',
+    },
+  },
+});
+```
+
+### Contractor Access
+
+```javascript
+// Configure contractor access (school official exception)
+await aivo.admin.addContractor({
+  organization: 'AIVO Platform',
+  contractId: 'contract_123',
+  ferpaDesignation: 'school_official',
+
+  // Direct control criteria
+  directControl: true,
+  dataUseLimitation: 'educational_purposes_only',
+
+  // No re-disclosure
+  reDisclosureProhibited: true,
+
+  // Access scope
+  allowedRecordTypes: ['progress', 'assessments'],
+
+  // Annual review required
+  reviewDate: '2025-01-15',
+});
+```
+
+## Parental Rights Transfer
+
+When a student turns 18 or attends postsecondary school:
+
+```javascript
+// Transfer rights to student
+await aivo.students.transferRights({
+  studentId: 'stu_123',
+  reason: 'age_18',
+  effectiveDate: '2024-09-01',
+
+  // Optionally maintain parent access with consent
+  parentAccessWithConsent: true,
+});
+
+// After transfer, only student can:
+// - Access records
+// - Provide consent for disclosure
+// - Request amendments
+```
+
+## Implementation Checklist
+
+### Before Launch
+
+- [ ] Designate FERPA compliance officer
+- [ ] Define education records vs. directory information
+- [ ] Configure access control policies
+- [ ] Set up consent management workflows
+- [ ] Implement audit logging
+- [ ] Train staff on FERPA requirements
+- [ ] Publish annual FERPA notification
+
+### Ongoing Compliance
+
+- [ ] Send annual FERPA notification
+- [ ] Process opt-out requests within deadline
+- [ ] Respond to access requests within 45 days
+- [ ] Review and update contractor agreements
+- [ ] Conduct periodic access audits
+- [ ] Update directory information designations
+- [ ] Document all disclosure exceptions
+
+### Technical Requirements
+
+- [ ] Encrypt education records at rest and in transit
+- [ ] Implement role-based access controls
+- [ ] Enable comprehensive audit logging
+- [ ] Secure authentication (MFA for staff)
+- [ ] Data backup and disaster recovery
+- [ ] Incident response procedures
+
+## Compliance Reports
+
+```javascript
+// Generate FERPA compliance report
+const report = await aivo.admin.generateComplianceReport({
+  type: 'ferpa',
+  period: 'annual',
+  includeMetrics: [
+    'access_requests_processed',
+    'amendment_requests',
+    'disclosures_made',
+    'consent_obtained',
+    'opt_out_requests',
+  ],
+});
+
+// Export for compliance review
+const pdf = await report.export('pdf');
+```
+
+## Resources
+
+- [Department of Education FERPA Page](https://studentprivacy.ed.gov/)
+- [FERPA Regulations (34 CFR Part 99)](https://www.ecfr.gov/current/title-34/subtitle-A/part-99)
+- [PTAC FERPA Guidance](https://studentprivacy.ed.gov/resources)
+- [AIVO FERPA Policy](https://aivo.edu/legal/ferpa)

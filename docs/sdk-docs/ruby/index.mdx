@@ -1,0 +1,598 @@
+---
+sidebar_position: 1
+title: Ruby SDK
+description: Official Ruby SDK for the AIVO API
+---
+
+# Ruby SDK
+
+The official Ruby SDK for the AIVO API provides an idiomatic Ruby interface for integrating AIVO into your Ruby applications.
+
+## Installation
+
+Add to your Gemfile:
+
+```ruby
+gem 'aivo', '~> 1.0'
+```
+
+Then run:
+
+```bash
+bundle install
+```
+
+Or install directly:
+
+```bash
+gem install aivo
+```
+
+## Quick Start
+
+```ruby
+require 'aivo'
+
+# Configure the client
+Aivo.configure do |config|
+  config.api_key = ENV['AIVO_API_KEY']
+  config.environment = :production # or :sandbox
+end
+
+# Create a client instance
+client = Aivo::Client.new
+
+# Create a user
+user = client.users.create(
+  email: 'student@example.com',
+  name: 'Alex Student',
+  role: 'student'
+)
+
+puts "Created user: #{user.id}"
+```
+
+## Configuration
+
+### Global Configuration
+
+```ruby
+Aivo.configure do |config|
+  # Required
+  config.api_key = ENV['AIVO_API_KEY']
+
+  # Optional
+  config.environment = :production
+  config.api_version = 'v1'
+  config.timeout = 30
+  config.open_timeout = 10
+  config.retry_count = 3
+  config.logger = Rails.logger
+end
+```
+
+### Per-Request Configuration
+
+```ruby
+# Override settings for specific requests
+client = Aivo::Client.new(
+  api_key: 'different_key',
+  timeout: 60
+)
+```
+
+### Environment Variables
+
+```bash
+export AIVO_API_KEY="aivo_sk_live_..."
+export AIVO_ENVIRONMENT="production"
+export AIVO_API_VERSION="v1"
+```
+
+## Resources
+
+### Users
+
+```ruby
+# List users with pagination
+users = client.users.list(page: 1, per_page: 20, role: 'student')
+
+users.data.each do |user|
+  puts "#{user.name} (#{user.email})"
+end
+
+puts "Total: #{users.pagination.total}"
+
+# Get a specific user
+user = client.users.retrieve('usr_123')
+
+# Create a user
+user = client.users.create(
+  email: 'student@example.com',
+  name: 'Alex Student',
+  role: 'student',
+  metadata: { grade: '10', school_id: 'sch_456' }
+)
+
+# Update a user
+user = client.users.update('usr_123',
+  name: 'Alexander Student',
+  metadata: { grade: '11' }
+)
+
+# Delete a user
+client.users.delete('usr_123')
+```
+
+### Lessons
+
+```ruby
+# List lessons
+lessons = client.lessons.list(
+  status: 'published',
+  subject: 'mathematics',
+  grade_level: ['9', '10'],
+  page: 1
+)
+
+# Get lesson with content
+lesson = client.lessons.retrieve('les_123', expand: ['content', 'author'])
+
+# Create a lesson
+lesson = client.lessons.create(
+  title: 'Introduction to Algebra',
+  description: 'Learn the basics of algebraic expressions',
+  subject: 'mathematics',
+  grade_level: '9',
+  content_blocks: [
+    {
+      type: 'text',
+      content: 'Algebra is the study of...'
+    },
+    {
+      type: 'video',
+      url: 'https://videos.aivo.edu/algebra-intro.mp4',
+      duration: 300
+    }
+  ]
+)
+
+# Publish a lesson
+lesson = client.lessons.publish('les_123')
+
+# Archive a lesson
+lesson = client.lessons.archive('les_123')
+```
+
+### Courses
+
+```ruby
+# List courses
+courses = client.courses.list(status: 'active')
+
+# Get course with lessons
+course = client.courses.retrieve('crs_123', expand: ['lessons', 'enrollments'])
+
+# Create a course
+course = client.courses.create(
+  title: 'Algebra Fundamentals',
+  description: 'Complete algebra course for beginners',
+  subject: 'mathematics',
+  lesson_ids: ['les_123', 'les_456', 'les_789']
+)
+
+# Enroll a user
+enrollment = client.courses.enroll('crs_123',
+  user_id: 'usr_456',
+  role: 'student'
+)
+
+# Get course progress
+progress = client.courses.get_progress('crs_123', user_id: 'usr_456')
+```
+
+### Assessments
+
+```ruby
+# List assessments
+assessments = client.assessments.list(lesson_id: 'les_123')
+
+# Create an assessment
+assessment = client.assessments.create(
+  title: 'Algebra Quiz 1',
+  lesson_id: 'les_123',
+  time_limit: 1800, # 30 minutes
+  passing_score: 70,
+  questions: [
+    {
+      type: 'multiple_choice',
+      question: 'What is 2x + 3 = 7? Solve for x.',
+      options: ['x = 1', 'x = 2', 'x = 3', 'x = 4'],
+      correct_answer: 1,
+      points: 10
+    },
+    {
+      type: 'short_answer',
+      question: 'Define a variable in algebra.',
+      points: 10
+    }
+  ]
+)
+
+# Submit an attempt
+result = client.assessments.submit_attempt('asmt_123',
+  user_id: 'usr_456',
+  answers: [
+    { question_id: 'q_1', answer: 1 },
+    { question_id: 'q_2', answer: 'A symbol representing an unknown value' }
+  ]
+)
+
+puts "Score: #{result.score}%"
+puts result.passed ? 'Passed!' : 'Try again'
+```
+
+### Progress
+
+```ruby
+# Get user progress
+progress = client.progress.get_user_progress('usr_123')
+
+# Get lesson progress
+lesson_progress = client.progress.get_lesson_progress('usr_123', lesson_id: 'les_456')
+
+# Update progress
+client.progress.update('usr_123',
+  lesson_id: 'les_456',
+  status: 'completed',
+  score: 95,
+  time_spent: 1800
+)
+```
+
+### Analytics
+
+```ruby
+# Get user analytics
+analytics = client.analytics.get_user_analytics('usr_123',
+  start_date: 30.days.ago.to_date,
+  end_date: Date.today,
+  metrics: ['time_spent', 'lessons_completed', 'assessment_scores']
+)
+
+# Get course analytics
+course_analytics = client.analytics.get_course_analytics('crs_123',
+  start_date: 30.days.ago.to_date,
+  end_date: Date.today
+)
+
+# Get organization analytics
+org_analytics = client.analytics.get_organization_analytics(
+  start_date: 30.days.ago.to_date,
+  end_date: Date.today,
+  group_by: 'week'
+)
+```
+
+## Error Handling
+
+```ruby
+begin
+  user = client.users.retrieve('usr_invalid')
+rescue Aivo::NotFoundError => e
+  puts "User not found: #{e.message}"
+rescue Aivo::ValidationError => e
+  puts "Validation failed: #{e.message}"
+  e.errors.each do |error|
+    puts "  #{error[:field]}: #{error[:message]}"
+  end
+rescue Aivo::AuthenticationError => e
+  puts "Authentication failed: #{e.message}"
+rescue Aivo::RateLimitError => e
+  puts "Rate limited. Retry after: #{e.retry_after} seconds"
+rescue Aivo::APIError => e
+  puts "API error: #{e.message} (#{e.code})"
+rescue Aivo::Error => e
+  puts "General error: #{e.message}"
+end
+```
+
+### Custom Error Handler
+
+```ruby
+Aivo.configure do |config|
+  config.error_handler = lambda do |error|
+    Rails.logger.error("AIVO API Error: #{error.message}")
+    Sentry.capture_exception(error)
+  end
+end
+```
+
+## Webhooks
+
+### Signature Verification
+
+```ruby
+# In your webhook controller
+class WebhooksController < ApplicationController
+  skip_before_action :verify_authenticity_token
+
+  def aivo
+    payload = request.body.read
+    signature = request.headers['X-AIVO-Signature']
+    timestamp = request.headers['X-AIVO-Timestamp']
+
+    begin
+      event = Aivo::Webhook.construct_event(
+        payload: payload,
+        signature: signature,
+        timestamp: timestamp,
+        secret: ENV['AIVO_WEBHOOK_SECRET']
+      )
+
+      handle_event(event)
+      head :ok
+    rescue Aivo::Webhook::SignatureVerificationError => e
+      head :bad_request
+    end
+  end
+
+  private
+
+  def handle_event(event)
+    case event.type
+    when 'lesson.completed'
+      handle_lesson_completed(event.data)
+    when 'assessment.submitted'
+      handle_assessment_submitted(event.data)
+    when 'user.created'
+      handle_user_created(event.data)
+    else
+      Rails.logger.info("Unhandled event type: #{event.type}")
+    end
+  end
+
+  def handle_lesson_completed(data)
+    # Process lesson completion
+  end
+
+  def handle_assessment_submitted(data)
+    # Process assessment submission
+  end
+
+  def handle_user_created(data)
+    # Process user creation
+  end
+end
+```
+
+## Rails Integration
+
+### Initializer
+
+Create `config/initializers/aivo.rb`:
+
+```ruby
+Aivo.configure do |config|
+  config.api_key = Rails.application.credentials.aivo[:api_key]
+  config.environment = Rails.env.production? ? :production : :sandbox
+  config.logger = Rails.logger
+  config.timeout = 30
+
+  # Retry configuration
+  config.retry_count = 3
+  config.retry_delay = 1 # seconds
+end
+```
+
+### Service Object Pattern
+
+```ruby
+# app/services/aivo_service.rb
+class AivoService
+  def initialize
+    @client = Aivo::Client.new
+  end
+
+  def sync_user(user)
+    aivo_user = find_or_create_aivo_user(user)
+    user.update!(aivo_id: aivo_user.id)
+    aivo_user
+  end
+
+  def enroll_in_course(user, course_id)
+    @client.courses.enroll(course_id, user_id: user.aivo_id)
+  end
+
+  def get_progress(user)
+    @client.progress.get_user_progress(user.aivo_id)
+  end
+
+  private
+
+  def find_or_create_aivo_user(user)
+    if user.aivo_id.present?
+      @client.users.retrieve(user.aivo_id)
+    else
+      @client.users.create(
+        email: user.email,
+        name: user.name,
+        role: 'student',
+        metadata: { local_id: user.id }
+      )
+    end
+  rescue Aivo::NotFoundError
+    @client.users.create(
+      email: user.email,
+      name: user.name,
+      role: 'student',
+      metadata: { local_id: user.id }
+    )
+  end
+end
+```
+
+### Active Job Integration
+
+```ruby
+# app/jobs/sync_progress_job.rb
+class SyncProgressJob < ApplicationJob
+  queue_as :default
+
+  def perform(user_id)
+    user = User.find(user_id)
+    service = AivoService.new
+    progress = service.get_progress(user)
+
+    user.update!(
+      lessons_completed: progress.lessons_completed,
+      total_time_spent: progress.total_time_spent,
+      last_synced_at: Time.current
+    )
+  end
+end
+```
+
+## Pagination
+
+```ruby
+# Iterate through all pages
+client.users.list.auto_paging_each do |user|
+  puts user.name
+end
+
+# Or collect all
+all_users = client.users.list.auto_paging_each.to_a
+
+# Manual pagination
+page = client.users.list(page: 1, per_page: 100)
+
+while page.pagination.has_more
+  page.data.each { |user| process(user) }
+  page = client.users.list(
+    page: page.pagination.current_page + 1,
+    per_page: 100
+  )
+end
+```
+
+## Testing
+
+### RSpec Integration
+
+```ruby
+# spec/spec_helper.rb
+require 'aivo/testing'
+
+RSpec.configure do |config|
+  config.include Aivo::Testing::Helpers
+
+  config.before(:each) do
+    Aivo::Testing.mock!
+  end
+
+  config.after(:each) do
+    Aivo::Testing.reset!
+  end
+end
+```
+
+### Mocking Responses
+
+```ruby
+# spec/services/aivo_service_spec.rb
+RSpec.describe AivoService do
+  describe '#sync_user' do
+    it 'creates user in AIVO' do
+      stub_aivo_request(:post, '/users')
+        .to_return(status: 200, body: {
+          id: 'usr_123',
+          email: 'test@example.com',
+          name: 'Test User'
+        }.to_json)
+
+      user = create(:user)
+      service = AivoService.new
+      aivo_user = service.sync_user(user)
+
+      expect(aivo_user.id).to eq('usr_123')
+      expect(user.reload.aivo_id).to eq('usr_123')
+    end
+  end
+end
+```
+
+### VCR Integration
+
+```ruby
+# spec/spec_helper.rb
+require 'vcr'
+
+VCR.configure do |config|
+  config.cassette_library_dir = 'spec/cassettes'
+  config.hook_into :webmock
+  config.filter_sensitive_data('<AIVO_API_KEY>') { ENV['AIVO_API_KEY'] }
+  config.configure_rspec_metadata!
+end
+
+# Usage in specs
+RSpec.describe 'AIVO Integration', :vcr do
+  it 'fetches lessons' do
+    lessons = client.lessons.list
+    expect(lessons.data).not_to be_empty
+  end
+end
+```
+
+## Logging
+
+```ruby
+# Enable detailed logging
+Aivo.configure do |config|
+  config.logger = Logger.new(STDOUT)
+  config.log_level = :debug
+end
+
+# Custom logger
+class AivoLogger
+  def info(message)
+    Rails.logger.info("[AIVO] #{message}")
+  end
+
+  def debug(message)
+    Rails.logger.debug("[AIVO] #{message}")
+  end
+
+  def error(message)
+    Rails.logger.error("[AIVO] #{message}")
+    Sentry.capture_message(message, level: :error)
+  end
+end
+
+Aivo.configure do |config|
+  config.logger = AivoLogger.new
+end
+```
+
+## Thread Safety
+
+The AIVO Ruby SDK is thread-safe. Each client instance maintains its own connection pool:
+
+```ruby
+# Safe to use in multi-threaded environments
+threads = 10.times.map do
+  Thread.new do
+    client = Aivo::Client.new
+    client.users.list
+  end
+end
+
+threads.each(&:join)
+```
+
+## Resources
+
+- [API Reference](/api-reference)
+- [Ruby SDK on GitHub](https://github.com/aivo-edu/aivo-ruby)
+- [RubyGems Package](https://rubygems.org/gems/aivo)
+- [Changelog](https://github.com/aivo-edu/aivo-ruby/blob/main/CHANGELOG.md)
