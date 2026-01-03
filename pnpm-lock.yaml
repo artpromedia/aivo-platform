@@ -1885,8 +1885,8 @@ importers:
   services/embedded-tools-svc:
     dependencies:
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/helmet':
         specifier: ^11.1.1
         version: 11.1.1
@@ -2928,8 +2928,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ts-rbac
       '@fastify/cors':
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^8.5.0
+        version: 8.5.0
       '@fastify/helmet':
         specifier: ^11.1.1
         version: 11.1.1
