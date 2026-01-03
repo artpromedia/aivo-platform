@@ -4,7 +4,7 @@
  * Business logic for managing goals and objectives.
  */
 
-import { prisma } from '../prisma.js';
+import { prisma, toJsonValue } from '../prisma.js';
 import type {
   CreateGoalInput,
   UpdateGoalInput,
@@ -31,7 +31,7 @@ export async function createGoal(input: CreateGoalInput) {
       startDate: input.startDate ?? new Date(),
       targetDate: input.targetDate,
       status: input.status ?? 'DRAFT',
-      metadataJson: input.metadataJson ?? {},
+      metadataJson: toJsonValue(input.metadataJson ?? {}),
     },
     include: {
       objectives: true,
@@ -134,7 +134,7 @@ export async function updateGoal(id: string, tenantId: string, input: UpdateGoal
       ...(input.targetDate !== undefined && { targetDate: input.targetDate }),
       ...(input.status !== undefined && { status: input.status }),
       ...(input.progressRating !== undefined && { progressRating: input.progressRating }),
-      ...(input.metadataJson !== undefined && { metadataJson: input.metadataJson ?? {} }),
+      ...(input.metadataJson !== undefined && { metadataJson: toJsonValue(input.metadataJson ?? {}) }),
     },
     include: {
       objectives: {

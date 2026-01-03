@@ -55,7 +55,7 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
         ...request.body as object,
         tenantId: ctx.tenantId,
         createdByUserId: ctx.userId,
-      });
+      }) as Parameters<typeof progressNoteService.createProgressNote>[0];
 
       const note = await progressNoteService.createProgressNote(body);
 

@@ -323,7 +323,7 @@ export function formatFileSize(
 /**
  * Format duration in milliseconds to human-readable
  */
-export function formatDuration(
+export function formatDurationMs(
   milliseconds: number,
   locale: SupportedLocale,
   options: { style?: 'long' | 'short' | 'narrow' } = {}

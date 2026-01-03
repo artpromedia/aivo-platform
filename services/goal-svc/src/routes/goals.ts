@@ -64,7 +64,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
         ...request.body as object,
         tenantId: ctx.tenantId,
         createdByUserId: ctx.userId,
-      });
+      }) as Parameters<typeof goalService.createGoal>[0];
 
       const goal = await goalService.createGoal(body);
 
@@ -230,7 +230,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       const body = CreateObjectiveSchema.parse({
         ...request.body as object,
         goalId,
-      });
+      }) as Parameters<typeof goalService.createObjective>[0];
 
       const objective = await goalService.createObjective(body, ctx.tenantId);
 

@@ -4,7 +4,7 @@
  * Business logic for managing session plans and items.
  */
 
-import { prisma } from '../prisma.js';
+import { prisma, toJsonValue } from '../prisma.js';
 import type {
   CreateSessionPlanInput,
   UpdateSessionPlanInput,
@@ -28,7 +28,7 @@ export async function createSessionPlan(input: CreateSessionPlanInput) {
       estimatedDurationMinutes: input.estimatedDurationMinutes,
       sessionType: input.sessionType ?? 'LEARNING',
       status: input.status ?? 'DRAFT',
-      metadataJson: input.metadataJson ?? {},
+      metadataJson: toJsonValue(input.metadataJson ?? {}),
       items: input.items
         ? {
             create: input.items.map((item, index) => ({
@@ -39,7 +39,7 @@ export async function createSessionPlan(input: CreateSessionPlanInput) {
               activityType: item.activityType,
               activityDescription: item.activityDescription,
               estimatedDurationMinutes: item.estimatedDurationMinutes,
-              aiMetadataJson: item.aiMetadataJson ?? {},
+              aiMetadataJson: toJsonValue(item.aiMetadataJson ?? {}),
             })),
           }
         : undefined,
@@ -158,7 +158,7 @@ export async function updateSessionPlan(id: string, tenantId: string, input: Upd
       ...(input.sessionType !== undefined && { sessionType: input.sessionType }),
       ...(input.status !== undefined && { status: input.status }),
       ...(input.sessionId !== undefined && { sessionId: input.sessionId }),
-      ...(input.metadataJson !== undefined && { metadataJson: input.metadataJson ?? {} }),
+      ...(input.metadataJson !== undefined && { metadataJson: toJsonValue(input.metadataJson ?? {}) }),
     },
     include: {
       items: {
@@ -217,7 +217,7 @@ export async function addSessionPlanItem(
       activityType: input.activityType,
       activityDescription: input.activityDescription,
       estimatedDurationMinutes: input.estimatedDurationMinutes,
-      aiMetadataJson: input.aiMetadataJson ?? {},
+      aiMetadataJson: toJsonValue(input.aiMetadataJson ?? {}),
     },
   });
 
@@ -252,7 +252,7 @@ export async function replaceSessionPlanItems(
           activityType: item.activityType,
           activityDescription: item.activityDescription,
           estimatedDurationMinutes: item.estimatedDurationMinutes,
-          aiMetadataJson: item.aiMetadataJson ?? {},
+          aiMetadataJson: toJsonValue(item.aiMetadataJson ?? {}),
         },
       })
     ),

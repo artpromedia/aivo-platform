@@ -56,7 +56,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
         ...request.body as object,
         tenantId: ctx.tenantId,
         createdByUserId: ctx.userId,
-      });
+      }) as Parameters<typeof sessionPlanService.createSessionPlan>[0];
 
       const sessionPlan = await sessionPlanService.createSessionPlan(body);
 
@@ -278,7 +278,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
     ) => {
       const ctx = getTenantContext(request);
       const { planId } = request.params;
-      const body = CreateSessionPlanItemSchema.parse(request.body);
+      const body = CreateSessionPlanItemSchema.parse(request.body) as Parameters<typeof sessionPlanService.addSessionPlanItem>[2];
 
       const item = await sessionPlanService.addSessionPlanItem(planId, ctx.tenantId, body);
 
@@ -306,7 +306,7 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       const { planId } = request.params;
       const { items } = request.body;
 
-      const parsedItems = items.map((item) => CreateSessionPlanItemSchema.parse(item));
+      const parsedItems = items.map((item) => CreateSessionPlanItemSchema.parse(item)) as Parameters<typeof sessionPlanService.replaceSessionPlanItems>[2];
 
       const sessionPlan = await sessionPlanService.replaceSessionPlanItems(planId, ctx.tenantId, parsedItems);
 
