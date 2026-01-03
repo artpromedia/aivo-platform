@@ -5,9 +5,10 @@
  * Integrates with Prisma to filter content at the database level.
  */
 
-import type { Prisma } from '@prisma/client';
-import type { SensoryProfile, SensoryContentFilter } from '@aivo/ts-shared';
+import type { Prisma } from '../prisma-types.js';
+import type { SensoryProfile, SensoryContentFilter } from './sensory-compat-types.js';
 import { isHighSensitivity, isVeryHighSensitivity } from '@aivo/ts-shared';
+import { getSensitivityLevel } from './sensory-compat-types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

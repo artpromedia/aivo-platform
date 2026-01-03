@@ -4,7 +4,7 @@
  * Tracking and management of sensory-related incidents.
  */
 
-import type { Prisma, SensoryIncident as PrismaSensoryIncident } from '@prisma/client';
+import type { Prisma, SensoryIncident as PrismaSensoryIncident } from '../prisma-types.js';
 import { prisma } from '../prisma.js';
 import type {
   CreateSensoryIncidentInput,

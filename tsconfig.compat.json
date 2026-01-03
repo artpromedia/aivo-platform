@@ -1,12 +1,17 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
     "exactOptionalPropertyTypes": false,
     "verbatimModuleSyntax": false,
     "noUncheckedIndexedAccess": false,
     "useUnknownInCatchVariables": false,
+    "skipLibCheck": true,
     "moduleResolution": "bundler",
     "module": "ESNext"
   }

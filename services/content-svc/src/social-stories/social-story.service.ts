@@ -10,7 +10,7 @@ import type {
   SocialStoryCategory,
   SocialStoryReadingLevel,
   LearningObjectGradeBand,
-} from '@prisma/client';
+} from '../prisma-types.js';
 
 import { prisma } from '../prisma.js';
 

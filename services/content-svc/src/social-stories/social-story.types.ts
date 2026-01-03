@@ -6,13 +6,13 @@
  * visual narratives supporting neurodiverse learners.
  */
 
-// Re-export enums from Prisma client
+// Re-export enums from local prisma types
 export {
   SocialStoryCategory,
   SocialStoryReadingLevel,
   SocialStoryVisualStyle,
   LearningObjectGradeBand,
-} from '@prisma/client';
+} from '../prisma-types.js';
 
 // Import for local use in type definitions
 import type {
@@ -20,7 +20,7 @@ import type {
   SocialStoryReadingLevel as SocialStoryReadingLevelType,
   SocialStoryVisualStyle as SocialStoryVisualStyleType,
   LearningObjectGradeBand as LearningObjectGradeBandType,
-} from '@prisma/client';
+} from '../prisma-types.js';
 
 /** Trigger types for when a social story should be shown */
 export enum StoryTriggerType {

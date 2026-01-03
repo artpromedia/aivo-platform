@@ -5,7 +5,7 @@
  * Used by AI orchestrator (Lesson Planner agent) and teacher planning tools.
  */
 
-import type { LearningObjectSubject, LearningObjectGradeBand } from '@prisma/client';
+import type { LearningObjectSubject, LearningObjectGradeBand } from './prisma-types.js';
 
 import { searchContent, getRecentlyUsedLOIds, type SearchResult } from './search.js';
 

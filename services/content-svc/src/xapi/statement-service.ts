@@ -633,12 +633,12 @@ export class XapiStatementService {
    * Create and optionally store a statement
    */
   async createStatement(
-    statement: Omit<XapiStatement, 'id' | 'stored'>,
+    statement: Omit<XapiStatement, 'id' | 'stored'> & { id?: string },
     options: StoreOptions = {}
   ): Promise<XapiStatement> {
     const fullStatement: XapiStatement = {
       ...statement,
-      id: options.addId !== false ? randomUUID() : statement.id,
+      id: options.addId !== false ? randomUUID() : (statement.id ?? randomUUID()),
       timestamp:
         options.addTimestamp !== false && !statement.timestamp
           ? new Date().toISOString()

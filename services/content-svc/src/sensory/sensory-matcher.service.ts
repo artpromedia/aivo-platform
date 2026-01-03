@@ -5,13 +5,15 @@
  * based on learner sensory profiles.
  */
 
+// Use local compat types that match the implementation
 import type {
   SensoryProfile,
   ContentSensoryMetadata,
   SensoryMatchResult,
   SensoryWarning,
   ContentAdaptation,
-} from '@aivo/ts-shared';
+  SensorySensitivity,
+} from './sensory-compat-types';
 
 import {
   isHighSensitivity,
@@ -22,6 +24,13 @@ import {
   TIME_MULTIPLIERS,
   TEXT_SCALES,
 } from '@aivo/ts-shared';
+
+// Helper to get numeric sensitivity level
+function getSensitivityLevel(sensitivity: SensorySensitivity | undefined): number {
+  if (sensitivity === undefined) return 5;
+  if (typeof sensitivity === 'number') return sensitivity;
+  return sensitivity.level ?? 5;
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

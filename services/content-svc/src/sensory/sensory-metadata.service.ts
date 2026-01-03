@@ -4,7 +4,7 @@
  * CRUD operations for content sensory metadata.
  */
 
-import type { Prisma, ContentSensoryMetadata as PrismaContentSensoryMetadata } from '@prisma/client';
+import type { Prisma, ContentSensoryMetadata as PrismaContentSensoryMetadata } from '../prisma-types.js';
 import { prisma } from '../prisma.js';
 import type {
   CreateSensoryMetadataInput,
