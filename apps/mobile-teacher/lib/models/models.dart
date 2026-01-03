@@ -11,3 +11,6 @@ export 'class_group.dart';
 export 'sync_operation.dart';
 export 'teacher_profile.dart';
 export 'analytics.dart';
+export 'assignment.dart';
+export 'grade.dart';
+export 'integration.dart';

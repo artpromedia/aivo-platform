@@ -361,6 +361,242 @@ class TeacherLocalDatabase {
     return [];
   }
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // ASSIGNMENTS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get all assignments.
+  Future<List<Assignment>> getAssignments() async {
+    final cached = await _db.getAllContentByType('assignment');
+    return cached
+        .map((c) => Assignment.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Get an assignment by ID.
+  Future<Assignment?> getAssignment(String id) async {
+    final cached = await _db.getContent(id);
+    if (cached == null || cached.contentType != 'assignment') return null;
+    return Assignment.fromJson(jsonDecode(cached.jsonPayload) as Map<String, dynamic>);
+  }
+
+  /// Get assignments by class ID.
+  Future<List<Assignment>> getAssignmentsByClass(String classId) async {
+    final all = await getAssignments();
+    return all.where((a) => a.classId == classId).toList();
+  }
+
+  /// Cache assignments.
+  Future<void> cacheAssignments(List<Assignment> assignments) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
+    for (final assignment in assignments) {
+      final jsonData = jsonEncode(assignment.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: assignment.id,
+        contentType: 'assignment',
+        subject: 'grades',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
+      ));
+    }
+  }
+
+  /// Delete an assignment from cache.
+  Future<void> deleteAssignment(String id) async {
+    await _db.deleteContent(id);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SUBMISSIONS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get submissions for an assignment.
+  Future<List<Submission>> getSubmissions(String assignmentId) async {
+    final cached = await _db.getAllContentByType('submission');
+    return cached
+        .map((c) => Submission.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
+        .where((s) => s.assignmentId == assignmentId)
+        .toList();
+  }
+
+  /// Get a submission by ID.
+  Future<Submission?> getSubmission(String id) async {
+    final cached = await _db.getContent(id);
+    if (cached == null || cached.contentType != 'submission') return null;
+    return Submission.fromJson(jsonDecode(cached.jsonPayload) as Map<String, dynamic>);
+  }
+
+  /// Cache submissions.
+  Future<void> cacheSubmissions(List<Submission> submissions) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
+    for (final submission in submissions) {
+      final jsonData = jsonEncode(submission.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: submission.id,
+        contentType: 'submission',
+        subject: 'grades',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
+      ));
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // GRADES / GRADEBOOK
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get gradebook for a class.
+  Future<Gradebook?> getGradebook(String classId) async {
+    final cached = await _db.getContent('gradebook_$classId');
+    if (cached == null || cached.contentType != 'gradebook') return null;
+    return Gradebook.fromJson(jsonDecode(cached.jsonPayload) as Map<String, dynamic>);
+  }
+
+  /// Cache gradebook.
+  Future<void> cacheGradebook(Gradebook gradebook) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch;
+    final jsonData = jsonEncode(gradebook.toJson());
+    await _db.upsertContent(OfflineContent(
+      contentKey: 'gradebook_${gradebook.classId}',
+      contentType: 'gradebook',
+      subject: 'grades',
+      gradeBand: 'K-12',
+      jsonPayload: jsonData,
+      mediaPathsJson: null,
+      sizeBytes: jsonData.length,
+      expiresAt: expiresAt,
+      createdAt: now,
+      lastAccessedAt: now,
+    ));
+  }
+
+  /// Get grade entries for a student.
+  Future<List<GradeEntry>> getGradesByStudent(String studentId) async {
+    final cached = await _db.getAllContentByType('grade_entry');
+    return cached
+        .map((c) => GradeEntry.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
+        .where((g) => g.studentId == studentId)
+        .toList();
+  }
+
+  /// Get grade entries for an assignment.
+  Future<List<GradeEntry>> getGradesByAssignment(String assignmentId) async {
+    final cached = await _db.getAllContentByType('grade_entry');
+    return cached
+        .map((c) => GradeEntry.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
+        .where((g) => g.assignmentId == assignmentId)
+        .toList();
+  }
+
+  /// Get a specific grade entry.
+  Future<GradeEntry?> getGrade(String studentId, String assignmentId) async {
+    final cached = await _db.getContent('grade_${studentId}_$assignmentId');
+    if (cached == null || cached.contentType != 'grade_entry') return null;
+    return GradeEntry.fromJson(jsonDecode(cached.jsonPayload) as Map<String, dynamic>);
+  }
+
+  /// Cache grade entries.
+  Future<void> cacheGrades(List<GradeEntry> grades) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
+    for (final grade in grades) {
+      final jsonData = jsonEncode(grade.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: 'grade_${grade.studentId}_${grade.assignmentId}',
+        contentType: 'grade_entry',
+        subject: 'grades',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
+      ));
+    }
+  }
+
+  /// Update a grade entry locally (for offline support).
+  Future<GradeEntry> updateGrade(GradeEntry grade) async {
+    await cacheGrades([grade]);
+    return grade;
+  }
+
+  /// Get student grade summary for a class.
+  Future<StudentGrade?> getStudentGrade(String classId, String studentId) async {
+    final cached = await _db.getContent('student_grade_${classId}_$studentId');
+    if (cached == null || cached.contentType != 'student_grade') return null;
+    return StudentGrade.fromJson(jsonDecode(cached.jsonPayload) as Map<String, dynamic>);
+  }
+
+  /// Cache student grade summaries.
+  Future<void> cacheStudentGrades(List<StudentGrade> grades) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch;
+    for (final grade in grades) {
+      final jsonData = jsonEncode(grade.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: 'student_grade_${grade.classId}_${grade.studentId}',
+        contentType: 'student_grade',
+        subject: 'grades',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
+      ));
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ASSIGNMENT CATEGORIES
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get categories for a class.
+  Future<List<AssignmentCategory>> getCategories(String classId) async {
+    final cached = await _db.getAllContentByType('category');
+    return cached
+        .map((c) => AssignmentCategory.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
+        .where((cat) => cat.classId == classId)
+        .toList();
+  }
+
+  /// Cache categories.
+  Future<void> cacheCategories(List<AssignmentCategory> categories) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch;
+    for (final category in categories) {
+      final jsonData = jsonEncode(category.toJson());
+      await _db.upsertContent(OfflineContent(
+        contentKey: category.id,
+        contentType: 'category',
+        subject: 'grades',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
+      ));
+    }
+  }
+
   SyncOperation _queueItemToOperation(OfflineSyncQueueEntry item) {
     final payload = jsonDecode(item.payloadJson) as Map<String, dynamic>;
     return SyncOperation(

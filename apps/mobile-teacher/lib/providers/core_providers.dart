@@ -116,6 +116,34 @@ final classRepositoryProvider = Provider<ClassRepository>((ref) {
   );
 });
 
+/// Assignment repository provider.
+final assignmentRepositoryProvider = Provider<AssignmentRepository>((ref) {
+  return AssignmentRepository(
+    api: ref.watch(apiClientProvider),
+    db: ref.watch(localDatabaseProvider),
+    sync: ref.watch(syncServiceProvider),
+    connectivity: ref.watch(connectivityMonitorProvider),
+  );
+});
+
+/// Grade repository provider.
+final gradeRepositoryProvider = Provider<GradeRepository>((ref) {
+  return GradeRepository(
+    api: ref.watch(apiClientProvider),
+    db: ref.watch(localDatabaseProvider),
+    sync: ref.watch(syncServiceProvider),
+    connectivity: ref.watch(connectivityMonitorProvider),
+  );
+});
+
+/// Integration repository provider.
+final integrationRepositoryProvider = Provider<IntegrationRepository>((ref) {
+  return IntegrationRepository(
+    api: ref.watch(apiClientProvider),
+    connectivity: ref.watch(connectivityMonitorProvider),
+  );
+});
+
 // ============================================================================
 // Connectivity State
 // ============================================================================

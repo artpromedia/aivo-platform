@@ -20,6 +20,10 @@ import '../screens/reports/reports_screen.dart';
 import '../screens/reports/iep_reports_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/offline_settings_screen.dart';
+import '../screens/gradebook/gradebook_screen.dart';
+import '../screens/gradebook/grade_submission_screen.dart';
+import '../screens/assignments/assignment_list_screen.dart';
+import '../screens/assignments/assignment_detail_screen.dart';
 import '../screens/login_screen.dart' show TeacherLoginScreen;
 
 /// Application router.
@@ -122,6 +126,42 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/classes',
       redirect: (context, state) => '/dashboard',
+    ),
+
+    // Gradebook
+    GoRoute(
+      path: '/gradebook/:classId',
+      builder: (context, state) => GradebookScreen(
+        classId: state.pathParameters['classId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/gradebook/:classId/grade/:studentId/:assignmentId',
+      builder: (context, state) => GradeSubmissionScreen(
+        assignmentId: state.pathParameters['assignmentId']!,
+        submissionId: '${state.pathParameters['studentId']}_${state.pathParameters['assignmentId']}',
+      ),
+    ),
+
+    // Assignments
+    GoRoute(
+      path: '/assignments',
+      builder: (context, state) => AssignmentListScreen(
+        classId: state.uri.queryParameters['classId'],
+      ),
+    ),
+    GoRoute(
+      path: '/assignments/:id',
+      builder: (context, state) => AssignmentDetailScreen(
+        assignmentId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/assignments/:assignmentId/submissions/:submissionId',
+      builder: (context, state) => GradeSubmissionScreen(
+        assignmentId: state.pathParameters['assignmentId']!,
+        submissionId: state.pathParameters['submissionId']!,
+      ),
     ),
   ],
   errorBuilder: (context, state) => Scaffold(

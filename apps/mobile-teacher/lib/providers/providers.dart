@@ -10,3 +10,5 @@ export 'iep_provider.dart';
 export 'messages_provider.dart';
 export 'classes_provider.dart';
 export 'sync_provider.dart';
+export 'assignments_provider.dart';
+export 'grades_provider.dart';

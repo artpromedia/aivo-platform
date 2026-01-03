@@ -30,6 +30,14 @@ export 'reports/iep_reports_screen.dart';
 export 'settings/settings_screen.dart';
 export 'settings/offline_settings_screen.dart';
 
+// Gradebook
+export 'gradebook/gradebook_screen.dart';
+export 'gradebook/grade_submission_screen.dart';
+
+// Assignments
+export 'assignments/assignment_list_screen.dart';
+export 'assignments/assignment_detail_screen.dart';
+
 // Legacy screens
 export 'login_screen.dart';
 export 'classes_screen.dart';
