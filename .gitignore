@@ -40,3 +40,16 @@ config/secrets/*.env
 config/secrets/*.key
 !config/secrets/.gitkeep
 !config/secrets/README.md
+
+# Mobile app signing (Android)
+**/android/key.properties
+**/android/app/keystore/
+*.jks
+*.keystore
+
+# Mobile app signing (iOS)
+**/ios/*.mobileprovision
+**/ios/*.p12
+**/ios/fastlane/report.xml
+**/ios/fastlane/Preview.html
+**/ios/fastlane/test_output

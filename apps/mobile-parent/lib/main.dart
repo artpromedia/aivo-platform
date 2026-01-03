@@ -189,16 +189,22 @@ Future<void> main() async {
   await CrashlyticsService.runWithCrashlytics(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Initialize environment configuration
+    EnvConfig.initialize();
+
     // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Initialize Crashlytics (disabled in debug mode)
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+    // Initialize Crashlytics based on flavor config
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+      EnvConfig.flavor.crashReportingEnabled,
+    );
 
-    // Set custom key for app type
+    // Set custom keys for crash context
     await FirebaseCrashlytics.instance.setCustomKey('app_type', 'parent');
+    await FirebaseCrashlytics.instance.setCustomKey('environment', EnvConfig.flavor.displayName);
 
     // Set up background message handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

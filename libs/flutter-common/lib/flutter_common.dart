@@ -64,3 +64,6 @@ export 'crashlytics/crashlytics.dart';
 
 // Firebase Analytics
 export 'analytics/analytics.dart';
+
+// Environment configuration
+export 'config/config.dart';

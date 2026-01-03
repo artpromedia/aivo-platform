@@ -174,17 +174,23 @@ Future<void> main() async {
   await CrashlyticsService.runWithCrashlytics(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Initialize environment configuration
+    EnvConfig.initialize();
+
     // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Initialize Crashlytics (disabled in debug mode)
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+    // Initialize Crashlytics based on flavor config
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+      EnvConfig.flavor.crashReportingEnabled,
+    );
 
-    // Set custom key for child device (COPPA compliant - no personal data)
+    // Set custom keys for crash context (COPPA compliant - no personal data)
     await FirebaseCrashlytics.instance.setCustomKey('is_child_device', true);
     await FirebaseCrashlytics.instance.setCustomKey('app_type', 'learner');
+    await FirebaseCrashlytics.instance.setCustomKey('environment', EnvConfig.flavor.displayName);
 
     // Mark as child device for COPPA compliance
     await BackgroundHandlerConfig.setChildDevice(true);
