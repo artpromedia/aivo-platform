@@ -12,9 +12,17 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
   throw new Error('JWT public key not provided');
 }
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: Number(process.env.PORT || 4006),
-  databaseUrl: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/aivo',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgres://localhost:5432/aivo_dsr'),
   ssl: process.env.PGSSL === 'true',
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
   exportEventLimit: Number(process.env.EXPORT_EVENT_LIMIT || 500),

@@ -1,8 +1,16 @@
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? '4030', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
-  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-analytics-svc',
-  databaseUrl: process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/aivo',
+  jwtSecret: requireEnvInProduction('JWT_SECRET', 'dev-secret-analytics-svc'),
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_analytics'),
   
   // NATS configuration
   nats: {

@@ -10,6 +10,14 @@ function requireEnv(name: string, defaultValue?: string): string {
   return value;
 }
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   // Server
   port: parseInt(process.env.PORT ?? '4070', 10),
@@ -27,8 +35,7 @@ export const config = {
   billingServiceUrl: process.env.BILLING_SERVICE_URL ?? 'http://localhost:4060',
 
   // Database URL (shared with billing-svc or separate)
-  databaseUrl:
-    process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/aivo_billing',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_billing'),
 
   // Default trial days for parent subscriptions
   defaultTrialDays: parseInt(process.env.DEFAULT_TRIAL_DAYS ?? '30', 10),

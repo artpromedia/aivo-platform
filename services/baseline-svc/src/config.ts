@@ -14,10 +14,17 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
   throw new Error('JWT key not provided');
 }
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: Number(process.env.PORT || 4010),
-  databaseUrl:
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_baseline',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_baseline'),
   aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
   aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
   learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4015',

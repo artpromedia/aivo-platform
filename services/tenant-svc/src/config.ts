@@ -2,10 +2,17 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: Number(process.env.PORT || 4002),
-  databaseUrl:
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_tenant',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_tenant'),
   jwtPublicKey: process.env.JWT_PUBLIC_KEY,
   jwtPublicKeyPath: process.env.JWT_PUBLIC_KEY_PATH,
   

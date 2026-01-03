@@ -29,6 +29,14 @@ x-node-service: &node-service
     REDIS_URL: redis://redis:6379
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     OTEL_SERVICE_NAME: ${SERVICE_NAME:-aivo-service}
+  deploy:
+    resources:
+      limits:
+        cpus: '1.0'
+        memory: 512M
+      reservations:
+        cpus: '0.25'
+        memory: 128M
 
 x-healthcheck-defaults: &healthcheck-defaults
   interval: 30s
@@ -70,6 +78,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
   redis:
     image: redis:7-alpine
@@ -84,6 +100,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   nats:
     image: nats:2.10-alpine
@@ -101,6 +125,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
 
   # ════════════════════════════════════════════════════════════════════════════
   # API Gateway
@@ -133,6 +165,14 @@ services:
     depends_on:
       auth-svc:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   # ════════════════════════════════════════════════════════════════════════════
   # Core Services (Tier 1 - No service dependencies)
@@ -883,6 +923,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # ════════════════════════════════════════════════════════════════════════════
   # Observability Stack
@@ -898,6 +946,14 @@ services:
     volumes:
       - ./configs/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   prometheus:
     image: prom/prometheus:v2.48.0
@@ -911,6 +967,14 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   grafana:
     image: grafana/grafana:10.2.0
@@ -927,6 +991,14 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   jaeger:
     image: jaegertracing/all-in-one:1.52
@@ -936,6 +1008,14 @@ services:
       - "14268:14268"  # Collector HTTP
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   loki:
     image: grafana/loki:2.9.0
@@ -946,6 +1026,14 @@ services:
       - ./configs/loki.yml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   # ════════════════════════════════════════════════════════════════════════════
   # MinIO (S3-compatible storage for local dev)
@@ -968,6 +1056,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   minio-setup:
     image: minio/mc:latest

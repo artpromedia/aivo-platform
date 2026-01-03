@@ -24,8 +24,10 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
-  // Database
-  DATABASE_URL: databaseUrl('postgresql://postgres:postgres@localhost:5432/aivo_billing'),
+  // Database (credentials should be provided via environment variables)
+  DATABASE_URL: isProduction()
+    ? z.string().min(1, 'DATABASE_URL is required in production')
+    : databaseUrl('postgresql://localhost:5432/aivo_billing'),
 
   // JWT configuration (required in production)
   JWT_SECRET: secret('dev-only-secret'),

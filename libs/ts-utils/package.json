@@ -3,10 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "lint": "echo \"lint ts-utils\"",
-    "test": "echo \"test ts-utils\"",
-    "build": "echo \"build ts-utils\""
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "build": "tsc",
+    "dev": "tsc --watch"
   },
   "peerDependencies": {
     "fastify": "^5.0.0",

@@ -2,6 +2,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   server: {
     port: parseInt(process.env.PORT || '3080', 10),
@@ -9,7 +17,7 @@ export const config = {
   },
 
   database: {
-    url: process.env.DATABASE_URL || '',
+    url: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_sync'),
   },
 
   redis: {
@@ -17,7 +25,7 @@ export const config = {
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || '',
+    secret: requireEnvInProduction('JWT_SECRET', 'dev-secret-sync-svc'),
     issuer: process.env.JWT_ISSUER || 'aivo',
   },
 

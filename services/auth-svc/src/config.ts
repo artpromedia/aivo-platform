@@ -27,10 +27,17 @@ function readOptionalKey(keyEnv: string | undefined, fileEnv: string | undefined
   return undefined;
 }
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: Number(process.env.PORT || 4001),
-  databaseUrl:
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aivo_auth',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_auth'),
   consumerTenantId: process.env.CONSUMER_TENANT_ID || '00000000-0000-0000-0000-000000000000',
   accessTokenTtl: process.env.ACCESS_TOKEN_TTL || '15m',
   refreshTokenTtl: process.env.REFRESH_TOKEN_TTL || '7d',

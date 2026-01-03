@@ -9,9 +9,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "echo \"lint ui-web\"",
-    "test": "echo \"test ui-web\"",
-    "build": "echo \"build ui-web\""
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.14"
