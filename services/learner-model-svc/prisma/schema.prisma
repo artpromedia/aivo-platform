@@ -99,6 +99,16 @@ model VirtualBrain {
   baselineAttemptId  String?  @map("baseline_attempt_id") @db.Uuid
   gradeBand          GradeBand @map("grade_band")
   initializationJson Json?    @map("initialization_json")
+
+  // Geographic location for curriculum alignment
+  stateCode          String?  @map("state_code") @db.VarChar(2)
+  zipCode            String?  @map("zip_code") @db.VarChar(10)
+  ncesDistrictId     String?  @map("nces_district_id")
+
+  // Curriculum standards applied to this virtual brain
+  curriculumStandards String[] @default([]) @map("curriculum_standards")
+  curriculumVersion   String?  @map("curriculum_version")  // For tracking updates
+
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -110,6 +120,8 @@ model VirtualBrain {
 
   @@unique([tenantId, learnerId])
   @@index([tenantId, learnerId])
+  @@index([stateCode])
+  @@index([ncesDistrictId])
   @@map("virtual_brains")
 }
 
