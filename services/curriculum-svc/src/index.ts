@@ -1,7 +1,7 @@
 /**
- * Professional Development Service
- * Comprehensive PD program management, enrollment tracking,
- * compliance monitoring, and certification management.
+ * Curriculum Service
+ * Comprehensive curriculum management including curriculum creation,
+ * unit/lesson organization, standards alignment, pacing guides, and teacher progress tracking.
  */
 
 import Fastify from 'fastify';
@@ -9,12 +9,12 @@ import cors from '@fastify/cors';
 import 'dotenv/config';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
-import { programsRoutes } from './routes/programs.js';
-import { enrollmentsRoutes } from './routes/enrollments.js';
-import { requirementsRoutes } from './routes/requirements.js';
-import { complianceRoutes } from './routes/compliance.js';
-import { certificationsRoutes } from './routes/certifications.js';
-import { reportsRoutes } from './routes/reports.js';
+import { curriculaRoutes } from './routes/curricula.js';
+import { unitsRoutes } from './routes/units.js';
+import { lessonsRoutes } from './routes/lessons.js';
+import { standardsRoutes } from './routes/standards.js';
+import { pacingRoutes } from './routes/pacing.js';
+import { progressRoutes } from './routes/progress.js';
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
@@ -30,23 +30,23 @@ async function main() {
   await app.register(cors, { origin: true, credentials: true });
 
   // Health checks
-  app.get('/health', async () => ({ status: 'ok', service: 'professional-dev-svc' }));
+  app.get('/health', async () => ({ status: 'ok', service: 'curriculum-svc' }));
   app.get('/ready', async () => {
     try {
       await connectDatabase();
-      return { status: 'ready', service: 'professional-dev-svc' };
+      return { status: 'ready', service: 'curriculum-svc' };
     } catch (error) {
       return { status: 'not_ready', error: 'Database connection failed' };
     }
   });
 
   // Register routes
-  await app.register(programsRoutes, { prefix: '/programs' });
-  await app.register(enrollmentsRoutes, { prefix: '/enrollments' });
-  await app.register(requirementsRoutes, { prefix: '/requirements' });
-  await app.register(complianceRoutes, { prefix: '/compliance' });
-  await app.register(certificationsRoutes, { prefix: '/certifications' });
-  await app.register(reportsRoutes, { prefix: '/reports' });
+  await app.register(curriculaRoutes, { prefix: '/curricula' });
+  await app.register(unitsRoutes, { prefix: '/units' });
+  await app.register(lessonsRoutes, { prefix: '/lessons' });
+  await app.register(standardsRoutes, { prefix: '/standards' });
+  await app.register(pacingRoutes, { prefix: '/pacing' });
+  await app.register(progressRoutes, { prefix: '/progress' });
 
   // Graceful shutdown
   const signals = ['SIGINT', 'SIGTERM'];
@@ -62,7 +62,7 @@ async function main() {
   try {
     await connectDatabase();
     await app.listen({ port: config.port, host: config.host });
-    app.log.info(`Professional Development Service listening on ${config.host}:${config.port}`);
+    app.log.info(`Curriculum Service listening on ${config.host}:${config.port}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

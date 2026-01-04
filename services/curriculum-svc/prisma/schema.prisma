@@ -1,0 +1,351 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Standard curriculum frameworks
+enum CurriculumStandard {
+  COMMON_CORE
+  NGSS           // Next Generation Science Standards
+  C3             // College, Career, and Civic Life (Social Studies)
+  STATE_SPECIFIC
+  CUSTOM
+
+  @@map("curriculum_standard")
+}
+
+/// Grade band for curriculum
+enum GradeBand {
+  PRE_K
+  K_2
+  G3_5
+  G6_8
+  G9_12
+
+  @@map("grade_band")
+}
+
+/// Subject area
+enum SubjectArea {
+  ELA
+  MATH
+  SCIENCE
+  SOCIAL_STUDIES
+  SEL
+  ARTS
+  WORLD_LANGUAGE
+  PHYSICAL_ED
+  TECHNOLOGY
+  CAREER_TECH
+
+  @@map("subject_area")
+}
+
+/// Unit status
+enum UnitStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("unit_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Curriculum definition (top level)
+model Curriculum {
+  id              String             @id @default(uuid()) @db.Uuid
+  tenantId        String             @map("tenant_id") @db.Uuid
+
+  /// Curriculum name
+  name            String
+
+  /// Description
+  description     String?            @db.Text
+
+  /// Standard framework
+  standard        CurriculumStandard
+
+  /// Subject area
+  subject         SubjectArea
+
+  /// Grade band
+  gradeBand       GradeBand          @map("grade_band")
+
+  /// Academic year (e.g., "2024-2025")
+  academicYear    String             @map("academic_year")
+
+  /// Version for tracking changes
+  version         Int                @default(1)
+
+  /// Is this the active curriculum?
+  isActive        Boolean            @default(true) @map("is_active")
+
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  createdBy       String?            @map("created_by") @db.Uuid
+
+  units           CurriculumUnit[]
+  standards       StandardAlignment[]
+  pacingGuides    PacingGuide[]
+
+  @@unique([tenantId, name, academicYear])
+  @@index([tenantId])
+  @@index([subject, gradeBand])
+  @@map("curricula")
+}
+
+/// Unit within a curriculum
+model CurriculumUnit {
+  id              String           @id @default(uuid()) @db.Uuid
+  curriculumId    String           @map("curriculum_id") @db.Uuid
+
+  /// Unit title
+  title           String
+
+  /// Description/overview
+  description     String?          @db.Text
+
+  /// Order in curriculum
+  orderIndex      Int              @map("order_index")
+
+  /// Essential questions
+  essentialQuestions String[]      @map("essential_questions")
+
+  /// Big ideas/enduring understandings
+  bigIdeas        String[]         @map("big_ideas")
+
+  /// Estimated duration in days
+  durationDays    Int              @map("duration_days")
+
+  /// Status
+  status          UnitStatus       @default(DRAFT)
+
+  /// Start date (for pacing)
+  suggestedStartDate DateTime?     @map("suggested_start_date")
+
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  curriculum      Curriculum       @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  lessons         Lesson[]
+  standards       StandardAlignment[]
+  resources       UnitResource[]
+
+  @@index([curriculumId])
+  @@map("curriculum_units")
+}
+
+/// Lesson within a unit
+model Lesson {
+  id              String         @id @default(uuid()) @db.Uuid
+  unitId          String         @map("unit_id") @db.Uuid
+
+  /// Lesson title
+  title           String
+
+  /// Description
+  description     String?        @db.Text
+
+  /// Order in unit
+  orderIndex      Int            @map("order_index")
+
+  /// Learning objectives
+  objectives      String[]
+
+  /// Estimated duration in minutes
+  durationMin     Int            @map("duration_min")
+
+  /// Lesson type
+  lessonType      String?        @map("lesson_type") // DIRECT_INSTRUCTION, WORKSHOP, LAB, ASSESSMENT, etc.
+
+  /// Instructional activities (JSON structure)
+  activities      Json           @default("[]")
+
+  /// Materials needed
+  materials       String[]
+
+  /// Differentiation notes
+  differentiation Json?
+
+  /// Assessment ideas
+  assessmentNotes String?        @map("assessment_notes") @db.Text
+
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  unit            CurriculumUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  standards       StandardAlignment[]
+  contentLinks    LessonContentLink[]
+
+  @@index([unitId])
+  @@map("lessons")
+}
+
+/// Standard alignment (links curriculum items to standards)
+model StandardAlignment {
+  id              String          @id @default(uuid()) @db.Uuid
+
+  /// Standard code (e.g., "CCSS.ELA-LITERACY.RL.5.1")
+  standardCode    String          @map("standard_code")
+
+  /// Standard description
+  description     String          @db.Text
+
+  /// Standard category/strand
+  category        String?
+
+  /// Alignment type
+  alignmentType   String          @default("PRIMARY") @map("alignment_type") // PRIMARY, SUPPORTING
+
+  /// Linked curriculum item
+  curriculumId    String?         @map("curriculum_id") @db.Uuid
+  unitId          String?         @map("unit_id") @db.Uuid
+  lessonId        String?         @map("lesson_id") @db.Uuid
+
+  curriculum      Curriculum?     @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  unit            CurriculumUnit? @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  lesson          Lesson?         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([standardCode])
+  @@index([curriculumId])
+  @@index([unitId])
+  @@index([lessonId])
+  @@map("standard_alignments")
+}
+
+/// Resource linked to a unit
+model UnitResource {
+  id              String         @id @default(uuid()) @db.Uuid
+  unitId          String         @map("unit_id") @db.Uuid
+
+  /// Resource title
+  title           String
+
+  /// Resource type
+  resourceType    String         @map("resource_type") // VIDEO, DOCUMENT, LINK, ACTIVITY, ASSESSMENT
+
+  /// URL or asset ID
+  url             String?
+
+  /// Asset ID (for internal content)
+  assetId         String?        @map("asset_id") @db.Uuid
+
+  /// Description
+  description     String?        @db.Text
+
+  /// Order
+  orderIndex      Int            @default(0) @map("order_index")
+
+  /// Is required resource?
+  isRequired      Boolean        @default(false) @map("is_required")
+
+  unit            CurriculumUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId])
+  @@map("unit_resources")
+}
+
+/// Link between lesson and learning content
+model LessonContentLink {
+  id              String   @id @default(uuid()) @db.Uuid
+  lessonId        String   @map("lesson_id") @db.Uuid
+
+  /// Content type
+  contentType     String   @map("content_type") // LEARNING_OBJECT, ASSESSMENT, ACTIVITY
+
+  /// Content ID (from content-authoring-svc)
+  contentId       String   @map("content_id") @db.Uuid
+
+  /// Usage context
+  usageContext    String?  @map("usage_context") // INTRODUCTION, PRACTICE, ASSESSMENT, EXTENSION
+
+  /// Order in lesson
+  orderIndex      Int      @default(0) @map("order_index")
+
+  /// Is required?
+  isRequired      Boolean  @default(true) @map("is_required")
+
+  lesson          Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([contentId])
+  @@map("lesson_content_links")
+}
+
+/// Pacing guide for a curriculum
+model PacingGuide {
+  id              String      @id @default(uuid()) @db.Uuid
+  curriculumId    String      @map("curriculum_id") @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+
+  /// Name (e.g., "Standard Pacing", "Extended Year")
+  name            String
+
+  /// Description
+  description     String?     @db.Text
+
+  /// Start date
+  startDate       DateTime    @map("start_date")
+
+  /// End date
+  endDate         DateTime    @map("end_date")
+
+  /// Pacing entries (JSON with unit dates)
+  entries         Json        @default("[]")
+
+  /// Is default pacing guide?
+  isDefault       Boolean     @default(false) @map("is_default")
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  curriculum      Curriculum  @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+
+  @@index([curriculumId])
+  @@index([tenantId])
+  @@map("pacing_guides")
+}
+
+/// Teacher's progress through curriculum
+model TeacherCurriculumProgress {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  teacherId       String      @map("teacher_id") @db.Uuid
+  curriculumId    String      @map("curriculum_id") @db.Uuid
+
+  /// Current unit
+  currentUnitId   String?     @map("current_unit_id") @db.Uuid
+
+  /// Current lesson
+  currentLessonId String?     @map("current_lesson_id") @db.Uuid
+
+  /// Completed unit IDs
+  completedUnits  String[]    @db.Uuid @map("completed_units")
+
+  /// Completed lesson IDs
+  completedLessons String[]   @db.Uuid @map("completed_lessons")
+
+  /// Days ahead/behind pacing
+  pacingOffset    Int         @default(0) @map("pacing_offset")
+
+  /// Notes
+  notes           String?     @db.Text
+
+  lastUpdatedAt   DateTime    @default(now()) @map("last_updated_at")
+
+  @@unique([tenantId, teacherId, curriculumId])
+  @@index([tenantId, teacherId])
+  @@map("teacher_curriculum_progress")
+}
