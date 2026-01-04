@@ -7,35 +7,62 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+type LogoVariant =
+  | 'horizontal-dark'
+  | 'horizontal-white'
+  | 'horizontal-purple'
+  | 'stacked-dark'
+  | 'icon-dark'
+  | 'icon-white'
+  | 'icon-purple';
+
 interface AivoLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  showText?: boolean;
-  showTagline?: boolean;
+  variant?: LogoVariant;
   animated?: boolean;
   href?: string;
   className?: string;
 }
 
 const sizeMap = {
-  sm: { logo: 40, text: 'text-lg', tagline: 'text-[10px]' },
-  md: { logo: 48, text: 'text-xl', tagline: 'text-xs' },
-  lg: { logo: 56, text: 'text-2xl', tagline: 'text-sm' },
-  xl: { logo: 72, text: 'text-3xl', tagline: 'text-base' },
+  sm: { logo: 40, horizontal: 140, stacked: 80 },
+  md: { logo: 48, horizontal: 168, stacked: 96 },
+  lg: { logo: 56, horizontal: 196, stacked: 112 },
+  xl: { logo: 72, horizontal: 252, stacked: 144 },
+};
+
+const variantAssets: Record<LogoVariant, string> = {
+  'horizontal-dark': '/images/aivo-logo-horizontal-dark.svg',
+  'horizontal-white': '/images/aivo-logo-horizontal-white.svg',
+  'horizontal-purple': '/images/aivo-logo-horizontal-purple.svg',
+  'stacked-dark': '/images/aivo-logo-stacked-dark.svg',
+  'icon-dark': '/icons/aivo-icon-dark.svg',
+  'icon-white': '/icons/aivo-icon-white.svg',
+  'icon-purple': '/icons/aivo-icon-purple.svg',
 };
 
 export function AivoLogo({
   size = 'md',
-  showText = true,
-  showTagline = false,
+  variant = 'horizontal-dark',
   animated = false,
   href = '/',
   className,
 }: AivoLogoProps) {
-  const { logo: logoSize, text: textSize, tagline: taglineSize } = sizeMap[size];
+  const dimensions = sizeMap[size];
+  const isHorizontal = variant.startsWith('horizontal');
+  const isStacked = variant.startsWith('stacked');
+  const isIcon = variant.startsWith('icon');
+
+  const width = isHorizontal
+    ? dimensions.horizontal
+    : isStacked
+      ? dimensions.stacked
+      : dimensions.logo;
+  const height = isStacked ? dimensions.logo * 1.5 : dimensions.logo;
 
   const LogoContent = () => (
-    <div className={cn('flex items-center gap-2', className)}>
-      {/* Logo Icon */}
+    <div className={cn('flex items-center', className)}>
+      {/* Logo */}
       <div className="relative">
         {animated && (
           <motion.div
@@ -52,24 +79,14 @@ export function AivoLogo({
           />
         )}
         <Image
-          src="/images/aivo-logo.svg"
+          src={variantAssets[variant]}
           alt="AIVO Learning"
-          width={logoSize}
-          height={logoSize}
+          width={width}
+          height={height}
           className="relative"
           priority
         />
       </div>
-
-      {/* Text */}
-      {showText && (
-        <div className="flex flex-col">
-          <span className={cn('font-display font-bold tracking-tight', textSize)}>
-            <span className="text-gray-900">AIVO</span>
-          </span>
-          {showTagline && <span className={cn('text-gray-500 -mt-1', taglineSize)}>Learning</span>}
-        </div>
-      )}
     </div>
   );
 

@@ -18,18 +18,42 @@ enum AivoLogoSize {
   xl,
 }
 
+/// Logo variants for different contexts and themes.
+enum AivoLogoVariant {
+  /// Horizontal logo with dark text (for light backgrounds)
+  horizontalDark,
+
+  /// Horizontal logo with white text (for dark backgrounds)
+  horizontalWhite,
+
+  /// Horizontal logo with purple text (brand purple)
+  horizontalPurple,
+
+  /// Stacked logo with dark text
+  stackedDark,
+
+  /// Icon only - dark version
+  iconDark,
+
+  /// Icon only - white version
+  iconWhite,
+
+  /// Icon only - purple version
+  iconPurple,
+}
+
 /// A consistent AIVO logo widget that matches the marketing website.
 ///
 /// Usage:
 /// ```dart
-/// // Icon only
+/// // Icon only (auto-detects theme)
 /// AivoLogo(size: AivoLogoSize.md)
 ///
-/// // Icon + text
-/// AivoLogo(showText: true)
+/// // Specific variant
+/// AivoLogo(variant: AivoLogoVariant.horizontalDark)
 ///
-/// // Icon + text + tagline
-/// AivoLogo(showText: true, showTagline: true)
+/// // Horizontal logo with text
+/// AivoLogo(variant: AivoLogoVariant.horizontalPurple)
 ///
 /// // Animated with glow effect
 /// AivoLogo(animated: true)
@@ -39,6 +63,7 @@ class AivoLogo extends StatefulWidget {
   const AivoLogo({
     super.key,
     this.size = AivoLogoSize.md,
+    this.variant,
     this.showText = false,
     this.showTagline = false,
     this.animated = false,
@@ -48,7 +73,10 @@ class AivoLogo extends StatefulWidget {
   /// The size of the logo.
   final AivoLogoSize size;
 
-  /// Whether to show "AIVO" text next to the logo.
+  /// The logo variant to use. If null, auto-detects based on theme brightness.
+  final AivoLogoVariant? variant;
+
+  /// Whether to show "AIVO" text next to the logo (for icon variants).
   final bool showText;
 
   /// Whether to show "Learning" tagline below the text.
@@ -166,10 +194,41 @@ class _AivoLogoState extends State<AivoLogo>
   }
 
   Widget _buildLogoIcon() {
+    // Determine the asset path based on variant
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveVariant = widget.variant ??
+        (isDark ? AivoLogoVariant.iconWhite : AivoLogoVariant.iconDark);
+
+    final assetPath = switch (effectiveVariant) {
+      AivoLogoVariant.horizontalDark =>
+        'packages/flutter_common/assets/images/aivo-logo-horizontal-dark.svg',
+      AivoLogoVariant.horizontalWhite =>
+        'packages/flutter_common/assets/images/aivo-logo-horizontal-white.svg',
+      AivoLogoVariant.horizontalPurple =>
+        'packages/flutter_common/assets/images/aivo-logo-horizontal-purple.svg',
+      AivoLogoVariant.stackedDark =>
+        'packages/flutter_common/assets/images/aivo-logo-stacked-dark.svg',
+      AivoLogoVariant.iconDark =>
+        'packages/flutter_common/assets/images/aivo-icon-dark.svg',
+      AivoLogoVariant.iconWhite =>
+        'packages/flutter_common/assets/images/aivo-icon-white.svg',
+      AivoLogoVariant.iconPurple =>
+        'packages/flutter_common/assets/images/aivo-icon-purple.svg',
+    };
+
+    // For horizontal/stacked variants, use wider dimensions
+    final isHorizontal = effectiveVariant == AivoLogoVariant.horizontalDark ||
+        effectiveVariant == AivoLogoVariant.horizontalWhite ||
+        effectiveVariant == AivoLogoVariant.horizontalPurple;
+    final isStacked = effectiveVariant == AivoLogoVariant.stackedDark;
+
+    final width = isHorizontal ? _logoSize * 3.5 : (isStacked ? _logoSize * 2 : _logoSize);
+    final height = isStacked ? _logoSize * 1.5 : _logoSize;
+
     final logoWidget = SvgPicture.asset(
-      'packages/flutter_common/assets/images/aivo-logo.svg',
-      width: _logoSize,
-      height: _logoSize,
+      assetPath,
+      width: width,
+      height: height,
     );
 
     if (!widget.animated) {

@@ -142,7 +142,7 @@ export function Navigation() {
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <AivoLogo size="md" showText showTagline={!isScrolled} href="/" className="shrink-0" />
+            <AivoLogo size="md" variant="horizontal-dark" href="/" className="shrink-0" />
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
@@ -287,7 +287,7 @@ export function Navigation() {
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
-                  <AivoLogo size="md" showText href="/" />
+                  <AivoLogo size="md" variant="horizontal-dark" href="/" />
                   <button
                     onClick={() => {
                       setIsMobileMenuOpen(false);

@@ -1,16 +1,18 @@
 # Flutter Native Splash configuration
 # Run: flutter pub run flutter_native_splash:create
 # https://pub.dev/packages/flutter_native_splash
+# NOTE: Convert SVG assets to PNG before running. Use assets/splash/splash_logo.png (400x400)
 
 flutter_native_splash:
   # Logo image to display on splash screen
   image: assets/splash/splash_logo.png
+  image_dark: assets/splash/splash_logo_dark.png
 
-  # Background color
+  # Background color (AIVO brand colors)
   color: "#FFFFFF"
   color_dark: "#1E1E2E"
 
-  # Branding image (shown at bottom)
+  # Branding image (shown at bottom) - use AIVO wordmark
   branding: assets/splash/branding.png
   branding_dark: assets/splash/branding_dark.png
   branding_mode: bottom

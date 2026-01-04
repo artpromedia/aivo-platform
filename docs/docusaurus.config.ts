@@ -19,7 +19,7 @@ import type * as OpenApiPlugin from 'docusaurus-plugin-openapi-docs';
 const config: Config = {
   title: 'AIVO Developer Docs',
   tagline: 'Build powerful educational experiences with the AIVO Platform',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
 
   url: 'https://developers.aivo.edu',
   baseUrl: '/',

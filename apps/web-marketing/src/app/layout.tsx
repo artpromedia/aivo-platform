@@ -90,10 +90,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicons/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icons/aivo-icon-purple.svg', type: 'image/svg+xml' },
     ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    apple: [{ url: '/icons/aivo-icon-purple.svg', type: 'image/svg+xml' }],
   },
   manifest: '/manifest.json',
   alternates: {

@@ -335,7 +335,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-1">
-            <AivoLogo size="lg" showText showTagline className="mb-6" />
+            <AivoLogo size="lg" variant="stacked-dark" className="mb-6" />
 
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
               AI-powered personalized learning for neurodiverse students. Supporting ADHD, Autism,
