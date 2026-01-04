@@ -29,13 +29,20 @@ model Tenant {
   primaryDomain   String    @unique
   billingPlanId   String?
   settingsJson    Json?
-  
+
   // Domain configuration for multi-tenant access
   subdomain       String?   @unique  // e.g., "springfield-schools"
   customDomain    String?   @unique  // e.g., "learning.springfield.edu"
   domainVerified  Boolean   @default(false) @map("domain_verified")
   domainVerifiedAt DateTime? @map("domain_verified_at")
-  
+
+  // Geographic location for district auto-detection
+  stateCode       String?   @map("state_code") @db.VarChar(2)  // US state: "CA", "TX", etc.
+  zipCode         String?   @map("zip_code") @db.VarChar(10)   // ZIP code: "94105" or "94105-1234"
+  city            String?   @db.VarChar(100)
+  county          String?   @db.VarChar(100)
+  ncesDistrictId  String?   @unique @map("nces_district_id")   // NCES district ID for matching
+
   // Region for data residency
   region          String    @default("us-east-1")
   isActive        Boolean   @default(true) @map("is_active")
@@ -64,6 +71,9 @@ model Tenant {
   @@index([isActive])
   @@index([status])
   @@index([deleteGraceEndsAt])
+  @@index([stateCode])
+  @@index([zipCode])
+  @@index([ncesDistrictId])
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -117,6 +127,14 @@ model School {
   name        String
   address     String?
   externalId  String?
+
+  // Geographic location
+  stateCode   String?   @map("state_code") @db.VarChar(2)
+  zipCode     String?   @map("zip_code") @db.VarChar(10)
+  city        String?   @db.VarChar(100)
+  county      String?   @db.VarChar(100)
+  ncesSchoolId String?  @unique @map("nces_school_id")  // NCES school ID
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   classrooms  Classroom[]
@@ -124,6 +142,8 @@ model School {
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([stateCode])
+  @@index([zipCode])
 }
 
 model Classroom {
@@ -341,4 +361,112 @@ model TenantAuditEvent {
   @@index([eventType])
   @@index([actorUserId])
   @@map("tenant_audit_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// District Lookup (ZIP to District Mapping)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// District lookup table for auto-detecting district from ZIP code
+/// Populated from NCES data (National Center for Education Statistics)
+model DistrictLookup {
+  id              String   @id @default(uuid()) @db.Uuid
+  ncesDistrictId  String   @map("nces_district_id")          // NCES LEA ID
+  districtName    String   @map("district_name")
+  stateCode       String   @map("state_code") @db.VarChar(2)
+  stateName       String   @map("state_name")
+
+  // Geographic coverage
+  zipCodes        String[] @map("zip_codes")                  // All ZIP codes in this district
+  counties        String[] @default([])
+  city            String?
+
+  // District metadata
+  districtType    String?  @map("district_type")              // Regular, Charter, etc.
+  gradeSpan       String?  @map("grade_span")                 // e.g., "PK-12"
+  enrollmentCount Int?     @map("enrollment_count")
+  schoolCount     Int?     @map("school_count")
+
+  // Contact info
+  phone           String?
+  website         String?
+  address         String?
+
+  // Data source tracking
+  lastUpdated     DateTime @default(now()) @map("last_updated")
+  dataSource      String   @default("NCES") @map("data_source")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([ncesDistrictId])
+  @@index([stateCode])
+  @@index([zipCodes])
+  @@map("district_lookups")
+}
+
+/// ZIP code to district mapping (for efficient lookups)
+model ZipCodeDistrict {
+  id              String   @id @default(uuid()) @db.Uuid
+  zipCode         String   @map("zip_code") @db.VarChar(5)
+  stateCode       String   @map("state_code") @db.VarChar(2)
+
+  // Can have multiple districts per ZIP (rare but possible)
+  ncesDistrictIds String[] @map("nces_district_ids")
+  primaryDistrictId String? @map("primary_district_id")       // Most common district for this ZIP
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([zipCode])
+  @@index([stateCode])
+  @@map("zip_code_districts")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// State Curriculum Standards Mapping
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Curriculum standard framework
+enum CurriculumFramework {
+  COMMON_CORE          // Common Core State Standards
+  NGSS                 // Next Generation Science Standards
+  C3                   // College, Career, and Civic Life (Social Studies)
+  STATE_SPECIFIC       // State-developed standards
+  TEKS                 // Texas Essential Knowledge and Skills
+  CCSS_MATH            // Common Core Math
+  CCSS_ELA             // Common Core ELA
+  STATE_SCIENCE        // State science standards
+  STATE_SOCIAL_STUDIES // State social studies standards
+}
+
+/// Maps US states to their adopted curriculum standards
+model StateCurriculumStandards {
+  id              String   @id @default(uuid()) @db.Uuid
+  stateCode       String   @map("state_code") @db.VarChar(2)
+  stateName       String   @map("state_name")
+
+  // Adopted frameworks
+  mathFramework         CurriculumFramework @default(COMMON_CORE) @map("math_framework")
+  elaFramework          CurriculumFramework @default(COMMON_CORE) @map("ela_framework")
+  scienceFramework      CurriculumFramework @default(NGSS) @map("science_framework")
+  socialStudiesFramework CurriculumFramework @default(C3) @map("social_studies_framework")
+
+  // State-specific standards identifiers (for states with custom standards)
+  stateStandardsVersion String? @map("state_standards_version")  // e.g., "TEKS 2023"
+  stateStandardsUrl     String? @map("state_standards_url")
+
+  // Additional frameworks adopted (e.g., SEL standards)
+  additionalFrameworks  String[] @default([]) @map("additional_frameworks")
+
+  // Metadata
+  adoptedYear           Int?     @map("adopted_year")
+  lastRevisedYear       Int?     @map("last_revised_year")
+  notes                 String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([stateCode])
+  @@map("state_curriculum_standards")
 }

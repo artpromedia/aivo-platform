@@ -3,6 +3,7 @@ import type { Redis as RedisType } from 'ioredis';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerClassroomRoutes } from './routes/classrooms.js';
+import { registerDistrictLookupRoutes } from './routes/district-lookup.js';
 import { registerResolveRoutes } from './routes/resolve.js';
 import { registerSchoolRoutes } from './routes/schools.js';
 import { registerTenantRoutes } from './routes/tenants.js';
@@ -43,7 +44,10 @@ export function createApp() {
   app.register(registerTenantRoutes);
   app.register(registerSchoolRoutes);
   app.register(registerClassroomRoutes);
-  
+
+  // District lookup routes (public - no auth required for onboarding)
+  app.register(registerDistrictLookupRoutes);
+
   // Admin routes for domain management
   app.register(tenantDomainsRoutes, { prefix: '/admin' });
 

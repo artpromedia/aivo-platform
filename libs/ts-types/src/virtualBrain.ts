@@ -176,4 +176,72 @@ export interface VirtualBrainSummary {
       avgMastery: number;
     }
   >;
+  /** Location-based curriculum info */
+  location?: {
+    stateCode?: string;
+    zipCode?: string;
+    ncesDistrictId?: string;
+  };
+  /** Active curriculum standards */
+  curriculumStandards?: string[];
+  /** Curriculum version for tracking updates */
+  curriculumVersion?: string;
+}
+
+// ── Curriculum-aware Initialization ──────────────────────────────────────────
+
+/**
+ * Location input for Virtual Brain initialization.
+ */
+export interface VirtualBrainLocationInput {
+  /** 2-letter state code */
+  stateCode?: string;
+  /** 5-digit ZIP code */
+  zipCode?: string;
+  /** NCES district ID for explicit district matching */
+  ncesDistrictId?: string;
+}
+
+/**
+ * Extended initialization request with location/curriculum.
+ */
+export interface VirtualBrainInitRequest {
+  tenantId: string;
+  learnerId: string;
+  baselineProfileId: string;
+  baselineAttemptId: string;
+  gradeBand: GradeBand;
+  skillEstimates: {
+    skillCode: string;
+    domain: SkillDomain;
+    estimatedLevel: number;
+    confidence: number;
+  }[];
+  /** Location for curriculum auto-detection */
+  location?: VirtualBrainLocationInput;
+  /** Explicit curriculum standards (overrides auto-detection) */
+  curriculumStandards?: string[];
+}
+
+/**
+ * Initialization result with curriculum info.
+ */
+export interface VirtualBrainInitResult {
+  virtualBrainId: string;
+  learnerId: string;
+  skillsInitialized: number;
+  skillsMissing: string[];
+  createdAt: string;
+  location?: VirtualBrainLocationInput;
+  curriculumStandards: string[];
+}
+
+/**
+ * Update curriculum for existing Virtual Brain.
+ */
+export interface VirtualBrainCurriculumUpdate {
+  stateCode?: string;
+  zipCode?: string;
+  ncesDistrictId?: string;
+  curriculumStandards: string[];
 }

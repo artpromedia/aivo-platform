@@ -13,6 +13,7 @@ import { ParentController } from './parent/parent.controller.js';
 import { AuthController } from './auth/auth.controller.js';
 import { MessagingController } from './messaging/messaging.controller.js';
 import { ReportsController } from './pdf/reports.controller.js';
+import { OnboardingController } from './onboarding/onboarding.controller.js';
 
 // Services
 import { ParentService } from './parent/parent.service.js';
@@ -23,6 +24,7 @@ import { NotificationService } from './notification/notification.service.js';
 import { EmailService } from './email/email.service.js';
 import { ContentModerationService } from './moderation/content-moderation.service.js';
 import { PdfReportService } from './pdf/pdf-report.service.js';
+import { OnboardingService } from './onboarding/onboarding.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { CryptoService } from './crypto/crypto.service.js';
 import { I18nService } from './i18n/i18n.service.js';
@@ -41,6 +43,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     AuthController,
     MessagingController,
     ReportsController,
+    OnboardingController,
   ],
   providers: [
     // Core services
@@ -57,11 +60,13 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     NotificationService,
     ContentModerationService,
     PdfReportService,
+    OnboardingService,
   ],
   exports: [
     ParentService,
     MessagingService,
     NotificationService,
+    OnboardingService,
   ],
 })
 export class ParentModule implements NestModule {
@@ -82,6 +87,9 @@ export class ParentModule implements NestModule {
         { path: 'auth/forgot-password', method: RequestMethod.POST },
         { path: 'auth/reset-password', method: RequestMethod.POST },
         { path: 'health', method: RequestMethod.GET },
+        // Onboarding location lookup is public
+        { path: 'onboarding/lookup-location', method: RequestMethod.POST },
+        { path: 'onboarding/districts/state/:stateCode', method: RequestMethod.GET },
       )
       .forRoutes('*');
   }

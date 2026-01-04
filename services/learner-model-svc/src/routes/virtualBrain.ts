@@ -19,6 +19,12 @@ interface InitializationResult {
   skillsInitialized: number;
   skillsMissing: string[];
   createdAt: string;
+  location?: {
+    stateCode?: string;
+    zipCode?: string;
+    ncesDistrictId?: string;
+  };
+  curriculumStandards: string[];
 }
 
 // Type for skill from DB query
@@ -102,6 +108,21 @@ const InitializeSchema = z.object({
       confidence: z.number().min(0).max(1),
     })
   ),
+  // Geographic location for curriculum alignment
+  location: z.object({
+    stateCode: z.string().length(2).optional(),
+    zipCode: z.string().min(5).max(10).optional(),
+    ncesDistrictId: z.string().optional(),
+  }).optional(),
+  // Curriculum standards to apply (auto-detected from location or manual)
+  curriculumStandards: z.array(z.string()).optional(),
+});
+
+const UpdateCurriculumSchema = z.object({
+  stateCode: z.string().length(2).optional(),
+  zipCode: z.string().min(5).max(10).optional(),
+  ncesDistrictId: z.string().optional(),
+  curriculumStandards: z.array(z.string()),
 });
 
 const GetByLearnerParams = z.object({
@@ -163,6 +184,8 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
         baselineAttemptId,
         gradeBand,
         skillEstimates,
+        location,
+        curriculumStandards,
       } = parseResult.data;
 
       // Tenant authorization
@@ -223,11 +246,20 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
             baselineProfileId,
             baselineAttemptId,
             gradeBand,
+            // Geographic location for curriculum alignment
+            stateCode: location?.stateCode,
+            zipCode: location?.zipCode,
+            ncesDistrictId: location?.ncesDistrictId,
+            // Curriculum standards (auto-detected or provided)
+            curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
+            curriculumVersion: '1.0',
             initializationJson: {
               source: 'baseline',
               skillEstimatesCount: skillEstimates.length,
               missingSkillCodes: missingSkills,
               initializedAt: new Date().toISOString(),
+              location: location ?? null,
+              curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
             },
           },
         });
@@ -256,9 +288,83 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
         skillsInitialized: skillStatesToCreate.length,
         skillsMissing: missingSkills,
         createdAt: virtualBrain.createdAt.toISOString(),
+        location: location ? {
+          stateCode: location.stateCode,
+          zipCode: location.zipCode,
+          ncesDistrictId: location.ncesDistrictId,
+        } : undefined,
+        curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
       };
 
       return reply.status(201).send(result);
+    }
+  );
+
+  /**
+   * PATCH /virtual-brains/:learnerId/curriculum
+   * Update curriculum standards for a learner's Virtual Brain.
+   * Called when learner's location changes or district updates curriculum.
+   */
+  fastify.patch(
+    '/virtual-brains/:learnerId/curriculum',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = GetByLearnerParams.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({ error: 'Invalid learner ID' });
+      }
+
+      const bodyResult = UpdateCurriculumSchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: bodyResult.error.flatten(),
+        });
+      }
+
+      const { learnerId } = paramsResult.data;
+      const { stateCode, zipCode, ncesDistrictId, curriculumStandards } = bodyResult.data;
+
+      // Find the virtual brain
+      const virtualBrain = await prisma.virtualBrain.findFirst({
+        where: {
+          learnerId,
+          tenantId: user.tenantId,
+        },
+      });
+
+      if (!virtualBrain) {
+        return reply.status(404).send({ error: 'Virtual brain not found for this learner' });
+      }
+
+      // Update the virtual brain with new curriculum info
+      const updated = await prisma.virtualBrain.update({
+        where: { id: virtualBrain.id },
+        data: {
+          stateCode: stateCode ?? virtualBrain.stateCode,
+          zipCode: zipCode ?? virtualBrain.zipCode,
+          ncesDistrictId: ncesDistrictId ?? virtualBrain.ncesDistrictId,
+          curriculumStandards,
+          curriculumVersion: `${Number(virtualBrain.curriculumVersion?.split('.')[0] ?? 1) + 1}.0`,
+        },
+      });
+
+      return reply.send({
+        id: updated.id,
+        learnerId: updated.learnerId,
+        location: {
+          stateCode: updated.stateCode,
+          zipCode: updated.zipCode,
+          ncesDistrictId: updated.ncesDistrictId,
+        },
+        curriculumStandards: updated.curriculumStandards,
+        curriculumVersion: updated.curriculumVersion,
+        updatedAt: updated.updatedAt.toISOString(),
+      });
     }
   );
 
@@ -317,6 +423,14 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
         gradeBand: virtualBrain.gradeBand,
         baselineProfileId: virtualBrain.baselineProfileId,
         baselineAttemptId: virtualBrain.baselineAttemptId,
+        // Location and curriculum info
+        location: {
+          stateCode: virtualBrain.stateCode,
+          zipCode: virtualBrain.zipCode,
+          ncesDistrictId: virtualBrain.ncesDistrictId,
+        },
+        curriculumStandards: virtualBrain.curriculumStandards,
+        curriculumVersion: virtualBrain.curriculumVersion,
         createdAt: virtualBrain.createdAt.toISOString(),
         updatedAt: virtualBrain.updatedAt.toISOString(),
         skillStates: (virtualBrain.skillStates as SkillStateWithRelations[]).map((ss) => ({
