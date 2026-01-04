@@ -12,3 +12,34 @@ export { GradeThemeToggle } from './components/grade-theme-toggle';
 // AI Components
 export { LessonGenerator, AITutorChat, AIFeedback } from './components/ai';
 export type { LessonGeneratorProps, AITutorChatProps, AIFeedbackProps } from './components/ai';
+
+// Scratch Pad Components
+export {
+  ScratchPadCanvas,
+  useScratchPad,
+  ScratchPadProvider,
+  useScratchPadContext,
+  ScratchPadModal,
+  ScratchPadDrawer,
+  ScratchPadFAB,
+  InlineScratchPad,
+  useScratchPadPopup,
+  MathQuestionWithScratchPad,
+  MathActivityWithScratchPad,
+} from './components/scratch-pad';
+export type {
+  ScratchPadCanvasProps,
+  ScratchPadCanvasRef,
+  UseScratchPadOptions,
+  ScratchPadState,
+  ScratchPadActions,
+  ScratchPadProviderProps,
+  ScratchPadModalProps,
+  ScratchPadDrawerProps,
+  ScratchPadFABProps,
+  InlineScratchPadProps,
+  UseScratchPadPopupReturn,
+  MathQuestion,
+  MathQuestionWithScratchPadProps,
+  MathActivityWithScratchPadProps,
+} from './components/scratch-pad';
