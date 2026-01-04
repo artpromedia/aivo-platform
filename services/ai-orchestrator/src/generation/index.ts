@@ -19,3 +19,9 @@ export { LearningPathService } from './learning-path.service.js';
 export { TranslationService } from './translation.service.js';
 export { CostTrackingService } from './cost-tracking.service.js';
 export type { UsageRecord, UsageSummary, BudgetConfig } from './cost-tracking.service.js';
+
+// Reading Level & Content Adaptation
+export { ReadabilityAnalysisService, LEXILE_GRADE_RANGES } from './readability-analysis.service.js';
+export type { ReadabilityAnalysis, LexileEstimateRequest, ReadingLevelEstimate } from './readability-analysis.service.js';
+export { ContentAdaptationService } from './content-adaptation.service.js';
+export type { ContentAdaptationRequest, AdaptedContent, ScaffoldedContent, BatchAdaptationRequest } from './content-adaptation.service.js';
