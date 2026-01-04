@@ -302,10 +302,10 @@ export function Pricing() {
           {/* Author */}
           <div className="flex items-center justify-center gap-3">
             <div className="w-12 h-12 bg-theme-primary-200 rounded-full flex items-center justify-center font-bold text-theme-primary-700">
-              SM
+              PP
             </div>
             <div className="text-left">
-              <div className="font-semibold text-gray-900">Sarah M.</div>
+              <div className="font-semibold text-gray-900">Pilot Parent</div>
               <div className="text-sm text-gray-500">Pilot Program Parent</div>
             </div>
           </div>

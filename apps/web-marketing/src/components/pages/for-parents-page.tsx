@@ -97,21 +97,21 @@ const testimonials = [
   {
     quote:
       'For the first time, my son with ADHD actually asks to do his learning time. AIVO understands him in a way his school never could.',
-    author: 'Maria S.',
+    author: 'Pilot Parent',
     child: 'Son, age 8, ADHD',
     rating: 5,
   },
   {
     quote:
       'The IEP tracking has been a game-changer for our family. I can show the school exactly how much progress Emma is making at home.',
-    author: 'David & Lisa T.',
+    author: 'Pilot Family',
     child: 'Daughter, age 10, Dyslexia',
     rating: 5,
   },
   {
     quote:
       "My daughter is on the autism spectrum and needs predictability. AIVO's consistent routines and visual schedules have reduced her anxiety around learning.",
-    author: 'Jennifer K.',
+    author: 'Pilot Parent',
     child: 'Daughter, age 7, ASD',
     rating: 5,
   },
@@ -373,7 +373,7 @@ export function ForParentsPage() {
               >
                 {/* Rating */}
                 <div className="flex items-center gap-1 mb-4">
-                  {/* eslint-disable-next-line react/no-array-index-key */}
+                  {}
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={`star-${i}`} className="w-5 h-5 text-sunshine-500 fill-current" />
                   ))}

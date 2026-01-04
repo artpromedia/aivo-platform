@@ -154,21 +154,21 @@ const testimonials = [
   {
     quote:
       'My son with ADHD can finally focus on his learning. The Focus Mode button is genius—one tap and distractions disappear.',
-    author: 'Rachel M.',
+    author: 'Pilot Parent',
     child: 'Son, age 9, ADHD',
     rating: 5,
   },
   {
     quote:
       'We tried regular tablets but the temptation to play games was too strong. AIVO Pad solved that completely.',
-    author: 'James & Sarah L.',
+    author: 'Pilot Family',
     child: 'Daughter, age 11, ASD',
     rating: 5,
   },
   {
     quote:
       'The sensory customization is incredible. We adjusted the colors and sounds to match what works for our daughter.',
-    author: 'Michelle K.',
+    author: 'Pilot Parent',
     child: 'Daughter, age 7, Sensory Processing',
     rating: 5,
   },

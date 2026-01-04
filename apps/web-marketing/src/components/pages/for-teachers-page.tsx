@@ -107,7 +107,7 @@ const testimonials = [
   {
     quote:
       'AIVO has transformed how I support my students with IEPs. The automatic progress tracking saves me hours each week on documentation.',
-    author: 'Michael T.',
+    author: 'Pilot Educator',
     role: 'Special Education Teacher',
     experience: '12 years',
     rating: 5,
@@ -115,7 +115,7 @@ const testimonials = [
   {
     quote:
       'For the first time, I can truly differentiate for every student in my inclusive classroom. AIVO handles the personalization so I can focus on teaching.',
-    author: 'Sarah L.',
+    author: 'Pilot Educator',
     role: '3rd Grade Teacher',
     experience: '8 years',
     rating: 5,
@@ -247,9 +247,19 @@ export function ForTeachersPage() {
                   {/* Student list preview */}
                   <div className="space-y-2">
                     {[
-                      { name: 'Alex M.', status: 'Working on Fractions', progress: 72, iep: true },
-                      { name: 'Emma S.', status: 'Completed Chapter 4', progress: 100, iep: false },
-                      { name: 'Jordan K.', status: 'Needs intervention', progress: 45, iep: true },
+                      {
+                        name: 'Student A',
+                        status: 'Working on Fractions',
+                        progress: 72,
+                        iep: true,
+                      },
+                      {
+                        name: 'Student B',
+                        status: 'Completed Chapter 4',
+                        progress: 100,
+                        iep: false,
+                      },
+                      { name: 'Student C', status: 'Needs intervention', progress: 45, iep: true },
                     ].map((student) => (
                       <div
                         key={student.name}

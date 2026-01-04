@@ -368,7 +368,7 @@ export function AboutPage() {
                     themselves.&quot;
                   </p>
                   <p className="text-sm">
-                    <span className="font-semibold text-gray-900">Jennifer M.</span>
+                    <span className="font-semibold text-gray-900">Pilot Educator</span>
                     <span className="text-gray-500">
                       {' '}
                       — Special Education Director, Pilot School
