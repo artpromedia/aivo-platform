@@ -1,6 +1,19 @@
+/**
+ * Executive Function Service
+ * Comprehensive executive function support including task management,
+ * visual schedules, planning assistance, and EF strategy recommendations.
+ */
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import 'dotenv/config';
+
+import { connectDatabase, disconnectDatabase } from './db.js';
+import { profileRoutes } from './routes/profile.js';
+import { tasksRoutes } from './routes/tasks.js';
+import { schedulesRoutes } from './routes/schedules.js';
+import { strategiesRoutes } from './routes/strategies.js';
+import { analyticsRoutes } from './routes/analytics.js';
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
@@ -17,108 +30,35 @@ async function main() {
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'executive-function-svc' }));
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EF PROFILE
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  app.get('/profile/:learnerId', async (request, reply) => {
-    reply.send({ message: 'Get EF profile endpoint' });
+  app.get('/ready', async () => {
+    try {
+      await connectDatabase();
+      return { status: 'ready', service: 'executive-function-svc' };
+    } catch (error) {
+      return { status: 'not_ready', error: 'Database connection failed' };
+    }
   });
 
-  app.put('/profile/:learnerId', async (request, reply) => {
-    reply.send({ message: 'Update EF profile endpoint' });
-  });
+  // Register routes
+  await app.register(profileRoutes, { prefix: '/profile' });
+  await app.register(tasksRoutes, { prefix: '/tasks' });
+  await app.register(schedulesRoutes, { prefix: '/schedules' });
+  await app.register(strategiesRoutes, { prefix: '/strategies' });
+  await app.register(analyticsRoutes, { prefix: '/analytics' });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TASKS
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  app.get('/tasks', async (request, reply) => {
-    reply.send({ message: 'List tasks endpoint' });
-  });
-
-  app.post('/tasks', async (request, reply) => {
-    reply.send({ message: 'Create task endpoint' });
-  });
-
-  app.patch('/tasks/:id', async (request, reply) => {
-    reply.send({ message: 'Update task endpoint' });
-  });
-
-  app.post('/tasks/:id/complete', async (request, reply) => {
-    reply.send({ message: 'Complete task endpoint' });
-  });
-
-  app.post('/tasks/:id/check-in', async (request, reply) => {
-    reply.send({ message: 'Task check-in endpoint' });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TASK BREAKDOWN (AI-assisted)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  app.post('/planning/breakdown', async (request, reply) => {
-    reply.send({ message: 'AI task breakdown endpoint' });
-  });
-
-  app.post('/planning/sessions', async (request, reply) => {
-    reply.send({ message: 'Create planning session endpoint' });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VISUAL SCHEDULES
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  app.get('/schedules/today', async (request, reply) => {
-    reply.send({ message: 'Get today\'s schedule endpoint' });
-  });
-
-  app.get('/schedules/:date', async (request, reply) => {
-    reply.send({ message: 'Get schedule for date endpoint' });
-  });
-
-  app.post('/schedules', async (request, reply) => {
-    reply.send({ message: 'Create schedule endpoint' });
-  });
-
-  app.post('/schedules/:id/blocks/:blockId/complete', async (request, reply) => {
-    reply.send({ message: 'Complete schedule block endpoint' });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TEMPLATES
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  app.get('/templates', async (request, reply) => {
-    reply.send({ message: 'List schedule templates endpoint' });
-  });
-
-  app.post('/templates', async (request, reply) => {
-    reply.send({ message: 'Create schedule template endpoint' });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // STRATEGIES
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  app.get('/strategies', async (request, reply) => {
-    reply.send({ message: 'List EF strategies endpoint' });
-  });
-
-  app.get('/strategies/recommended', async (request, reply) => {
-    reply.send({ message: 'Get recommended strategies endpoint' });
-  });
-
-  app.post('/strategies/:id/use', async (request, reply) => {
-    reply.send({ message: 'Record strategy usage endpoint' });
-  });
-
-  app.post('/strategies/:id/rate', async (request, reply) => {
-    reply.send({ message: 'Rate strategy endpoint' });
+  // Graceful shutdown
+  const signals = ['SIGINT', 'SIGTERM'];
+  signals.forEach((signal) => {
+    process.on(signal, async () => {
+      app.log.info(`Received ${signal}, shutting down...`);
+      await app.close();
+      await disconnectDatabase();
+      process.exit(0);
+    });
   });
 
   try {
+    await connectDatabase();
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`Executive Function Service listening on ${config.host}:${config.port}`);
   } catch (err) {
