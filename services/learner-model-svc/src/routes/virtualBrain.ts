@@ -125,6 +125,26 @@ const UpdateCurriculumSchema = z.object({
   curriculumStandards: z.array(z.string()),
 });
 
+const UpdateReadingLevelSchema = z.object({
+  lexileLevel: z.number().min(-100).max(2000),
+  lexileLevelLow: z.number().min(-100).max(2000).optional(),
+  lexileLevelHigh: z.number().min(-100).max(2000).optional(),
+  confidence: z.number().min(0).max(1),
+  gradeEquivalent: z.number().min(0).max(16),
+  assessmentType: z.enum(['BASELINE', 'ADAPTIVE', 'COMPREHENSION_CHECK', 'ORAL_READING', 'VOCABULARY_PROBE']),
+  assessmentDetails: z.object({
+    wordsAssessed: z.number().optional(),
+    passagesRead: z.number().optional(),
+    comprehensionScore: z.number().min(0).max(1).optional(),
+    fluencyWpm: z.number().optional(),
+  }).optional(),
+});
+
+const UpdateContentPreferencesSchema = z.object({
+  preferSimplifiedLanguage: z.boolean().optional(),
+  targetContentLexile: z.number().min(-100).max(2000).optional(),
+});
+
 const GetByLearnerParams = z.object({
   learnerId: z.string().uuid(),
 });
@@ -582,6 +602,232 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
           masteredSkills: skillGraph.filter((s) => s.isMastered).length,
           readySkills: skillGraph.filter((s) => s.isReady).length,
         },
+      });
+    }
+  );
+
+  /**
+   * PATCH /virtual-brains/:learnerId/reading-level
+   * Update reading level for a learner's Virtual Brain.
+   * Called after reading assessments or comprehension checks.
+   */
+  fastify.patch(
+    '/virtual-brains/:learnerId/reading-level',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = GetByLearnerParams.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({ error: 'Invalid learner ID' });
+      }
+
+      const bodyResult = UpdateReadingLevelSchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: bodyResult.error.flatten(),
+        });
+      }
+
+      const { learnerId } = paramsResult.data;
+      const {
+        lexileLevel,
+        lexileLevelLow,
+        lexileLevelHigh,
+        confidence,
+        gradeEquivalent,
+        assessmentType,
+        assessmentDetails,
+      } = bodyResult.data;
+
+      // Find the virtual brain
+      const virtualBrain = await prisma.virtualBrain.findFirst({
+        where: {
+          learnerId,
+          tenantId: user.tenantId,
+        },
+      });
+
+      if (!virtualBrain) {
+        return reply.status(404).send({ error: 'Virtual brain not found for this learner' });
+      }
+
+      // Update the virtual brain and create assessment record in transaction
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Update reading level in virtual brain
+        const updated = await tx.virtualBrain.update({
+          where: { id: virtualBrain.id },
+          data: {
+            lexileLevel,
+            lexileLevelLow: lexileLevelLow ?? lexileLevel - 75,
+            lexileLevelHigh: lexileLevelHigh ?? lexileLevel + 75,
+            lexileConfidence: confidence,
+            lexileLastAssessed: new Date(),
+            readingGradeLevel: gradeEquivalent,
+          },
+        });
+
+        // Create assessment record for history
+        await tx.readingLevelAssessment.create({
+          data: {
+            virtualBrainId: virtualBrain.id,
+            assessmentType,
+            lexileLevel,
+            gradeEquivalent,
+            confidence,
+            wordsAssessed: assessmentDetails?.wordsAssessed,
+            passagesRead: assessmentDetails?.passagesRead,
+            comprehensionScore: assessmentDetails?.comprehensionScore,
+            fluencyWpm: assessmentDetails?.fluencyWpm,
+            sourceJson: assessmentDetails ?? undefined,
+          },
+        });
+
+        return updated;
+      });
+
+      return reply.send({
+        id: result.id,
+        learnerId: result.learnerId,
+        readingLevel: {
+          lexileLevel: result.lexileLevel,
+          lexileLevelLow: result.lexileLevelLow,
+          lexileLevelHigh: result.lexileLevelHigh,
+          lexileConfidence: result.lexileConfidence ? Number(result.lexileConfidence) : null,
+          lexileLastAssessed: result.lexileLastAssessed?.toISOString(),
+          readingGradeLevel: result.readingGradeLevel ? Number(result.readingGradeLevel) : null,
+        },
+        updatedAt: result.updatedAt.toISOString(),
+      });
+    }
+  );
+
+  /**
+   * GET /virtual-brains/:learnerId/reading-level
+   * Get reading level and history for a learner.
+   */
+  fastify.get(
+    '/virtual-brains/:learnerId/reading-level',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = GetByLearnerParams.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({ error: 'Invalid learner ID' });
+      }
+
+      const { learnerId } = paramsResult.data;
+
+      const virtualBrain = await prisma.virtualBrain.findFirst({
+        where: {
+          learnerId,
+          tenantId: user.tenantId,
+        },
+        include: {
+          readingAssessments: {
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          },
+        },
+      });
+
+      if (!virtualBrain) {
+        return reply.status(404).send({ error: 'Virtual brain not found' });
+      }
+
+      return reply.send({
+        learnerId: virtualBrain.learnerId,
+        currentLevel: {
+          lexileLevel: virtualBrain.lexileLevel,
+          lexileLevelLow: virtualBrain.lexileLevelLow,
+          lexileLevelHigh: virtualBrain.lexileLevelHigh,
+          lexileConfidence: virtualBrain.lexileConfidence ? Number(virtualBrain.lexileConfidence) : null,
+          lexileLastAssessed: virtualBrain.lexileLastAssessed?.toISOString(),
+          readingGradeLevel: virtualBrain.readingGradeLevel ? Number(virtualBrain.readingGradeLevel) : null,
+        },
+        preferences: {
+          preferSimplifiedLanguage: virtualBrain.preferSimplifiedLanguage,
+          targetContentLexile: virtualBrain.targetContentLexile,
+        },
+        assessmentHistory: virtualBrain.readingAssessments.map((a) => ({
+          id: a.id,
+          assessmentType: a.assessmentType,
+          lexileLevel: a.lexileLevel,
+          gradeEquivalent: Number(a.gradeEquivalent),
+          confidence: Number(a.confidence),
+          comprehensionScore: a.comprehensionScore ? Number(a.comprehensionScore) : null,
+          fluencyWpm: a.fluencyWpm,
+          createdAt: a.createdAt.toISOString(),
+        })),
+      });
+    }
+  );
+
+  /**
+   * PATCH /virtual-brains/:learnerId/content-preferences
+   * Update content delivery preferences for language adaptation.
+   */
+  fastify.patch(
+    '/virtual-brains/:learnerId/content-preferences',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const paramsResult = GetByLearnerParams.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({ error: 'Invalid learner ID' });
+      }
+
+      const bodyResult = UpdateContentPreferencesSchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: bodyResult.error.flatten(),
+        });
+      }
+
+      const { learnerId } = paramsResult.data;
+      const { preferSimplifiedLanguage, targetContentLexile } = bodyResult.data;
+
+      const virtualBrain = await prisma.virtualBrain.findFirst({
+        where: {
+          learnerId,
+          tenantId: user.tenantId,
+        },
+      });
+
+      if (!virtualBrain) {
+        return reply.status(404).send({ error: 'Virtual brain not found' });
+      }
+
+      const updated = await prisma.virtualBrain.update({
+        where: { id: virtualBrain.id },
+        data: {
+          preferSimplifiedLanguage: preferSimplifiedLanguage ?? virtualBrain.preferSimplifiedLanguage,
+          targetContentLexile: targetContentLexile ?? virtualBrain.targetContentLexile,
+        },
+      });
+
+      return reply.send({
+        id: updated.id,
+        learnerId: updated.learnerId,
+        preferences: {
+          preferSimplifiedLanguage: updated.preferSimplifiedLanguage,
+          targetContentLexile: updated.targetContentLexile,
+        },
+        readingLevel: {
+          lexileLevel: updated.lexileLevel,
+          effectiveContentLexile: updated.targetContentLexile ?? updated.lexileLevel,
+        },
+        updatedAt: updated.updatedAt.toISOString(),
       });
     }
   );

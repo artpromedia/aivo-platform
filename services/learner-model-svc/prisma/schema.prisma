@@ -109,6 +109,22 @@ model VirtualBrain {
   curriculumStandards String[] @default([]) @map("curriculum_standards")
   curriculumVersion   String?  @map("curriculum_version")  // For tracking updates
 
+  // ── Reading Level & Language Adaptation ───────────────────────────────────
+  // Lexile measure: typically 0-2000 (BR for Beginning Reader = negative values)
+  // Common ranges: K-1: BR-300L, 2-3: 300-600L, 4-5: 600-900L, 6-8: 900-1100L, 9-12: 1100-1400L
+  lexileLevel        Int?     @map("lexile_level")                // Current estimated Lexile level
+  lexileLevelLow     Int?     @map("lexile_level_low")            // Lower bound of comfort range
+  lexileLevelHigh    Int?     @map("lexile_level_high")           // Upper bound (stretch level)
+  lexileConfidence   Decimal? @map("lexile_confidence") @db.Decimal(4, 3) // Confidence in estimate (0-1)
+  lexileLastAssessed DateTime? @map("lexile_last_assessed") @db.Timestamptz
+
+  // Grade-equivalent reading level (e.g., 5.3 = 5th grade, 3rd month)
+  readingGradeLevel  Decimal? @map("reading_grade_level") @db.Decimal(3, 1)
+
+  // Content delivery preferences
+  preferSimplifiedLanguage Boolean @default(false) @map("prefer_simplified_language")
+  targetContentLexile      Int?    @map("target_content_lexile")  // Override for content delivery
+
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -117,12 +133,54 @@ model VirtualBrain {
   engagements        LearnerEngagement[]
   neurodiverseProfile NeurodiverseProfile?
   learningSessions   LearningSession[]
+  readingAssessments ReadingLevelAssessment[]
 
   @@unique([tenantId, learnerId])
   @@index([tenantId, learnerId])
   @@index([stateCode])
   @@index([ncesDistrictId])
   @@map("virtual_brains")
+}
+
+/// Reading level assessment history for tracking progress.
+/// Each assessment provides a point-in-time measurement of reading ability.
+model ReadingLevelAssessment {
+  id               String   @id @default(uuid()) @db.Uuid
+  virtualBrainId   String   @map("virtual_brain_id") @db.Uuid
+
+  // Assessment type
+  assessmentType   ReadingAssessmentType @map("assessment_type")
+
+  // Measured levels
+  lexileLevel      Int      @map("lexile_level")
+  gradeEquivalent  Decimal  @map("grade_equivalent") @db.Decimal(3, 1)
+  confidence       Decimal  @db.Decimal(4, 3)
+
+  // Assessment details
+  wordsAssessed    Int?     @map("words_assessed")
+  passagesRead     Int?     @map("passages_read")
+  comprehensionScore Decimal? @map("comprehension_score") @db.Decimal(4, 3)
+  fluencyWpm       Int?     @map("fluency_wpm")  // Words per minute for oral reading
+
+  // Source data
+  sourceJson       Json?    @map("source_json")  // Raw assessment data
+
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  virtualBrain     VirtualBrain @relation(fields: [virtualBrainId], references: [id], onDelete: Cascade)
+
+  @@index([virtualBrainId, createdAt(sort: Desc)])
+  @@map("reading_level_assessments")
+}
+
+enum ReadingAssessmentType {
+  BASELINE           // Initial assessment from onboarding
+  ADAPTIVE           // Ongoing adaptive assessment during learning
+  COMPREHENSION_CHECK // After reading passage
+  ORAL_READING       // Oral fluency assessment (via speech recognition)
+  VOCABULARY_PROBE   // Vocabulary-focused assessment
+
+  @@map("reading_assessment_type")
 }
 
 // ── Learning Objects ─────────────────────────────────────────────────────────
