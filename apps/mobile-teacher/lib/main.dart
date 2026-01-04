@@ -29,6 +29,9 @@ import 'screens/session_plan_screen.dart';
 import 'screens/session_log_screen.dart';
 import 'screens/learner_detail_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/gradebook/gradebook_screen.dart';
+import 'screens/sessions/live_session_screen.dart';
+import 'screens/monitoring/class_monitoring_screen.dart';
 
 /// Secure storage instance for tokens.
 const _secureStorage = FlutterSecureStorage(
@@ -221,6 +224,30 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const TeacherSettingsScreen(),
+      ),
+      // Gradebook route
+      GoRoute(
+        path: '/gradebook/:classId',
+        builder: (context, state) {
+          final classId = state.pathParameters['classId']!;
+          return GradebookScreen(classId: classId);
+        },
+      ),
+      // Live session monitoring route
+      GoRoute(
+        path: '/session/:sessionId/live',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId']!;
+          return LiveSessionScreen(sessionId: sessionId);
+        },
+      ),
+      // Class monitoring route
+      GoRoute(
+        path: '/class/:classId/monitor',
+        builder: (context, state) {
+          final classId = state.pathParameters['classId']!;
+          return ClassMonitoringScreen(classId: classId);
+        },
       ),
     ],
     redirect: (context, state) {
