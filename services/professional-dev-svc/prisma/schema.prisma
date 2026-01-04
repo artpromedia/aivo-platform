@@ -1,0 +1,345 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of PD program
+enum ProgramType {
+  COURSE           // Online or in-person course
+  WORKSHOP         // One-time workshop
+  CERTIFICATION    // Certification program
+  SELF_PACED       // Self-directed learning
+  CONFERENCE       // Conference attendance
+  COACHING         // 1:1 coaching sessions
+  COMMUNITY        // Learning community participation
+
+  @@map("program_type")
+}
+
+/// Status of enrollment
+enum EnrollmentStatus {
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+  WITHDRAWN
+  EXPIRED
+
+  @@map("enrollment_status")
+}
+
+/// Requirement status
+enum RequirementStatus {
+  PENDING
+  IN_PROGRESS
+  SATISFIED
+  OVERDUE
+  WAIVED
+
+  @@map("requirement_status")
+}
+
+/// Category of PD
+enum PDCategory {
+  INSTRUCTION        // Teaching methods
+  TECHNOLOGY         // EdTech skills
+  SEL                // Social-emotional learning
+  SPECIAL_ED         // Special education
+  CONTENT_AREA       // Subject-specific
+  LEADERSHIP         // Admin/leadership
+  EQUITY             // DEI training
+  SAFETY             // Safety/compliance
+  NEURODIVERSE       // Neurodiversity training
+  ASSESSMENT         // Assessment strategies
+
+  @@map("pd_category")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// PD Program definition
+model PDProgram {
+  id              String        @id @default(uuid()) @db.Uuid
+  tenantId        String?       @map("tenant_id") @db.Uuid // null = global program
+
+  /// Program title
+  title           String
+
+  /// Description
+  description     String        @db.Text
+
+  /// Program type
+  type            ProgramType
+
+  /// Category
+  category        PDCategory
+
+  /// Credit hours
+  creditHours     Float         @map("credit_hours")
+
+  /// Duration in days (for tracking)
+  durationDays    Int?          @map("duration_days")
+
+  /// External provider name
+  provider        String?
+
+  /// External URL/link
+  externalUrl     String?       @map("external_url")
+
+  /// Cost (if any)
+  cost            Float         @default(0)
+
+  /// Whether certificate is provided
+  hasCertificate  Boolean       @default(false) @map("has_certificate")
+
+  /// Modules within the program
+  modules         Json          @default("[]")
+
+  /// Prerequisites (other program IDs)
+  prerequisites   String[]      @db.Uuid
+
+  /// Tags for discovery
+  tags            String[]
+
+  isActive        Boolean       @default(true) @map("is_active")
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  enrollments     PDEnrollment[]
+  requirements    PDRequirementProgram[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([type])
+  @@map("pd_programs")
+}
+
+/// Teacher enrollment in a program
+model PDEnrollment {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @map("tenant_id") @db.Uuid
+  teacherId       String           @map("teacher_id") @db.Uuid
+  programId       String           @map("program_id") @db.Uuid
+
+  /// Enrollment status
+  status          EnrollmentStatus @default(ENROLLED)
+
+  /// Enrollment date
+  enrolledAt      DateTime         @default(now()) @map("enrolled_at")
+
+  /// Start date
+  startedAt       DateTime?        @map("started_at")
+
+  /// Completion date
+  completedAt     DateTime?        @map("completed_at")
+
+  /// Expiry date (if applicable)
+  expiresAt       DateTime?        @map("expires_at")
+
+  /// Hours completed
+  hoursCompleted  Float            @default(0) @map("hours_completed")
+
+  /// Module progress (JSON)
+  moduleProgress  Json             @default("{}") @map("module_progress")
+
+  /// Certificate URL (if completed)
+  certificateUrl  String?          @map("certificate_url")
+
+  /// External completion ID
+  externalId      String?          @map("external_id")
+
+  /// Notes
+  notes           String?          @db.Text
+
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  program         PDProgram        @relation(fields: [programId], references: [id])
+  activities      PDActivity[]
+
+  @@unique([tenantId, teacherId, programId])
+  @@index([tenantId, teacherId])
+  @@index([status])
+  @@map("pd_enrollments")
+}
+
+/// PD Requirement (district-level)
+model PDRequirement {
+  id                String             @id @default(uuid()) @db.Uuid
+  tenantId          String             @map("tenant_id") @db.Uuid
+
+  /// Requirement title
+  title             String
+
+  /// Description
+  description       String?            @db.Text
+
+  /// Category
+  category          PDCategory
+
+  /// Hours required
+  hoursRequired     Float              @map("hours_required")
+
+  /// Deadline
+  deadline          DateTime
+
+  /// Whether this is recurring
+  isRecurring       Boolean            @default(false) @map("is_recurring")
+
+  /// Recurrence interval
+  recurrenceMonths  Int?               @map("recurrence_months")
+
+  /// Roles this applies to
+  applicableRoles   String[]           @map("applicable_roles")
+
+  /// Schools this applies to (empty = all)
+  applicableSchools String[]           @db.Uuid @map("applicable_schools")
+
+  isActive          Boolean            @default(true) @map("is_active")
+
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  programs          PDRequirementProgram[]
+  teacherProgress   TeacherRequirementProgress[]
+
+  @@index([tenantId])
+  @@index([deadline])
+  @@map("pd_requirements")
+}
+
+/// Programs that satisfy a requirement
+model PDRequirementProgram {
+  id            String        @id @default(uuid()) @db.Uuid
+  requirementId String        @map("requirement_id") @db.Uuid
+  programId     String        @map("program_id") @db.Uuid
+
+  requirement   PDRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  program       PDProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, programId])
+  @@map("pd_requirement_programs")
+}
+
+/// Teacher's progress toward a requirement
+model TeacherRequirementProgress {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @map("tenant_id") @db.Uuid
+  teacherId       String           @map("teacher_id") @db.Uuid
+  requirementId   String           @map("requirement_id") @db.Uuid
+
+  /// Status
+  status          RequirementStatus @default(PENDING)
+
+  /// Hours completed toward this requirement
+  hoursCompleted  Float            @default(0) @map("hours_completed")
+
+  /// Date satisfied
+  satisfiedAt     DateTime?        @map("satisfied_at")
+
+  /// Waiver reason (if waived)
+  waiverReason    String?          @map("waiver_reason") @db.Text
+  waivedBy        String?          @map("waived_by") @db.Uuid
+  waivedAt        DateTime?        @map("waived_at")
+
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  requirement     PDRequirement    @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, teacherId, requirementId])
+  @@index([tenantId, teacherId])
+  @@index([status])
+  @@map("teacher_requirement_progress")
+}
+
+/// Activity log for PD
+model PDActivity {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @map("tenant_id") @db.Uuid
+  teacherId     String        @map("teacher_id") @db.Uuid
+  enrollmentId  String?       @map("enrollment_id") @db.Uuid
+
+  /// Activity type
+  activityType  String        @map("activity_type")
+
+  /// Description
+  description   String
+
+  /// Hours spent
+  hours         Float
+
+  /// Date of activity
+  activityDate  DateTime      @map("activity_date")
+
+  /// Evidence URL (certificate, etc.)
+  evidenceUrl   String?       @map("evidence_url")
+
+  /// Verified by admin
+  isVerified    Boolean       @default(false) @map("is_verified")
+  verifiedBy    String?       @map("verified_by") @db.Uuid
+  verifiedAt    DateTime?     @map("verified_at")
+
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  enrollment    PDEnrollment? @relation(fields: [enrollmentId], references: [id])
+
+  @@index([tenantId, teacherId])
+  @@index([activityDate])
+  @@map("pd_activities")
+}
+
+/// External certification record
+model PDCertification {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  teacherId       String      @map("teacher_id") @db.Uuid
+
+  /// Certification name
+  name            String
+
+  /// Issuing organization
+  issuingOrg      String      @map("issuing_org")
+
+  /// Issue date
+  issuedAt        DateTime    @map("issued_at")
+
+  /// Expiration date
+  expiresAt       DateTime?   @map("expires_at")
+
+  /// Credential ID
+  credentialId    String?     @map("credential_id")
+
+  /// Verification URL
+  verificationUrl String?     @map("verification_url")
+
+  /// Certificate file URL
+  certificateUrl  String?     @map("certificate_url")
+
+  /// Category
+  category        PDCategory?
+
+  /// Credit hours
+  creditHours     Float?      @map("credit_hours")
+
+  /// Verified by admin
+  isVerified      Boolean     @default(false) @map("is_verified")
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@index([tenantId, teacherId])
+  @@index([expiresAt])
+  @@map("pd_certifications")
+}

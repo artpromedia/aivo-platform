@@ -1,0 +1,392 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Executive function skill areas
+enum EFSkill {
+  WORKING_MEMORY       // Holding info in mind
+  COGNITIVE_FLEXIBILITY // Shifting between tasks
+  INHIBITORY_CONTROL   // Self-control, impulse control
+  PLANNING             // Goal-directed planning
+  ORGANIZATION         // Organizing materials/thoughts
+  TIME_MANAGEMENT      // Time awareness and estimation
+  TASK_INITIATION      // Getting started
+  EMOTIONAL_REGULATION // Managing emotions
+  METACOGNITION        // Self-awareness
+
+  @@map("ef_skill")
+}
+
+/// Task status
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  SKIPPED
+
+  @@map("task_status")
+}
+
+/// Task priority
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@map("task_priority")
+}
+
+/// Schedule block type
+enum BlockType {
+  LEARNING       // Academic learning
+  BREAK          // Rest/play break
+  TRANSITION     // Moving between activities
+  ROUTINE        // Regular routine (meals, etc.)
+  FLEXIBLE       // Flexible time
+
+  @@map("block_type")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Learner's EF profile and preferences
+model EFProfile {
+  id                  String      @id @default(uuid()) @db.Uuid
+  tenantId            String      @map("tenant_id") @db.Uuid
+  learnerId           String      @unique @map("learner_id") @db.Uuid
+
+  /// Skill levels (0-100) for each EF skill
+  skillLevels         Json        @default("{}") @map("skill_levels")
+
+  /// Preferred task chunk duration (minutes)
+  preferredChunkMin   Int         @default(15) @map("preferred_chunk_min")
+
+  /// Preferred break duration (minutes)
+  preferredBreakMin   Int         @default(5) @map("preferred_break_min")
+
+  /// Needs visual schedule
+  needsVisualSchedule Boolean     @default(true) @map("needs_visual_schedule")
+
+  /// Needs countdown timers
+  needsCountdown      Boolean     @default(true) @map("needs_countdown")
+
+  /// Needs transition warnings
+  needsTransitionWarn Boolean     @default(true) @map("needs_transition_warn")
+
+  /// Warning lead time (minutes before transition)
+  transitionWarnMin   Int         @default(5) @map("transition_warn_min")
+
+  /// Best focus time of day
+  bestFocusTime       String?     @map("best_focus_time") // MORNING, MIDDAY, AFTERNOON
+
+  /// Maximum tasks visible at once
+  maxVisibleTasks     Int         @default(3) @map("max_visible_tasks")
+
+  /// Reward style preference
+  rewardStyle         String      @default("VISUAL") @map("reward_style")
+
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("ef_profiles")
+}
+
+/// Task for a learner
+model LearnerTask {
+  id              String        @id @default(uuid()) @db.Uuid
+  tenantId        String        @map("tenant_id") @db.Uuid
+  learnerId       String        @map("learner_id") @db.Uuid
+
+  /// Task title (short, clear)
+  title           String
+
+  /// Detailed description
+  description     String?       @db.Text
+
+  /// Status
+  status          TaskStatus    @default(NOT_STARTED)
+
+  /// Priority
+  priority        TaskPriority  @default(MEDIUM)
+
+  /// Parent task (for subtasks)
+  parentTaskId    String?       @map("parent_task_id") @db.Uuid
+
+  /// Order within parent/list
+  orderIndex      Int           @default(0) @map("order_index")
+
+  /// Estimated time (minutes)
+  estimatedMin    Int?          @map("estimated_min")
+
+  /// Actual time spent (minutes)
+  actualMin       Int?          @map("actual_min")
+
+  /// Due date/time
+  dueAt           DateTime?     @map("due_at")
+
+  /// Completed timestamp
+  completedAt     DateTime?     @map("completed_at")
+
+  /// Associated learning session
+  sessionId       String?       @map("session_id") @db.Uuid
+
+  /// Category/subject
+  category        String?
+
+  /// Icon identifier
+  icon            String?
+
+  /// Color for visual display
+  color           String?
+
+  /// Reward XP on completion
+  rewardXp        Int           @default(5) @map("reward_xp")
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  parentTask      LearnerTask?  @relation("TaskSubtasks", fields: [parentTaskId], references: [id])
+  subtasks        LearnerTask[] @relation("TaskSubtasks")
+  checkIns        TaskCheckIn[]
+
+  @@index([tenantId, learnerId])
+  @@index([status])
+  @@index([dueAt])
+  @@index([parentTaskId])
+  @@map("learner_tasks")
+}
+
+/// Check-in on task progress
+model TaskCheckIn {
+  id            String      @id @default(uuid()) @db.Uuid
+  taskId        String      @map("task_id") @db.Uuid
+
+  /// What was accomplished
+  update        String      @db.Text
+
+  /// Feeling about progress (1-5)
+  feelingRating Int?        @map("feeling_rating")
+
+  /// Minutes worked since last check-in
+  minutesWorked Int?        @map("minutes_worked")
+
+  /// Blockers encountered
+  blockers      String?     @db.Text
+
+  /// Next step planned
+  nextStep      String?     @db.Text
+
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  task          LearnerTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_check_ins")
+}
+
+/// Visual schedule for a day
+model VisualSchedule {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  learnerId     String          @map("learner_id") @db.Uuid
+
+  /// Date for this schedule
+  scheduleDate  DateTime        @map("schedule_date") @db.Date
+
+  /// Template used (if any)
+  templateId    String?         @map("template_id") @db.Uuid
+
+  /// Overall notes for the day
+  notes         String?         @db.Text
+
+  /// Whether learner has reviewed the schedule
+  isReviewed    Boolean         @default(false) @map("is_reviewed")
+  reviewedAt    DateTime?       @map("reviewed_at")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  blocks        ScheduleBlock[]
+
+  @@unique([tenantId, learnerId, scheduleDate])
+  @@index([tenantId, learnerId])
+  @@map("visual_schedules")
+}
+
+/// Block within a schedule
+model ScheduleBlock {
+  id            String         @id @default(uuid()) @db.Uuid
+  scheduleId    String         @map("schedule_id") @db.Uuid
+
+  /// Block type
+  blockType     BlockType      @map("block_type")
+
+  /// Label/title for the block
+  title         String
+
+  /// Start time
+  startTime     DateTime       @map("start_time")
+
+  /// End time
+  endTime       DateTime       @map("end_time")
+
+  /// Duration in minutes
+  durationMin   Int            @map("duration_min")
+
+  /// Order in schedule
+  orderIndex    Int            @map("order_index")
+
+  /// Icon identifier
+  icon          String?
+
+  /// Color for visual display
+  color         String?
+
+  /// Associated task IDs
+  taskIds       String[]       @db.Uuid @map("task_ids")
+
+  /// Completed status
+  isCompleted   Boolean        @default(false) @map("is_completed")
+  completedAt   DateTime?      @map("completed_at")
+
+  /// Skipped (with reason)
+  isSkipped     Boolean        @default(false) @map("is_skipped")
+  skipReason    String?        @map("skip_reason")
+
+  schedule      VisualSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleId])
+  @@map("schedule_blocks")
+}
+
+/// Schedule template for reuse
+model ScheduleTemplate {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String      @map("tenant_id") @db.Uuid
+  learnerId     String?     @map("learner_id") @db.Uuid // null = tenant-wide
+
+  /// Template name
+  name          String
+
+  /// Day type (WEEKDAY, WEEKEND, SCHOOL_DAY, etc.)
+  dayType       String      @map("day_type")
+
+  /// Block definitions
+  blocks        Json        @default("[]")
+
+  /// Whether this is the default for its day type
+  isDefault     Boolean     @default(false) @map("is_default")
+
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@map("schedule_templates")
+}
+
+/// Planning session (for task breakdown)
+model PlanningSession {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  learnerId       String      @map("learner_id") @db.Uuid
+
+  /// What we're planning for
+  planningGoal    String      @map("planning_goal") @db.Text
+
+  /// Original unbroken task description
+  originalTask    String      @map("original_task") @db.Text
+
+  /// AI-generated breakdown
+  breakdown       Json        @default("[]")
+
+  /// User-modified breakdown
+  finalBreakdown  Json?       @map("final_breakdown")
+
+  /// Time estimates
+  totalEstimatedMin Int?      @map("total_estimated_min")
+
+  /// Created tasks from this session
+  createdTaskIds  String[]    @db.Uuid @map("created_task_ids")
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  @@index([tenantId, learnerId])
+  @@map("planning_sessions")
+}
+
+/// Strategy suggestion
+model EFStrategy {
+  id            String      @id @default(uuid()) @db.Uuid
+
+  /// Which EF skill this helps
+  skill         EFSkill
+
+  /// Strategy title
+  title         String
+
+  /// Strategy description
+  description   String      @db.Text
+
+  /// When to use this strategy
+  whenToUse     String      @map("when_to_use") @db.Text
+
+  /// Step-by-step instructions
+  steps         String[]
+
+  /// Age range (min grade)
+  minGrade      Int         @default(0) @map("min_grade")
+
+  /// Age range (max grade)
+  maxGrade      Int         @default(12) @map("max_grade")
+
+  /// Icon/image
+  iconUrl       String?     @map("icon_url")
+
+  /// Tags
+  tags          String[]
+
+  isActive      Boolean     @default(true) @map("is_active")
+
+  @@index([skill])
+  @@map("ef_strategies")
+}
+
+/// Learner's strategy usage
+model LearnerStrategyUsage {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String      @map("tenant_id") @db.Uuid
+  learnerId     String      @map("learner_id") @db.Uuid
+  strategyId    String      @map("strategy_id") @db.Uuid
+
+  /// Times used
+  usageCount    Int         @default(1) @map("usage_count")
+
+  /// Effectiveness rating (1-5)
+  avgRating     Float?      @map("avg_rating")
+
+  /// Favorite status
+  isFavorite    Boolean     @default(false) @map("is_favorite")
+
+  lastUsedAt    DateTime    @default(now()) @map("last_used_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@unique([tenantId, learnerId, strategyId])
+  @@index([tenantId, learnerId])
+  @@map("learner_strategy_usage")
+}
