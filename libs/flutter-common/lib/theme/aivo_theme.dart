@@ -193,48 +193,51 @@ class _AivoGradeBandColors {
   final Color error;
 }
 
-/// K-5: Brighter, more playful - higher saturation
+/// K-5: Explorer - Playful, larger elements, more rounded
+/// Primary: Purple #7C3AED
 const _k5Colors = _AivoGradeBandColors(
-  primary: Color(0xFF8B5CF6), // Violet (brand primary)
-  secondary: Color(0xFFFF6B6B), // Coral (brand CTA)
-  accent: Color(0xFFFBBF24), // Sunshine (playful accent)
-  background: Color(0xFFFFFBFE), // Warm white
-  surface: Colors.white,
-  surfaceMuted: Color(0xFFFAF5FF), // Light violet tint
-  textPrimary: Color(0xFF18181B),
-  textSecondary: Color(0xFF52525B),
-  error: Color(0xFFEF4444),
-);
-
-/// G6-8: Balanced - standard brand colors
-const _g6_8Colors = _AivoGradeBandColors(
-  primary: Color(0xFF8B5CF6), // Violet (brand primary)
-  secondary: Color(0xFFFF6B6B), // Coral (brand CTA)
-  accent: Color(0xFF10B981), // Mint (balanced accent)
-  background: Color(0xFFFFFFFF), // Pure white
+  primary: Color(0xFF7C3AED), // Brand Purple
+  secondary: Color(0xFFA78BFA), // Light Purple
+  accent: Color(0xFFF59E0B), // Amber (playful accent)
+  background: Color(0xFFFAFBFF), // Light purple tint
   surface: Colors.white,
   surfaceMuted: Color(0xFFF5F3FF), // Light violet tint
-  textPrimary: Color(0xFF18181B),
+  textPrimary: Color(0xFF1A1A2E), // Navy
   textSecondary: Color(0xFF52525B),
   error: Color(0xFFEF4444),
 );
 
-/// G9-12: More mature - slightly muted, professional
+/// G6-8: Navigator - Balanced, modern, teal primary
+/// Primary: Teal #0891B2
+const _g6_8Colors = _AivoGradeBandColors(
+  primary: Color(0xFF0891B2), // Teal
+  secondary: Color(0xFF22D3EE), // Light Teal
+  accent: Color(0xFF10B981), // Mint (balanced accent)
+  background: Color(0xFFF8FAFB), // Light teal tint
+  surface: Colors.white,
+  surfaceMuted: Color(0xFFECFEFF), // Light teal tint
+  textPrimary: Color(0xFF1A1A2E), // Navy
+  textSecondary: Color(0xFF52525B),
+  error: Color(0xFFEF4444),
+);
+
+/// G9-12: Scholar - Professional, focused, navy primary
+/// Primary: Navy #1A1A2E
 const _g9_12Colors = _AivoGradeBandColors(
-  primary: Color(0xFF7C3AED), // Deeper violet
-  secondary: Color(0xFFFA5252), // Deeper coral
-  accent: Color(0xFF0EA5E9), // Sky (professional accent)
+  primary: Color(0xFF1A1A2E), // Navy
+  secondary: Color(0xFF47476F), // Medium Navy
+  accent: Color(0xFF7C3AED), // Purple (professional accent)
   background: Color(0xFFFAFAFA), // Subtle gray
   surface: Colors.white,
   surfaceMuted: Color(0xFFF4F4F5), // Neutral gray
-  textPrimary: Color(0xFF18181B),
+  textPrimary: Color(0xFF1A1A2E), // Navy
   textSecondary: Color(0xFF52525B),
   error: Color(0xFFDC2626),
 );
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPOGRAPHY
-// Using Inter to match marketing website
+// Using Nunito as the brand font (matching web)
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _AivoTypography {
@@ -253,57 +256,60 @@ class _AivoTypography {
   final double label;
 }
 
+/// Explorer (K-5): Larger, more playful typography
 const _k5Type = _AivoTypography(
-  display: 36,
-  headline: 30,
-  title: 24,
+  display: 42,
+  headline: 34,
+  title: 26,
   body: 18,
-  label: 14,
+  label: 16,
 );
 
+/// Navigator (6-8): Balanced typography
 const _g6_8Type = _AivoTypography(
-  display: 34,
+  display: 36,
   headline: 28,
   title: 22,
-  body: 17,
+  body: 16,
   label: 14,
 );
 
+/// Scholar (9-12): Compact, professional typography
 const _g9_12Type = _AivoTypography(
   display: 32,
-  headline: 26,
+  headline: 24,
   title: 20,
-  body: 16,
+  body: 15,
   label: 13,
 );
 
 TextTheme _buildTextTheme(_AivoTypography type) {
-  final base = GoogleFonts.interTextTheme();
+  final base = GoogleFonts.nunitoTextTheme();
   return base.copyWith(
     displayLarge: base.displayLarge?.copyWith(
       fontSize: type.display,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w800, // Extra bold for headings
       letterSpacing: -0.5,
       color: AivoBrandColors.textPrimary,
     ),
     displayMedium: base.displayMedium?.copyWith(
       fontSize: type.display - 4,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w800,
       color: AivoBrandColors.textPrimary,
     ),
     headlineLarge: base.headlineLarge?.copyWith(
       fontSize: type.headline,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w800,
       color: AivoBrandColors.textPrimary,
     ),
     headlineMedium: base.headlineMedium?.copyWith(
       fontSize: type.headline - 2,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
       color: AivoBrandColors.textPrimary,
     ),
     titleLarge: base.titleLarge?.copyWith(
       fontSize: type.title,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
       color: AivoBrandColors.textPrimary,
     ),
     titleMedium: base.titleMedium?.copyWith(

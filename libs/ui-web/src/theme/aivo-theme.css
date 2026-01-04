@@ -1,0 +1,504 @@
+/**
+ * AIVO Design System - CSS Custom Properties
+ * 
+ * This file defines CSS custom properties for the AIVO theme system.
+ * Three age-based themes: Explorer (Pre-K–5), Navigator (6-8), Scholar (9-12)
+ * 
+ * Usage:
+ *   - Apply theme with data-theme attribute: <body data-theme="explorer">
+ *   - Access variables: var(--aivo-color-primary)
+ *   - High contrast: data-high-contrast="true"
+ *   - Dark mode: data-theme="scholar-dark"
+ */
+
+/* ============================================================================
+   Google Fonts Import - Nunito (Brand Font)
+   ============================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+
+/* ============================================================================
+   Root Variables - Brand Foundation
+   ============================================================================ */
+:root {
+  /* Brand Colors */
+  --aivo-brand-primary: #7c3aed;
+  --aivo-brand-navy: #1a1a2e;
+  --aivo-brand-white: #ffffff;
+
+  /* Functional Colors */
+  --aivo-color-success: #10b981;
+  --aivo-color-progress: #f59e0b;
+  --aivo-color-focus: #3b82f6;
+  --aivo-color-error: #ef4444;
+
+  /* Typography */
+  --aivo-font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  --aivo-font-family-dyslexia: 'Atkinson Hyperlegible', 'Nunito', sans-serif;
+  --aivo-font-weight-regular: 400;
+  --aivo-font-weight-medium: 500;
+  --aivo-font-weight-semibold: 600;
+  --aivo-font-weight-bold: 700;
+  --aivo-font-weight-heading: 800;
+
+  /* Spacing Scale */
+  --aivo-space-0: 0;
+  --aivo-space-1: 4px;
+  --aivo-space-2: 8px;
+  --aivo-space-3: 12px;
+  --aivo-space-4: 16px;
+  --aivo-space-5: 20px;
+  --aivo-space-6: 24px;
+  --aivo-space-7: 32px;
+  --aivo-space-8: 40px;
+  --aivo-space-9: 48px;
+  --aivo-space-10: 56px;
+
+  /* Neutral Colors */
+  --aivo-neutral-50: #fafafa;
+  --aivo-neutral-100: #f4f4f5;
+  --aivo-neutral-200: #e4e4e7;
+  --aivo-neutral-300: #d4d4d8;
+  --aivo-neutral-400: #a1a1aa;
+  --aivo-neutral-500: #71717a;
+  --aivo-neutral-600: #52525b;
+  --aivo-neutral-700: #3f3f46;
+  --aivo-neutral-800: #27272a;
+  --aivo-neutral-900: #18181b;
+  --aivo-neutral-950: #09090b;
+
+  /* Purple Scale */
+  --aivo-purple-50: #f5f3ff;
+  --aivo-purple-100: #ede9fe;
+  --aivo-purple-200: #ddd6fe;
+  --aivo-purple-300: #c4b5fd;
+  --aivo-purple-400: #a78bfa;
+  --aivo-purple-500: #8b5cf6;
+  --aivo-purple-600: #7c3aed;
+  --aivo-purple-700: #6d28d9;
+  --aivo-purple-800: #5b21b6;
+  --aivo-purple-900: #4c1d95;
+
+  /* Teal Scale */
+  --aivo-teal-50: #ecfeff;
+  --aivo-teal-100: #cffafe;
+  --aivo-teal-200: #a5f3fc;
+  --aivo-teal-300: #67e8f9;
+  --aivo-teal-400: #22d3ee;
+  --aivo-teal-500: #06b6d4;
+  --aivo-teal-600: #0891b2;
+  --aivo-teal-700: #0e7490;
+  --aivo-teal-800: #155e75;
+  --aivo-teal-900: #164e63;
+
+  /* Navy Scale */
+  --aivo-navy-50: #e8e8ed;
+  --aivo-navy-100: #d1d1db;
+  --aivo-navy-200: #a3a3b7;
+  --aivo-navy-300: #757593;
+  --aivo-navy-400: #47476f;
+  --aivo-navy-500: #2d2d47;
+  --aivo-navy-600: #1a1a2e;
+  --aivo-navy-700: #15152a;
+  --aivo-navy-800: #101026;
+  --aivo-navy-900: #0b0b22;
+
+  /* Motion */
+  --aivo-motion-fast: 150ms;
+  --aivo-motion-base: 250ms;
+  --aivo-motion-slow: 400ms;
+  --aivo-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --aivo-motion-easing-emphasized: cubic-bezier(0.3, 0, 0.2, 1);
+
+  /* Shadows */
+  --aivo-shadow-soft: 0 4px 16px rgba(26, 26, 46, 0.08);
+  --aivo-shadow-raised: 0 8px 24px rgba(26, 26, 46, 0.12);
+  --aivo-shadow-elevated: 0 12px 32px rgba(26, 26, 46, 0.16);
+}
+
+/* ============================================================================
+   Explorer Theme (Pre-K–5) - Playful & Engaging
+   Purple primary, larger elements, more rounded corners
+   ============================================================================ */
+[data-theme='explorer'],
+[data-grade-theme='explorer'] {
+  /* Colors */
+  --aivo-color-primary: #7c3aed;
+  --aivo-color-primary-hover: #6d28d9;
+  --aivo-color-secondary: #a78bfa;
+  --aivo-color-accent: #f59e0b;
+  --aivo-color-background: #fafbff;
+  --aivo-color-surface: #ffffff;
+  --aivo-color-surface-muted: #f5f3ff;
+  --aivo-color-surface-elevated: #ffffff;
+  --aivo-color-info: #3b82f6;
+  --aivo-color-success: #10b981;
+  --aivo-color-warning: #f59e0b;
+  --aivo-color-error: #ef4444;
+  --aivo-color-border: #ddd6fe;
+  --aivo-color-border-muted: #ede9fe;
+  --aivo-color-focus: #3b82f6;
+  --aivo-color-focus-ring: rgba(59, 130, 246, 0.5);
+  --aivo-color-backdrop: rgba(26, 26, 46, 0.5);
+  --aivo-color-text-primary: #1a1a2e;
+  --aivo-color-text-secondary: #52525b;
+  --aivo-color-text-muted: #71717a;
+  --aivo-color-text-on-primary: #ffffff;
+  --aivo-color-text-on-accent: #1a1a2e;
+
+  /* Border Radius */
+  --aivo-radius-button: 20px;
+  --aivo-radius-card: 20px;
+  --aivo-radius-input: 12px;
+  --aivo-radius-modal: 24px;
+  --aivo-radius-xs: 4px;
+  --aivo-radius-sm: 8px;
+  --aivo-radius-md: 12px;
+  --aivo-radius-lg: 16px;
+  --aivo-radius-xl: 20px;
+  --aivo-radius-pill: 999px;
+
+  /* Typography */
+  --aivo-font-size-display: 42px;
+  --aivo-font-size-headline: 34px;
+  --aivo-font-size-title: 26px;
+  --aivo-font-size-body: 18px;
+  --aivo-font-size-label: 16px;
+  --aivo-font-size-caption: 14px;
+  --aivo-line-height-display: 52px;
+  --aivo-line-height-headline: 42px;
+  --aivo-line-height-title: 34px;
+  --aivo-line-height-body: 28px;
+  --aivo-line-height-label: 24px;
+  --aivo-line-height-caption: 20px;
+
+  /* Touch Targets (larger for young learners) */
+  --aivo-touch-target-min: 56px;
+  --aivo-touch-target-button: 56px;
+  --aivo-touch-target-icon: 56px;
+
+  /* Scale multipliers */
+  --aivo-scale-font: 1.12;
+  --aivo-scale-space: 1.15;
+}
+
+/* ============================================================================
+   Navigator Theme (6-8) - Balanced & Modern  
+   Teal primary, medium sizing, moderate curves
+   ============================================================================ */
+[data-theme='navigator'],
+[data-grade-theme='navigator'] {
+  /* Colors */
+  --aivo-color-primary: #0891b2;
+  --aivo-color-primary-hover: #0e7490;
+  --aivo-color-secondary: #22d3ee;
+  --aivo-color-accent: #10b981;
+  --aivo-color-background: #f8fafb;
+  --aivo-color-surface: #ffffff;
+  --aivo-color-surface-muted: #ecfeff;
+  --aivo-color-surface-elevated: #ffffff;
+  --aivo-color-info: #3b82f6;
+  --aivo-color-success: #10b981;
+  --aivo-color-warning: #f59e0b;
+  --aivo-color-error: #ef4444;
+  --aivo-color-border: #a5f3fc;
+  --aivo-color-border-muted: #cffafe;
+  --aivo-color-focus: #3b82f6;
+  --aivo-color-focus-ring: rgba(59, 130, 246, 0.5);
+  --aivo-color-backdrop: rgba(26, 26, 46, 0.45);
+  --aivo-color-text-primary: #1a1a2e;
+  --aivo-color-text-secondary: #52525b;
+  --aivo-color-text-muted: #71717a;
+  --aivo-color-text-on-primary: #ffffff;
+  --aivo-color-text-on-accent: #ffffff;
+
+  /* Border Radius */
+  --aivo-radius-button: 12px;
+  --aivo-radius-card: 12px;
+  --aivo-radius-input: 8px;
+  --aivo-radius-modal: 16px;
+  --aivo-radius-xs: 4px;
+  --aivo-radius-sm: 8px;
+  --aivo-radius-md: 12px;
+  --aivo-radius-lg: 16px;
+  --aivo-radius-xl: 20px;
+  --aivo-radius-pill: 999px;
+
+  /* Typography */
+  --aivo-font-size-display: 36px;
+  --aivo-font-size-headline: 28px;
+  --aivo-font-size-title: 22px;
+  --aivo-font-size-body: 16px;
+  --aivo-font-size-label: 14px;
+  --aivo-font-size-caption: 12px;
+  --aivo-line-height-display: 44px;
+  --aivo-line-height-headline: 36px;
+  --aivo-line-height-title: 30px;
+  --aivo-line-height-body: 24px;
+  --aivo-line-height-label: 20px;
+  --aivo-line-height-caption: 18px;
+
+  /* Touch Targets */
+  --aivo-touch-target-min: 48px;
+  --aivo-touch-target-button: 48px;
+  --aivo-touch-target-icon: 48px;
+
+  /* Scale multipliers */
+  --aivo-scale-font: 1.04;
+  --aivo-scale-space: 1.06;
+}
+
+/* ============================================================================
+   Scholar Theme (9-12) - Professional & Focused
+   Navy primary, compact sizing, subtle curves
+   ============================================================================ */
+[data-theme='scholar'],
+[data-grade-theme='scholar'] {
+  /* Colors */
+  --aivo-color-primary: #1a1a2e;
+  --aivo-color-primary-hover: #2d2d47;
+  --aivo-color-secondary: #47476f;
+  --aivo-color-accent: #7c3aed;
+  --aivo-color-background: #fafafa;
+  --aivo-color-surface: #ffffff;
+  --aivo-color-surface-muted: #f4f4f5;
+  --aivo-color-surface-elevated: #ffffff;
+  --aivo-color-info: #3b82f6;
+  --aivo-color-success: #10b981;
+  --aivo-color-warning: #f59e0b;
+  --aivo-color-error: #ef4444;
+  --aivo-color-border: #e4e4e7;
+  --aivo-color-border-muted: #f4f4f5;
+  --aivo-color-focus: #3b82f6;
+  --aivo-color-focus-ring: rgba(59, 130, 246, 0.5);
+  --aivo-color-backdrop: rgba(26, 26, 46, 0.4);
+  --aivo-color-text-primary: #1a1a2e;
+  --aivo-color-text-secondary: #52525b;
+  --aivo-color-text-muted: #71717a;
+  --aivo-color-text-on-primary: #ffffff;
+  --aivo-color-text-on-accent: #ffffff;
+
+  /* Border Radius */
+  --aivo-radius-button: 8px;
+  --aivo-radius-card: 8px;
+  --aivo-radius-input: 6px;
+  --aivo-radius-modal: 12px;
+  --aivo-radius-xs: 4px;
+  --aivo-radius-sm: 8px;
+  --aivo-radius-md: 12px;
+  --aivo-radius-lg: 16px;
+  --aivo-radius-xl: 20px;
+  --aivo-radius-pill: 999px;
+
+  /* Typography */
+  --aivo-font-size-display: 32px;
+  --aivo-font-size-headline: 24px;
+  --aivo-font-size-title: 20px;
+  --aivo-font-size-body: 15px;
+  --aivo-font-size-label: 13px;
+  --aivo-font-size-caption: 11px;
+  --aivo-line-height-display: 40px;
+  --aivo-line-height-headline: 32px;
+  --aivo-line-height-title: 28px;
+  --aivo-line-height-body: 24px;
+  --aivo-line-height-label: 18px;
+  --aivo-line-height-caption: 16px;
+
+  /* Touch Targets */
+  --aivo-touch-target-min: 44px;
+  --aivo-touch-target-button: 44px;
+  --aivo-touch-target-icon: 44px;
+
+  /* Scale multipliers */
+  --aivo-scale-font: 1;
+  --aivo-scale-space: 1;
+}
+
+/* ============================================================================
+   Scholar Dark Theme (9-12) - Dark Mode
+   ============================================================================ */
+[data-theme='scholar-dark'],
+[data-grade-theme='scholar-dark'] {
+  /* Colors */
+  --aivo-color-primary: #a78bfa;
+  --aivo-color-primary-hover: #c4b5fd;
+  --aivo-color-secondary: #757593;
+  --aivo-color-accent: #7c3aed;
+  --aivo-color-background: #09090b;
+  --aivo-color-surface: #18181b;
+  --aivo-color-surface-muted: #27272a;
+  --aivo-color-surface-elevated: #27272a;
+  --aivo-color-info: #60a5fa;
+  --aivo-color-success: #34d399;
+  --aivo-color-warning: #fbbf24;
+  --aivo-color-error: #f87171;
+  --aivo-color-border: #3f3f46;
+  --aivo-color-border-muted: #27272a;
+  --aivo-color-focus: #60a5fa;
+  --aivo-color-focus-ring: rgba(96, 165, 250, 0.5);
+  --aivo-color-backdrop: rgba(0, 0, 0, 0.6);
+  --aivo-color-text-primary: #fafafa;
+  --aivo-color-text-secondary: #a1a1aa;
+  --aivo-color-text-muted: #71717a;
+  --aivo-color-text-on-primary: #09090b;
+  --aivo-color-text-on-accent: #ffffff;
+
+  /* Border Radius (same as scholar) */
+  --aivo-radius-button: 8px;
+  --aivo-radius-card: 8px;
+  --aivo-radius-input: 6px;
+  --aivo-radius-modal: 12px;
+  --aivo-radius-xs: 4px;
+  --aivo-radius-sm: 8px;
+  --aivo-radius-md: 12px;
+  --aivo-radius-lg: 16px;
+  --aivo-radius-xl: 20px;
+  --aivo-radius-pill: 999px;
+
+  /* Typography (same as scholar) */
+  --aivo-font-size-display: 32px;
+  --aivo-font-size-headline: 24px;
+  --aivo-font-size-title: 20px;
+  --aivo-font-size-body: 15px;
+  --aivo-font-size-label: 13px;
+  --aivo-font-size-caption: 11px;
+  --aivo-line-height-display: 40px;
+  --aivo-line-height-headline: 32px;
+  --aivo-line-height-title: 28px;
+  --aivo-line-height-body: 24px;
+  --aivo-line-height-label: 18px;
+  --aivo-line-height-caption: 16px;
+
+  /* Touch Targets */
+  --aivo-touch-target-min: 44px;
+  --aivo-touch-target-button: 44px;
+  --aivo-touch-target-icon: 44px;
+
+  /* Scale multipliers */
+  --aivo-scale-font: 1;
+  --aivo-scale-space: 1;
+
+  /* Dark mode specific */
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   High Contrast Overrides
+   ============================================================================ */
+[data-high-contrast='true'] {
+  --aivo-color-border: var(--aivo-color-primary);
+  --aivo-color-focus-ring: var(--aivo-color-primary);
+}
+
+[data-high-contrast='true'][data-theme='explorer'] {
+  --aivo-color-primary: #5b21b6;
+  --aivo-color-background: #ffffff;
+  --aivo-color-surface: #ffffff;
+  --aivo-color-text-primary: #09090b;
+  --aivo-color-text-secondary: #27272a;
+  --aivo-color-border: #5b21b6;
+  --aivo-color-focus: #1d4ed8;
+}
+
+[data-high-contrast='true'][data-theme='navigator'] {
+  --aivo-color-primary: #0e7490;
+  --aivo-color-background: #ffffff;
+  --aivo-color-surface: #ffffff;
+  --aivo-color-text-primary: #09090b;
+  --aivo-color-text-secondary: #27272a;
+  --aivo-color-border: #0e7490;
+  --aivo-color-focus: #1d4ed8;
+}
+
+[data-high-contrast='true'][data-theme='scholar'] {
+  --aivo-color-primary: #09090b;
+  --aivo-color-background: #ffffff;
+  --aivo-color-surface: #ffffff;
+  --aivo-color-text-primary: #09090b;
+  --aivo-color-text-secondary: #27272a;
+  --aivo-color-border: #09090b;
+  --aivo-color-focus: #1d4ed8;
+}
+
+[data-high-contrast='true'][data-theme='scholar-dark'] {
+  --aivo-color-primary: #e9d5ff;
+  --aivo-color-background: #000000;
+  --aivo-color-surface: #09090b;
+  --aivo-color-text-primary: #ffffff;
+  --aivo-color-text-secondary: #d4d4d8;
+  --aivo-color-border: #ffffff;
+  --aivo-color-focus: #93c5fd;
+}
+
+/* ============================================================================
+   Reduced Motion
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --aivo-motion-fast: 0ms;
+    --aivo-motion-base: 0ms;
+    --aivo-motion-slow: 150ms;
+    --aivo-motion-easing-standard: linear;
+    --aivo-motion-easing-emphasized: linear;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   Dyslexia-Friendly Mode
+   ============================================================================ */
+[data-dyslexia='true'] {
+  --aivo-font-family: 'Atkinson Hyperlegible', 'Nunito', sans-serif;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+}
+
+/* ============================================================================
+   Base Reset & Accessibility Defaults
+   ============================================================================ */
+html {
+  font-family: var(--aivo-font-family);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus visible styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--aivo-color-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--aivo-color-focus-ring);
+}
+
+/* Remove focus styles for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Skip link for accessibility */
+.aivo-skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 9999;
+  padding: var(--aivo-space-3) var(--aivo-space-4);
+  background: var(--aivo-color-primary);
+  color: var(--aivo-color-text-on-primary);
+  font-weight: var(--aivo-font-weight-semibold);
+  border-radius: var(--aivo-radius-button);
+  text-decoration: none;
+}
+
+.aivo-skip-link:focus {
+  left: var(--aivo-space-4);
+  top: var(--aivo-space-4);
+}

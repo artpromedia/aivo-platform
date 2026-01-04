@@ -7,7 +7,9 @@ const colorEntries = [
   { token: 'background', name: 'background' },
   { token: 'surface', name: 'surface' },
   { token: 'surfaceMuted', name: 'surface-muted' },
+  { token: 'surfaceElevated', name: 'surface-elevated' },
   { token: 'primary', name: 'primary' },
+  { token: 'primaryHover', name: 'primary-hover' },
   { token: 'secondary', name: 'secondary' },
   { token: 'accent', name: 'accent' },
   { token: 'info', name: 'info' },
@@ -15,9 +17,12 @@ const colorEntries = [
   { token: 'warning', name: 'warning' },
   { token: 'error', name: 'error' },
   { token: 'border', name: 'border' },
+  { token: 'borderMuted', name: 'border-muted' },
   { token: 'focus', name: 'focus' },
   { token: 'textPrimary', name: 'text' },
   { token: 'textSecondary', name: 'muted' },
+  { token: 'textMuted', name: 'text-muted' },
+  { token: 'textOnPrimary', name: 'on-primary' },
   { token: 'textOnAccent', name: 'on-accent' },
 ] as const;
 
@@ -73,14 +78,31 @@ function buildThemeVariables(grade: GradeBand, options: ThemeOptions = {}): Reco
     }
   }
 
-  // backdrop keeps alpha as-is for overlays
+  // backdrop and focusRing keep their format for overlays
   if (colorSource.backdrop) {
     vars['--color-backdrop'] = colorSource.backdrop;
+  }
+  if (colorSource.focusRing) {
+    vars['--color-focus-ring'] = colorSource.focusRing;
   }
 
   for (const size of fontSizeKeys) {
     vars[`--font-size-${kebab(size)}`] = `${theme.fontSize[size]}px`;
     vars[`--line-height-${kebab(size)}`] = `${theme.lineHeight[size]}px`;
+  }
+
+  // Theme-specific radius values
+  if (theme.radius) {
+    for (const [name, value] of Object.entries(theme.radius)) {
+      vars[`--radius-${kebab(name)}`] = `${value}px`;
+    }
+  }
+
+  // Touch target sizes
+  if (theme.touchTarget) {
+    for (const [name, value] of Object.entries(theme.touchTarget)) {
+      vars[`--touch-target-${kebab(name)}`] = `${value}px`;
+    }
   }
 
   const spacingScale = theme.scale.space;
@@ -150,29 +172,48 @@ function gradeThemeBase(defaultGrade: GradeBand) {
   };
 
   for (const grade of Object.keys(tokens.gradeThemes)) {
-    base[`[data-grade-theme="${grade}"]`] = buildThemeVariables(grade);
+    // Support both data-grade-theme and data-theme attributes
+    base[`[data-grade-theme="${grade}"]`] = buildThemeVariables(grade as GradeBand);
+    base[`[data-theme="${grade}"]`] = buildThemeVariables(grade as GradeBand);
+
+    // High contrast variants
+    base[`[data-grade-theme="${grade}"][data-high-contrast="true"]`] = buildThemeVariables(
+      grade as GradeBand,
+      { highContrast: true }
+    );
+    base[`[data-theme="${grade}"][data-high-contrast="true"]`] = buildThemeVariables(
+      grade as GradeBand,
+      { highContrast: true }
+    );
+    // Legacy attribute support
     base[`[data-grade-theme="${grade}"][data-a11y-high-contrast="true"]`] = buildThemeVariables(
-      grade,
+      grade as GradeBand,
       { highContrast: true }
     );
   }
 
+  // Dyslexia-friendly font
+  base['[data-dyslexia="true"]'] = {
+    '--font-family-default': 'var(--font-family-dyslexia)',
+  };
   base['[data-a11y-dyslexia="true"]'] = {
     '--font-family-default': 'var(--font-family-dyslexia)',
   };
 
+  // Reduced motion
   const reducedMotionVars = buildThemeVariables(defaultGrade, { reducedMotion: true });
   const reducedMotionOverrides: Record<string, string> = Object.fromEntries(
     Object.entries(reducedMotionVars).filter(
       ([key]) => key.startsWith('--motion-duration') || key.startsWith('--motion-easing')
     )
   );
+  base['[data-reduced-motion="true"]'] = reducedMotionOverrides;
   base['[data-a11y-reduced-motion="true"]'] = reducedMotionOverrides;
 
   return base;
 }
 
-export function createGradeThemePlugin(defaultGrade: GradeBand = 'G6_8') {
+export function createGradeThemePlugin(defaultGrade: GradeBand = 'navigator') {
   const colorTheme: Record<string, string> = Object.fromEntries(
     colorEntries.map((entry) => [entry.name, `rgb(var(--color-${entry.name}) / <alpha-value>)`])
   );

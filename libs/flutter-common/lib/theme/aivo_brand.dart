@@ -4,45 +4,88 @@ import 'package:flutter/material.dart';
 // AIVO BRAND DESIGN TOKENS
 //
 // Single source of truth for AIVO brand identity.
-// Aligned with: apps/web-marketing/tailwind.config.cjs
+// Brand: AIVO - "Unlocking Every Learner's Potential"
+// Primary Font: Nunito (Google Fonts)
+// Primary Color: Purple #7C3AED
 //
 // USAGE:
 //   - Primary brand color: AivoBrand.primary
-//   - CTA actions: AivoBrand.coral
-//   - Success states: AivoBrand.mint
+//   - Functional colors: AivoBrand.success, AivoBrand.error
 //   - Theme extension: Theme.of(context).extension<AivoColors>()
 // ══════════════════════════════════════════════════════════════════════════════
 
 /// AIVO brand design tokens - the single source of truth.
 ///
-/// These values are synced with the marketing website's Tailwind configuration.
+/// These values define the AIVO design system across all platforms.
 abstract class AivoBrand {
   AivoBrand._();
 
   // ════════════════════════════════════════════════════════════════════════════
-  // PRIMARY BRAND COLOR (Violet/Purple)
-  // Tailwind: theme-primary
-  // Usage: Primary buttons, links, selected states, brand identity
+  // BRAND IDENTITY
   // ════════════════════════════════════════════════════════════════════════════
 
-  static const MaterialColor primary = MaterialColor(0xFF8B5CF6, <int, Color>{
+  static const String brandName = 'AIVO';
+  static const String brandTagline = "Unlocking Every Learner's Potential";
+  static const String brandFont = 'Nunito';
+  static const String brandFontDyslexia = 'Atkinson Hyperlegible';
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // PRIMARY BRAND COLOR (Purple)
+  // Core brand color - used for primary actions, links, brand identity
+  // Explorer theme primary color
+  // ════════════════════════════════════════════════════════════════════════════
+
+  static const MaterialColor primary = MaterialColor(0xFF7C3AED, <int, Color>{
     50: Color(0xFFF5F3FF),
     100: Color(0xFFEDE9FE),
     200: Color(0xFFDDD6FE),
     300: Color(0xFFC4B5FD),
     400: Color(0xFFA78BFA),
-    500: Color(0xFF8B5CF6), // DEFAULT
-    600: Color(0xFF7C3AED),
+    500: Color(0xFF8B5CF6),
+    600: Color(0xFF7C3AED), // DEFAULT - Brand Purple
     700: Color(0xFF6D28D9),
     800: Color(0xFF5B21B6),
     900: Color(0xFF4C1D95),
-    950: Color(0xFF2E1065),
   });
 
   // ════════════════════════════════════════════════════════════════════════════
-  // CTA COLOR (Coral)
-  // Tailwind: coral
-  // Usage: Call-to-action buttons, highlights, urgent actions
+  // TEAL COLOR (Navigator Theme Primary)
+  // Middle school (6-8) theme primary
+  // ════════════════════════════════════════════════════════════════════════════
+
+  static const MaterialColor teal = MaterialColor(0xFF0891B2, <int, Color>{
+    50: Color(0xFFECFEFF),
+    100: Color(0xFFCFFAFE),
+    200: Color(0xFFA5F3FC),
+    300: Color(0xFF67E8F9),
+    400: Color(0xFF22D3EE),
+    500: Color(0xFF06B6D4),
+    600: Color(0xFF0891B2), // DEFAULT - Navigator Teal
+    700: Color(0xFF0E7490),
+    800: Color(0xFF155E75),
+    900: Color(0xFF164E63),
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // NAVY COLOR (Scholar Theme Primary)
+  // High school (9-12) theme primary
+  // ════════════════════════════════════════════════════════════════════════════
+
+  static const MaterialColor navy = MaterialColor(0xFF1A1A2E, <int, Color>{
+    50: Color(0xFFE8E8ED),
+    100: Color(0xFFD1D1DB),
+    200: Color(0xFFA3A3B7),
+    300: Color(0xFF757593),
+    400: Color(0xFF47476F),
+    500: Color(0xFF2D2D47),
+    600: Color(0xFF1A1A2E), // DEFAULT - Scholar Navy
+    700: Color(0xFF15152A),
+    800: Color(0xFF101026),
+    900: Color(0xFF0B0B22),
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // LEGACY: CTA COLOR (Coral) - kept for backwards compatibility
   // ════════════════════════════════════════════════════════════════════════════
 
   static const MaterialColor coral = MaterialColor(0xFFFF6B6B, <int, Color>{
