@@ -18,7 +18,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
 
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 import 'firebase_options.dart';
 import 'offline/offline.dart';
