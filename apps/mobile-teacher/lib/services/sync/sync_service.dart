@@ -8,7 +8,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_common/flutter_common.dart'
-    hide SyncOperationType, SyncResult, SyncConflict, ConflictType, SyncStatusInfo;
+    hide SyncOperationType, SyncResult, SyncConflict, ConflictType, SyncStatusInfo, EnvConfig;
 import 'package:uuid/uuid.dart';
 
 import '../../models/sync_operation.dart';

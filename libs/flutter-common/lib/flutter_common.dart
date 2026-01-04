@@ -62,14 +62,14 @@ export 'realtime/realtime.dart' hide UserPresence, ConnectionStatus, presencePro
 // Firebase Crashlytics
 export 'crashlytics/crashlytics.dart';
 
-// Firebase Analytics
-export 'analytics/analytics.dart';
+// Firebase Analytics - hide conflicts with services/analytics_service.dart
+export 'analytics/analytics.dart' hide analyticsServiceProvider, AnalyticsService;
 
 // Environment configuration
 export 'config/config.dart';
 
-// Error handling
-export 'error_handling/error_handling.dart';
+// Error handling - hide ErrorCategory to avoid conflict with offline/sync_scheduler.dart
+export 'error_handling/error_handling.dart' hide ErrorCategory;
 
 // Deep linking
 export 'deep_linking/deep_linking.dart';
