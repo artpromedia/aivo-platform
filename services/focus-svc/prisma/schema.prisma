@@ -181,28 +181,28 @@ model DailyFocusSummary {
   tenantId              String   @map("tenant_id") @db.Uuid
   learnerId             String   @map("learner_id") @db.Uuid
   date                  DateTime @map("date") @db.Date
-  
+
   // Session metrics
   totalSessionsCount    Int      @default(0) @map("total_sessions_count")
   totalSessionDurationMs BigInt  @default(0) @map("total_session_duration_ms")
-  
+
   // Focus metrics
   avgFocusScore         Float?   @map("avg_focus_score")
   focusedTimeMs         BigInt   @default(0) @map("focused_time_ms")
   distractedTimeMs      BigInt   @default(0) @map("distracted_time_ms")
-  
+
   // Intervention metrics
   interventionCount     Int      @default(0) @map("intervention_count")
   breaksCount           Int      @default(0) @map("breaks_count")
   regulationActivitiesCount Int  @default(0) @map("regulation_activities_count")
-  
+
   // Ping statistics
   totalPings            Int      @default(0) @map("total_pings")
   focusLossEvents       Int      @default(0) @map("focus_loss_events")
-  
+
   // Computed at end of day
   focusRatio            Float?   @map("focus_ratio") // focusedTime / totalTime
-  
+
   // Timestamps
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -211,4 +211,69 @@ model DailyFocusSummary {
   @@index([tenantId, learnerId, date])
   @@index([date])
   @@map("daily_focus_summaries")
+}
+
+/// Game sessions for focus break mini-games
+model GameSession {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  learnerId         String    @map("learner_id") @db.Uuid
+  sessionId         String    @map("session_id") @db.Uuid
+
+  // Game details
+  gameId            String    @map("game_id")
+  gameTitle         String    @map("game_title")
+  gameCategory      String    @map("game_category") // cognitive, relaxation, physical, creative
+
+  // Timing
+  startedAt         DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  endedAt           DateTime? @map("ended_at") @db.Timestamptz
+  durationSeconds   Int?      @map("duration_seconds")
+
+  // Completion and scoring
+  completed         Boolean   @default(false) @map("completed")
+  score             Int?      @map("score")
+  maxScore          Int?      @map("max_score")
+
+  // Effectiveness tracking
+  returnedToFocus   Boolean?  @map("returned_to_focus")
+  helpfulnessRating Int?      @map("helpfulness_rating") // 1-5
+  preFocusScore     Float?    @map("pre_focus_score")
+  postFocusScore    Float?    @map("post_focus_score")
+
+  // Metadata
+  metadataJson      Json?     @default("{}") @map("metadata_json")
+
+  @@index([tenantId, learnerId, startedAt])
+  @@index([sessionId])
+  @@index([gameId])
+  @@index([gameCategory])
+  @@map("game_sessions")
+}
+
+/// Learner game preferences and history
+model LearnerGamePreferences {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String   @unique @map("learner_id") @db.Uuid
+
+  // Preferences
+  favoriteCategories String[] @map("favorite_categories") // ['relaxation', 'cognitive']
+  completedGameIds  String[] @map("completed_game_ids")
+
+  // Statistics
+  totalGamesPlayed  Int      @default(0) @map("total_games_played")
+  totalGamesCompleted Int    @default(0) @map("total_games_completed")
+  averageHelpfulness Float?  @map("average_helpfulness")
+
+  // Last played tracking
+  lastPlayedGameId  String?  @map("last_played_game_id")
+  lastPlayedAt      DateTime? @map("last_played_at") @db.Timestamptz
+
+  // Timestamps
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@map("learner_game_preferences")
 }

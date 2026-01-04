@@ -8,3 +8,5 @@ export { streakService } from './streak.service.js';
 export { leaderboardService } from './leaderboard.service.js';
 export { challengeService, CHALLENGE_TEMPLATES } from './challenge.service.js';
 export { rewardService } from './reward.service.js';
+export { teamService } from './team.service.js';
+export { competitionService } from './competition.service.js';

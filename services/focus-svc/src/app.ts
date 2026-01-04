@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerFocusRoutes } from './routes/focus.js';
+import { registerGamesRoutes } from './routes/games.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export async function buildApp() {
@@ -29,6 +30,9 @@ export async function buildApp() {
 
   // Focus routes
   await app.register(registerFocusRoutes, { prefix: '/focus' });
+
+  // Games routes (also under /focus prefix for consistency)
+  await app.register(registerGamesRoutes, { prefix: '/focus' });
 
   return app;
 }

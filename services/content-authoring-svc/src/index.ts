@@ -46,8 +46,11 @@ import cors from '@fastify/cors';
 import Fastify from 'fastify';
 
 import { registerAuthHook } from './auth.js';
+import { communityRoutes } from './routes/community.routes.js';
 import { contentRoutes } from './routes/content.js';
 import { learningObjectRoutes } from './routes/learningObjects.js';
+import { lessonBuilderRoutes } from './routes/lesson-builder.routes.js';
+import { sharingRoutes } from './routes/sharing.routes.js';
 import { translationRoutes } from './routes/translations.js';
 import { versionRoutes } from './routes/versions.js';
 
@@ -80,6 +83,9 @@ async function main() {
   await fastify.register(versionRoutes, { prefix: '/api' });
   await fastify.register(translationRoutes, { prefix: '/api' });
   await fastify.register(contentRoutes, { prefix: '/api' });
+  await fastify.register(lessonBuilderRoutes, { prefix: '/api' });
+  await fastify.register(sharingRoutes, { prefix: '/api' });
+  await fastify.register(communityRoutes, { prefix: '/api' });
 
   // Start server
   try {

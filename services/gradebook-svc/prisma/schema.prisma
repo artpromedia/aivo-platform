@@ -1,0 +1,490 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// GRADEBOOK ENUMS
+// ============================================================================
+
+enum AssignmentType {
+  HOMEWORK
+  QUIZ
+  TEST
+  PROJECT
+  PARTICIPATION
+  DISCUSSION
+  LAB
+  PRESENTATION
+  EXTRA_CREDIT
+  OTHER
+
+  @@map("assignment_type")
+}
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("assignment_status")
+}
+
+enum GradeStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  GRADED
+  LATE
+  MISSING
+  EXEMPT
+  EXCUSED
+
+  @@map("grade_status")
+}
+
+enum GradingScale {
+  POINTS          // Raw points
+  PERCENTAGE      // 0-100%
+  LETTER_GRADE    // A, B, C, D, F
+  STANDARDS_BASED // 1-4 scale
+  PASS_FAIL       // Pass/Fail
+  COMPLETE_INCOMPLETE // Complete/Incomplete
+
+  @@map("grading_scale")
+}
+
+enum GradeCalculationType {
+  WEIGHTED_CATEGORIES  // Categories weighted by percentage
+  TOTAL_POINTS        // Sum of all points
+  STANDARDS_BASED     // Based on standards mastery
+  CUSTOM              // Custom calculation
+
+  @@map("grade_calculation_type")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_SELECT
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+  FILL_BLANK
+  MATCHING
+  ORDERING
+  NUMERIC
+
+  @@map("question_type")
+}
+
+enum AssessmentBuilderStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("assessment_builder_status")
+}
+
+// ============================================================================
+// GRADEBOOK MODELS
+// ============================================================================
+
+/// Gradebook Configuration per Class/Course
+model GradebookConfig {
+  id                    String                @id @default(uuid()) @db.Uuid
+  tenantId              String                @map("tenant_id") @db.Uuid
+  classroomId           String                @unique @map("classroom_id") @db.Uuid
+  teacherId             String                @map("teacher_id") @db.Uuid
+
+  /// Grading settings
+  gradingScale          GradingScale          @default(PERCENTAGE) @map("grading_scale")
+  calculationType       GradeCalculationType  @default(WEIGHTED_CATEGORIES) @map("calculation_type")
+  dropLowestScores      Int                   @default(0) @map("drop_lowest_scores") @db.SmallInt
+  allowLateSubmissions  Boolean               @default(true) @map("allow_late_submissions")
+  latePenaltyPercent    Int?                  @map("late_penalty_percent") @db.SmallInt
+  extraCreditEnabled    Boolean               @default(true) @map("extra_credit_enabled")
+
+  /// Display settings
+  showStudentGrades     Boolean               @default(true) @map("show_student_grades")
+  showClassAverage      Boolean               @default(false) @map("show_class_average")
+  roundGrades           Boolean               @default(true) @map("round_grades")
+
+  /// Letter grade scale (customizable)
+  letterGradeScale      Json                  @default("{\"A\": 90, \"B\": 80, \"C\": 70, \"D\": 60, \"F\": 0}") @map("letter_grade_scale")
+
+  /// Relationships
+  categories            GradeCategory[]
+  assignments           Assignment[]
+
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([teacherId])
+  @@map("gradebook_configs")
+}
+
+/// Grade Categories (e.g., Homework, Tests, Projects)
+model GradeCategory {
+  id                String          @id @default(uuid()) @db.Uuid
+  gradebookConfigId String          @map("gradebook_config_id") @db.Uuid
+  name              String          @db.VarChar(100)
+  weight            Float           @default(1.0) // Percentage weight (0-1)
+  color             String?         @db.VarChar(20) // Hex color
+  dropLowest        Int             @default(0) @map("drop_lowest") @db.SmallInt
+  orderIndex        Int             @map("order_index") @db.SmallInt
+
+  /// Relationships
+  gradebookConfig   GradebookConfig @relation(fields: [gradebookConfigId], references: [id], onDelete: Cascade)
+  assignments       Assignment[]
+
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([gradebookConfigId])
+  @@map("grade_categories")
+}
+
+/// Assignment (any gradeable item)
+model Assignment {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  gradebookConfigId String            @map("gradebook_config_id") @db.Uuid
+  categoryId        String?           @map("category_id") @db.Uuid
+
+  /// Basic info
+  title             String            @db.VarChar(200)
+  description       String?           @db.Text
+  type              AssignmentType    @default(HOMEWORK)
+  status            AssignmentStatus  @default(DRAFT)
+
+  /// Points
+  totalPoints       Int               @map("total_points")
+  extraCredit       Boolean           @default(false) @map("extra_credit")
+
+  /// Dates
+  assignedDate      DateTime?         @map("assigned_date") @db.Timestamptz
+  dueDate           DateTime?         @map("due_date") @db.Timestamptz
+  availableFrom     DateTime?         @map("available_from") @db.Timestamptz
+  availableUntil    DateTime?         @map("available_until") @db.Timestamptz
+
+  /// Settings
+  allowLateSubmissions Boolean        @default(true) @map("allow_late_submissions")
+  latePenaltyPercent   Int?           @map("late_penalty_percent") @db.SmallInt
+
+  /// Integration
+  assessmentId      String?           @map("assessment_id") @db.Uuid // Link to assessment-svc
+  externalId        String?           @map("external_id") @db.VarChar(200) // Google Classroom, Canvas, etc.
+  externalSource    String?           @map("external_source") @db.VarChar(50)
+
+  /// Relationships
+  gradebookConfig   GradebookConfig   @relation(fields: [gradebookConfigId], references: [id], onDelete: Cascade)
+  category          GradeCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  grades            Grade[]
+  auditLog          GradeAuditLog[]
+
+  createdBy         String            @map("created_by") @db.Uuid
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  publishedAt       DateTime?         @map("published_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([gradebookConfigId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([assessmentId])
+  @@map("assignments")
+}
+
+/// Grade for a student on an assignment
+model Grade {
+  id              String        @id @default(uuid()) @db.Uuid
+  assignmentId    String        @map("assignment_id") @db.Uuid
+  studentId       String        @map("student_id") @db.Uuid
+  tenantId        String        @map("tenant_id") @db.Uuid
+
+  /// Score
+  score           Float?        // Actual points earned (null if not graded)
+  maxPoints       Int           @map("max_points") // Max points at time of grading
+  percentage      Float?        // Calculated percentage
+  letterGrade     String?       @map("letter_grade") @db.VarChar(5)
+
+  /// Status
+  status          GradeStatus   @default(NOT_SUBMITTED)
+
+  /// Submission info
+  submittedAt     DateTime?     @map("submitted_at") @db.Timestamptz
+  gradedAt        DateTime?     @map("graded_at") @db.Timestamptz
+  gradedBy        String?       @map("graded_by") @db.Uuid
+
+  /// Late submission
+  isLate          Boolean       @default(false) @map("is_late")
+  latePenalty     Float?        @map("late_penalty") // Points deducted
+
+  /// Override
+  isOverride      Boolean       @default(false) @map("is_override")
+  overrideReason  String?       @map("override_reason") @db.Text
+  originalScore   Float?        @map("original_score") // Score before override
+
+  /// Feedback
+  feedback        String?       @db.Text
+  privateNotes    String?       @map("private_notes") @db.Text // Only for teacher
+
+  /// Rubric scoring
+  rubricScores    Json?         @map("rubric_scores") // [{ criterionId, score, feedback }]
+
+  /// Relationships
+  assignment      Assignment    @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  auditLog        GradeAuditLog[]
+
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([assignmentId, studentId])
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([assignmentId])
+  @@index([status])
+  @@index([gradedBy])
+  @@map("grades")
+}
+
+/// Audit log for grade changes
+model GradeAuditLog {
+  id              String      @id @default(uuid()) @db.Uuid
+  gradeId         String      @map("grade_id") @db.Uuid
+  assignmentId    String      @map("assignment_id") @db.Uuid
+  studentId       String      @map("student_id") @db.Uuid
+
+  /// Change details
+  action          String      @db.VarChar(50) // created, updated, override_applied, deleted
+  fieldChanged    String?     @map("field_changed") @db.VarChar(50)
+  oldValue        String?     @map("old_value") @db.Text
+  newValue        String?     @map("new_value") @db.Text
+  reason          String?     @db.Text
+
+  /// Audit
+  changedBy       String      @map("changed_by") @db.Uuid
+  changedAt       DateTime    @default(now()) @map("changed_at") @db.Timestamptz
+  ipAddress       String?     @map("ip_address") @db.VarChar(45)
+
+  /// Relationships
+  grade           Grade       @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  assignment      Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([gradeId])
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([changedBy])
+  @@index([changedAt])
+  @@map("grade_audit_logs")
+}
+
+// ============================================================================
+// ASSESSMENT BUILDER MODELS
+// ============================================================================
+
+/// Custom Assessment built by teacher
+model CustomAssessment {
+  id                  String                    @id @default(uuid()) @db.Uuid
+  tenantId            String                    @map("tenant_id") @db.Uuid
+  teacherId           String                    @map("teacher_id") @db.Uuid
+
+  /// Basic info
+  title               String                    @db.VarChar(200)
+  description         String?                   @db.Text
+  status              AssessmentBuilderStatus   @default(DRAFT)
+
+  /// Settings
+  timeLimit           Int?                      @map("time_limit") // minutes
+  shuffleQuestions    Boolean                   @default(false) @map("shuffle_questions")
+  shuffleAnswers      Boolean                   @default(false) @map("shuffle_answers")
+  showCorrectAnswers  Boolean                   @default(true) @map("show_correct_answers")
+  allowRetakes        Boolean                   @default(false) @map("allow_retakes")
+  maxAttempts         Int                       @default(1) @map("max_attempts") @db.SmallInt
+  passingScore        Float?                    @map("passing_score") // Percentage
+
+  /// Metadata
+  tags                String[]                  @default([])
+  subjectId           String?                   @map("subject_id") @db.Uuid
+  gradeLevel          String?                   @map("grade_level") @db.VarChar(20)
+
+  /// Relationships
+  questions           CustomAssessmentQuestion[]
+  submissions         AssessmentSubmission[]
+
+  /// Publishing
+  isShared            Boolean                   @default(false) @map("is_shared")
+  sharedWith          String[]                  @default([]) @map("shared_with") @db.Uuid
+
+  createdAt           DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  publishedAt         DateTime?                 @map("published_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([teacherId])
+  @@index([status])
+  @@map("custom_assessments")
+}
+
+/// Question in custom assessment
+model CustomAssessmentQuestion {
+  id                String           @id @default(uuid()) @db.Uuid
+  assessmentId      String           @map("assessment_id") @db.Uuid
+  orderIndex        Int              @map("order_index") @db.SmallInt
+
+  /// Question content
+  type              QuestionType
+  questionText      String           @map("question_text") @db.Text
+  questionMedia     Json?            @map("question_media") // { type: 'image'|'video', url: string }
+
+  /// Options (for MC, MS, matching, etc.)
+  options           Json?            // Array of options with text and correct flag
+  correctAnswer     Json?            @map("correct_answer")
+  acceptedAnswers   String[]         @default([]) @map("accepted_answers")
+
+  /// Scoring
+  points            Int              @default(1)
+  partialCredit     Boolean          @default(false) @map("partial_credit")
+
+  /// Feedback
+  explanation       String?          @db.Text
+  hints             String[]         @default([])
+
+  /// Relationships
+  assessment        CustomAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([assessmentId])
+  @@map("custom_assessment_questions")
+}
+
+/// Question Bank for reusable questions
+model QuestionBankItem {
+  id              String        @id @default(uuid()) @db.Uuid
+  tenantId        String        @map("tenant_id") @db.Uuid
+  teacherId       String        @map("teacher_id") @db.Uuid
+
+  /// Question content
+  type            QuestionType
+  questionText    String        @map("question_text") @db.Text
+  questionMedia   Json?         @map("question_media")
+  options         Json?
+  correctAnswer   Json?         @map("correct_answer")
+  acceptedAnswers String[]      @default([]) @map("accepted_answers")
+
+  /// Metadata
+  tags            String[]      @default([])
+  subjectId       String?       @map("subject_id") @db.Uuid
+  gradeLevel      String?       @map("grade_level") @db.VarChar(20)
+  difficulty      String?       @db.VarChar(20)
+
+  /// Usage stats
+  timesUsed       Int           @default(0) @map("times_used")
+  averageScore    Float?        @map("average_score")
+
+  /// Sharing
+  isShared        Boolean       @default(false) @map("is_shared")
+  sharedWith      String[]      @default([]) @map("shared_with") @db.Uuid
+
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([teacherId])
+  @@index([tags])
+  @@map("question_bank_items")
+}
+
+/// Submission for custom assessment
+model AssessmentSubmission {
+  id              String           @id @default(uuid()) @db.Uuid
+  assessmentId    String           @map("assessment_id") @db.Uuid
+  studentId       String           @map("student_id") @db.Uuid
+  tenantId        String           @map("tenant_id") @db.Uuid
+
+  /// Attempt info
+  attemptNumber   Int              @default(1) @map("attempt_number") @db.SmallInt
+
+  /// Status
+  status          String           @default("in_progress") // in_progress, submitted, graded
+
+  /// Timing
+  startedAt       DateTime         @default(now()) @map("started_at") @db.Timestamptz
+  submittedAt     DateTime?        @map("submitted_at") @db.Timestamptz
+  timeSpent       Int?             @map("time_spent") // seconds
+
+  /// Scoring
+  score           Float?           // Points earned
+  maxScore        Float?           @map("max_score")
+  percentage      Float?
+  passed          Boolean?
+
+  /// Answers
+  answers         Json             @default("{}") // { questionId: answer }
+
+  /// Grading
+  gradedBy        String?          @map("graded_by") @db.Uuid
+  gradedAt        DateTime?        @map("graded_at") @db.Timestamptz
+  feedback        String?          @db.Text
+
+  /// Relationships
+  assessment      CustomAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([assessmentId])
+  @@index([studentId])
+  @@index([tenantId])
+  @@map("assessment_submissions")
+}
+
+/// Rubric for essay/subjective grading
+model GradingRubric {
+  id          String            @id @default(uuid()) @db.Uuid
+  tenantId    String            @map("tenant_id") @db.Uuid
+  teacherId   String            @map("teacher_id") @db.Uuid
+
+  name        String            @db.VarChar(200)
+  description String?           @db.Text
+  maxPoints   Int               @map("max_points")
+
+  /// Criteria
+  criteria    RubricCriterion[]
+
+  /// Sharing
+  isShared    Boolean           @default(false) @map("is_shared")
+
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([teacherId])
+  @@map("grading_rubrics")
+}
+
+/// Criterion in rubric
+model RubricCriterion {
+  id          String        @id @default(uuid()) @db.Uuid
+  rubricId    String        @map("rubric_id") @db.Uuid
+  name        String        @db.VarChar(200)
+  description String?       @db.Text
+  maxPoints   Int           @map("max_points")
+  orderIndex  Int           @map("order_index") @db.SmallInt
+
+  /// Performance levels
+  levels      Json          // [{ points: 4, label: "Excellent", description: "..." }, ...]
+
+  rubric      GradingRubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+
+  @@index([rubricId])
+  @@map("rubric_criteria")
+}

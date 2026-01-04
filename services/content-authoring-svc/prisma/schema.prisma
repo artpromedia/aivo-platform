@@ -59,8 +59,10 @@ model LearningObject {
   createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz
   updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
 
-  versions LearningObjectVersion[]
-  tags     LearningObjectTag[]
+  versions      LearningObjectVersion[]
+  tags          LearningObjectTag[]
+  contentShares ContentShare[]
+  forks         ContentFork[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, subject, gradeBand])
@@ -242,4 +244,211 @@ model LearningObjectTranslation {
   @@index([locale])
   @@index([status])
   @@map("learning_object_translations")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENT SHARING & MARKETPLACE
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ContentVisibility {
+  PRIVATE
+  SCHOOL
+  DISTRICT
+  PUBLIC
+
+  @@map("content_visibility")
+}
+
+/// Shared content from teachers to the marketplace
+model ContentShare {
+  id                   String             @id @default(uuid()) @db.Uuid
+  learningObjectId     String             @map("learning_object_id") @db.Uuid
+  sharedByUserId       String             @map("shared_by_user_id") @db.Uuid
+  tenantId             String?            @map("tenant_id") @db.Uuid
+  schoolId             String?            @map("school_id") @db.Uuid
+  visibility           ContentVisibility  @default(PRIVATE)
+  description          String?
+  license              String?
+  requiresAttribution  Boolean            @default(false) @map("requires_attribution")
+  downloadCount        Int                @default(0) @map("download_count")
+  viewCount            Int                @default(0) @map("view_count")
+  forkCount            Int                @default(0) @map("fork_count")
+  averageRating        Decimal?           @db.Decimal(3, 2) @map("average_rating")
+  isActive             Boolean            @default(true) @map("is_active")
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  learningObject LearningObject          @relation(fields: [learningObjectId], references: [id], onDelete: Cascade)
+  sharedBy       TeacherProfile          @relation(fields: [sharedByUserId], references: [userId], onDelete: Cascade)
+  tags           ContentShareTag[]
+  reviews        ContentReview[]
+  ratings        ContentRating[]
+  forks          ContentFork[]
+  collectionItems CollectionItem[]
+
+  @@unique([learningObjectId, sharedByUserId])
+  @@index([visibility, isActive])
+  @@index([sharedByUserId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([averageRating])
+  @@map("content_shares")
+}
+
+/// Tags for shared content
+model ContentShareTag {
+  id             String   @id @default(uuid()) @db.Uuid
+  contentShareId String   @map("content_share_id") @db.Uuid
+  tag            String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  contentShare ContentShare @relation(fields: [contentShareId], references: [id], onDelete: Cascade)
+
+  @@unique([contentShareId, tag])
+  @@index([tag])
+  @@map("content_share_tags")
+}
+
+/// User ratings for shared content
+model ContentRating {
+  id             String   @id @default(uuid()) @db.Uuid
+  contentShareId String   @map("content_share_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  rating         Int      // 1-5 stars
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  contentShare ContentShare @relation(fields: [contentShareId], references: [id], onDelete: Cascade)
+
+  @@unique([contentShareId, userId])
+  @@index([contentShareId])
+  @@map("content_ratings")
+}
+
+/// Detailed reviews for shared content
+model ContentReview {
+  id             String   @id @default(uuid()) @db.Uuid
+  contentShareId String   @map("content_share_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  rating         Int      // 1-5 stars
+  title          String
+  comment        String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  contentShare ContentShare @relation(fields: [contentShareId], references: [id], onDelete: Cascade)
+
+  @@unique([contentShareId, userId])
+  @@index([contentShareId, createdAt(sort: Desc)])
+  @@map("content_reviews")
+}
+
+/// Track forked/remixed content
+model ContentFork {
+  id                     String   @id @default(uuid()) @db.Uuid
+  originalContentShareId String   @map("original_content_share_id") @db.Uuid
+  forkedLearningObjectId String   @map("forked_learning_object_id") @db.Uuid
+  forkedByUserId         String   @map("forked_by_user_id") @db.Uuid
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  originalContentShare ContentShare   @relation(fields: [originalContentShareId], references: [id], onDelete: Cascade)
+  forkedLearningObject LearningObject @relation(fields: [forkedLearningObjectId], references: [id], onDelete: Cascade)
+
+  @@index([originalContentShareId])
+  @@index([forkedLearningObjectId])
+  @@index([forkedByUserId])
+  @@map("content_forks")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEACHER COMMUNITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Teacher profile with community features
+model TeacherProfile {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @unique @map("user_id") @db.Uuid
+  displayName    String?  @map("display_name")
+  bio            String?
+  school         String?
+  district       String?
+  subjects       String[] // Array of subjects they teach
+  gradeBands     String[] @map("grade_bands") // Array of grade bands
+  avatarUrl      String?  @map("avatar_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  sharedContent ContentShare[]
+  followers     TeacherFollow[] @relation("Following")
+  following     TeacherFollow[] @relation("Follower")
+  collections   ContentCollection[]
+
+  @@index([school])
+  @@index([district])
+  @@map("teacher_profiles")
+}
+
+/// Teacher following relationships
+model TeacherFollow {
+  id          String   @id @default(uuid()) @db.Uuid
+  followerId  String   @map("follower_id") @db.Uuid
+  followingId String   @map("following_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  follower  TeacherProfile @relation("Follower", fields: [followerId], references: [userId], onDelete: Cascade)
+  following TeacherProfile @relation("Following", fields: [followingId], references: [userId], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("teacher_follows")
+}
+
+/// Content collections/playlists created by teachers
+model ContentCollection {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  name        String
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  teacher TeacherProfile   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  items   CollectionItem[]
+  tags    CollectionTag[]
+
+  @@index([userId])
+  @@index([isPublic])
+  @@map("content_collections")
+}
+
+/// Items in a content collection
+model CollectionItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  collectionId   String   @map("collection_id") @db.Uuid
+  contentShareId String   @map("content_share_id") @db.Uuid
+  notes          String?
+  addedAt        DateTime @default(now()) @map("added_at") @db.Timestamptz
+
+  collection   ContentCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  contentShare ContentShare      @relation(fields: [contentShareId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, contentShareId])
+  @@index([collectionId])
+  @@map("collection_items")
+}
+
+/// Tags for collections
+model CollectionTag {
+  id           String   @id @default(uuid()) @db.Uuid
+  collectionId String   @map("collection_id") @db.Uuid
+  tag          String
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  collection ContentCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, tag])
+  @@index([tag])
+  @@map("collection_tags")
 }

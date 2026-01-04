@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.compat.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "outDir": "dist",
+    "rootDir": ".",
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["src/**/*", "generated/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
+}
