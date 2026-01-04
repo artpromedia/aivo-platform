@@ -52,7 +52,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 # Build the application
-RUN pnpm turbo build --filter=@aivo/${APP_NAME}
+RUN pnpm turbo build --filter="@aivo/${APP_NAME}"
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner

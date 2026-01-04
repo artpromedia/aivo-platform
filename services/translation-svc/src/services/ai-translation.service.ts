@@ -132,8 +132,8 @@ export interface TranslationMetadata {
  * AI Translation Service
  */
 export class AITranslationService {
-  private apiEndpoint: string;
-  private apiKey: string;
+  private readonly apiEndpoint: string;
+  private readonly apiKey: string;
 
   constructor(config: { apiEndpoint: string; apiKey: string }) {
     this.apiEndpoint = config.apiEndpoint;
@@ -387,7 +387,7 @@ Provide the adapted text and explain the changes made.
   private parseResponse(response: string, request: AITranslationRequest): AITranslationResult {
     try {
       // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(response);
       if (!jsonMatch) {
         throw new Error('No JSON found in response');
       }

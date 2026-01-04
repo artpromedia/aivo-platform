@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rxdart/rxdart.dart';
 
-import 'in_app_notification_service.dart';
+import '../in_app_notification_service.dart';
 
 /// Widget for displaying notification badge on icons
 class NotificationBadge extends StatelessWidget {

@@ -12,7 +12,6 @@
 import { type FastifyInstance, type FastifyPluginAsync } from 'fastify';
 import type { Pool } from 'pg';
 import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
 
 import { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import {

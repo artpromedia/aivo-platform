@@ -44,7 +44,7 @@ await fastify.register(rateLimit as any, {
 fastify.decorate('prisma', prisma);
 
 // Register admin auth plugin
-await fastify.register(adminAuthPlugin as any);
+await fastify.register(adminAuthPlugin);
 
 // Register routes
 await fastify.register(partnerRoutes as any, { prefix: '/api/partners' });
@@ -88,4 +88,5 @@ const start = async () => {
 
 start();
 
-export { fastify, prisma };
+export { fastify };
+export { prisma } from './prisma-types.js';

@@ -10,7 +10,6 @@ import {
   port,
   databaseUrl,
   secret,
-  optional,
   isProduction,
 } from '@aivo/env-validation';
 

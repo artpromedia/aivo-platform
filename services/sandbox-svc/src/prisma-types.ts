@@ -7,14 +7,11 @@
  * should be defined in the schema.prisma file and generated via prisma generate.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { PrismaClient as BasePrismaClient } from '@prisma/client';
 
-// Use `any` for model types to allow flexibility with actual Prisma-generated types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyModel = any;
-
 // Model delegate types that match Prisma's API
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface ModelDelegate {
   findUnique: (args: any) => Promise<any>;
   findFirst: (args: any) => Promise<any>;

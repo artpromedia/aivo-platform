@@ -7,7 +7,7 @@
 FROM node:20-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache g++ make python3
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter=@aivo/${SERVICE_NAME}
+RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
 # Prune dev dependencies
 RUN pnpm prune --prod

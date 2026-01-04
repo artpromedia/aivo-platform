@@ -409,7 +409,7 @@ class TeacherLocalDatabase {
 
   /// Delete an assignment from cache.
   Future<void> deleteAssignment(String id) async {
-    await _db.deleteContent(id);
+    await _db.deleteContentByKeys([id]);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
