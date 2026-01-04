@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of game
+enum GameType {
+  FOCUS_BREAK      // Short games for focus breaks
+  BRAIN_TRAINING   // Cognitive skill building
+  EDUCATIONAL      // Subject-matter learning
+  REWARD           // Unlockable reward games
+  RELAXATION       // Calming/sensory games
+
+  @@map("game_type")
+}
+
+/// Category of game mechanics
+enum GameCategory {
+  PUZZLE           // Logic and problem solving
+  MEMORY           // Memory and recall
+  REACTION         // Speed and reflexes
+  PATTERN          // Pattern recognition
+  RELAXATION       // Calming activities
+  MOVEMENT         // Physical movement
+  CREATIVE         // Drawing, building
+  MATH             // Math-based games
+  LANGUAGE         // Word games
+
+  @@map("game_category")
+}
+
+/// Cognitive skill targeted
+enum CognitiveSkill {
+  WORKING_MEMORY
+  ATTENTION
+  PROCESSING_SPEED
+  COGNITIVE_FLEXIBILITY
+  INHIBITORY_CONTROL
+  VISUAL_SPATIAL
+  VERBAL_REASONING
+  PATTERN_RECOGNITION
+
+  @@map("cognitive_skill")
+}
+
+/// Grade band for age-appropriate content
+enum GradeBand {
+  K_2       // Kindergarten - 2nd grade (ages 5-8)
+  G3_5      // 3rd - 5th grade (ages 8-11)
+  G6_8      // 6th - 8th grade (ages 11-14)
+  G9_12     // 9th - 12th grade (ages 14-18)
+
+  @@map("grade_band")
+}
+
+/// Context in which game was played
+enum GameContext {
+  BREAK             // Focus break during learning
+  REWARD            // Earned as reward
+  BRAIN_TRAINING    // Part of brain training routine
+  FREE_PLAY         // Free choice play
+  TEACHER_ASSIGNED  // Assigned by teacher
+
+  @@map("game_context")
+}
+
+/// Session status
+enum SessionStatus {
+  STARTED
+  PAUSED
+  COMPLETED
+  ABANDONED
+
+  @@map("session_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Game definition - catalog of available games
+model Game {
+  id                   String          @id @default(uuid()) @db.Uuid
+
+  /// Unique slug for the game
+  slug                 String          @unique
+
+  /// Display name
+  title                String
+
+  /// Short description
+  description          String          @db.Text
+
+  /// Detailed instructions
+  instructions         String?         @db.Text
+
+  /// Game type
+  type                 GameType
+
+  /// Game category
+  category             GameCategory
+
+  /// Minimum age (years)
+  minAge               Int             @map("min_age")
+
+  /// Maximum age (years)
+  maxAge               Int             @map("max_age")
+
+  /// Grade bands this game is suitable for
+  gradeBands           GradeBand[]     @map("grade_bands")
+
+  /// Estimated duration in seconds
+  estimatedDurationSec Int             @map("estimated_duration_sec")
+
+  /// Cognitive skills targeted
+  cognitiveSkills      CognitiveSkill[] @map("cognitive_skills")
+
+  /// Accessibility features
+  accessibilityFeatures String[]       @map("accessibility_features")
+
+  /// Thumbnail image URL
+  thumbnailUrl         String?         @map("thumbnail_url")
+
+  /// Game asset bundle URL
+  assetBundleUrl       String?         @map("asset_bundle_url")
+
+  /// Game-specific configuration (levels, difficulty, etc.)
+  gameConfig           Json            @default("{}") @map("game_config")
+
+  /// Whether game is active/playable
+  isActive             Boolean         @default(true) @map("is_active")
+
+  /// XP awarded on completion
+  xpReward             Int             @default(10) @map("xp_reward")
+
+  /// Coins awarded on completion
+  coinReward           Int             @default(5) @map("coin_reward")
+
+  /// Tags for discovery
+  tags                 String[]
+
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  sessions             GameSession[]
+
+  @@index([type])
+  @@index([category])
+  @@index([isActive])
+  @@map("games")
+}
+
+/// Individual game play session
+model GameSession {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  learnerId     String          @map("learner_id") @db.Uuid
+  gameId        String          @map("game_id") @db.Uuid
+
+  /// Context in which game was played
+  context       GameContext
+
+  /// Session status
+  status        SessionStatus   @default(STARTED)
+
+  /// Score achieved (game-specific)
+  score         Int?
+
+  /// Stars earned (0-3 for display)
+  stars         Int?            @db.SmallInt
+
+  /// Whether this was a personal best
+  isPersonalBest Boolean        @default(false) @map("is_personal_best")
+
+  /// Level reached (if applicable)
+  levelReached  Int?            @map("level_reached")
+
+  /// Difficulty level played
+  difficulty    String?
+
+  /// Duration of play in seconds
+  durationSec   Int?            @map("duration_sec")
+
+  /// Detailed performance metrics (accuracy, speed, etc.)
+  metrics       Json            @default("{}") @map("metrics")
+
+  /// XP earned from this session
+  xpEarned      Int             @default(0) @map("xp_earned")
+
+  /// Coins earned from this session
+  coinsEarned   Int             @default(0) @map("coins_earned")
+
+  startedAt     DateTime        @default(now()) @map("started_at")
+  endedAt       DateTime?       @map("ended_at")
+  pausedAt      DateTime?       @map("paused_at")
+
+  /// Reference to learning session if applicable
+  learningSessionId String?     @map("learning_session_id") @db.Uuid
+
+  game          Game            @relation(fields: [gameId], references: [id])
+
+  @@index([tenantId, learnerId])
+  @@index([gameId])
+  @@index([context])
+  @@index([startedAt])
+  @@map("game_sessions")
+}
+
+/// Daily brain training plan
+model BrainTrainingPlan {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  learnerId     String          @map("learner_id") @db.Uuid
+
+  /// Date this plan is for
+  planDate      DateTime        @map("plan_date") @db.Date
+
+  /// Ordered list of game IDs for this day
+  gameIds       String[]        @map("game_ids") @db.Uuid
+
+  /// Target duration in minutes
+  targetMinutes Int             @default(15) @map("target_minutes")
+
+  /// Skills to focus on
+  focusSkills   CognitiveSkill[] @map("focus_skills")
+
+  /// Completed game IDs
+  completedGameIds String[]     @map("completed_game_ids") @db.Uuid
+
+  /// Whether plan was completed
+  isCompleted   Boolean         @default(false) @map("is_completed")
+
+  /// Actual time spent in minutes
+  actualMinutes Int?            @map("actual_minutes")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@unique([tenantId, learnerId, planDate])
+  @@index([tenantId, learnerId])
+  @@map("brain_training_plans")
+}
+
+/// Learner's game preferences and history summary
+model LearnerGameProfile {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  learnerId     String          @unique @map("learner_id") @db.Uuid
+
+  /// Preferred game categories
+  preferredCategories GameCategory[] @map("preferred_categories")
+
+  /// Accessibility requirements
+  accessibilityNeeds  String[]   @map("accessibility_needs")
+
+  /// Total games played
+  totalGamesPlayed    Int        @default(0) @map("total_games_played")
+
+  /// Total time playing (minutes)
+  totalPlayTimeMin    Int        @default(0) @map("total_play_time_min")
+
+  /// Current brain training streak (days)
+  brainTrainingStreak Int        @default(0) @map("brain_training_streak")
+
+  /// Last brain training date
+  lastBrainTrainingDate DateTime? @map("last_brain_training_date")
+
+  /// Skill levels for each cognitive skill (0-100)
+  skillLevels         Json       @default("{}") @map("skill_levels")
+
+  /// Favorite game IDs
+  favoriteGameIds     String[]   @map("favorite_game_ids") @db.Uuid
+
+  /// Recently played game IDs (last 10)
+  recentGameIds       String[]   @map("recent_game_ids") @db.Uuid
+
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("learner_game_profiles")
+}
+
+/// High scores / leaderboard entries
+model GameLeaderboardEntry {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  gameId        String          @map("game_id") @db.Uuid
+  learnerId     String          @map("learner_id") @db.Uuid
+
+  /// High score
+  score         Int
+
+  /// When the score was achieved
+  achievedAt    DateTime        @default(now()) @map("achieved_at")
+
+  /// Rank at time of achievement (null if not calculated)
+  rank          Int?
+
+  /// Period type (weekly, monthly, all_time)
+  periodType    String          @map("period_type")
+
+  /// Period key (e.g., "2024-W52", "2024-12", "all_time")
+  periodKey     String          @map("period_key")
+
+  @@unique([tenantId, gameId, learnerId, periodType, periodKey])
+  @@index([tenantId, gameId, periodType, periodKey])
+  @@map("game_leaderboard_entries")
+}

@@ -19,3 +19,13 @@ export {
 // New agent exports
 export { BaseAgent, type AgentContext, type AgentResponse } from './base-agent.js';
 export { TutorAgent } from './tutor-agent.js';
+export {
+  WritingAssistantAgent,
+  type WritingContext,
+  type WritingType,
+  type WritingLevel,
+  type WritingSuggestion,
+  type SentenceCompletion,
+  type WritingPromptResponse,
+  type WritingFeedback,
+} from './writing-assistant.js';

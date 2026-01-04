@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Type of speech therapy session
+enum SessionType {
+  ARTICULATION    // Sound production
+  FLUENCY         // Stuttering/cluttering
+  LANGUAGE        // Expressive/receptive
+  VOICE           // Vocal quality
+  PRAGMATICS      // Social communication
+  PHONOLOGY       // Sound patterns
+
+  @@map("session_type")
+}
+
+/// Status of a therapy session
+enum TherapySessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+
+  @@map("therapy_session_status")
+}
+
+/// Type of activity within a session
+enum ActivityType {
+  WORD_REPETITION
+  SENTENCE_PRACTICE
+  CONVERSATION
+  PICTURE_NAMING
+  STORY_RETELL
+  READING_ALOUD
+  GAME_BASED
+  BREATHING_EXERCISE
+  PACING_PRACTICE
+
+  @@map("activity_type")
+}
+
+/// Goal status
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  MASTERED
+  DISCONTINUED
+
+  @@map("goal_status")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Speech therapy goal (IEP-aligned)
+model SpeechGoal {
+  id              String       @id @default(uuid()) @db.Uuid
+  tenantId        String       @map("tenant_id") @db.Uuid
+  learnerId       String       @map("learner_id") @db.Uuid
+  therapistId     String?      @map("therapist_id") @db.Uuid
+
+  /// Goal description
+  description     String       @db.Text
+
+  /// Session type this goal targets
+  sessionType     SessionType  @map("session_type")
+
+  /// Target sounds or skills
+  targetSounds    String[]     @map("target_sounds")
+
+  /// Accuracy threshold for mastery (e.g., 80%)
+  masteryThreshold Float       @default(0.8) @map("mastery_threshold")
+
+  /// Current accuracy level
+  currentAccuracy Float?       @map("current_accuracy")
+
+  /// Status
+  status          GoalStatus   @default(NOT_STARTED)
+
+  /// IEP reference
+  iepGoalId       String?      @map("iep_goal_id")
+
+  /// Target date for mastery
+  targetDate      DateTime?    @map("target_date")
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  sessions        TherapySession[]
+  progressRecords GoalProgress[]
+
+  @@index([tenantId, learnerId])
+  @@index([therapistId])
+  @@map("speech_goals")
+}
+
+/// Progress record for a goal
+model GoalProgress {
+  id            String      @id @default(uuid()) @db.Uuid
+  goalId        String      @map("goal_id") @db.Uuid
+  sessionId     String?     @map("session_id") @db.Uuid
+
+  /// Accuracy achieved in this session
+  accuracy      Float
+
+  /// Number of trials
+  trials        Int
+
+  /// Notes from session
+  notes         String?     @db.Text
+
+  recordedAt    DateTime    @default(now()) @map("recorded_at")
+  recordedBy    String?     @map("recorded_by") @db.Uuid
+
+  goal          SpeechGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_progress")
+}
+
+/// Speech therapy session
+model TherapySession {
+  id              String                 @id @default(uuid()) @db.Uuid
+  tenantId        String                 @map("tenant_id") @db.Uuid
+  learnerId       String                 @map("learner_id") @db.Uuid
+  therapistId     String?                @map("therapist_id") @db.Uuid
+
+  /// Session type
+  sessionType     SessionType            @map("session_type")
+
+  /// Status
+  status          TherapySessionStatus   @default(SCHEDULED)
+
+  /// Linked goal (optional)
+  goalId          String?                @map("goal_id") @db.Uuid
+
+  /// Scheduled time
+  scheduledAt     DateTime?              @map("scheduled_at")
+
+  /// Actual times
+  startedAt       DateTime?              @map("started_at")
+  endedAt         DateTime?              @map("ended_at")
+
+  /// Duration in minutes
+  durationMin     Int?                   @map("duration_min")
+
+  /// Session notes
+  notes           String?                @db.Text
+
+  /// Summary for parents
+  parentSummary   String?                @map("parent_summary") @db.Text
+
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+
+  goal            SpeechGoal?            @relation(fields: [goalId], references: [id])
+  activities      TherapyActivity[]
+  recordings      SpeechRecording[]
+
+  @@index([tenantId, learnerId])
+  @@index([therapistId])
+  @@index([scheduledAt])
+  @@map("therapy_sessions")
+}
+
+/// Individual activity within a session
+model TherapyActivity {
+  id              String         @id @default(uuid()) @db.Uuid
+  sessionId       String         @map("session_id") @db.Uuid
+
+  /// Activity type
+  activityType    ActivityType   @map("activity_type")
+
+  /// Activity name/description
+  name            String
+
+  /// Target sounds for this activity
+  targetSounds    String[]       @map("target_sounds")
+
+  /// Word/sentence list used
+  stimuliList     String[]       @map("stimuli_list")
+
+  /// Results per stimulus
+  results         Json           @default("[]")
+
+  /// Overall accuracy for this activity
+  accuracy        Float?
+
+  /// Time spent in seconds
+  durationSec     Int?           @map("duration_sec")
+
+  /// Order in session
+  orderIndex      Int            @map("order_index")
+
+  completedAt     DateTime?      @map("completed_at")
+
+  session         TherapySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  recordings      SpeechRecording[]
+
+  @@index([sessionId])
+  @@map("therapy_activities")
+}
+
+/// Audio recording from a session
+model SpeechRecording {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  sessionId       String          @map("session_id") @db.Uuid
+  activityId      String?         @map("activity_id") @db.Uuid
+
+  /// S3/storage URL
+  audioUrl        String          @map("audio_url")
+
+  /// Duration in seconds
+  durationSec     Float           @map("duration_sec")
+
+  /// Transcript (from speech-to-text)
+  transcript      String?         @db.Text
+
+  /// Target phrase that was being practiced
+  targetPhrase    String?         @map("target_phrase")
+
+  /// AI analysis results
+  analysis        Json?
+
+  /// Accuracy score from analysis
+  accuracyScore   Float?          @map("accuracy_score")
+
+  /// Phoneme-level breakdown
+  phonemeAnalysis Json?           @map("phoneme_analysis")
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  session         TherapySession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  activity        TherapyActivity? @relation(fields: [activityId], references: [id])
+
+  @@index([sessionId])
+  @@index([activityId])
+  @@map("speech_recordings")
+}
+
+/// Word/phrase library for practice
+model SpeechStimulus {
+  id              String      @id @default(uuid()) @db.Uuid
+
+  /// The word or phrase
+  text            String
+
+  /// Target sound(s)
+  targetSounds    String[]    @map("target_sounds")
+
+  /// Position of target sound
+  soundPosition   String?     @map("sound_position") // INITIAL, MEDIAL, FINAL
+
+  /// Syllable count
+  syllableCount   Int         @map("syllable_count")
+
+  /// Difficulty level (1-5)
+  difficulty      Int         @default(1)
+
+  /// Category
+  category        String?
+
+  /// Image URL for picture naming
+  imageUrl        String?     @map("image_url")
+
+  /// Audio model URL (correct pronunciation)
+  audioModelUrl   String?     @map("audio_model_url")
+
+  /// Age appropriateness (min grade)
+  minGrade        Int         @default(0) @map("min_grade")
+
+  isActive        Boolean     @default(true) @map("is_active")
+
+  @@index([targetSounds])
+  @@index([difficulty])
+  @@map("speech_stimuli")
+}
+
+/// Home practice assignment
+model HomePractice {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  learnerId       String      @map("learner_id") @db.Uuid
+  therapistId     String      @map("therapist_id") @db.Uuid
+
+  /// Assignment title
+  title           String
+
+  /// Instructions for parent/student
+  instructions    String      @db.Text
+
+  /// Target sounds
+  targetSounds    String[]    @map("target_sounds")
+
+  /// Practice items (words/phrases)
+  practiceItems   String[]    @map("practice_items")
+
+  /// Recommended practice minutes per day
+  dailyMinutes    Int         @default(10) @map("daily_minutes")
+
+  /// Due date
+  dueDate         DateTime    @map("due_date")
+
+  /// Completed status
+  isCompleted     Boolean     @default(false) @map("is_completed")
+  completedAt     DateTime?   @map("completed_at")
+
+  /// Practice logs
+  practiceLogs    Json        @default("[]") @map("practice_logs")
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  @@index([tenantId, learnerId])
+  @@index([dueDate])
+  @@map("home_practice")
+}

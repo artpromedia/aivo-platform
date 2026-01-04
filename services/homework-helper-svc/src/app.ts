@@ -1,14 +1,25 @@
 import Fastify from 'fastify';
+import multipart from '@fastify/multipart';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerHomeworkRoutes } from './routes/homework.js';
+import { registerParentRoutes } from './routes/parent.js';
+import { registerUploadRoutes } from './routes/upload.js';
 
 export async function buildApp() {
   const app = Fastify({
     logger: {
       level: config.logLevel,
+    },
+  });
+
+  // Register multipart support for file uploads
+  await app.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max file size
+      files: 1, // Only allow 1 file per request
     },
   });
 
@@ -29,6 +40,12 @@ export async function buildApp() {
 
   // Homework routes
   await app.register(registerHomeworkRoutes, { prefix: '/homework' });
+
+  // Parent monitoring routes
+  await app.register(registerParentRoutes, { prefix: '/parent' });
+
+  // Upload routes (OCR)
+  await app.register(registerUploadRoutes, { prefix: '/upload' });
 
   return app;
 }
