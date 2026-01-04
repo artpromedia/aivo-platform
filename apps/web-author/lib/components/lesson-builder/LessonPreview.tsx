@@ -152,8 +152,8 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <Trophy className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-700 mb-2">Lesson Complete!</h2>
-          <p className="text-gray-500 mb-4">
+          <h2 className="text-2xl font-bold text-text mb-2">Lesson Complete!</h2>
+          <p className="text-muted mb-4">
             You scored {score} points
           </p>
         </div>
@@ -168,7 +168,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
       {/* Progress Header */}
       {lesson.settings.showProgress && (
         <div className="mb-6">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <div className="flex items-center justify-between text-sm text-muted mb-2">
             <span>
               Section {currentSectionIndex + 1} of {sections.length}: {currentSection.title}
             </span>
@@ -177,9 +177,9 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
               {score} pts
             </span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-border rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 transition-all duration-300"
+              className="h-full bg-primary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -187,9 +187,9 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
       )}
 
       {/* Activity Card */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-lg overflow-hidden">
         {/* Activity Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-4">
+        <div className="bg-gradient-to-r from-primary to-accent text-on-accent px-6 py-4">
           <h2 className="text-lg font-semibold">{currentActivity.title}</h2>
           <p className="text-sm opacity-90 mt-1">
             Activity {currentActivityIndex + 1} of {activities.length}
@@ -198,8 +198,8 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
 
         {/* Instructions */}
         {currentActivity.instructions && (
-          <div className="px-6 py-4 bg-blue-50 border-b">
-            <p className="text-gray-700">{currentActivity.instructions}</p>
+          <div className="px-6 py-4 bg-primary/10 border-b">
+            <p className="text-text">{currentActivity.instructions}</p>
           </div>
         )}
 
@@ -217,21 +217,21 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
         {state.submitted && (
           <div
             className={`px-6 py-4 ${
-              state.isCorrect ? 'bg-green-50' : 'bg-red-50'
+              state.isCorrect ? 'bg-success/10' : 'bg-error/10'
             }`}
           >
             <div className="flex items-center gap-2">
               {state.isCorrect ? (
                 <>
-                  <Check className="w-5 h-5 text-green-600" />
-                  <span className="font-medium text-green-700">
+                  <Check className="w-5 h-5 text-success" />
+                  <span className="font-medium text-success">
                     {currentActivity.feedback.correct.message}
                   </span>
                 </>
               ) : (
                 <>
-                  <X className="w-5 h-5 text-red-600" />
-                  <span className="font-medium text-red-700">
+                  <X className="w-5 h-5 text-error" />
+                  <span className="font-medium text-error">
                     {currentActivity.feedback.incorrect.message}
                   </span>
                 </>
@@ -254,7 +254,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
         )}
 
         {/* Actions */}
-        <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+        <div className="px-6 py-4 bg-surface-muted border-t flex items-center justify-between">
           <div className="flex items-center gap-2">
             {!state.submitted && currentActivity.hints.length > hintIndex && (
               <button
@@ -268,7 +268,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
             {state.submitted && !state.isCorrect && state.attempts < lesson.settings.maxAttempts && (
               <button
                 onClick={handleRetry}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-100 rounded-lg"
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg"
               >
                 <RotateCcw className="w-4 h-4" />
                 Try Again ({lesson.settings.maxAttempts - state.attempts} left)
@@ -280,7 +280,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
             <button
               onClick={handlePrevious}
               disabled={currentSectionIndex === 0 && currentActivityIndex === 0}
-              className="flex items-center gap-1 px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+              className="flex items-center gap-1 px-4 py-2 text-muted hover:bg-surface-muted rounded-lg disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" />
               Back
@@ -291,7 +291,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
                 currentSectionIndex === sections.length - 1 &&
                 currentActivityIndex === activities.length - 1
               }
-              className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg disabled:opacity-50"
+              className="flex items-center gap-1 px-4 py-2 bg-primary text-on-accent hover:bg-primary/90 rounded-lg disabled:opacity-50"
             >
               Next
               <ChevronRight className="w-4 h-4" />
@@ -420,20 +420,20 @@ function MultipleChoiceActivity({
               state.selectedOptions.includes(option.id)
                 ? state.submitted
                   ? option.isCorrect
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-red-500 bg-red-50'
-                  : 'border-blue-500 bg-blue-50'
+                    ? 'border-success bg-success/10'
+                    : 'border-error bg-error/10'
+                  : 'border-primary bg-primary/10'
                 : state.submitted && option.isCorrect
-                ? 'border-green-500 bg-green-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-success bg-success/10'
+                : 'border-border hover:border-border'
             }`}
           >
             <span className="flex items-center gap-3">
               <span
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                   state.selectedOptions.includes(option.id)
-                    ? 'border-blue-500 bg-blue-500 text-white'
-                    : 'border-gray-300'
+                    ? 'border-primary bg-primary text-on-accent'
+                    : 'border-border'
                 }`}
               >
                 {state.selectedOptions.includes(option.id) && <Check className="w-4 h-4" />}
@@ -448,7 +448,7 @@ function MultipleChoiceActivity({
         <button
           onClick={handleSubmit}
           disabled={state.selectedOptions.length === 0}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3 bg-primary text-on-accent rounded-lg hover:bg-primary/90 disabled:opacity-50"
         >
           Submit Answer
         </button>
@@ -506,10 +506,10 @@ function MatchingActivity({
               onClick={() => handleLeftClick(pair.id)}
               className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
                 selectedLeft === pair.id
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-primary bg-primary/10'
                   : state.matches[pair.id]
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-success bg-success/10'
+                  : 'border-border hover:border-border'
               }`}
             >
               {pair.left.text}
@@ -523,8 +523,8 @@ function MatchingActivity({
               onClick={() => handleRightClick(pair.id)}
               className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
                 Object.values(state.matches).includes(pair.id)
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-success bg-success/10'
+                  : 'border-border hover:border-border'
               }`}
             >
               {pair.right.text}
@@ -537,7 +537,7 @@ function MatchingActivity({
         <button
           onClick={handleSubmit}
           disabled={Object.keys(state.matches).length !== content.pairs.length}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3 bg-primary text-on-accent rounded-lg hover:bg-primary/90 disabled:opacity-50"
         >
           Submit Answer
         </button>
@@ -596,7 +596,7 @@ function FillInBlankActivity({
                 value={state.textInputs[index] || ''}
                 onChange={(e) => handleChange(index, e.target.value)}
                 disabled={state.submitted}
-                className="inline-block w-32 mx-1 px-2 py-1 border-b-2 border-blue-500 bg-blue-50 text-center focus:outline-none focus:bg-blue-100"
+                className="inline-block w-32 mx-1 px-2 py-1 border-b-2 border-primary bg-primary/10 text-center focus:outline-none focus:bg-primary/20"
                 placeholder="..."
               />
             )}
@@ -607,7 +607,7 @@ function FillInBlankActivity({
       {!state.submitted && (
         <button
           onClick={handleSubmit}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="w-full py-3 bg-primary text-on-accent rounded-lg hover:bg-primary/90"
         >
           Submit Answer
         </button>
@@ -670,9 +670,9 @@ function OrderingActivity({
           return (
             <div
               key={itemId}
-              className="flex items-center gap-2 p-3 bg-white border rounded-lg"
+              className="flex items-center gap-2 p-3 bg-surface border rounded-lg"
             >
-              <span className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full text-sm font-medium">
+              <span className="w-6 h-6 flex items-center justify-center bg-surface-muted rounded-full text-sm font-medium">
                 {index + 1}
               </span>
               <span className="flex-1">{item.content}</span>
@@ -681,14 +681,14 @@ function OrderingActivity({
                   <button
                     onClick={() => moveItem(index, Math.max(0, index - 1))}
                     disabled={index === 0}
-                    className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
+                    className="p-1 hover:bg-surface-muted rounded disabled:opacity-30"
                   >
                     ↑
                   </button>
                   <button
                     onClick={() => moveItem(index, Math.min(state.ordering.length - 1, index + 1))}
                     disabled={index === state.ordering.length - 1}
-                    className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
+                    className="p-1 hover:bg-surface-muted rounded disabled:opacity-30"
                   >
                     ↓
                   </button>
@@ -702,7 +702,7 @@ function OrderingActivity({
       {!state.submitted && (
         <button
           onClick={handleSubmit}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="w-full py-3 bg-primary text-on-accent rounded-lg hover:bg-primary/90"
         >
           Submit Answer
         </button>
@@ -747,11 +747,11 @@ function FreeResponseActivity({
         onChange={(e) => onStateChange({ textInputs: { response: e.target.value } })}
         disabled={state.submitted}
         rows={6}
-        className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-focus"
         placeholder="Type your response here..."
       />
 
-      <div className="flex items-center justify-between text-sm text-gray-500">
+      <div className="flex items-center justify-between text-sm text-muted">
         <span>Word count: {wordCount}</span>
         {(content.minWords || content.maxWords) && (
           <span>
@@ -766,7 +766,7 @@ function FreeResponseActivity({
         <button
           onClick={handleSubmit}
           disabled={!isValid || response.trim().length === 0}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3 bg-primary text-on-accent rounded-lg hover:bg-primary/90 disabled:opacity-50"
         >
           Submit Response
         </button>

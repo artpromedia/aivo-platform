@@ -151,12 +151,12 @@ export function ActivityTypeSelector({ onSelect, onClose }: ActivityTypeSelector
   const categories = ['choice', 'interactive', 'response', 'media', 'advanced'] as const;
 
   return (
-    <div className="bg-white border rounded-lg shadow-xl w-96 max-h-[500px] overflow-hidden">
+    <div className="bg-surface border rounded-lg shadow-xl w-96 max-h-[500px] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-        <h3 className="font-medium text-gray-700">Add Activity</h3>
-        <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded">
-          <X className="w-4 h-4 text-gray-500" />
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-surface-muted">
+        <h3 className="font-medium text-text">Add Activity</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-muted rounded">
+          <X className="w-4 h-4 text-muted" />
         </button>
       </div>
 
@@ -168,7 +168,7 @@ export function ActivityTypeSelector({ onSelect, onClose }: ActivityTypeSelector
 
           return (
             <div key={category} className="border-b last:border-b-0">
-              <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <div className="px-4 py-2 bg-surface-muted text-xs font-semibold text-muted uppercase tracking-wide">
                 {CATEGORY_LABELS[category]}
               </div>
               <div className="p-2">
@@ -176,14 +176,14 @@ export function ActivityTypeSelector({ onSelect, onClose }: ActivityTypeSelector
                   <button
                     key={activityType.type}
                     onClick={() => onSelect(activityType.type)}
-                    className="w-full flex items-start gap-3 p-2 rounded-lg hover:bg-blue-50 text-left transition-colors"
+                    className="w-full flex items-start gap-3 p-2 rounded-lg hover:bg-primary/10 text-left transition-colors"
                   >
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <activityType.icon className="w-5 h-5 text-gray-600" />
+                    <div className="p-2 bg-surface-muted rounded-lg">
+                      <activityType.icon className="w-5 h-5 text-muted" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-700">{activityType.label}</div>
-                      <div className="text-xs text-gray-500 truncate">
+                      <div className="font-medium text-text">{activityType.label}</div>
+                      <div className="text-xs text-muted truncate">
                         {activityType.description}
                       </div>
                     </div>

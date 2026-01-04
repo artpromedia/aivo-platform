@@ -78,21 +78,21 @@ export function ActivityEditor() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-surface border-b px-6 py-4">
         <input
           type="text"
           value={activity.title}
           onChange={(e) => updateActivity({ title: e.target.value })}
-          className="text-lg font-semibold w-full border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+          className="text-lg font-semibold w-full border-none focus:outline-none focus:ring-2 focus:ring-focus rounded px-2 py-1"
           placeholder="Activity Title"
         />
-        <div className="text-sm text-gray-500 mt-1 capitalize">
+        <div className="text-sm text-muted mt-1 capitalize">
           {activity.type.replace(/_/g, ' ')}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b px-6">
+      <div className="bg-surface border-b px-6">
         <div className="flex gap-4">
           {tabs.map((tab) => (
             <button
@@ -100,8 +100,8 @@ export function ActivityEditor() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-3 py-2 border-b-2 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted hover:text-text'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -112,7 +112,7 @@ export function ActivityEditor() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-6 bg-surface-muted">
         {activeTab === 'content' && (
           <ContentEditor activity={activity} onUpdate={updateActivity} />
         )}
@@ -147,15 +147,15 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
   return (
     <div className="space-y-6">
       {/* Instructions */}
-      <div className="bg-white rounded-lg p-4 shadow-sm">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="bg-surface rounded-lg p-4 shadow-sm">
+        <label className="block text-sm font-medium text-text mb-2">
           Instructions
         </label>
         <textarea
           value={activity.instructions}
           onChange={(e) => onUpdate({ instructions: e.target.value })}
           rows={3}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Enter instructions for this activity..."
         />
       </div>
@@ -192,7 +192,7 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
         />
       )}
       {!['multiple_choice', 'matching', 'fill_in_blank', 'ordering', 'free_response'].includes(activity.type) && (
-        <div className="bg-white rounded-lg p-4 shadow-sm text-center text-gray-500">
+        <div className="bg-surface rounded-lg p-4 shadow-sm text-center text-muted">
           <p>Editor for {activity.type.replace(/_/g, ' ')} activities coming soon.</p>
         </div>
       )}
@@ -244,14 +244,14 @@ function MultipleChoiceEditor({
   };
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+    <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Question</label>
+        <label className="block text-sm font-medium text-text mb-2">Question</label>
         <textarea
           value={content.question}
           onChange={(e) => onUpdate({ question: e.target.value })}
           rows={2}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Enter your question..."
         />
       </div>
@@ -262,38 +262,38 @@ function MultipleChoiceEditor({
             type="checkbox"
             checked={content.multiSelect}
             onChange={(e) => onUpdate({ multiSelect: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-border text-primary focus:ring-focus"
           />
-          <span className="text-sm text-gray-600">Allow multiple selections</span>
+          <span className="text-sm text-muted">Allow multiple selections</span>
         </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={content.shuffleOptions}
             onChange={(e) => onUpdate({ shuffleOptions: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-border text-primary focus:ring-focus"
           />
-          <span className="text-sm text-gray-600">Shuffle options</span>
+          <span className="text-sm text-muted">Shuffle options</span>
         </label>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Options</label>
+        <label className="block text-sm font-medium text-text mb-2">Options</label>
         <div className="space-y-2">
           {content.options.map((option, index) => (
             <div
               key={option.id}
               className={`flex items-center gap-2 p-2 border rounded-lg ${
-                option.isCorrect ? 'border-green-500 bg-green-50' : ''
+                option.isCorrect ? 'border-success bg-success/10' : ''
               }`}
             >
-              <GripVertical className="w-4 h-4 text-gray-300 cursor-grab" />
+              <GripVertical className="w-4 h-4 text-muted cursor-grab" />
               <button
                 onClick={() => setCorrectAnswer(index)}
                 className={`p-1 rounded-full ${
                   option.isCorrect
-                    ? 'bg-green-500 text-white'
-                    : 'border-2 border-gray-300 text-transparent hover:border-gray-400'
+                    ? 'bg-success text-on-accent'
+                    : 'border-2 border-border text-transparent hover:border-border'
                 }`}
               >
                 <Check className="w-4 h-4" />
@@ -307,7 +307,7 @@ function MultipleChoiceEditor({
               />
               <button
                 onClick={() => removeOption(index)}
-                className="p-1 hover:bg-red-100 rounded text-red-500"
+                className="p-1 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -316,7 +316,7 @@ function MultipleChoiceEditor({
         </div>
         <button
           onClick={addOption}
-          className="mt-2 flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+          className="mt-2 flex items-center gap-2 text-sm text-primary hover:text-primary"
         >
           <Plus className="w-4 h-4" />
           Add Option
@@ -362,20 +362,20 @@ function MatchingEditor({
   };
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+    <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Prompt</label>
+        <label className="block text-sm font-medium text-text mb-2">Prompt</label>
         <textarea
           value={content.prompt}
           onChange={(e) => onUpdate({ prompt: e.target.value })}
           rows={2}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Match the items..."
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Matching Pairs</label>
+        <label className="block text-sm font-medium text-text mb-2">Matching Pairs</label>
         <div className="space-y-2">
           {content.pairs.map((pair, index) => (
             <div key={pair.id} className="flex items-center gap-2">
@@ -383,20 +383,20 @@ function MatchingEditor({
                 type="text"
                 value={pair.left.text}
                 onChange={(e) => updatePair(index, 'left', e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                 placeholder="Left item"
               />
-              <span className="text-gray-400">↔</span>
+              <span className="text-muted">↔</span>
               <input
                 type="text"
                 value={pair.right.text}
                 onChange={(e) => updatePair(index, 'right', e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                 placeholder="Right item"
               />
               <button
                 onClick={() => removePair(index)}
-                className="p-2 hover:bg-red-100 rounded text-red-500"
+                className="p-2 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -405,7 +405,7 @@ function MatchingEditor({
         </div>
         <button
           onClick={addPair}
-          className="mt-2 flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+          className="mt-2 flex items-center gap-2 text-sm text-primary hover:text-primary"
         >
           <Plus className="w-4 h-4" />
           Add Pair
@@ -427,19 +427,19 @@ function FillInBlankEditor({
   onUpdate: (updates: Partial<FillInBlankContent>) => void;
 }) {
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+    <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-text mb-2">
           Text (use [blank] for blanks)
         </label>
         <textarea
           value={content.text}
           onChange={(e) => onUpdate({ text: e.target.value })}
           rows={4}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus font-mono"
           placeholder="The quick [blank] fox jumps over the [blank] dog."
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-muted mt-1">
           Type [blank] where you want students to fill in an answer
         </p>
       </div>
@@ -450,18 +450,18 @@ function FillInBlankEditor({
             type="checkbox"
             checked={content.caseSensitive}
             onChange={(e) => onUpdate({ caseSensitive: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-border text-primary focus:ring-focus"
           />
-          <span className="text-sm text-gray-600">Case sensitive</span>
+          <span className="text-sm text-muted">Case sensitive</span>
         </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={content.allowPartialCredit}
             onChange={(e) => onUpdate({ allowPartialCredit: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-border text-primary focus:ring-focus"
           />
-          <span className="text-sm text-gray-600">Allow partial credit</span>
+          <span className="text-sm text-muted">Allow partial credit</span>
         </label>
       </div>
     </div>
@@ -507,37 +507,37 @@ function OrderingEditor({
   };
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+    <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Prompt</label>
+        <label className="block text-sm font-medium text-text mb-2">Prompt</label>
         <textarea
           value={content.prompt}
           onChange={(e) => onUpdate({ prompt: e.target.value })}
           rows={2}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Put these items in the correct order..."
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-text mb-2">
           Items (in correct order)
         </label>
         <div className="space-y-2">
           {content.items.map((item, index) => (
             <div key={item.id} className="flex items-center gap-2">
-              <span className="w-6 text-center text-sm text-gray-500">{index + 1}</span>
-              <GripVertical className="w-4 h-4 text-gray-300 cursor-grab" />
+              <span className="w-6 text-center text-sm text-muted">{index + 1}</span>
+              <GripVertical className="w-4 h-4 text-muted cursor-grab" />
               <input
                 type="text"
                 value={item.content}
                 onChange={(e) => updateItem(index, e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                 placeholder={`Item ${index + 1}`}
               />
               <button
                 onClick={() => removeItem(index)}
-                className="p-2 hover:bg-red-100 rounded text-red-500"
+                className="p-2 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -546,7 +546,7 @@ function OrderingEditor({
         </div>
         <button
           onClick={addItem}
-          className="mt-2 flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+          className="mt-2 flex items-center gap-2 text-sm text-primary hover:text-primary"
         >
           <Plus className="w-4 h-4" />
           Add Item
@@ -554,11 +554,11 @@ function OrderingEditor({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Direction</label>
+        <label className="block text-sm font-medium text-text mb-2">Direction</label>
         <select
           value={content.direction}
           onChange={(e) => onUpdate({ direction: e.target.value as 'vertical' | 'horizontal' })}
-          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
         >
           <option value="vertical">Vertical</option>
           <option value="horizontal">Horizontal</option>
@@ -580,21 +580,21 @@ function FreeResponseEditor({
   onUpdate: (updates: Partial<FreeResponseContent>) => void;
 }) {
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+    <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Prompt</label>
+        <label className="block text-sm font-medium text-text mb-2">Prompt</label>
         <textarea
           value={content.prompt}
           onChange={(e) => onUpdate({ prompt: e.target.value })}
           rows={3}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Write your response to the following..."
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-text mb-2">
             Minimum Words
           </label>
           <input
@@ -603,13 +603,13 @@ function FreeResponseEditor({
             onChange={(e) =>
               onUpdate({ minWords: e.target.value ? parseInt(e.target.value) : undefined })
             }
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Optional"
             min={0}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-text mb-2">
             Maximum Words
           </label>
           <input
@@ -618,7 +618,7 @@ function FreeResponseEditor({
             onChange={(e) =>
               onUpdate({ maxWords: e.target.value ? parseInt(e.target.value) : undefined })
             }
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Optional"
             min={0}
           />
@@ -639,42 +639,42 @@ function FeedbackEditor({ activity, onUpdate }: EditorProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg p-4 shadow-sm">
-        <h3 className="font-medium text-green-700 mb-3">Correct Answer Feedback</h3>
+      <div className="bg-surface rounded-lg p-4 shadow-sm">
+        <h3 className="font-medium text-success mb-3">Correct Answer Feedback</h3>
         <textarea
           value={activity.feedback.correct.message}
           onChange={(e) =>
             updateFeedback('correct', { ...activity.feedback.correct, message: e.target.value })
           }
           rows={2}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Great job! That's correct."
         />
       </div>
 
-      <div className="bg-white rounded-lg p-4 shadow-sm">
-        <h3 className="font-medium text-red-700 mb-3">Incorrect Answer Feedback</h3>
+      <div className="bg-surface rounded-lg p-4 shadow-sm">
+        <h3 className="font-medium text-error mb-3">Incorrect Answer Feedback</h3>
         <textarea
           value={activity.feedback.incorrect.message}
           onChange={(e) =>
             updateFeedback('incorrect', { ...activity.feedback.incorrect, message: e.target.value })
           }
           rows={2}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Not quite. Try again!"
         />
       </div>
 
-      <div className="bg-white rounded-lg p-4 shadow-sm">
-        <h3 className="font-medium text-gray-700 mb-3">Encouragement Messages</h3>
-        <p className="text-sm text-gray-500 mb-2">
+      <div className="bg-surface rounded-lg p-4 shadow-sm">
+        <h3 className="font-medium text-text mb-3">Encouragement Messages</h3>
+        <p className="text-sm text-muted mb-2">
           Random encouraging messages shown during the activity
         </p>
         <textarea
           value={activity.feedback.encouragement.join('\n')}
           onChange={(e) => updateFeedback('encouragement', e.target.value.split('\n'))}
           rows={3}
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus font-mono text-sm"
           placeholder="You can do it!&#10;Keep trying!&#10;Almost there!"
         />
       </div>
@@ -718,14 +718,14 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg p-4 shadow-sm">
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="bg-surface rounded-lg p-4 shadow-sm">
+        <p className="text-sm text-muted mb-4">
           Add hints that students can reveal for help. Each hint can have a point deduction.
         </p>
 
         <div className="space-y-3">
           {activity.hints.map((hint, index) => (
-            <div key={hint.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+            <div key={hint.id} className="flex items-start gap-2 p-3 bg-surface-muted rounded-lg">
               <span className="w-6 h-6 flex items-center justify-center bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
                 {index + 1}
               </span>
@@ -734,11 +734,11 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
                   value={hint.text}
                   onChange={(e) => updateHint(index, { text: e.target.value })}
                   rows={2}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                   placeholder="Enter hint text..."
                 />
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Points deduction:</label>
+                  <label className="text-sm text-muted">Points deduction:</label>
                   <input
                     type="number"
                     value={hint.pointsDeduction}
@@ -752,7 +752,7 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
               </div>
               <button
                 onClick={() => removeHint(index)}
-                className="p-1 hover:bg-red-100 rounded text-red-500"
+                className="p-1 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -762,7 +762,7 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
 
         <button
           onClick={addHint}
-          className="mt-3 flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+          className="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary"
         >
           <Plus className="w-4 h-4" />
           Add Hint
@@ -779,16 +779,16 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
 function SettingsEditor({ activity, onUpdate }: EditorProps) {
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
-        <h3 className="font-medium text-gray-700">Activity Settings</h3>
+      <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
+        <h3 className="font-medium text-text">Activity Settings</h3>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Points</label>
+          <label className="block text-sm font-medium text-text mb-2">Points</label>
           <input
             type="number"
             value={activity.points}
             onChange={(e) => onUpdate({ points: parseInt(e.target.value) || 0 })}
-            className="w-32 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-32 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             min={0}
           />
         </div>
@@ -798,17 +798,17 @@ function SettingsEditor({ activity, onUpdate }: EditorProps) {
             type="checkbox"
             checked={activity.required}
             onChange={(e) => onUpdate({ required: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-border text-primary focus:ring-focus"
           />
-          <span className="text-sm text-gray-700">Required to complete lesson</span>
+          <span className="text-sm text-text">Required to complete lesson</span>
         </label>
       </div>
 
-      <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
-        <h3 className="font-medium text-gray-700">Accessibility</h3>
+      <div className="bg-surface rounded-lg p-4 shadow-sm space-y-4">
+        <h3 className="font-medium text-text">Accessibility</h3>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">ARIA Label</label>
+          <label className="block text-sm font-medium text-text mb-2">ARIA Label</label>
           <input
             type="text"
             value={activity.accessibility.ariaLabel}
@@ -817,13 +817,13 @@ function SettingsEditor({ activity, onUpdate }: EditorProps) {
                 accessibility: { ...activity.accessibility, ariaLabel: e.target.value },
               })
             }
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Descriptive label for screen readers"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-text mb-2">
             Keyboard Instructions
           </label>
           <textarea
@@ -837,7 +837,7 @@ function SettingsEditor({ activity, onUpdate }: EditorProps) {
               })
             }
             rows={2}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Instructions for keyboard navigation"
           />
         </div>

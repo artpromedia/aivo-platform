@@ -77,11 +77,11 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
 
   if (!state.lesson) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-surface-muted">
         <div className="text-center">
-          <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">No Lesson Loaded</h2>
-          <p className="text-gray-500">Create a new lesson or load an existing one to get started.</p>
+          <BookOpen className="w-16 h-16 mx-auto text-muted mb-4" />
+          <h2 className="text-xl font-semibold text-muted mb-2">No Lesson Loaded</h2>
+          <p className="text-muted">Create a new lesson or load an existing one to get started.</p>
         </div>
       </div>
     );
@@ -90,14 +90,14 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
   if (state.isPreviewMode) {
     return (
       <div className="h-full flex flex-col">
-        <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+        <div className="bg-surface border-b px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Play className="w-5 h-5 text-green-600" />
+            <Play className="w-5 h-5 text-success" />
             <span className="font-medium">Preview Mode</span>
           </div>
           <button
             onClick={togglePreview}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium"
+            className="flex items-center gap-2 px-3 py-1.5 bg-surface-muted hover:bg-surface-muted rounded-lg text-sm font-medium"
           >
             <EyeOff className="w-4 h-4" />
             Exit Preview
@@ -111,19 +111,19 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-surface-muted">
       {/* Toolbar */}
-      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+      <div className="bg-surface border-b px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-blue-600" />
+            <BookOpen className="w-5 h-5 text-primary" />
             <input
               type="text"
               value={state.lesson.title}
               onChange={(e) =>
                 dispatch({ type: 'UPDATE_LESSON', payload: { title: e.target.value } })
               }
-              className="text-lg font-semibold border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+              className="text-lg font-semibold border-none focus:outline-none focus:ring-2 focus:ring-focus rounded px-2 py-1"
               placeholder="Lesson Title"
             />
           </div>
@@ -140,7 +140,7 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
           <button
             onClick={handleUndo}
             disabled={state.undoStack.length === 0}
-            className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 hover:bg-surface-muted rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             title="Undo"
           >
             <Undo2 className="w-4 h-4" />
@@ -148,18 +148,18 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
           <button
             onClick={handleRedo}
             disabled={state.redoStack.length === 0}
-            className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 hover:bg-surface-muted rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             title="Redo"
           >
             <Redo2 className="w-4 h-4" />
           </button>
 
-          <div className="w-px h-6 bg-gray-200" />
+          <div className="w-px h-6 bg-border" />
 
           {/* Settings */}
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-2 rounded-lg ${showSettings ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+            className={`p-2 rounded-lg ${showSettings ? 'bg-primary/20 text-primary' : 'hover:bg-surface-muted'}`}
             title="Lesson Settings"
           >
             <Settings className="w-4 h-4" />
@@ -168,7 +168,7 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
           {/* Preview */}
           <button
             onClick={togglePreview}
-            className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 rounded-lg text-sm"
+            className="flex items-center gap-2 px-3 py-1.5 hover:bg-surface-muted rounded-lg text-sm"
             title="Preview Lesson"
           >
             <Eye className="w-4 h-4" />
@@ -179,7 +179,7 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
           <button
             onClick={handleSave}
             disabled={isSaving || !state.isDirty}
-            className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-1.5 bg-primary hover:bg-primary/90 text-on-accent rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Saving...' : 'Save'}
@@ -203,9 +203,9 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sections Panel */}
-        <div className="w-80 border-r bg-white overflow-y-auto">
+        <div className="w-80 border-r bg-surface overflow-y-auto">
           <div className="p-4 border-b">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-medium text-text">
               <Layers className="w-4 h-4" />
               Lesson Structure
             </div>
@@ -218,11 +218,11 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
           {selectedActivity ? (
             <ActivityEditor />
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="flex items-center justify-center h-full text-muted">
               <div className="text-center">
                 <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Select an activity to edit</p>
-                <p className="text-sm text-gray-400 mt-1">or add a new activity to a section</p>
+                <p className="text-sm text-muted mt-1">or add a new activity to a section</p>
               </div>
             </div>
           )}
@@ -230,7 +230,7 @@ export function LessonBuilder({ onSave }: LessonBuilderProps) {
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="w-80 border-l bg-white overflow-y-auto">
+          <div className="w-80 border-l bg-surface overflow-y-auto">
             <LessonSettings onClose={() => setShowSettings(false)} />
           </div>
         )}

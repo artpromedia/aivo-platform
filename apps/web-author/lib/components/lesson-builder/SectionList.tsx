@@ -96,10 +96,10 @@ function SectionItem({ section, isSelected, onSelect }: SectionItemProps) {
   };
 
   return (
-    <div className={`border-b ${isSelected ? 'bg-blue-50' : ''}`}>
+    <div className={`border-b border-border ${isSelected ? 'bg-primary/10' : ''}`}>
       {/* Section Header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer group"
+        className="flex items-center gap-2 px-3 py-2 hover:bg-surface-muted cursor-pointer group"
         onClick={onSelect}
       >
         <button
@@ -107,16 +107,16 @@ function SectionItem({ section, isSelected, onSelect }: SectionItemProps) {
             e.stopPropagation();
             setIsExpanded(!isExpanded);
           }}
-          className="p-0.5 hover:bg-gray-200 rounded"
+          className="p-0.5 hover:bg-surface-muted rounded"
         >
           {isExpanded ? (
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-muted" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+            <ChevronRight className="w-4 h-4 text-muted" />
           )}
         </button>
 
-        <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab" />
+        <GripVertical className="w-4 h-4 text-muted/50 opacity-0 group-hover:opacity-100 cursor-grab" />
 
         {isEditing ? (
           <input
@@ -125,17 +125,17 @@ function SectionItem({ section, isSelected, onSelect }: SectionItemProps) {
             onChange={(e) => setEditTitle(e.target.value)}
             onBlur={handleTitleSave}
             onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
-            className="flex-1 text-sm font-medium border rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 text-sm font-medium border border-border rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-focus"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className="flex-1 text-sm font-medium text-gray-700 truncate">
+          <span className="flex-1 text-sm font-medium text-text truncate">
             {section.title}
           </span>
         )}
 
-        <span className="text-xs text-gray-400">{section.activities.length}</span>
+        <span className="text-xs text-muted">{section.activities.length}</span>
 
         <div className="relative">
           <button
@@ -143,20 +143,20 @@ function SectionItem({ section, isSelected, onSelect }: SectionItemProps) {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className="p-1 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100"
+            className="p-1 hover:bg-surface-muted rounded opacity-0 group-hover:opacity-100"
           >
-            <MoreHorizontal className="w-4 h-4 text-gray-500" />
+            <MoreHorizontal className="w-4 h-4 text-muted" />
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg py-1 z-10 w-36">
+            <div className="absolute right-0 top-full mt-1 bg-surface border border-border rounded-lg shadow-lg py-1 z-10 w-36">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsEditing(true);
                   setShowMenu(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 text-left"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-muted text-left"
               >
                 <Edit2 className="w-4 h-4" />
                 Rename
@@ -166,18 +166,18 @@ function SectionItem({ section, isSelected, onSelect }: SectionItemProps) {
                   e.stopPropagation();
                   handleDuplicate();
                 }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 text-left"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-muted text-left"
               >
                 <Copy className="w-4 h-4" />
                 Duplicate
               </button>
-              <hr className="my-1" />
+              <hr className="my-1 border-border" />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete();
                 }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-red-50 text-red-600 text-left"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-error/10 text-error text-left"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete
@@ -203,7 +203,7 @@ function SectionItem({ section, isSelected, onSelect }: SectionItemProps) {
           <div className="relative">
             <button
               onClick={() => setShowActivitySelector(!showActivitySelector)}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-muted hover:text-text hover:bg-surface-muted rounded"
             >
               <Plus className="w-4 h-4" />
               Add Activity
@@ -253,26 +253,26 @@ function ActivityItem({ activity, sectionId, isSelected }: ActivityItemProps) {
     <div
       onClick={handleSelect}
       className={`flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer group ${
-        isSelected ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
+        isSelected ? 'bg-primary/20 text-primary' : 'hover:bg-surface-muted'
       }`}
     >
       {activity.required ? (
-        <Circle className="w-3 h-3 text-gray-400" />
+        <Circle className="w-3 h-3 text-muted" />
       ) : (
-        <CheckCircle className="w-3 h-3 text-green-500" />
+        <CheckCircle className="w-3 h-3 text-success" />
       )}
 
       <span className="flex-1 text-sm truncate">{activity.title}</span>
 
-      <span className="text-xs text-gray-400">
+      <span className="text-xs text-muted">
         {ACTIVITY_TYPE_LABELS[activity.type]?.split(' ')[0] || activity.type}
       </span>
 
       <button
         onClick={handleDelete}
-        className="p-0.5 hover:bg-red-100 rounded opacity-0 group-hover:opacity-100"
+        className="p-0.5 hover:bg-error/10 rounded opacity-0 group-hover:opacity-100"
       >
-        <Trash2 className="w-3 h-3 text-red-500" />
+        <Trash2 className="w-3 h-3 text-error" />
       </button>
     </div>
   );
@@ -320,12 +320,12 @@ export function SectionList() {
               onChange={(e) => setNewSectionTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddSection()}
               placeholder="Section title..."
-              className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-focus"
               autoFocus
             />
             <button
               onClick={handleAddSection}
-              className="px-2 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+              className="px-2 py-1 bg-primary text-on-accent text-sm rounded hover:bg-primary/90"
             >
               Add
             </button>
@@ -334,7 +334,7 @@ export function SectionList() {
                 setIsAdding(false);
                 setNewSectionTitle('');
               }}
-              className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700"
+              className="px-2 py-1 text-sm text-muted hover:text-text"
             >
               Cancel
             </button>
@@ -342,7 +342,7 @@ export function SectionList() {
         ) : (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg"
           >
             <Plus className="w-4 h-4" />
             Add Section
