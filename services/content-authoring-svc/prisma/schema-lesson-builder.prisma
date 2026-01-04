@@ -1,0 +1,137 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// LESSON BUILDER SCHEMA
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Add these models to your main schema.prisma file to support the Lesson Builder
+//
+// This schema defines:
+// - Lesson: Main lesson entity with metadata
+// - LessonVersion: Version control for lessons (drafts and published versions)
+// - LessonBlock: Individual content blocks within a lesson
+// - LessonTemplate: Reusable lesson templates
+// - LessonTemplateBlock: Blocks within templates
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Lesson {
+  id          String   @id @default(uuid())
+  tenantId    String?  @map("tenant_id")
+
+  // Metadata
+  title       String   @db.VarChar(500)
+  description String?  @db.Text
+  subject     String   @db.VarChar(50)  // ELA, MATH, SCIENCE, etc.
+  gradeBand   String   @map("grade_band") @db.VarChar(50)  // K_2, G3_5, etc.
+
+  // Publishing
+  isPublished Boolean  @default(false) @map("is_published")
+
+  // Audit
+  createdByUserId String  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  versions LessonVersion[]
+
+  @@index([tenantId])
+  @@index([subject])
+  @@index([gradeBand])
+  @@index([createdByUserId])
+  @@index([isPublished])
+  @@map("lessons")
+}
+
+model LessonVersion {
+  id        String   @id @default(uuid())
+  lessonId  String   @map("lesson_id")
+
+  // Version info
+  versionNumber Int    @map("version_number")
+  isDraft       Boolean @default(true) @map("is_draft")
+  publishedAt   DateTime? @map("published_at")
+
+  // Audit
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  lesson Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  blocks LessonBlock[]
+
+  @@unique([lessonId, versionNumber])
+  @@index([lessonId])
+  @@index([isDraft])
+  @@map("lesson_versions")
+}
+
+model LessonBlock {
+  id        String   @id @default(uuid())
+  versionId String   @map("version_id")
+
+  // Block info
+  type     String  @db.VarChar(50)  // TEXT_PARAGRAPH, MEDIA_IMAGE, QUIZ, etc.
+  position Int     // Order in the lesson (0-indexed)
+
+  // Content (stored as JSON)
+  content  Json    // Block-specific content
+  settings Json?   // Block-specific settings
+
+  // Audit
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  version LessonVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@index([position])
+  @@map("lesson_blocks")
+}
+
+model LessonTemplate {
+  id          String   @id @default(uuid())
+  tenantId    String?  @map("tenant_id")  // null = global template
+
+  // Template info
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  category    String   @db.VarChar(50)  // e.g., "Reading Comprehension", "Math Practice"
+  subject     String   @db.VarChar(50)
+  gradeBand   String   @map("grade_band") @db.VarChar(50)
+
+  // Preview
+  thumbnailUrl String? @map("thumbnail_url") @db.VarChar(500)
+
+  // Audit
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  blocks LessonTemplateBlock[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([subject])
+  @@map("lesson_templates")
+}
+
+model LessonTemplateBlock {
+  id         String   @id @default(uuid())
+  templateId String   @map("template_id")
+
+  // Block info
+  type     String  @db.VarChar(50)
+  position Int
+  content  Json
+  settings Json?
+
+  // Relations
+  template LessonTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@index([position])
+  @@map("lesson_template_blocks")
+}

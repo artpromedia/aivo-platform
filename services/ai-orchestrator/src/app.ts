@@ -13,6 +13,9 @@ import { registerBrainRoutes } from './routes/brain.js';
 import { emotionalStateRoutes } from './routes/emotionalState.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { socialStoryRoutes } from './routes/socialStories.js';
+import gameGenerationRoutes from './routes/game-generation.js';
+import generationRoutes from './routes/generation.js';
+import { LLMOrchestrator } from './providers/llm-orchestrator.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
 import { UsageTracker } from './usage/index.js';
@@ -65,6 +68,18 @@ export function createApp(options: AppOptions = {}) {
 
   // Emotional state detection and intervention routes (ND-2.3)
   app.register(emotionalStateRoutes, { prefix: '/emotional-state', pool: policyPool });
+
+  // Create LLM Orchestrator for AI services
+  const llmOrchestrator = new LLMOrchestrator({
+    defaultProvider: 'anthropic',
+    fallbackProviders: ['openai'],
+  });
+
+  // AI Content Generation routes
+  app.register(generationRoutes, { pool: policyPool, llmOrchestrator });
+
+  // AI-Generated Adaptive Games routes
+  app.register(gameGenerationRoutes, { llmOrchestrator });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;

@@ -43,3 +43,18 @@ export type {
   MathQuestionWithScratchPadProps,
   MathActivityWithScratchPadProps,
 } from './components/scratch-pad';
+
+// Focus Games Components
+export {
+  FocusGamePlayer,
+  GameSelector,
+  useGameSelection,
+} from './components/focus-games';
+export type {
+  FocusGamePlayerProps,
+  GameType,
+  GameConfig,
+  GameSelectorProps,
+  MiniGame,
+  GameCategory,
+} from './components/focus-games';

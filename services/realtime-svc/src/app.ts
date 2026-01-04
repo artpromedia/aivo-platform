@@ -7,9 +7,13 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { config } from './config.js';
+import { AlertRulesEngine } from './engine/alert-rules.js';
 import { WebSocketGateway } from './gateway/index.js';
 import { SessionEventHandler, AnalyticsEventHandler } from './handlers/index.js';
+import { ClassroomMonitorHandler } from './handlers/classroom-monitor.handler.js';
+import { registerMonitorRoutes } from './routes/monitor.routes.js';
 import { PresenceService, RoomService, MessageBrokerService } from './services/index.js';
+import { ClassroomMonitorService } from './services/classroom-monitor.service.js';
 
 export interface AppServices {
   gateway: WebSocketGateway;
@@ -18,6 +22,9 @@ export interface AppServices {
   messageBroker: MessageBrokerService;
   sessionEventHandler: SessionEventHandler;
   analyticsEventHandler: AnalyticsEventHandler;
+  alertRulesEngine: AlertRulesEngine;
+  classroomMonitorService: ClassroomMonitorService;
+  classroomMonitorHandler: ClassroomMonitorHandler;
 }
 
 export async function buildApp(): Promise<{ app: FastifyInstance; services: AppServices }> {
@@ -39,6 +46,10 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
   // Initialize message broker
   await messageBroker.initialize();
 
+  // Initialize classroom monitoring
+  const alertRulesEngine = new AlertRulesEngine();
+  const classroomMonitorService = new ClassroomMonitorService(alertRulesEngine);
+
   // Initialize WebSocket gateway
   const gateway = new WebSocketGateway(presenceService, roomService, messageBroker);
   await gateway.initialize(app);
@@ -46,9 +57,15 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
   // Initialize event handlers
   const sessionEventHandler = new SessionEventHandler(messageBroker, gateway);
   const analyticsEventHandler = new AnalyticsEventHandler(messageBroker, gateway);
+  const classroomMonitorHandler = new ClassroomMonitorHandler(
+    classroomMonitorService,
+    messageBroker,
+    gateway
+  );
 
   sessionEventHandler.initialize();
   analyticsEventHandler.initialize();
+  classroomMonitorHandler.initialize();
 
   // Health check endpoint
   app.get('/health', async () => ({
@@ -71,6 +88,9 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
     memory: process.memoryUsage(),
   }));
 
+  // Register monitor routes
+  await registerMonitorRoutes(app, classroomMonitorService);
+
   const services: AppServices = {
     gateway,
     presenceService,
@@ -78,6 +98,9 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
     messageBroker,
     sessionEventHandler,
     analyticsEventHandler,
+    alertRulesEngine,
+    classroomMonitorService,
+    classroomMonitorHandler,
   };
 
   return { app, services };

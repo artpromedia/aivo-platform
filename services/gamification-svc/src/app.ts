@@ -14,6 +14,8 @@ import {
   leaderboardRoutes,
   challengeRoutes,
   shopRoutes,
+  teamRoutes,
+  competitionRoutes,
 } from './routes/index.js';
 
 const app: Application = express();
@@ -66,6 +68,8 @@ apiRouter.use('/streaks', streakRoutes);
 apiRouter.use('/leaderboards', leaderboardRoutes);
 apiRouter.use('/challenges', challengeRoutes);
 apiRouter.use('/shop', shopRoutes);
+apiRouter.use('/teams', teamRoutes);
+apiRouter.use('/competitions', competitionRoutes);
 
 app.use('/api/gamification', apiRouter);
 
