@@ -8,7 +8,9 @@
  * Prisma client is generated with the real model implementations.
  */
 
-import { PrismaClient as BasePrismaClient } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import type { PrismaClient as BasePrismaClient } from '@prisma/client';
 
 /**
  * Generic model delegate interface for CRUD operations
