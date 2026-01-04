@@ -44,17 +44,48 @@ export type {
   MathActivityWithScratchPadProps,
 } from './components/scratch-pad';
 
-// Focus Games Components
+// Games Components - Adaptive Games and Focus Games
 export {
+  AdaptiveGameCard,
+  AdaptiveGameGrid,
+  FocusGameCard,
   FocusGamePlayer,
-  GameSelector,
-  useGameSelection,
-} from './components/focus-games';
+  GameProgressTracker,
+  GameDifficultySelector,
+} from './components/games';
 export type {
+  AdaptiveGameCardProps,
+  AdaptiveGameGridProps,
+  FocusGameCardProps,
   FocusGamePlayerProps,
+  GameProgressTrackerProps,
+  GameDifficultySelectorProps,
   GameType,
-  GameConfig,
-  GameSelectorProps,
-  MiniGame,
-  GameCategory,
-} from './components/focus-games';
+  GameDifficulty,
+  GameSession,
+  FocusMetrics,
+} from './components/games';
+
+// Gamification Components - Teams and Competitions
+export {
+  TeamCard,
+  TeamGrid,
+  TeamLeaderboard,
+  CompetitionCard,
+  CompetitionBracket,
+  TeamChallengeCreator,
+  TeamProgressWidget,
+} from './components/gamification';
+export type {
+  TeamCardProps,
+  TeamGridProps,
+  TeamLeaderboardProps,
+  CompetitionCardProps,
+  CompetitionBracketProps,
+  TeamChallengeCreatorProps,
+  TeamProgressWidgetProps,
+  Team,
+  TeamMember,
+  Competition,
+  CompetitionStatus,
+} from './components/gamification';

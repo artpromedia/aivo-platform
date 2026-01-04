@@ -30,6 +30,9 @@ import 'screens/session_complete_screen.dart';
 import 'screens/design_system_gallery_screen.dart';
 import 'screens/activity_screen.dart';
 import 'screens/session_feedback_screen.dart';
+import 'screens/adaptive_games_screen.dart';
+import 'screens/focus_games_screen.dart';
+import 'screens/teams_screen.dart';
 import 'learner/theme_loader.dart';
 import 'services/learner_notification_service.dart';
 
@@ -111,6 +114,30 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final sessionId = state.pathParameters['sessionId']!;
           return SessionFeedbackScreen(sessionId: sessionId);
+        },
+      ),
+      // Adaptive Games route
+      GoRoute(
+        path: '/games',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return AdaptiveGamesScreen(learnerId: learnerId);
+        },
+      ),
+      // Focus Games/Activities route
+      GoRoute(
+        path: '/focus',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return FocusGamesScreen(learnerId: learnerId);
+        },
+      ),
+      // Teams route
+      GoRoute(
+        path: '/teams',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return TeamsScreen(learnerId: learnerId);
         },
       ),
       if (_enableDesignSystemGallery)
