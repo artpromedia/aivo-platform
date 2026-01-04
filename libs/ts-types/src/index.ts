@@ -14,6 +14,7 @@ export * from './audit.js';
 export * from './copy.js';
 export * from './gamification.types.js';
 export * from './district.js';
+export * from './scratchPad.js';
 
 // Event schemas (re-export all from events module)
 export * from './events/index.js';
