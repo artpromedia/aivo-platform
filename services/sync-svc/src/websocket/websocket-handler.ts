@@ -1,6 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { WebSocket } from 'ws';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
+
+type Timer = ReturnType<typeof setInterval>;
 import { SyncEventEmitter } from '../services/sync-events.js';
 import { syncService } from '../services/sync-service.js';
 import {
@@ -31,7 +34,7 @@ interface WebSocketClient {
 export class WebSocketHandler {
   private clients: Map<string, WebSocketClient> = new Map();
   private eventEmitter: SyncEventEmitter;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private heartbeatInterval: Timer | null = null;
 
   constructor() {
     this.eventEmitter = SyncEventEmitter.getInstance();
@@ -51,7 +54,7 @@ export class WebSocketHandler {
     // Start heartbeat checker
     this.startHeartbeat();
 
-    console.log('🔌 WebSocket handler registered');
+    logger.info('WebSocket handler registered');
   }
 
   /**
@@ -77,7 +80,7 @@ export class WebSocketHandler {
     };
 
     this.clients.set(clientId, client);
-    console.log(`📱 Client connected: ${clientId}`);
+    logger.debug({ clientId }, 'Client connected');
 
     // Set up message handler
     socket.on('message', async (data) => {
@@ -92,12 +95,12 @@ export class WebSocketHandler {
     // Handle close
     socket.on('close', () => {
       this.clients.delete(clientId);
-      console.log(`📱 Client disconnected: ${clientId}`);
+      logger.debug({ clientId }, 'Client disconnected');
     });
 
     // Handle errors
     socket.on('error', (error) => {
-      console.error(`WebSocket error for ${clientId}:`, error);
+      logger.error({ err: error, clientId }, 'WebSocket error');
       this.clients.delete(clientId);
     });
 
@@ -423,7 +426,7 @@ export class WebSocketHandler {
 
       for (const [clientId, client] of this.clients) {
         if (now - client.lastPing > timeout) {
-          console.log(`📱 Client timed out: ${clientId}`);
+          logger.debug({ clientId }, 'Client timed out');
           client.socket.close(1000, 'Connection timeout');
           this.clients.delete(clientId);
         }

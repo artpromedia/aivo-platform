@@ -146,6 +146,7 @@ class InAppNotificationService {
   Timer? _pollTimer;
   int _currentPage = 1;
   bool _hasMore = true;
+  // ignore: unused_field - Reserved for future cache freshness checks
   DateTime? _lastFetched;
   bool _initialized = false;
 

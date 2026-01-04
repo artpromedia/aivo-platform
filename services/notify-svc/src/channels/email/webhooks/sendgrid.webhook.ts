@@ -11,6 +11,7 @@ import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import crypto from 'node:crypto';
 
 import { config } from '../../../config.js';
+import { logger } from '../../../logger.js';
 import type { EmailWebhookEvent, SuppressionReason } from '../types.js';
 import { emailService } from '../email.service.js';
 
@@ -65,7 +66,7 @@ function verifyWebhookSignature(
       decodedSignature
     );
   } catch (error) {
-    console.error('[SendGridWebhook] Signature verification failed:', error);
+    logger.error({ err: error }, 'Signature verification failed');
     return false;
   }
 }
@@ -75,21 +76,13 @@ function verifyWebhookSignature(
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function handleDelivered(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Email delivered:', {
-    email: event.email,
-    messageId: event.sg_message_id,
-  });
+  logger.debug({ email: event.email, messageId: event.sg_message_id }, 'Email delivered');
 
   // Update email log status in database if needed
 }
 
 async function handleBounce(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Email bounced:', {
-    email: event.email,
-    type: event.type,
-    reason: event.reason,
-    classification: event.bounce_classification,
-  });
+  logger.info({ email: event.email, type: event.type, reason: event.reason, classification: event.bounce_classification }, 'Email bounced');
 
   // Determine if hard bounce (add to suppression) or soft bounce (retry later)
   const isHardBounce = event.type === 'bounce' && 
@@ -108,30 +101,20 @@ async function handleBounce(event: SendGridEvent): Promise<void> {
 }
 
 async function handleDropped(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Email dropped:', {
-    email: event.email,
-    reason: event.reason,
-  });
+  logger.info({ email: event.email, reason: event.reason }, 'Email dropped');
 
   // Dropped emails are already suppressed by SendGrid
   // Log for analytics
 }
 
 async function handleDeferred(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Email deferred:', {
-    email: event.email,
-    attempt: event.attempt,
-    response: event.response,
-  });
+  logger.debug({ email: event.email, attempt: event.attempt, response: event.response }, 'Email deferred');
 
   // Temporary failure, SendGrid will retry
 }
 
 async function handleSpamReport(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Spam report:', {
-    email: event.email,
-    messageId: event.sg_message_id,
-  });
+  logger.warn({ email: event.email, messageId: event.sg_message_id }, 'Spam report received');
 
   // Add to suppression list immediately
   await emailService.addToSuppressionList(
@@ -142,9 +125,7 @@ async function handleSpamReport(event: SendGridEvent): Promise<void> {
 }
 
 async function handleUnsubscribe(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Unsubscribe:', {
-    email: event.email,
-  });
+  logger.info({ email: event.email }, 'Unsubscribe request');
 
   await emailService.addToSuppressionList(
     event.email,
@@ -154,22 +135,13 @@ async function handleUnsubscribe(event: SendGridEvent): Promise<void> {
 }
 
 async function handleOpen(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Email opened:', {
-    email: event.email,
-    userAgent: event.useragent,
-    ip: event.ip,
-  });
+  logger.debug({ email: event.email, userAgent: event.useragent, ip: event.ip }, 'Email opened');
 
   // Track engagement metrics
 }
 
 async function handleClick(event: SendGridEvent): Promise<void> {
-  console.log('[SendGridWebhook] Link clicked:', {
-    email: event.email,
-    url: event.url,
-    userAgent: event.useragent,
-    ip: event.ip,
-  });
+  logger.debug({ email: event.email, url: event.url, userAgent: event.useragent, ip: event.ip }, 'Link clicked');
 
   // Track engagement metrics
 }
@@ -208,14 +180,10 @@ async function processEvents(events: SendGridEvent[]): Promise<void> {
           await handleClick(event);
           break;
         default:
-          console.log('[SendGridWebhook] Unknown event type:', event.event);
+          logger.debug({ eventType: event.event }, 'Unknown event type');
       }
     } catch (error) {
-      console.error('[SendGridWebhook] Error processing event:', {
-        event: event.event,
-        email: event.email,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ err: error, eventType: event.event, email: event.email }, 'Error processing event');
     }
   }
 }
@@ -244,7 +212,7 @@ export async function sendGridWebhookHandler(
     const timestamp = request.headers['x-twilio-email-event-webhook-timestamp'];
 
     if (!signature || !timestamp) {
-      console.warn('[SendGridWebhook] Missing signature headers');
+      logger.warn('Missing signature headers');
       return reply.status(401).send({ error: 'Missing signature' });
     }
 
@@ -252,7 +220,7 @@ export async function sendGridWebhookHandler(
     const isValid = verifyWebhookSignature(webhookKey, rawBody, signature, timestamp);
 
     if (!isValid) {
-      console.warn('[SendGridWebhook] Invalid signature');
+      logger.warn('Invalid signature');
       return reply.status(401).send({ error: 'Invalid signature' });
     }
   }
@@ -264,12 +232,12 @@ export async function sendGridWebhookHandler(
     return reply.status(400).send({ error: 'Invalid payload format' });
   }
 
-  console.log('[SendGridWebhook] Received events:', events.length);
+  logger.debug({ count: events.length }, 'Received webhook events');
 
   // Process in background, respond immediately
   setImmediate(() => {
     processEvents(events).catch((error: unknown) => {
-      console.error('[SendGridWebhook] Background processing error:', error);
+      logger.error({ err: error }, 'Background processing error');
     });
   });
 
@@ -288,7 +256,7 @@ export function registerSendGridWebhook(fastify: FastifyInstance): void {
     handler: sendGridWebhookHandler,
   });
 
-  console.log('[SendGridWebhook] Registered POST /webhooks/email/sendgrid');
+  logger.info('Registered POST /webhooks/email/sendgrid');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

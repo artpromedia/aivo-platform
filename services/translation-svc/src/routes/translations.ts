@@ -7,6 +7,8 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { logger } from '../logger.js';
+
 import { TranslationService } from '../services/translation.service';
 
 const app = new Hono();
@@ -62,7 +64,7 @@ app.get('/translations/:locale/:namespace', async (c) => {
 
     return c.json({ translations });
   } catch (error) {
-    console.error('Error fetching translations:', error);
+    logger.error({ err: error, locale, namespace }, 'Error fetching translations');
     return c.json({ error: 'Failed to fetch translations' }, 500);
   }
 });
@@ -86,7 +88,7 @@ app.get('/translations/:locale/:namespace/:key', async (c) => {
 
     return c.json({ translation });
   } catch (error) {
-    console.error('Error fetching translation:', error);
+    logger.error({ err: error, locale, namespace, key }, 'Error fetching translation');
     return c.json({ error: 'Failed to fetch translation' }, 500);
   }
 });
@@ -112,7 +114,7 @@ app.put(
 
       return c.json({ translation }, 201);
     } catch (error) {
-      console.error('Error upserting translation:', error);
+      logger.error({ err: error, locale, namespace }, 'Error upserting translation');
       return c.json({ error: 'Failed to save translation' }, 500);
     }
   }
@@ -137,7 +139,7 @@ app.delete('/translations/:locale/:namespace/:key', async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    console.error('Error deleting translation:', error);
+    logger.error({ err: error, locale, namespace, key }, 'Error deleting translation');
     return c.json({ error: 'Failed to delete translation' }, 500);
   }
 });
@@ -159,7 +161,7 @@ app.patch(
       const translation = await translationService.updateStatus(id, status);
       return c.json({ translation });
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error({ err: error, id, status }, 'Error updating translation status');
       return c.json({ error: 'Failed to update status' }, 500);
     }
   }
@@ -177,7 +179,7 @@ app.post('/translate', zValidator('json', machineTranslateSchema), async (c) => 
     const result = await translationService.machineTranslate(body);
     return c.json(result);
   } catch (error) {
-    console.error('Error in machine translation:', error);
+    logger.error({ err: error, sourceLocale: body.sourceLocale, targetLocale: body.targetLocale }, 'Error in machine translation');
     return c.json({ error: 'Failed to translate' }, 500);
   }
 });
@@ -200,7 +202,7 @@ app.get('/bundles/:locale/:namespace', async (c) => {
 
     return c.json(bundle);
   } catch (error) {
-    console.error('Error exporting bundle:', error);
+    logger.error({ err: error, locale, namespace }, 'Error exporting bundle');
     return c.json({ error: 'Failed to export bundle' }, 500);
   }
 });
@@ -225,7 +227,7 @@ app.post('/bundles/import', zValidator('json', importBundleSchema), async (c) =>
 
     return c.json(result);
   } catch (error) {
-    console.error('Error importing bundle:', error);
+    logger.error({ err: error, locale: body.locale, namespace: body.namespace }, 'Error importing bundle');
     return c.json({ error: 'Failed to import bundle' }, 500);
   }
 });
@@ -246,7 +248,7 @@ app.get('/stats/:locale/:namespace', async (c) => {
 
     return c.json({ stats });
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    logger.error({ err: error, locale, namespace }, 'Error fetching stats');
     return c.json({ error: 'Failed to fetch statistics' }, 500);
   }
 });
@@ -266,7 +268,7 @@ app.get('/missing/:sourceLocale/:targetLocale/:namespace', async (c) => {
 
     return c.json({ missingKeys, count: missingKeys.length });
   } catch (error) {
-    console.error('Error fetching missing translations:', error);
+    logger.error({ err: error, sourceLocale, targetLocale, namespace }, 'Error fetching missing translations');
     return c.json({ error: 'Failed to fetch missing translations' }, 500);
   }
 });
@@ -285,7 +287,7 @@ app.get('/glossary/:locale', async (c) => {
 
     return c.json({ terms });
   } catch (error) {
-    console.error('Error fetching glossary:', error);
+    logger.error({ err: error, locale, category }, 'Error fetching glossary');
     return c.json({ error: 'Failed to fetch glossary' }, 500);
   }
 });
@@ -318,7 +320,7 @@ app.post(
 
       return c.json({ term }, 201);
     } catch (error) {
-      console.error('Error adding glossary term:', error);
+      logger.error({ err: error, term: body.term, locale: body.locale }, 'Error adding glossary term');
       return c.json({ error: 'Failed to add glossary term' }, 500);
     }
   }

@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 import Redis from 'ioredis';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import {
   ChangeNotification,
   EntityType,
-  SyncOperationType,
   ConflictResolutionStrategy,
 } from '../types.js';
 
@@ -58,9 +58,9 @@ export class SyncEventEmitter extends EventEmitter {
       });
 
       this.isConnected = true;
-      console.log('📡 Sync event emitter connected to Redis');
+      logger.info('Sync event emitter connected to Redis');
     } catch (error) {
-      console.error('Failed to connect sync event emitter:', error);
+      logger.error({ err: error }, 'Failed to connect sync event emitter');
       throw error;
     }
   }
@@ -80,7 +80,7 @@ export class SyncEventEmitter extends EventEmitter {
     }
 
     this.isConnected = false;
-    console.log('📡 Sync event emitter disconnected');
+    logger.info('Sync event emitter disconnected');
   }
 
   /**
@@ -88,7 +88,7 @@ export class SyncEventEmitter extends EventEmitter {
    */
   emitChange(notification: ChangeNotification): void {
     if (!this.publisher) {
-      console.warn('Publisher not connected, change not emitted');
+      logger.warn('Publisher not connected, change not emitted');
       return;
     }
 
@@ -112,7 +112,7 @@ export class SyncEventEmitter extends EventEmitter {
     userId: string;
   }): void {
     if (!this.publisher) {
-      console.warn('Publisher not connected, conflict not emitted');
+      logger.warn('Publisher not connected, conflict not emitted');
       return;
     }
 
@@ -138,7 +138,7 @@ export class SyncEventEmitter extends EventEmitter {
         this.emit('conflict', data);
       }
     } catch (error) {
-      console.error('Failed to parse sync event message:', error);
+      logger.error({ err: error }, 'Failed to parse sync event message');
     }
   }
 

@@ -13,7 +13,8 @@ import type {
   ActivityCompleted,
 } from '@aivo/events';
 import { config } from '../config.js';
-import { SessionType, SessionOrigin, SessionEventType } from '../types.js';
+import { logger } from '../logger.js';
+import { SessionType, SessionOrigin } from '../types.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -86,7 +87,7 @@ class SessionEventPublisherService {
     if (config.nats.enabled) {
       this.initializePublisher();
     } else {
-      console.log('[SessionEventPublisher] NATS disabled, events will be logged only');
+      logger.info('NATS disabled, events will be logged only');
     }
   }
 
@@ -109,11 +110,11 @@ class SessionEventPublisherService {
       });
 
       await this.publisher.connect();
-      console.log('[SessionEventPublisher] Connected to NATS');
+      logger.info('Connected to NATS');
       this.connectionError = null;
     } catch (err) {
       this.connectionError = err instanceof Error ? err : new Error(String(err));
-      console.error('[SessionEventPublisher] Failed to connect to NATS:', err);
+      logger.error({ err }, 'Failed to connect to NATS');
       this.publisher = null;
     } finally {
       this.isConnecting = false;
@@ -183,20 +184,16 @@ class SessionEventPublisherService {
         );
 
         if (result.success) {
-          console.log(`[SessionEventPublisher] Published session.started: ${session.id} (seq: ${result.sequence})`);
+          logger.debug({ sessionId: session.id, sequence: result.sequence }, 'Published session.started');
         } else {
-          console.error(`[SessionEventPublisher] Failed to publish session.started: ${result.error?.message}`);
+          logger.error({ sessionId: session.id, error: result.error?.message }, 'Failed to publish session.started');
         }
       } catch (err) {
-        console.error('[SessionEventPublisher] Error publishing session.started:', err);
+        logger.error({ err, sessionId: session.id }, 'Error publishing session.started');
       }
     } else {
       // Log event when NATS is not available
-      console.log('[SessionEventPublisher] Event (not sent):', JSON.stringify({
-        eventType: 'learning.session.started',
-        tenantId: session.tenantId,
-        payload,
-      }));
+      logger.debug({ eventType: 'learning.session.started', tenantId: session.tenantId, payload }, 'Event not sent (NATS unavailable)');
     }
   }
 
@@ -221,19 +218,15 @@ class SessionEventPublisherService {
         );
 
         if (result.success) {
-          console.log(`[SessionEventPublisher] Published session.ended: ${data.sessionId} (seq: ${result.sequence})`);
+          logger.debug({ sessionId: data.sessionId, sequence: result.sequence }, 'Published session.ended');
         } else {
-          console.error(`[SessionEventPublisher] Failed to publish session.ended: ${result.error?.message}`);
+          logger.error({ sessionId: data.sessionId, error: result.error?.message }, 'Failed to publish session.ended');
         }
       } catch (err) {
-        console.error('[SessionEventPublisher] Error publishing session.ended:', err);
+        logger.error({ err, sessionId: data.sessionId }, 'Error publishing session.ended');
       }
     } else {
-      console.log('[SessionEventPublisher] Event (not sent):', JSON.stringify({
-        eventType: 'learning.session.ended',
-        tenantId: data.tenantId,
-        payload,
-      }));
+      logger.debug({ eventType: 'learning.session.ended', tenantId: data.tenantId, payload }, 'Event not sent (NATS unavailable)');
     }
   }
 
@@ -265,10 +258,10 @@ class SessionEventPublisherService {
         );
 
         if (result.success) {
-          console.log(`[SessionEventPublisher] Published activity.started: ${data.activityId}`);
+          logger.debug({ activityId: data.activityId, sessionId: data.sessionId }, 'Published activity.started');
         }
       } catch (err) {
-        console.error('[SessionEventPublisher] Error publishing activity.started:', err);
+        logger.error({ err, activityId: data.activityId }, 'Error publishing activity.started');
       }
     }
   }
@@ -298,10 +291,10 @@ class SessionEventPublisherService {
         );
 
         if (result.success) {
-          console.log(`[SessionEventPublisher] Published activity.completed: ${data.activityId}`);
+          logger.debug({ activityId: data.activityId, sessionId: data.sessionId }, 'Published activity.completed');
         }
       } catch (err) {
-        console.error('[SessionEventPublisher] Error publishing activity.completed:', err);
+        logger.error({ err, activityId: data.activityId }, 'Error publishing activity.completed');
       }
     }
   }
@@ -314,7 +307,7 @@ class SessionEventPublisherService {
     if (this.publisher) {
       await this.publisher.close();
       this.publisher = null;
-      console.log('[SessionEventPublisher] Disconnected from NATS');
+      logger.info('Disconnected from NATS');
     }
   }
 

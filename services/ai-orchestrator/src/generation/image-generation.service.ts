@@ -20,7 +20,6 @@ import type {
   ImageStyle,
   ImageSize,
   GradeLevel,
-  GenerationMetadata,
 } from './types.js';
 
 const IMAGE_TYPE_PROMPTS: Record<ImageType, string> = {
@@ -69,7 +68,7 @@ const GRADE_LEVEL_GUIDANCE: Record<string, string> = {
 };
 
 export class ImageGenerationService {
-  private openai: OpenAI | null = null;
+  private readonly openai: OpenAI | null = null;
 
   constructor(config?: { apiKey?: string }) {
     if (config?.apiKey) {
@@ -260,25 +259,20 @@ export class ImageGenerationService {
   // ────────────────────────────────────────────────────────────────────────────
 
   private buildImagePrompt(request: ImageGenerationRequest): string {
-    const parts: string[] = [];
+    const parts: string[] = [
+      // Type-specific guidance
+      IMAGE_TYPE_PROMPTS[request.type],
+      // User's prompt
+      `\nSubject: ${request.prompt}`,
+    ];
 
-    // Add type-specific guidance
-    parts.push(IMAGE_TYPE_PROMPTS[request.type]);
-
-    // Add the user's prompt
-    parts.push(`\nSubject: ${request.prompt}`);
-
-    // Add style modifier
+    // Add optional modifiers
     if (request.style) {
       parts.push(`\nStyle: ${STYLE_MODIFIERS[request.style]}`);
     }
-
-    // Add grade level guidance
     if (request.gradeLevel) {
       parts.push(`\nAudience: ${GRADE_LEVEL_GUIDANCE[request.gradeLevel]}`);
     }
-
-    // Add subject context
     if (request.subject) {
       parts.push(`\nSubject area: ${request.subject}`);
     }
@@ -303,9 +297,9 @@ export class ImageGenerationService {
     };
 
     const description = typeDescriptions[request.type] ?? 'Image of';
+    const styleText = request.style ? `Style: ${request.style}.` : '';
+    const subjectText = request.subject ? `Subject: ${request.subject}.` : '';
 
-    return `${description} ${request.prompt}. ${request.style ? `Style: ${request.style}.` : ''} ${
-      request.subject ? `Subject: ${request.subject}.` : ''
-    }`;
+    return `${description} ${request.prompt}. ${styleText} ${subjectText}`.trim();
   }
 }
