@@ -2,7 +2,9 @@ import { type FastifyInstance, type FastifyPluginAsync, type FastifyRequest } fr
 import { z } from 'zod';
 
 import { config } from '../config.js';
+import { BaselineQuestionGenerationService } from '../generation/baseline-question.service.js';
 import { runAiCall } from '../pipeline/AiCallPipeline.js';
+import { getLLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import type { AgentConfigStore } from '../registry/store.js';
 import type { TelemetryStore } from '../telemetry/index.js';
@@ -45,6 +47,17 @@ const createConfigSchema = z.object({
 });
 
 const patchConfigSchema = createConfigSchema.partial();
+
+const baselineGenerateSchema = z.object({
+  tenantId: z.string(),
+  learnerId: z.string(),
+  agentType: z.literal('BASELINE'),
+  payload: z.object({
+    gradeBand: z.enum(['K5', 'G6_8', 'G9_12']),
+    domain: z.enum(['ELA', 'MATH', 'SCIENCE', 'SPEECH', 'SEL']),
+    skillCodes: z.array(z.string()).min(1).max(10),
+  }),
+});
 
 interface InternalRoutesOptions {
   registry: AgentConfigRegistry;
@@ -264,6 +277,48 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
           avgLatencyByAgent: {},
           callsByUseCase: {},
         },
+      });
+    }
+  });
+
+  /**
+   * POST /ai/baseline/generate - Generate unique baseline assessment questions
+   * Called by baseline-svc to get AI-generated questions for each learner
+   */
+  app.post('/ai/baseline/generate', async (request, reply) => {
+    const parsed = baselineGenerateSchema.safeParse(request.body);
+    if (!parsed.success) {
+      reply.code(400).send({
+        error: 'Invalid request body',
+        details: parsed.error.flatten(),
+      });
+      return;
+    }
+
+    const { tenantId, learnerId, payload } = parsed.data;
+    const { gradeBand, domain, skillCodes } = payload;
+
+    try {
+      const llm = getLLMOrchestrator();
+      const baselineService = new BaselineQuestionGenerationService(llm);
+
+      const result = await baselineService.generateQuestions({
+        tenantId,
+        learnerId,
+        gradeBand,
+        domain,
+        skillCodes,
+      });
+
+      reply.code(200).send({
+        questions: result.questions,
+        generationId: result.generationId,
+      });
+    } catch (error) {
+      console.error('Baseline question generation failed', { error, tenantId, learnerId });
+      reply.code(500).send({
+        error: 'Baseline question generation failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   });

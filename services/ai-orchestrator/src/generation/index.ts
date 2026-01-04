@@ -25,3 +25,13 @@ export { ReadabilityAnalysisService, LEXILE_GRADE_RANGES } from './readability-a
 export type { ReadabilityAnalysis, LexileEstimateRequest, ReadingLevelEstimate } from './readability-analysis.service.js';
 export { ContentAdaptationService } from './content-adaptation.service.js';
 export type { ContentAdaptationRequest, AdaptedContent, ScaffoldedContent, BatchAdaptationRequest } from './content-adaptation.service.js';
+
+// Baseline Assessment
+export { BaselineQuestionGenerationService } from './baseline-question.service.js';
+export type {
+  BaselineQuestionRequest,
+  BaselineQuestion,
+  BaselineQuestionResult,
+  GradeBand,
+  BaselineDomain,
+} from './baseline-question.service.js';
