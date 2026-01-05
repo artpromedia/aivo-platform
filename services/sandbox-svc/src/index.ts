@@ -29,10 +29,17 @@ const fastify = Fastify({
   },
 });
 
-// Register plugins
+// CORS configuration - requires explicit origins in production
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : process.env.NODE_ENV === 'production'
+    ? [] // No origins allowed by default in production
+    : ['http://localhost:3000', 'http://localhost:3001']; // Dev defaults
+
 await fastify.register(cors as any, {
-  origin: process.env.CORS_ORIGIN ?? '*',
+  origin: corsOrigins,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true,
 });
 
 await fastify.register(rateLimit as any, {

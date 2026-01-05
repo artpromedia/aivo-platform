@@ -15,6 +15,7 @@ import {
   verifyTwilioSignature,
   verifySnsSignature,
 } from '../lib/webhook-verification.js';
+import { emailTrackingRateLimiter, webhookRateLimiter } from '../lib/rate-limit.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -272,6 +273,7 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
    */
   fastify.get(
     '/webhooks/email/track/open/:trackingId',
+    { preHandler: emailTrackingRateLimiter },
     async (
       request: FastifyRequest<{ Params: { trackingId: string } }>,
       reply: FastifyReply
@@ -307,6 +309,7 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
    */
   fastify.get(
     '/webhooks/email/track/click/:trackingId',
+    { preHandler: emailTrackingRateLimiter },
     async (
       request: FastifyRequest<{
         Params: { trackingId: string };

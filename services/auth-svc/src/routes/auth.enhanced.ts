@@ -8,6 +8,13 @@ import { z } from 'zod';
 
 import { config } from '../config.js';
 import { verifyToken } from '../lib/jwt.js';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  refreshTokenRateLimiter,
+  passwordResetRateLimiter,
+  verifyEmailRateLimiter,
+} from '../lib/rate-limit.js';
 import { prisma } from '../prisma.js';
 import { createAuthService } from '../services/auth.service.js';
 
@@ -116,7 +123,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
   // --------------------------------------------------------------------------
   // POST /auth/register - User Registration
   // --------------------------------------------------------------------------
-  fastify.post('/register', async (request, reply) => {
+  fastify.post('/register', { preHandler: registerRateLimiter }, async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -150,7 +157,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
   // --------------------------------------------------------------------------
   // POST /auth/login - User Login
   // --------------------------------------------------------------------------
-  fastify.post('/login', async (request, reply) => {
+  fastify.post('/login', { preHandler: loginRateLimiter }, async (request, reply) => {
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -188,7 +195,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
   // --------------------------------------------------------------------------
   // POST /auth/refresh - Token Refresh
   // --------------------------------------------------------------------------
-  fastify.post('/refresh', async (request, reply) => {
+  fastify.post('/refresh', { preHandler: refreshTokenRateLimiter }, async (request, reply) => {
     const parsed = refreshSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -256,7 +263,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
   // --------------------------------------------------------------------------
   // POST /auth/verify-email - Email Verification
   // --------------------------------------------------------------------------
-  fastify.post('/verify-email', async (request, reply) => {
+  fastify.post('/verify-email', { preHandler: verifyEmailRateLimiter }, async (request, reply) => {
     const parsed = verifyEmailSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -276,7 +283,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
   // --------------------------------------------------------------------------
   // POST /auth/request-password-reset - Request Password Reset
   // --------------------------------------------------------------------------
-  fastify.post('/request-password-reset', async (request, reply) => {
+  fastify.post('/request-password-reset', { preHandler: passwordResetRateLimiter }, async (request, reply) => {
     const parsed = passwordResetRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -303,7 +310,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
   // --------------------------------------------------------------------------
   // POST /auth/reset-password - Reset Password with Token
   // --------------------------------------------------------------------------
-  fastify.post('/reset-password', async (request, reply) => {
+  fastify.post('/reset-password', { preHandler: passwordResetRateLimiter }, async (request, reply) => {
     const parsed = passwordResetSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({

@@ -199,8 +199,8 @@ export async function getConsentLogHistory(
       `SELECT * FROM consent_logs
        WHERE ${whereClause}
        ORDER BY created_at DESC
-       LIMIT ${limit} OFFSET ${offset}`,
-      params
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...params, limit, offset]
     ),
   ]);
 

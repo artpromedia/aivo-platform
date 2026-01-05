@@ -157,6 +157,39 @@ export interface PerformanceTrend {
   accuracy: number;
 }
 
+// ─── SQL Injection Prevention ───────────────────────────────────────────────────
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const VALID_AGGREGATIONS = ['hour', 'day', 'week', 'month', 'quarter', 'year'] as const;
+
+function validateUuid(value: string, fieldName: string): string {
+  if (!UUID_REGEX.test(value)) {
+    throw new Error(`Invalid ${fieldName}: must be a valid UUID`);
+  }
+  return value;
+}
+
+function validateIsoDate(value: Date): string {
+  const iso = value.toISOString();
+  // Additional validation - ensure it parses back to the same date
+  if (isNaN(new Date(iso).getTime())) {
+    throw new Error('Invalid date format');
+  }
+  return iso;
+}
+
+function validateAggregation(value: string): string {
+  if (!VALID_AGGREGATIONS.includes(value as AggregationPeriod)) {
+    throw new Error(`Invalid aggregation: must be one of ${VALID_AGGREGATIONS.join(', ')}`);
+  }
+  return value;
+}
+
+function escapeRedshiftString(value: string): string {
+  // Escape single quotes by doubling them (Redshift standard)
+  return value.replace(/'/g, "''");
+}
+
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
 export interface AnalyticsQueryConfig {
@@ -379,15 +412,21 @@ export class AnalyticsQueryService {
     tenantId: string,
     period: TimeRange
   ): Promise<Array<{ skillId: string; studentId: string; masteryLevel: number }>> {
+    // Validate inputs
+    const safeClassId = validateUuid(classId, 'classId');
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
     const sql = `
-      SELECT 
+      SELECT
         skill_id,
         student_id,
         mastery_level
       FROM analytics.skill_mastery
-      WHERE class_id = '${classId}'
-        AND tenant_id = '${tenantId}'
-        AND updated_at BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+      WHERE class_id = '${safeClassId}'
+        AND tenant_id = '${safeTenantId}'
+        AND updated_at BETWEEN '${safeStart}' AND '${safeEnd}'
       ORDER BY skill_id, student_id
     `;
 
@@ -422,8 +461,15 @@ export class AnalyticsQueryService {
       }
     }
 
+    // Validate inputs
+    const safeSkillId = validateUuid(skillId, 'skillId');
+    const safeClassId = validateUuid(classId, 'classId');
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
     const sql = `
-      SELECT 
+      SELECT
         skill_id,
         skill_name,
         COUNT(DISTINCT student_id) as student_count,
@@ -441,10 +487,10 @@ export class AnalyticsQueryService {
         COUNT(CASE WHEN mastery_level >= 0.9 THEN 1 END) as mastery_90_100
       FROM analytics.skill_mastery sm
       JOIN analytics.dim_skills s ON sm.skill_id = s.id
-      WHERE sm.skill_id = '${skillId}'
-        AND sm.class_id = '${classId}'
-        AND sm.tenant_id = '${tenantId}'
-        AND sm.updated_at BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+      WHERE sm.skill_id = '${safeSkillId}'
+        AND sm.class_id = '${safeClassId}'
+        AND sm.tenant_id = '${safeTenantId}'
+        AND sm.updated_at BETWEEN '${safeStart}' AND '${safeEnd}'
       GROUP BY skill_id, skill_name
     `;
 
@@ -503,8 +549,13 @@ export class AnalyticsQueryService {
       }
     }
 
+    // Validate inputs
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
     const sql = `
-      SELECT 
+      SELECT
         COUNT(DISTINCT u.id) FILTER (WHERE u.role = 'student') as total_students,
         COUNT(DISTINCT u.id) FILTER (WHERE u.role = 'student' AND u.last_activity_at >= CURRENT_DATE - 30) as active_students,
         COUNT(DISTINCT u.id) FILTER (WHERE u.role = 'teacher') as total_teachers,
@@ -521,14 +572,14 @@ export class AnalyticsQueryService {
         AVG(s.duration_minutes) as avg_session_duration,
         COUNT(s.id)::FLOAT / NULLIF(COUNT(DISTINCT s.student_id), 0) as avg_sessions_per_user,
         -- Growth
-        COUNT(DISTINCT u.id) FILTER (WHERE u.role = 'student' AND u.created_at >= '${period.start.toISOString()}') as new_students
+        COUNT(DISTINCT u.id) FILTER (WHERE u.role = 'student' AND u.created_at >= '${safeStart}') as new_students
       FROM analytics.dim_users u
-      LEFT JOIN analytics.fact_events e ON u.id = e.student_id 
-        AND e.event_time BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+      LEFT JOIN analytics.fact_events e ON u.id = e.student_id
+        AND e.event_time BETWEEN '${safeStart}' AND '${safeEnd}'
       LEFT JOIN analytics.fact_sessions s ON u.id = s.student_id
-        AND s.started_at BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+        AND s.started_at BETWEEN '${safeStart}' AND '${safeEnd}'
       LEFT JOIN analytics.dim_classes c ON c.tenant_id = u.tenant_id
-      WHERE u.tenant_id = '${tenantId}'
+      WHERE u.tenant_id = '${safeTenantId}'
       GROUP BY u.tenant_id
     `;
 
@@ -593,9 +644,21 @@ export class AnalyticsQueryService {
       }
     }
 
+    // Validate inputs
+    const safeClassId = validateUuid(classId, 'classId');
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
+    // Threshold values are from config (trusted numeric values)
+    const inactivityDays = Number(this.config.atRiskThresholds.inactivityDays);
+    const lowScore = Number(this.config.atRiskThresholds.lowScore);
+    const lowCompletion = Number(this.config.atRiskThresholds.lowCompletion);
+    const lowMastery = Number(this.config.atRiskThresholds.lowMastery);
+
     const sql = `
       WITH student_metrics AS (
-        SELECT 
+        SELECT
           s.student_id,
           -- Inactivity
           DATEDIFF(day, MAX(e.event_time), CURRENT_DATE) as days_inactive,
@@ -603,7 +666,7 @@ export class AnalyticsQueryService {
           AVG(e.score) FILTER (WHERE e.event_type LIKE 'lesson.%') as avg_score,
           AVG(e.score) FILTER (WHERE e.event_type LIKE 'assessment.%') as avg_assessment_score,
           -- Completion
-          COUNT(*) FILTER (WHERE e.event_type = 'lesson.completed')::FLOAT / 
+          COUNT(*) FILTER (WHERE e.event_type = 'lesson.completed')::FLOAT /
             NULLIF(COUNT(*) FILTER (WHERE e.event_type = 'lesson.started'), 0) as completion_rate,
           -- Mastery
           AVG(sm.mastery_level) as avg_mastery,
@@ -612,41 +675,41 @@ export class AnalyticsQueryService {
           AVG(sess.duration_minutes) as avg_session_duration
         FROM analytics.dim_enrollments s
         LEFT JOIN analytics.fact_events e ON s.student_id = e.student_id
-          AND e.event_time BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+          AND e.event_time BETWEEN '${safeStart}' AND '${safeEnd}'
         LEFT JOIN analytics.skill_mastery sm ON s.student_id = sm.student_id
         LEFT JOIN analytics.fact_sessions sess ON s.student_id = sess.student_id
-          AND sess.started_at BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
-        WHERE s.class_id = '${classId}'
-          AND s.tenant_id = '${tenantId}'
+          AND sess.started_at BETWEEN '${safeStart}' AND '${safeEnd}'
+        WHERE s.class_id = '${safeClassId}'
+          AND s.tenant_id = '${safeTenantId}'
         GROUP BY s.student_id
       )
       SELECT *,
         -- Calculate risk score (weighted factors)
-        CASE 
-          WHEN days_inactive > ${this.config.atRiskThresholds.inactivityDays * 2} THEN 30
-          WHEN days_inactive > ${this.config.atRiskThresholds.inactivityDays} THEN 15
+        CASE
+          WHEN days_inactive > ${inactivityDays * 2} THEN 30
+          WHEN days_inactive > ${inactivityDays} THEN 15
           ELSE 0
         END +
-        CASE 
-          WHEN COALESCE(avg_score, 0) < ${this.config.atRiskThresholds.lowScore - 20} THEN 25
-          WHEN COALESCE(avg_score, 0) < ${this.config.atRiskThresholds.lowScore} THEN 15
+        CASE
+          WHEN COALESCE(avg_score, 0) < ${lowScore - 20} THEN 25
+          WHEN COALESCE(avg_score, 0) < ${lowScore} THEN 15
           ELSE 0
         END +
-        CASE 
-          WHEN COALESCE(completion_rate, 0) < ${(this.config.atRiskThresholds.lowCompletion - 20) / 100} THEN 25
-          WHEN COALESCE(completion_rate, 0) < ${this.config.atRiskThresholds.lowCompletion / 100} THEN 15
+        CASE
+          WHEN COALESCE(completion_rate, 0) < ${(lowCompletion - 20) / 100} THEN 25
+          WHEN COALESCE(completion_rate, 0) < ${lowCompletion / 100} THEN 15
           ELSE 0
         END +
-        CASE 
-          WHEN COALESCE(avg_mastery, 0) < ${(this.config.atRiskThresholds.lowMastery - 20) / 100} THEN 20
-          WHEN COALESCE(avg_mastery, 0) < ${this.config.atRiskThresholds.lowMastery / 100} THEN 10
+        CASE
+          WHEN COALESCE(avg_mastery, 0) < ${(lowMastery - 20) / 100} THEN 20
+          WHEN COALESCE(avg_mastery, 0) < ${lowMastery / 100} THEN 10
           ELSE 0
         END as risk_score
       FROM student_metrics
-      WHERE days_inactive > ${this.config.atRiskThresholds.inactivityDays}
-        OR COALESCE(avg_score, 0) < ${this.config.atRiskThresholds.lowScore}
-        OR COALESCE(completion_rate, 0) < ${this.config.atRiskThresholds.lowCompletion / 100}
-        OR COALESCE(avg_mastery, 0) < ${this.config.atRiskThresholds.lowMastery / 100}
+      WHERE days_inactive > ${inactivityDays}
+        OR COALESCE(avg_score, 0) < ${lowScore}
+        OR COALESCE(completion_rate, 0) < ${lowCompletion / 100}
+        OR COALESCE(avg_mastery, 0) < ${lowMastery / 100}
       ORDER BY risk_score DESC
     `;
 
@@ -734,9 +797,15 @@ export class AnalyticsQueryService {
     period: TimeRange,
     aggregation: AggregationPeriod
   ): Promise<EngagementTrend[]> {
+    // Validate inputs
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+    const safeAggregation = validateAggregation(aggregation);
+
     const sql = `
-      SELECT 
-        DATE_TRUNC('${aggregation}', e.event_time) as period,
+      SELECT
+        DATE_TRUNC('${safeAggregation}', e.event_time) as period,
         COUNT(DISTINCT e.student_id) as active_users,
         COUNT(DISTINCT e.session_id) as sessions,
         COUNT(*) FILTER (WHERE e.event_type = 'lesson.completed') as lessons_completed,
@@ -744,9 +813,9 @@ export class AnalyticsQueryService {
         AVG(s.duration_minutes) as avg_time_minutes
       FROM analytics.fact_events e
       LEFT JOIN analytics.fact_sessions s ON e.session_id = s.id
-      WHERE e.tenant_id = '${tenantId}'
-        AND e.event_time BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
-      GROUP BY DATE_TRUNC('${aggregation}', e.event_time)
+      WHERE e.tenant_id = '${safeTenantId}'
+        AND e.event_time BETWEEN '${safeStart}' AND '${safeEnd}'
+      GROUP BY DATE_TRUNC('${safeAggregation}', e.event_time)
       ORDER BY period
     `;
 
@@ -771,9 +840,16 @@ export class AnalyticsQueryService {
     period: TimeRange,
     aggregation: AggregationPeriod
   ): Promise<PerformanceTrend[]> {
+    // Validate inputs
+    const safeClassId = validateUuid(classId, 'classId');
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+    const safeAggregation = validateAggregation(aggregation);
+
     const sql = `
-      SELECT 
-        DATE_TRUNC('${aggregation}', e.event_time) as period,
+      SELECT
+        DATE_TRUNC('${safeAggregation}', e.event_time) as period,
         AVG(e.score) as avg_score,
         COUNT(*) FILTER (WHERE e.event_type = 'lesson.completed')::FLOAT /
           NULLIF(COUNT(*) FILTER (WHERE e.event_type = 'lesson.started'), 0) as completion_rate,
@@ -783,11 +859,11 @@ export class AnalyticsQueryService {
           NULLIF(COUNT(*) FILTER (WHERE e.event_type = 'question.answered'), 0) as accuracy
       FROM analytics.fact_events e
       LEFT JOIN analytics.skill_mastery sm ON e.student_id = sm.student_id
-        AND sm.updated_at BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
-      WHERE e.class_id = '${classId}'
-        AND e.tenant_id = '${tenantId}'
-        AND e.event_time BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
-      GROUP BY DATE_TRUNC('${aggregation}', e.event_time)
+        AND sm.updated_at BETWEEN '${safeStart}' AND '${safeEnd}'
+      WHERE e.class_id = '${safeClassId}'
+        AND e.tenant_id = '${safeTenantId}'
+        AND e.event_time BETWEEN '${safeStart}' AND '${safeEnd}'
+      GROUP BY DATE_TRUNC('${safeAggregation}', e.event_time)
       ORDER BY period
     `;
 
@@ -918,11 +994,17 @@ export class AnalyticsQueryService {
     return [...new Set(recommendations)]; // Deduplicate
   }
 
-  // Query builders (simplified for brevity)
+  // Query builders with input validation for SQL injection prevention
   private buildStudentMetricsQuery(studentId: string, tenantId: string, period: TimeRange): string {
+    // Validate all inputs
+    const safeStudentId = validateUuid(studentId, 'studentId');
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
     return `
-      SELECT 
-        '${studentId}' as student_id,
+      SELECT
+        '${safeStudentId}' as student_id,
         COUNT(*) FILTER (WHERE event_type = 'lesson.started') as lessons_started,
         COUNT(*) FILTER (WHERE event_type = 'lesson.completed') as lessons_completed,
         AVG(score) FILTER (WHERE event_type = 'lesson.completed') as avg_lesson_score,
@@ -936,16 +1018,22 @@ export class AnalyticsQueryService {
         COUNT(DISTINCT DATE_TRUNC('day', event_time)) as active_days,
         MAX(event_time) as last_activity
       FROM analytics.fact_events
-      WHERE student_id = '${studentId}'
-        AND tenant_id = '${tenantId}'
-        AND event_time BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+      WHERE student_id = '${safeStudentId}'
+        AND tenant_id = '${safeTenantId}'
+        AND event_time BETWEEN '${safeStart}' AND '${safeEnd}'
     `;
   }
 
   private buildBatchStudentMetricsQuery(studentIds: string[], tenantId: string, period: TimeRange): string {
-    const idList = studentIds.map((id) => `'${id}'`).join(',');
+    // Validate all inputs
+    const safeIds = studentIds.map((id) => validateUuid(id, 'studentId'));
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
+    const idList = safeIds.map((id) => `'${id}'`).join(',');
     return `
-      SELECT 
+      SELECT
         student_id,
         COUNT(*) FILTER (WHERE event_type = 'lesson.started') as lessons_started,
         COUNT(*) FILTER (WHERE event_type = 'lesson.completed') as lessons_completed,
@@ -961,15 +1049,21 @@ export class AnalyticsQueryService {
         MAX(event_time) as last_activity
       FROM analytics.fact_events
       WHERE student_id IN (${idList})
-        AND tenant_id = '${tenantId}'
-        AND event_time BETWEEN '${period.start.toISOString()}' AND '${period.end.toISOString()}'
+        AND tenant_id = '${safeTenantId}'
+        AND event_time BETWEEN '${safeStart}' AND '${safeEnd}'
       GROUP BY student_id
     `;
   }
 
   private buildClassMetricsQuery(classId: string, tenantId: string, period: TimeRange): string {
+    // Validate all inputs
+    const safeClassId = validateUuid(classId, 'classId');
+    const safeTenantId = validateUuid(tenantId, 'tenantId');
+    const safeStart = validateIsoDate(period.start);
+    const safeEnd = validateIsoDate(period.end);
+
     return `
-      SELECT 
+      SELECT
         COUNT(DISTINCT student_id) as student_count,
         COUNT(DISTINCT student_id) FILTER (WHERE event_time >= CURRENT_DATE - 7) as active_students,
         AVG(completion_rate) as avg_completion_rate,
@@ -980,9 +1074,9 @@ export class AnalyticsQueryService {
         AVG(passed::INT) as assessment_pass_rate,
         AVG(mastery_level) as avg_mastery
       FROM analytics.class_aggregates
-      WHERE class_id = '${classId}'
-        AND tenant_id = '${tenantId}'
-        AND period_date BETWEEN '${period.start.toISOString()}'::DATE AND '${period.end.toISOString()}'::DATE
+      WHERE class_id = '${safeClassId}'
+        AND tenant_id = '${safeTenantId}'
+        AND period_date BETWEEN '${safeStart}'::DATE AND '${safeEnd}'::DATE
     `;
   }
 

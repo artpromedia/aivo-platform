@@ -11,12 +11,19 @@ import {
   securityRoutes,
 } from './routes/index.js';
 
+// CORS configuration - requires explicit origins in production
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : process.env.NODE_ENV === 'production'
+    ? [] // No origins allowed by default in production
+    : ['http://localhost:3000', 'http://localhost:3001']; // Dev defaults
+
 export function createApp() {
   const app = express();
 
   // Security middleware
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({ origin: corsOrigins, credentials: true }));
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));

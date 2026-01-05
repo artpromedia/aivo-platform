@@ -9,6 +9,7 @@ const API_BASE_URL = process.env.API_GATEWAY_URL ?? 'http://localhost:3000';
 interface FetchOptions {
   cache?: RequestCache;
   revalidate?: number;
+  accessToken?: string;
 }
 
 /**
@@ -63,10 +64,14 @@ export interface ActivityEvent {
  */
 export async function fetchPlatformMetrics(options: FetchOptions = {}): Promise<PlatformMetrics> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (options.accessToken) {
+      headers['Authorization'] = `Bearer ${options.accessToken}`;
+    }
     const response = await fetch(`${API_BASE_URL}/admin/v1/metrics/platform`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       cache: options.cache ?? 'no-store',
       next: options.revalidate ? { revalidate: options.revalidate } : undefined,
     });
@@ -93,10 +98,14 @@ export async function fetchPlatformMetrics(options: FetchOptions = {}): Promise<
  */
 export async function fetchServiceHealth(options: FetchOptions = {}): Promise<ServiceHealth[]> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (options.accessToken) {
+      headers['Authorization'] = `Bearer ${options.accessToken}`;
+    }
     const response = await fetch(`${API_BASE_URL}/admin/v1/health/services`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       cache: options.cache ?? 'no-store',
       next: options.revalidate ? { revalidate: options.revalidate } : undefined,
     });
@@ -119,10 +128,14 @@ export async function fetchIntegrationStatus(
   options: FetchOptions = {}
 ): Promise<IntegrationStatus[]> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (options.accessToken) {
+      headers['Authorization'] = `Bearer ${options.accessToken}`;
+    }
     const response = await fetch(`${API_BASE_URL}/admin/v1/integrations/status`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       cache: options.cache ?? 'no-store',
       next: options.revalidate ? { revalidate: options.revalidate } : undefined,
     });
@@ -146,10 +159,14 @@ export async function fetchRecentActivity(
   options: FetchOptions = {}
 ): Promise<ActivityEvent[]> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (options.accessToken) {
+      headers['Authorization'] = `Bearer ${options.accessToken}`;
+    }
     const response = await fetch(`${API_BASE_URL}/admin/v1/activity?limit=${limit}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       cache: options.cache ?? 'no-store',
       next: options.revalidate ? { revalidate: options.revalidate } : undefined,
     });

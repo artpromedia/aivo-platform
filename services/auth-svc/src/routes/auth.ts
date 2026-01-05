@@ -5,6 +5,11 @@ import { z } from 'zod';
 
 import { config } from '../config.js';
 import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  refreshTokenRateLimiter,
+} from '../lib/rate-limit.js';
 import { prisma } from '../prisma.js';
 
 const registerBody = z.object({
@@ -32,7 +37,7 @@ function userResponse(user: { id: string; email: string; tenantId: string }, rol
 }
 
 export async function registerAuthRoutes(fastify: FastifyInstance) {
-  fastify.post('/register', async (request, reply) => {
+  fastify.post('/register', { preHandler: registerRateLimiter }, async (request, reply) => {
     const parsed = registerBody.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid payload' });
@@ -71,7 +76,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.post('/login', async (request, reply) => {
+  fastify.post('/login', { preHandler: loginRateLimiter }, async (request, reply) => {
     const parsed = loginBody.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid payload' });
@@ -106,7 +111,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.post('/refresh', async (request, reply) => {
+  fastify.post('/refresh', { preHandler: refreshTokenRateLimiter }, async (request, reply) => {
     const parsed = refreshBody.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid payload' });

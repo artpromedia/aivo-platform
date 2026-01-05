@@ -197,8 +197,8 @@ export async function listDsrRequestsForTenant(
       `SELECT * FROM dsr_requests
        WHERE ${whereClause}
        ORDER BY created_at DESC
-       LIMIT ${limit} OFFSET ${offset}`,
-      params
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...params, limit, offset]
     ),
   ]);
 
