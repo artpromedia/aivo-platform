@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 /**
  * Translation Service
  *
@@ -9,7 +15,9 @@
  */
 
 import type { SupportedLocale, TranslationNamespace } from '@aivo/i18n';
+import { Translate } from '@google-cloud/translate/build/src/v2';
 
+import sql from '../db';
 import type {
   TranslationEntry,
   TranslationStatus,
@@ -21,6 +29,7 @@ import type {
   MachineTranslationRequest,
   MachineTranslationResult,
   TranslationProvider,
+  TranslationSource,
 } from '../types';
 
 /**
@@ -36,14 +45,70 @@ export interface TranslationServiceConfig {
   cacheTTL: number;
 }
 
+// Database row types
+interface TranslationRow {
+  id: string;
+  key: string;
+  locale: string;
+  namespace: string;
+  value: string;
+  context: string | null;
+  description: string | null;
+  status: string;
+  source: string;
+  plural_form: string | null;
+  max_length: number | null;
+  screenshot_url: string | null;
+  version: number;
+  created_at: Date;
+  updated_at: Date;
+  created_by: string | null;
+  updated_by: string | null;
+}
+
+interface TranslationMemoryRow {
+  id: string;
+  source_locale: string;
+  source_text: string;
+  target_locale: string;
+  target_text: string;
+  context: string | null;
+  quality: number;
+  usage_count: number;
+  created_at: Date;
+  last_used_at: Date;
+}
+
+interface GlossaryTermRow {
+  id: string;
+  term: string;
+  base_locale: string;
+  definition: string;
+  category: string | null;
+  do_not_translate: boolean;
+  case_sensitive: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface GlossaryTranslationRow {
+  locale: string;
+  translation: string;
+}
+
 /**
  * Translation Service
  */
 export class TranslationService {
   private config: TranslationServiceConfig;
+  private googleTranslate: Translate | null = null;
 
   constructor(config: TranslationServiceConfig) {
     this.config = config;
+
+    if (config.googleApiKey) {
+      this.googleTranslate = new Translate({ key: config.googleApiKey });
+    }
   }
 
   // ==================== Translation CRUD ====================
@@ -56,8 +121,19 @@ export class TranslationService {
     namespace: TranslationNamespace,
     key: string
   ): Promise<TranslationEntry | null> {
-    // TODO: Implement database lookup
-    throw new Error('Not implemented');
+    const rows = await sql<TranslationRow[]>`
+      SELECT * FROM translations
+      WHERE locale = ${locale}
+        AND namespace = ${namespace}
+        AND key = ${key}
+      LIMIT 1
+    `;
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return this.rowToEntry(rows[0]);
   }
 
   /**
@@ -67,8 +143,14 @@ export class TranslationService {
     locale: SupportedLocale,
     namespace: TranslationNamespace
   ): Promise<TranslationEntry[]> {
-    // TODO: Implement database lookup
-    throw new Error('Not implemented');
+    const rows = await sql<TranslationRow[]>`
+      SELECT * FROM translations
+      WHERE locale = ${locale}
+        AND namespace = ${namespace}
+      ORDER BY key
+    `;
+
+    return rows.map((row) => this.rowToEntry(row));
   }
 
   /**
@@ -77,8 +159,33 @@ export class TranslationService {
   async upsertTranslation(
     entry: Omit<TranslationEntry, 'id' | 'createdAt' | 'updatedAt' | 'version'>
   ): Promise<TranslationEntry> {
-    // TODO: Implement database upsert
-    throw new Error('Not implemented');
+    const rows = await sql<TranslationRow[]>`
+      INSERT INTO translations (
+        key, locale, namespace, value, context, description,
+        status, source, plural_form, max_length, screenshot_url,
+        created_by, updated_by
+      ) VALUES (
+        ${entry.key}, ${entry.locale}, ${entry.namespace}, ${entry.value},
+        ${entry.context ?? null}, ${entry.description ?? null},
+        ${entry.status}, ${entry.source}, ${entry.pluralForm ?? null},
+        ${entry.maxLength ?? null}, ${entry.screenshot ?? null},
+        ${entry.createdBy ?? null}, ${entry.updatedBy ?? null}
+      )
+      ON CONFLICT (locale, namespace, key)
+      DO UPDATE SET
+        value = EXCLUDED.value,
+        context = EXCLUDED.context,
+        description = EXCLUDED.description,
+        status = EXCLUDED.status,
+        source = EXCLUDED.source,
+        plural_form = EXCLUDED.plural_form,
+        max_length = EXCLUDED.max_length,
+        screenshot_url = EXCLUDED.screenshot_url,
+        updated_by = EXCLUDED.updated_by
+      RETURNING *
+    `;
+
+    return this.rowToEntry(rows[0]);
   }
 
   /**
@@ -89,8 +196,14 @@ export class TranslationService {
     namespace: TranslationNamespace,
     key: string
   ): Promise<boolean> {
-    // TODO: Implement database delete
-    throw new Error('Not implemented');
+    const result = await sql`
+      DELETE FROM translations
+      WHERE locale = ${locale}
+        AND namespace = ${namespace}
+        AND key = ${key}
+    `;
+
+    return result.count > 0;
   }
 
   /**
@@ -101,8 +214,18 @@ export class TranslationService {
     status: TranslationStatus,
     userId?: string
   ): Promise<TranslationEntry> {
-    // TODO: Implement status update
-    throw new Error('Not implemented');
+    const rows = await sql<TranslationRow[]>`
+      UPDATE translations
+      SET status = ${status}, updated_by = ${userId ?? null}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    if (rows.length === 0) {
+      throw new Error(`Translation with id ${id} not found`);
+    }
+
+    return this.rowToEntry(rows[0]);
   }
 
   // ==================== Machine Translation ====================
@@ -195,20 +318,30 @@ export class TranslationService {
     sourceLocale: SupportedLocale,
     targetLocale: SupportedLocale
   ): Promise<MachineTranslationResult['translations']> {
-    if (!this.config.googleApiKey) {
+    if (!this.config.googleApiKey || !this.googleTranslate) {
       throw new Error('Google API key not configured');
     }
 
-    // TODO: Implement Google Cloud Translation API call
-    // const { Translate } = require('@google-cloud/translate').v2;
-    // const translate = new Translate({ key: this.config.googleApiKey });
+    const results: MachineTranslationResult['translations'] = [];
 
-    return texts.map((text) => ({
-      sourceText: text,
-      translatedText: `[GOOGLE] ${text}`, // Placeholder
-      confidence: 85,
-      provider: 'google' as TranslationProvider,
-    }));
+    // Google Translate API supports batch translation
+    const [translations] = await this.googleTranslate.translate(texts, {
+      from: sourceLocale,
+      to: targetLocale,
+    });
+
+    const translatedArray = Array.isArray(translations) ? translations : [translations];
+
+    for (let i = 0; i < texts.length; i++) {
+      results.push({
+        sourceText: texts[i],
+        translatedText: translatedArray[i] ?? texts[i],
+        confidence: 85,
+        provider: 'google' as TranslationProvider,
+      });
+    }
+
+    return results;
   }
 
   /**
@@ -223,13 +356,59 @@ export class TranslationService {
       throw new Error('DeepL API key not configured');
     }
 
-    // TODO: Implement DeepL API call
-    return texts.map((text) => ({
+    // DeepL uses different locale codes
+    const deeplSourceLang = this.toDeepLLanguage(sourceLocale);
+    const deeplTargetLang = this.toDeepLLanguage(targetLocale);
+
+    const response = await fetch('https://api-free.deepl.com/v2/translate', {
+      method: 'POST',
+      headers: {
+        Authorization: `DeepL-Auth-Key ${this.config.deeplApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: texts,
+        source_lang: deeplSourceLang,
+        target_lang: deeplTargetLang,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`DeepL API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as {
+      translations: { text: string; detected_source_language?: string }[];
+    };
+
+    return texts.map((text, index) => ({
       sourceText: text,
-      translatedText: `[DEEPL] ${text}`, // Placeholder
+      translatedText: data.translations[index]?.text ?? text,
       confidence: 90,
       provider: 'deepl' as TranslationProvider,
     }));
+  }
+
+  /**
+   * Convert locale to DeepL language code
+   */
+  private toDeepLLanguage(locale: SupportedLocale): string {
+    const mapping: Record<string, string> = {
+      en: 'EN',
+      'en-US': 'EN-US',
+      'en-GB': 'EN-GB',
+      es: 'ES',
+      'es-MX': 'ES',
+      fr: 'FR',
+      de: 'DE',
+      it: 'IT',
+      pt: 'PT-PT',
+      'pt-BR': 'PT-BR',
+      zh: 'ZH',
+      ja: 'JA',
+      ko: 'KO',
+    };
+    return mapping[locale] ?? locale.toUpperCase().split('-')[0];
   }
 
   // ==================== Translation Memory ====================
@@ -242,8 +421,40 @@ export class TranslationService {
     sourceLocale: SupportedLocale,
     targetLocale: SupportedLocale
   ): Promise<TranslationMemoryEntry[]> {
-    // TODO: Implement fuzzy matching against translation memory
-    return [];
+    if (texts.length === 0) {
+      return [];
+    }
+
+    // Use exact matching for now (fuzzy matching could be added with pg_trgm)
+    const rows = await sql<TranslationMemoryRow[]>`
+      SELECT * FROM translation_memory
+      WHERE source_locale = ${sourceLocale}
+        AND target_locale = ${targetLocale}
+        AND source_text = ANY(${texts})
+      ORDER BY quality DESC
+    `;
+
+    // Update usage count for hits
+    if (rows.length > 0) {
+      await sql`
+        UPDATE translation_memory
+        SET usage_count = usage_count + 1, last_used_at = NOW()
+        WHERE id = ANY(${rows.map((r) => r.id)})
+      `;
+    }
+
+    return rows.map((row) => ({
+      id: row.id,
+      sourceLocale: row.source_locale as SupportedLocale,
+      sourceText: row.source_text,
+      targetLocale: row.target_locale as SupportedLocale,
+      targetText: row.target_text,
+      context: row.context ?? undefined,
+      quality: row.quality,
+      usageCount: row.usage_count,
+      createdAt: row.created_at,
+      lastUsedAt: row.last_used_at,
+    }));
   }
 
   /**
@@ -252,8 +463,36 @@ export class TranslationService {
   async addToTranslationMemory(
     entry: Omit<TranslationMemoryEntry, 'id' | 'usageCount' | 'createdAt' | 'lastUsedAt'>
   ): Promise<TranslationMemoryEntry> {
-    // TODO: Implement database insert
-    throw new Error('Not implemented');
+    const rows = await sql<TranslationMemoryRow[]>`
+      INSERT INTO translation_memory (
+        source_locale, source_text, target_locale, target_text, context, quality
+      ) VALUES (
+        ${entry.sourceLocale}, ${entry.sourceText},
+        ${entry.targetLocale}, ${entry.targetText},
+        ${entry.context ?? null}, ${entry.quality}
+      )
+      ON CONFLICT (source_locale, target_locale, md5(source_text), md5(COALESCE(context, '')))
+      DO UPDATE SET
+        target_text = EXCLUDED.target_text,
+        quality = GREATEST(translation_memory.quality, EXCLUDED.quality),
+        usage_count = translation_memory.usage_count + 1,
+        last_used_at = NOW()
+      RETURNING *
+    `;
+
+    const row = rows[0];
+    return {
+      id: row.id,
+      sourceLocale: row.source_locale as SupportedLocale,
+      sourceText: row.source_text,
+      targetLocale: row.target_locale as SupportedLocale,
+      targetText: row.target_text,
+      context: row.context ?? undefined,
+      quality: row.quality,
+      usageCount: row.usage_count,
+      createdAt: row.created_at,
+      lastUsedAt: row.last_used_at,
+    };
   }
 
   // ==================== Glossary ====================
@@ -262,8 +501,47 @@ export class TranslationService {
    * Get glossary terms
    */
   async getGlossaryTerms(locale: SupportedLocale, category?: string): Promise<GlossaryTerm[]> {
-    // TODO: Implement database lookup
-    return [];
+    const baseQuery = sql<(GlossaryTermRow & { translations_json: string })[]>`
+      SELECT
+        gt.*,
+        COALESCE(
+          json_agg(
+            json_build_object('locale', gtr.locale, 'translation', gtr.translation)
+          ) FILTER (WHERE gtr.id IS NOT NULL),
+          '[]'
+        )::text as translations_json
+      FROM glossary_terms gt
+      LEFT JOIN glossary_translations gtr ON gt.id = gtr.term_id
+      WHERE gt.base_locale = ${locale}
+        ${category ? sql`AND gt.category = ${category}` : sql``}
+      GROUP BY gt.id
+      ORDER BY gt.term
+    `;
+
+    const rows = await baseQuery;
+
+    return rows.map((row) => {
+      const translationsArray = JSON.parse(row.translations_json) as GlossaryTranslationRow[];
+      const translations: Record<SupportedLocale, string> = {} as Record<SupportedLocale, string>;
+      for (const tr of translationsArray) {
+        if (tr.locale && tr.translation) {
+          translations[tr.locale as SupportedLocale] = tr.translation;
+        }
+      }
+
+      return {
+        id: row.id,
+        term: row.term,
+        locale: row.base_locale as SupportedLocale,
+        definition: row.definition,
+        translations,
+        category: row.category ?? undefined,
+        doNotTranslate: row.do_not_translate,
+        caseSensitive: row.case_sensitive,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+    });
   }
 
   /**
@@ -272,8 +550,42 @@ export class TranslationService {
   async addGlossaryTerm(
     term: Omit<GlossaryTerm, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<GlossaryTerm> {
-    // TODO: Implement database insert
-    throw new Error('Not implemented');
+    // Insert term
+    const termRows = await sql<GlossaryTermRow[]>`
+      INSERT INTO glossary_terms (
+        term, base_locale, definition, category, do_not_translate, case_sensitive
+      ) VALUES (
+        ${term.term}, ${term.locale}, ${term.definition},
+        ${term.category ?? null}, ${term.doNotTranslate ?? false}, ${term.caseSensitive ?? true}
+      )
+      RETURNING *
+    `;
+
+    const termRow = termRows[0];
+
+    // Insert translations
+    const translationEntries = Object.entries(term.translations);
+    if (translationEntries.length > 0) {
+      for (const [locale, translation] of translationEntries) {
+        await sql`
+          INSERT INTO glossary_translations (term_id, locale, translation)
+          VALUES (${termRow.id}, ${locale}, ${translation})
+        `;
+      }
+    }
+
+    return {
+      id: termRow.id,
+      term: termRow.term,
+      locale: termRow.base_locale as SupportedLocale,
+      definition: termRow.definition,
+      translations: term.translations,
+      category: termRow.category ?? undefined,
+      doNotTranslate: termRow.do_not_translate,
+      caseSensitive: termRow.case_sensitive,
+      createdAt: termRow.created_at,
+      updatedAt: termRow.updated_at,
+    };
   }
 
   /**
@@ -296,12 +608,19 @@ export class TranslationService {
       const translation = term.translations[targetLocale];
       if (translation) {
         const flags = term.caseSensitive ? 'g' : 'gi';
-        const regex = new RegExp(`\\b${term.term}\\b`, flags);
+        const regex = new RegExp(`\\b${this.escapeRegex(term.term)}\\b`, flags);
         result = result.replace(regex, translation);
       }
     }
 
     return result;
+  }
+
+  /**
+   * Escape regex special characters
+   */
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   // ==================== Bundle Management ====================
@@ -363,7 +682,7 @@ export class TranslationService {
           namespace: bundle.namespace,
           value,
           status,
-          source: 'imported',
+          source: 'imported' as TranslationSource,
         });
 
         imported++;
@@ -378,10 +697,7 @@ export class TranslationService {
   /**
    * Compare bundles and get diff
    */
-  async compareBundles(
-    source: TranslationBundle,
-    target: TranslationBundle
-  ): Promise<TranslationDiff> {
+  compareBundles(source: TranslationBundle, target: TranslationBundle): TranslationDiff {
     const sourceKeys = new Set(Object.keys(source.translations));
     const targetKeys = new Set(Object.keys(target.translations));
 
@@ -427,10 +743,13 @@ export class TranslationService {
     ).length;
     const pendingKeys = entries.filter((e) => e.status === 'pending_review').length;
 
-    const lastEntry = entries.reduce(
-      (latest, entry) => (entry.updatedAt > latest.updatedAt ? entry : latest),
-      entries[0]
-    );
+    const lastEntry =
+      entries.length > 0
+        ? entries.reduce(
+            (latest, entry) => (entry.updatedAt > latest.updatedAt ? entry : latest),
+            entries[0]
+          )
+        : null;
 
     return {
       locale,
@@ -458,5 +777,32 @@ export class TranslationService {
     const targetKeys = new Set(targetEntries.map((e) => e.key));
 
     return sourceEntries.filter((e) => !targetKeys.has(e.key)).map((e) => e.key);
+  }
+
+  // ==================== Helpers ====================
+
+  /**
+   * Convert database row to TranslationEntry
+   */
+  private rowToEntry(row: TranslationRow): TranslationEntry {
+    return {
+      id: row.id,
+      key: row.key,
+      locale: row.locale as SupportedLocale,
+      namespace: row.namespace as TranslationNamespace,
+      value: row.value,
+      context: row.context ?? undefined,
+      description: row.description ?? undefined,
+      status: row.status as TranslationStatus,
+      source: row.source as TranslationSource,
+      pluralForm: row.plural_form ?? undefined,
+      maxLength: row.max_length ?? undefined,
+      screenshot: row.screenshot_url ?? undefined,
+      version: row.version,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      createdBy: row.created_by ?? undefined,
+      updatedBy: row.updated_by ?? undefined,
+    };
   }
 }

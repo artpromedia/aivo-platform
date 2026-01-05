@@ -9,70 +9,9 @@
 import Link from 'next/link';
 import * as React from 'react';
 
+import type { IntegrationStatus as IntegrationType } from '../../../lib/api/dashboard';
+
 type IntegrationStatusType = 'active' | 'syncing' | 'error' | 'inactive';
-
-interface Integration {
-  id: string;
-  name: string;
-  type: 'edfi' | 'scim' | 'lms' | 'sis';
-  status: IntegrationStatusType;
-  lastSync?: string;
-  tenantsUsing: number;
-  errorCount?: number;
-}
-
-// Mock data
-const mockIntegrations: Integration[] = [
-  {
-    id: 'edfi-1',
-    name: 'Ed-Fi State Reporting',
-    type: 'edfi',
-    status: 'active',
-    lastSync: '15 min ago',
-    tenantsUsing: 127,
-  },
-  {
-    id: 'scim-1',
-    name: 'SCIM User Provisioning',
-    type: 'scim',
-    status: 'active',
-    lastSync: '2 min ago',
-    tenantsUsing: 89,
-  },
-  {
-    id: 'sis-clever',
-    name: 'Clever SIS Sync',
-    type: 'sis',
-    status: 'syncing',
-    lastSync: 'In progress',
-    tenantsUsing: 312,
-  },
-  {
-    id: 'sis-classlink',
-    name: 'ClassLink Roster',
-    type: 'sis',
-    status: 'active',
-    lastSync: '1 hour ago',
-    tenantsUsing: 156,
-  },
-  {
-    id: 'lms-canvas',
-    name: 'Canvas LTI',
-    type: 'lms',
-    status: 'active',
-    lastSync: '5 min ago',
-    tenantsUsing: 423,
-  },
-  {
-    id: 'lms-google',
-    name: 'Google Classroom',
-    type: 'lms',
-    status: 'error',
-    lastSync: '2 hours ago',
-    tenantsUsing: 178,
-    errorCount: 3,
-  },
-];
 
 const statusConfig: Record<IntegrationStatusType, { label: string; className: string }> = {
   active: { label: 'Active', className: 'bg-green-100 text-green-700' },
@@ -89,13 +28,60 @@ const typeLabels: Record<string, string> = {
 };
 
 export function IntegrationStatus() {
-  const [integrations] = React.useState(mockIntegrations);
+  const [integrations, setIntegrations] = React.useState<IntegrationType[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function loadIntegrations() {
+      try {
+        const response = await fetch('/api/dashboard/integrations');
+        if (!response.ok) {
+          throw new Error('Failed to fetch integration status');
+        }
+        const data = (await response.json()) as IntegrationType[];
+        setIntegrations(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load integrations');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadIntegrations();
+    // Refresh every 30 seconds
+    const interval = setInterval(() => void loadIntegrations(), 30000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const statusCounts = {
     active: integrations.filter((i) => i.status === 'active').length,
     syncing: integrations.filter((i) => i.status === 'syncing').length,
     error: integrations.filter((i) => i.status === 'error').length,
   };
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h3 className="font-semibold text-gray-900">Integration Status</h3>
+        <div className="mt-4 flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <h3 className="font-semibold text-red-900">Integration Status</h3>
+        <p className="mt-2 text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">

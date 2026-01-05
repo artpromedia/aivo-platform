@@ -9,96 +9,16 @@
 
 import * as React from 'react';
 
+import {
+  fetchActiveSessions,
+  acknowledgeHelpRequest,
+  type StudentSession,
+  type FocusState,
+} from '../../../../lib/api/monitoring';
+
 import { PageHeader } from '@/components/layout/breadcrumb';
 
-interface StudentSession {
-  id: string;
-  studentName: string;
-  avatarUrl?: string;
-  currentActivity: string;
-  subject: string;
-  startTime: string;
-  duration: number;
-  progress: number;
-  focusState: 'focused' | 'distracted' | 'idle' | 'break';
-  needsHelp: boolean;
-  recentScore?: number;
-}
-
-// Mock active session data
-const mockActiveSessions: StudentSession[] = [
-  {
-    id: '1',
-    studentName: 'Emma Wilson',
-    currentActivity: 'Fraction Addition Practice',
-    subject: 'Math',
-    startTime: '10:15 AM',
-    duration: 18,
-    progress: 65,
-    focusState: 'focused',
-    needsHelp: false,
-    recentScore: 92,
-  },
-  {
-    id: '2',
-    studentName: 'Michael Chen',
-    currentActivity: 'Reading Comprehension Quiz',
-    subject: 'Reading',
-    startTime: '10:20 AM',
-    duration: 13,
-    progress: 40,
-    focusState: 'focused',
-    needsHelp: false,
-    recentScore: 85,
-  },
-  {
-    id: '3',
-    studentName: 'Olivia Brown',
-    currentActivity: 'Multiplication Facts',
-    subject: 'Math',
-    startTime: '10:12 AM',
-    duration: 21,
-    progress: 80,
-    focusState: 'distracted',
-    needsHelp: true,
-  },
-  {
-    id: '4',
-    studentName: 'Alex Smith',
-    currentActivity: 'Vocabulary Matching',
-    subject: 'Reading',
-    startTime: '10:25 AM',
-    duration: 8,
-    progress: 25,
-    focusState: 'focused',
-    needsHelp: false,
-    recentScore: 78,
-  },
-  {
-    id: '5',
-    studentName: 'Sarah Johnson',
-    currentActivity: 'Breathing Exercise',
-    subject: 'Focus Break',
-    startTime: '10:28 AM',
-    duration: 2,
-    progress: 50,
-    focusState: 'break',
-    needsHelp: false,
-  },
-  {
-    id: '6',
-    studentName: 'James Miller',
-    currentActivity: 'Word Problems',
-    subject: 'Math',
-    startTime: '10:10 AM',
-    duration: 23,
-    progress: 55,
-    focusState: 'idle',
-    needsHelp: true,
-  },
-];
-
-const focusStateConfig = {
+const focusStateConfig: Record<FocusState, { label: string; color: string; icon: string }> = {
   focused: {
     label: 'Focused',
     color: 'bg-green-100 text-green-700',
@@ -122,14 +42,66 @@ const focusStateConfig = {
 };
 
 export default function MonitoringPage() {
-  const [sessions] = React.useState(mockActiveSessions);
+  const [sessions, setSessions] = React.useState<StudentSession[]>([]);
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function loadSessions() {
+      try {
+        const accessToken = 'mock-token';
+        const data = await fetchActiveSessions(undefined, accessToken);
+        setSessions(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load sessions');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    void loadSessions();
+    // Refresh every 5 seconds for real-time monitoring
+    const interval = setInterval(loadSessions, 5000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleOfferHelp = async (studentId: string) => {
+    try {
+      const accessToken = 'mock-token';
+      await acknowledgeHelpRequest(`help-${studentId}`, accessToken);
+      // Refresh sessions to update help status
+      const data = await fetchActiveSessions(undefined, accessToken);
+      setSessions(data);
+    } catch (err) {
+      console.error('Failed to acknowledge help request:', err);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   const needsHelpCount = sessions.filter((s) => s.needsHelp).length;
   const focusedCount = sessions.filter((s) => s.focusState === 'focused').length;
-  const avgProgress = Math.round(
-    sessions.reduce((sum, s) => sum + s.progress, 0) / sessions.length
-  );
+  const avgProgress =
+    sessions.length > 0
+      ? Math.round(sessions.reduce((sum, s) => sum + s.progress, 0) / sessions.length)
+      : 0;
 
   return (
     <div>
@@ -193,6 +165,7 @@ export default function MonitoringPage() {
               .map((s) => (
                 <button
                   key={s.id}
+                  onClick={() => handleOfferHelp(s.studentId)}
                   className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100"
                 >
                   Help {s.studentName}
@@ -207,13 +180,13 @@ export default function MonitoringPage() {
         {viewMode === 'grid' ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sessions.map((session) => (
-              <SessionCard key={session.id} session={session} />
+              <SessionCard key={session.id} session={session} onOfferHelp={handleOfferHelp} />
             ))}
           </div>
         ) : (
           <div className="space-y-2">
             {sessions.map((session) => (
-              <SessionRow key={session.id} session={session} />
+              <SessionRow key={session.id} session={session} onOfferHelp={handleOfferHelp} />
             ))}
           </div>
         )}
@@ -222,7 +195,13 @@ export default function MonitoringPage() {
   );
 }
 
-function SessionCard({ session }: { session: StudentSession }) {
+function SessionCard({
+  session,
+  onOfferHelp,
+}: {
+  session: StudentSession;
+  onOfferHelp: (studentId: string) => void;
+}) {
   const focusConfig = focusStateConfig[session.focusState];
 
   return (
@@ -289,7 +268,12 @@ function SessionCard({ session }: { session: StudentSession }) {
 
       {/* Help Button */}
       {session.needsHelp && (
-        <button className="mt-3 w-full rounded-lg bg-red-50 py-2 text-sm font-medium text-red-700 hover:bg-red-100">
+        <button
+          onClick={() => {
+            onOfferHelp(session.studentId);
+          }}
+          className="mt-3 w-full rounded-lg bg-red-50 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
           🙋 Offer Help
         </button>
       )}
@@ -297,7 +281,13 @@ function SessionCard({ session }: { session: StudentSession }) {
   );
 }
 
-function SessionRow({ session }: { session: StudentSession }) {
+function SessionRow({
+  session,
+  onOfferHelp,
+}: {
+  session: StudentSession;
+  onOfferHelp: (studentId: string) => void;
+}) {
   const focusConfig = focusStateConfig[session.focusState];
 
   return (
@@ -337,7 +327,12 @@ function SessionRow({ session }: { session: StudentSession }) {
       </span>
 
       {session.needsHelp && (
-        <button className="rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100">
+        <button
+          onClick={() => {
+            onOfferHelp(session.studentId);
+          }}
+          className="rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
           Help
         </button>
       )}

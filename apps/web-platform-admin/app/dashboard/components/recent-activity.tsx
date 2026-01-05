@@ -8,65 +8,13 @@
 
 import * as React from 'react';
 
+import type { ActivityEvent } from '../../../lib/api/dashboard';
+
 type ActivityType = 'tenant' | 'user' | 'integration' | 'billing' | 'security' | 'system';
 
-interface Activity {
-  id: string;
-  type: ActivityType;
-  title: string;
-  description: string;
-  timestamp: string;
+interface Activity extends Omit<ActivityEvent, 'severity' | 'metadata'> {
   actor?: string;
 }
-
-// Mock data
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    type: 'tenant',
-    title: 'New tenant created',
-    description: 'Springfield Unified School District joined the platform',
-    timestamp: '5 min ago',
-    actor: 'system',
-  },
-  {
-    id: '2',
-    type: 'integration',
-    title: 'Ed-Fi export completed',
-    description: 'Texas TEA - 1,245 records exported successfully',
-    timestamp: '12 min ago',
-  },
-  {
-    id: '3',
-    type: 'security',
-    title: 'Failed login attempts',
-    description: '15 failed attempts from IP 192.168.1.100',
-    timestamp: '25 min ago',
-  },
-  {
-    id: '4',
-    type: 'billing',
-    title: 'Contract renewed',
-    description: 'Riverside County Schools renewed for 3 years',
-    timestamp: '1 hour ago',
-    actor: 'admin@riverside.edu',
-  },
-  {
-    id: '5',
-    type: 'user',
-    title: 'Bulk user import',
-    description: '523 users provisioned via SCIM',
-    timestamp: '2 hours ago',
-  },
-  {
-    id: '6',
-    type: 'system',
-    title: 'Service deployment',
-    description: 'auth-svc v2.4.1 deployed to production',
-    timestamp: '3 hours ago',
-    actor: 'ci/cd',
-  },
-];
 
 const typeConfig: Record<ActivityType, { icon: React.ReactNode; color: string }> = {
   tenant: {
@@ -96,7 +44,54 @@ const typeConfig: Record<ActivityType, { icon: React.ReactNode; color: string }>
 };
 
 export function RecentActivity() {
-  const [activities] = React.useState(mockActivities);
+  const [activities, setActivities] = React.useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function loadActivities() {
+      try {
+        const response = await fetch('/api/dashboard/activity');
+        if (!response.ok) {
+          throw new Error('Failed to fetch activity');
+        }
+        const data = (await response.json()) as Activity[];
+        setActivities(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load activity');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadActivities();
+    // Refresh every 30 seconds
+    const interval = setInterval(() => void loadActivities(), 30000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h3 className="font-semibold text-gray-900">Recent Activity</h3>
+        <div className="mt-4 flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <h3 className="font-semibold text-red-900">Recent Activity</h3>
+        <p className="mt-2 text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">

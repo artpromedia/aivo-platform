@@ -6,63 +6,82 @@
 
 import * as React from 'react';
 
+import {
+  fetchConversations,
+  fetchConversationMessages,
+  sendMessage,
+  markConversationRead,
+  type Conversation,
+  type Message,
+} from '../../../../lib/api/messages';
+
 import { PageHeader } from '@/components/layout/breadcrumb';
 
-const conversations = [
-  {
-    id: '1',
-    name: "Sarah Wilson (Emma's parent)",
-    lastMessage: 'Thank you for the update!',
-    time: '2h ago',
-    unread: false,
-  },
-  {
-    id: '2',
-    name: "James Chen (Michael's parent)",
-    lastMessage: 'Can we schedule a call?',
-    time: '5h ago',
-    unread: true,
-  },
-  {
-    id: '3',
-    name: "Lisa Brown (Olivia's parent)",
-    lastMessage: "I'll make sure she submits it today",
-    time: '1d ago',
-    unread: false,
-  },
-  {
-    id: '4',
-    name: "Robert Smith (Alex's parent)",
-    lastMessage: 'Thanks for the accommodation info',
-    time: '2d ago',
-    unread: false,
-  },
-];
-
-const mockMessages = [
-  {
-    id: '1',
-    from: 'me',
-    text: "Hi Mrs. Wilson, I wanted to update you on Emma's progress in Algebra.",
-    time: '2:30 PM',
-  },
-  {
-    id: '2',
-    from: 'parent',
-    text: 'Thank you for reaching out! How is she doing?',
-    time: '2:35 PM',
-  },
-  {
-    id: '3',
-    from: 'me',
-    text: "She's doing great! Her quiz scores have improved significantly this quarter.",
-    time: '2:40 PM',
-  },
-  { id: '4', from: 'parent', text: 'Thank you for the update!', time: '2:45 PM' },
-];
-
 export default function MessagesPage() {
-  const [selected, setSelected] = React.useState(conversations[0]);
+  const [conversations, setConversations] = React.useState<Conversation[]>([]);
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [selected, setSelected] = React.useState<Conversation | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [newMessage, setNewMessage] = React.useState('');
+  const [isSending, setIsSending] = React.useState(false);
+
+  React.useEffect(() => {
+    async function loadConversations() {
+      try {
+        const accessToken = 'mock-token';
+        const data = await fetchConversations(accessToken);
+        setConversations(data);
+        if (data.length > 0 && !selected) {
+          setSelected(data[0]);
+        }
+      } catch (err) {
+        console.error('Failed to load conversations:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    void loadConversations();
+  }, [selected]);
+
+  React.useEffect(() => {
+    async function loadMessages() {
+      if (!selected) return;
+      try {
+        const accessToken = 'mock-token';
+        const data = await fetchConversationMessages(selected.id, accessToken);
+        setMessages(data);
+        if (selected.unread) {
+          await markConversationRead(selected.id, accessToken);
+        }
+      } catch (err) {
+        console.error('Failed to load messages:', err);
+      }
+    }
+    void loadMessages();
+  }, [selected]);
+
+  const handleSendMessage = async () => {
+    if (!selected || !newMessage.trim()) return;
+    try {
+      setIsSending(true);
+      const accessToken = 'mock-token';
+      const sent = await sendMessage(selected.id, newMessage.trim(), accessToken);
+      setMessages((prev) => [...prev, sent]);
+      setNewMessage('');
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -94,12 +113,14 @@ export default function MessagesPage() {
                   setSelected(conv);
                 }}
                 className={`w-full border-b p-4 text-left hover:bg-gray-50 ${
-                  selected.id === conv.id ? 'bg-primary-50' : ''
+                  selected?.id === conv.id ? 'bg-primary-50' : ''
                 }`}
               >
                 <div className="flex items-start justify-between">
-                  <p className="font-medium text-gray-900">{conv.name}</p>
-                  <span className="text-xs text-gray-500">{conv.time}</span>
+                  <p className="font-medium text-gray-900">
+                    {conv.participantName} {conv.studentName && `(${conv.studentName}'s parent)`}
+                  </p>
+                  <span className="text-xs text-gray-500">{conv.lastMessageTime}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm text-gray-500">{conv.lastMessage}</p>
@@ -112,48 +133,71 @@ export default function MessagesPage() {
 
         {/* Messages Area */}
         <div className="flex flex-1 flex-col">
-          {/* Header */}
-          <div className="border-b p-4">
-            <h3 className="font-semibold text-gray-900">{selected.name}</h3>
-            <p className="text-sm text-gray-500">Parent of Emma Wilson</p>
-          </div>
+          {selected ? (
+            <>
+              {/* Header */}
+              <div className="border-b p-4">
+                <h3 className="font-semibold text-gray-900">{selected.participantName}</h3>
+                <p className="text-sm text-gray-500">
+                  {selected.studentName
+                    ? `Parent of ${selected.studentName}`
+                    : selected.participantRole}
+                </p>
+              </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {mockMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.from === 'me' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                    msg.from === 'me' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <p className="text-sm">{msg.text}</p>
-                  <p
-                    className={`mt-1 text-xs ${msg.from === 'me' ? 'text-primary-200' : 'text-gray-500'}`}
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.senderType === 'teacher' ? 'justify-end' : 'justify-start'}`}
                   >
-                    {msg.time}
-                  </p>
+                    <div
+                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                        msg.senderType === 'teacher'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <p className="text-sm">{msg.content}</p>
+                      <p
+                        className={`mt-1 text-xs ${msg.senderType === 'teacher' ? 'text-primary-200' : 'text-gray-500'}`}
+                      >
+                        {msg.timestamp}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Input */}
+              <div className="border-t p-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    className="flex-1 rounded-lg border px-4 py-2 text-sm"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={isSending || !newMessage.trim()}
+                    className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {isSending ? 'Sending...' : 'Send'}
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Input */}
-          <div className="border-t p-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Type a message..."
-                className="flex-1 rounded-lg border px-4 py-2 text-sm"
-              />
-              <button className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
-                Send
-              </button>
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center text-gray-500">
+              Select a conversation to view messages
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
