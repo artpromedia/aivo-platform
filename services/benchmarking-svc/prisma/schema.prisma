@@ -1,0 +1,301 @@
+// Cross-District Benchmarking Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Participation status for districts
+enum ParticipationStatus {
+  PENDING     // Awaiting admin approval
+  ACTIVE      // Actively participating
+  SUSPENDED   // Temporarily suspended
+  WITHDRAWN   // Voluntarily withdrawn
+}
+
+// District size classification
+enum DistrictSize {
+  SMALL       // < 1,000 students
+  MEDIUM      // 1,000 - 5,000 students
+  LARGE       // 5,000 - 25,000 students
+  VERY_LARGE  // > 25,000 students
+}
+
+// Geographic classification
+enum GeographicType {
+  URBAN
+  SUBURBAN
+  RURAL
+}
+
+// Metric categories
+enum MetricCategory {
+  ACADEMIC_PERFORMANCE
+  ENGAGEMENT
+  AI_EFFECTIVENESS
+  OPERATIONAL
+}
+
+// Report status
+enum ReportStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+// District participation in benchmarking program
+model BenchmarkParticipant {
+  id                    String              @id @default(cuid())
+  tenantId              String              @unique
+  districtName          String              // Anonymized in comparisons
+  status                ParticipationStatus @default(PENDING)
+
+  // Demographics for peer matching
+  size                  DistrictSize
+  geographicType        GeographicType
+  studentCount          Int
+  freeReducedLunchPct   Float?              // Socioeconomic indicator
+  state                 String              @db.VarChar(2)
+  gradeLevelsServed     String[]            // ["K", "1", "2", ...]
+
+  // Sharing preferences
+  shareAcademicData     Boolean             @default(true)
+  shareEngagementData   Boolean             @default(true)
+  shareAiEffectiveness  Boolean             @default(true)
+  shareOperationalData  Boolean             @default(false)
+  allowPeerContact      Boolean             @default(false) // Allow other districts to request contact
+
+  // Consent tracking
+  consentedBy           String              // Admin who enrolled
+  consentedAt           DateTime
+  dataProcessingConsent Boolean             @default(true)
+
+  enrolledAt            DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  withdrawnAt           DateTime?
+
+  // Relations
+  metrics               BenchmarkMetric[]
+  reports               BenchmarkReport[]
+  cohortMemberships     CohortMembership[]
+  insights              BenchmarkInsight[]
+
+  @@index([status])
+  @@index([size, geographicType])
+  @@index([state])
+}
+
+// Anonymized metric submissions from districts
+model BenchmarkMetric {
+  id              String           @id @default(cuid())
+  participantId   String
+  participant     BenchmarkParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  category        MetricCategory
+  metricKey       String           // e.g., "math_proficiency_rate", "avg_session_duration"
+  metricValue     Float
+
+  // Time period for the metric
+  periodStart     DateTime
+  periodEnd       DateTime
+  periodType      String           // "monthly", "quarterly", "yearly"
+
+  // Aggregation metadata
+  sampleSize      Int              // Number of students/sessions in aggregate
+  confidenceLevel Float?           // Statistical confidence
+
+  // Privacy controls
+  noisyValue      Float?           // Differentially private version
+  isAnonymized    Boolean          @default(true)
+
+  submittedAt     DateTime         @default(now())
+
+  @@unique([participantId, metricKey, periodStart, periodEnd])
+  @@index([category, metricKey])
+  @@index([periodStart, periodEnd])
+}
+
+// Peer cohort definitions
+model BenchmarkCohort {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+
+  // Cohort criteria
+  sizeMin         DistrictSize?
+  sizeMax         DistrictSize?
+  geographicTypes GeographicType[]
+  states          String[]
+  frlPctMin       Float?
+  frlPctMax       Float?
+  gradeLevels     String[]
+
+  // Computed statistics (updated periodically)
+  memberCount     Int              @default(0)
+  lastComputedAt  DateTime?
+
+  isSystem        Boolean          @default(false) // System-generated vs custom
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  members         CohortMembership[]
+  aggregates      CohortAggregate[]
+}
+
+// Junction table for cohort membership
+model CohortMembership {
+  id              String               @id @default(cuid())
+  participantId   String
+  participant     BenchmarkParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  cohortId        String
+  cohort          BenchmarkCohort      @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+
+  joinedAt        DateTime             @default(now())
+
+  @@unique([participantId, cohortId])
+}
+
+// Precomputed cohort aggregate statistics
+model CohortAggregate {
+  id              String          @id @default(cuid())
+  cohortId        String
+  cohort          BenchmarkCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+
+  category        MetricCategory
+  metricKey       String
+
+  // Statistical aggregates
+  mean            Float
+  median          Float
+  stdDev          Float
+  p25             Float           // 25th percentile
+  p75             Float           // 75th percentile
+  p90             Float           // 90th percentile
+  min             Float
+  max             Float
+  sampleCount     Int             // Number of districts
+
+  // Time period
+  periodStart     DateTime
+  periodEnd       DateTime
+  periodType      String
+
+  computedAt      DateTime        @default(now())
+
+  @@unique([cohortId, metricKey, periodStart, periodEnd])
+  @@index([metricKey, periodType])
+}
+
+// Generated comparison reports
+model BenchmarkReport {
+  id              String               @id @default(cuid())
+  participantId   String
+  participant     BenchmarkParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  title           String
+  reportType      String               // "quarterly_review", "annual_benchmark", "custom"
+  status          ReportStatus         @default(PENDING)
+
+  // Report content (JSON)
+  configuration   Json                 // Report settings
+  data            Json?                // Computed data
+
+  // Comparison settings
+  cohortIds       String[]             // Peer groups to compare against
+  metricCategories MetricCategory[]
+  periodStart     DateTime
+  periodEnd       DateTime
+
+  generatedAt     DateTime?
+  expiresAt       DateTime?
+
+  createdAt       DateTime             @default(now())
+  createdBy       String               // User who requested
+
+  @@index([participantId, status])
+  @@index([createdAt])
+}
+
+// AI-generated insights and recommendations
+model BenchmarkInsight {
+  id              String               @id @default(cuid())
+  participantId   String
+  participant     BenchmarkParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  category        MetricCategory
+  insightType     String               // "strength", "opportunity", "trend", "recommendation"
+  title           String
+  description     String               @db.Text
+
+  // Supporting data
+  metricKey       String?
+  currentValue    Float?
+  peerAverage     Float?
+  percentile      Int?                 // District's percentile rank
+
+  // Actionable recommendation
+  recommendation  String?              @db.Text
+  priority        Int                  @default(50) // 1-100, higher = more important
+
+  // Validity period
+  validFrom       DateTime             @default(now())
+  validUntil      DateTime
+
+  isAcknowledged  Boolean              @default(false)
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?
+
+  createdAt       DateTime             @default(now())
+
+  @@index([participantId, category])
+  @@index([validUntil])
+}
+
+// Audit log for compliance
+model BenchmarkAuditLog {
+  id              String   @id @default(cuid())
+  participantId   String?
+  action          String   // "enroll", "update_settings", "submit_metrics", "view_comparison", "generate_report"
+  actorId         String
+  actorType       String   // "user", "system", "admin"
+
+  resourceType    String?
+  resourceId      String?
+
+  details         Json?
+  ipAddress       String?
+
+  createdAt       DateTime @default(now())
+
+  @@index([participantId, createdAt])
+  @@index([action, createdAt])
+}
+
+// Metric definitions catalog
+model MetricDefinition {
+  id              String         @id @default(cuid())
+  key             String         @unique
+  name            String
+  description     String         @db.Text
+  category        MetricCategory
+
+  // Value specifications
+  unit            String         // "percentage", "count", "minutes", "ratio"
+  minValue        Float?
+  maxValue        Float?
+  higherIsBetter  Boolean        @default(true)
+
+  // Calculation info
+  formula         String?        @db.Text
+  dataSource      String         // "analytics", "assessments", "platform_usage"
+
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}

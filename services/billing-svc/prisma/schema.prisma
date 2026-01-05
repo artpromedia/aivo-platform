@@ -1017,6 +1017,20 @@ enum GradeBand {
   ALL       // All grades (for add-on modules)
 }
 
+/// Type of license bundle
+enum BundleType {
+  FAMILY          // Individual family subscription (1 learner + 1 parent + 1 teacher)
+  CLASSROOM       // Classroom bundle (multiple learners + 1 teacher + parents)
+  DISTRICT_SEAT   // District seat bundle (1 learner + parent access + teacher access)
+}
+
+/// Origin of the bundle assignment
+enum BundleOrigin {
+  DISTRICT_ENROLLMENT   // Child enrolled by district/school
+  PARENT_SUBSCRIPTION   // Parent purchased subscription
+  TEACHER_ASSIGNMENT    // Teacher assigned from school pool
+}
+
 /// Enforcement mode for seat caps
 enum SeatCapEnforcement {
   SOFT      // Allow overage with warnings
@@ -1168,6 +1182,358 @@ model LicenseAssignment {
   @@index([learnerId])
   @@index([teacherId])
   @@map("license_assignments")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LICENSE BUNDLES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// License bundles represent packaged licenses that include learner, parent,
+// and teacher access. Bundles can originate from district enrollment or
+// parent subscription, supporting bi-directional enrollment flows.
+//
+
+/// Status of a license bundle
+enum LicenseBundleStatus {
+  PENDING     // Bundle created, awaiting all parties to activate
+  ACTIVE      // All parties have access
+  SUSPENDED   // Temporarily suspended (e.g., payment issue)
+  EXPIRED     // Bundle has expired
+  CANCELLED   // Bundle was cancelled
+}
+
+model LicenseBundle {
+  id                    String              @id @default(uuid()) @db.Uuid
+
+  /// Tenant this bundle belongs to
+  tenantId              String              @db.Uuid
+
+  /// Bundle type
+  bundleType            BundleType
+
+  /// Origin of this bundle
+  origin                BundleOrigin
+
+  /// Current bundle status
+  status                LicenseBundleStatus @default(PENDING)
+
+  /// Primary learner for this bundle
+  learnerId             String              @db.Uuid
+
+  /// Parent user linked to this bundle (null until parent accepts invite)
+  parentUserId          String?             @db.Uuid
+
+  /// Teacher user linked to this bundle (null until teacher is assigned/invited)
+  teacherUserId         String?             @db.Uuid
+
+  /// School ID (for school-based bundles)
+  schoolId              String?             @db.Uuid
+
+  /// Contract ID (for district-originated bundles)
+  contractId            String?             @db.Uuid
+
+  /// Subscription ID (for parent-originated bundles)
+  subscriptionId        String?             @db.Uuid
+
+  /// Seat entitlement ID (for tracking seat allocation)
+  seatEntitlementId     String?             @db.Uuid
+
+  /// Learner license assignment ID
+  learnerAssignmentId   String?             @db.Uuid
+
+  /// Teacher license assignment ID
+  teacherAssignmentId   String?             @db.Uuid
+
+  /// Grade band for this bundle
+  gradeBand             GradeBand
+
+  /// Bundle effective start date
+  startDate             DateTime            @db.Date
+
+  /// Bundle effective end date
+  endDate               DateTime            @db.Date
+
+  /// Modules included in bundle
+  /// Example: ["ELA", "MATH", "SEL"]
+  modulesJson           Json?
+
+  /// Parent invite ID (from parent-svc, for tracking invite status)
+  parentInviteId        String?
+
+  /// Teacher invite ID (for tracking teacher invite status)
+  teacherInviteId       String?
+
+  /// Who created this bundle
+  createdBy             String?             @db.Uuid
+
+  /// Metadata: additional bundle context
+  metadataJson          Json?
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  bundleEvents          LicenseBundleEvent[]
+
+  @@index([tenantId, status])
+  @@index([learnerId])
+  @@index([parentUserId])
+  @@index([teacherUserId])
+  @@index([contractId])
+  @@index([subscriptionId])
+  @@index([status, endDate])
+  @@map("license_bundles")
+}
+
+/// Type of bundle event
+enum LicenseBundleEventType {
+  BUNDLE_CREATED          // Bundle was created
+  PARENT_INVITED          // Parent invitation sent
+  PARENT_ACCEPTED         // Parent accepted invitation
+  TEACHER_INVITED         // Teacher invitation sent
+  TEACHER_ACCEPTED        // Teacher accepted/was assigned
+  BUNDLE_ACTIVATED        // Bundle fully activated
+  BUNDLE_SUSPENDED        // Bundle suspended
+  BUNDLE_REACTIVATED      // Bundle reactivated
+  BUNDLE_EXPIRED          // Bundle expired
+  BUNDLE_CANCELLED        // Bundle cancelled
+  PARENT_CHANGED          // Parent user changed
+  TEACHER_CHANGED         // Teacher user changed
+}
+
+model LicenseBundleEvent {
+  id              String                  @id @default(uuid()) @db.Uuid
+
+  /// Parent bundle
+  bundleId        String                  @db.Uuid
+
+  /// Tenant
+  tenantId        String                  @db.Uuid
+
+  /// Event type
+  eventType       LicenseBundleEventType
+
+  /// Actor who triggered event
+  actorId         String?                 @db.Uuid
+
+  /// Actor type
+  actorType       String                  @default("SYSTEM") // SYSTEM, PARENT, TEACHER, ADMIN
+
+  /// Event description
+  description     String
+
+  /// Previous state
+  previousValue   Json?
+
+  /// New state
+  newValue        Json?
+
+  /// Additional context
+  metadataJson    Json?
+
+  createdAt       DateTime                @default(now()) @db.Timestamptz
+
+  // Relations
+  bundle          LicenseBundle           @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([tenantId, eventType])
+  @@index([tenantId, createdAt])
+  @@map("license_bundle_events")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEACHER INVITES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Teacher invitations for parent-initiated enrollment flow.
+// When a parent subscribes, they can invite their child's teacher.
+//
+
+/// Status of a teacher invite
+enum TeacherInviteStatus {
+  PENDING     // Invite sent, awaiting acceptance
+  ACCEPTED    // Teacher accepted
+  DECLINED    // Teacher declined
+  EXPIRED     // Invite expired
+  REVOKED     // Invite was revoked
+}
+
+model TeacherInvite {
+  id                String              @id @default(uuid()) @db.Uuid
+
+  /// Unique invite code
+  code              String              @unique
+
+  /// Tenant
+  tenantId          String              @db.Uuid
+
+  /// Bundle this invite is for
+  bundleId          String              @db.Uuid
+
+  /// Learner the teacher will be assigned to
+  learnerId         String              @db.Uuid
+
+  /// Teacher email
+  teacherEmail      String
+
+  /// Teacher name (optional, for display)
+  teacherName       String?
+
+  /// School name (for context)
+  schoolName        String?
+
+  /// Invite status
+  status            TeacherInviteStatus @default(PENDING)
+
+  /// Parent who sent the invite
+  invitedByParentId String              @db.Uuid
+
+  /// Teacher user ID (once accepted)
+  teacherUserId     String?             @db.Uuid
+
+  /// Preferred language for invite email
+  language          String              @default("en")
+
+  /// When invite expires
+  expiresAt         DateTime            @db.Timestamptz
+
+  /// When invite was accepted
+  acceptedAt        DateTime?           @db.Timestamptz
+
+  /// Message from parent to teacher
+  message           String?
+
+  /// Metadata
+  metadataJson      Json?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([code])
+  @@index([teacherEmail])
+  @@index([bundleId])
+  @@index([learnerId])
+  @@index([status])
+  @@map("teacher_invites")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BULK INVITE BATCHES
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Tracks bulk invitation operations for district admin enrollment workflows.
+//
+
+/// Status of a bulk invite batch
+enum BulkInviteBatchStatus {
+  PENDING     // Batch created, processing not started
+  PROCESSING  // Currently sending invites
+  COMPLETED   // All invites processed
+  FAILED      // Batch failed
+  CANCELLED   // Batch was cancelled
+}
+
+model BulkInviteBatch {
+  id                  String                @id @default(uuid()) @db.Uuid
+
+  /// Tenant
+  tenantId            String                @db.Uuid
+
+  /// Batch type: 'parent' or 'teacher'
+  inviteType          String                // parent, teacher
+
+  /// Batch status
+  status              BulkInviteBatchStatus @default(PENDING)
+
+  /// Total invites in batch
+  totalCount          Int
+
+  /// Successfully sent
+  successCount        Int                   @default(0)
+
+  /// Failed to send
+  failedCount         Int                   @default(0)
+
+  /// Skipped (e.g., already invited)
+  skippedCount        Int                   @default(0)
+
+  /// User who initiated the batch
+  createdBy           String                @db.Uuid
+
+  /// School filter (if applicable)
+  schoolId            String?               @db.Uuid
+
+  /// Class/grade filter (if applicable)
+  classId             String?               @db.Uuid
+
+  /// Source file reference (for CSV uploads)
+  sourceFileUrl       String?
+
+  /// Processing started at
+  processingStartedAt DateTime?             @db.Timestamptz
+
+  /// Processing completed at
+  processingCompletedAt DateTime?           @db.Timestamptz
+
+  /// Error details for failed items
+  /// Example: [{ "email": "...", "error": "invalid email" }]
+  errorsJson          Json?
+
+  /// Metadata
+  metadataJson        Json?
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  // Relations
+  items               BulkInviteItem[]
+
+  @@index([tenantId, status])
+  @@index([createdBy])
+  @@index([status, createdAt])
+  @@map("bulk_invite_batches")
+}
+
+model BulkInviteItem {
+  id              String    @id @default(uuid()) @db.Uuid
+
+  /// Parent batch
+  batchId         String    @db.Uuid
+
+  /// Learner ID
+  learnerId       String    @db.Uuid
+
+  /// Recipient email
+  email           String
+
+  /// Recipient name
+  name            String?
+
+  /// Item status: pending, sent, failed, skipped
+  status          String    @default("pending")
+
+  /// Error message if failed
+  error           String?
+
+  /// Created invite ID (once sent)
+  inviteId        String?
+
+  /// Bundle ID (if bundle was created)
+  bundleId        String?   @db.Uuid
+
+  /// Processed at
+  processedAt     DateTime? @db.Timestamptz
+
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  batch           BulkInviteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, status])
+  @@index([learnerId])
+  @@index([email])
+  @@map("bulk_invite_items")
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
