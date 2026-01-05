@@ -4,8 +4,8 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ExportFormat } from '../components/export/ExportFormatSelector';
-import { ExportOptions } from '../components/export/ExportOptionsPanel';
+import type { ExportFormat } from '../components/export/ExportFormatSelector';
+import type { ExportOptions } from '../components/export/ExportOptionsPanel';
 
 export type ExportStatus = 
   | 'idle' 

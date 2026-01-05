@@ -51,22 +51,36 @@ function colorToRgbChannels(value) {
 
 function buildThemeVariables(grade) {
   const theme = tokens.gradeThemes[grade];
+  if (!theme) {
+    console.warn(`Unknown grade theme: ${grade}`);
+    return {};
+  }
   const vars = {};
 
   for (const entry of colorEntries) {
-    const color = theme.color[entry.token];
-    vars[`--color-${entry.name}`] = colorToRgbChannels(color);
+    const color = theme.color?.[entry.token];
+    if (color) {
+      vars[`--color-${entry.name}`] = colorToRgbChannels(color);
+    }
   }
 
   // backdrop keeps alpha as-is for overlays
-  vars['--color-backdrop'] = theme.color.backdrop;
-
-  for (const size of fontSizeKeys) {
-    vars[`--font-size-${kebab(size)}`] = `${theme.fontSize[size]}px`;
-    vars[`--line-height-${kebab(size)}`] = `${theme.lineHeight[size]}px`;
+  if (theme.color?.backdrop) {
+    vars['--color-backdrop'] = theme.color.backdrop;
   }
 
-  const spacingScale = theme.scale.space;
+  if (theme.fontSize && theme.lineHeight) {
+    for (const size of fontSizeKeys) {
+      if (theme.fontSize[size] !== undefined) {
+        vars[`--font-size-${kebab(size)}`] = `${theme.fontSize[size]}px`;
+      }
+      if (theme.lineHeight[size] !== undefined) {
+        vars[`--line-height-${kebab(size)}`] = `${theme.lineHeight[size]}px`;
+      }
+    }
+  }
+
+  const spacingScale = theme.scale?.space ?? 1;
   for (const [token, value] of Object.entries(tokens.base.space)) {
     const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value));
     vars[`--space-${token}`] = `${numeric * spacingScale}px`;
@@ -127,7 +141,7 @@ function gradeThemeBase(defaultGrade) {
   return base;
 }
 
-function createGradeThemePlugin(defaultGrade = 'G6_8') {
+function createGradeThemePlugin(defaultGrade = 'navigator') {
   const colorTheme = Object.fromEntries(
     colorEntries.map((entry) => [entry.name, `rgb(var(--color-${entry.name}) / <alpha-value>)`])
   );

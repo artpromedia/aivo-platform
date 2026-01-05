@@ -51,7 +51,9 @@ export function ContentPackEditor({
     if (index === 0) return;
     setItems((prev) => {
       const newItems = [...prev];
-      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+      const temp = newItems[index - 1]!;
+      newItems[index - 1] = newItems[index]!;
+      newItems[index] = temp;
       return newItems;
     });
   };
@@ -60,7 +62,9 @@ export function ContentPackEditor({
     if (index === items.length - 1) return;
     setItems((prev) => {
       const newItems = [...prev];
-      [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+      const temp = newItems[index]!;
+      newItems[index] = newItems[index + 1]!;
+      newItems[index + 1] = temp;
       return newItems;
     });
   };

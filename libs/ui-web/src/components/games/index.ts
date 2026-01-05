@@ -21,4 +21,5 @@ export type {
   GameType,
   GameDifficulty,
   GameSession,
+  FocusMetrics,
 } from './types';
