@@ -7,7 +7,8 @@
  * @module @aivo/ts-types/events/validation
  */
 
-import { z, ZodError } from 'zod';
+import type { z, ZodError } from 'zod';
+
 import { BaseEventSchema, type BaseEvent } from './base.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

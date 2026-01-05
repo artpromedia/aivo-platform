@@ -22,12 +22,62 @@ export interface LocationInput {
 
 /** US State code (2-letter abbreviation) */
 export type StateCode =
-  | 'AL' | 'AK' | 'AZ' | 'AR' | 'CA' | 'CO' | 'CT' | 'DE' | 'FL' | 'GA'
-  | 'HI' | 'ID' | 'IL' | 'IN' | 'IA' | 'KS' | 'KY' | 'LA' | 'ME' | 'MD'
-  | 'MA' | 'MI' | 'MN' | 'MS' | 'MO' | 'MT' | 'NE' | 'NV' | 'NH' | 'NJ'
-  | 'NM' | 'NY' | 'NC' | 'ND' | 'OH' | 'OK' | 'OR' | 'PA' | 'RI' | 'SC'
-  | 'SD' | 'TN' | 'TX' | 'UT' | 'VT' | 'VA' | 'WA' | 'WV' | 'WI' | 'WY'
-  | 'DC' | 'PR' | 'VI' | 'GU' | 'AS' | 'MP';
+  | 'AL'
+  | 'AK'
+  | 'AZ'
+  | 'AR'
+  | 'CA'
+  | 'CO'
+  | 'CT'
+  | 'DE'
+  | 'FL'
+  | 'GA'
+  | 'HI'
+  | 'ID'
+  | 'IL'
+  | 'IN'
+  | 'IA'
+  | 'KS'
+  | 'KY'
+  | 'LA'
+  | 'ME'
+  | 'MD'
+  | 'MA'
+  | 'MI'
+  | 'MN'
+  | 'MS'
+  | 'MO'
+  | 'MT'
+  | 'NE'
+  | 'NV'
+  | 'NH'
+  | 'NJ'
+  | 'NM'
+  | 'NY'
+  | 'NC'
+  | 'ND'
+  | 'OH'
+  | 'OK'
+  | 'OR'
+  | 'PA'
+  | 'RI'
+  | 'SC'
+  | 'SD'
+  | 'TN'
+  | 'TX'
+  | 'UT'
+  | 'VT'
+  | 'VA'
+  | 'WA'
+  | 'WV'
+  | 'WI'
+  | 'WY'
+  | 'DC'
+  | 'PR'
+  | 'VI'
+  | 'GU'
+  | 'AS'
+  | 'MP';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // District
@@ -77,14 +127,14 @@ export interface DistrictLookupResult {
 
 /** Curriculum framework adopted by states */
 export type CurriculumFramework =
-  | 'COMMON_CORE'          // Common Core State Standards
-  | 'NGSS'                 // Next Generation Science Standards
-  | 'C3'                   // College, Career, and Civic Life (Social Studies)
-  | 'STATE_SPECIFIC'       // State-developed standards
-  | 'TEKS'                 // Texas Essential Knowledge and Skills
-  | 'CCSS_MATH'            // Common Core Math
-  | 'CCSS_ELA'             // Common Core ELA
-  | 'STATE_SCIENCE'        // State science standards
+  | 'COMMON_CORE' // Common Core State Standards
+  | 'NGSS' // Next Generation Science Standards
+  | 'C3' // College, Career, and Civic Life (Social Studies)
+  | 'STATE_SPECIFIC' // State-developed standards
+  | 'TEKS' // Texas Essential Knowledge and Skills
+  | 'CCSS_MATH' // Common Core Math
+  | 'CCSS_ELA' // Common Core ELA
+  | 'STATE_SCIENCE' // State science standards
   | 'STATE_SOCIAL_STUDIES'; // State social studies standards
 
 /** State curriculum standards information */
@@ -113,11 +163,11 @@ export interface StateCurriculumInfo {
 
 /** Onboarding step */
 export type OnboardingStep =
-  | 'location'           // Entering ZIP/state
-  | 'learner_info'       // Entering learner details
+  | 'location' // Entering ZIP/state
+  | 'learner_info' // Entering learner details
   | 'district_selection' // Selecting from multiple districts
-  | 'baseline'           // Completing baseline assessment
-  | 'complete';          // Onboarding finished
+  | 'baseline' // Completing baseline assessment
+  | 'complete'; // Onboarding finished
 
 /** Current onboarding status */
 export interface OnboardingStatus {
@@ -179,14 +229,4 @@ export interface VirtualBrainLocation {
   ncesDistrictId?: string;
 }
 
-/** Curriculum update for Virtual Brain */
-export interface VirtualBrainCurriculumUpdate {
-  /** New state code */
-  stateCode?: string;
-  /** New ZIP code */
-  zipCode?: string;
-  /** New NCES district ID */
-  ncesDistrictId?: string;
-  /** New curriculum standards to apply */
-  curriculumStandards: string[];
-}
+// Note: VirtualBrainCurriculumUpdate is exported from virtualBrain.ts

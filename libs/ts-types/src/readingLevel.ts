@@ -229,11 +229,11 @@ export interface ScaffoldedContent {
  * Request for batch content adaptation
  */
 export interface BatchAdaptationRequest {
-  items: Array<{
+  items: {
     id: string;
     content: string;
     contentType?: ContentType;
-  }>;
+  }[];
   targetLexile: number;
   subject?: string;
   preserveTerms?: string[];
