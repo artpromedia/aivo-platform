@@ -92,16 +92,16 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
       });
 
       // Redirect to IdP
-      return reply.redirect(302, result.redirectUrl);
+      return reply.redirect(result.redirectUrl, 302);
     } catch (error) {
       if (error instanceof SsoError) {
         fastify.log.warn({ error: error.code, message: error.message }, 'SSO initiation failed');
-        
+
         // Redirect to error page
         const errorUrl = new URL(`${config.webAppUrl}/auth/error`);
         errorUrl.searchParams.set('error', error.code);
         errorUrl.searchParams.set('message', error.message);
-        return reply.redirect(302, errorUrl.toString());
+        return reply.redirect(errorUrl.toString(), 302);
       }
 
       fastify.log.error(error, 'SSO initiation error');
@@ -174,7 +174,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
       // Check for OIDC error response
       const error = (request.query as Record<string, string>).error;
       const errorDesc = (request.query as Record<string, string>).error_description;
-      
+
       if (error) {
         fastify.log.warn({ error, errorDesc }, 'OIDC error response');
         const errorUrl = new URL(`${config.webAppUrl}/auth/error`);
@@ -182,7 +182,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
         if (errorDesc) {
           errorUrl.searchParams.set('message', errorDesc);
         }
-        return reply.redirect(302, errorUrl.toString());
+        return reply.redirect(errorUrl.toString(), 302);
       }
 
       return reply.status(400).send({ error: 'Invalid callback parameters' });
@@ -199,7 +199,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
       if (error_description) {
         errorUrl.searchParams.set('message', error_description);
       }
-      return reply.redirect(302, errorUrl.toString());
+      return reply.redirect(errorUrl.toString(), 302);
     }
 
     const ipAddress = getClientIp(request);
@@ -234,9 +234,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
     const { tenantSlug } = paramsResult.data;
     const metadata = ssoService.getSpMetadata(tenantSlug);
 
-    return reply
-      .header('Content-Type', 'application/xml')
-      .send(metadata);
+    return reply.header('Content-Type', 'application/xml').send(metadata);
   });
 
   // ==========================================================================
@@ -277,9 +275,10 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
   <script>
     (function() {
       // Build deep link safely using properly escaped values
-      var deepLink = ${safeError !== null
-        ? `'aivo://auth/error?error=' + ${safeError}`
-        : `'aivo://auth/callback?token=' + ${safeToken}`
+      var deepLink = ${
+        safeError !== null
+          ? `'aivo://auth/error?error=' + ${safeError}`
+          : `'aivo://auth/callback?token=' + ${safeToken}`
       };
 
       window.location.href = deepLink;
@@ -344,20 +343,20 @@ function handleSsoResult(
     if (result.message) {
       errorUrl.searchParams.set('message', result.message);
     }
-    return reply.redirect(302, errorUrl.toString());
+    return reply.redirect(errorUrl.toString(), 302);
   }
 
   // For mobile clients, redirect to deep link handler
   if (result.clientType === 'mobile') {
     const mobileUrl = new URL(`${webAppUrl}/auth/sso/mobile/complete`);
     mobileUrl.searchParams.set('token', result.accessToken ?? '');
-    return reply.redirect(302, mobileUrl.toString());
+    return reply.redirect(mobileUrl.toString(), 302);
   }
 
   // For web clients, redirect with tokens
   const successUrl = new URL(result.redirectUri ?? `${webAppUrl}/auth/callback`);
   successUrl.searchParams.set('access_token', result.accessToken ?? '');
   successUrl.searchParams.set('refresh_token', result.refreshToken ?? '');
-  
-  return reply.redirect(302, successUrl.toString());
+
+  return reply.redirect(successUrl.toString(), 302);
 }

@@ -15,7 +15,7 @@ import {
   verifyTwilioSignature,
   verifySnsSignature,
 } from '../lib/webhook-verification.js';
-import { emailTrackingRateLimiter, webhookRateLimiter } from '../lib/rate-limit.js';
+import { emailTrackingRateLimiter } from '../lib/rate-limit.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

@@ -397,7 +397,11 @@ export function isDistrictPlan(planType: PlanType): boolean {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// DISTRICT CONTRACT TYPES (re-export from types/)
+// RE-EXPORT FROM TYPES DIRECTORY
 // ══════════════════════════════════════════════════════════════════════════════
 
 export * from './types/contract.types';
+export * from './types/coverage-profile.types';
+export * from './types/licensing.types';
+export * from './types/procurement.types';
+export * from './types/usage-analytics.types';

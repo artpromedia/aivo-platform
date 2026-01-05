@@ -13,7 +13,6 @@ import {
 } from '../repositories/licensing.repository.js';
 import {
   type EnforcementDecision,
-  type GradeBand,
   getGradeBandForSku,
   getSkuForGradeBand,
   gradeToGradeBand,
@@ -26,7 +25,6 @@ import {
   type SeatEntitlement,
   type SyncEntitlementsRequest,
   type SyncEntitlementsResult,
-  type TenantSeatUsage,
   type TenantSeatUsageSummary,
   type TransferLicenseRequest,
   type TransferLicenseResult,

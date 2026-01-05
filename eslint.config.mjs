@@ -129,10 +129,16 @@ export default [
   {
     // Services using compat tsconfig (strictNullChecks: false)
     files: [
+      "services/auth-svc/**/*.{ts,tsx}",
       "services/billing-svc/**/*.{ts,tsx}",
-      "services/auth-svc/src/scim/**/*.{ts,tsx}",
       "services/benchmarking-svc/**/*.{ts,tsx}",
-      "services/edfi-svc/**/*.{ts,tsx}"
+      "services/edfi-svc/**/*.{ts,tsx}",
+      "services/analytics-svc/**/*.{ts,tsx}",
+      "services/assessment-svc/**/*.{ts,tsx}",
+      "services/consent-svc/**/*.{ts,tsx}",
+      "services/dsr-svc/**/*.{ts,tsx}",
+      "services/gamification-svc/**/*.{ts,tsx}",
+      "services/notify-svc/**/*.{ts,tsx}"
     ],
     rules: {
       "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",

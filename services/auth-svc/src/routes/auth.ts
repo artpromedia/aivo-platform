@@ -130,7 +130,7 @@ export async function registerAuthRoutes(fastify: FastifyInstance) {
         roles: payload.roles,
       });
       return reply.status(200).send({ accessToken, refreshToken });
-    } catch (err) {
+    } catch (_err) {
       return reply.status(401).send({ error: 'Invalid refresh token' });
     }
   });
