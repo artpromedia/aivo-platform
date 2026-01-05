@@ -138,7 +138,7 @@ const PROVIDER_DISPLAY: Record<string, { name: string; colorClass: string }> = {
 
 function parseBestFor(intendedUseCases: string): string[] {
   const bestForMatch = intendedUseCases.match(/Best for:\s*([\s\S]*?)(?=\n\n|Not appropriate|$)/i);
-  if (!bestForMatch) return [];
+  if (!bestForMatch?.[1]) return [];
 
   return bestForMatch[1]
     .split('\n')
@@ -150,7 +150,7 @@ function parseNotAppropriateFor(limitations: string): string[] {
   const notAppropriateMatch = limitations.match(
     /Not appropriate for:\s*([\s\S]*?)(?=\n\nImportant:|$)/i
   );
-  if (!notAppropriateMatch) return [];
+  if (!notAppropriateMatch?.[1]) return [];
 
   return notAppropriateMatch[1]
     .split('\n')
@@ -160,7 +160,7 @@ function parseNotAppropriateFor(limitations: string): string[] {
 
 function extractDisclaimer(safety: string): string | null {
   const disclaimerMatch = safety.match(/Disclaimer:\s*(.+)/i);
-  return disclaimerMatch ? disclaimerMatch[1].trim() : null;
+  return disclaimerMatch?.[1]?.trim() ?? null;
 }
 
 function formatReviewDate(dateStr: string): string {
@@ -179,7 +179,7 @@ function formatReviewDate(dateStr: string): string {
 describe('District Admin AI Models Page', () => {
   describe('tenant-specific model cards', () => {
     it('should have featureKey and isActive for tenant assignment', () => {
-      const model = mockTenantModelCards[0];
+      const model = mockTenantModelCards[0]!;
 
       expect(model).toHaveProperty('featureKey');
       expect(model).toHaveProperty('isActive');
@@ -188,7 +188,7 @@ describe('District Admin AI Models Page', () => {
     });
 
     it('should have all base model card fields', () => {
-      const model = mockTenantModelCards[0];
+      const model = mockTenantModelCards[0]!;
 
       expect(model).toHaveProperty('id');
       expect(model).toHaveProperty('modelKey');
@@ -206,15 +206,15 @@ describe('District Admin AI Models Page', () => {
       for (const model of mockTenantModelCards) {
         const featureDisplay = FEATURE_DISPLAY[model.featureKey];
         expect(featureDisplay).toBeDefined();
-        expect(featureDisplay.name).toBeTruthy();
-        expect(featureDisplay.icon).toBeTruthy();
+        expect(featureDisplay!.name).toBeTruthy();
+        expect(featureDisplay!.icon).toBeTruthy();
       }
     });
   });
 
   describe('helper functions', () => {
     it('should parse "Best for" items', () => {
-      const model = mockTenantModelCards[0];
+      const model = mockTenantModelCards[0]!;
       const bestFor = parseBestFor(model.intendedUseCases);
 
       expect(bestFor.length).toBeGreaterThan(0);
@@ -222,7 +222,7 @@ describe('District Admin AI Models Page', () => {
     });
 
     it('should parse "Not appropriate for" items', () => {
-      const model = mockTenantModelCards[0];
+      const model = mockTenantModelCards[0]!;
       const notFor = parseNotAppropriateFor(model.limitations);
 
       expect(notFor.length).toBeGreaterThan(0);
@@ -230,7 +230,7 @@ describe('District Admin AI Models Page', () => {
     });
 
     it('should extract disclaimer', () => {
-      const model = mockTenantModelCards[0];
+      const model = mockTenantModelCards[0]!;
       const disclaimer = extractDisclaimer(model.safetyConsiderations);
 
       expect(disclaimer).not.toBeNull();
@@ -251,31 +251,31 @@ describe('District Admin AI Models Page', () => {
 
       for (const provider of providers) {
         expect(PROVIDER_DISPLAY[provider]).toBeDefined();
-        expect(PROVIDER_DISPLAY[provider].name).toBeTruthy();
-        expect(PROVIDER_DISPLAY[provider].colorClass).toBeTruthy();
+        expect(PROVIDER_DISPLAY[provider]!.name).toBeTruthy();
+        expect(PROVIDER_DISPLAY[provider]!.colorClass).toBeTruthy();
       }
     });
   });
 
   describe('feature display mapping', () => {
     it('should have display info for TUTORING feature', () => {
-      expect(FEATURE_DISPLAY.TUTORING.name).toBe('AI Tutoring');
-      expect(FEATURE_DISPLAY.TUTORING.icon).toBe('📚');
+      expect(FEATURE_DISPLAY.TUTORING!.name).toBe('AI Tutoring');
+      expect(FEATURE_DISPLAY.TUTORING!.icon).toBe('📚');
     });
 
     it('should have display info for BASELINE feature', () => {
-      expect(FEATURE_DISPLAY.BASELINE.name).toBe('Baseline Assessment');
-      expect(FEATURE_DISPLAY.BASELINE.icon).toBe('📊');
+      expect(FEATURE_DISPLAY.BASELINE!.name).toBe('Baseline Assessment');
+      expect(FEATURE_DISPLAY.BASELINE!.icon).toBe('📊');
     });
 
     it('should have display info for FOCUS feature', () => {
-      expect(FEATURE_DISPLAY.FOCUS.name).toBe('Focus Support');
-      expect(FEATURE_DISPLAY.FOCUS.icon).toBe('🧘');
+      expect(FEATURE_DISPLAY.FOCUS!.name).toBe('Focus Support');
+      expect(FEATURE_DISPLAY.FOCUS!.icon).toBe('🧘');
     });
 
     it('should have display info for ALL features fallback', () => {
-      expect(FEATURE_DISPLAY.ALL.name).toBe('All Features');
-      expect(FEATURE_DISPLAY.ALL.icon).toBe('⭐');
+      expect(FEATURE_DISPLAY.ALL!.name).toBe('All Features');
+      expect(FEATURE_DISPLAY.ALL!.icon).toBe('⭐');
     });
   });
 });
@@ -287,7 +287,7 @@ describe('District Admin AI Models Page', () => {
 describe('Model Detail Modal', () => {
   describe('content display', () => {
     it('should have all sections available for display', () => {
-      const model = mockTenantModelCards[0];
+      const model = mockTenantModelCards[0]!;
 
       // Overview
       expect(model.description).toBeTruthy();

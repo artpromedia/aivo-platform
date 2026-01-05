@@ -66,9 +66,9 @@ export const tokens = aivoTokens as {
 export type GradeBand = 'explorer' | 'navigator' | 'scholar' | 'scholarDark';
 
 export const gradeBandLabels: Record<GradeBand, string> = {
-  explorer: tokens.meta.gradeBands.explorer,
-  navigator: tokens.meta.gradeBands.navigator,
-  scholar: tokens.meta.gradeBands.scholar,
+  explorer: tokens.meta.gradeBands.explorer ?? 'Explorer (K-5)',
+  navigator: tokens.meta.gradeBands.navigator ?? 'Navigator (6-8)',
+  scholar: tokens.meta.gradeBands.scholar ?? 'Scholar (9-12)',
   scholarDark: 'Scholar Dark Mode',
 };
 

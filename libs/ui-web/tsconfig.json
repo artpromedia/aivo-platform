@@ -5,8 +5,8 @@
     "outDir": "./dist",
     "declaration": true,
     "noEmit": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "types": ["node", "react"],
     "jsx": "react-jsx",
     "baseUrl": "./src"

@@ -11,10 +11,9 @@ import {
   ProgressBar,
   AtRiskBadge,
   StudentProgressCard,
-  StudentMetricsSummary,
   DataTable,
-  Column,
 } from './analytics-dashboard';
+import type { StudentMetricsSummary, Column } from './analytics-dashboard';
 import {
   EngagementTrendChart,
   ScoreDistributionChart,
@@ -23,8 +22,8 @@ import {
   PerformanceComparisonChart,
   ChartContainer,
   CHART_COLORS,
-  HeatmapDataPoint,
 } from './charts';
+import type { HeatmapDataPoint } from './charts';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

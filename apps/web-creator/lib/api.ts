@@ -164,8 +164,8 @@ export interface ValidationError {
 const API_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:4070/api/v1';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const headers = options.headers instanceof Headers 
-    ? Object.fromEntries(options.headers.entries())
+  const headers = options.headers instanceof Headers
+    ? Object.fromEntries(Array.from(options.headers as Iterable<[string, string]>))
     : options.headers ?? {};
 
   const res = await fetch(`${API_BASE}${endpoint}`, {

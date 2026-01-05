@@ -11,8 +11,8 @@ import {
   ProgressBar,
   MasteryLevel,
   AtRiskBadge,
-  StudentMetricsSummary,
 } from './analytics-dashboard';
+import type { StudentMetricsSummary } from './analytics-dashboard';
 import {
   EngagementTrendChart,
   SkillMasteryRadar,
