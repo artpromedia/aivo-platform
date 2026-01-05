@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /**
  * Accommodation Routes
  *
@@ -5,6 +8,12 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+import {
+  emitAccommodationCreated,
+  emitAccommodationUpdated,
+  emitAccommodationDeleted,
+} from '../events/index.js';
 import {
   CreateAccommodationRequestSchema,
   UpdateAccommodationRequestSchema,
@@ -106,8 +115,16 @@ export async function registerAccommodationRoutes(app: FastifyInstance): Promise
       const data = CreateAccommodationRequestSchema.parse(request.body);
       const accommodation = await createAccommodation(context.tenantId, learnerId, data, context);
 
-      // TODO: Emit accommodation.created event to NATS
-      // TODO: If isCritical, send notification via notify-svc
+      // Emit accommodation.created event to NATS (fire and forget)
+      // If isCritical, notify-svc will pick up the event and send notifications
+      void emitAccommodationCreated(
+        context.tenantId,
+        learnerId,
+        accommodation.id,
+        context.userId,
+        accommodation.category,
+        accommodation.isCritical
+      );
 
       return reply.status(201).send({
         accommodation,
@@ -136,7 +153,15 @@ export async function registerAccommodationRoutes(app: FastifyInstance): Promise
           context
         );
 
-        // TODO: Emit accommodation.updated event to NATS
+        // Emit accommodation.updated event to NATS (fire and forget)
+        const changedFields = Object.keys(data);
+        void emitAccommodationUpdated(
+          context.tenantId,
+          learnerId,
+          accommodationId,
+          context.userId,
+          changedFields
+        );
 
         return reply.status(200).send({
           accommodation,
@@ -166,7 +191,8 @@ export async function registerAccommodationRoutes(app: FastifyInstance): Promise
       try {
         await deleteAccommodation(context.tenantId, learnerId, accommodationId, context);
 
-        // TODO: Emit accommodation.deleted event to NATS
+        // Emit accommodation.deleted event to NATS (fire and forget)
+        void emitAccommodationDeleted(context.tenantId, learnerId, accommodationId, context.userId);
 
         return reply.status(200).send({
           message: 'Accommodation deleted successfully',
