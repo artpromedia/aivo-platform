@@ -160,7 +160,8 @@ export class LTIController {
     @Body(ValidationPipe) dto: LTIRegisterToolDto,
     @TenantId() tenantId: string,
   ): Promise<{ id: string; deploymentId: string }> {
-    return this.platformService.registerTool(tenantId, dto);
+    // The service will generate keys internally if not provided
+    return this.platformService.registerTool(tenantId, dto as any);
   }
 
   @Get('tools')

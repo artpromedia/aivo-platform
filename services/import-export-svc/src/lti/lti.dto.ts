@@ -145,6 +145,11 @@ export class LTIRegisterToolDto {
   @IsOptional()
   @IsBoolean()
   supportsDeepLinking?: boolean;
+
+  @ApiPropertyOptional({ description: 'Key ID for signing' })
+  @IsOptional()
+  @IsString()
+  keyId?: string;
 }
 
 // ============================================================================
@@ -154,7 +159,7 @@ export class LTIRegisterToolDto {
 export class LTIContentItemDto {
   @ApiProperty({ description: 'Content item type', enum: ['ltiResourceLink', 'link', 'file', 'html', 'image'] })
   @IsEnum(['ltiResourceLink', 'link', 'file', 'html', 'image'])
-  type!: string;
+  type!: 'ltiResourceLink' | 'link' | 'file' | 'html' | 'image';
 
   @ApiPropertyOptional({ description: 'Title' })
   @IsOptional()
@@ -254,14 +259,14 @@ export class LTISubmitScoreDto {
     enum: ['Initialized', 'Started', 'InProgress', 'Submitted', 'Completed'],
   })
   @IsEnum(['Initialized', 'Started', 'InProgress', 'Submitted', 'Completed'])
-  activityProgress!: string;
+  activityProgress!: 'Initialized' | 'Started' | 'InProgress' | 'Submitted' | 'Completed';
 
   @ApiProperty({
     description: 'Grading progress',
     enum: ['FullyGraded', 'Pending', 'PendingManual', 'Failed', 'NotReady'],
   })
   @IsEnum(['FullyGraded', 'Pending', 'PendingManual', 'Failed', 'NotReady'])
-  gradingProgress!: string;
+  gradingProgress!: 'FullyGraded' | 'Pending' | 'PendingManual' | 'Failed' | 'NotReady';
 
   @ApiProperty({ description: 'Timestamp' })
   @IsString()

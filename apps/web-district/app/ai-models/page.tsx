@@ -104,7 +104,7 @@ Important: Focus patterns should not indicate learning disabilities.`,
 
 export const metadata = {
   title: 'AI Overview | Aivo District Admin',
-  description: 'Understand the AI models powering your district's learning experience',
+  description: "Understand the AI models powering your district's learning experience",
 };
 
 function LoadingState() {
@@ -259,7 +259,7 @@ export default function AIModelsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-text">AI Overview</h1>
         <p className="text-muted mt-1">
-          Learn about the AI models that power your district's learning experience.
+          Learn about the AI models that power your district&apos;s learning experience.
         </p>
       </div>
 
@@ -283,7 +283,7 @@ export default function AIModelsPage() {
             <h2 className="text-sm font-semibold text-text">AI Transparency & Governance</h2>
             <p className="text-sm text-muted mt-1">
               These model cards document the capabilities and limitations of AI features used in
-              Aivo. Use this information to support your district's AI governance policies and
+              Aivo. Use this information to support your district&apos;s AI governance policies and
               communicate with families about how AI assists learning.
             </p>
           </div>

@@ -128,7 +128,20 @@ export class XAPIExporter {
       fileName: `xapi_statements_${Date.now()}.${ext}`,
       fileSize: buffer.length,
       contentType: 'application/json',
-      metadata: { statementCount: statements.length },
+      metadata: {
+        format: 'xapi',
+        itemCount: statements.length,
+        statementCount: statements.length,
+        totalSize: buffer.length,
+        exportedAt: new Date(),
+        exportedBy: 'xapi-exporter',
+        contentSummary: contentIds.map(id => ({
+          id,
+          type: 'xapi-statements',
+          title: `Statements for ${id}`,
+          exported: true,
+        })),
+      },
       warnings: [],
     };
   }

@@ -207,7 +207,7 @@ export class XAPIController {
     if (hasMore) statements.pop();
 
     return {
-      statements: statements.map(s => this.formatStatement(s)),
+      statements: statements.map((s: unknown) => this.formatStatement(s)),
       more: hasMore ? `/xapi/statements?since=${statements[statements.length - 1]?.stored?.toISOString()}` : undefined,
     };
   }
@@ -270,8 +270,8 @@ export class XAPIController {
     @TenantId() tenantId: string,
   ): Promise<any> {
     return this.xapiExporter.export(tenantId, query.contentIds, {
-      startDate: query.startDate,
-      endDate: query.endDate,
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
       actorId: query.actorId,
       format: query.format,
     });

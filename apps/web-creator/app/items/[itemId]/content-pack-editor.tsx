@@ -29,10 +29,10 @@ export function ContentPackEditor({
       setError(null);
       const input: ContentPackItemInput[] = items.map((item, idx) => ({
         loVersionId: item.loVersionId,
-        loId: item.loId ?? undefined,
+        ...(item.loId != null && { loId: item.loId }),
         position: idx,
         isHighlight: item.isHighlight,
-        metadataJson: item.metadataJson ?? undefined,
+        ...(item.metadataJson != null && { metadataJson: item.metadataJson }),
       }));
       const response = await setContentPackItems(vendorId, itemId, versionId, input);
       setItems(response.data);
