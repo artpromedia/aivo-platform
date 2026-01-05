@@ -1,0 +1,287 @@
+// Ed-Fi Integration Service Schema
+// Manages state education agency reporting via Ed-Fi Data Standard
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum EdfiApiVersion {
+  V5_3
+  V6_1
+  V7_0
+}
+
+enum ExportStatus {
+  PENDING
+  QUEUED
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+  CANCELLED
+}
+
+enum SubmissionStatus {
+  PENDING
+  SENT
+  ACCEPTED
+  REJECTED
+  ERROR
+}
+
+enum ResourceType {
+  STUDENTS
+  STUDENT_SCHOOL_ASSOCIATIONS
+  STUDENT_SECTION_ASSOCIATIONS
+  STAFF
+  STAFF_SECTION_ASSOCIATIONS
+  SECTIONS
+  COURSES
+  SCHOOLS
+  LOCAL_EDUCATION_AGENCIES
+  STUDENT_ASSESSMENTS
+  GRADES
+  STUDENT_ATTENDANCE_EVENTS
+  LEARNING_STANDARDS
+  INTERVENTIONS
+  CALENDAR_DATES
+  GRADING_PERIODS
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Ed-Fi API configuration per tenant
+model EdfiConfig {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @db.Uuid
+  name                String          // Display name, e.g., "Texas TEA"
+  stateCode           String          @db.VarChar(2) // TX, CA, FL, etc.
+  apiVersion          EdfiApiVersion
+  baseUrl             String          // Ed-Fi ODS/API base URL
+  clientId            String          // OAuth client ID
+  clientSecretEnc     String          // Encrypted client secret
+  schoolYear          Int             // 2024
+  enabled             Boolean         @default(true)
+
+  // Scheduling
+  exportSchedule      String?         // Cron expression for automatic exports
+
+  // State-specific extensions
+  extensionsJson      Json?           // ["tx-teds", "ca-calpads"]
+
+  // Resource configuration
+  enabledResources    ResourceType[]  // Which resources to export
+
+  // Tracking
+  lastExportAt        DateTime?
+  lastSuccessAt       DateTime?
+
+  // Metadata
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  createdBy           String?         @db.Uuid
+
+  // Relations
+  exports             EdfiExportRun[]
+  mappings            EdfiFieldMapping[]
+
+  @@unique([tenantId, stateCode])
+  @@index([tenantId])
+  @@index([enabled])
+}
+
+/// Custom field mappings for state-specific requirements
+model EdfiFieldMapping {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  resourceType        ResourceType
+  aivoField           String          // Source field in Aivo
+  edfiField           String          // Target field in Ed-Fi
+  transformRule       String?         // Optional transformation (e.g., "DATE_FORMAT:YYYY-MM-DD")
+  required            Boolean         @default(false)
+  defaultValue        String?         // Default if source is null
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  config              EdfiConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, resourceType, edfiField])
+  @@index([configId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPORT TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Export run tracking
+model EdfiExportRun {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  status              ExportStatus    @default(PENDING)
+
+  // Export scope
+  resourceTypes       ResourceType[]  // Resources being exported
+  fullSync            Boolean         @default(false) // Full vs delta sync
+  sinceDate           DateTime?       // For delta sync, export changes since this date
+
+  // Progress tracking
+  totalRecords        Int             @default(0)
+  processedRecords    Int             @default(0)
+  successCount        Int             @default(0)
+  errorCount          Int             @default(0)
+
+  // Timing
+  startedAt           DateTime?
+  completedAt         DateTime?
+
+  // Error tracking
+  errorLog            Json?           // Array of error details
+
+  // Trigger info
+  isManual            Boolean         @default(false)
+  triggeredBy         String?         @db.Uuid
+
+  createdAt           DateTime        @default(now())
+
+  // Relations
+  config              EdfiConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+  submissions         EdfiSubmission[]
+
+  @@index([configId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Individual record submissions to Ed-Fi API
+model EdfiSubmission {
+  id                  String          @id @default(uuid()) @db.Uuid
+  exportRunId         String          @db.Uuid
+  resourceType        ResourceType
+
+  // Record identification
+  aivoRecordId        String          @db.Uuid // ID in Aivo system
+  edfiResourceId      String?         // ID returned by Ed-Fi API
+
+  // Submission tracking
+  status              SubmissionStatus @default(PENDING)
+  attempts            Int             @default(0)
+
+  // Payload
+  payloadJson         Json            // The Ed-Fi resource JSON
+  responseJson        Json?           // Response from Ed-Fi API
+
+  // Error tracking
+  errorMessage        String?
+  errorCode           String?         // Ed-Fi error code
+
+  // Timing
+  sentAt              DateTime?
+  respondedAt         DateTime?
+
+  createdAt           DateTime        @default(now())
+
+  // Relations
+  exportRun           EdfiExportRun   @relation(fields: [exportRunId], references: [id], onDelete: Cascade)
+
+  @@index([exportRunId])
+  @@index([resourceType])
+  @@index([status])
+  @@index([aivoRecordId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CHANGE TRACKING FOR DELTA SYNC
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks last sync timestamp per resource type
+model EdfiSyncCursor {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  resourceType        ResourceType
+  lastSyncedAt        DateTime        // Last successful sync timestamp
+  lastRecordId        String?         // For pagination resumption
+
+  updatedAt           DateTime        @updatedAt
+
+  @@unique([configId, resourceType])
+  @@index([configId])
+}
+
+/// OAuth token cache for Ed-Fi API
+model EdfiTokenCache {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid @unique
+  accessToken         String          // Encrypted
+  tokenType           String          @default("Bearer")
+  expiresAt           DateTime
+  refreshToken        String?         // Encrypted, if available
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([configId])
+  @@index([expiresAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VALIDATION AND AUDIT
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Validation errors found before export
+model EdfiValidationError {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  resourceType        ResourceType
+  aivoRecordId        String          @db.Uuid
+  field               String
+  errorType           String          // MISSING_REQUIRED, INVALID_FORMAT, etc.
+  errorMessage        String
+  suggestedFix        String?
+
+  // Resolution tracking
+  resolved            Boolean         @default(false)
+  resolvedAt          DateTime?
+  resolvedBy          String?         @db.Uuid
+
+  createdAt           DateTime        @default(now())
+
+  @@index([configId])
+  @@index([resourceType])
+  @@index([resolved])
+}
+
+/// Audit log for all Ed-Fi operations
+model EdfiAuditLog {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @db.Uuid
+  configId            String?         @db.Uuid
+
+  action              String          // CONFIG_CREATED, EXPORT_STARTED, SUBMISSION_SENT, etc.
+  resourceType        ResourceType?
+  recordId            String?         @db.Uuid
+
+  actorId             String?         @db.Uuid
+  actorType           String          // USER, SYSTEM, SCHEDULER
+
+  details             Json?           // Additional context
+
+  createdAt           DateTime        @default(now())
+
+  @@index([tenantId])
+  @@index([configId])
+  @@index([action])
+  @@index([createdAt])
+}

@@ -128,7 +128,12 @@ export default [
   },
   {
     // Services using compat tsconfig (strictNullChecks: false)
-    files: ["services/billing-svc/**/*.{ts,tsx}"],
+    files: [
+      "services/billing-svc/**/*.{ts,tsx}",
+      "services/auth-svc/src/scim/**/*.{ts,tsx}",
+      "services/benchmarking-svc/**/*.{ts,tsx}",
+      "services/edfi-svc/**/*.{ts,tsx}"
+    ],
     rules: {
       "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
@@ -136,7 +141,12 @@ export default [
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
-      "@typescript-eslint/no-unsafe-return": "off"
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unnecessary-type-parameters": "off",
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/restrict-plus-operands": "off"
     }
   },
   {

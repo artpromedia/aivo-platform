@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../app/providers';
 
 const links = [
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/tenants', label: 'Tenants' },
   { href: '/billing', label: 'Billing' },
   { href: '/ai/incidents', label: 'AI Incidents' },
