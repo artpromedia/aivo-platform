@@ -191,7 +191,8 @@ export const PLAN_ENTITLEMENTS: Record<Plan, Entitlements> = {
     },
     monthlyPriceCents: 2999, // $29.99
     annualPriceCents: 29900, // $299.00 (2 months free)
-    description: 'Full access for families with up to 5 learners. Includes AI tutor and advanced analytics.',
+    description:
+      'Full access for families with up to 5 learners. Includes AI tutor and advanced analytics.',
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -308,7 +309,8 @@ export const PLAN_ENTITLEMENTS: Record<Plan, Entitlements> = {
     },
     monthlyPriceCents: 0, // Custom pricing
     annualPriceCents: 0, // Multi-year contracts typical
-    description: 'District-wide licensing with white-label, dedicated support, and full API access.',
+    description:
+      'District-wide licensing with white-label, dedicated support, and full API access.',
   },
 };
 
@@ -384,18 +386,212 @@ export function calculateProration(
 ): number {
   const current = PLAN_ENTITLEMENTS[currentPlan];
   const next = PLAN_ENTITLEMENTS[newPlan];
-  
+
   const currentPrice = isAnnual ? current.annualPriceCents : current.monthlyPriceCents;
   const newPrice = isAnnual ? next.annualPriceCents : next.monthlyPriceCents;
-  
+
   // Credit for unused portion of current plan
   const credit = Math.round((currentPrice * daysRemaining) / totalDays);
-  
+
   // Charge for remaining portion of new plan
   const charge = Math.round((newPrice * daysRemaining) / totalDays);
-  
+
   // Net amount (positive = charge, negative = credit)
   return charge - credit;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LICENSE BUNDLE CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Bundle types define packaged licenses that include learner, parent, and teacher
+// access. Bundles support bi-directional enrollment:
+// - District enrolls child → Teacher invites parent
+// - Parent subscribes → Parent invites teacher
+//
+
+export type BundleType = 'FAMILY' | 'CLASSROOM' | 'DISTRICT_SEAT';
+
+export interface BundleConfig {
+  /** Bundle type identifier */
+  type: BundleType;
+  /** SKU for billing */
+  sku: string;
+  /** Human-readable name */
+  name: string;
+  /** Description */
+  description: string;
+  /** Number of learner licenses included */
+  learnerSeats: number;
+  /** Number of parent dashboard licenses included */
+  parentSeats: number;
+  /** Number of teacher licenses included (can be shared) */
+  teacherSeats: number;
+  /** Modules included in bundle */
+  modules: string[];
+  /** Features included */
+  features: Partial<PlanFeatures>;
+  /** Monthly price in cents (0 = part of contract) */
+  monthlyPriceCents: number;
+  /** Annual price in cents (0 = part of contract) */
+  annualPriceCents: number;
+  /** Whether parent dashboard is included */
+  includesParentDashboard: boolean;
+  /** Whether teacher tools are included */
+  includesTeacherTools: boolean;
+  /** Trial days for parent-originated bundles */
+  trialDays: number;
+}
+
+/**
+ * Bundle configuration definitions
+ */
+export const BUNDLE_CONFIG: Record<BundleType, BundleConfig> = {
+  // ══════════════════════════════════════════════════════════════════════════
+  // FAMILY BUNDLE (Parent-originated)
+  // ══════════════════════════════════════════════════════════════════════════
+  // Parent subscribes and can invite their child's teacher
+  FAMILY: {
+    type: 'FAMILY',
+    sku: 'BUNDLE_FAMILY',
+    name: 'Family Bundle',
+    description: 'Complete learning package: 1 learner + parent dashboard + teacher collaboration',
+    learnerSeats: 1,
+    parentSeats: 1,
+    teacherSeats: 1, // Teacher gets limited access to this learner
+    modules: [...BASE_MODULES, 'SEL'],
+    features: {
+      aiTutor: true,
+      advancedAnalytics: true,
+      parentDashboard: true,
+      teacherTools: true,
+      progressMonitoring: true,
+      collaboration: true,
+      offlineMode: true,
+    },
+    monthlyPriceCents: 2499, // $24.99/month (discounted from separate purchases)
+    annualPriceCents: 24900, // $249/year (2 months free)
+    includesParentDashboard: true,
+    includesTeacherTools: true,
+    trialDays: 14,
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CLASSROOM BUNDLE (Teacher-originated)
+  // ══════════════════════════════════════════════════════════════════════════
+  // Teacher/school purchases for classroom, parents get automatic access
+  CLASSROOM: {
+    type: 'CLASSROOM',
+    sku: 'BUNDLE_CLASSROOM',
+    name: 'Classroom Bundle',
+    description: 'Full classroom access: up to 30 learners + all parents + 1 teacher',
+    learnerSeats: 30,
+    parentSeats: 30, // Each learner's parent gets access
+    teacherSeats: 1,
+    modules: [...ALL_MODULES],
+    features: {
+      aiTutor: true,
+      advancedAnalytics: true,
+      customCurriculum: true,
+      parentDashboard: true,
+      teacherTools: true,
+      assessmentCreation: true,
+      progressMonitoring: true,
+      collaboration: true,
+      iepIntegration: true,
+      offlineMode: true,
+    },
+    monthlyPriceCents: 0, // Contract-based
+    annualPriceCents: 0, // Typically $1,500-3,000/year depending on negotiation
+    includesParentDashboard: true,
+    includesTeacherTools: true,
+    trialDays: 0, // No trial for school purchases
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // DISTRICT SEAT BUNDLE (District-originated)
+  // ══════════════════════════════════════════════════════════════════════════
+  // District allocates seat to learner via teacher, parent gets automatic access
+  DISTRICT_SEAT: {
+    type: 'DISTRICT_SEAT',
+    sku: 'BUNDLE_DISTRICT_SEAT',
+    name: 'District Seat Bundle',
+    description: 'Per-learner district license: learner + parent + teacher access included',
+    learnerSeats: 1,
+    parentSeats: 1, // Parent dashboard access for this learner
+    teacherSeats: 0, // Teacher access comes from district teacher pool
+    modules: [...ALL_MODULES],
+    features: {
+      aiTutor: true,
+      advancedAnalytics: true,
+      customCurriculum: true,
+      parentDashboard: true,
+      teacherTools: true,
+      assessmentCreation: true,
+      progressMonitoring: true,
+      collaboration: true,
+      iepIntegration: true,
+      offlineMode: true,
+      dataExport: true,
+    },
+    monthlyPriceCents: 0, // Part of contract (typically $5-15/seat/month)
+    annualPriceCents: 0, // Part of contract
+    includesParentDashboard: true,
+    includesTeacherTools: true,
+    trialDays: 0,
+  },
+};
+
+/**
+ * Bundle SKUs for seeding products table
+ */
+export const BUNDLE_SKUS = {
+  FAMILY: 'BUNDLE_FAMILY',
+  FAMILY_MULTI: 'BUNDLE_FAMILY_MULTI', // Multi-child family bundle
+  CLASSROOM_SMALL: 'BUNDLE_CLASSROOM_SMALL', // Up to 15 students
+  CLASSROOM_STANDARD: 'BUNDLE_CLASSROOM', // Up to 30 students
+  CLASSROOM_LARGE: 'BUNDLE_CLASSROOM_LARGE', // Up to 45 students
+  DISTRICT_SEAT_K2: 'BUNDLE_DISTRICT_SEAT_K2',
+  DISTRICT_SEAT_35: 'BUNDLE_DISTRICT_SEAT_35',
+  DISTRICT_SEAT_68: 'BUNDLE_DISTRICT_SEAT_68',
+  DISTRICT_SEAT_912: 'BUNDLE_DISTRICT_SEAT_912',
+  DISTRICT_TEACHER: 'BUNDLE_DISTRICT_TEACHER', // Teacher-only license
+} as const;
+
+/**
+ * Get bundle configuration by type
+ */
+export function getBundleConfig(type: BundleType): BundleConfig {
+  return BUNDLE_CONFIG[type];
+}
+
+/**
+ * Get bundle config by SKU
+ */
+export function getBundleConfigBySku(sku: string): BundleConfig | undefined {
+  return Object.values(BUNDLE_CONFIG).find((config) => config.sku === sku);
+}
+
+/**
+ * Check if a bundle includes parent dashboard access
+ */
+export function bundleIncludesParentDashboard(type: BundleType): boolean {
+  return BUNDLE_CONFIG[type].includesParentDashboard;
+}
+
+/**
+ * Check if a bundle includes teacher tools
+ */
+export function bundleIncludesTeacherTools(type: BundleType): boolean {
+  return BUNDLE_CONFIG[type].includesTeacherTools;
+}
+
+/**
+ * Get the effective modules for a bundle (combining bundle + any add-ons)
+ */
+export function getBundleModules(type: BundleType, addOnModules: string[] = []): string[] {
+  const baseModules = BUNDLE_CONFIG[type].modules;
+  return [...new Set([...baseModules, ...addOnModules])];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
