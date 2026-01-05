@@ -81,102 +81,114 @@ export class LicensingService {
     // Process each seat-based line item
     const processedSkus = new Set<string>();
 
-    for (const lineItem of contract.lineItems) {
-      if (!isSeatSku(lineItem.sku)) {
-        continue; // Skip non-seat SKUs (e.g., ORG_BASE, add-ons)
-      }
+    // Use transaction to ensure atomic sync of all entitlements
+    try {
+      await prisma.$transaction(async (tx) => {
+        for (const lineItem of contract.lineItems) {
+          if (!isSeatSku(lineItem.sku)) {
+            continue; // Skip non-seat SKUs (e.g., ORG_BASE, add-ons)
+          }
 
-      const gradeBand = getGradeBandForSku(lineItem.sku);
-      if (!gradeBand) {
-        result.errors.push(
-          `Unknown grade band for SKU: ${lineItem.sku}`
-        );
-        continue;
-      }
+          const gradeBand = getGradeBandForSku(lineItem.sku);
+          if (!gradeBand) {
+            result.errors.push(
+              `Unknown grade band for SKU: ${lineItem.sku}`
+            );
+            continue;
+          }
 
-      processedSkus.add(lineItem.sku);
-      const existing = existingBySkuMap.get(lineItem.sku);
+          processedSkus.add(lineItem.sku);
+          const existing = existingBySkuMap.get(lineItem.sku);
 
-      try {
-        if (existing && !forceRecreate) {
-          // Update existing entitlement
-          const updated = await seatEntitlementRepository.update(existing.id, {
-            quantityCommitted: lineItem.quantityCommitted,
-            startDate: lineItem.startDate ?? contract.startDate,
-            endDate: lineItem.endDate ?? contract.endDate,
-            isActive: contract.status === 'ACTIVE',
-          });
+          if (existing && !forceRecreate) {
+            // Update existing entitlement within transaction
+            const updated = await tx.seatEntitlement.update({
+              where: { id: existing.id },
+              data: {
+                quantityCommitted: lineItem.quantityCommitted,
+                startDate: lineItem.startDate ?? contract.startDate,
+                endDate: lineItem.endDate ?? contract.endDate,
+                isActive: contract.status === 'ACTIVE',
+              },
+            });
 
-          result.updated++;
-          result.entitlements.push(updated);
+            result.updated++;
+            result.entitlements.push(updated as unknown as SeatEntitlement);
 
-          // Log event
-          await this.logEvent({
-            tenantId: contract.tenantId,
-            eventType: LicenseEventType.ENTITLEMENT_UPDATED,
-            entitlementId: existing.id,
-            description: `Updated entitlement for ${lineItem.sku}: ${lineItem.quantityCommitted} seats`,
-            previousValue: {
-              quantityCommitted: existing.quantityCommitted,
-            },
-            newValue: {
-              quantityCommitted: lineItem.quantityCommitted,
-            },
-          });
-        } else {
-          // Create new entitlement
-          const entitlement = await seatEntitlementRepository.create({
-            tenantId: contract.tenantId,
-            contractId: contract.id,
-            lineItemId: lineItem.id,
-            sku: lineItem.sku,
-            gradeBand,
-            quantityCommitted: lineItem.quantityCommitted,
-            overageAllowed: true, // Default to soft cap
-            overageLimit: null,
-            enforcement: 'SOFT',
-            startDate: lineItem.startDate ?? contract.startDate,
-            endDate: lineItem.endDate ?? contract.endDate,
-          });
+            // Log event within transaction
+            await tx.licenseEvent.create({
+              data: {
+                tenantId: contract.tenantId,
+                eventType: LicenseEventType.ENTITLEMENT_UPDATED,
+                entitlementId: existing.id,
+                actorType: 'SYSTEM',
+                description: `Updated entitlement for ${lineItem.sku}: ${lineItem.quantityCommitted} seats`,
+                previousValue: { quantityCommitted: existing.quantityCommitted },
+                newValue: { quantityCommitted: lineItem.quantityCommitted },
+              },
+            });
+          } else {
+            // Create new entitlement within transaction
+            const entitlement = await tx.seatEntitlement.create({
+              data: {
+                tenantId: contract.tenantId,
+                contractId: contract.id,
+                lineItemId: lineItem.id,
+                sku: lineItem.sku,
+                gradeBand,
+                quantityCommitted: lineItem.quantityCommitted,
+                quantityAllocated: 0,
+                overageAllowed: true, // Default to soft cap
+                overageCount: 0,
+                enforcement: 'SOFT',
+                startDate: lineItem.startDate ?? contract.startDate,
+                endDate: lineItem.endDate ?? contract.endDate,
+                isActive: true,
+              },
+            });
 
-          result.created++;
-          result.entitlements.push(entitlement);
+            result.created++;
+            result.entitlements.push(entitlement as unknown as SeatEntitlement);
 
-          // Log event
-          await this.logEvent({
-            tenantId: contract.tenantId,
-            eventType: LicenseEventType.ENTITLEMENT_CREATED,
-            entitlementId: entitlement.id,
-            description: `Created entitlement for ${lineItem.sku}: ${lineItem.quantityCommitted} seats`,
-            newValue: {
-              sku: lineItem.sku,
-              gradeBand,
-              quantityCommitted: lineItem.quantityCommitted,
-            },
-          });
+            // Log event within transaction
+            await tx.licenseEvent.create({
+              data: {
+                tenantId: contract.tenantId,
+                eventType: LicenseEventType.ENTITLEMENT_CREATED,
+                entitlementId: entitlement.id,
+                actorType: 'SYSTEM',
+                description: `Created entitlement for ${lineItem.sku}: ${lineItem.quantityCommitted} seats`,
+                newValue: { sku: lineItem.sku, gradeBand, quantityCommitted: lineItem.quantityCommitted },
+              },
+            });
+          }
         }
-      } catch (error) {
-        result.errors.push(
-          `Failed to process ${lineItem.sku}: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    }
 
-    // Deactivate entitlements for SKUs no longer in contract
-    for (const existing of existingEntitlements) {
-      if (!processedSkus.has(existing.sku) && existing.isActive) {
-        await seatEntitlementRepository.update(existing.id, {
-          isActive: false,
-        });
-        result.deactivated++;
+        // Deactivate entitlements for SKUs no longer in contract
+        for (const existing of existingEntitlements) {
+          if (!processedSkus.has(existing.sku) && existing.isActive) {
+            await tx.seatEntitlement.update({
+              where: { id: existing.id },
+              data: { isActive: false },
+            });
+            result.deactivated++;
 
-        await this.logEvent({
-          tenantId: contract.tenantId,
-          eventType: LicenseEventType.ENTITLEMENT_EXPIRED,
-          entitlementId: existing.id,
-          description: `Deactivated entitlement for ${existing.sku}: SKU no longer in contract`,
-        });
-      }
+            await tx.licenseEvent.create({
+              data: {
+                tenantId: contract.tenantId,
+                eventType: LicenseEventType.ENTITLEMENT_EXPIRED,
+                entitlementId: existing.id,
+                actorType: 'SYSTEM',
+                description: `Deactivated entitlement for ${existing.sku}: SKU no longer in contract`,
+              },
+            });
+          }
+        }
+      });
+    } catch (error) {
+      result.errors.push(
+        `Transaction failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     return result;
@@ -920,6 +932,7 @@ export class LicensingService {
 
   /**
    * Process expired entitlements and mark their assignments as expired.
+   * Uses transaction to ensure atomic processing of expirations.
    */
   async processExpiredEntitlements(): Promise<{
     entitlementsExpired: number;
@@ -937,30 +950,54 @@ export class LicensingService {
       },
     });
 
+    // Process each expiration in its own transaction to prevent partial failures
+    // from affecting other entitlements while maintaining atomicity per entitlement
     for (const entitlement of expiredEntitlements) {
-      // Deactivate entitlement
-      await prisma.seatEntitlement.update({
-        where: { id: entitlement.id },
-        data: { isActive: false },
-      });
-      entitlementsExpired++;
+      try {
+        const expiredCount = await prisma.$transaction(async (tx) => {
+          // Deactivate entitlement
+          await tx.seatEntitlement.update({
+            where: { id: entitlement.id },
+            data: { isActive: false },
+          });
 
-      // Expire all active assignments
-      const expiredCount =
-        await licenseAssignmentRepository.expireByEntitlement(entitlement.id);
-      assignmentsExpired += expiredCount;
+          // Expire all active assignments for this entitlement
+          const result = await tx.licenseAssignment.updateMany({
+            where: {
+              entitlementId: entitlement.id,
+              status: 'ACTIVE',
+            },
+            data: {
+              status: 'EXPIRED',
+              revokedAt: now,
+              revokedReason: 'Entitlement expired',
+            },
+          });
 
-      // Log event
-      await this.logEvent({
-        tenantId: entitlement.tenantId,
-        eventType: LicenseEventType.ENTITLEMENT_EXPIRED,
-        entitlementId: entitlement.id,
-        description: `Entitlement expired: ${entitlement.sku}, ${expiredCount} assignments affected`,
-        metadataJson: {
-          assignmentsExpired: expiredCount,
-          endDate: entitlement.endDate.toISOString(),
-        },
-      });
+          // Log event within transaction
+          await tx.licenseEvent.create({
+            data: {
+              tenantId: entitlement.tenantId,
+              eventType: LicenseEventType.ENTITLEMENT_EXPIRED,
+              entitlementId: entitlement.id,
+              actorType: 'SYSTEM',
+              description: `Entitlement expired: ${entitlement.sku}, ${result.count} assignments affected`,
+              metadataJson: {
+                assignmentsExpired: result.count,
+                endDate: entitlement.endDate.toISOString(),
+              },
+            },
+          });
+
+          return result.count;
+        });
+
+        entitlementsExpired++;
+        assignmentsExpired += expiredCount;
+      } catch (error) {
+        console.error(`Failed to expire entitlement ${entitlement.id}:`, error);
+        // Continue processing other entitlements
+      }
     }
 
     return { entitlementsExpired, assignmentsExpired };

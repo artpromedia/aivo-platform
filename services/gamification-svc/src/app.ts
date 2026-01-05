@@ -19,11 +19,22 @@ import {
 const app: Application = express();
 
 // ============================================================================
+// CORS CONFIGURATION
+// ============================================================================
+
+// CORS configuration - requires explicit origins in production
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : process.env.NODE_ENV === 'production'
+    ? [] // No origins allowed by default in production
+    : ['http://localhost:3000', 'http://localhost:3001']; // Dev defaults
+
+// ============================================================================
 // MIDDLEWARE
 // ============================================================================
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json());
 
 // Request logging

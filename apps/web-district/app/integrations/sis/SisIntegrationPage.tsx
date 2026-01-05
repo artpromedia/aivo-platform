@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 // ============================================================================
 // TYPES
@@ -485,7 +485,20 @@ function ProviderDetails({
   } | null>(null);
   const [oauthLoading, setOauthLoading] = useState(false);
 
+  // Ref for OAuth popup interval cleanup
+  const oauthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const isOAuthProvider = PROVIDER_INFO[provider.providerType].requiresOAuth;
+
+  // Cleanup OAuth interval on unmount
+  useEffect(() => {
+    return () => {
+      if (oauthCheckIntervalRef.current) {
+        clearInterval(oauthCheckIntervalRef.current);
+        oauthCheckIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Load OAuth status for OAuth providers
   useEffect(() => {
@@ -521,9 +534,12 @@ function ProviderDetails({
       const popup = window.open(authUrl, 'oauth', 'width=600,height=700,scrollbars=yes');
       
       // Poll for completion
-      const checkClosed = setInterval(async () => {
+      oauthCheckIntervalRef.current = setInterval(async () => {
         if (popup?.closed) {
-          clearInterval(checkClosed);
+          if (oauthCheckIntervalRef.current) {
+            clearInterval(oauthCheckIntervalRef.current);
+            oauthCheckIntervalRef.current = null;
+          }
           // Refresh OAuth status
           const status = await getOAuthStatus(provider.id);
           setOauthStatus(status);

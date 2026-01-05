@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { config } from '../config.js';
+import { ssoRateLimiter } from '../lib/rate-limit.js';
 import { SsoService, SsoError } from '../lib/sso/index.js';
 
 // ============================================================================
@@ -67,7 +68,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: z.infer<typeof tenantParams>;
     Querystring: z.infer<typeof ssoInitQuery>;
-  }>('/sso/:tenantSlug', async (request, reply) => {
+  }>('/sso/:tenantSlug', { preHandler: ssoRateLimiter }, async (request, reply) => {
     const paramsResult = tenantParams.safeParse(request.params);
     if (!paramsResult.success) {
       return reply.status(400).send({ error: 'Invalid tenant slug' });
@@ -119,7 +120,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: z.infer<typeof tenantParams>;
     Body: z.infer<typeof samlCallbackBody>;
-  }>('/saml/acs/:tenantSlug', async (request, reply) => {
+  }>('/saml/acs/:tenantSlug', { preHandler: ssoRateLimiter }, async (request, reply) => {
     const paramsResult = tenantParams.safeParse(request.params);
     if (!paramsResult.success) {
       return reply.status(400).send({ error: 'Invalid tenant slug' });
@@ -162,7 +163,7 @@ export async function registerSsoRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: z.infer<typeof tenantParams>;
     Querystring: z.infer<typeof oidcCallbackQuery>;
-  }>('/oidc/callback/:tenantSlug', async (request, reply) => {
+  }>('/oidc/callback/:tenantSlug', { preHandler: ssoRateLimiter }, async (request, reply) => {
     const paramsResult = tenantParams.safeParse(request.params);
     if (!paramsResult.success) {
       return reply.status(400).send({ error: 'Invalid tenant slug' });

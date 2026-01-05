@@ -16,7 +16,7 @@
 'use client';
 
 import { Loader2, CheckCircle2, XCircle, Link2, Unlink, RefreshCw } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +70,20 @@ export function GoogleClassroomConnect({
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Ref for OAuth popup interval cleanup
+  const popupCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const { toast } = useToast();
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (popupCheckIntervalRef.current) {
+        clearInterval(popupCheckIntervalRef.current);
+        popupCheckIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Fetch connection status
   const fetchStatus = useCallback(async () => {
@@ -144,9 +157,12 @@ export function GoogleClassroomConnect({
       }
 
       // Check if popup is closed
-      const checkClosed = setInterval(() => {
+      popupCheckIntervalRef.current = setInterval(() => {
         if (popup.closed) {
-          clearInterval(checkClosed);
+          if (popupCheckIntervalRef.current) {
+            clearInterval(popupCheckIntervalRef.current);
+            popupCheckIntervalRef.current = null;
+          }
           setConnecting(false);
         }
       }, 500);
