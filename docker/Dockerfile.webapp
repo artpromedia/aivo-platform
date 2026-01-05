@@ -11,7 +11,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 # Copy package files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
@@ -30,7 +30,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 # Copy from deps stage
 COPY --from=deps /app/node_modules ./node_modules

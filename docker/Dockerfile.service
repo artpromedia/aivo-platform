@@ -12,7 +12,7 @@ RUN apk add --no-cache g++ make python3
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 # Copy workspace files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./

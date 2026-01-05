@@ -24,6 +24,11 @@
     "commit": "cz",
     "clean": "turbo run clean --parallel && rimraf node_modules"
   },
+  "pnpm": {
+    "overrides": {
+      "qs": ">=6.14.1"
+    }
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
