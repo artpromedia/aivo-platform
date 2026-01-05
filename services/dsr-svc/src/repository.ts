@@ -61,7 +61,7 @@ function mapAuditEntry(row: Record<string, unknown>): DsrAuditLogEntry {
   };
 }
 
-function mapRateLimit(row: Record<string, unknown>): DsrRateLimit {
+function _mapRateLimit(row: Record<string, unknown>): DsrRateLimit {
   return {
     id: row.id as string,
     tenant_id: row.tenant_id as string,

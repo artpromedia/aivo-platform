@@ -71,7 +71,7 @@ export function GoogleClassroomConnect({
   const [error, setError] = useState<string | null>(null);
 
   // Ref for OAuth popup interval cleanup
-  const popupCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const popupCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { toast } = useToast();
 

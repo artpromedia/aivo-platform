@@ -38,7 +38,7 @@ const store = new Map<string, RateLimitEntry>();
 // Cleanup expired entries every 60 seconds
 const CLEANUP_INTERVAL = 60_000;
 
-let cleanupTimer: NodeJS.Timeout | null = null;
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
 function startCleanup(): void {
   if (cleanupTimer) return;

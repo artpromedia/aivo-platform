@@ -118,7 +118,7 @@ async function fetchProviders(tenantId: string): Promise<SisProvider[]> {
   return data.providers;
 }
 
-async function fetchProvider(providerId: string): Promise<{ provider: SisProvider; status: ProviderStatus }> {
+async function _fetchProvider(providerId: string): Promise<{ provider: SisProvider; status: ProviderStatus }> {
   const res = await fetch(`${API_BASE}/v1/providers/${providerId}`);
   if (!res.ok) throw new Error('Failed to fetch provider');
   return res.json();
@@ -375,7 +375,7 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
             <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center text-gray-500">
               No integrations configured yet.
               <br />
-              Click "Add Integration" to get started.
+              Click &quot;Add Integration&quot; to get started.
             </div>
           ) : (
             <div className="space-y-2">
@@ -486,7 +486,7 @@ function ProviderDetails({
   const [oauthLoading, setOauthLoading] = useState(false);
 
   // Ref for OAuth popup interval cleanup
-  const oauthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const oauthCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isOAuthProvider = PROVIDER_INFO[provider.providerType].requiresOAuth;
 

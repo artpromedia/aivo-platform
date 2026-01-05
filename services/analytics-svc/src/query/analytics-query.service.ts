@@ -185,7 +185,7 @@ function validateAggregation(value: string): string {
   return value;
 }
 
-function escapeRedshiftString(value: string): string {
+function _escapeRedshiftString(value: string): string {
   // Escape single quotes by doubling them (Redshift standard)
   return value.replace(/'/g, "''");
 }
@@ -651,10 +651,10 @@ export class AnalyticsQueryService {
     const safeEnd = validateIsoDate(period.end);
 
     // Threshold values are from config (trusted numeric values)
-    const inactivityDays = Number(this.config.atRiskThresholds.inactivityDays);
-    const lowScore = Number(this.config.atRiskThresholds.lowScore);
-    const lowCompletion = Number(this.config.atRiskThresholds.lowCompletion);
-    const lowMastery = Number(this.config.atRiskThresholds.lowMastery);
+    const inactivityDays = this.config.atRiskThresholds.inactivityDays;
+    const lowScore = this.config.atRiskThresholds.lowScore;
+    const lowCompletion = this.config.atRiskThresholds.lowCompletion;
+    const lowMastery = this.config.atRiskThresholds.lowMastery;
 
     const sql = `
       WITH student_metrics AS (
@@ -727,7 +727,7 @@ export class AnalyticsQueryService {
           value: row.days_inactive as number,
           threshold: this.config.atRiskThresholds.inactivityDays,
           contribution: (row.days_inactive as number) > this.config.atRiskThresholds.inactivityDays * 2 ? 30 : 15,
-          description: `Student has been inactive for ${row.days_inactive} days`,
+          description: `Student has been inactive for ${String(row.days_inactive)} days`,
         });
       }
 
