@@ -8,6 +8,8 @@
 
 import * as React from 'react';
 
+import type { PlatformMetrics } from '../../../lib/api/dashboard';
+
 interface MetricCard {
   label: string;
   value: string | number;
@@ -18,38 +20,6 @@ interface MetricCard {
   icon: React.ReactNode;
   color: 'blue' | 'green' | 'purple' | 'amber';
 }
-
-// Mock data - would come from API
-const mockMetrics: MetricCard[] = [
-  {
-    label: 'Total Tenants',
-    value: 847,
-    change: { value: 12, trend: 'up' },
-    icon: <BuildingIcon />,
-    color: 'blue',
-  },
-  {
-    label: 'Active Learners',
-    value: '1.2M',
-    change: { value: 8.5, trend: 'up' },
-    icon: <UsersIcon />,
-    color: 'green',
-  },
-  {
-    label: 'Sessions Today',
-    value: '45.2K',
-    change: { value: 3.2, trend: 'up' },
-    icon: <ActivityIcon />,
-    color: 'purple',
-  },
-  {
-    label: 'API Requests (24h)',
-    value: '8.4M',
-    change: { value: 2.1, trend: 'down' },
-    icon: <ServerIcon />,
-    color: 'amber',
-  },
-];
 
 const colorClasses = {
   blue: 'bg-blue-50 text-blue-600 border-blue-200',
@@ -65,35 +35,133 @@ const iconBgClasses = {
   amber: 'bg-amber-100',
 };
 
-export function MetricCards() {
-  const [metrics, setMetrics] = React.useState(mockMetrics);
-  const [_isLoading, setIsLoading] = React.useState(false);
+function formatNumber(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(1)}K`;
+  }
+  return value.toString();
+}
 
-  // Simulate data refresh
+function metricsToCards(metrics: PlatformMetrics): MetricCard[] {
+  return [
+    {
+      label: 'Total Tenants',
+      value: formatNumber(metrics.activeTenants.value),
+      change: {
+        value: Math.abs(metrics.activeTenants.change),
+        trend:
+          metrics.activeTenants.change > 0
+            ? 'up'
+            : metrics.activeTenants.change < 0
+              ? 'down'
+              : 'neutral',
+      },
+      icon: <BuildingIcon />,
+      color: 'blue',
+    },
+    {
+      label: 'Active Learners',
+      value: formatNumber(metrics.totalLearners.value),
+      change: {
+        value: Math.abs(metrics.totalLearners.change),
+        trend:
+          metrics.totalLearners.change > 0
+            ? 'up'
+            : metrics.totalLearners.change < 0
+              ? 'down'
+              : 'neutral',
+      },
+      icon: <UsersIcon />,
+      color: 'green',
+    },
+    {
+      label: 'Sessions Today',
+      value: formatNumber(metrics.activeSessions.value),
+      change: {
+        value: Math.abs(metrics.activeSessions.change),
+        trend:
+          metrics.activeSessions.change > 0
+            ? 'up'
+            : metrics.activeSessions.change < 0
+              ? 'down'
+              : 'neutral',
+      },
+      icon: <ActivityIcon />,
+      color: 'purple',
+    },
+    {
+      label: 'API Requests (24h)',
+      value: formatNumber(metrics.apiRequests.value),
+      change: {
+        value: Math.abs(metrics.apiRequests.change),
+        trend:
+          metrics.apiRequests.change > 0
+            ? 'up'
+            : metrics.apiRequests.change < 0
+              ? 'down'
+              : 'neutral',
+      },
+      icon: <ServerIcon />,
+      color: 'amber',
+    },
+  ];
+}
+
+export function MetricCards() {
+  const [metrics, setMetrics] = React.useState<MetricCard[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchMetrics = React.useCallback(async () => {
+    try {
+      const response = await fetch('/api/dashboard/metrics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch metrics');
+      }
+      const data = (await response.json()) as PlatformMetrics;
+      setMetrics(metricsToCards(data));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      // Keep existing metrics on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
+    void fetchMetrics();
+
+    // Refresh every 30 seconds
     const interval = setInterval(() => {
-      setIsLoading(true);
-      setTimeout(() => {
-        setMetrics((prev) =>
-          prev.map((m) => ({
-            ...m,
-            // Simulate small value changes
-            change: m.change
-              ? {
-                  ...m.change,
-                  value: Math.max(0, m.change.value + (Math.random() - 0.5) * 2),
-                }
-              : undefined,
-          }))
-        );
-        setIsLoading(false);
-      }, 500);
-    }, 30000); // Refresh every 30 seconds
+      void fetchMetrics();
+    }, 30000);
 
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [fetchMetrics]);
+
+  if (isLoading && metrics.length === 0) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i} className="h-28 animate-pulse rounded-lg bg-gray-200" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error && metrics.length === 0) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
+        Failed to load metrics: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

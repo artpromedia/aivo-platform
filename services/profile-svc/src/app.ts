@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /**
  * Profile Service - Fastify Application
  *
@@ -5,12 +6,14 @@
  * and observability hooks.
  */
 
-import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import Fastify, { type FastifyInstance } from 'fastify';
+
 import { config } from './config.js';
-import { registerProfileRoutes } from './routes/profileRoutes.js';
+import { natsPublisher } from './events/index.js';
 import { registerAccommodationRoutes } from './routes/accommodationRoutes.js';
+import { registerProfileRoutes } from './routes/profileRoutes.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BUILD APPLICATION
@@ -47,6 +50,17 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // ────────────────────────────────────────────────────────────────────────────
+  // Initialize NATS for event publishing
+  // ────────────────────────────────────────────────────────────────────────────
+  try {
+    await natsPublisher.initialize();
+    app.log.info('NATS event publisher initialized');
+  } catch (error) {
+    app.log.warn({ err: error }, 'NATS initialization failed - events will be skipped');
+    // Continue without NATS - events are fire-and-forget
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
   // Health check endpoints
   // ────────────────────────────────────────────────────────────────────────────
   app.get('/health', async () => {
@@ -54,8 +68,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   app.get('/ready', async () => {
-    // TODO: Check database connectivity
-    return { status: 'ready', service: 'profile-svc' };
+    return {
+      status: 'ready',
+      service: 'profile-svc',
+      nats: natsPublisher.isReady() ? 'connected' : 'disconnected',
+    };
   });
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -75,7 +92,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         url: request.url,
         method: request.method,
       },
-      'Request error',
+      'Request error'
     );
 
     // Zod validation errors
@@ -108,10 +125,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     const statusCode = error.statusCode ?? 500;
     return reply.status(statusCode).send({
       error: statusCode >= 500 ? 'Internal Server Error' : error.name,
-      message:
-        statusCode >= 500
-          ? 'An unexpected error occurred'
-          : error.message,
+      message: statusCode >= 500 ? 'An unexpected error occurred' : error.message,
     });
   });
 
@@ -120,6 +134,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // ────────────────────────────────────────────────────────────────────────────
   const shutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down gracefully...`);
+    await natsPublisher.close();
     await app.close();
     process.exit(0);
   };

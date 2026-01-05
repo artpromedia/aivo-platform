@@ -8,71 +8,9 @@
 
 import * as React from 'react';
 
+import type { ServiceHealth } from '../../../lib/api/dashboard';
+
 type HealthStatus = 'healthy' | 'degraded' | 'down';
-
-interface ServiceHealth {
-  name: string;
-  status: HealthStatus;
-  latency?: number;
-  uptime: string;
-  lastCheck: string;
-}
-
-// Mock data - would come from monitoring API
-const mockServices: ServiceHealth[] = [
-  { name: 'API Gateway', status: 'healthy', latency: 12, uptime: '99.99%', lastCheck: '10s ago' },
-  { name: 'Auth Service', status: 'healthy', latency: 8, uptime: '99.98%', lastCheck: '10s ago' },
-  {
-    name: 'Session Service',
-    status: 'healthy',
-    latency: 15,
-    uptime: '99.97%',
-    lastCheck: '10s ago',
-  },
-  {
-    name: 'Content Service',
-    status: 'healthy',
-    latency: 22,
-    uptime: '99.95%',
-    lastCheck: '10s ago',
-  },
-  {
-    name: 'AI Orchestrator',
-    status: 'degraded',
-    latency: 245,
-    uptime: '99.80%',
-    lastCheck: '10s ago',
-  },
-  {
-    name: 'Analytics Service',
-    status: 'healthy',
-    latency: 35,
-    uptime: '99.92%',
-    lastCheck: '10s ago',
-  },
-  {
-    name: 'Billing Service',
-    status: 'healthy',
-    latency: 18,
-    uptime: '99.99%',
-    lastCheck: '10s ago',
-  },
-  {
-    name: 'PostgreSQL Primary',
-    status: 'healthy',
-    latency: 3,
-    uptime: '99.99%',
-    lastCheck: '10s ago',
-  },
-  { name: 'Redis Cache', status: 'healthy', latency: 1, uptime: '99.99%', lastCheck: '10s ago' },
-  {
-    name: 'Ed-Fi Integration',
-    status: 'healthy',
-    latency: 89,
-    uptime: '99.85%',
-    lastCheck: '1m ago',
-  },
-];
 
 const statusConfig: Record<HealthStatus, { label: string; className: string; dotClass: string }> = {
   healthy: { label: 'Healthy', className: 'text-green-700', dotClass: 'bg-green-500' },
@@ -81,8 +19,35 @@ const statusConfig: Record<HealthStatus, { label: string; className: string; dot
 };
 
 export function SystemHealth() {
-  const [services, _setServices] = React.useState(mockServices);
+  const [services, setServices] = React.useState<ServiceHealth[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [filter, setFilter] = React.useState<'all' | HealthStatus>('all');
+
+  React.useEffect(() => {
+    async function loadHealth() {
+      try {
+        const response = await fetch('/api/dashboard/health');
+        if (!response.ok) {
+          throw new Error('Failed to fetch service health');
+        }
+        const data = (await response.json()) as ServiceHealth[];
+        setServices(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load health data');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadHealth();
+    // Refresh every 10 seconds for real-time monitoring
+    const interval = setInterval(() => void loadHealth(), 10000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const filteredServices = services.filter((s) => filter === 'all' || s.status === filter);
 
@@ -94,6 +59,26 @@ export function SystemHealth() {
 
   const overallStatus: HealthStatus =
     healthCounts.down > 0 ? 'down' : healthCounts.degraded > 0 ? 'degraded' : 'healthy';
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h3 className="font-semibold text-gray-900">System Health</h3>
+        <div className="mt-4 flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <h3 className="font-semibold text-red-900">System Health</h3>
+        <p className="mt-2 text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">

@@ -9,135 +9,27 @@
 
 import * as React from 'react';
 
+import {
+  fetchPosts,
+  fetchResources,
+  fetchCommunityStats,
+  likePost,
+  type Post,
+  type SharedResource,
+  type PostCategory,
+  type CommunityStats,
+} from '../../../../lib/api/community';
+
 import { PageHeader } from '@/components/layout/breadcrumb';
 
-interface Post {
-  id: string;
-  author: {
-    name: string;
-    role: string;
-    school: string;
-  };
-  title: string;
-  content: string;
-  category: 'discussion' | 'resource' | 'question' | 'success-story';
-  likes: number;
-  comments: number;
-  createdAt: string;
-  isLiked?: boolean;
-}
-
-interface Resource {
-  id: string;
-  title: string;
-  type: 'lesson' | 'activity' | 'worksheet' | 'game';
-  subject: string;
-  gradeLevel: string;
-  downloads: number;
-  rating: number;
-  author: string;
-}
-
-// Mock data
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    author: { name: 'Sarah Thompson', role: 'Math Teacher', school: 'Lincoln Elementary' },
-    title: 'Great strategies for teaching fractions to 4th graders',
-    content:
-      "I've found that using visual fraction tiles combined with the adaptive games really helps struggling learners. My students' scores improved 20% this month!",
-    category: 'success-story',
-    likes: 24,
-    comments: 8,
-    createdAt: '2 hours ago',
-    isLiked: true,
-  },
-  {
-    id: '2',
-    author: { name: 'Michael Rodriguez', role: 'Special Ed Teacher', school: 'Oak Park Academy' },
-    title: 'How do you handle focus breaks for kids with ADHD?',
-    content:
-      "I'm looking for advice on timing and types of focus breaks. The built-in breathing exercises are great, but I'm wondering what intervals work best for others.",
-    category: 'question',
-    likes: 15,
-    comments: 12,
-    createdAt: '5 hours ago',
-  },
-  {
-    id: '3',
-    author: { name: 'Emily Chen', role: 'Reading Specialist', school: 'Riverside School' },
-    title: 'New phonics activity pack for K-2',
-    content:
-      'Just uploaded a collection of 15 phonics activities that integrate with the adaptive reading games. Great for differentiated instruction!',
-    category: 'resource',
-    likes: 42,
-    comments: 6,
-    createdAt: '1 day ago',
-  },
-  {
-    id: '4',
-    author: { name: 'David Park', role: '3rd Grade Teacher', school: 'Sunshine Elementary' },
-    title: 'Team competitions - what works for you?',
-    content:
-      "I'm starting team competitions next week. Any tips on setting up fair teams and keeping motivation high throughout the week?",
-    category: 'discussion',
-    likes: 8,
-    comments: 14,
-    createdAt: '2 days ago',
-  },
-];
-
-const mockResources: Resource[] = [
-  {
-    id: '1',
-    title: 'Fraction Fundamentals Pack',
-    type: 'lesson',
-    subject: 'Math',
-    gradeLevel: '3-5',
-    downloads: 234,
-    rating: 4.8,
-    author: 'Sarah Thompson',
-  },
-  {
-    id: '2',
-    title: 'Reading Comprehension Strategies',
-    type: 'activity',
-    subject: 'Reading',
-    gradeLevel: 'K-2',
-    downloads: 189,
-    rating: 4.6,
-    author: 'Emily Chen',
-  },
-  {
-    id: '3',
-    title: 'Multiplication Practice Worksheets',
-    type: 'worksheet',
-    subject: 'Math',
-    gradeLevel: '2-4',
-    downloads: 156,
-    rating: 4.5,
-    author: 'Community',
-  },
-  {
-    id: '4',
-    title: 'Word Family Matching Game',
-    type: 'game',
-    subject: 'Reading',
-    gradeLevel: 'K-1',
-    downloads: 312,
-    rating: 4.9,
-    author: 'Community',
-  },
-];
-
-const categoryConfig = {
+const categoryConfig: Record<PostCategory, { label: string; color: string; icon: string }> = {
   discussion: { label: 'Discussion', color: 'bg-blue-100 text-blue-700', icon: '💬' },
   resource: { label: 'Resource', color: 'bg-green-100 text-green-700', icon: '📦' },
   question: { label: 'Question', color: 'bg-amber-100 text-amber-700', icon: '❓' },
   'success-story': { label: 'Success Story', color: 'bg-purple-100 text-purple-700', icon: '🌟' },
 };
 
-const resourceTypeIcons = {
+const resourceTypeIcons: Record<string, string> = {
   lesson: '📚',
   activity: '🎯',
   worksheet: '📝',
@@ -146,11 +38,63 @@ const resourceTypeIcons = {
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = React.useState<'feed' | 'resources'>('feed');
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = React.useState<PostCategory | null>(null);
+  const [posts, setPosts] = React.useState<Post[]>([]);
+  const [resources, setResources] = React.useState<SharedResource[]>([]);
+  const [stats, setStats] = React.useState<CommunityStats | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const filteredPosts = selectedCategory
-    ? mockPosts.filter((p) => p.category === selectedCategory)
-    : mockPosts;
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const accessToken = 'mock-token';
+        const [postsData, resourcesData, statsData] = await Promise.all([
+          fetchPosts(accessToken, { category: selectedCategory ?? undefined }),
+          fetchResources(accessToken),
+          fetchCommunityStats(accessToken),
+        ]);
+        setPosts(postsData);
+        setResources(resourcesData);
+        setStats(statsData);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load community data');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    void loadData();
+  }, [selectedCategory]);
+
+  const handleLikePost = async (postId: string) => {
+    try {
+      const accessToken = 'mock-token';
+      await likePost(postId, accessToken);
+      // Refresh posts
+      const postsData = await fetchPosts(accessToken, { category: selectedCategory ?? undefined });
+      setPosts(postsData);
+    } catch (err) {
+      console.error('Failed to like post:', err);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -228,8 +172,8 @@ export default function CommunityPage() {
             </div>
 
             {/* Posts */}
-            {filteredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} onLike={handleLikePost} />
             ))}
           </div>
 
@@ -240,19 +184,21 @@ export default function CommunityPage() {
               <h3 className="font-semibold text-gray-900">Your Community</h3>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-2xl font-bold text-primary-600">12</p>
+                  <p className="text-2xl font-bold text-primary-600">{stats?.totalPosts ?? 0}</p>
                   <p className="text-xs text-gray-500">Posts</p>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-2xl font-bold text-primary-600">48</p>
+                  <p className="text-2xl font-bold text-primary-600">{stats?.totalComments ?? 0}</p>
                   <p className="text-xs text-gray-500">Comments</p>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-2xl font-bold text-primary-600">5</p>
+                  <p className="text-2xl font-bold text-primary-600">
+                    {stats?.resourcesShared ?? 0}
+                  </p>
                   <p className="text-xs text-gray-500">Resources Shared</p>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-2xl font-bold text-primary-600">127</p>
+                  <p className="text-2xl font-bold text-primary-600">{stats?.likesReceived ?? 0}</p>
                   <p className="text-xs text-gray-500">Likes Received</p>
                 </div>
               </div>
@@ -308,7 +254,7 @@ export default function CommunityPage() {
 
           {/* Resources Grid */}
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {mockResources.map((resource) => (
+            {resources.map((resource) => (
               <ResourceCard key={resource.id} resource={resource} />
             ))}
           </div>
@@ -318,7 +264,7 @@ export default function CommunityPage() {
   );
 }
 
-function PostCard({ post }: { post: Post }) {
+function PostCard({ post, onLike }: { post: Post; onLike: (postId: string) => void }) {
   const config = categoryConfig[post.category];
 
   return (
@@ -351,6 +297,9 @@ function PostCard({ post }: { post: Post }) {
       <div className="mt-4 flex items-center justify-between border-t pt-3">
         <div className="flex gap-4">
           <button
+            onClick={() => {
+              onLike(post.id);
+            }}
             className={`flex items-center gap-1 text-sm ${
               post.isLiked ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -367,7 +316,7 @@ function PostCard({ post }: { post: Post }) {
   );
 }
 
-function ResourceCard({ resource }: { resource: Resource }) {
+function ResourceCard({ resource }: { resource: SharedResource }) {
   return (
     <div className="rounded-xl border bg-white p-4 transition-shadow hover:shadow-md">
       <div className="text-3xl">{resourceTypeIcons[resource.type]}</div>

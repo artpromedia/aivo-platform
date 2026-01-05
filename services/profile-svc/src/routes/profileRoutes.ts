@@ -6,6 +6,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+import { emitProfileCreated, emitProfileUpdated } from '../events/index.js';
 import { CreateProfileRequestSchema, UpdateProfileRequestSchema } from '../schemas/index.js';
 import {
   getProfile,
@@ -84,7 +85,8 @@ export async function registerProfileRoutes(app: FastifyInstance): Promise<void>
       try {
         const profile = await createProfile(context.tenantId, learnerId, data, context);
 
-        // TODO: Emit profile.updated event to NATS
+        // Emit profile.created event to NATS (fire and forget)
+        void emitProfileCreated(context.tenantId, learnerId, profile.id, context.userId);
 
         return reply.status(201).send({
           profile,
@@ -116,7 +118,15 @@ export async function registerProfileRoutes(app: FastifyInstance): Promise<void>
       try {
         const profile = await updateProfile(context.tenantId, learnerId, data, context);
 
-        // TODO: Emit profile.updated event to NATS
+        // Emit profile.updated event to NATS (fire and forget)
+        const changedFields = Object.keys(data);
+        void emitProfileUpdated(
+          context.tenantId,
+          learnerId,
+          profile.id,
+          context.userId,
+          changedFields
+        );
 
         return reply.status(200).send({
           profile,

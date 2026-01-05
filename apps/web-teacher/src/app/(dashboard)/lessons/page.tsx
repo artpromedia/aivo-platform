@@ -10,78 +10,9 @@
 import Link from 'next/link';
 import * as React from 'react';
 
+import { fetchLessons, type LessonSummary, type LessonStatus } from '../../../../lib/api/lessons';
+
 import { PageHeader } from '@/components/layout/breadcrumb';
-
-interface Lesson {
-  id: string;
-  title: string;
-  subject: string;
-  gradeLevel: string;
-  duration: number;
-  objectives: string[];
-  status: 'draft' | 'published' | 'archived';
-  lastModified: string;
-  hasAdaptiveContent: boolean;
-}
-
-// Mock lesson data
-const mockLessons: Lesson[] = [
-  {
-    id: '1',
-    title: 'Introduction to Fractions',
-    subject: 'Math',
-    gradeLevel: '4th Grade',
-    duration: 45,
-    objectives: ['Identify fractions', 'Compare fractions with same denominator'],
-    status: 'published',
-    lastModified: '2024-12-15',
-    hasAdaptiveContent: true,
-  },
-  {
-    id: '2',
-    title: 'Reading Comprehension: Main Ideas',
-    subject: 'Reading',
-    gradeLevel: '3rd Grade',
-    duration: 30,
-    objectives: ['Identify main idea', 'Find supporting details'],
-    status: 'published',
-    lastModified: '2024-12-14',
-    hasAdaptiveContent: true,
-  },
-  {
-    id: '3',
-    title: 'Scientific Method Overview',
-    subject: 'Science',
-    gradeLevel: '5th Grade',
-    duration: 50,
-    objectives: ['Understand scientific method steps', 'Form hypotheses'],
-    status: 'draft',
-    lastModified: '2024-12-13',
-    hasAdaptiveContent: false,
-  },
-  {
-    id: '4',
-    title: 'Multiplication Facts Practice',
-    subject: 'Math',
-    gradeLevel: '3rd Grade',
-    duration: 25,
-    objectives: ['Practice multiplication tables 1-10'],
-    status: 'published',
-    lastModified: '2024-12-12',
-    hasAdaptiveContent: true,
-  },
-  {
-    id: '5',
-    title: 'Poetry Analysis',
-    subject: 'Reading',
-    gradeLevel: '5th Grade',
-    duration: 40,
-    objectives: ['Identify poetic devices', 'Analyze rhythm and rhyme'],
-    status: 'archived',
-    lastModified: '2024-11-20',
-    hasAdaptiveContent: false,
-  },
-];
 
 const subjectIcons: Record<string, string> = {
   Math: '🔢',
@@ -92,18 +23,49 @@ const subjectIcons: Record<string, string> = {
 };
 
 export default function LessonsPage() {
-  const [filter, setFilter] = React.useState<'all' | 'draft' | 'published' | 'archived'>('all');
+  const [filter, setFilter] = React.useState<'all' | LessonStatus>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [lessons, setLessons] = React.useState<LessonSummary[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const filteredLessons = mockLessons.filter((lesson) => {
-    if (filter !== 'all' && lesson.status !== filter) return false;
-    if (searchQuery && !lesson.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
+  React.useEffect(() => {
+    async function loadLessons() {
+      try {
+        setIsLoading(true);
+        const accessToken = 'mock-token';
+        const data = await fetchLessons(accessToken, {
+          status: filter === 'all' ? undefined : filter,
+          search: searchQuery || undefined,
+        });
+        setLessons(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load lessons');
+      } finally {
+        setIsLoading(false);
+      }
     }
-    return true;
-  });
+    void loadLessons();
+  }, [filter, searchQuery]);
 
-  const getStatusBadge = (status: Lesson['status']) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  const getStatusBadge = (status: LessonStatus) => {
     switch (status) {
       case 'published':
         return (
@@ -174,7 +136,7 @@ export default function LessonsPage() {
 
       {/* Lessons Grid */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredLessons.map((lesson) => (
+        {lessons.map((lesson) => (
           <div
             key={lesson.id}
             className="group rounded-xl border bg-white p-4 transition-shadow hover:shadow-md"
@@ -248,7 +210,7 @@ export default function LessonsPage() {
       </div>
 
       {/* Empty State */}
-      {filteredLessons.length === 0 && (
+      {lessons.length === 0 && (
         <div className="mt-12 text-center">
           <p className="text-gray-500">No lessons found</p>
           <Link href="/lessons/new" className="mt-4 inline-block text-primary-600 hover:underline">
