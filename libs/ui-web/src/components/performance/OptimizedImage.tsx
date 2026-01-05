@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-condition */
 
+import * as React from 'react';
 import {
   forwardRef,
   memo,
@@ -161,11 +162,11 @@ const OptimizedImageInner = forwardRef<HTMLImageElement, OptimizedImageProps>(
     // Merge refs
     const setRefs = useCallback(
       (node: HTMLImageElement | null) => {
-        imgRef.current = node;
+        (imgRef as React.MutableRefObject<HTMLImageElement | null>).current = node;
         if (typeof ref === 'function') {
           ref(node);
         } else if (ref) {
-          ref.current = node;
+          (ref as React.MutableRefObject<HTMLImageElement | null>).current = node;
         }
       },
       [ref]

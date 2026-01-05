@@ -180,7 +180,7 @@ export class WebPushManager {
       // Create new subscription
       this.subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.vapidPublicKey,
+        applicationServerKey: this.vapidPublicKey as BufferSource,
       });
 
       console.log('[WebPushManager] Successfully subscribed to push notifications');

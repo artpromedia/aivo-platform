@@ -68,6 +68,7 @@ export interface EngagementDataPoint {
   activities: number;
   timeMinutes: number;
   score: number;
+  [key: string]: string | number;
 }
 
 export interface SkillMasteryData {

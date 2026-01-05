@@ -25,7 +25,7 @@ export type ExportFormat =
 
 export type ContentType = 'lesson' | 'assessment' | 'question' | 'course';
 
-interface FormatOption {
+export interface FormatInfo {
   id: ExportFormat;
   name: string;
   description: string;
@@ -33,6 +33,9 @@ interface FormatOption {
   supportedTypes: ContentType[];
   tags: string[];
 }
+
+// Alias for backward compatibility
+type FormatOption = FormatInfo;
 
 const FORMAT_OPTIONS: FormatOption[] = [
   {
@@ -85,7 +88,7 @@ const FORMAT_OPTIONS: FormatOption[] = [
   },
 ];
 
-interface ExportFormatSelectorProps {
+export interface ExportFormatSelectorProps {
   contentType: ContentType;
   onSelect: (format: ExportFormat) => void;
   selectedFormat?: ExportFormat | null;

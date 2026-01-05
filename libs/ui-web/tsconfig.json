@@ -10,6 +10,12 @@
     "types": ["node", "react"],
     "jsx": "react-jsx",
     "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/hooks/*": ["./hooks/*"]
+    },
     "exactOptionalPropertyTypes": false,
     "verbatimModuleSyntax": false,
     "noUncheckedIndexedAccess": false

@@ -108,7 +108,15 @@ self.addEventListener('push', (event) => {
   const { title, body, ...options } = payload;
 
   // Build notification options
-  const notificationOptions: NotificationOptions & { image?: string } = {
+  // Note: Some properties (actions, vibrate, renotify) are part of experimental APIs
+  type ExtendedNotificationOptions = NotificationOptions & {
+    image?: string;
+    actions?: Array<{ action: string; title: string; icon?: string }>;
+    vibrate?: number | number[];
+    renotify?: boolean;
+  };
+
+  const notificationOptions: ExtendedNotificationOptions = {
     body,
     icon: options.icon ?? DEFAULT_ICON,
     badge: options.badge ?? DEFAULT_BADGE,

@@ -14,6 +14,7 @@
   "dependencies": {
     "@aivo/ui-web": "workspace:*",
     "date-fns": "^3.6.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.460.0",
     "next": "15.4.8",
     "react": "19.1.0",
@@ -21,17 +22,19 @@
     "recharts": "^2.12.7"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
+    "@types/lodash": "^4.17.21",
     "@types/node": "^22.19.1",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^25.0.1",
     "postcss": "^8.5.4",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.7.3",
-    "vitest": "^2.1.9",
-    "@vitejs/plugin-react": "^4.3.4",
-    "jsdom": "^25.0.1"
+    "vitest": "^2.1.9"
   }
 }
