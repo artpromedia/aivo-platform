@@ -12,11 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../motor/motor_models.dart';
-import '../../../motor/motor_profile_provider.dart';
-import '../../../sensory/sensory_models.dart';
-import '../../../sensory/sensory_service.dart';
-import '../../../theme/learner_theme.dart';
 
 // ============================================================================
 // PROVIDERS

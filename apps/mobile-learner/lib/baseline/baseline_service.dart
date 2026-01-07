@@ -1,9 +1,18 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 const _baseUrl = String.fromEnvironment('BASELINE_BASE_URL', defaultValue: 'http://localhost:4003');
-const _useBaselineMock = bool.fromEnvironment('USE_BASELINE_MOCK', defaultValue: true);
+const _useBaselineMock = bool.fromEnvironment('USE_BASELINE_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    debugPrint('⚠️ WARNING: Baseline service is using mock data.');
+    return true;
+  }());
+}
 
 /// Exception thrown by baseline API operations.
 class BaselineException implements Exception {
@@ -29,6 +38,7 @@ class LearnerBaselineService {
   /// GET /baseline/profiles/by-learner?learnerId=...
   Future<BaselineProfile?> getProfileByLearner(String learnerId) async {
     if (_useBaselineMock) {
+      _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 200));
       // Deterministic mock state based on learnerId for consistent testing
       final mockState = learnerId.hashCode.abs() % 4;

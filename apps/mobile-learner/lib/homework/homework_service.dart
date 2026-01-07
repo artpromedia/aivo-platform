@@ -1,8 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _baseUrl = String.fromEnvironment('HOMEWORK_HELPER_BASE_URL', defaultValue: 'http://localhost:4025');
-const _useHomeworkMock = bool.fromEnvironment('USE_HOMEWORK_MOCK', defaultValue: true);
+const _useHomeworkMock = bool.fromEnvironment('USE_HOMEWORK_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    debugPrint('⚠️ WARNING: Homework service is using mock data.');
+    return true;
+  }());
+}
 
 /// Subject areas for homework help.
 enum HomeworkSubject {
@@ -179,6 +188,7 @@ class HomeworkService {
     String sourceType = 'TEXT',
   }) async {
     if (_useHomeworkMock) {
+      _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 800));
       return _mockHomeworkSession(problemText, subject);
     }

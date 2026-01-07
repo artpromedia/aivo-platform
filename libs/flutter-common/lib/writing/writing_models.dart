@@ -1,7 +1,6 @@
 /// Writing models for writing assistance features
 library;
 
-import 'package:flutter/material.dart';
 
 /// Writing task type
 enum WritingTaskType {

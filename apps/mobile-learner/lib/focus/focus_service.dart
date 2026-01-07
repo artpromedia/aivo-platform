@@ -1,8 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _baseUrl = String.fromEnvironment('FOCUS_BASE_URL', defaultValue: 'http://localhost:4026');
-const _useFocusMock = bool.fromEnvironment('USE_FOCUS_MOCK', defaultValue: true);
+const _useFocusMock = bool.fromEnvironment('USE_FOCUS_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    debugPrint('⚠️ WARNING: Focus service is using mock data.');
+    return true;
+  }());
+}
 
 /// Types of regulation/break activities.
 enum BreakActivityType {
@@ -149,6 +158,7 @@ class FocusService {
     bool? rapidExit,
   }) async {
     if (_useFocusMock) {
+      _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 100));
       return _mockPingResult(idleMs, mood, rapidExit);
     }

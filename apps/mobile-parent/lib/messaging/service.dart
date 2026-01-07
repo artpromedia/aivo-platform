@@ -12,7 +12,7 @@ import 'models.dart';
 
 const _baseUrl = String.fromEnvironment(
   'MESSAGING_API_URL',
-  defaultValue: 'http://localhost:4000',
+  defaultValue: 'https://api.aivo.app',
 );
 const _useMock = bool.fromEnvironment('USE_MESSAGING_MOCK', defaultValue: false);
 

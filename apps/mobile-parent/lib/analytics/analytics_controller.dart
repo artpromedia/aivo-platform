@@ -5,7 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'analytics_service.dart';
 
 const _baseUrl = String.fromEnvironment('ANALYTICS_BASE_URL', defaultValue: 'http://localhost:4030');
-const _useAnalyticsMock = bool.fromEnvironment('USE_ANALYTICS_MOCK', defaultValue: true);
+const _useAnalyticsMock = bool.fromEnvironment('USE_ANALYTICS_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    debugPrint('⚠️ WARNING: Analytics controller is using mock data.');
+    return true;
+  }());
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MODELS - Learner Summary
@@ -356,6 +364,7 @@ class AnalyticsController extends StateNotifier<ChildProgressState> {
 
     try {
       if (_useAnalyticsMock) {
+        _logMockWarning();
         await Future.delayed(const Duration(milliseconds: 600));
         state = state.copyWith(
           isLoading: false,

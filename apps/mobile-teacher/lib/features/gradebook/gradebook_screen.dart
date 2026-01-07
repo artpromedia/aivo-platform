@@ -7,7 +7,6 @@
 /// - Filter and search functionality
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class GradebookScreen extends StatefulWidget {
   final String classroomId;
@@ -584,7 +583,7 @@ class _QuickGradeDialogState extends State<QuickGradeDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           DropdownButtonFormField<String>(
-            value: selectedStudentId,
+            initialValue: selectedStudentId,
             decoration: const InputDecoration(labelText: 'Student'),
             items: widget.students.map((student) {
               return DropdownMenuItem(
@@ -596,7 +595,7 @@ class _QuickGradeDialogState extends State<QuickGradeDialog> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: selectedAssignmentId,
+            initialValue: selectedAssignmentId,
             decoration: const InputDecoration(labelText: 'Assignment'),
             items: widget.assignments.map((assignment) {
               return DropdownMenuItem(

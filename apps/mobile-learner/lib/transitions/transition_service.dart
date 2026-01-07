@@ -1,8 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _baseUrl = String.fromEnvironment('SESSION_BASE_URL', defaultValue: 'http://localhost:4020');
-const _useTransitionMock = bool.fromEnvironment('USE_TRANSITION_MOCK', defaultValue: true);
+const _useTransitionMock = bool.fromEnvironment('USE_TRANSITION_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    debugPrint('⚠️ WARNING: Transition service is using mock data.');
+    return true;
+  }());
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ENUMS
@@ -458,6 +467,7 @@ class TransitionService {
     required String learnerId,
   }) async {
     if (_useTransitionMock) {
+      _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 100));
       return _mockPreferences();
     }

@@ -12,7 +12,16 @@ const _baseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:3020',
 );
 
-const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: true);
+const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    // ignore: avoid_print
+    print('⚠️ WARNING: Collaboration service is using mock data.');
+    return true;
+  }());
+}
 
 /// Service for teacher collaboration APIs.
 class TeacherCollaborationService {
@@ -28,6 +37,7 @@ class TeacherCollaborationService {
   /// Get collaboration summary for a classroom.
   Future<ClassroomCollaborationSummary> getClassroomSummary(String classId) async {
     if (_useMock) {
+      _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockClassroomSummary(classId);
     }

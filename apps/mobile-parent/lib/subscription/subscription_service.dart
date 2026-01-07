@@ -22,7 +22,16 @@ const _entitlementsBaseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:4080',
 );
 
-const _useMock = bool.fromEnvironment('USE_SUBSCRIPTION_MOCK', defaultValue: true);
+const _useMock = bool.fromEnvironment('USE_SUBSCRIPTION_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    // ignore: avoid_print
+    print('⚠️ WARNING: Subscription service is using mock data.');
+    return true;
+  }());
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SERVICE
@@ -48,7 +57,10 @@ class SubscriptionService {
 
   /// Get or create billing account for tenant.
   Future<BillingAccount> getBillingAccount(String tenantId) async {
-    if (_useMock) return _mockBillingAccount(tenantId);
+    if (_useMock) {
+      _logMockWarning();
+      return _mockBillingAccount(tenantId);
+    }
 
     final response = await _billingDio.get('/billing-accounts/by-tenant/$tenantId');
     return BillingAccount.fromJson(response.data as Map<String, dynamic>);

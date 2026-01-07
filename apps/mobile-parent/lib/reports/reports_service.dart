@@ -1,8 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _baseUrl = String.fromEnvironment('REPORTS_BASE_URL', defaultValue: 'http://localhost:4050');
-const _useReportsMock = bool.fromEnvironment('USE_REPORTS_MOCK', defaultValue: true);
+const _useReportsMock = bool.fromEnvironment('USE_REPORTS_MOCK', defaultValue: false);
+
+/// Log warning when mock data is used in non-debug mode
+void _logMockWarning() {
+  assert(() {
+    debugPrint('⚠️ WARNING: Reports service is using mock data.');
+    return true;
+  }());
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MODELS
@@ -283,6 +292,7 @@ class ReportsService {
     int days = 28,
   }) async {
     if (_useReportsMock) {
+      _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 600));
       return _mockParentLearnerReport(learnerId);
     }

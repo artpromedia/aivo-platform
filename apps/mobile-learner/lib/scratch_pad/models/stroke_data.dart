@@ -1,9 +1,3 @@
-/// Stroke Data Models for Math Scratch Pad
-///
-/// Models for capturing and serializing handwriting strokes
-/// for math equation recognition.
-
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 /// A single point in a stroke with pressure and timestamp
