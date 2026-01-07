@@ -398,7 +398,7 @@ class NotificationPreferencesNotifier
   final http.Client _client;
   static const String _baseUrl = String.fromEnvironment(
     'NOTIFICATION_API_URL',
-    defaultValue: 'https://api.aivo.com/api',
+    defaultValue: 'https://api.aivolearning.com',
   );
 
   /// Load all preferences for the parent

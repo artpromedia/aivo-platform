@@ -7,7 +7,7 @@ import 'service.dart';
 /// Provider for the engagement service
 final parentEngagementServiceProvider = Provider<ParentEngagementService>((ref) {
   // TODO: Inject properly configured Dio instance from auth/network layer
-  final dio = Dio(BaseOptions(baseUrl: 'https://api.aivo.com'));
+  final dio = Dio(BaseOptions(baseUrl: 'https://api.aivolearning.com'));
   return ParentEngagementService(dio: dio);
 });
 

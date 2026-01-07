@@ -147,7 +147,7 @@ final engagementServiceProvider = Provider<EngagementService>((ref) {
   final dio = Dio();
   const baseUrl = String.fromEnvironment(
     'ENGAGEMENT_API_URL',
-    defaultValue: 'https://api.aivo.com',
+    defaultValue: 'https://api.aivolearning.com',
   );
   return EngagementService(dio, baseUrl: baseUrl);
 });

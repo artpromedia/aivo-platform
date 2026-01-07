@@ -10,13 +10,13 @@ class EnvConfig {
   /// Base URL for API calls.
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.aivo.com',
+    defaultValue: 'https://api.aivolearning.com',
   );
 
   /// Base URL for WebSocket connections.
   static const wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'wss://api.aivo.com',
+    defaultValue: 'wss://api.aivolearning.com',
   );
 
   /// Interval for background sync when online (in minutes).
