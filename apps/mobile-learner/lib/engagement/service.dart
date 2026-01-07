@@ -144,11 +144,10 @@ class EngagementService {
 
 /// Provider for the engagement service
 final engagementServiceProvider = Provider<EngagementService>((ref) {
-  // In a real app, Dio and baseUrl would be configured via environment
   final dio = Dio();
   const baseUrl = String.fromEnvironment(
     'ENGAGEMENT_API_URL',
-    defaultValue: 'http://localhost:3000',
+    defaultValue: 'https://api.aivolearning.com',
   );
   return EngagementService(dio, baseUrl: baseUrl);
 });

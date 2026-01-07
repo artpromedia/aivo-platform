@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'predictability_models.dart';
 
 const _baseUrl = String.fromEnvironment('SESSION_BASE_URL', defaultValue: 'http://localhost:4020');
-const _usePredictabilityMock = bool.fromEnvironment('USE_PREDICTABILITY_MOCK', defaultValue: true);
+const _usePredictabilityMock = bool.fromEnvironment('USE_PREDICTABILITY_MOCK', defaultValue: false);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PROVIDERS

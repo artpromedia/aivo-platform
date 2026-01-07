@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 const _baseUrl = String.fromEnvironment('BASELINE_BASE_URL', defaultValue: 'http://localhost:4003');
-const _useBaselineMock = bool.fromEnvironment('USE_BASELINE_MOCK', defaultValue: true);
+const _useBaselineMock = bool.fromEnvironment('USE_BASELINE_MOCK', defaultValue: false);
 
 /// Exception thrown by baseline API operations.
 class BaselineException implements Exception {

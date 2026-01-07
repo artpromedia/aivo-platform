@@ -27,18 +27,17 @@ class _ClassMonitoringScreenState extends ConsumerState<ClassMonitoringScreen> {
   @override
   void initState() {
     super.initState();
-    // Load active sessions for the class
-    ref.read(classProvider(widget.classId).notifier).loadClass();
+    // Load/refresh class data
+    Future.microtask(() => ref.invalidate(classProvider(widget.classId)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider(widget.classId));
-    final classData = classState.classGroup;
+    final classAsync = ref.watch(classProvider(widget.classId));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(classData?.name ?? 'Live Monitoring'),
+        title: Text(classAsync.valueOrNull?.name ?? 'Live Monitoring'),
         actions: [
           IconButton(
             icon: Icon(_showGridView ? Icons.view_list : Icons.grid_view),
@@ -47,16 +46,16 @@ class _ClassMonitoringScreenState extends ConsumerState<ClassMonitoringScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.read(classProvider(widget.classId).notifier).loadClass();
+              ref.invalidate(classProvider(widget.classId));
             },
           ),
         ],
       ),
-      body: classState.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : classState.error != null
-              ? _buildErrorView(classState.error!)
-              : _buildMonitoringContent(classData),
+      body: classAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _buildErrorView(error.toString()),
+        data: (classData) => _buildMonitoringContent(classData),
+      ),
     );
   }
 
@@ -72,7 +71,7 @@ class _ClassMonitoringScreenState extends ConsumerState<ClassMonitoringScreen> {
           Text(error, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => ref.read(classProvider(widget.classId).notifier).loadClass(),
+            onPressed: () => ref.invalidate(classProvider(widget.classId)),
             child: const Text('Retry'),
           ),
         ],

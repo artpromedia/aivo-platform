@@ -64,11 +64,7 @@ class TeacherSettingsScreen extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Profile editing coming soon')),
-                        );
-                      },
+                      onPressed: () => _showProfileEditor(context, ref),
                     ),
                   ],
                 ),
@@ -200,6 +196,61 @@ class TeacherSettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  void _showProfileEditor(BuildContext context, WidgetRef ref) {
+    final authState = ref.read(teacherAuthProvider);
+    final nameController = TextEditingController(text: authState.teacherName ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Edit Profile',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Display Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profile updated')),
+                    );
+                  },
+                  child: const Text('Save Changes'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

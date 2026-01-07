@@ -19,7 +19,7 @@ const _billingBaseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:4060',
 );
 
-const _useMock = bool.fromEnvironment('USE_COVERAGE_MOCK', defaultValue: true);
+const _useMock = bool.fromEnvironment('USE_COVERAGE_MOCK', defaultValue: false);
 
 // Cache duration
 const _cacheDuration = Duration(minutes: 5);

@@ -311,7 +311,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.target,
+            Icons.gps_fixed,
             size: 16,
             color: accuracy >= 0.8
                 ? Colors.green
