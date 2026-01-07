@@ -1,9 +1,11 @@
 /**
  * Gradebook API Client
  * Types and fetch functions for teacher gradebook.
+ *
+ * Backend Service: gradebook-svc (port 3030)
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const GRADEBOOK_SVC_URL = process.env.NEXT_PUBLIC_GRADEBOOK_SVC_URL || 'http://localhost:3030';
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -190,7 +192,7 @@ export async function fetchGradebook(classId: string, accessToken: string): Prom
     return mockGradebook(classId);
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/gradebook/${classId}`, {
+  const res = await fetch(`${GRADEBOOK_SVC_URL}/gradebook/classroom/${classId}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -201,7 +203,43 @@ export async function fetchGradebook(classId: string, accessToken: string): Prom
     throw new Error(`Failed to fetch gradebook: ${res.status}`);
   }
 
-  return res.json() as Promise<Gradebook>;
+  // Transform backend response to match our Gradebook interface
+  const data = await res.json();
+  return transformGradebookResponse(data, classId);
+}
+
+// Helper to transform backend gradebook response to our frontend interface
+function transformGradebookResponse(data: any, classId: string): Gradebook {
+  return {
+    classId,
+    className: data.className ?? `Class ${classId}`,
+    gradingPeriod: data.gradingPeriod ?? 'Current Period',
+    assignments: (data.assignments ?? []).map((a: any) => ({
+      id: a.id,
+      classId,
+      title: a.title ?? a.name,
+      type: a.type ?? 'homework',
+      category: a.categoryName ?? a.category ?? 'General',
+      totalPoints: a.maxPoints ?? a.totalPoints ?? 100,
+      dueDate: a.dueDate ?? new Date().toISOString(),
+      status: a.status ?? 'published',
+    })),
+    students: (data.students ?? []).map((s: any) => ({
+      studentId: s.studentId ?? s.id,
+      studentName: s.name ?? s.studentName ?? 'Unknown',
+      overallGrade: s.overallGrade ?? s.currentGrade ?? 0,
+      missingCount: s.missingCount ?? 0,
+      grades: (s.grades ?? []).map((g: any) => ({
+        id: g.id,
+        studentId: s.studentId ?? s.id,
+        assignmentId: g.assignmentId,
+        score: g.score ?? g.points,
+        status: g.status ?? (g.score === null ? 'pending' : 'graded'),
+        feedback: g.feedback,
+        gradedAt: g.gradedAt,
+      })),
+    })),
+  };
 }
 
 export async function fetchTeacherClasses(accessToken: string): Promise<TeacherClass[]> {
@@ -210,7 +248,9 @@ export async function fetchTeacherClasses(accessToken: string): Promise<TeacherC
     return mockTeacherClasses();
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/teacher/classes`, {
+  // Note: Teacher classes may come from a different service (profile-svc or tenant-svc)
+  // For now, using gradebook-svc config endpoint which includes class info
+  const res = await fetch(`${GRADEBOOK_SVC_URL}/gradebook/classes`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -221,7 +261,13 @@ export async function fetchTeacherClasses(accessToken: string): Promise<TeacherC
     throw new Error(`Failed to fetch classes: ${res.status}`);
   }
 
-  return res.json() as Promise<TeacherClass[]>;
+  const data = await res.json();
+  return (data ?? []).map((c: any) => ({
+    id: c.id ?? c.classroomId,
+    name: c.name ?? c.className,
+    period: c.period ?? '',
+    studentCount: c.studentCount ?? c.enrolledCount ?? 0,
+  }));
 }
 
 export async function updateGrade(
@@ -241,8 +287,8 @@ export async function updateGrade(
     };
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/grades/${gradeId}`, {
-    method: 'PATCH',
+  const res = await fetch(`${GRADEBOOK_SVC_URL}/gradebook/grades/${gradeId}`, {
+    method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -254,5 +300,14 @@ export async function updateGrade(
     throw new Error(`Failed to update grade: ${res.status}`);
   }
 
-  return res.json() as Promise<Grade>;
+  const data = await res.json();
+  return {
+    id: data.id ?? gradeId,
+    studentId: data.studentId,
+    assignmentId: data.assignmentId,
+    score: data.score ?? data.points,
+    status: data.status ?? (data.score === null ? 'missing' : 'graded'),
+    feedback: data.feedback,
+    gradedAt: data.gradedAt ?? data.updatedAt,
+  };
 }

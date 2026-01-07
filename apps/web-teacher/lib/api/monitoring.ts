@@ -1,9 +1,13 @@
 /**
  * Monitoring API Client
  * Types and fetch functions for real-time student monitoring.
+ *
+ * Backend Service: realtime-svc (port 3003)
+ * Note: Real-time updates are handled via WebSocket (see use-websocket.ts hook)
+ * This API provides REST endpoints for initial data loading and actions.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const REALTIME_SVC_URL = process.env.NEXT_PUBLIC_REALTIME_URL || 'http://localhost:3003';
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -168,10 +172,11 @@ export async function fetchActiveSessions(
     return mockActiveSessions();
   }
 
-  const params = new URLSearchParams();
-  if (classId) params.set('classId', classId);
+  if (!classId) {
+    throw new Error('classId is required for fetching active sessions');
+  }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/monitoring/sessions?${params.toString()}`, {
+  const res = await fetch(`${REALTIME_SVC_URL}/monitor/classroom/${classId}/students`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -182,7 +187,80 @@ export async function fetchActiveSessions(
     throw new Error(`Failed to fetch active sessions: ${res.status}`);
   }
 
-  return res.json() as Promise<StudentSession[]>;
+  const data = await res.json();
+  // realtime-svc returns { success: true, data: [...] }
+  const students = data.data ?? data;
+  return students.map(transformStudentSession);
+}
+
+// Helper to transform backend student data to frontend StudentSession interface
+function transformStudentSession(student: any): StudentSession {
+  return {
+    id: student.sessionId ?? student.id,
+    studentId: student.studentId ?? student.id,
+    studentName: student.name ?? student.studentName,
+    avatarUrl: student.avatarUrl,
+    currentActivity: student.currentActivity?.name ?? student.activity ?? 'Unknown Activity',
+    activityType: mapActivityType(student.currentActivity?.type ?? student.activityType),
+    subject: student.currentActivity?.subject ?? student.subject ?? 'General',
+    startTime: formatTime(student.sessionStartTime ?? student.startTime),
+    duration: calculateDuration(student.sessionStartTime ?? student.startTime),
+    progress: student.progress ?? student.currentActivity?.progress ?? 0,
+    focusState: mapFocusState(student.focusState ?? student.engagement?.state),
+    needsHelp: student.needsHelp ?? student.hasActiveHelpRequest ?? false,
+    helpRequestTime: student.helpRequestTime ? formatTime(student.helpRequestTime) : undefined,
+    recentScore: student.recentScore ?? student.lastScore,
+    streakCount: student.streakCount ?? student.streak,
+  };
+}
+
+// Helper to map backend activity types to frontend types
+function mapActivityType(type: string): StudentSession['activityType'] {
+  const typeMap: Record<string, StudentSession['activityType']> = {
+    'GAME': 'game',
+    'QUIZ': 'quiz',
+    'READING': 'reading',
+    'VIDEO': 'video',
+    'BREAK': 'break',
+    'HOMEWORK': 'homework',
+    'game': 'game',
+    'quiz': 'quiz',
+    'reading': 'reading',
+    'video': 'video',
+    'break': 'break',
+    'homework': 'homework',
+  };
+  return typeMap[type] ?? 'game';
+}
+
+// Helper to map backend focus states to frontend states
+function mapFocusState(state: string): FocusState {
+  const stateMap: Record<string, FocusState> = {
+    'FOCUSED': 'focused',
+    'DISTRACTED': 'distracted',
+    'IDLE': 'idle',
+    'BREAK': 'break',
+    'focused': 'focused',
+    'distracted': 'distracted',
+    'idle': 'idle',
+    'break': 'break',
+  };
+  return stateMap[state] ?? 'focused';
+}
+
+// Helper to format time for display
+function formatTime(timestamp: string | Date | undefined): string {
+  if (!timestamp) return '';
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+// Helper to calculate duration in minutes
+function calculateDuration(startTime: string | Date | undefined): number {
+  if (!startTime) return 0;
+  const start = typeof startTime === 'string' ? new Date(startTime) : startTime;
+  const now = new Date();
+  return Math.floor((now.getTime() - start.getTime()) / (1000 * 60));
 }
 
 export async function fetchMonitoringStats(
@@ -195,10 +273,11 @@ export async function fetchMonitoringStats(
     return mockMonitoringStats(sessions);
   }
 
-  const params = new URLSearchParams();
-  if (classId) params.set('classId', classId);
+  if (!classId) {
+    throw new Error('classId is required for fetching monitoring stats');
+  }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/monitoring/stats?${params.toString()}`, {
+  const res = await fetch(`${REALTIME_SVC_URL}/monitor/classroom/${classId}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -209,10 +288,26 @@ export async function fetchMonitoringStats(
     throw new Error(`Failed to fetch monitoring stats: ${res.status}`);
   }
 
-  return res.json() as Promise<MonitoringStats>;
+  const data = await res.json();
+  // realtime-svc returns { success: true, data: { metrics: {...}, students: [...] } }
+  const classroom = data.data ?? data;
+  const metrics = classroom.metrics ?? classroom;
+
+  return {
+    totalActive: metrics.totalActive ?? metrics.activeStudents ?? 0,
+    focusedCount: metrics.focusedCount ?? metrics.focused ?? 0,
+    distractedCount: metrics.distractedCount ?? metrics.distracted ?? 0,
+    idleCount: metrics.idleCount ?? metrics.idle ?? 0,
+    onBreakCount: metrics.onBreakCount ?? metrics.onBreak ?? 0,
+    needsHelpCount: metrics.needsHelpCount ?? metrics.needingHelp ?? 0,
+    avgProgress: metrics.avgProgress ?? metrics.averageProgress ?? 0,
+  };
 }
 
-export async function fetchHelpRequests(accessToken: string): Promise<HelpRequest[]> {
+export async function fetchHelpRequests(
+  accessToken: string,
+  classId?: string
+): Promise<HelpRequest[]> {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     const sessions = mockActiveSessions().filter((s) => s.needsHelp);
@@ -227,7 +322,11 @@ export async function fetchHelpRequests(accessToken: string): Promise<HelpReques
     }));
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/monitoring/help-requests`, {
+  if (!classId) {
+    throw new Error('classId is required for fetching help requests');
+  }
+
+  const res = await fetch(`${REALTIME_SVC_URL}/monitor/classroom/${classId}/alerts`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -238,26 +337,69 @@ export async function fetchHelpRequests(accessToken: string): Promise<HelpReques
     throw new Error(`Failed to fetch help requests: ${res.status}`);
   }
 
-  return res.json() as Promise<HelpRequest[]>;
+  const data = await res.json();
+  // realtime-svc returns alerts which include help requests
+  const alerts = data.data ?? data;
+  return alerts
+    .filter((alert: any) => alert.type === 'HELP_REQUEST' || alert.type === 'help_request')
+    .map(transformHelpRequest);
+}
+
+// Helper to transform backend alert to frontend HelpRequest
+function transformHelpRequest(alert: any): HelpRequest {
+  return {
+    id: alert.id,
+    studentId: alert.studentId,
+    studentName: alert.studentName ?? alert.student?.name,
+    activity: alert.activity ?? alert.context?.activity,
+    subject: alert.subject ?? alert.context?.subject ?? 'General',
+    requestTime: formatTime(alert.createdAt ?? alert.timestamp),
+    status: mapHelpRequestStatus(alert.status),
+  };
+}
+
+// Helper to map backend status to frontend status
+function mapHelpRequestStatus(status: string): HelpRequest['status'] {
+  const statusMap: Record<string, HelpRequest['status']> = {
+    'PENDING': 'pending',
+    'ACKNOWLEDGED': 'acknowledged',
+    'RESOLVED': 'resolved',
+    'pending': 'pending',
+    'acknowledged': 'acknowledged',
+    'resolved': 'resolved',
+  };
+  return statusMap[status] ?? 'pending';
 }
 
 export async function acknowledgeHelpRequest(
   requestId: string,
-  accessToken: string
+  accessToken: string,
+  classId?: string
 ): Promise<void> {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     return;
   }
 
+  // realtime-svc uses intervention endpoint for acknowledging
+  // We need the classId to construct the proper URL
+  if (!classId) {
+    throw new Error('classId is required for acknowledging help request');
+  }
+
   const res = await fetch(
-    `${API_BASE_URL}/api/v1/monitoring/help-requests/${requestId}/acknowledge`,
+    `${REALTIME_SVC_URL}/monitor/classroom/${classId}/intervention`,
     {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        studentId: requestId.replace('help-', ''), // Extract student ID from help request ID
+        type: 'help',
+        triggeredByAlert: requestId,
+      }),
     }
   );
 
@@ -266,18 +408,33 @@ export async function acknowledgeHelpRequest(
   }
 }
 
-export async function resolveHelpRequest(requestId: string, accessToken: string): Promise<void> {
+export async function resolveHelpRequest(
+  requestId: string,
+  accessToken: string,
+  classId?: string
+): Promise<void> {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     return;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/monitoring/help-requests/${requestId}/resolve`, {
+  if (!classId) {
+    throw new Error('classId is required for resolving help request');
+  }
+
+  // Use intervention endpoint to mark as resolved
+  const res = await fetch(`${REALTIME_SVC_URL}/monitor/classroom/${classId}/intervention`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      studentId: requestId.replace('help-', ''),
+      type: 'help',
+      message: 'Help request resolved',
+      triggeredByAlert: requestId,
+    }),
   });
 
   if (!res.ok) {
@@ -288,20 +445,30 @@ export async function resolveHelpRequest(requestId: string, accessToken: string)
 export async function sendNudge(
   studentId: string,
   message: string,
-  accessToken: string
+  accessToken: string,
+  classId?: string
 ): Promise<void> {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 300));
     return;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/monitoring/nudge`, {
+  if (!classId) {
+    throw new Error('classId is required for sending nudge');
+  }
+
+  // Use intervention endpoint to send nudge/encouragement
+  const res = await fetch(`${REALTIME_SVC_URL}/monitor/classroom/${classId}/intervention`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ studentId, message }),
+    body: JSON.stringify({
+      studentId,
+      type: 'encouragement',
+      message,
+    }),
   });
 
   if (!res.ok) {

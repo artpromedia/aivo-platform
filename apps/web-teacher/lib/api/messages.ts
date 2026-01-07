@@ -1,9 +1,11 @@
 /**
  * Messages API Client
  * Types and fetch functions for teacher-parent messaging.
+ *
+ * Backend Service: messaging-svc (port 3081)
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const MESSAGING_SVC_URL = process.env.NEXT_PUBLIC_MESSAGING_SVC_URL || 'http://localhost:3081';
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -166,7 +168,7 @@ export async function fetchConversations(accessToken: string): Promise<Conversat
     return mockConversations();
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/messages/conversations`, {
+  const res = await fetch(`${MESSAGING_SVC_URL}/conversations`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -177,7 +179,57 @@ export async function fetchConversations(accessToken: string): Promise<Conversat
     throw new Error(`Failed to fetch conversations: ${res.status}`);
   }
 
-  return res.json() as Promise<Conversation[]>;
+  const data = await res.json();
+  // messaging-svc returns { data: [...], pagination: {...} } or { items: [...] }
+  const items = data.data ?? data.items ?? data;
+  return items.map(transformConversationResponse);
+}
+
+// Helper to transform backend conversation to frontend interface
+function transformConversationResponse(conv: any): Conversation {
+  // messaging-svc has participants array - find the other participant
+  const participant = conv.participants?.find((p: any) => p.role !== 'OWNER') ?? conv.participants?.[0];
+  const lastMsg = conv.lastMessage ?? conv.messages?.[0];
+
+  return {
+    id: conv.id,
+    participantName: participant?.user?.name ?? participant?.name ?? 'Unknown',
+    participantRole: mapParticipantRole(participant?.role ?? participant?.user?.role),
+    studentName: conv.contextType === 'student' ? conv.contextName : participant?.studentName,
+    lastMessage: lastMsg?.content ?? '',
+    lastMessageTime: formatMessageTime(lastMsg?.createdAt ?? conv.updatedAt),
+    unread: conv.unreadCount > 0,
+    unreadCount: conv.unreadCount ?? 0,
+  };
+}
+
+// Helper to map backend roles to frontend roles
+function mapParticipantRole(role: string): Conversation['participantRole'] {
+  const roleMap: Record<string, Conversation['participantRole']> = {
+    'PARENT': 'parent',
+    'GUARDIAN': 'guardian',
+    'ADMIN': 'admin',
+    'parent': 'parent',
+    'guardian': 'guardian',
+    'admin': 'admin',
+  };
+  return roleMap[role] ?? 'parent';
+}
+
+// Helper to format message timestamps
+function formatMessageTime(timestamp: string | undefined): string {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffHours < 1) return 'Just now';
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return '1d ago';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
 }
 
 export async function fetchConversationMessages(
@@ -190,7 +242,7 @@ export async function fetchConversationMessages(
   }
 
   const res = await fetch(
-    `${API_BASE_URL}/api/v1/messages/conversations/${conversationId}/messages`,
+    `${MESSAGING_SVC_URL}/conversations/${conversationId}/messages`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -203,7 +255,34 @@ export async function fetchConversationMessages(
     throw new Error(`Failed to fetch messages: ${res.status}`);
   }
 
-  return res.json() as Promise<Message[]>;
+  const data = await res.json();
+  const items = data.data ?? data.messages ?? data;
+  return items.map((msg: any) => transformMessageResponse(msg, conversationId));
+}
+
+// Helper to transform backend message to frontend interface
+function transformMessageResponse(msg: any, conversationId: string): Message {
+  return {
+    id: msg.id,
+    conversationId,
+    senderId: msg.senderId ?? msg.sender?.id,
+    senderType: msg.senderRole === 'TEACHER' || msg.sender?.role === 'teacher' ? 'teacher' : 'parent',
+    content: msg.content,
+    timestamp: formatMessageTimestamp(msg.createdAt),
+    read: msg.isRead ?? msg.readAt !== null,
+    attachments: msg.metadata?.attachments?.map((a: any) => ({
+      name: a.name ?? a.filename,
+      url: a.url,
+      type: a.mimeType ?? a.type,
+    })),
+  };
+}
+
+// Helper to format message timestamp for display
+function formatMessageTimestamp(timestamp: string | undefined): string {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export async function sendMessage(
@@ -225,7 +304,7 @@ export async function sendMessage(
   }
 
   const res = await fetch(
-    `${API_BASE_URL}/api/v1/messages/conversations/${conversationId}/messages`,
+    `${MESSAGING_SVC_URL}/conversations/${conversationId}/messages`,
     {
       method: 'POST',
       headers: {
@@ -240,7 +319,9 @@ export async function sendMessage(
     throw new Error(`Failed to send message: ${res.status}`);
   }
 
-  return res.json() as Promise<Message>;
+  const data = await res.json();
+  const msg = data.data ?? data;
+  return transformMessageResponse(msg, conversationId);
 }
 
 export async function markConversationRead(
@@ -252,12 +333,13 @@ export async function markConversationRead(
     return;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/messages/conversations/${conversationId}/read`, {
+  const res = await fetch(`${MESSAGING_SVC_URL}/conversations/${conversationId}/read`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ lastMessageId: 'latest' }), // messaging-svc requires lastMessageId
   });
 
   if (!res.ok) {

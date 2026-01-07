@@ -1,10 +1,21 @@
 /**
  * Community API Client
  * Types and fetch functions for teacher community hub.
+ *
+ * Backend Service: COMING SOON - No backend exists yet
+ * When mock mode is disabled, all functions throw a "Coming Soon" error.
+ * This feature is planned for a future release.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+
+// Error class for coming soon features
+class ComingSoonError extends Error {
+  constructor(feature: string) {
+    super(`${feature} is coming soon! This feature is currently in development.`);
+    this.name = 'ComingSoonError';
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -212,23 +223,8 @@ export async function fetchPosts(
     return options?.category ? posts.filter((p) => p.category === options.category) : posts;
   }
 
-  const params = new URLSearchParams();
-  if (options?.category) params.set('category', options.category);
-  if (options?.limit) params.set('limit', String(options.limit));
-  if (options?.offset) params.set('offset', String(options.offset));
-
-  const res = await fetch(`${API_BASE_URL}/api/v1/community/posts?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch posts: ${res.status}`);
-  }
-
-  return res.json() as Promise<Post[]>;
+  // Community feature is coming soon - no backend service exists yet
+  throw new ComingSoonError('Teacher Community');
 }
 
 export async function fetchResources(
@@ -240,23 +236,8 @@ export async function fetchResources(
     return mockResources();
   }
 
-  const params = new URLSearchParams();
-  if (options?.type) params.set('type', options.type);
-  if (options?.subject) params.set('subject', options.subject);
-  if (options?.gradeLevel) params.set('gradeLevel', options.gradeLevel);
-
-  const res = await fetch(`${API_BASE_URL}/api/v1/community/resources?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch resources: ${res.status}`);
-  }
-
-  return res.json() as Promise<SharedResource[]>;
+  // Community feature is coming soon - no backend service exists yet
+  throw new ComingSoonError('Community Resources');
 }
 
 export async function fetchCommunityStats(accessToken: string): Promise<CommunityStats> {
@@ -265,18 +246,8 @@ export async function fetchCommunityStats(accessToken: string): Promise<Communit
     return mockCommunityStats();
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/community/stats`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch community stats: ${res.status}`);
-  }
-
-  return res.json() as Promise<CommunityStats>;
+  // Community feature is coming soon - no backend service exists yet
+  throw new ComingSoonError('Community Stats');
 }
 
 export async function likePost(postId: string, accessToken: string): Promise<void> {
@@ -285,17 +256,8 @@ export async function likePost(postId: string, accessToken: string): Promise<voi
     return;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/community/posts/${postId}/like`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to like post: ${res.status}`);
-  }
+  // Community feature is coming soon - no backend service exists yet
+  throw new ComingSoonError('Post Likes');
 }
 
 export async function createPost(
@@ -314,18 +276,9 @@ export async function createPost(
     };
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/community/posts`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(post),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to create post: ${res.status}`);
-  }
-
-  return res.json() as Promise<Post>;
+  // Community feature is coming soon - no backend service exists yet
+  throw new ComingSoonError('Create Post');
 }
+
+// Export the ComingSoonError for UI handling
+export { ComingSoonError };
