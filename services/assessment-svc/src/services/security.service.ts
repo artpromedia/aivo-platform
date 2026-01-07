@@ -72,12 +72,65 @@ export interface Accommodation {
 }
 
 // ============================================================================
+// CONFIGURATION VALIDATION
+// ============================================================================
+
+/**
+ * Validate security configuration on startup.
+ * SECURITY: Fail fast if required secrets are missing or weak.
+ */
+function validateSecurityConfig(): string {
+  const secret = process.env.SECURITY_TOKEN_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      'FATAL: SECURITY_TOKEN_SECRET environment variable is required. ' +
+      'Generate a secure random secret of at least 32 characters.'
+    );
+  }
+
+  if (secret.length < 32) {
+    throw new Error(
+      'FATAL: SECURITY_TOKEN_SECRET must be at least 32 characters. ' +
+      `Current length: ${secret.length}`
+    );
+  }
+
+  // Check for weak/default secrets
+  const weakSecrets = [
+    'default-secret-change-me',
+    'secret',
+    'password',
+    'changeme',
+    'test-secret',
+    'development',
+    'your-secret-here',
+  ];
+
+  const lowerSecret = secret.toLowerCase();
+  if (weakSecrets.some(weak => lowerSecret.includes(weak))) {
+    throw new Error(
+      'FATAL: SECURITY_TOKEN_SECRET appears to be a weak or default value. ' +
+      'Generate a cryptographically secure random secret.'
+    );
+  }
+
+  return secret;
+}
+
+// ============================================================================
 // SERVICE
 // ============================================================================
 
 export class SecurityService {
   private readonly TOKEN_EXPIRY_MINUTES = 5;
-  private readonly TOKEN_SECRET = process.env.SECURITY_TOKEN_SECRET ?? 'default-secret-change-me';
+  private readonly TOKEN_SECRET: string;
+
+  constructor() {
+    // SECURITY: Validate and load secret on instantiation
+    // This will throw and prevent service startup if secret is invalid
+    this.TOKEN_SECRET = validateSecurityConfig();
+  }
 
   /**
    * Generate a security token for an attempt

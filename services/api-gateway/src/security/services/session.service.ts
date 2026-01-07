@@ -141,14 +141,120 @@ export class SessionService {
    */
   async invalidateSession(sessionId: string): Promise<void> {
     const session = await this.getSession(sessionId);
-    
+
     if (session) {
       await this.redis.srem(`user:${session.userId}:sessions`, sessionId);
     }
-    
+
     await this.redis.del(sessionId);
-    
+
     this.logger.debug('Session invalidated', { sessionId });
+  }
+
+  /**
+   * Regenerate session ID to prevent session fixation attacks.
+   *
+   * SECURITY: This should be called after:
+   * - Successful authentication (any method: password, SSO, MFA)
+   * - Privilege escalation (e.g., sudo mode, admin access)
+   * - MFA verification
+   *
+   * The old session is completely destroyed (not just expired) and
+   * all session data is copied to a new session ID.
+   */
+  async regenerateSession(oldSessionId: string): Promise<Session | null> {
+    // Get existing session data
+    const oldSession = await this.getSession(oldSessionId);
+
+    if (!oldSession) {
+      this.logger.warn('Attempted to regenerate non-existent session', { oldSessionId });
+      return null;
+    }
+
+    // Generate new cryptographically random session ID
+    const newSessionId = randomUUID();
+    const now = new Date();
+
+    // Create new session with copied data but new ID and refreshed timestamps
+    const newSession: Session = {
+      id: newSessionId,
+      userId: oldSession.userId,
+      tenantId: oldSession.tenantId,
+      ip: oldSession.ip,
+      userAgent: oldSession.userAgent,
+      createdAt: oldSession.createdAt, // Preserve original creation time
+      lastActivityAt: now, // Update activity time
+      expiresAt: oldSession.expiresAt, // Keep original expiration
+      deviceInfo: oldSession.deviceInfo,
+    };
+
+    // Calculate remaining TTL from original session
+    const remainingTtl = Math.max(
+      1,
+      Math.floor((oldSession.expiresAt.getTime() - Date.now()) / 1000)
+    );
+
+    // Store new session with remaining TTL
+    await this.redis.set(
+      newSessionId,
+      JSON.stringify(newSession),
+      'EX',
+      remainingTtl
+    );
+
+    // Update user's session list: remove old, add new
+    await this.redis.srem(`user:${oldSession.userId}:sessions`, oldSessionId);
+    await this.redis.sadd(`user:${oldSession.userId}:sessions`, newSessionId);
+
+    // SECURITY: Immediately delete old session (don't just expire it)
+    // This prevents any race conditions where the old session could be used
+    await this.redis.del(oldSessionId);
+
+    this.logger.log('Session regenerated for security', {
+      oldSessionId,
+      newSessionId,
+      userId: oldSession.userId,
+      reason: 'authentication_event',
+    });
+
+    return newSession;
+  }
+
+  /**
+   * Regenerate session after authentication.
+   * This is a convenience method that creates a new session with
+   * updated authentication context.
+   */
+  async regenerateSessionForAuth(
+    oldSessionId: string,
+    ip: string,
+    userAgent: string
+  ): Promise<Session | null> {
+    const oldSession = await this.getSession(oldSessionId);
+
+    if (!oldSession) {
+      return null;
+    }
+
+    // Create completely new session (regenerate)
+    const newSession = await this.createSession(
+      oldSession.userId,
+      oldSession.tenantId,
+      ip,
+      userAgent
+    );
+
+    // SECURITY: Delete old session immediately
+    await this.redis.srem(`user:${oldSession.userId}:sessions`, oldSessionId);
+    await this.redis.del(oldSessionId);
+
+    this.logger.log('Session regenerated after authentication', {
+      oldSessionId,
+      newSessionId: newSession.id,
+      userId: oldSession.userId,
+    });
+
+    return newSession;
   }
   
   /**

@@ -91,6 +91,17 @@ export interface EngagementPattern {
 }
 
 /**
+ * Classroom metadata stored in Redis for authorization
+ */
+export interface ClassroomMetadata {
+  classroomId: string;
+  tenantId: string;
+  teacherIds: string[];
+  schoolId?: string;
+  districtId?: string;
+}
+
+/**
  * Classroom Monitor Service
  */
 export class ClassroomMonitorService {
@@ -98,8 +109,60 @@ export class ClassroomMonitorService {
   private readonly METRICS_TTL = 86400; // 24 hours
   private readonly PATTERN_RETENTION = 86400; // 24 hours
   private readonly INTERVENTION_TTL = 86400 * 7; // 7 days
+  private readonly METADATA_TTL = 3600; // 1 hour
 
   constructor(private readonly alertRules: AlertRulesEngine) {}
+
+  /**
+   * Set classroom metadata for authorization
+   * This should be called when a classroom session is started
+   */
+  async setClassroomMetadata(metadata: ClassroomMetadata): Promise<void> {
+    const redis = getRedisClient();
+    const key = this.getClassroomMetadataKey(metadata.classroomId);
+    await redis.setex(key, this.METADATA_TTL, JSON.stringify(metadata));
+  }
+
+  /**
+   * Get classroom metadata for authorization checks
+   */
+  async getClassroomMetadata(classroomId: string): Promise<ClassroomMetadata | null> {
+    const redis = getRedisClient();
+    const key = this.getClassroomMetadataKey(classroomId);
+    const metadataStr = await redis.get(key);
+
+    if (!metadataStr) {
+      return null;
+    }
+
+    return JSON.parse(metadataStr) as ClassroomMetadata;
+  }
+
+  /**
+   * Check if a teacher has access to a classroom
+   * Used for authorization in monitor routes
+   */
+  async isTeacherOfClassroom(
+    teacherId: string,
+    classroomId: string,
+    tenantId: string
+  ): Promise<boolean> {
+    const metadata = await this.getClassroomMetadata(classroomId);
+
+    if (!metadata) {
+      // Classroom not found in cache - could be inactive
+      // In production, this would query the database
+      return false;
+    }
+
+    // Verify tenant isolation
+    if (metadata.tenantId !== tenantId) {
+      return false;
+    }
+
+    // Check if teacher is assigned to this classroom
+    return metadata.teacherIds.includes(teacherId);
+  }
 
   /**
    * Update student activity status
@@ -143,8 +206,12 @@ export class ClassroomMonitorService {
   async getClassroomState(classroomId: string): Promise<{
     metrics: ClassroomMetrics;
     students: StudentActivityStatus[];
-  }> {
+    tenantId: string | null;
+  } | null> {
     const redis = getRedisClient();
+
+    // Get classroom metadata for tenantId
+    const metadata = await this.getClassroomMetadata(classroomId);
 
     // Get active students
     const activeStudentIds = await redis.smembers(this.getActiveStudentsKey(classroomId));
@@ -170,7 +237,11 @@ export class ClassroomMonitorService {
       metrics = await this.calculateMetrics(classroomId, students);
     }
 
-    return { metrics, students };
+    return {
+      metrics,
+      students,
+      tenantId: metadata?.tenantId ?? null,
+    };
   }
 
   /**
@@ -428,6 +499,10 @@ export class ClassroomMonitorService {
   }
 
   // Key generators
+  private getClassroomMetadataKey(classroomId: string): string {
+    return `classroom:${classroomId}:metadata`;
+  }
+
   private getStudentKey(classroomId: string, studentId: string): string {
     return `classroom:${classroomId}:student:${studentId}:status`;
   }
