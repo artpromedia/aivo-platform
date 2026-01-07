@@ -1,7 +1,7 @@
 # SSO Security Audit Checklist
 
-**Last Updated**: December 2024  
-**Reviewer**: Security Team  
+**Last Updated**: January 2026
+**Reviewer**: Security Team
 **Scope**: OAuth 2.0/OIDC, SAML 2.0, LTI 1.3, Session Management
 
 This checklist is designed for auditing SSO implementations in the AIVO platform. It covers security controls required for COPPA/FERPA compliance and industry best practices.
@@ -14,24 +14,24 @@ This checklist is designed for auditing SSO implementations in the AIVO platform
 
 | Control                                                         | Status             | Notes                                                    |
 | --------------------------------------------------------------- | ------------------ | -------------------------------------------------------- |
-| [ ] Using Authorization Code Flow with PKCE (not Implicit Flow) | ⚠️ PKCE Missing    | `services/auth-svc/src/sso/oidc-validator.ts` lacks PKCE |
+| [x] Using Authorization Code Flow with PKCE (not Implicit Flow) | ✅ Implemented     | `services/auth-svc/src/lib/sso/pkce.ts` - RFC 7636 compliant |
 | [ ] State parameter is cryptographically random (min 32 bytes)  | ✅ Implemented     | AES-256-GCM encrypted state                              |
 | [ ] State parameter is validated on callback                    | ✅ Implemented     | Validated with auth tag                                  |
 | [ ] State parameter is bound to user session                    | ✅ Implemented     | Nonce included in encrypted state                        |
 | [ ] State parameter expires after short time (5 minutes max)    | ✅ Implemented     | 10-minute expiry                                         |
 | [ ] State parameter is single-use                               | ✅ Implemented     | Consumed on validation                                   |
 | [ ] Nonce parameter used for ID token validation                | ✅ Implemented     | Validated in OIDC validator                              |
-| [ ] Code verifier stored securely (not in URL or localStorage)  | ❌ Not Implemented | PKCE not implemented                                     |
+| [x] Code verifier stored securely (not in URL or localStorage)  | ✅ Implemented     | Encrypted in SSO state parameter                         |
 
 ### 1.2 Redirect URI Validation
 
-| Control                                                 | Status             | Notes                      |
-| ------------------------------------------------------- | ------------------ | -------------------------- |
-| [ ] Exact match validation (no wildcards in production) | ❌ Missing         | No whitelist validation    |
-| [ ] No open redirect vulnerabilities                    | ❌ Vulnerable      | Any valid URL accepted     |
-| [ ] Redirect URIs use HTTPS only                        | ⚠️ Partial         | Only Zod URL validation    |
-| [ ] No path traversal in redirect handling              | ✅ Implemented     | URL constructor normalizes |
-| [ ] Registered redirect URIs stored securely            | ⚠️ Not Implemented | Per-tenant config needed   |
+| Control                                                 | Status             | Notes                                                        |
+| ------------------------------------------------------- | ------------------ | ------------------------------------------------------------ |
+| [x] Exact match validation (no wildcards in production) | ✅ Implemented     | `services/auth-svc/src/lib/sso/redirect-validator.ts`        |
+| [x] No open redirect vulnerabilities                    | ✅ Implemented     | Domain whitelist + path validation                           |
+| [x] Redirect URIs use HTTPS only                        | ✅ Implemented     | Enforced in production via `requireHttps` config             |
+| [x] No path traversal in redirect handling              | ✅ Implemented     | URL constructor normalizes                                   |
+| [x] Registered redirect URIs stored securely            | ✅ Implemented     | Per-tenant `allowedRedirectDomains` in database              |
 
 ### 1.3 Token Security
 
@@ -125,8 +125,8 @@ This checklist is designed for auditing SSO implementations in the AIVO platform
 | --------------------------------------------------------- | ------------------ | ------------------------ |
 | [ ] Sessions are server-side (not JWT-only)               | ✅ Implemented     | Database sessions        |
 | [ ] Session ID is cryptographically random (min 128 bits) | ✅ Implemented     | UUID v4                  |
-| [ ] Session ID regenerated on authentication              | ❌ Not Implemented | Missing regeneration     |
-| [ ] Session ID regenerated on privilege change            | ❌ Not Implemented | Missing regeneration     |
+| [x] Session ID regenerated on authentication              | ✅ Implemented     | `session.service.ts:165` - `regenerateSession()` |
+| [x] Session ID regenerated on privilege change            | ✅ Implemented     | Called on auth, MFA, privilege escalation        |
 | [ ] Session timeout enforced (idle and absolute)          | ✅ Implemented     | 7-day max, idle tracking |
 | [ ] Concurrent session limits enforced                    | ⚠️ Configurable    | Per-tenant setting       |
 | [ ] Session invalidation on password change               | ✅ Implemented     | Revokes all sessions     |
@@ -255,22 +255,39 @@ This checklist is designed for auditing SSO implementations in the AIVO platform
 
 ### 🔴 Critical (Fix Immediately)
 
-1. **SAML Signature Validation Optional** - `services/auth-svc/src/sso/saml-validator.ts` returns `true` when signature is missing
-2. **Hardcoded Encryption Keys** - Multiple fallback secrets in SSO state and JWT config
-3. **Open Redirect Vulnerability** - No redirect URI whitelist in SSO callback
+~~1. **SAML Signature Validation Optional** - `services/auth-svc/src/sso/saml-validator.ts` returns `true` when signature is missing~~
+   - ✅ **FIXED** (January 2026): Signature validation now required
+
+~~2. **Hardcoded Encryption Keys** - Multiple fallback secrets in SSO state and JWT config~~
+   - ✅ **FIXED** (January 2026): Fallback secrets removed, environment variables required
+
+~~3. **Open Redirect Vulnerability** - No redirect URI whitelist in SSO callback~~
+   - ✅ **FIXED** (January 2026): `redirect-validator.ts` implements domain whitelist
 
 ### 🟠 High Priority (Fix This Sprint)
 
-4. **PKCE Not Implemented** - Authorization code flow vulnerable to interception
+~~4. **PKCE Not Implemented** - Authorization code flow vulnerable to interception~~
+   - ✅ **FIXED** (January 2026): `pkce.ts` implements RFC 7636 with S256 method
+
 5. **Tokens in URL Parameters** - Access tokens leaked via Referer headers
+   - ⚠️ Review needed - check current implementation
+
 6. **SAML XML Parsing** - Regex-based parsing vulnerable to manipulation
-7. **Session Not Regenerated** - Session fixation possible
+   - ⚠️ Review needed - consider migrating to xml-crypto
+
+~~7. **Session Not Regenerated** - Session fixation possible~~
+   - ✅ **FIXED** (January 2026): `session.service.ts:165` - `regenerateSession()`
 
 ### 🟡 Medium Priority (Fix This Quarter)
 
 8. **In-Memory State Storage** - Won't scale with multiple instances
+   - ⚠️ Review needed - consider Redis-backed state
+
 9. **Missing CSRF Tokens** - Relies solely on SameSite cookies
+   - ⚠️ Consider adding explicit CSRF tokens for defense-in-depth
+
 10. **InResponseTo Not Validated** - SAML response replay possible
+    - ⚠️ Track SAML request IDs in Redis for validation
 
 ### 🟢 Low Priority (Backlog)
 
@@ -291,18 +308,21 @@ This checklist is designed for auditing SSO implementations in the AIVO platform
 
 ## Appendix A: File References
 
-| Component      | File Path                                          |
-| -------------- | -------------------------------------------------- |
-| OIDC Validator | `services/auth-svc/src/sso/oidc-validator.ts`      |
-| SAML Validator | `services/auth-svc/src/sso/saml-validator.ts`      |
-| SSO State      | `services/auth-svc/src/sso/state.ts`               |
-| SSO Service    | `services/auth-svc/src/sso/service.ts`             |
-| SSO Routes     | `services/auth-svc/src/sso/routes.ts`              |
-| LTI Validator  | `services/lti-svc/src/validators/jwt-validator.ts` |
-| LTI Launch     | `services/lti-svc/src/launch-service.ts`           |
-| Auth Service   | `services/auth-svc/src/services/auth.service.ts`   |
-| JWT (Shared)   | `libs/ts-shared/src/auth/jwt.ts`                   |
-| SIS OAuth      | `services/sis-sync-svc/src/oauth/`                 |
+| Component            | File Path                                                  |
+| -------------------- | ---------------------------------------------------------- |
+| PKCE Implementation  | `services/auth-svc/src/lib/sso/pkce.ts`                    |
+| Redirect Validator   | `services/auth-svc/src/lib/sso/redirect-validator.ts`      |
+| Session Service      | `services/api-gateway/src/security/services/session.service.ts` |
+| OIDC Validator       | `services/auth-svc/src/lib/sso/oidc.ts`                    |
+| SAML Validator       | `services/auth-svc/src/sso/saml-validator.ts`              |
+| SSO State            | `services/auth-svc/src/sso/state.ts`                       |
+| SSO Service          | `services/auth-svc/src/lib/sso/service.ts`                 |
+| SSO Routes           | `services/auth-svc/src/sso/routes.ts`                      |
+| LTI Validator        | `services/lti-svc/src/validators/jwt-validator.ts`         |
+| LTI Launch           | `services/lti-svc/src/launch-service.ts`                   |
+| Auth Service         | `services/auth-svc/src/services/auth.service.ts`           |
+| JWT (Shared)         | `libs/ts-shared/src/auth/jwt.ts`                           |
+| SIS OAuth            | `services/sis-sync-svc/src/oauth/`                         |
 
 ## Appendix B: Related Documentation
 

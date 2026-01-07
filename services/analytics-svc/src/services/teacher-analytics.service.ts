@@ -216,9 +216,21 @@ export async function getClassOverview(
     s.sessions.some((session) => new Date(session.startTime) >= startDate)
   ).length;
 
-  // Calculate mastery (using mock data for now - would query learner model)
-  const masteryScores = students.map(() => Math.random() * 0.5 + 0.4); // Mock: 40-90%
-  const averageMastery = calculateAverage(masteryScores);
+  // Get real mastery scores from learner model snapshots
+  const studentIds = students.map((s) => s.id);
+  const latestSnapshots = await prisma.learnerModelSnapshot.findMany({
+    where: {
+      learnerId: { in: studentIds },
+      classId: classId,
+    },
+    orderBy: { snapshotDate: 'desc' },
+    distinct: ['learnerId'],
+  });
+
+  // Build mastery map for quick lookup
+  const masteryMap = new Map(latestSnapshots.map((s) => [s.learnerId, s.overallMastery]));
+  const masteryScores = students.map((s) => masteryMap.get(s.id) ?? 0);
+  const averageMastery = masteryScores.length > 0 ? calculateAverage(masteryScores) : 0;
 
   // Calculate mastery distribution
   const masteryDistribution = {
@@ -228,22 +240,27 @@ export async function getClassOverview(
     beginning: masteryScores.filter((s) => s < 0.5).length,
   };
 
-  // Calculate engagement
-  const engagementScores = students.map((student) => {
-    if (student.sessions.length === 0) return 0;
-    const completedSessions = student.sessions.filter((s) => s.status === 'completed');
-    return completedSessions.length / Math.max(student.sessions.length, 1);
-  });
-  const averageEngagement = calculateAverage(engagementScores);
+  // Get real engagement scores from learner model snapshots
+  const engagementMap = new Map(latestSnapshots.map((s) => [s.learnerId, s.engagementScore]));
+  const engagementScores = students.map((s) => engagementMap.get(s.id) ?? 0);
+  const averageEngagement = engagementScores.length > 0 ? calculateAverage(engagementScores) : 0;
 
-  // Calculate risk distribution
-  const riskLevels = masteryScores.map((m, i) => {
-    const e = engagementScores[i] || 0;
-    const score = m * 0.6 + e * 0.4;
-    if (score >= 0.7) return 'on-track';
-    if (score >= 0.5) return 'watch';
-    if (score >= 0.3) return 'at-risk';
-    return 'critical';
+  // Get real risk levels from learner model snapshots
+  const riskMap = new Map(latestSnapshots.map((s) => [s.learnerId, s.riskLevel]));
+  const riskLevels = students.map((s) => {
+    const risk = riskMap.get(s.id);
+    switch (risk) {
+      case 'LOW':
+        return 'on-track';
+      case 'MEDIUM':
+        return 'watch';
+      case 'HIGH':
+        return 'at-risk';
+      case 'CRITICAL':
+        return 'critical';
+      default:
+        return 'on-track';
+    }
   });
 
   const riskDistribution = {
@@ -269,18 +286,30 @@ export async function getClassOverview(
     );
   }, 0);
 
-  // Generate mock trends
-  const masteryTrend: TrendData = {
-    direction: 'up',
-    percentChange: 3.5,
-    dataPoints: generateTrendDataPoints(period, averageMastery),
-  };
+  // Generate real trends from ClassAnalyticsSummary
+  const historicalSummaries = await prisma.classAnalyticsSummary.findMany({
+    where: {
+      classId: classId,
+      summaryDate: { gte: startDate, lte: endDate },
+    },
+    orderBy: { summaryDate: 'asc' },
+  });
 
-  const engagementTrend: TrendData = {
-    direction: 'stable',
-    percentChange: 0.5,
-    dataPoints: generateTrendDataPoints(period, averageEngagement),
-  };
+  const masteryTrend: TrendData = calculateTrendFromHistory(
+    historicalSummaries.map((s) => ({
+      date: s.summaryDate.toISOString().split('T')[0],
+      value: s.avgClassMastery,
+    })),
+    averageMastery
+  );
+
+  const engagementTrend: TrendData = calculateTrendFromHistory(
+    historicalSummaries.map((s) => ({
+      date: s.summaryDate.toISOString().split('T')[0],
+      value: s.avgEngagement,
+    })),
+    averageEngagement
+  );
 
   // Generate insights
   const insights: ClassInsight[] = [];
@@ -320,9 +349,9 @@ export async function getClassOverview(
     engagementTrend,
     insights: insights.sort((a, b) => b.priority - a.priority).slice(0, 5),
     previousPeriodComparison: {
-      masteryChange: 3.5,
-      engagementChange: 0.5,
-      timeChange: 12,
+      masteryChange: masteryTrend.percentChange,
+      engagementChange: engagementTrend.percentChange,
+      timeChange: calculateTimeChange(historicalSummaries),
     },
   };
 
@@ -375,55 +404,64 @@ export async function getSkillMasteryMatrix(
     throw new Error('Class not found');
   }
 
-  // Mock skills data
-  const skills = [
-    {
-      skillId: 'skill-1',
-      skillName: 'Addition',
-      domain: 'Arithmetic',
-      standardId: 'CCSS.MATH.1.NBT.C.4',
+  // Get skill breakdown from learner model snapshots
+  const studentIds = classInfo.enrollments.map((e) => e.student.id);
+  const latestSnapshots = await prisma.learnerModelSnapshot.findMany({
+    where: {
+      learnerId: { in: studentIds },
+      classId: classId,
     },
-    {
-      skillId: 'skill-2',
-      skillName: 'Subtraction',
-      domain: 'Arithmetic',
-      standardId: 'CCSS.MATH.1.NBT.C.6',
-    },
-    {
-      skillId: 'skill-3',
-      skillName: 'Multiplication',
-      domain: 'Arithmetic',
-      standardId: 'CCSS.MATH.3.OA.A.1',
-    },
-    {
-      skillId: 'skill-4',
-      skillName: 'Division',
-      domain: 'Arithmetic',
-      standardId: 'CCSS.MATH.3.OA.A.2',
-    },
-    {
-      skillId: 'skill-5',
-      skillName: 'Fractions',
-      domain: 'Number Sense',
-      standardId: 'CCSS.MATH.3.NF.A.1',
-    },
-  ].filter((s) => !domainFilter || s.domain === domainFilter);
+    orderBy: { snapshotDate: 'desc' },
+    distinct: ['learnerId'],
+  });
 
-  // Build student mastery data
+  // Extract unique skills from skill breakdowns
+  const skillsSet = new Map<string, { skillId: string; skillName: string; domain: string; standardId?: string }>();
+  for (const snapshot of latestSnapshots) {
+    const skillBreakdown = snapshot.skillBreakdown as { skillId: string; skillName: string; domain: string; standardId?: string; mastery: number }[];
+    if (Array.isArray(skillBreakdown)) {
+      for (const skill of skillBreakdown) {
+        if (!domainFilter || skill.domain === domainFilter) {
+          skillsSet.set(skill.skillId, {
+            skillId: skill.skillId,
+            skillName: skill.skillName,
+            domain: skill.domain,
+            standardId: skill.standardId,
+          });
+        }
+      }
+    }
+  }
+  const skills = Array.from(skillsSet.values());
+
+  // Build student mastery data from real snapshots
+  const snapshotMap = new Map(latestSnapshots.map((s) => [s.learnerId, s]));
   const students = classInfo.enrollments.map((enrollment) => {
     const student = enrollment.student;
+    const snapshot = snapshotMap.get(student.id);
     const masteryBySkill: Record<
       string,
       { mastery: number; trend: 'up' | 'down' | 'stable'; attempts: number }
     > = {};
 
+    if (snapshot && Array.isArray(snapshot.skillBreakdown)) {
+      const skillBreakdown = snapshot.skillBreakdown as { skillId: string; mastery: number; trend?: string; attempts?: number }[];
+      for (const skillData of skillBreakdown) {
+        if (skills.some((s) => s.skillId === skillData.skillId)) {
+          masteryBySkill[skillData.skillId] = {
+            mastery: skillData.mastery ?? 0,
+            trend: (skillData.trend as 'up' | 'down' | 'stable') ?? 'stable',
+            attempts: skillData.attempts ?? 0,
+          };
+        }
+      }
+    }
+
+    // Fill in missing skills with zero values
     for (const skill of skills) {
-      const mastery = Math.random() * 0.6 + 0.3; // Mock: 30-90%
-      masteryBySkill[skill.skillId] = {
-        mastery,
-        trend: ['up', 'down', 'stable'][Math.floor(Math.random() * 3)] as 'up' | 'down' | 'stable',
-        attempts: Math.floor(Math.random() * 20) + 1,
-      };
+      if (!masteryBySkill[skill.skillId]) {
+        masteryBySkill[skill.skillId] = { mastery: 0, trend: 'stable', attempts: 0 };
+      }
     }
 
     return {
@@ -569,42 +607,116 @@ export async function getIEPProgressReport(classId: string, teacherId: string) {
     throw new Error('Class not found');
   }
 
-  // Mock IEP data - in real implementation, query IEP tables
-  const studentsWithIEP = classInfo.enrollments.slice(0, 3).map((e) => ({
-    studentId: e.student.id,
-    studentName: `${e.student.givenName} ${e.student.familyName}`,
-    goals: [
-      {
-        goalId: `goal-${e.student.id}-1`,
-        description: 'Improve reading comprehension to grade level',
-        category: 'Reading',
-        targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-        currentProgress: Math.random() * 60 + 20,
-        expectedProgress: 50,
-        status: 'on-track' as const,
-        recentProgress: [],
-        relatedSkill: 'Reading Comprehension',
+  // Get real IEP data from database
+  const studentIds = classInfo.enrollments.map((e) => e.student.id);
+
+  const iepGoals = await prisma.iEPGoal.findMany({
+    where: {
+      learnerId: { in: studentIds },
+      classId: classId,
+    },
+    include: {
+      progressRecords: {
+        orderBy: { recordedAt: 'desc' },
+        take: 5,
       },
-    ],
-    accommodations: [
-      { type: 'Extended Time', description: '1.5x time on assessments', isActive: true },
-    ],
-    overallProgress: Math.random() * 40 + 40,
-    goalsAtRisk: 0,
-  }));
+    },
+  });
+
+  const accommodations = await prisma.studentAccommodation.findMany({
+    where: {
+      learnerId: { in: studentIds },
+      isActive: true,
+    },
+  });
+
+  const upcomingReviews = await prisma.iEPReviewSchedule.findMany({
+    where: {
+      classId: classId,
+      isCompleted: false,
+      reviewDate: { gte: new Date() },
+    },
+    orderBy: { reviewDate: 'asc' },
+    take: 10,
+  });
+
+  // Group goals and accommodations by student
+  const goalsByStudent = new Map<string, typeof iepGoals>();
+  for (const goal of iepGoals) {
+    const existing = goalsByStudent.get(goal.learnerId) || [];
+    existing.push(goal);
+    goalsByStudent.set(goal.learnerId, existing);
+  }
+
+  const accommodationsByStudent = new Map<string, typeof accommodations>();
+  for (const acc of accommodations) {
+    const existing = accommodationsByStudent.get(acc.learnerId) || [];
+    existing.push(acc);
+    accommodationsByStudent.set(acc.learnerId, existing);
+  }
+
+  // Build student IEP data
+  const studentsWithIEP = classInfo.enrollments
+    .filter((e) => goalsByStudent.has(e.student.id) || accommodationsByStudent.has(e.student.id))
+    .map((e) => {
+      const studentGoals = goalsByStudent.get(e.student.id) || [];
+      const studentAccommodations = accommodationsByStudent.get(e.student.id) || [];
+
+      const goals = studentGoals.map((g) => ({
+        goalId: g.id,
+        description: g.description,
+        category: g.category,
+        targetDate: g.targetDate,
+        currentProgress: g.currentProgress,
+        expectedProgress: g.expectedProgress,
+        status: g.status.toLowerCase().replace('_', '-') as 'on-track' | 'behind' | 'at-risk' | 'completed' | 'discontinued',
+        recentProgress: g.progressRecords.map((p) => ({
+          date: p.recordedAt,
+          value: p.progressValue,
+          notes: p.notes,
+        })),
+        relatedSkill: g.relatedSkillName,
+      }));
+
+      const goalsAtRisk = goals.filter((g) => g.status === 'at-risk' || g.status === 'behind').length;
+      const avgProgress = goals.length > 0
+        ? goals.reduce((sum, g) => sum + g.currentProgress, 0) / goals.length
+        : 0;
+
+      return {
+        studentId: e.student.id,
+        studentName: `${e.student.givenName} ${e.student.familyName}`,
+        goals,
+        accommodations: studentAccommodations.map((a) => ({
+          type: a.accommodationType,
+          description: a.description,
+          isActive: a.isActive,
+        })),
+        overallProgress: avgProgress,
+        goalsAtRisk,
+      };
+    });
+
+  const totalGoals = studentsWithIEP.reduce((sum, s) => sum + s.goals.length, 0);
+  const goalsOnTrack = studentsWithIEP.reduce(
+    (sum, s) => sum + s.goals.filter((g) => g.status === 'on-track' || g.status === 'completed').length,
+    0
+  );
+  const goalsAtRiskTotal = studentsWithIEP.reduce((sum, s) => sum + s.goalsAtRisk, 0);
 
   return {
     classId,
     className: classInfo.name,
     totalStudentsWithIEP: studentsWithIEP.length,
-    totalGoals: studentsWithIEP.reduce((sum, s) => sum + s.goals.length, 0),
-    goalsOnTrack: studentsWithIEP.reduce(
-      (sum, s) => sum + s.goals.filter((g) => g.status === 'on-track').length,
-      0
-    ),
-    goalsAtRisk: studentsWithIEP.reduce((sum, s) => sum + s.goalsAtRisk, 0),
+    totalGoals,
+    goalsOnTrack,
+    goalsAtRisk: goalsAtRiskTotal,
     students: studentsWithIEP,
-    upcomingReviewDates: [],
+    upcomingReviewDates: upcomingReviews.map((r) => ({
+      reviewDate: r.reviewDate,
+      reviewType: r.reviewType,
+      learnerId: r.learnerId,
+    })),
   };
 }
 
@@ -634,44 +746,134 @@ export async function getStudentAnalytics(
     throw new Error('Student not found');
   }
 
-  // Build response with mock data for complex fields
+  // Get learner model snapshot for real mastery/engagement data
+  const latestSnapshot = await prisma.learnerModelSnapshot.findFirst({
+    where: { learnerId: studentId },
+    orderBy: { snapshotDate: 'desc' },
+  });
+
+  // Get historical snapshots for trend
+  const historicalSnapshots = await prisma.learnerModelSnapshot.findMany({
+    where: {
+      learnerId: studentId,
+      snapshotDate: { gte: startDate },
+    },
+    orderBy: { snapshotDate: 'asc' },
+  });
+
+  // Get IEP goals and accommodations
+  const iepGoals = await prisma.iEPGoal.findMany({
+    where: { learnerId: studentId },
+    include: { progressRecords: { orderBy: { recordedAt: 'desc' }, take: 3 } },
+  });
+
+  const accommodations = await prisma.studentAccommodation.findMany({
+    where: { learnerId: studentId, isActive: true },
+  });
+
+  // Calculate mastery trend from historical data
+  const masteryTrend = calculateTrendFromHistory(
+    historicalSnapshots.map((s) => ({
+      date: s.snapshotDate.toISOString().split('T')[0],
+      value: s.overallMastery,
+    })),
+    latestSnapshot?.overallMastery ?? 0
+  );
+
+  // Calculate engagement level
+  const engagementScore = latestSnapshot?.engagementScore ?? 0;
+  let engagementLevel: EngagementLevel;
+  if (engagementScore >= 0.8) engagementLevel = 'highly-engaged';
+  else if (engagementScore >= 0.6) engagementLevel = 'engaged';
+  else if (engagementScore >= 0.4) engagementLevel = 'passive';
+  else if (engagementScore >= 0.2) engagementLevel = 'disengaged';
+  else engagementLevel = 'absent';
+
+  // Map risk level
+  let riskLevel: RiskLevel;
+  switch (latestSnapshot?.riskLevel) {
+    case 'LOW':
+      riskLevel = 'on-track';
+      break;
+    case 'MEDIUM':
+      riskLevel = 'watch';
+      break;
+    case 'HIGH':
+      riskLevel = 'at-risk';
+      break;
+    case 'CRITICAL':
+      riskLevel = 'critical';
+      break;
+    default:
+      riskLevel = 'on-track';
+  }
+
+  // Extract skill mastery from snapshot
+  const skillBreakdown = (latestSnapshot?.skillBreakdown ?? []) as { skillId: string; skillName: string; mastery: number; trend?: string }[];
+  const strengthAreas = skillBreakdown.filter((s) => s.mastery >= 0.8).map((s) => s.skillName);
+  const growthAreas = skillBreakdown.filter((s) => s.mastery < 0.5).map((s) => s.skillName);
+
+  // Calculate real session metrics
+  const completedSessions = student.sessions.filter((s) => s.status === 'completed');
+  const totalLearningTime = completedSessions.reduce((sum, s) => {
+    if (s.endTime) {
+      return sum + Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000);
+    }
+    return sum;
+  }, 0);
+  const avgSessionLength = completedSessions.length > 0 ? totalLearningTime / completedSessions.length : 0;
+
   return {
     studentId,
     studentName: `${student.givenName} ${student.familyName}`,
     gradeLevel: student.gradeLevel || 5,
-    overallMastery: Math.random() * 0.4 + 0.5,
-    masteryTrend: { direction: 'up' as const, percentChange: 5.2, dataPoints: [] },
-    engagementLevel: 'engaged' as EngagementLevel,
-    riskLevel: 'on-track' as RiskLevel,
-    riskFactors: [],
-    totalLearningTime: Math.floor(Math.random() * 500 + 200),
-    averageSessionLength: 25,
-    sessionsCompleted: student.sessions.filter((s) => s.status === 'completed').length,
+    overallMastery: latestSnapshot?.overallMastery ?? 0,
+    masteryTrend,
+    engagementLevel,
+    riskLevel,
+    riskFactors: (latestSnapshot?.riskFactors ?? []) as { factor: string; severity: number; description: string }[],
+    totalLearningTime,
+    averageSessionLength: Math.round(avgSessionLength),
+    sessionsCompleted: completedSessions.length,
     lastActiveDate: student.sessions[0]?.startTime || new Date(),
-    streakDays: Math.floor(Math.random() * 10),
-    skillMastery: [],
-    strengthAreas: ['Addition', 'Number Sense'],
-    growthAreas: ['Fractions'],
+    streakDays: latestSnapshot?.sessionsCompleted ?? 0,
+    skillMastery: skillBreakdown.map((s) => ({
+      skillId: s.skillId,
+      skillName: s.skillName,
+      mastery: s.mastery,
+      trend: (s.trend as 'up' | 'down' | 'stable') ?? 'stable',
+    })),
+    strengthAreas: strengthAreas.slice(0, 3),
+    growthAreas: growthAreas.slice(0, 3),
     engagementMetrics: {
-      averageTimeOnTask: 22,
-      completionRate: 0.85,
-      hintUsageRate: 0.15,
-      correctFirstAttemptRate: 0.72,
+      averageTimeOnTask: Math.round(avgSessionLength),
+      completionRate: completedSessions.length / Math.max(student.sessions.length, 1),
+      hintUsageRate: 0, // Would need to query session events
+      correctFirstAttemptRate: 0, // Would need to query session events
     },
-    iepProgress: undefined,
-    activeAccommodations: [],
+    iepProgress: iepGoals.length > 0
+      ? {
+          goalsCount: iepGoals.length,
+          onTrack: iepGoals.filter((g) => g.status === 'ON_TRACK').length,
+          atRisk: iepGoals.filter((g) => g.status === 'AT_RISK' || g.status === 'BEHIND').length,
+        }
+      : undefined,
+    activeAccommodations: accommodations.map((a) => ({
+      type: a.accommodationType,
+      description: a.description,
+    })),
     recentSessions: student.sessions.slice(0, 5).map((s) => ({
       sessionId: s.id,
       date: s.startTime,
       duration: s.endTime
         ? Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000)
         : 0,
-      activitiesCompleted: Math.floor(Math.random() * 10) + 1,
-      averageScore: Math.random() * 0.3 + 0.6,
+      activitiesCompleted: 0, // Would need to count session events
+      averageScore: 0, // Would need to query assessment results
       skillsPracticed: [],
-      engagementLevel: 'engaged' as EngagementLevel,
+      engagementLevel: engagementLevel,
     })),
-    recommendations: [],
+    recommendations: generateStudentRecommendations(riskLevel, growthAreas, engagementLevel),
   };
 }
 
@@ -710,34 +912,132 @@ export async function getEngagementAnalytics(
   const students = classInfo.enrollments.map((e) => e.student);
   const activeStudents = students.filter((s) => s.sessions.length > 0).length;
 
+  // Get learner model snapshots for engagement data
+  const studentIds = students.map((s) => s.id);
+  const latestSnapshots = await prisma.learnerModelSnapshot.findMany({
+    where: {
+      learnerId: { in: studentIds },
+      classId: classId,
+    },
+    orderBy: { snapshotDate: 'desc' },
+    distinct: ['learnerId'],
+  });
+
+  const engagementMap = new Map(latestSnapshots.map((s) => [s.learnerId, s.engagementScore]));
+
+  // Calculate real engagement metrics
+  const allSessions = students.flatMap((s) => s.sessions);
+  const completedSessions = allSessions.filter((s) => s.status === 'completed');
+  const totalDuration = completedSessions.reduce((sum, s) => {
+    if (s.endTime) {
+      return sum + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000;
+    }
+    return sum;
+  }, 0);
+
+  const avgTimeOnTask = completedSessions.length > 0 ? totalDuration / completedSessions.length : 0;
+  const completionRate = allSessions.length > 0 ? completedSessions.length / allSessions.length : 0;
+  const daysInPeriod = Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const avgSessionsPerWeek = daysInPeriod > 0 ? allSessions.length / daysInPeriod : 0;
+
+  // Calculate engagement distribution from snapshots
+  const distribution = {
+    highlyEngaged: 0,
+    engaged: 0,
+    passive: 0,
+    disengaged: 0,
+    absent: 0,
+  };
+
+  for (const student of students) {
+    const engagement = engagementMap.get(student.id) ?? 0;
+    if (engagement >= 0.8) distribution.highlyEngaged++;
+    else if (engagement >= 0.6) distribution.engaged++;
+    else if (engagement >= 0.4) distribution.passive++;
+    else if (engagement >= 0.2) distribution.disengaged++;
+    else distribution.absent++;
+  }
+
+  // Get historical summaries for trends
+  const historicalSummaries = await prisma.classAnalyticsSummary.findMany({
+    where: {
+      classId: classId,
+      summaryDate: { gte: startDate, lte: endDate },
+    },
+    orderBy: { summaryDate: 'asc' },
+  });
+
+  // Calculate weekly activity from sessions
+  const sessionsByDay = new Map<number, { count: number; totalDuration: number }>();
+  for (const session of allSessions) {
+    const day = new Date(session.startTime).getDay();
+    const existing = sessionsByDay.get(day) || { count: 0, totalDuration: 0 };
+    existing.count++;
+    if (session.endTime) {
+      existing.totalDuration += (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 60000;
+    }
+    sessionsByDay.set(day, existing);
+  }
+
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weeklyActivity = [1, 2, 3, 4, 5].map((dayNum) => {
+    const dayData = sessionsByDay.get(dayNum) || { count: 0, totalDuration: 0 };
+    return {
+      day: dayNames[dayNum],
+      sessions: dayData.count,
+      avgDuration: dayData.count > 0 ? Math.round(dayData.totalDuration / dayData.count) : 0,
+    };
+  });
+
+  // Find low engagement students
+  const lowEngagementStudents = students
+    .map((s) => ({
+      studentId: s.id,
+      studentName: `${s.givenName} ${s.familyName}`,
+      engagementScore: engagementMap.get(s.id) ?? 0,
+      lastActiveDate: s.sessions[0]?.startTime || null,
+    }))
+    .filter((s) => s.engagementScore < 0.4)
+    .sort((a, b) => a.engagementScore - b.engagementScore)
+    .slice(0, 5)
+    .map((s) => ({
+      studentId: s.studentId,
+      studentName: s.studentName,
+      engagementLevel: (s.engagementScore < 0.2 ? 'absent' : 'disengaged') as EngagementLevel,
+      lastActiveDate: s.lastActiveDate || new Date(0),
+    }));
+
   return {
     classId,
     totalStudents: students.length,
     activeStudents,
-    averageTimeOnTask: 22,
-    completionRate: 0.78,
-    averageSessionsPerWeek: 3.2,
-    timeOnTaskTrend: { direction: 'up' as const, percentChange: 8 },
-    completionRateTrend: { direction: 'stable' as const, percentChange: 1 },
-    sessionsTrend: { direction: 'up' as const, percentChange: 12 },
-    distribution: {
-      highlyEngaged: Math.floor(students.length * 0.2),
-      engaged: Math.floor(students.length * 0.4),
-      passive: Math.floor(students.length * 0.25),
-      disengaged: Math.floor(students.length * 0.1),
-      absent: Math.floor(students.length * 0.05),
-    },
-    weeklyActivity: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => ({
-      day,
-      sessions: Math.floor(Math.random() * 50) + 10,
-      avgDuration: Math.floor(Math.random() * 15) + 15,
-    })),
-    lowEngagementStudents: students.slice(0, 3).map((s) => ({
-      studentId: s.id,
-      studentName: `${s.givenName} ${s.familyName}`,
-      engagementLevel: 'disengaged' as EngagementLevel,
-      lastActiveDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    })),
+    averageTimeOnTask: Math.round(avgTimeOnTask),
+    completionRate,
+    averageSessionsPerWeek: Math.round(avgSessionsPerWeek * 10) / 10,
+    timeOnTaskTrend: calculateTrendFromHistory(
+      historicalSummaries.map((s) => ({
+        date: s.summaryDate.toISOString().split('T')[0],
+        value: s.totalTimeMinutes / Math.max(s.totalStudents, 1),
+      })),
+      avgTimeOnTask
+    ),
+    completionRateTrend: calculateTrendFromHistory(
+      historicalSummaries.map((s) => ({
+        date: s.summaryDate.toISOString().split('T')[0],
+        value: s.avgEngagement,
+      })),
+      completionRate
+    ),
+    sessionsTrend: calculateTrendFromHistory(
+      historicalSummaries.map((s) => ({
+        date: s.summaryDate.toISOString().split('T')[0],
+        value: s.totalStudents,
+      })),
+      allSessions.length
+    ),
+    distribution,
+    weeklyActivity,
+    lowEngagementStudents,
   };
 }
 
@@ -745,27 +1045,94 @@ export async function getEngagementAnalytics(
 // Helper Functions
 // =====================
 
-function generateTrendDataPoints(
-  period: TimePeriod,
-  baseValue: number
-): { date: string; value: number }[] {
-  const points: { date: string; value: number }[] = [];
-  const numPoints = period === 'today' ? 24 : period === 'week' ? 7 : period === 'month' ? 30 : 12;
-
-  for (let i = numPoints - 1; i >= 0; i--) {
-    const date = new Date();
-    if (period === 'today') {
-      date.setHours(date.getHours() - i);
-    } else {
-      date.setDate(date.getDate() - i);
-    }
-    points.push({
-      date: date.toISOString().split('T')[0],
-      value: baseValue + (Math.random() - 0.5) * 0.1,
-    });
+/**
+ * Calculate trend data from historical data points
+ */
+function calculateTrendFromHistory(
+  dataPoints: { date: string; value: number }[],
+  currentValue: number
+): TrendData {
+  if (dataPoints.length < 2) {
+    return {
+      direction: 'stable',
+      percentChange: 0,
+      dataPoints: dataPoints.length > 0 ? dataPoints : [{ date: new Date().toISOString().split('T')[0], value: currentValue }],
+    };
   }
 
-  return points;
+  // Calculate trend direction and percent change
+  const firstHalf = dataPoints.slice(0, Math.floor(dataPoints.length / 2));
+  const secondHalf = dataPoints.slice(Math.floor(dataPoints.length / 2));
+
+  const firstAvg = firstHalf.reduce((sum, p) => sum + p.value, 0) / firstHalf.length;
+  const secondAvg = secondHalf.reduce((sum, p) => sum + p.value, 0) / secondHalf.length;
+
+  const percentChange = firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
+
+  let direction: 'up' | 'down' | 'stable';
+  if (percentChange > 2) direction = 'up';
+  else if (percentChange < -2) direction = 'down';
+  else direction = 'stable';
+
+  return {
+    direction,
+    percentChange: Math.round(percentChange * 10) / 10,
+    dataPoints,
+  };
+}
+
+/**
+ * Calculate time change from historical summaries
+ */
+function calculateTimeChange(summaries: { totalTimeMinutes: number }[]): number {
+  if (summaries.length < 2) return 0;
+
+  const firstHalf = summaries.slice(0, Math.floor(summaries.length / 2));
+  const secondHalf = summaries.slice(Math.floor(summaries.length / 2));
+
+  const firstTotal = firstHalf.reduce((sum, s) => sum + s.totalTimeMinutes, 0);
+  const secondTotal = secondHalf.reduce((sum, s) => sum + s.totalTimeMinutes, 0);
+
+  if (firstTotal === 0) return 0;
+  return Math.round(((secondTotal - firstTotal) / firstTotal) * 100);
+}
+
+/**
+ * Generate recommendations for a student based on their metrics
+ */
+function generateStudentRecommendations(
+  riskLevel: RiskLevel,
+  growthAreas: string[],
+  engagementLevel: EngagementLevel
+): string[] {
+  const recommendations: string[] = [];
+
+  // Risk-based recommendations
+  if (riskLevel === 'critical' || riskLevel === 'at-risk') {
+    recommendations.push('Schedule a one-on-one check-in to assess barriers to progress');
+    recommendations.push('Consider contacting family about additional support');
+  } else if (riskLevel === 'watch') {
+    recommendations.push('Monitor progress closely over the next week');
+  }
+
+  // Growth area recommendations
+  if (growthAreas.length > 0) {
+    recommendations.push(`Focus additional practice on: ${growthAreas.slice(0, 2).join(', ')}`);
+  }
+
+  // Engagement-based recommendations
+  if (engagementLevel === 'absent' || engagementLevel === 'disengaged') {
+    recommendations.push('Check for technical barriers or access issues');
+    recommendations.push('Consider alternative learning activities to boost engagement');
+  } else if (engagementLevel === 'passive') {
+    recommendations.push('Try interactive activities to increase active participation');
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push('Student is on track - continue current learning plan');
+  }
+
+  return recommendations.slice(0, 5);
 }
 
 function calculateStudentWarning(

@@ -481,34 +481,218 @@ export class SpeechTherapyService {
   }
 
   /**
-   * Analyze speech recording using AI/speech recognition
-   * This is a placeholder for actual speech analysis integration
+   * Analyze speech recording using Azure Cognitive Speech Services
+   * Provides pronunciation assessment with phoneme-level feedback
    */
   async analyzeRecording(recordingId: string, targetPhrase: string): Promise<RecordingAnalysis> {
-    // In production, this would call a speech analysis API
-    // (Azure Speech, Google Speech, or specialized speech therapy API)
-
     const recording = await this.prisma.speechRecording.findUnique({
       where: { id: recordingId },
     });
 
     if (!recording) throw new Error('Recording not found');
 
-    // Placeholder analysis - in production, use actual speech-to-text + phoneme analysis
-    const mockAnalysis: RecordingAnalysis = {
-      accuracy: 0.85,
-      phonemeBreakdown: this.analyzePhonemesPlaceholder(targetPhrase),
-      fluencyScore: 0.9,
-      suggestions: [
-        'Good attempt! Focus on the /s/ sound at the beginning.',
-        'Try slowing down for clearer pronunciation.',
-      ],
+    // Check if Azure Speech credentials are configured
+    const azureSpeechKey = process.env.AZURE_SPEECH_KEY;
+    const azureSpeechRegion = process.env.AZURE_SPEECH_REGION;
+
+    if (!azureSpeechKey || !azureSpeechRegion) {
+      // Fall back to placeholder if Azure not configured
+      console.warn('[SpeechTherapy] Azure Speech not configured, using placeholder analysis');
+      const placeholderAnalysis: RecordingAnalysis = {
+        accuracy: 0,
+        phonemeBreakdown: this.analyzePhonemesPlaceholder(targetPhrase),
+        fluencyScore: 0,
+        suggestions: ['Speech analysis service not configured. Please contact administrator.'],
+      };
+      await this.updateRecordingAnalysis(recordingId, placeholderAnalysis, targetPhrase);
+      return placeholderAnalysis;
+    }
+
+    try {
+      // Fetch audio from storage
+      const audioResponse = await fetch(recording.audioUrl);
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to fetch audio: ${audioResponse.status}`);
+      }
+      const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+
+      // Call Azure Speech API for pronunciation assessment
+      const analysis = await this.performAzureSpeechAnalysis(
+        audioBuffer,
+        targetPhrase,
+        azureSpeechKey,
+        azureSpeechRegion
+      );
+
+      // Save the analysis
+      await this.updateRecordingAnalysis(recordingId, analysis, analysis.transcript || targetPhrase);
+
+      return analysis;
+    } catch (error) {
+      console.error('[SpeechTherapy] Speech analysis failed:', error);
+
+      // Return error analysis
+      const errorAnalysis: RecordingAnalysis = {
+        accuracy: 0,
+        phonemeBreakdown: [],
+        fluencyScore: 0,
+        suggestions: ['Speech analysis failed. Please try recording again.'],
+      };
+      await this.updateRecordingAnalysis(recordingId, errorAnalysis, targetPhrase);
+      return errorAnalysis;
+    }
+  }
+
+  /**
+   * Perform speech analysis using Azure Cognitive Services REST API
+   */
+  private async performAzureSpeechAnalysis(
+    audioBuffer: Buffer,
+    targetPhrase: string,
+    apiKey: string,
+    region: string,
+    language: string = 'en-US'
+  ): Promise<RecordingAnalysis & { transcript?: string }> {
+    // Azure Speech pronunciation assessment REST endpoint
+    const endpoint = `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;
+
+    // Build pronunciation assessment config
+    const pronunciationAssessmentConfig = {
+      referenceText: targetPhrase,
+      gradingSystem: 'HundredMark',
+      granularity: 'Phoneme',
+      enableMiscue: true,
     };
 
-    // Save the analysis
-    await this.updateRecordingAnalysis(recordingId, mockAnalysis, targetPhrase);
+    const response = await fetch(`${endpoint}?language=${language}`, {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000',
+        'Pronunciation-Assessment': Buffer.from(JSON.stringify(pronunciationAssessmentConfig)).toString('base64'),
+        'Accept': 'application/json',
+      },
+      body: audioBuffer,
+    });
 
-    return mockAnalysis;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Azure Speech API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    // Parse Azure response
+    const nBest = result.NBest?.[0];
+    if (!nBest) {
+      return {
+        accuracy: 0,
+        phonemeBreakdown: [],
+        fluencyScore: 0,
+        suggestions: ['Could not recognize speech. Please speak more clearly.'],
+        transcript: '',
+      };
+    }
+
+    const pronunciationAssessment = nBest.PronunciationAssessment || {};
+    const words = nBest.Words || [];
+
+    // Extract phoneme-level analysis
+    const phonemeBreakdown: PhonemeResult[] = [];
+    for (const word of words) {
+      const phonemes = word.Phonemes || [];
+      for (const phoneme of phonemes) {
+        phonemeBreakdown.push({
+          phoneme: phoneme.Phoneme || '',
+          expected: phoneme.Phoneme || '',
+          actual: phoneme.Phoneme || '',
+          isCorrect: (phoneme.PronunciationAssessment?.AccuracyScore || 0) >= 70,
+          position: this.determinePhonemePosition(phoneme, word, phonemes),
+        });
+      }
+    }
+
+    // Generate pedagogical suggestions
+    const suggestions = this.generatePronunciationSuggestions(
+      pronunciationAssessment,
+      words,
+      phonemeBreakdown
+    );
+
+    return {
+      accuracy: (pronunciationAssessment.AccuracyScore || 0) / 100,
+      phonemeBreakdown,
+      fluencyScore: (pronunciationAssessment.FluencyScore || 0) / 100,
+      suggestions,
+      transcript: nBest.Display || nBest.Lexical || '',
+    };
+  }
+
+  /**
+   * Determine phoneme position within word
+   */
+  private determinePhonemePosition(
+    phoneme: unknown,
+    word: unknown,
+    allPhonemes: unknown[]
+  ): 'initial' | 'medial' | 'final' {
+    const index = allPhonemes.indexOf(phoneme);
+    if (index === 0) return 'initial';
+    if (index === allPhonemes.length - 1) return 'final';
+    return 'medial';
+  }
+
+  /**
+   * Generate pedagogical suggestions based on pronunciation analysis
+   */
+  private generatePronunciationSuggestions(
+    assessment: { AccuracyScore?: number; FluencyScore?: number; CompletenessScore?: number },
+    words: { Word?: string; PronunciationAssessment?: { AccuracyScore?: number } }[],
+    phonemes: PhonemeResult[]
+  ): string[] {
+    const suggestions: string[] = [];
+    const accuracyScore = assessment.AccuracyScore || 0;
+    const fluencyScore = assessment.FluencyScore || 0;
+    const completenessScore = assessment.CompletenessScore || 0;
+
+    // Accuracy feedback
+    if (accuracyScore >= 90) {
+      suggestions.push('Excellent pronunciation! Keep up the great work.');
+    } else if (accuracyScore >= 70) {
+      suggestions.push('Good job! A few sounds need practice.');
+    } else if (accuracyScore >= 50) {
+      suggestions.push('Nice effort! Let\'s focus on clearer pronunciation.');
+    } else {
+      suggestions.push('Let\'s practice this phrase together.');
+    }
+
+    // Find problem words
+    const problemWords = words.filter(
+      (w) => (w.PronunciationAssessment?.AccuracyScore || 0) < 70
+    );
+    if (problemWords.length > 0 && problemWords.length <= 3) {
+      const wordList = problemWords.map((w) => `"${w.Word}"`).join(', ');
+      suggestions.push(`Try focusing on: ${wordList}`);
+    }
+
+    // Find problem phonemes
+    const problemPhonemes = phonemes.filter((p) => !p.isCorrect);
+    if (problemPhonemes.length > 0 && problemPhonemes.length <= 3) {
+      const uniquePhonemes = [...new Set(problemPhonemes.map((p) => p.phoneme))];
+      suggestions.push(`Practice the /${uniquePhonemes.join('/, /')}/ sound${uniquePhonemes.length > 1 ? 's' : ''}.`);
+    }
+
+    // Fluency feedback
+    if (fluencyScore < 70) {
+      suggestions.push('Try speaking a bit more smoothly, without long pauses.');
+    }
+
+    // Completeness feedback
+    if (completenessScore < 80) {
+      suggestions.push('Make sure to say all the words in the phrase.');
+    }
+
+    return suggestions.slice(0, 5);
   }
 
   /**
