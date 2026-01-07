@@ -396,7 +396,10 @@ class NotificationPreferencesNotifier
         super(const NotificationPreferencesState());
 
   final http.Client _client;
-  static const String _baseUrl = 'http://localhost:3000/api'; // TODO: Configure
+  static const String _baseUrl = String.fromEnvironment(
+    'NOTIFICATION_API_URL',
+    defaultValue: 'https://api.aivo.com/api',
+  );
 
   /// Load all preferences for the parent
   Future<void> loadAllPreferences() async {

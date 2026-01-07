@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Student model for roster.
 class RosterStudent {
@@ -113,7 +114,7 @@ class ClassRosterScreen extends ConsumerWidget {
                   context.push('/class/$classId/session?name=${Uri.encodeComponent(className)}');
                   break;
                 case 'export':
-                  _exportRoster(context);
+                  _exportRoster(context, ref);
                   break;
               }
             },
@@ -282,9 +283,28 @@ class ClassRosterScreen extends ConsumerWidget {
     context.push('/learner/${student.id}?name=${Uri.encodeComponent(student.name)}');
   }
 
-  void _exportRoster(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Export feature coming soon')),
+  void _exportRoster(BuildContext context, WidgetRef ref) {
+    final roster = ref.read(classRosterProvider(classId)).roster;
+    if (roster == null || roster.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No students to export')),
+      );
+      return;
+    }
+
+    // Generate CSV content
+    final buffer = StringBuffer();
+    buffer.writeln('Name,Status,Last Activity,Needs Attention');
+    for (final student in roster) {
+      buffer.writeln(
+        '${student.name},${student.status ?? ""},${student.lastActivity ?? ""},${student.needsAttention}',
+      );
+    }
+
+    // Share the CSV
+    Share.share(
+      buffer.toString(),
+      subject: '$className - Class Roster',
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 const _baseUrl = String.fromEnvironment('LEARNER_BASE_URL', defaultValue: 'http://localhost:4002');
-const _useLearnerMock = bool.fromEnvironment('USE_LEARNER_MOCK', defaultValue: true);
+const _useLearnerMock = bool.fromEnvironment('USE_LEARNER_MOCK', defaultValue: false);
 
 class LearnerService {
   LearnerService() : _dio = Dio(BaseOptions(baseUrl: _baseUrl));

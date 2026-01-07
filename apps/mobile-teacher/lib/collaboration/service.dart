@@ -12,7 +12,7 @@ const _baseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:3020',
 );
 
-const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: true);
+const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: false);
 
 /// Service for teacher collaboration APIs.
 class TeacherCollaborationService {

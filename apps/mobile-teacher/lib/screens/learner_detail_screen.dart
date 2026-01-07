@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:go_router/go_router.dart';
 
 /// Learner detail model.
 class LearnerDetail {
@@ -327,15 +328,11 @@ class LearnerDetailScreen extends ConsumerWidget {
   }
 
   void _sendMessage(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Messaging coming soon')),
-    );
+    context.push('/messages/compose?recipientId=$learnerId&recipientName=${Uri.encodeComponent(learnerName)}');
   }
 
   void _viewReport(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Full report coming soon')),
-    );
+    context.push('/reports/learner/$learnerId?name=${Uri.encodeComponent(learnerName)}');
   }
 
   void _addObservation(BuildContext context, WidgetRef ref) {
