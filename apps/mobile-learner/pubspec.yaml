@@ -26,6 +26,7 @@ dependencies:
   sqflite: ^2.3.3+2
   hive_flutter: ^1.1.0
   intl: ^0.20.2
+  uni_links: ^0.5.1
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:
