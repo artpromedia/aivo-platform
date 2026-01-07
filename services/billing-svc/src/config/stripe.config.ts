@@ -77,6 +77,40 @@ function getOptionalEnvVar(name: string): string | undefined {
   return process.env[name] || undefined;
 }
 
+/**
+ * Validates a Stripe price ID format
+ * Real Stripe price IDs match: price_[a-zA-Z0-9]{14,}
+ */
+function isValidStripePriceId(value: string): boolean {
+  // Stripe price IDs are: price_ followed by 14+ alphanumeric characters
+  return /^price_[a-zA-Z0-9]{14,}$/.test(value);
+}
+
+/**
+ * Get price ID with validation - returns undefined for invalid/placeholder values
+ */
+function getPriceIdEnvVar(name: string, isProduction: boolean): string {
+  const value = process.env[name];
+
+  if (!value) {
+    if (isProduction) {
+      throw new Error(`Missing required environment variable: ${name}`);
+    }
+    // Return empty string for development - will be validated as missing
+    return '';
+  }
+
+  // Check for valid Stripe price ID format
+  if (isProduction && !isValidStripePriceId(value)) {
+    throw new Error(
+      `Invalid Stripe price ID format for ${name}: "${value}". ` +
+      'Expected format: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)'
+    );
+  }
+
+  return value;
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════════════════════════════════════════════════════
@@ -99,13 +133,22 @@ export const stripeConfig: StripeConfig = {
   },
   
   // Price IDs for subscription plans
+  // IMPORTANT: In production, real Stripe price IDs are REQUIRED
+  // Format: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)
+  // Configure via environment variables:
+  //   - STRIPE_PRICE_PRO_MONTHLY
+  //   - STRIPE_PRICE_PRO_ANNUAL
+  //   - STRIPE_PRICE_PREMIUM_MONTHLY
+  //   - STRIPE_PRICE_PREMIUM_ANNUAL
+  //   - STRIPE_PRICE_SCHOOL_ANNUAL (optional)
+  //   - STRIPE_PRICE_DISTRICT_ANNUAL (optional)
   priceIds: {
-    proMonthly: getEnvVar('STRIPE_PRICE_PRO_MONTHLY', 'price_pro_monthly'),
-    proAnnual: getEnvVar('STRIPE_PRICE_PRO_ANNUAL', 'price_pro_annual'),
-    premiumMonthly: getEnvVar('STRIPE_PRICE_PREMIUM_MONTHLY', 'price_premium_monthly'),
-    premiumAnnual: getEnvVar('STRIPE_PRICE_PREMIUM_ANNUAL', 'price_premium_annual'),
-    ...(process.env.STRIPE_PRICE_SCHOOL_ANNUAL ? { schoolAnnual: process.env.STRIPE_PRICE_SCHOOL_ANNUAL } : {}),
-    ...(process.env.STRIPE_PRICE_DISTRICT_ANNUAL ? { districtAnnual: process.env.STRIPE_PRICE_DISTRICT_ANNUAL } : {}),
+    proMonthly: getPriceIdEnvVar('STRIPE_PRICE_PRO_MONTHLY', isProduction),
+    proAnnual: getPriceIdEnvVar('STRIPE_PRICE_PRO_ANNUAL', isProduction),
+    premiumMonthly: getPriceIdEnvVar('STRIPE_PRICE_PREMIUM_MONTHLY', isProduction),
+    premiumAnnual: getPriceIdEnvVar('STRIPE_PRICE_PREMIUM_ANNUAL', isProduction),
+    schoolAnnual: getOptionalEnvVar('STRIPE_PRICE_SCHOOL_ANNUAL'),
+    districtAnnual: getOptionalEnvVar('STRIPE_PRICE_DISTRICT_ANNUAL'),
   },
   
   // Portal and Tax
@@ -139,43 +182,92 @@ function checkPlaceholder(value: string, name: string, errors: string[]): void {
 }
 
 /**
- * Check if a price ID is valid
+ * Check if a price ID is valid with strict format validation
  */
-function checkPriceId(value: string, name: string, errors: string[]): void {
-  if (!value.startsWith('price_')) {
-    errors.push(`${name} is not a valid Stripe price ID`);
+function checkPriceId(value: string, name: string, errors: string[], isRequired: boolean = true): void {
+  if (!value) {
+    if (isRequired) {
+      errors.push(`${name} is required but not set`);
+    }
+    return;
+  }
+
+  if (!isValidStripePriceId(value)) {
+    errors.push(
+      `${name} has invalid format: "${value}". ` +
+      'Expected: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)'
+    );
   }
 }
 
 /**
  * Validate Stripe configuration at startup
+ * In production, ensures all required values are properly configured with real Stripe IDs
  */
 export function validateStripeConfig(): void {
   const errors: string[] = [];
-  
-  // Only run full validation in production
-  if (!isProduction) {
-    return;
-  }
-  
-  // Check for placeholder values
+  const warnings: string[] = [];
+
+  // Check for placeholder values in API keys
   checkPlaceholder(stripeConfig.secretKey, 'STRIPE_SECRET_KEY', errors);
   checkPlaceholder(stripeConfig.webhook.secret, 'STRIPE_WEBHOOK_SECRET', errors);
-  
+
   // Warn about test keys in production
-  if (stripeConfig.secretKey.startsWith('sk_test_') && stripeConfig.warnOnTestMode) {
-    console.warn('⚠️  WARNING: Using Stripe TEST key in production environment!');
+  if (isProduction) {
+    if (stripeConfig.secretKey.startsWith('sk_test_')) {
+      if (stripeConfig.warnOnTestMode) {
+        warnings.push('Using Stripe TEST secret key in production environment');
+      }
+    }
+    if (stripeConfig.publishableKey.startsWith('pk_test_')) {
+      if (stripeConfig.warnOnTestMode) {
+        warnings.push('Using Stripe TEST publishable key in production environment');
+      }
+    }
   }
-  
-  // Validate price IDs
+
+  // Validate required price IDs (with strict format in production)
   const { priceIds } = stripeConfig;
-  checkPriceId(priceIds.proMonthly, 'STRIPE_PRICE_PRO_MONTHLY', errors);
-  checkPriceId(priceIds.proAnnual, 'STRIPE_PRICE_PRO_ANNUAL', errors);
-  checkPriceId(priceIds.premiumMonthly, 'STRIPE_PRICE_PREMIUM_MONTHLY', errors);
-  checkPriceId(priceIds.premiumAnnual, 'STRIPE_PRICE_PREMIUM_ANNUAL', errors);
-  
+  if (isProduction) {
+    checkPriceId(priceIds.proMonthly, 'STRIPE_PRICE_PRO_MONTHLY', errors, true);
+    checkPriceId(priceIds.proAnnual, 'STRIPE_PRICE_PRO_ANNUAL', errors, true);
+    checkPriceId(priceIds.premiumMonthly, 'STRIPE_PRICE_PREMIUM_MONTHLY', errors, true);
+    checkPriceId(priceIds.premiumAnnual, 'STRIPE_PRICE_PREMIUM_ANNUAL', errors, true);
+
+    // Optional price IDs - validate format if set
+    if (priceIds.schoolAnnual) {
+      checkPriceId(priceIds.schoolAnnual, 'STRIPE_PRICE_SCHOOL_ANNUAL', errors, false);
+    }
+    if (priceIds.districtAnnual) {
+      checkPriceId(priceIds.districtAnnual, 'STRIPE_PRICE_DISTRICT_ANNUAL', errors, false);
+    }
+  } else {
+    // In development, warn if price IDs are missing but don't error
+    if (!priceIds.proMonthly || !priceIds.proAnnual || !priceIds.premiumMonthly || !priceIds.premiumAnnual) {
+      warnings.push(
+        'Some Stripe price IDs are not configured. ' +
+        'Billing features may not work until STRIPE_PRICE_* environment variables are set.'
+      );
+    }
+  }
+
+  // Output warnings
+  for (const warning of warnings) {
+    console.warn(`⚠️  STRIPE WARNING: ${warning}`);
+  }
+
+  // Throw on errors
   if (errors.length > 0) {
-    throw new Error(`Stripe configuration errors:\n${errors.join('\n')}`);
+    throw new Error(
+      `Stripe configuration validation failed:\n` +
+      errors.map((e) => `  - ${e}`).join('\n') +
+      '\n\nPlease configure the required environment variables with valid Stripe values.'
+    );
+  }
+
+  // Log success in production
+  if (isProduction) {
+    console.log('[Stripe] Configuration validated successfully');
   }
 }
 
@@ -188,21 +280,31 @@ export type BillingInterval = 'monthly' | 'annual';
 
 /**
  * Get Stripe price ID for a plan and billing interval
+ * Returns null if the price ID is not configured
  */
 export function getPriceId(plan: PlanName, interval: BillingInterval): string | null {
   const { priceIds } = stripeConfig;
-  
+
+  // Helper to return null for empty strings
+  const getValidPriceId = (priceId: string | undefined): string | null => {
+    return priceId && priceId.length > 0 ? priceId : null;
+  };
+
   switch (plan) {
     case 'FREE':
       return null; // Free plan has no price
     case 'PRO':
-      return interval === 'monthly' ? priceIds.proMonthly : priceIds.proAnnual;
+      return interval === 'monthly'
+        ? getValidPriceId(priceIds.proMonthly)
+        : getValidPriceId(priceIds.proAnnual);
     case 'PREMIUM':
-      return interval === 'monthly' ? priceIds.premiumMonthly : priceIds.premiumAnnual;
+      return interval === 'monthly'
+        ? getValidPriceId(priceIds.premiumMonthly)
+        : getValidPriceId(priceIds.premiumAnnual);
     case 'SCHOOL':
-      return priceIds.schoolAnnual ?? null;
+      return getValidPriceId(priceIds.schoolAnnual);
     case 'DISTRICT':
-      return priceIds.districtAnnual ?? null;
+      return getValidPriceId(priceIds.districtAnnual);
     default:
       return null;
   }
@@ -212,27 +314,32 @@ export function getPriceId(plan: PlanName, interval: BillingInterval): string | 
  * Get plan name from Stripe price ID
  */
 export function getPlanFromPriceId(priceId: string): { plan: PlanName; interval: BillingInterval } | null {
+  if (!priceId) {
+    return null;
+  }
+
   const { priceIds } = stripeConfig;
-  
-  if (priceId === priceIds.proMonthly) {
+
+  // Check each configured price ID (only if they are set)
+  if (priceIds.proMonthly && priceId === priceIds.proMonthly) {
     return { plan: 'PRO', interval: 'monthly' };
   }
-  if (priceId === priceIds.proAnnual) {
+  if (priceIds.proAnnual && priceId === priceIds.proAnnual) {
     return { plan: 'PRO', interval: 'annual' };
   }
-  if (priceId === priceIds.premiumMonthly) {
+  if (priceIds.premiumMonthly && priceId === priceIds.premiumMonthly) {
     return { plan: 'PREMIUM', interval: 'monthly' };
   }
-  if (priceId === priceIds.premiumAnnual) {
+  if (priceIds.premiumAnnual && priceId === priceIds.premiumAnnual) {
     return { plan: 'PREMIUM', interval: 'annual' };
   }
-  if (priceId === priceIds.schoolAnnual) {
+  if (priceIds.schoolAnnual && priceId === priceIds.schoolAnnual) {
     return { plan: 'SCHOOL', interval: 'annual' };
   }
-  if (priceId === priceIds.districtAnnual) {
+  if (priceIds.districtAnnual && priceId === priceIds.districtAnnual) {
     return { plan: 'DISTRICT', interval: 'annual' };
   }
-  
+
   return null;
 }
 
