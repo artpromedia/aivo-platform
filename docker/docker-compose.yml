@@ -69,7 +69,7 @@ services:
         aivo_profile,aivo_research,aivo_collaboration,
         aivo_consent,aivo_focus,aivo_goal,aivo_homework,
         aivo_learner_model,aivo_messaging,aivo_reports,
-        aivo_experimentation,aivo_teacher_planning
+        aivo_experimentation,aivo_teacher_planning,aivo_community
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -710,6 +710,24 @@ services:
       <<: *common-env
       SERVICE_NAME: messaging-svc
       DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_messaging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  community-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/community-svc/Dockerfile
+    ports:
+      - "3050:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: community-svc
+      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_community
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,0 +1,204 @@
+// Community Service Prisma Schema
+// Supports teacher community features: posts, resources, comments, and likes
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum PostCategory {
+  TIPS
+  QUESTIONS
+  SUCCESS_STORIES
+  GENERAL
+  ANNOUNCEMENTS
+}
+
+enum ResourceType {
+  LESSON_PLAN
+  WORKSHEET
+  PRESENTATION
+  VIDEO
+  ASSESSMENT
+  OTHER
+}
+
+enum UserRole {
+  TEACHER
+  PARENT
+  PRACTITIONER
+  ADMIN
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Community posts for discussions, tips, and questions
+model Post {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+
+  // Author info (denormalized for performance)
+  authorId    String       @map("author_id") @db.Uuid
+  authorName  String       @map("author_name")
+  authorRole  UserRole     @map("author_role")
+  authorSchool String?     @map("author_school")
+
+  // Content
+  title       String
+  content     String
+  category    PostCategory @default(GENERAL)
+
+  // Engagement metrics (denormalized for performance)
+  likesCount    Int        @default(0) @map("likes_count")
+  commentsCount Int        @default(0) @map("comments_count")
+
+  // Status
+  isPublished Boolean      @default(true) @map("is_published")
+  isPinned    Boolean      @default(false) @map("is_pinned")
+
+  // Timestamps
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  likes       PostLike[]
+  comments    Comment[]
+
+  @@index([tenantId, category, isPublished])
+  @@index([tenantId, authorId])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+/// Likes on posts
+model PostLike {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([tenantId, userId])
+  @@map("post_likes")
+}
+
+/// Comments on posts
+model Comment {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  postId      String   @map("post_id") @db.Uuid
+
+  // Author info (denormalized)
+  authorId    String   @map("author_id") @db.Uuid
+  authorName  String   @map("author_name")
+  authorRole  UserRole @map("author_role")
+
+  // Content
+  content     String
+
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+/// Shared resources (lesson plans, worksheets, etc.)
+model SharedResource {
+  id            String       @id @default(uuid()) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+
+  // Author info (denormalized)
+  authorId      String       @map("author_id") @db.Uuid
+  authorName    String       @map("author_name")
+
+  // Resource details
+  title         String
+  description   String?
+  type          ResourceType
+  subject       String?
+  gradeLevel    String?      @map("grade_level")
+
+  // File info
+  fileUrl       String?      @map("file_url")
+  fileName      String?      @map("file_name")
+  fileSize      Int?         @map("file_size")
+  thumbnailUrl  String?      @map("thumbnail_url")
+
+  // Engagement
+  downloadCount Int          @default(0) @map("download_count")
+  likesCount    Int          @default(0) @map("likes_count")
+
+  // Status
+  isPublished   Boolean      @default(true) @map("is_published")
+
+  // Timestamps
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  likes         ResourceLike[]
+
+  @@index([tenantId, type, isPublished])
+  @@index([tenantId, subject])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("shared_resources")
+}
+
+/// Likes on resources
+model ResourceLike {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  resourceId  String   @map("resource_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  resource    SharedResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, userId])
+  @@index([tenantId, userId])
+  @@map("resource_likes")
+}
+
+/// Community statistics (aggregated daily)
+model CommunityStats {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  date            DateTime @db.Date
+
+  // Counts
+  totalPosts      Int      @default(0) @map("total_posts")
+  totalResources  Int      @default(0) @map("total_resources")
+  totalComments   Int      @default(0) @map("total_comments")
+  activeUsers     Int      @default(0) @map("active_users")
+
+  // Daily activity
+  newPosts        Int      @default(0) @map("new_posts")
+  newResources    Int      @default(0) @map("new_resources")
+  newComments     Int      @default(0) @map("new_comments")
+
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([tenantId, date])
+  @@map("community_stats")
+}

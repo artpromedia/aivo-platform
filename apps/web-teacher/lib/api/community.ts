@@ -2,32 +2,23 @@
  * Community API Client
  * Types and fetch functions for teacher community hub.
  *
- * Backend Service: COMING SOON - No backend exists yet
- * When mock mode is disabled, all functions throw a "Coming Soon" error.
- * This feature is planned for a future release.
+ * Backend Service: community-svc (port 3050)
  */
 
+const COMMUNITY_SVC_URL = process.env.NEXT_PUBLIC_COMMUNITY_SVC_URL || 'http://localhost:3050';
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
-// Error class for coming soon features
-class ComingSoonError extends Error {
-  constructor(feature: string) {
-    super(`${feature} is coming soon! This feature is currently in development.`);
-    this.name = 'ComingSoonError';
-  }
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export type PostCategory = 'discussion' | 'resource' | 'question' | 'success-story';
+export type PostCategory = 'tips' | 'questions' | 'success-stories' | 'general' | 'announcements';
 
 export interface PostAuthor {
   id: string;
   name: string;
   role: string;
-  school: string;
+  school?: string;
   avatarUrl?: string;
 }
 
@@ -41,32 +32,34 @@ export interface Post {
   comments: number;
   createdAt: string;
   isLiked?: boolean;
+  isPinned?: boolean;
   tags?: string[];
 }
 
-export type ResourceType = 'lesson' | 'activity' | 'worksheet' | 'game';
+export type ResourceType = 'lesson-plan' | 'worksheet' | 'presentation' | 'video' | 'assessment' | 'other';
 
 export interface SharedResource {
   id: string;
   title: string;
   description?: string;
   type: ResourceType;
-  subject: string;
-  gradeLevel: string;
+  subject?: string;
+  gradeLevel?: string;
   downloads: number;
-  rating: number;
-  ratingCount: number;
+  likes: number;
   author: string;
   authorId: string;
   thumbnailUrl?: string;
+  fileUrl?: string;
   createdAt: string;
 }
 
 export interface CommunityStats {
   totalPosts: number;
+  totalResources: number;
   totalComments: number;
-  resourcesShared: number;
-  likesReceived: number;
+  activeUsers: number;
+  trendingTopics?: Array<{ category: string; count: number }>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -80,13 +73,13 @@ function mockPosts(): Post[] {
       author: {
         id: 'u1',
         name: 'Sarah Thompson',
-        role: 'Math Teacher',
+        role: 'teacher',
         school: 'Lincoln Elementary',
       },
       title: 'Great strategies for teaching fractions to 4th graders',
       content:
         "I've found that using visual fraction tiles combined with the adaptive games really helps struggling learners. My students' scores improved 20% this month!",
-      category: 'success-story',
+      category: 'success-stories',
       likes: 24,
       comments: 8,
       createdAt: '2 hours ago',
@@ -97,13 +90,13 @@ function mockPosts(): Post[] {
       author: {
         id: 'u2',
         name: 'Michael Rodriguez',
-        role: 'Special Ed Teacher',
+        role: 'practitioner',
         school: 'Oak Park Academy',
       },
       title: 'How do you handle focus breaks for kids with ADHD?',
       content:
         "I'm looking for advice on timing and types of focus breaks. The built-in breathing exercises are great, but I'm wondering what intervals work best for others.",
-      category: 'question',
+      category: 'questions',
       likes: 15,
       comments: 12,
       createdAt: '5 hours ago',
@@ -113,13 +106,13 @@ function mockPosts(): Post[] {
       author: {
         id: 'u3',
         name: 'Emily Chen',
-        role: 'Reading Specialist',
+        role: 'teacher',
         school: 'Riverside School',
       },
       title: 'New phonics activity pack for K-2',
       content:
         'Just uploaded a collection of 15 phonics activities that integrate with the adaptive reading games. Great for differentiated instruction!',
-      category: 'resource',
+      category: 'tips',
       likes: 42,
       comments: 6,
       createdAt: '1 day ago',
@@ -129,13 +122,13 @@ function mockPosts(): Post[] {
       author: {
         id: 'u4',
         name: 'David Park',
-        role: '3rd Grade Teacher',
+        role: 'parent',
         school: 'Sunshine Elementary',
       },
       title: 'Team competitions - what works for you?',
       content:
         "I'm starting team competitions next week. Any tips on setting up fair teams and keeping motivation high throughout the week?",
-      category: 'discussion',
+      category: 'general',
       likes: 8,
       comments: 14,
       createdAt: '2 days ago',
@@ -148,12 +141,11 @@ function mockResources(): SharedResource[] {
     {
       id: '1',
       title: 'Fraction Fundamentals Pack',
-      type: 'lesson',
+      type: 'lesson-plan',
       subject: 'Math',
       gradeLevel: '3-5',
       downloads: 234,
-      rating: 4.8,
-      ratingCount: 45,
+      likes: 45,
       author: 'Sarah Thompson',
       authorId: 'u1',
       createdAt: '2024-12-01',
@@ -161,12 +153,11 @@ function mockResources(): SharedResource[] {
     {
       id: '2',
       title: 'Reading Comprehension Strategies',
-      type: 'activity',
+      type: 'worksheet',
       subject: 'Reading',
       gradeLevel: 'K-2',
       downloads: 189,
-      rating: 4.6,
-      ratingCount: 32,
+      likes: 32,
       author: 'Emily Chen',
       authorId: 'u3',
       createdAt: '2024-11-28',
@@ -178,21 +169,19 @@ function mockResources(): SharedResource[] {
       subject: 'Math',
       gradeLevel: '2-4',
       downloads: 156,
-      rating: 4.5,
-      ratingCount: 28,
+      likes: 28,
       author: 'Community',
       authorId: 'system',
       createdAt: '2024-11-25',
     },
     {
       id: '4',
-      title: 'Word Family Matching Game',
-      type: 'game',
+      title: 'Word Family Matching Presentation',
+      type: 'presentation',
       subject: 'Reading',
       gradeLevel: 'K-1',
       downloads: 312,
-      rating: 4.9,
-      ratingCount: 67,
+      likes: 67,
       author: 'Community',
       authorId: 'system',
       createdAt: '2024-11-20',
@@ -202,10 +191,15 @@ function mockResources(): SharedResource[] {
 
 function mockCommunityStats(): CommunityStats {
   return {
-    totalPosts: 12,
-    totalComments: 48,
-    resourcesShared: 5,
-    likesReceived: 127,
+    totalPosts: 156,
+    totalResources: 42,
+    totalComments: 523,
+    activeUsers: 89,
+    trendingTopics: [
+      { category: 'tips', count: 34 },
+      { category: 'questions', count: 28 },
+      { category: 'success-stories', count: 21 },
+    ],
   };
 }
 
@@ -223,8 +217,34 @@ export async function fetchPosts(
     return options?.category ? posts.filter((p) => p.category === options.category) : posts;
   }
 
-  // Community feature is coming soon - no backend service exists yet
-  throw new ComingSoonError('Teacher Community');
+  const params = new URLSearchParams();
+  if (options?.category) {
+    // Map frontend category to backend enum
+    const categoryMap: Record<PostCategory, string> = {
+      'tips': 'TIPS',
+      'questions': 'QUESTIONS',
+      'success-stories': 'SUCCESS_STORIES',
+      'general': 'GENERAL',
+      'announcements': 'ANNOUNCEMENTS',
+    };
+    params.set('category', categoryMap[options.category]);
+  }
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/posts?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch posts: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.data ?? data;
 }
 
 export async function fetchResources(
@@ -233,11 +253,45 @@ export async function fetchResources(
 ): Promise<SharedResource[]> {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    return mockResources();
+    let resources = mockResources();
+    if (options?.type) {
+      resources = resources.filter((r) => r.type === options.type);
+    }
+    if (options?.subject) {
+      resources = resources.filter((r) => r.subject === options.subject);
+    }
+    return resources;
   }
 
-  // Community feature is coming soon - no backend service exists yet
-  throw new ComingSoonError('Community Resources');
+  const params = new URLSearchParams();
+  if (options?.type) {
+    // Map frontend type to backend enum
+    const typeMap: Record<ResourceType, string> = {
+      'lesson-plan': 'LESSON_PLAN',
+      'worksheet': 'WORKSHEET',
+      'presentation': 'PRESENTATION',
+      'video': 'VIDEO',
+      'assessment': 'ASSESSMENT',
+      'other': 'OTHER',
+    };
+    params.set('type', typeMap[options.type]);
+  }
+  if (options?.subject) params.set('subject', options.subject);
+  if (options?.gradeLevel) params.set('gradeLevel', options.gradeLevel);
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/resources?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch resources: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.data ?? data;
 }
 
 export async function fetchCommunityStats(accessToken: string): Promise<CommunityStats> {
@@ -246,8 +300,19 @@ export async function fetchCommunityStats(accessToken: string): Promise<Communit
     return mockCommunityStats();
   }
 
-  // Community feature is coming soon - no backend service exists yet
-  throw new ComingSoonError('Community Stats');
+  const res = await fetch(`${COMMUNITY_SVC_URL}/stats`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch community stats: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.data ?? data;
 }
 
 export async function likePost(postId: string, accessToken: string): Promise<void> {
@@ -256,8 +321,36 @@ export async function likePost(postId: string, accessToken: string): Promise<voi
     return;
   }
 
-  // Community feature is coming soon - no backend service exists yet
-  throw new ComingSoonError('Post Likes');
+  const res = await fetch(`${COMMUNITY_SVC_URL}/posts/${postId}/like`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to like post: ${res.status}`);
+  }
+}
+
+export async function unlikePost(postId: string, accessToken: string): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return;
+  }
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/posts/${postId}/like`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to unlike post: ${res.status}`);
+  }
 }
 
 export async function createPost(
@@ -268,7 +361,7 @@ export async function createPost(
     await new Promise((resolve) => setTimeout(resolve, 400));
     return {
       id: `post-${Date.now()}`,
-      author: { id: 'current-user', name: 'You', role: 'Teacher', school: 'Your School' },
+      author: { id: 'current-user', name: 'You', role: 'teacher', school: 'Your School' },
       ...post,
       likes: 0,
       comments: 0,
@@ -276,9 +369,94 @@ export async function createPost(
     };
   }
 
-  // Community feature is coming soon - no backend service exists yet
-  throw new ComingSoonError('Create Post');
+  // Map frontend category to backend enum
+  const categoryMap: Record<PostCategory, string> = {
+    'tips': 'TIPS',
+    'questions': 'QUESTIONS',
+    'success-stories': 'SUCCESS_STORIES',
+    'general': 'GENERAL',
+    'announcements': 'ANNOUNCEMENTS',
+  };
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/posts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title: post.title,
+      content: post.content,
+      category: categoryMap[post.category],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to create post: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.data ?? data;
 }
 
-// Export the ComingSoonError for UI handling
-export { ComingSoonError };
+export async function addComment(
+  postId: string,
+  content: string,
+  accessToken: string
+): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return;
+  }
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/posts/${postId}/comments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to add comment: ${res.status}`);
+  }
+}
+
+export async function likeResource(resourceId: string, accessToken: string): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return;
+  }
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/resources/${resourceId}/like`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to like resource: ${res.status}`);
+  }
+}
+
+export async function downloadResource(resourceId: string, accessToken: string): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return;
+  }
+
+  const res = await fetch(`${COMMUNITY_SVC_URL}/resources/${resourceId}/download`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to track download: ${res.status}`);
+  }
+}
