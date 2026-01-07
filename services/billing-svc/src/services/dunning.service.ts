@@ -29,6 +29,7 @@
 
 import type { FastifyBaseLogger } from 'fastify';
 
+import { config } from '../config.js';
 import { prisma } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -387,46 +388,121 @@ export class DunningService {
     stage: DunningStage | 'resolved',
     subscriptionId: string
   ): Promise<void> {
-    // In production, this would call notify-svc
-    // For now, we'll just log the notification intent
-    const notificationTypes: Record<string, { type: string; message: string }> = {
+    const notificationTypes: Record<string, {
+      type: string;
+      subject: string;
+      message: string;
+      priority: 'high' | 'normal';
+      template: string;
+    }> = {
       day0: {
         type: 'PAYMENT_FAILED',
-        message: "We couldn't process your payment. Please update your payment method.",
+        subject: 'Action Required: Payment Failed',
+        message: "We couldn't process your payment. Please update your payment method to continue your subscription.",
+        priority: 'high',
+        template: 'payment-failed',
       },
       day3: {
         type: 'PAYMENT_REMINDER',
-        message: 'Reminder: Your payment is still pending. Please update your payment method to avoid service interruption.',
+        subject: 'Reminder: Payment Still Pending',
+        message: 'Your payment is still pending. Please update your payment method within 4 days to avoid service interruption.',
+        priority: 'high',
+        template: 'payment-reminder',
       },
       day7: {
         type: 'LIMITED_MODE_ACTIVATED',
-        message: 'Your subscription is now in limited mode due to unpaid balance. Some features are restricted.',
+        subject: 'Service Limited: Payment Required',
+        message: 'Your subscription is now in limited mode due to unpaid balance. Some features are restricted until payment is resolved.',
+        priority: 'high',
+        template: 'limited-mode-activated',
       },
       resolved: {
         type: 'PAYMENT_SUCCEEDED',
-        message: 'Your payment was successful! Full access has been restored.',
+        subject: 'Payment Successful - Full Access Restored',
+        message: 'Your payment was successful! Full access to all features has been restored.',
+        priority: 'normal',
+        template: 'payment-succeeded',
       },
     };
 
     const notification = notificationTypes[stage];
+    if (!notification) {
+      console.warn(`[Dunning] Unknown notification stage: ${stage}`);
+      return;
+    }
 
-    // Log notification (replace with actual notify-svc call)
     console.log(`[Dunning Notification] tenant=${tenantId} type=${notification.type} subscription=${subscriptionId}`);
 
-    // TODO: Integrate with notify-svc
-    // await fetch(`${config.notifySvcUrl}/internal/notifications`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     tenantId,
-    //     type: notification.type,
-    //     channel: 'EMAIL',
-    //     payload: {
-    //       message: notification.message,
-    //       subscriptionId,
-    //     },
-    //   }),
-    // });
+    // Get billing account owner for notification targeting
+    const subscription = await prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        billingAccount: {
+          select: {
+            ownerUserId: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!subscription?.billingAccount) {
+      console.warn(`[Dunning] No billing account found for subscription: ${subscriptionId}`);
+      return;
+    }
+
+    try {
+      // Call notify-svc to send the notification
+      const response = await fetch(`${config.services.notify}/internal/notifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': 'billing-svc',
+        },
+        body: JSON.stringify({
+          tenantId,
+          userId: subscription.billingAccount.ownerUserId,
+          type: notification.type,
+          channels: ['EMAIL', 'PUSH'], // Send via both email and push
+          priority: notification.priority,
+          payload: {
+            subject: notification.subject,
+            message: notification.message,
+            template: notification.template,
+            subscriptionId,
+            billingPortalUrl: `${config.services.auth}/billing/portal`,
+          },
+          metadata: {
+            source: 'dunning',
+            stage,
+            subscriptionId,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Dunning] Notification failed:`, {
+          status: response.status,
+          error: errorText,
+          tenantId,
+          stage,
+        });
+      } else {
+        console.log(`[Dunning] Notification sent successfully`, {
+          tenantId,
+          type: notification.type,
+          stage,
+        });
+      }
+    } catch (error) {
+      // Log but don't fail the dunning process if notification fails
+      console.error(`[Dunning] Failed to send notification:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        tenantId,
+        stage,
+      });
+    }
   }
 }
 

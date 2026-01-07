@@ -11,6 +11,7 @@
 
 import * as Y from 'yjs';
 
+import { prisma } from '../prisma.js';
 import { getRedisClient } from '../redis/index.js';
 
 /**
@@ -432,30 +433,108 @@ export class SyncService {
   private async loadFromDatabase(
     documentId: string
   ): Promise<{ state: Uint8Array; version: number } | null> {
-    // TODO: Implement actual database loading when Prisma is integrated
-    // This would load from the document_states table
-    return null;
+    try {
+      const docState = await prisma.documentState.findUnique({
+        where: { documentId },
+        select: {
+          state: true,
+          version: true,
+        },
+      });
+
+      if (!docState) {
+        return null;
+      }
+
+      return {
+        state: new Uint8Array(docState.state),
+        version: docState.version,
+      };
+    } catch (error) {
+      console.error(`[Sync] Failed to load document ${documentId} from database:`, error);
+      return null;
+    }
   }
 
   private async saveToDatabase(
     documentId: string,
     state: Uint8Array,
-    version: number
+    version: number,
+    tenantId?: string,
+    userId?: string
   ): Promise<void> {
-    // TODO: Implement actual database saving when Prisma is integrated
-    // This would upsert to the document_states table
-    const redis = getRedisClient();
+    try {
+      // Upsert document state to database
+      await prisma.documentState.upsert({
+        where: { documentId },
+        create: {
+          documentId,
+          tenantId: tenantId || '00000000-0000-0000-0000-000000000000', // Default tenant
+          state: Buffer.from(state),
+          version,
+          lastModifiedBy: userId,
+        },
+        update: {
+          state: Buffer.from(state),
+          version,
+          lastModifiedBy: userId,
+          updatedAt: new Date(),
+        },
+      });
 
-    // For now, persist to Redis with longer TTL
-    await redis.setex(
-      `doc:persistent:${documentId}`,
-      86400 * 7, // 7 days
-      JSON.stringify({
-        state: Buffer.from(state).toString('base64'),
-        version,
-        updatedAt: new Date().toISOString(),
-      })
-    );
+      // Also record in history for version restoration
+      const docState = await prisma.documentState.findUnique({
+        where: { documentId },
+        select: { id: true },
+      });
+
+      if (docState) {
+        await prisma.documentHistory.create({
+          data: {
+            documentStateId: docState.id,
+            version,
+            userId: userId || '00000000-0000-0000-0000-000000000000',
+            updateSize: state.length,
+          },
+        });
+
+        // Prune old history entries (keep last 100)
+        const historyCount = await prisma.documentHistory.count({
+          where: { documentStateId: docState.id },
+        });
+
+        if (historyCount > this.MAX_HISTORY) {
+          const oldEntries = await prisma.documentHistory.findMany({
+            where: { documentStateId: docState.id },
+            orderBy: { createdAt: 'asc' },
+            take: historyCount - this.MAX_HISTORY,
+            select: { id: true },
+          });
+
+          await prisma.documentHistory.deleteMany({
+            where: {
+              id: { in: oldEntries.map((e) => e.id) },
+            },
+          });
+        }
+      }
+
+      console.log(`[Sync] Document ${documentId} persisted to database, version ${version}`);
+    } catch (error) {
+      console.error(`[Sync] Failed to save document ${documentId} to database:`, error);
+
+      // Fallback: persist to Redis with longer TTL
+      const redis = getRedisClient();
+      await redis.setex(
+        `doc:persistent:${documentId}`,
+        86400 * 7, // 7 days
+        JSON.stringify({
+          state: Buffer.from(state).toString('base64'),
+          version,
+          updatedAt: new Date().toISOString(),
+        })
+      );
+    }
   }
 
   /**

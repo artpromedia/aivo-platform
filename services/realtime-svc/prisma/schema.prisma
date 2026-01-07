@@ -1,0 +1,177 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// Realtime Service Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Provides persistence layer for:
+// - Document states (Y.js CRDT snapshots)
+// - Room configurations and metadata
+// - Collaboration history
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DOCUMENT STATE
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Stores Y.js document state for persistence and recovery.
+// Documents are synced periodically from Redis cache.
+//
+
+model DocumentState {
+  id              String    @id @default(uuid()) @db.Uuid
+
+  /// Unique document identifier (matches Redis key)
+  documentId      String    @unique @map("document_id")
+
+  /// Tenant that owns this document
+  tenantId        String    @map("tenant_id") @db.Uuid
+
+  /// Document type for categorization
+  documentType    String    @default("general") @map("document_type")
+
+  /// Y.js state as binary (base64 encoded in JSON for transport)
+  state           Bytes
+
+  /// Current version number
+  version         Int       @default(0)
+
+  /// Last user who modified the document
+  lastModifiedBy  String?   @map("last_modified_by") @db.Uuid
+
+  /// Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  history         DocumentHistory[]
+
+  @@index([tenantId])
+  @@index([documentType])
+  @@index([updatedAt])
+  @@map("document_states")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DOCUMENT HISTORY
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Tracks document changes for version restoration and audit.
+//
+
+model DocumentHistory {
+  id              String        @id @default(uuid()) @db.Uuid
+
+  /// Reference to document state
+  documentStateId String        @map("document_state_id") @db.Uuid
+  documentState   DocumentState @relation(fields: [documentStateId], references: [id], onDelete: Cascade)
+
+  /// Version number at this point
+  version         Int
+
+  /// User who made this change
+  userId          String        @map("user_id") @db.Uuid
+
+  /// Size of the update in bytes
+  updateSize      Int           @map("update_size")
+
+  /// Optional: compressed delta (for storage efficiency)
+  delta           Bytes?
+
+  /// Timestamp
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([documentStateId, version])
+  @@index([createdAt])
+  @@map("document_history")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ROOM CONFIG
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Stores persistent room configurations.
+// Runtime room state is in Redis, but configs persist across restarts.
+//
+
+model RoomConfig {
+  id              String    @id @default(uuid()) @db.Uuid
+
+  /// Unique room identifier
+  roomId          String    @unique @map("room_id")
+
+  /// Tenant that owns this room
+  tenantId        String    @map("tenant_id") @db.Uuid
+
+  /// Room type (class, session, document, planning, analytics)
+  roomType        String    @map("room_type")
+
+  /// Room name/title
+  name            String?
+
+  /// Associated resource ID (e.g., classId, sessionId, documentId)
+  resourceId      String?   @map("resource_id")
+
+  /// Maximum members allowed (null = unlimited)
+  maxMembers      Int?      @map("max_members")
+
+  /// Whether room is currently active
+  isActive        Boolean   @default(true) @map("is_active")
+
+  /// Custom configuration as JSON
+  configJson      Json?     @map("config_json")
+
+  /// Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  activities      RoomActivity[]
+
+  @@index([tenantId])
+  @@index([roomType])
+  @@index([resourceId])
+  @@index([isActive])
+  @@map("room_configs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ROOM ACTIVITY
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Logs room activity for analytics and audit.
+//
+
+model RoomActivity {
+  id              String      @id @default(uuid()) @db.Uuid
+
+  /// Reference to room config
+  roomConfigId    String      @map("room_config_id") @db.Uuid
+  roomConfig      RoomConfig  @relation(fields: [roomConfigId], references: [id], onDelete: Cascade)
+
+  /// Activity type
+  activityType    String      @map("activity_type")
+
+  /// User who performed the activity
+  userId          String?     @map("user_id") @db.Uuid
+
+  /// Activity details as JSON
+  details         Json?
+
+  /// Timestamp
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  @@index([roomConfigId])
+  @@index([activityType])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("room_activities")
+}

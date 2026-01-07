@@ -496,16 +496,18 @@ export class SpeechTherapyService {
     const azureSpeechRegion = process.env.AZURE_SPEECH_REGION;
 
     if (!azureSpeechKey || !azureSpeechRegion) {
-      // Fall back to placeholder if Azure not configured
-      console.warn('[SpeechTherapy] Azure Speech not configured, using placeholder analysis');
-      const placeholderAnalysis: RecordingAnalysis = {
-        accuracy: 0,
-        phonemeBreakdown: this.analyzePhonemesPlaceholder(targetPhrase),
-        fluencyScore: 0,
-        suggestions: ['Speech analysis service not configured. Please contact administrator.'],
-      };
-      await this.updateRecordingAnalysis(recordingId, placeholderAnalysis, targetPhrase);
-      return placeholderAnalysis;
+      // Azure Speech is required for production speech analysis - fail explicitly
+      const missingVars = [];
+      if (!azureSpeechKey) missingVars.push('AZURE_SPEECH_KEY');
+      if (!azureSpeechRegion) missingVars.push('AZURE_SPEECH_REGION');
+
+      const errorMessage = `Azure Speech Service is not configured. Missing: ${missingVars.join(', ')}. ` +
+        'Speech therapy analysis requires Azure Cognitive Services. ' +
+        'Please configure the required environment variables.';
+
+      console.error('[SpeechTherapy] Azure Speech not configured:', { missingVars });
+
+      throw new Error(errorMessage);
     }
 
     try {

@@ -205,19 +205,24 @@ describe('Payment Routes', () => {
       expect(body.instrumentId).toBeDefined();
     });
 
-    // Note: This test requires isolating the DB client per-test, which is complex with 
-    // the current singleton pattern. Skipping for now - the validation logic is correct.
-    it.skip('should return 400 if no customer exists', async () => {
+    it('should return 400 if no customer exists', async () => {
+      // Create a fresh billing account without providerCustomerId
+      const accountWithoutCustomer: BillingAccount = {
+        ...testBillingAccount,
+        id: '123e4567-e89b-12d3-a456-426614174099', // Different ID to avoid conflicts
+        providerCustomerId: null, // No Stripe customer
+      };
+
       // Rebuild app with fresh DB without customer
       const freshDb = new InMemoryDbClient();
-      freshDb.seedBillingAccount(testBillingAccount); // No providerCustomerId
+      freshDb.seedBillingAccount(accountWithoutCustomer);
       freshDb.seedPlan(testPlan);
       setDbClient(freshDb);
       const freshApp = await buildApp();
 
       const response = await freshApp.inject({
         method: 'POST',
-        url: `/payments/accounts/${testBillingAccount.id}/payment-method/attach`,
+        url: `/payments/accounts/${accountWithoutCustomer.id}/payment-method/attach`,
         payload: {
           paymentMethodId: 'pm_test123',
         },
@@ -226,6 +231,9 @@ describe('Payment Routes', () => {
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
       expect(body.error).toContain('no Stripe customer');
+
+      // Restore the original db client for subsequent tests
+      setDbClient(db);
     });
   });
 

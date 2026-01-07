@@ -290,8 +290,9 @@ export class BillingReconciliationJob {
       return null;
     }
 
-    // Calculate potential credit
-    const proRataCreditCents = this.calculateProRataCredit(sub, overlappingFeatures.length);
+    // Calculate potential credit using actual plan pricing
+    const proRataCreditCents = await this.calculateProRataCredit(sub, overlappingFeatures.length);
+    const featureCharge = await this.getFeatureCharge(sub);
 
     // Return the first/primary overlap (could return array for multiple)
     return {
@@ -299,7 +300,7 @@ export class BillingReconciliationJob {
       featureKey: overlappingFeatures[0],
       districtContractId: districtEntitlements[0].contractId,
       parentSubscriptionId: sub.subscriptionId,
-      parentChargeAmountCents: this.estimateFeatureCharge(sub),
+      parentChargeAmountCents: featureCharge,
       recommendedAction: proRataCreditCents > 0 ? 'CREDIT' : 'NONE',
       proRataCreditCents,
     };
@@ -356,41 +357,109 @@ export class BillingReconciliationJob {
 
   /**
    * Calculate pro-rata credit for remaining subscription period.
-   * TODO: Implement proper pro-rata calculation based on actual pricing.
+   * Uses actual plan pricing from database for accurate calculations.
    */
-  private calculateProRataCredit(
+  private async calculateProRataCredit(
     sub: ParentSubscriptionData,
     overlappingFeatureCount: number
-  ): number {
+  ): Promise<number> {
     const now = new Date();
     const periodEnd = new Date(sub.periodEnd);
     const periodStart = new Date(sub.periodStart);
 
-    // Calculate days remaining vs total period
-    const totalDays = Math.ceil(
-      (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const remainingDays = Math.max(
-      0,
-      Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    );
+    // Calculate time fractions
+    const totalMs = periodEnd.getTime() - periodStart.getTime();
+    const remainingMs = Math.max(0, periodEnd.getTime() - now.getTime());
 
-    if (totalDays <= 0) return 0;
+    if (totalMs <= 0) return 0;
 
-    // Estimate monthly charge per feature (simplified)
-    const estimatedMonthlyFeatureChargeCents = 500; // $5/feature/month estimate
-    const dailyCharge = (estimatedMonthlyFeatureChargeCents * 12) / 365;
+    const remainingFraction = remainingMs / totalMs;
 
-    // Pro-rata credit for remaining days * overlapping features
-    return Math.round(dailyCharge * remainingDays * overlappingFeatureCount);
+    // Get actual plan pricing from database
+    const plan = await this.prisma.plan.findFirst({
+      where: { sku: sub.planSku },
+      select: {
+        unitPriceCents: true,
+        billingPeriod: true,
+        metadataJson: true,
+      },
+    });
+
+    if (!plan) {
+      console.warn(`[ReconciliationJob] Plan not found for SKU: ${sub.planSku}`);
+      return 0;
+    }
+
+    // Calculate per-feature value
+    const totalFeatureCount = sub.coveredFeatures.length;
+    if (totalFeatureCount === 0) return 0;
+
+    // Get feature weights from plan metadata (or use equal weighting)
+    const metadata = plan.metadataJson as Record<string, unknown> | null;
+    const featureWeights = (metadata?.featureWeights as Record<string, number>) || {};
+
+    // Calculate total weight and overlapping weight
+    let totalWeight = 0;
+    let overlappingWeight = 0;
+
+    for (const feature of sub.coveredFeatures) {
+      const weight = featureWeights[feature] ?? 1.0;
+      totalWeight += weight;
+    }
+
+    // Use overlappingFeatureCount if no specific features tracked
+    if (overlappingFeatureCount > 0 && totalWeight > 0) {
+      // Approximate weight of overlapping features
+      overlappingWeight = (overlappingFeatureCount / totalFeatureCount) * totalWeight;
+    }
+
+    if (totalWeight === 0) return 0;
+
+    // Calculate the portion of the subscription price attributable to overlapping features
+    const overlapFraction = overlappingWeight / totalWeight;
+    const overlapPriceCents = Math.round(plan.unitPriceCents * overlapFraction);
+
+    // Apply remaining time fraction for pro-rata amount
+    const proRataCreditCents = Math.round(overlapPriceCents * remainingFraction);
+
+    // Apply minimum credit threshold (avoid micro-credits)
+    if (proRataCreditCents < 50) return 0; // Less than $0.50
+
+    return proRataCreditCents;
   }
 
   /**
-   * Estimate total feature charge for subscription.
-   * TODO: Get actual pricing from plan.
+   * Get feature charge for subscription from actual plan pricing.
+   */
+  private async getFeatureCharge(sub: ParentSubscriptionData): Promise<number> {
+    const plan = await this.prisma.plan.findFirst({
+      where: { sku: sub.planSku },
+      select: {
+        unitPriceCents: true,
+        billingPeriod: true,
+      },
+    });
+
+    if (!plan) return 0;
+
+    // Convert to monthly equivalent for consistent comparison
+    let monthlyPriceCents = plan.unitPriceCents;
+    if (plan.billingPeriod === 'ANNUAL') {
+      monthlyPriceCents = Math.round(plan.unitPriceCents / 12);
+    } else if (plan.billingPeriod === 'QUARTERLY') {
+      monthlyPriceCents = Math.round(plan.unitPriceCents / 3);
+    }
+
+    // Per-feature monthly price (averaged)
+    const featureCount = sub.coveredFeatures.length || 1;
+    return Math.round(monthlyPriceCents / featureCount);
+  }
+
+  /**
+   * @deprecated Use getFeatureCharge for actual pricing
    */
   private estimateFeatureCharge(sub: ParentSubscriptionData): number {
-    // Simplified estimate - would look up actual plan pricing
+    // Fallback estimate when async call not possible
     const monthlyEstimate = sub.coveredFeatures.length * 500; // $5/feature
     return monthlyEstimate;
   }

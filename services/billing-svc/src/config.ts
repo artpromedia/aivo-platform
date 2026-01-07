@@ -58,6 +58,7 @@ const envSchema = z.object({
   // Service URLs
   AUTH_SERVICE_URL: z.string().default('http://auth-svc:3000'),
   TENANT_SERVICE_URL: z.string().default('http://tenant-svc:3000'),
+  NOTIFY_SERVICE_URL: z.string().default('http://notify-svc:3000'),
 });
 
 /**
@@ -109,6 +110,7 @@ export const config = {
   services: {
     auth: env.AUTH_SERVICE_URL,
     tenant: env.TENANT_SERVICE_URL,
+    notify: env.NOTIFY_SERVICE_URL,
   },
 
   // Derived flags

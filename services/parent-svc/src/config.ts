@@ -32,7 +32,11 @@ const configSchema = z.object({
 
   // Content moderation
   moderationEnabled: z.coerce.boolean().default(true),
-  moderationApiKey: z.string().optional(),
+  moderationProvider: z.enum(['perspective', 'comprehend', 'none']).default('none'),
+  moderationApiKey: z.string().optional(), // Perspective API key
+  awsRegion: z.string().default('us-east-1'),
+  awsAccessKeyId: z.string().optional(),
+  awsSecretAccessKey: z.string().optional(),
 
   // COPPA compliance
   coppaMinAge: z.coerce.number().default(13),
@@ -60,7 +64,11 @@ function loadConfig() {
     rateLimitMaxRequests: process.env.RATE_LIMIT_MAX_REQUESTS,
     messagingRateLimitPerDay: process.env.MESSAGING_RATE_LIMIT_PER_DAY,
     moderationEnabled: process.env.MODERATION_ENABLED,
+    moderationProvider: process.env.MODERATION_PROVIDER,
     moderationApiKey: process.env.MODERATION_API_KEY,
+    awsRegion: process.env.AWS_REGION,
+    awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     coppaMinAge: process.env.COPPA_MIN_AGE,
     parentInviteExpiryDays: process.env.PARENT_INVITE_EXPIRY_DAYS,
   });
