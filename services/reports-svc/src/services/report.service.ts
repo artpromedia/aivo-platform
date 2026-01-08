@@ -1515,22 +1515,27 @@ export class ReportService {
   }
 
   private formatNumberValue(value: unknown): string {
-    return typeof value === 'number' ? value.toLocaleString() : String(value);
+    if (typeof value === 'number') return value.toLocaleString();
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+    return String(value ?? '');
   }
 
   private formatPercentageValue(value: unknown): string {
-    const num = typeof value === 'number' ? value : Number.parseFloat(String(value));
+    const stringValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '0');
+    const num = typeof value === 'number' ? value : Number.parseFloat(stringValue);
     return `${(num * 100).toFixed(1)}%`;
   }
 
   private formatDateValue(value: unknown): string {
-    return value instanceof Date
-      ? this.formatDate(value)
-      : this.formatDate(new Date(String(value)));
+    if (value instanceof Date) return this.formatDate(value);
+    const stringValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '');
+    return this.formatDate(new Date(stringValue));
   }
 
   private formatDurationValue(value: unknown): string {
-    const minutes = typeof value === 'number' ? value : Number.parseFloat(String(value));
+    const stringValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '0');
+    const minutes = typeof value === 'number' ? value : Number.parseFloat(stringValue);
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
