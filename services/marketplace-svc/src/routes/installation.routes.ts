@@ -170,8 +170,7 @@ async function createInstallation(
   const { tenantId } = TenantIdSchema.parse(request.params);
   const data = CreateInstallationSchema.parse(request.body);
 
-  // TODO: Extract from auth context
-  const installedByUserId = '00000000-0000-0000-0000-000000000000';
+  const installedByUserId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   // Get the marketplace item
   const item = await prisma.marketplaceItem.findUnique({
@@ -291,8 +290,7 @@ async function updateInstallation(
   const { tenantId, installationId } = request.params;
   const data = UpdateInstallationSchema.parse(request.body);
 
-  // TODO: Extract from auth context
-  const actorUserId = '00000000-0000-0000-0000-000000000000';
+  const actorUserId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   const installation = await prisma.marketplaceInstallation.findFirst({
     where: {
@@ -363,8 +361,7 @@ async function disableInstallation(
   const { tenantId, installationId } = request.params;
   const { reason } = request.body;
 
-  // TODO: Extract from auth context
-  const actorUserId = '00000000-0000-0000-0000-000000000000';
+  const actorUserId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   const installation = await prisma.marketplaceInstallation.findFirst({
     where: {
@@ -414,8 +411,7 @@ async function enableInstallation(
 ) {
   const { tenantId, installationId } = request.params;
 
-  // TODO: Extract from auth context
-  const actorUserId = '00000000-0000-0000-0000-000000000000';
+  const actorUserId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   const installation = await prisma.marketplaceInstallation.findFirst({
     where: {
@@ -466,8 +462,7 @@ async function uninstall(
   const { tenantId, installationId } = request.params;
   const { reason } = request.body;
 
-  // TODO: Extract from auth context
-  const actorUserId = '00000000-0000-0000-0000-000000000000';
+  const actorUserId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   const installation = await prisma.marketplaceInstallation.findFirst({
     where: {

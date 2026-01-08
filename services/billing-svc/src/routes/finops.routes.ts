@@ -688,7 +688,7 @@ async function voidInvoice(
       metadataJson: {
         ...((invoice.metadataJson ?? {}) as object),
         voidedAt: new Date().toISOString(),
-        voidedBy: 'finops-admin', // TODO: Get from auth context
+        voidedBy: (request.headers['x-user-id'] as string) ?? 'finops-admin',
       },
     },
   });

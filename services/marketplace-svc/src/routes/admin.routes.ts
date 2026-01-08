@@ -152,8 +152,7 @@ async function reviewVersion(
   const { versionId } = VersionIdSchema.parse(request.params);
   const { decision, notes } = ReviewDecisionSchema.parse(request.body);
 
-  // TODO: Extract from auth context
-  const reviewerId = '00000000-0000-0000-0000-000000000000';
+  const reviewerId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   const version = await prisma.marketplaceItemVersion.findUnique({
     where: { id: versionId },
@@ -362,8 +361,7 @@ async function reviewInstallation(
   const { installationId } = InstallationIdSchema.parse(request.params);
   const { decision, reason } = InstallationApprovalSchema.parse(request.body);
 
-  // TODO: Extract from auth context
-  const approverUserId = '00000000-0000-0000-0000-000000000000';
+  const approverUserId = request.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
   const installation = await prisma.marketplaceInstallation.findUnique({
     where: { id: installationId },

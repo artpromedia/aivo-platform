@@ -1,0 +1,354 @@
+# ============================================================================
+# AIVO Microservice Kubernetes Deployment Template
+# ============================================================================
+#
+# Copy this template and replace the following placeholders:
+#   - professional-dev-svc: The name of your service (e.g., auth-svc, billing-svc)
+#   - 3000: The port your service listens on (usually 3000)
+#   - 100m: CPU request (e.g., 100m, 250m)
+#   - 500m: CPU limit (e.g., 500m, 1000m)
+#   - 256Mi: Memory request (e.g., 256Mi, 512Mi)
+#   - 512Mi: Memory limit (e.g., 512Mi, 1Gi)
+#   - 2: Minimum number of replicas (e.g., 2)
+#   - 10: Maximum number of replicas (e.g., 10)
+#
+# Resource Sizing Guidelines:
+# ┌─────────────────────┬────────────┬────────────┬──────────────┬──────────────┐
+# │ Service Type        │ CPU Req    │ CPU Limit  │ Memory Req   │ Memory Limit │
+# ├─────────────────────┼────────────┼────────────┼──────────────┼──────────────┤
+# │ Auth/Core           │ 100m       │ 500m       │ 256Mi        │ 512Mi        │
+# │ API Gateway         │ 200m       │ 1000m      │ 512Mi        │ 1Gi          │
+# │ AI/ML Services      │ 500m       │ 2000m      │ 1Gi          │ 4Gi          │
+# │ Background Workers  │ 100m       │ 500m       │ 256Mi        │ 512Mi        │
+# │ Realtime/WebSocket  │ 200m       │ 1000m      │ 512Mi        │ 1Gi          │
+# └─────────────────────┴────────────┴────────────┴──────────────┴──────────────┘
+#
+# ============================================================================
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: professional-dev-svc-config
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: professional-dev-svc
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "3000"
+  HOST: "0.0.0.0"
+  # Add service-specific non-secret configuration here
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: professional-dev-svc
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: professional-dev-svc
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: aivo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: professional-dev-svc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: professional-dev-svc
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: professional-dev-svc
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      # Optional: Add init containers for migrations
+      # initContainers:
+      #   - name: migrations
+      #     image: aivo/professional-dev-svc:latest
+      #     command: ["npm", "run", "db:migrate"]
+      #     env:
+      #       - name: DATABASE_URL
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: professional-dev-svc-secrets
+      #             key: database-url
+
+      containers:
+        - name: professional-dev-svc
+          image: aivo/professional-dev-svc:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: professional-dev-svc-config
+
+          env:
+            # Database (if applicable)
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: professional-dev-svc-secrets
+                  key: database-url
+                  optional: true
+
+            # Shared infrastructure secrets
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: NATS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: nats-url
+
+            # Add service-specific secrets here
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # Liveness probe: Is the application alive?
+          # Fails = restart the container
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Readiness probe: Is the application ready to receive traffic?
+          # Fails = remove from service endpoints
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Startup probe: Has the application started successfully?
+          # Prevents liveness probe from killing slow-starting containers
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /home/node/.cache
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+
+      # Spread pods across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: professional-dev-svc
+                topologyKey: kubernetes.io/hostname
+
+      # Spread pods across availability zones
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: professional-dev-svc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: professional-dev-svc
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: professional-dev-svc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: professional-dev-svc
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: professional-dev-svc
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: professional-dev-svc
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: professional-dev-svc
+  namespace: aivo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: professional-dev-svc
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: professional-dev-svc
+  namespace: aivo
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: professional-dev-svc
+
+---
+# Network Policy: Restrict ingress to only gateway and other aivo services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: professional-dev-svc-network-policy
+  namespace: aivo
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: professional-dev-svc
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from gateway namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: aivo-gateway
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow from other aivo services
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+  egress:
+    # Allow to other aivo services
+    - to:
+        - podSelector: {}
+    # Allow to infrastructure (Redis, NATS, Postgres)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: aivo-infra
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
