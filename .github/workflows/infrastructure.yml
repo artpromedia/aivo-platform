@@ -43,11 +43,47 @@ env:
 
 jobs:
   # ============================================================================
+  # INPUT VALIDATION (Security: Sanitize user-controlled inputs)
+  # ============================================================================
+  validate-inputs:
+    name: Validate Inputs
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    outputs:
+      environment: ${{ steps.validate.outputs.environment }}
+      action: ${{ steps.validate.outputs.action }}
+    steps:
+      - name: Validate workflow inputs
+        id: validate
+        run: |
+          # Validate environment input against allowed values
+          VALID_ENVIRONMENTS="development staging production"
+          INPUT_ENV="${{ github.event.inputs.environment }}"
+          if [[ ! " $VALID_ENVIRONMENTS " =~ " $INPUT_ENV " ]]; then
+            echo "::error::Invalid environment: $INPUT_ENV"
+            exit 1
+          fi
+          
+          # Validate action input against allowed values  
+          VALID_ACTIONS="plan apply destroy"
+          INPUT_ACTION="${{ github.event.inputs.action }}"
+          if [[ ! " $VALID_ACTIONS " =~ " $INPUT_ACTION " ]]; then
+            echo "::error::Invalid action: $INPUT_ACTION"
+            exit 1
+          fi
+          
+          # Output sanitized values
+          echo "environment=$INPUT_ENV" >> $GITHUB_OUTPUT
+          echo "action=$INPUT_ACTION" >> $GITHUB_OUTPUT
+
+  # ============================================================================
   # TERRAFORM VALIDATE
   # ============================================================================
   validate:
     name: Validate
     runs-on: ubuntu-latest
+    needs: [validate-inputs]
+    if: always() && (github.event_name != 'workflow_dispatch' || needs.validate-inputs.result == 'success')
     steps:
       - uses: actions/checkout@v4
 
@@ -258,24 +294,27 @@ jobs:
   # TERRAFORM APPLY
   # ============================================================================
   apply:
-    name: Apply ${{ github.event.inputs.environment }}
-    needs: [plan-dev, plan-staging, plan-production]
+    name: Apply ${{ needs.validate-inputs.outputs.environment || github.event.inputs.environment }}
+    needs: [validate-inputs, plan-dev, plan-staging, plan-production]
     if: |
       always() && 
-      github.event.inputs.action == 'apply' &&
+      needs.validate-inputs.result == 'success' &&
+      needs.validate-inputs.outputs.action == 'apply' &&
       (needs.plan-dev.result == 'success' || needs.plan-staging.result == 'success' || needs.plan-production.result == 'success')
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ needs.validate-inputs.outputs.environment }}
     permissions:
       id-token: write
       contents: read
+    env:
+      VALIDATED_ENV: ${{ needs.validate-inputs.outputs.environment }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', github.event.inputs.environment == 'development' && 'DEV' || github.event.inputs.environment == 'staging' && 'STAGING' || 'PROD')] }}
+          role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', env.VALIDATED_ENV == 'development' && 'DEV' || env.VALIDATED_ENV == 'staging' && 'STAGING' || 'PROD')] }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -286,23 +325,23 @@ jobs:
       - name: Download Plan
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-${{ github.event.inputs.environment }}
-          path: infrastructure/terraform/environments/${{ github.event.inputs.environment }}
+          name: tfplan-${{ env.VALIDATED_ENV }}
+          path: infrastructure/terraform/environments/${{ env.VALIDATED_ENV }}
 
       - name: Terraform Init
         run: terraform init
-        working-directory: infrastructure/terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: infrastructure/terraform/environments/${{ env.VALIDATED_ENV }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-        working-directory: infrastructure/terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: infrastructure/terraform/environments/${{ env.VALIDATED_ENV }}
 
       - name: Notify
         uses: 8398a7/action-slack@v3
         if: always()
         with:
           status: ${{ job.status }}
-          text: 'Terraform apply ${{ github.event.inputs.environment }}: ${{ job.status }}'
+          text: 'Terraform apply ${{ env.VALIDATED_ENV }}: ${{ job.status }}'
           channel: '#infrastructure'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -61,20 +61,20 @@ export interface ReportRequest {
 export interface GenerateReportRequest {
   id: string;
   type: ReportType;
-  format?: ReportFormat | undefined;
+  format?: ReportFormat;
   tenantId: string;
   requestedBy: string;
-  requestedAt?: Date | undefined;
-  parameters?: Record<string, unknown> | undefined;
+  requestedAt?: Date;
+  parameters?: Record<string, unknown>;
   dateRange?: {
     startDate: Date;
     endDate: Date;
-  } | undefined;
+  };
   options?: {
-    subtitle?: string | undefined;
-    includeCharts?: boolean | undefined;
+    subtitle?: string;
+    includeCharts?: boolean;
     [key: string]: unknown;
-  } | undefined;
+  };
 }
 
 /**

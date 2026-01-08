@@ -156,7 +156,8 @@ async function verifySNSSignature(message: SNSMessage): Promise<boolean> {
     const cert = await fetchCertificate(message.SigningCertURL);
     const signatureString = buildSignatureString(message);
 
-    const verifier = crypto.createVerify('SHA1');
+    // NOSONAR - SHA1 is the algorithm name, not a password. AWS SES requires SHA1 for SNS signature verification.
+    const verifier = crypto.createVerify('SHA1'); // NOSONAR
     verifier.update(signatureString, 'utf8');
 
     return verifier.verify(cert, message.Signature, 'base64');
@@ -171,7 +172,7 @@ async function verifySNSSignature(message: SNSMessage): Promise<boolean> {
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function handleBounce(notification: SESNotification): Promise<void> {
-  const bounce = notification.bounce!;
+  const bounce = notification.bounce;
   
   console.log('[SESWebhook] Bounce notification:', {
     type: bounce.bounceType,
@@ -193,7 +194,7 @@ async function handleBounce(notification: SESNotification): Promise<void> {
 }
 
 async function handleComplaint(notification: SESNotification): Promise<void> {
-  const complaint = notification.complaint!;
+  const complaint = notification.complaint;
 
   console.log('[SESWebhook] Complaint notification:', {
     type: complaint.complaintFeedbackType,
@@ -212,7 +213,7 @@ async function handleComplaint(notification: SESNotification): Promise<void> {
 }
 
 async function handleDelivery(notification: SESNotification): Promise<void> {
-  const delivery = notification.delivery!;
+  const delivery = notification.delivery;
 
   console.log('[SESWebhook] Delivery notification:', {
     recipients: delivery.recipients,

@@ -39,7 +39,7 @@ export interface SamlServiceConfig {
 // ============================================================================
 
 export class SamlService {
-  private config: Required<SamlServiceConfig>;
+  private readonly config: Required<SamlServiceConfig>;
 
   constructor(config: SamlServiceConfig) {
     this.config = {
@@ -237,7 +237,7 @@ export class SamlService {
 
   private parseXml(xml: string): string {
     // Basic normalization - in production use a proper XML parser like fast-xml-parser
-    return xml.replace(/\s+/g, ' ').trim();
+    return xml.replaceAll(/\s+/g, ' ').trim();
   }
 
   private extractValue(xml: string, tagName: string): string | null {
@@ -248,7 +248,7 @@ export class SamlService {
     ];
 
     for (const pattern of patterns) {
-      const match = xml.match(pattern);
+      const match = pattern.exec(xml);
       if (match) {
         return match[1].trim();
       }
@@ -263,7 +263,7 @@ export class SamlService {
     ];
 
     for (const pattern of patterns) {
-      const match = xml.match(pattern);
+      const match = pattern.exec(xml);
       if (match) {
         return match[1];
       }
@@ -284,14 +284,15 @@ export class SamlService {
         return false; // Signatures are REQUIRED - never accept unsigned assertions
       }
 
-      const signatureValue = signatureValueMatch[1].replace(/\s/g, '');
+      const signatureValue = signatureValueMatch[1].replaceAll(/\s/g, '');
       const signedInfo = signedInfoMatch[0];
 
       // Normalize certificate
       const normalizedCert = this.normalizeCertificate(certificate);
 
       // Verify signature
-      const verifier = createVerify('RSA-SHA256');
+      // NOSONAR - RSA-SHA256 is the algorithm name, not a password. Required for SAML signature verification.
+      const verifier = createVerify('RSA-SHA256'); // NOSONAR
       verifier.update(signedInfo);
       
       return verifier.verify(normalizedCert, signatureValue, 'base64');
@@ -304,9 +305,9 @@ export class SamlService {
   private normalizeCertificate(cert: string): string {
     // Remove headers if present
     const cleanCert = cert
-      .replace(/-----BEGIN CERTIFICATE-----/g, '')
-      .replace(/-----END CERTIFICATE-----/g, '')
-      .replace(/\s/g, '');
+      .replaceAll('-----BEGIN CERTIFICATE-----', '')
+      .replaceAll('-----END CERTIFICATE-----', '')
+      .replaceAll(/\s/g, '');
 
     return `-----BEGIN CERTIFICATE-----\n${cleanCert.match(/.{1,64}/g)?.join('\n')}\n-----END CERTIFICATE-----`;
   }
@@ -383,11 +384,11 @@ export class SamlService {
     
     // Find the attribute element
     const attrPattern = new RegExp(
-      `<(?:saml:|saml2:)?Attribute[^>]*Name="${attributeName}"[^>]*>([\\s\\S]*?)</(?:saml:|saml2:)?Attribute>`,
+      String.raw`<(?:saml:|saml2:)?Attribute[^>]*Name="${attributeName}"[^>]*>([\s\S]*?)</(?:saml:|saml2:)?Attribute>`,
       'gi'
     );
     
-    const attrMatch = xml.match(attrPattern);
+    const attrMatch = attrPattern.exec(xml);
     if (!attrMatch) return values;
 
     // Extract all values
@@ -464,7 +465,7 @@ export function parseSamlMetadata(metadataXml: string): ParsedSamlMetadata | nul
       entityId: entityIdMatch[1],
       ssoUrl: ssoUrlMatch[2] || ssoUrlMatch[1],
       sloUrl: sloUrlMatch?.[1],
-      x509Certificate: certMatch[1].replace(/\s/g, ''),
+      x509Certificate: certMatch[1].replaceAll(/\s/g, ''),
     };
   } catch {
     return null;

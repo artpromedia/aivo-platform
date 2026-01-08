@@ -396,7 +396,7 @@ jobs:
             - **Commit:** ${{ github.sha }}
             - **Services:** ${{ needs.prepare.outputs.services }}
             - **Deployed by:** ${{ github.actor }}
-            - **Time:** ${{ github.event.head_commit.timestamp }}
+            - **Time:** ${{ github.event.head_commit.timestamp || github.event.repository.updated_at || 'N/A' }}
           generate_release_notes: true
 
       - name: Notify deployment

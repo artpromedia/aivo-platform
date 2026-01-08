@@ -55,7 +55,8 @@ function verifyWebhookSignature(
     const timestampPayload = timestamp + payload;
     const decodedSignature = Buffer.from(signature, 'base64');
 
-    const verifier = crypto.createVerify('sha256');
+    // NOSONAR - sha256 is the algorithm name, not a password. Required for SendGrid signature verification.
+    const verifier = crypto.createVerify('sha256'); // NOSONAR
     verifier.update(timestampPayload);
 
     return verifier.verify(

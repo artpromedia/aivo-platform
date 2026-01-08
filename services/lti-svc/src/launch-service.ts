@@ -62,7 +62,7 @@ export interface LaunchResult {
   launchId: string;
   status: LtiLaunchStatus;
   redirectUrl: string;
-  aivoSessionId?: string | undefined;
+  aivoSessionId?: string;
   userRole: LtiUserRole;
 }
 
@@ -116,9 +116,9 @@ export class LaunchService {
     iss: string;
     login_hint: string;
     target_link_uri: string;
-    lti_message_hint?: string | undefined;
-    client_id?: string | undefined;
-    lti_deployment_id?: string | undefined;
+    lti_message_hint?: string;
+    client_id?: string;
+    lti_deployment_id?: string;
   }): Promise<{ redirectUrl: string }> {
     // Find matching tool registration
     const tool = await this.findTool(params.iss, params.client_id, params.lti_deployment_id);
@@ -168,7 +168,7 @@ export class LaunchService {
    */
   async handleLaunch(params: {
     id_token: string;
-    state?: string | undefined;
+    state?: string;
   }): Promise<LaunchResult> {
     // Validate state if provided
     let storedState: OidcState | undefined;
@@ -243,8 +243,8 @@ export class LaunchService {
       ...(payload.given_name ? { givenName: payload.given_name } : {}),
       ...(payload.family_name ? { familyName: payload.family_name } : {}),
       ...(payload.name ? { name: payload.name } : {}),
-      roles: payload[LTI_CLAIMS.ROLES]! || [],
-      ...(payload[LTI_CLAIMS.CUSTOM] ? { customClaims: payload[LTI_CLAIMS.CUSTOM]! } : {}),
+      roles: payload[LTI_CLAIMS.ROLES] ?? [],
+      ...(payload[LTI_CLAIMS.CUSTOM] ? { customClaims: payload[LTI_CLAIMS.CUSTOM] } : {}),
       tenantId: tool.tenantId,
       toolId: tool.id,
     };
