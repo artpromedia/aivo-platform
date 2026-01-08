@@ -231,8 +231,8 @@ async function handleDelivery(notification: SESNotification): Promise<void> {
 async function confirmSubscription(subscribeUrl: string): Promise<void> {
   return new Promise((resolve, reject) => {
     https.get(subscribeUrl, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      let _data = '';
+      res.on('data', (chunk) => { _data += chunk; });
       res.on('end', () => {
         console.log('[SESWebhook] Subscription confirmed');
         resolve();
