@@ -526,10 +526,29 @@ export class AdminAuthService {
 
     await this.auditLog(admin.id, admin.email, 'password_reset_requested', context);
 
-    // TODO: Send email with reset link
-    // Note: Reset tokens should NEVER be logged, even in development
-    // Use a proper email service or check database directly for debugging
-    console.log(`Password reset requested for ${email} - token generated (check database or email)`);
+    // Send email with reset link via notify-svc
+    const resetUrl = `${process.env.SANDBOX_ADMIN_URL ?? 'https://sandbox.aivolearning.com'}/reset-password?token=${resetToken}`;
+    const notifyServiceUrl = process.env.NOTIFY_SERVICE_URL ?? 'http://notify-svc:3000';
+
+    try {
+      await fetch(`${notifyServiceUrl}/internal/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: 'Password Reset Request - AIVO Sandbox Admin',
+          template: 'password-reset',
+          data: {
+            adminName: admin.name,
+            resetUrl,
+            expiresIn: '1 hour',
+          },
+        }),
+      });
+    } catch (err) {
+      // Log error but don't fail the request - token is still generated
+      console.error('Failed to send password reset email:', err);
+    }
   }
 
   /**

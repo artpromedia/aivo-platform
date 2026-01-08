@@ -6,6 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { evaluate as mathEvaluate } from 'mathjs';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -357,17 +358,17 @@ Respond with JSON:
   }
 
   /**
-   * Evaluate a math expression locally
+   * Evaluate a math expression using mathjs (safe alternative to eval)
    */
   private evaluateExpression(expression: string): EvaluationResult {
     try {
-      // Sanitize and prepare expression
+      // Sanitize and prepare expression for mathjs
       let expr = expression
         .replace(/×/g, '*')
         .replace(/÷/g, '/')
-        .replace(/\^/g, '**')
-        .replace(/√(\d+)/g, 'Math.sqrt($1)')
-        .replace(/π/g, 'Math.PI')
+        .replace(/\^/g, '^') // mathjs uses ^ for exponents
+        .replace(/√(\d+)/g, 'sqrt($1)')
+        .replace(/π/g, 'pi')
         .replace(/\s+/g, '');
 
       // Handle simple equations (solve for result)
@@ -383,16 +384,17 @@ Respond with JSON:
         }
       }
 
-      // Only allow safe characters
-      if (!/^[\d+\-*/.()Math.sqrtPI\s]+$/i.test(expr)) {
+      // Only allow safe characters for mathjs
+      // mathjs handles validation internally, but we still sanitize
+      if (!/^[\d+\-*/^.()sqrt pi\s]+$/i.test(expr)) {
         return {
           isValid: true,
           formattedResult: expression,
         };
       }
 
-      // eslint-disable-next-line no-eval
-      const result = eval(expr);
+      // Use mathjs for safe expression evaluation
+      const result = mathEvaluate(expr);
 
       if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
         return {
