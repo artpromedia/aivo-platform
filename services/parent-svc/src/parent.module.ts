@@ -14,6 +14,7 @@ import { AuthController } from './auth/auth.controller.js';
 import { MessagingController } from './messaging/messaging.controller.js';
 import { ReportsController } from './pdf/reports.controller.js';
 import { OnboardingController } from './onboarding/onboarding.controller.js';
+import { HomeworkController } from './homework/homework.controller.js';
 
 // Services
 import { ParentService } from './parent/parent.service.js';
@@ -25,6 +26,7 @@ import { EmailService } from './email/email.service.js';
 import { ContentModerationService } from './moderation/content-moderation.service.js';
 import { PdfReportService } from './pdf/pdf-report.service.js';
 import { OnboardingService } from './onboarding/onboarding.service.js';
+import { HomeworkService } from './homework/homework.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { CryptoService } from './crypto/crypto.service.js';
 import { I18nService } from './i18n/i18n.service.js';
@@ -44,6 +46,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     MessagingController,
     ReportsController,
     OnboardingController,
+    HomeworkController,
   ],
   providers: [
     // Core services
@@ -61,6 +64,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     ContentModerationService,
     PdfReportService,
     OnboardingService,
+    HomeworkService,
   ],
   exports: [
     ParentService,

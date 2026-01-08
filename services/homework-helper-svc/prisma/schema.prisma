@@ -93,6 +93,12 @@ model HomeworkSubmission {
   /// Error message if status is FAILED
   errorMessage  String?          @map("error_message") @db.Text
 
+  /// OCR confidence score (0.0 - 1.0) if text was extracted via OCR
+  ocrConfidence Float?           @map("ocr_confidence")
+
+  /// OCR provider used (google_vision, aws_textract, mathpix, tesseract)
+  ocrProvider   String?          @map("ocr_provider")
+
   createdAt     DateTime         @default(now()) @map("created_at")
   updatedAt     DateTime         @updatedAt @map("updated_at")
 

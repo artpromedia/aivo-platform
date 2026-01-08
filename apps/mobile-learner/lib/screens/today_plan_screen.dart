@@ -5,6 +5,7 @@ import 'package:flutter_common/flutter_common.dart';
 
 import '../accessibility/accessibility.dart';
 import '../plan/plan_controller.dart';
+import '../social_stories/social_stories.dart';
 
 class TodayPlanScreen extends ConsumerStatefulWidget {
   const TodayPlanScreen({super.key, required this.learnerId});
@@ -34,6 +35,21 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
       appBar: AppBar(
         title: Text(strings.todayPlan),
         actions: [
+          // Social Stories button
+          Semantics(
+            label: 'Social Stories',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.auto_stories),
+              tooltip: 'Social Stories',
+              onPressed: () {
+                context.push('/stories', extra: {
+                  'learnerId': widget.learnerId,
+                  'activityType': 'learning',
+                });
+              },
+            ),
+          ),
           Semantics(
             label: A11yLabels.refreshButton,
             button: true,
@@ -148,6 +164,9 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
                 ),
           ),
           const SizedBox(height: 16),
+
+          // Story recommendations (collapsed section)
+          _StoryRecommendationsSection(learnerId: widget.learnerId),
 
           // Activities list
           Expanded(
@@ -325,5 +344,119 @@ class _DifficultyIndicator extends StatelessWidget {
     if (level <= 2) return Colors.green;
     if (level <= 3) return Colors.orange;
     return Colors.red;
+  }
+}
+
+/// Collapsible section showing relevant social story recommendations
+class _StoryRecommendationsSection extends ConsumerStatefulWidget {
+  const _StoryRecommendationsSection({required this.learnerId});
+
+  final String learnerId;
+
+  @override
+  ConsumerState<_StoryRecommendationsSection> createState() =>
+      _StoryRecommendationsSectionState();
+}
+
+class _StoryRecommendationsSectionState
+    extends ConsumerState<_StoryRecommendationsSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final recommendationsAsync = ref.watch(
+      storyRecommendationsProvider(
+        StoryRecommendationQuery(
+          learnerId: widget.learnerId,
+          activityTypes: ['learning', 'transition'],
+          maxResults: 3,
+        ),
+      ),
+    );
+
+    return recommendationsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (recommendations) {
+        if (recommendations.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with expand/collapse
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_stories,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Stories for Today',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${recommendations.length} available',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _expanded ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.grey[600],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Expandable content
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: SizedBox(
+                height: 100,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  itemCount: recommendations.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final rec = recommendations[index];
+                    return SizedBox(
+                      width: 200,
+                      child: StoryRecommendationCard(
+                        recommendation: rec,
+                        compact: true,
+                        onTap: () => StoryLauncher.launchStory(
+                          context,
+                          story: rec.story,
+                          learnerId: widget.learnerId,
+                          triggerType: StoryTriggerType.scheduled,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              crossFadeState:
+                  _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 200),
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
   }
 }

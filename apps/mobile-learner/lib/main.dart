@@ -32,6 +32,8 @@ import 'screens/session_feedback_screen.dart';
 import 'screens/adaptive_games_screen.dart';
 import 'screens/focus_games_screen.dart';
 import 'screens/teams_screen.dart';
+import 'screens/social_stories_screen.dart';
+import 'social_stories/social_stories.dart';
 import 'learner/theme_loader.dart';
 import 'services/learner_notification_service.dart';
 
@@ -137,6 +139,23 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
           return TeamsScreen(learnerId: learnerId);
+        },
+      ),
+      // Social Stories route
+      GoRoute(
+        path: '/stories',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final learnerId = extra?['learnerId'] as String? ?? pinState.learnerId ?? '';
+          final emotionalState = extra?['emotionalState'] as String?;
+          final activityType = extra?['activityType'] as String?;
+          final category = extra?['category'] as StoryCategory?;
+          return SocialStoriesScreen(
+            learnerId: learnerId,
+            initialCategory: category,
+            emotionalState: emotionalState,
+            activityType: activityType,
+          );
         },
       ),
       if (_enableDesignSystemGallery)

@@ -5,7 +5,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/aivo_brand.dart';
+import 'package:go_router/go_router.dart';
 
+import '../social_stories/social_stories.dart';
 import 'calming_intervention_widget.dart';
 import 'emotional_state_provider.dart';
 
@@ -15,6 +17,7 @@ class InterventionOverlay extends StatefulWidget {
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final VoidCallback onComplete;
+  final String? learnerId;
 
   const InterventionOverlay({
     super.key,
@@ -22,6 +25,7 @@ class InterventionOverlay extends StatefulWidget {
     required this.onAccept,
     required this.onDecline,
     required this.onComplete,
+    this.learnerId,
   });
 
   @override
@@ -34,6 +38,7 @@ class InterventionOverlay extends StatefulWidget {
     required VoidCallback onAccept,
     required VoidCallback onDecline,
     required VoidCallback onComplete,
+    String? learnerId,
   }) {
     return showGeneralDialog(
       context: context,
@@ -46,6 +51,7 @@ class InterventionOverlay extends StatefulWidget {
           onAccept: onAccept,
           onDecline: onDecline,
           onComplete: onComplete,
+          learnerId: learnerId,
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
@@ -316,9 +322,53 @@ class _InterventionOverlayState extends State<InterventionOverlay>
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Social Stories option
+          if (widget.learnerId != null)
+            OutlinedButton.icon(
+              onPressed: () {
+                widget.onComplete();
+                Navigator.of(context).pop();
+                // Navigate to social stories with emotional context
+                context.push('/stories', extra: {
+                  'learnerId': widget.learnerId,
+                  'emotionalState': _getEmotionalStateFromIntervention(),
+                });
+              },
+              icon: const Icon(Icons.auto_stories),
+              label: const Text('Read a Social Story'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: Colors.white.withOpacity(0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  String? _getEmotionalStateFromIntervention() {
+    // Map intervention types to emotional states for story recommendations
+    switch (widget.intervention.interventionType) {
+      case 'BREATHING':
+      case 'GROUNDING':
+        return 'anxious';
+      case 'MOVEMENT':
+        return 'restless';
+      case 'SENSORY':
+        return 'overwhelmed';
+      case 'ENCOURAGEMENT':
+        return 'frustrated';
+      case 'BREAK':
+        return 'tired';
+      default:
+        return null;
+    }
   }
 
   Color _getUrgencyColor(String urgency) {
