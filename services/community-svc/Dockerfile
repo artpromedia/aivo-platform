@@ -7,7 +7,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Enable corepack for pnpm
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 # Copy workspace files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -35,7 +35,7 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
 # Copy built files

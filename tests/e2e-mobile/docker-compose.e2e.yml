@@ -57,7 +57,7 @@ services:
   # Mock API Gateway
   mock-api:
     build:
-      context: ../tests/e2e-mobile/mock-server
+      context: ./mock-server
       dockerfile: Dockerfile
     container_name: aivo-mock-api
     environment:
@@ -73,7 +73,7 @@ services:
       redis-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,7 +104,7 @@ services:
       nats-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -131,7 +131,7 @@ services:
       auth-svc-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4100/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4100/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -158,7 +158,7 @@ services:
       redis-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4200/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -184,7 +184,7 @@ services:
       postgres-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4300/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4300/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -212,7 +212,7 @@ services:
       nats-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4400/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4400/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -238,7 +238,7 @@ services:
       postgres-test:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4500/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4500/health"]
       interval: 10s
       timeout: 5s
       retries: 5

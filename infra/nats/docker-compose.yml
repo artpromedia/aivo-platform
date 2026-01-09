@@ -15,7 +15,7 @@
 # Note: For local dev, connecting to any node works.
 # JetStream streams are replicated across nodes.
 
-version: '3.8'
+# Note: 'version' field is obsolete in Docker Compose v2+
 
 services:
   # ==========================================================================

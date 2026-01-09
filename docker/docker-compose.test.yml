@@ -6,7 +6,7 @@
 # - Minimal service set for integration testing
 # ══════════════════════════════════════════════════════════════════════════════
 
-version: '3.8'
+# Note: 'version' field is obsolete in Docker Compose v2+
 
 x-test-env: &test-env
   NODE_ENV: test

@@ -4,7 +4,7 @@
 # Use with docker-compose.override.yml for hot-reloading during development.
 # ══════════════════════════════════════════════════════════════════════════════
 
-version: '3.8'
+# Note: 'version' field is obsolete in Docker Compose v2+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # YAML Anchors for DRY Configuration
@@ -199,7 +199,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   tenant-svc:
     <<: *node-service
@@ -217,7 +217,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   profile-svc:
     <<: *node-service
@@ -235,7 +235,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   consent-svc:
     <<: *node-service
@@ -253,7 +253,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Content Layer (Tier 2)
@@ -284,7 +284,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   content-authoring-svc:
     <<: *node-service
@@ -303,7 +303,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Assessment & Learning (Tier 3)
@@ -325,7 +325,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   session-svc:
     <<: *node-service
@@ -348,7 +348,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   baseline-svc:
     <<: *node-service
@@ -370,7 +370,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Personalization (Tier 4)
@@ -392,7 +392,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   learner-model-svc:
     <<: *node-service
@@ -410,7 +410,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Engagement & Gamification (Tier 5)
@@ -434,7 +434,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   focus-svc:
     <<: *node-service
@@ -452,7 +452,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Homework & Goals (Tier 6)
@@ -475,7 +475,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   goal-svc:
     <<: *node-service
@@ -493,7 +493,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   teacher-planning-svc:
     <<: *node-service
@@ -511,7 +511,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Analytics & Research (Tier 7)
@@ -535,7 +535,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   retention-svc:
     <<: *node-service
@@ -554,7 +554,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   research-svc:
     <<: *node-service
@@ -572,7 +572,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   experimentation-svc:
     <<: *node-service
@@ -590,7 +590,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   reports-svc:
     <<: *node-service
@@ -609,7 +609,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Marketplace & Billing (Tier 8)
@@ -632,7 +632,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   billing-svc:
     <<: *node-service
@@ -652,7 +652,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   payments-svc:
     <<: *node-service
@@ -671,7 +671,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Communication (Tier 9)
@@ -697,7 +697,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   messaging-svc:
     <<: *node-service
@@ -715,7 +715,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   community-svc:
     <<: *node-service
@@ -733,7 +733,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   collaboration-svc:
     <<: *node-service
@@ -751,7 +751,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Integration & Sync (Tier 10)
@@ -773,7 +773,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   lti-svc:
     <<: *node-service
@@ -791,7 +791,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   sis-sync-svc:
     <<: *node-service
@@ -809,7 +809,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Safety & Compliance (Tier 11)
@@ -831,7 +831,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Tools & Sandbox (Tier 12)
@@ -853,7 +853,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   sandbox-svc:
     <<: *node-service
@@ -871,7 +871,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   device-mgmt-svc:
     <<: *node-service
@@ -889,7 +889,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # AI Services (Tier 13)
@@ -919,7 +919,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
   # ════════════════════════════════════════════════════════════════════════════
   # Search Infrastructure
