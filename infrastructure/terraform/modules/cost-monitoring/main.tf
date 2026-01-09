@@ -46,8 +46,9 @@ locals {
 # SNS Topic for Cost Alerts
 # ==============================================================================
 resource "aws_sns_topic" "cost_alerts" {
-  name = "${local.name}-cost-alerts"
-  tags = local.tags
+  name              = "${local.name}-cost-alerts"
+  kms_master_key_id = "alias/aws/sns"
+  tags              = local.tags
 }
 
 resource "aws_sns_topic_subscription" "email" {
@@ -286,12 +287,57 @@ resource "aws_s3_bucket" "cost_reports" {
   tags   = local.tags
 }
 
+# Block public access to cost reports bucket
+resource "aws_s3_bucket_public_access_block" "cost_reports" {
+  bucket = aws_s3_bucket.cost_reports.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Enable server-side encryption for cost reports bucket
+resource "aws_s3_bucket_server_side_encryption_configuration" "cost_reports" {
+  bucket = aws_s3_bucket.cost_reports.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+    bucket_key_enabled = true
+  }
+}
+
+# Enable versioning for cost reports bucket
+resource "aws_s3_bucket_versioning" "cost_reports" {
+  bucket = aws_s3_bucket.cost_reports.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_s3_bucket_policy" "cost_reports" {
   bucket = aws_s3_bucket.cost_reports.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.cost_reports.arn,
+          "${aws_s3_bucket.cost_reports.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
       {
         Sid    = "AllowBillingReports"
         Effect = "Allow"

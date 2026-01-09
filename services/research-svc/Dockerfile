@@ -27,7 +27,7 @@ COPY libs/ts-rbac/package.json libs/ts-rbac/
 COPY libs/ts-storage/package.json libs/ts-storage/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --filter @aivo/research-svc...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter @aivo/research-svc...
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Build Stage
@@ -47,10 +47,7 @@ COPY tsconfig.base.json ./
 
 # Generate Prisma client
 WORKDIR /app/services/research-svc
-RUN pnpm db:generate
-
-# Build
-RUN pnpm build
+RUN pnpm db:generate && pnpm build
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Production Stage
@@ -61,16 +58,16 @@ FROM base AS runner
 ENV NODE_ENV=production
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 appuser
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 appuser
 
 WORKDIR /app
 
-# Copy built artifacts
-COPY --from=builder --chown=appuser:nodejs /app/services/research-svc/dist ./dist
+# Copy built artifacts with proper permissions
+COPY --from=builder --chmod=555 --chown=appuser:nodejs /app/services/research-svc/dist ./dist
 COPY --from=builder --chown=appuser:nodejs /app/services/research-svc/node_modules ./node_modules
-COPY --from=builder --chown=appuser:nodejs /app/services/research-svc/prisma ./prisma
-COPY --from=builder --chown=appuser:nodejs /app/services/research-svc/package.json ./
+COPY --from=builder --chmod=444 --chown=appuser:nodejs /app/services/research-svc/prisma ./prisma
+COPY --from=builder --chmod=444 --chown=appuser:nodejs /app/services/research-svc/package.json ./
 
 USER appuser
 

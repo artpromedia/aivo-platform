@@ -18,7 +18,7 @@ COPY services/community-svc/package.json ./services/community-svc/
 COPY services/community-svc/tsconfig.json ./services/community-svc/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy source files
 COPY services/community-svc ./services/community-svc/
@@ -35,13 +35,13 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate && \
+    addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# Copy built files
-COPY --from=builder /app/services/community-svc/dist ./dist/
-COPY --from=builder /app/services/community-svc/generated ./generated/
-COPY --from=builder /app/services/community-svc/package.json ./
+# Copy built files with read-only permissions
+COPY --from=builder --chmod=555 /app/services/community-svc/dist ./dist/
+COPY --from=builder --chmod=444 /app/services/community-svc/generated ./generated/
+COPY --from=builder --chmod=444 /app/services/community-svc/package.json ./
 COPY --from=builder /app/services/community-svc/node_modules ./node_modules/
 
 USER nodejs

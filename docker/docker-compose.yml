@@ -59,8 +59,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: aivo
-      POSTGRES_PASSWORD: aivo_dev_password
+      POSTGRES_USER: ${POSTGRES_USER:-aivo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivo_dev_password}
       POSTGRES_MULTIPLE_DATABASES: >-
         aivo_auth,aivo_tenant,aivo_content,aivo_session,
         aivo_assessment,aivo_engagement,aivo_analytics,
@@ -188,7 +188,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: auth-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_auth
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_auth
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       JWT_EXPIRES_IN: 24h
       REFRESH_TOKEN_EXPIRES_IN: 7d
@@ -211,7 +211,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: tenant-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_tenant
     depends_on:
       postgres:
         condition: service_healthy
@@ -229,7 +229,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: profile-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_profile
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_profile
     depends_on:
       postgres:
         condition: service_healthy
@@ -247,7 +247,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: consent-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_consent
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_consent
     depends_on:
       postgres:
         condition: service_healthy
@@ -269,12 +269,12 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: content-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_content
       STORAGE_BUCKET: aivo-content-dev
       CDN_URL: http://localhost:9000/aivo-content-dev
       S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: aivo_minio
-      S3_SECRET_KEY: aivo_minio_secret
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-aivo_minio}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-aivo_minio_secret}
     depends_on:
       postgres:
         condition: service_healthy
@@ -296,7 +296,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: content-authoring-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_content
       CONTENT_SVC_URL: http://content-svc:3000
     depends_on:
       content-svc:
@@ -319,7 +319,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: assessment-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_assessment
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_assessment
     depends_on:
       postgres:
         condition: service_healthy
@@ -337,7 +337,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: session-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_session
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_session
       CONTENT_SVC_URL: http://content-svc:3000
       PERSONALIZATION_SVC_URL: http://personalization-svc:3000
       BILLING_SVC_URL: http://billing-svc:3000
@@ -360,7 +360,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: baseline-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_baseline
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_baseline
       ASSESSMENT_SVC_URL: http://assessment-svc:3000
       PERSONALIZATION_SVC_URL: http://personalization-svc:3000
     depends_on:
@@ -386,7 +386,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: personalization-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_personalization
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_personalization
     depends_on:
       postgres:
         condition: service_healthy
@@ -404,7 +404,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: learner-model-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_learner_model
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_learner_model
     depends_on:
       postgres:
         condition: service_healthy
@@ -426,7 +426,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: engagement-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_engagement
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_engagement
     depends_on:
       postgres:
         condition: service_healthy
@@ -446,7 +446,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: focus-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_focus
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_focus
     depends_on:
       postgres:
         condition: service_healthy
@@ -468,7 +468,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: homework-helper-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_homework
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_homework
       AI_ORCHESTRATOR_URL: http://ai-orchestrator:3000
     depends_on:
       postgres:
@@ -487,7 +487,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: goal-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_goal
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_goal
     depends_on:
       postgres:
         condition: service_healthy
@@ -505,7 +505,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: teacher-planning-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_teacher_planning
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_teacher_planning
     depends_on:
       postgres:
         condition: service_healthy
@@ -527,7 +527,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: analytics-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_analytics
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_analytics
     depends_on:
       postgres:
         condition: service_healthy
@@ -547,7 +547,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: retention-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_retention
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_retention
       NOTIFICATION_SVC_URL: http://notify-svc:3000
     depends_on:
       postgres:
@@ -566,7 +566,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: research-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_research
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_research
     depends_on:
       postgres:
         condition: service_healthy
@@ -584,7 +584,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: experimentation-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_experimentation
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_experimentation
     depends_on:
       postgres:
         condition: service_healthy
@@ -602,7 +602,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: reports-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_reports
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_reports
       ANALYTICS_SVC_URL: http://analytics-svc:3000
     depends_on:
       postgres:
@@ -625,7 +625,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: marketplace-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_marketplace
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_marketplace
       CONTENT_SVC_URL: http://content-svc:3000
     depends_on:
       postgres:
@@ -644,7 +644,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: billing-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_billing
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_billing
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
@@ -664,7 +664,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: payments-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_billing
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_billing
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
     depends_on:
       postgres:
@@ -687,7 +687,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: notify-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_notification
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_notification
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
       FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
     depends_on:
@@ -709,7 +709,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: messaging-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_messaging
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_messaging
     depends_on:
       postgres:
         condition: service_healthy
@@ -727,7 +727,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: community-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_community
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_community
     depends_on:
       postgres:
         condition: service_healthy
@@ -745,7 +745,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: collaboration-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_collaboration
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_collaboration
     depends_on:
       postgres:
         condition: service_healthy
@@ -767,7 +767,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: integration-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_tenant
     depends_on:
       postgres:
         condition: service_healthy
@@ -785,7 +785,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: lti-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_tenant
     depends_on:
       postgres:
         condition: service_healthy
@@ -803,7 +803,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: sis-sync-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_tenant
     depends_on:
       postgres:
         condition: service_healthy
@@ -825,7 +825,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: dsr-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_consent
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_consent
     depends_on:
       postgres:
         condition: service_healthy
@@ -847,7 +847,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: embedded-tools-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_content
     depends_on:
       postgres:
         condition: service_healthy
@@ -865,7 +865,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: sandbox-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_content
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_content
     depends_on:
       postgres:
         condition: service_healthy
@@ -883,7 +883,7 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: device-mgmt-svc
-      DATABASE_URL: postgresql://aivo:aivo_dev_password@postgres:5432/aivo_tenant
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_tenant
     depends_on:
       postgres:
         condition: service_healthy
@@ -1065,8 +1065,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: aivo_minio
-      MINIO_ROOT_PASSWORD: aivo_minio_secret
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-aivo_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-aivo_minio_secret}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"

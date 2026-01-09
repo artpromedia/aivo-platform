@@ -19,6 +19,7 @@ import hashlib
 import json
 import logging
 import pickle
+import re
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +29,19 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.calibration import CalibratedClassifierCV
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_id(identifier: str) -> str:
+    """Sanitize user-controlled identifiers for safe logging.
+    
+    Removes potentially dangerous characters to prevent log injection attacks.
+    Only allows alphanumeric characters, hyphens, and underscores.
+    """
+    if not identifier:
+        return "<empty>"
+    # Only allow alphanumeric, hyphens, and underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '', str(identifier)[:128])
+    return sanitized if sanitized else "<invalid>"
 
 
 class RiskLevel(str, Enum):
@@ -415,7 +429,7 @@ class StudentRiskModel:
                 prediction = await self.predict_risk(student_id, tenant_id)
                 results[student_id] = prediction
             except Exception as e:
-                logger.error(f"Failed to predict risk for {student_id}: {e}")
+                logger.error(f"Failed to predict risk for {_sanitize_id(student_id)}: {e}")
         
         return results
     
@@ -604,7 +618,7 @@ class StudentRiskModel:
         """Fetch student features from the feature store"""
         # In production, this would fetch from a feature store or compute from raw data
         # For now, return placeholder values
-        logger.warning(f"Using placeholder features for student {student_id}")
+        logger.warning(f"Using placeholder features for student {_sanitize_id(student_id)}")
         return {}
     
     async def _get_previous_prediction(
