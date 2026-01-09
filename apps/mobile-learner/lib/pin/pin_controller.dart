@@ -57,4 +57,23 @@ class PinController extends StateNotifier<PinAuthState> {
     await _storage.clear();
     state = PinAuthState.unauthenticated();
   }
+
+  /// Set authenticated state from SSO login.
+  ///
+  /// This is called when the user authenticates via enterprise SSO
+  /// (Clever, ClassLink, Google, Microsoft) instead of PIN.
+  ///
+  /// Addresses RE-AUDIT-003: Mobile Apps Still Lack Enterprise SSO
+  void setAuthenticatedFromSso({
+    required String userId,
+    required String tenantId,
+  }) {
+    // For SSO, we use the user ID as the learner ID
+    // The SSO token is stored separately by SsoService
+    state = PinAuthState.authenticated(
+      learnerId: userId,
+      tenantId: tenantId,
+    );
+    debugPrint('[PinController] Authenticated via SSO: $userId @ $tenantId');
+  }
 }

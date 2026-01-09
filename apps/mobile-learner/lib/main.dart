@@ -24,6 +24,7 @@ import 'screens/homework_helper_intro_screen.dart';
 import 'screens/homework_steps_screen.dart';
 import 'screens/homework_text_input_screen.dart';
 import 'screens/pin_entry_screen.dart';
+import 'screens/learner_login_screen.dart';
 import 'screens/today_plan_screen.dart';
 import 'screens/session_complete_screen.dart';
 import 'screens/design_system_gallery_screen.dart';
@@ -44,8 +45,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
   final baselineState = ref.watch(learnerBaselineControllerProvider);
 
   return GoRouter(
-    initialLocation: '/pin',
+    initialLocation: '/login',
     routes: [
+      // New unified login screen with SSO + PIN options
+      GoRoute(path: '/login', builder: (context, state) => const LearnerLoginScreen()),
+      // Legacy PIN-only entry (kept for deep links and testing)
       GoRoute(path: '/pin', builder: (context, state) => const PinEntryScreen()),
       GoRoute(
         path: '/plan',
@@ -166,13 +170,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
       if (pinState.status == PinStatus.loading) return null;
 
       final authed = pinState.isAuthenticated;
-      final atPin = state.matchedLocation == '/pin';
+      final atLogin = state.matchedLocation == '/login' || state.matchedLocation == '/pin';
 
-      // Not authenticated -> go to PIN
-      if (!authed && !atPin) return '/pin';
+      // Not authenticated -> go to login
+      if (!authed && !atLogin) return '/login';
 
-      // Authenticated at PIN -> check baseline status and route appropriately
-      if (authed && atPin) {
+      // Authenticated at login -> check baseline status and route appropriately
+      if (authed && atLogin) {
         // Check baseline status
         final profile = baselineState.profile;
 

@@ -103,10 +103,16 @@ class TeacherSettingsScreen extends ConsumerWidget {
             ],
           ),
 
-          // Appearance
+          // Appearance & Accessibility
           _SettingsSection(
-            title: 'Appearance',
+            title: 'Appearance & Accessibility',
             children: [
+              _SettingsTile(
+                icon: Icons.accessibility_new,
+                title: 'Accessibility',
+                subtitle: 'Text size, contrast, and display options',
+                onTap: () => context.go('/accessibility'),
+              ),
               _SettingsTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Dark Mode',

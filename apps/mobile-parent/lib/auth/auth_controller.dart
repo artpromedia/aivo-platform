@@ -53,6 +53,57 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  /// Authenticate via enterprise SSO (Clever, ClassLink, Google, Microsoft).
+  ///
+  /// This is called after the SSO flow completes and returns tokens.
+  /// Addresses RE-AUDIT-003: Mobile Apps Still Lack Enterprise SSO
+  Future<bool> loginWithSso({
+    required String accessToken,
+    required String refreshToken,
+    required String provider,
+  }) async {
+    state = AuthState.loading();
+    try {
+      final decoded = AuthState.decode(accessToken);
+      if (decoded.userId.isEmpty || decoded.tenantId.isEmpty || decoded.isExpired) {
+        state = AuthState.error('Invalid SSO token received');
+        return false;
+      }
+
+      // Verify the user has PARENT role
+      if (!decoded.roles.contains('PARENT')) {
+        state = AuthState.error('This SSO account is not a parent account');
+        return false;
+      }
+
+      await _storage.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
+      state = AuthState.authenticated(
+        userId: decoded.userId,
+        tenantId: decoded.tenantId,
+        roles: decoded.roles,
+      );
+
+      debugPrint('[AuthController] SSO login successful via $provider: ${decoded.userId}');
+      return true;
+    } catch (e) {
+      debugPrint('[AuthController] SSO login error: $e');
+      state = AuthState.error('SSO login failed');
+      return false;
+    }
+  }
+
+  /// Set authenticated state directly from SSO callback.
+  ///
+  /// Used when SSO tokens are already validated and stored by SsoService.
+  void setAuthenticatedFromSso({
+    required String userId,
+    required String tenantId,
+    required List<String> roles,
+  }) {
+    state = AuthState.authenticated(userId: userId, tenantId: tenantId, roles: roles);
+    debugPrint('[AuthController] Authenticated via SSO: $userId');
+  }
+
   Future<void> logout() async {
     await _storage.clear();
     state = AuthState.unauthenticated();

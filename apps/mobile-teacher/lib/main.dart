@@ -28,9 +28,11 @@ import 'screens/session_plan_screen.dart';
 import 'screens/session_log_screen.dart';
 import 'screens/learner_detail_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/accessibility_settings_screen.dart';
 import 'screens/gradebook/gradebook_screen.dart';
 import 'screens/sessions/live_session_screen.dart';
 import 'screens/monitoring/class_monitoring_screen.dart';
+import 'theme/teacher_theme.dart';
 
 /// Secure storage instance for tokens.
 const _secureStorage = FlutterSecureStorage(
@@ -163,6 +165,82 @@ class TeacherAuthNotifier extends StateNotifier<TeacherAuthState> {
     }
   }
 
+  /// Authenticate via enterprise SSO (Clever, ClassLink, Google, Microsoft).
+  ///
+  /// This is called after the SSO flow completes and returns tokens.
+  /// Addresses RE-AUDIT-003: Mobile Apps Still Lack Enterprise SSO
+  Future<bool> loginWithSso({
+    required String accessToken,
+    required String refreshToken,
+    required String userId,
+    required String displayName,
+    required String provider,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // Store tokens from SSO
+      await _secureStorage.write(
+        key: TokenStorageKeys.accessToken,
+        value: accessToken,
+      );
+      await _secureStorage.write(
+        key: TokenStorageKeys.refreshToken,
+        value: refreshToken,
+      );
+
+      // Verify the user is a teacher
+      final apiClient = AivoApiClient.instance;
+      final response = await apiClient.get('/auth/me');
+      final data = response.data as Map<String, dynamic>;
+      final role = data['role'] as String?;
+
+      if (role != 'TEACHER') {
+        // Clear tokens if not a teacher
+        await _secureStorage.delete(key: TokenStorageKeys.accessToken);
+        await _secureStorage.delete(key: TokenStorageKeys.refreshToken);
+
+        state = state.copyWith(
+          isLoading: false,
+          error: 'This SSO account is not a teacher account.',
+        );
+        return false;
+      }
+
+      state = state.copyWith(
+        isAuthenticated: true,
+        isLoading: false,
+        teacherId: userId,
+        teacherName: displayName,
+      );
+
+      debugPrint('[TeacherAuth] SSO login successful via $provider: $userId');
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e is ApiException ? e.message : 'SSO login failed',
+      );
+      return false;
+    }
+  }
+
+  /// Set authenticated state directly from SSO callback.
+  ///
+  /// Used when SSO tokens are already validated and stored by SsoService.
+  void setAuthenticatedFromSso({
+    required String userId,
+    required String displayName,
+  }) {
+    state = state.copyWith(
+      isAuthenticated: true,
+      isLoading: false,
+      teacherId: userId,
+      teacherName: displayName,
+    );
+    debugPrint('[TeacherAuth] Authenticated via SSO: $userId');
+  }
+
   Future<void> logout() async {
     await _secureStorage.delete(key: TokenStorageKeys.accessToken);
     await _secureStorage.delete(key: TokenStorageKeys.refreshToken);
@@ -223,6 +301,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const TeacherSettingsScreen(),
+      ),
+      // Accessibility settings (RE-AUDIT-004)
+      GoRoute(
+        path: '/accessibility',
+        builder: (context, state) => const TeacherAccessibilitySettingsScreen(),
       ),
       // Gradebook route
       GoRoute(
@@ -312,6 +395,8 @@ class TeacherApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(_routerProvider);
     final authState = ref.watch(teacherAuthProvider);
+    final theme = ref.watch(teacherThemeProvider);
+    final a11yState = ref.watch(teacherAccessibilityProvider);
 
     if (authState.isLoading) {
       return MaterialApp(
@@ -330,19 +415,25 @@ class TeacherApp extends ConsumerWidget {
       );
     }
 
-    return MaterialApp.router(
-      title: 'Aivo Teacher',
-      theme: themeForBand(AivoGradeBand.g6_8),
-      darkTheme: themeForBand(AivoGradeBand.g6_8), // TODO: Add dark theme support
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
+    return MediaQuery(
+      // Apply text scale factor from accessibility settings (RE-AUDIT-004)
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(a11yState.textScaleFactor),
+      ),
+      child: MaterialApp.router(
+        title: 'Aivo Teacher',
+        theme: theme,
+        darkTheme: theme, // TODO: Add dark theme support
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+      ),
     );
   }
 }
