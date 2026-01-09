@@ -172,7 +172,14 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('This is a preview button to show how buttons will look'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                     child: const Text('Sample Button'),
                   ),
                 ],

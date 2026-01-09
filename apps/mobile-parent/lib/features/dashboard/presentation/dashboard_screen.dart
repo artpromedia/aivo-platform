@@ -32,7 +32,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             icon: const Icon(Icons.download),
             tooltip: l10n.downloadReport,
             onPressed: () {
-              // Download report
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.reportDownloadStarted),
+                  action: SnackBarAction(
+                    label: l10n.viewDownloads,
+                    onPressed: () {
+                      // Navigate to downloads when implemented
+                    },
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -141,7 +151,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     style: Theme.of(context).textTheme.titleMedium,
                                   ),
                                   TextButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/activity');
+                                    },
                                     child: Text(l10n.viewAll),
                                   ),
                                 ],

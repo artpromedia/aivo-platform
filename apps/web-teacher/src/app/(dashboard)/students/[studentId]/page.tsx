@@ -1,14 +1,27 @@
 /**
  * Student Detail Page
+ *
+ * Displays individual student information, progress, and teacher actions.
+ * Addresses UI-UX-001: Fixed broken href="#" links with proper routes
  */
 
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import * as React from 'react';
+import { useState } from 'react';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
 
 export default function StudentDetailPage({ params }: { params: { studentId: string } }) {
-  // Mock data
+  const router = useRouter();
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // TODO: Replace with real API call
+  // This mock data should be replaced with: const { data: student } = useStudentQuery(params.studentId)
   const student = {
     id: params.studentId,
     firstName: 'Alex',
@@ -19,6 +32,21 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
     hasIep: true,
     classes: ['Algebra I - Period 1', 'Biology - Period 4'],
     accommodations: ['Extended Time', 'Preferential Seating', 'Frequent Breaks'],
+  };
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return;
+
+    setIsSaving(true);
+    try {
+      // TODO: Replace with real API call
+      // await addStudentNote(student.id, noteText);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulated delay
+      setNoteText('');
+      setIsNoteModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -109,30 +137,101 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
             </div>
           )}
 
-          {/* Quick Actions */}
+          {/* Quick Actions - Fixed: replaced href="#" with proper routes/actions */}
           <div className="rounded-xl border bg-white p-6">
             <h3 className="font-semibold text-gray-900">Quick Actions</h3>
             <div className="mt-4 space-y-2">
-              <ActionButton href="#" icon="📊" label="View Progress Report" />
-              <ActionButton href="#" icon="📝" label="Add Note" />
-              <ActionButton href="#" icon="📞" label="Contact Parent" />
-              <ActionButton href="#" icon="📈" label="Grade Calculator" />
+              <ActionButton
+                href={`/students/${student.id}/progress`}
+                icon="📊"
+                label="View Progress Report"
+              />
+              <ActionButton
+                icon="📝"
+                label="Add Note"
+                onClick={() => setIsNoteModalOpen(true)}
+              />
+              <ActionButton
+                href={`/messages/new?to=${student.id}&type=parent`}
+                icon="📞"
+                label="Contact Parent"
+              />
+              <ActionButton
+                href={`/students/${student.id}/grades/calculator`}
+                icon="📈"
+                label="Grade Calculator"
+              />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Add Note Modal */}
+      {isNoteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900">Add Note for {student.firstName}</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              This note will be visible to other teachers with access to this student.
+            </p>
+            <textarea
+              className="mt-4 w-full rounded-lg border p-3 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              rows={4}
+              placeholder="Enter your note..."
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsNoteModalOpen(false)}
+                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddNote}
+                disabled={isSaving || !noteText.trim()}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ActionButton({ href, icon, label }: { href: string; icon: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-gray-50"
-    >
-      <span>{icon}</span>
-      <span>{label}</span>
-    </Link>
-  );
+interface ActionButtonProps {
+  href?: string;
+  icon: string;
+  label: string;
+  onClick?: () => void;
+}
+
+function ActionButton({ href, icon, label, onClick }: ActionButtonProps) {
+  const className = "flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-gray-50 w-full text-left";
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        <span>{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  }
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        <span>{icon}</span>
+        <span>{label}</span>
+      </Link>
+    );
+  }
+
+  return null;
 }

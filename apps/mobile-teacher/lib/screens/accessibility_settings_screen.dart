@@ -221,14 +221,28 @@ class TeacherAccessibilitySettingsScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('This is a preview button to show how buttons will look'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
                           child: const Text('View Roster'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: FilledButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('This is a preview button to show how buttons will look'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
                           child: const Text('Start Session'),
                         ),
                       ),

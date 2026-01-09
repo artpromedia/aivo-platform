@@ -174,7 +174,7 @@ export function LtiDeepLinkingPicker({
                     {item.thumbnail ? (
                       <img
                         src={item.thumbnail}
-                        alt=""
+                        alt={`Thumbnail for ${item.title}`}
                         className="h-16 w-24 rounded object-cover"
                       />
                     ) : (

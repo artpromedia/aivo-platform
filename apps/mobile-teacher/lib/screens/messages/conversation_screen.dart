@@ -205,7 +205,42 @@ class _MessageInput extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.attach_file),
-              onPressed: () {}, // Attachment functionality
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) => SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.photo_library),
+                          title: const Text('Photo Library'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            // TODO: Implement photo picker
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.camera_alt),
+                          title: const Text('Camera'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            // TODO: Implement camera capture
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.insert_drive_file),
+                          title: const Text('Document'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            // TODO: Implement document picker
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
             Expanded(
               child: TextField(

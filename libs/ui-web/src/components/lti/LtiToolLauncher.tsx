@@ -202,7 +202,7 @@ export function LtiToolLauncher({
       <Card className={cn('w-full', className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {tool.icon && <img src={tool.icon} alt="" className="h-6 w-6" />}
+            {tool.icon && <img src={tool.icon} alt={`${tool.name} icon`} className="h-6 w-6" />}
             {tool.name}
           </CardTitle>
         </CardHeader>
@@ -336,7 +336,7 @@ export function LtiToolPicker({
         >
           <CardContent className="flex items-start gap-4 p-4">
             {tool.icon ? (
-              <img src={tool.icon} alt="" className="h-12 w-12 rounded object-contain" />
+              <img src={tool.icon} alt={`${tool.name} icon`} className="h-12 w-12 rounded object-contain" />
             ) : (
               <div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
                 <ExternalLink className="h-6 w-6 text-muted-foreground" />
