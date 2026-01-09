@@ -12,3 +12,14 @@ export type {
   SessionPlanOptions,
   ActivityScore,
 } from './activity-sequencer-types.js';
+
+// Curriculum-aware content filtering
+export {
+  CurriculumContentFilter,
+  curriculumContentFilter,
+} from './curriculum-content-filter.js';
+
+export type {
+  CurriculumFilterOptions,
+  CurriculumFilterResult,
+} from './curriculum-content-filter.js';
