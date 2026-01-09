@@ -6,6 +6,8 @@
  */
 
 import { PolicyEngine } from '@aivo/ts-policy-engine';
+
+import { logger } from './logger.js';
 import type { Pool } from 'pg';
 
 import type { ResourceType, RetentionPolicy } from './types.js';
@@ -162,7 +164,7 @@ export async function migrateRetentionPoliciesToEngine(pool: Pool): Promise<void
     // Check if tenant already has a policy document
     const existing = await repo.getActiveTenantPolicy(tenantId);
     if (existing) {
-      console.log(`Tenant ${tenantId} already has policy document, skipping`);
+      logger.info({ tenantId }, 'Tenant already has policy document, skipping');
       continue;
     }
 
@@ -209,9 +211,9 @@ export async function migrateRetentionPoliciesToEngine(pool: Pool): Promise<void
         },
         description: 'Migrated from legacy retention_policies table',
       });
-      console.log(`Migrated retention policies for tenant ${tenantId}`);
+      logger.info({ tenantId }, 'Migrated retention policies for tenant');
     }
   }
 
-  console.log('Retention policy migration complete');
+  logger.info('Retention policy migration complete');
 }

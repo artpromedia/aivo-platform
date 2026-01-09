@@ -7,6 +7,7 @@
 import { PrismaClient } from '@prisma/client';
 
 import { config } from './config.js';
+import { logger } from './logger.js';
 
 // Create singleton instance
 const globalForPrisma = globalThis as typeof globalThis & { prisma?: PrismaClient };
@@ -35,9 +36,9 @@ if (config.nodeEnv !== 'production') {
 export async function connectDatabase(): Promise<void> {
   try {
     await prisma.$connect();
-    console.log('[Database] Connected successfully');
+    logger.info('Database connected successfully');
   } catch (error) {
-    console.error('[Database] Connection failed:', error);
+    logger.error({ err: error }, 'Database connection failed');
     throw error;
   }
 }
@@ -47,5 +48,5 @@ export async function connectDatabase(): Promise<void> {
  */
 export async function disconnectDatabase(): Promise<void> {
   await prisma.$disconnect();
-  console.log('[Database] Disconnected');
+  logger.info('Database disconnected');
 }

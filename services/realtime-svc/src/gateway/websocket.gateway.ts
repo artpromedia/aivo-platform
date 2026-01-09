@@ -16,6 +16,7 @@ import { nanoid } from 'nanoid';
 import { Server, type Socket } from 'socket.io';
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import { getRedisClient, getSubscriberClient, RedisKeys } from '../redis/index.js';
 import type { MessageBrokerService } from '../services/message-broker.service.js';
 import type { PresenceService } from '../services/presence.service.js';
@@ -102,7 +103,7 @@ export class WebSocketGateway {
     // Start metrics collection
     this.startMetricsCollection();
 
-    console.log(`[WebSocket] Gateway initialized on server ${this.serverId}`);
+    logger.info({ serverId: this.serverId }, 'WebSocket Gateway initialized');
     return this.io;
   }
 
@@ -114,7 +115,7 @@ export class WebSocketGateway {
     const subClient = getSubscriberClient();
 
     this.io.adapter(createAdapter(pubClient, subClient));
-    console.log('[WebSocket] Redis adapter configured for horizontal scaling');
+    logger.info('Redis adapter configured for horizontal scaling');
   }
 
   /**
@@ -179,14 +180,14 @@ export class WebSocketGateway {
         timestamp: new Date().toISOString(),
       });
 
-      console.log(`[WebSocket] Connection established`, {
+      logger.info({
         socketId: socket.id,
         userId: user.sub,
         tenantId: user.tenantId,
         duration: Date.now() - startTime,
-      });
+      }, 'WebSocket connection established');
     } catch (error) {
-      console.error('[WebSocket] Connection error:', error);
+      logger.error({ err: error }, 'WebSocket connection error');
       socket.emit(WSEventType.ERROR, {
         code: 'CONNECTION_ERROR',
         message: 'Failed to establish connection',
@@ -205,7 +206,7 @@ export class WebSocketGateway {
         socket.handshake.headers?.authorization?.replace('Bearer ', '');
 
       if (!token) {
-        console.warn('[WebSocket] No auth token provided');
+        logger.warn('No auth token provided');
         return null;
       }
 
@@ -220,7 +221,7 @@ export class WebSocketGateway {
         email: payload.email as string | undefined,
       };
     } catch (error) {
-      console.warn('[WebSocket] Authentication failed:', (error as Error).message);
+      logger.warn({ err: error }, 'Authentication failed');
       return null;
     }
   }
@@ -302,12 +303,12 @@ export class WebSocketGateway {
         gracePeriod: config.presence.offlineGracePeriod,
       });
 
-      console.log(`[WebSocket] Disconnected`, {
+      logger.info({
         socketId: socket.id,
         userId: data.userId,
-      });
+      }, 'WebSocket disconnected');
     } catch (error) {
-      console.error('[WebSocket] Error handling disconnect:', error);
+      logger.error({ err: error }, 'Error handling disconnect');
     }
   }
 
@@ -373,15 +374,15 @@ export class WebSocketGateway {
         currentRoom: roomId,
       });
 
-      console.log(`[WebSocket] User joined room`, {
+      logger.info({
         userId: data.userId,
         roomId,
         roomType,
-      });
+      }, 'User joined room');
 
       callback?.({ success: true, roomId });
     } catch (error) {
-      console.error('[WebSocket] Error joining room:', error);
+      logger.error({ err: error }, 'Error joining room');
       callback?.({ error: (error as Error).message });
     }
   }
@@ -550,7 +551,7 @@ export class WebSocketGateway {
         });
       }
     } catch (error) {
-      console.error('[WebSocket] Collab operation error:', error);
+      logger.error({ err: error }, 'Collab operation error');
       callback?.({ error: 'Failed to apply operation' });
     }
   }
@@ -793,7 +794,7 @@ export class WebSocketGateway {
   private startMetricsCollection(): void {
     this.metricsInterval = setInterval(() => {
       const connections = this.io.sockets.sockets.size;
-      console.log(`[WebSocket] Active connections: ${connections}`);
+      logger.info({ connections }, 'Active WebSocket connections');
       // TODO: Emit to Prometheus metrics
     }, 30000);
   }
@@ -842,6 +843,6 @@ export class WebSocketGateway {
     // Close all connections gracefully
     this.io.disconnectSockets(true);
 
-    console.log('[WebSocket] Gateway shutdown complete');
+    logger.info('WebSocket Gateway shutdown complete');
   }
 }

@@ -18,6 +18,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { createHash } from 'crypto';
+import { logger } from '../logger.js';
 import type {
   ISisProvider,
   SisSchool,
@@ -156,7 +157,7 @@ export class OneRoster12Provider implements ISisProvider {
 
       return this.accessToken;
     } catch (error) {
-      console.error('[OneRoster12] Failed to get access token', error);
+      logger.error({ err: error }, '[OneRoster12] Failed to get access token');
       throw new Error('OneRoster authentication failed');
     }
   }
@@ -170,7 +171,7 @@ export class OneRoster12Provider implements ISisProvider {
       this.config.clientSecret = credentials.clientSecret;
     }
     await this.getAccessToken();
-    console.log('[OneRoster12] Initialized successfully');
+    logger.info('[OneRoster12] Initialized successfully');
   }
 
   /**
@@ -396,7 +397,7 @@ export class OneRoster12Provider implements ISisProvider {
         nextCursor: hasMore ? nextOffset.toString() : undefined,
       };
     } catch (error) {
-      console.error('[OneRoster12] Delta fetch failed', error);
+      logger.error({ err: error }, '[OneRoster12] Delta fetch failed');
       throw error;
     }
   }

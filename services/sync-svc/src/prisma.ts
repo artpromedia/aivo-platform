@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { logger } from './logger.js';
 
 export const prisma = new PrismaClient({
   log:
@@ -9,10 +10,10 @@ export const prisma = new PrismaClient({
 
 export async function connectDatabase(): Promise<void> {
   await prisma.$connect();
-  console.log('📦 Database connected');
+  logger.info('Database connected');
 }
 
 export async function disconnectDatabase(): Promise<void> {
   await prisma.$disconnect();
-  console.log('📦 Database disconnected');
+  logger.info('Database disconnected');
 }

@@ -11,6 +11,7 @@ import type { SisProvider, SyncStatus } from '../providers/types';
 import { SyncStatus as SyncStatusValues } from '../providers/types';
 import { SyncEngine } from '../sync/engine';
 import { EntityTransformer, TransformConfig } from '../sync/transformer';
+import { logger } from '../logger.js';
 
 export interface SchedulerConfig {
   /** Whether to start scheduled jobs on initialization */
@@ -77,7 +78,7 @@ export class SyncScheduler {
       }
     }
 
-    console.log(`[SyncScheduler] Initialized with ${this.scheduledJobs.size} scheduled jobs`);
+    logger.info({ count: this.scheduledJobs.size }, `[SyncScheduler] Initialized with scheduled jobs`);
   }
 
   /**
@@ -90,7 +91,7 @@ export class SyncScheduler {
 
     // Validate cron expression
     if (!cron.validate(provider.syncSchedule)) {
-      console.error(`[SyncScheduler] Invalid cron expression for provider ${provider.id}: ${provider.syncSchedule}`);
+      logger.error({ providerId: provider.id, syncSchedule: provider.syncSchedule }, '[SyncScheduler] Invalid cron expression for provider');
       return;
     }
 
@@ -99,11 +100,11 @@ export class SyncScheduler {
 
     // Create new scheduled task
     const task = cron.schedule(provider.syncSchedule, async () => {
-      console.log(`[SyncScheduler] Starting scheduled sync for provider ${provider.id}`);
+      logger.info({ providerId: provider.id }, '[SyncScheduler] Starting scheduled sync for provider');
       try {
         await this.runSync(provider.tenantId, provider.id, undefined, false);
       } catch (error) {
-        console.error(`[SyncScheduler] Scheduled sync failed for provider ${provider.id}:`, error);
+        logger.error({ err: error, providerId: provider.id }, '[SyncScheduler] Scheduled sync failed for provider');
       }
     });
 
@@ -114,7 +115,7 @@ export class SyncScheduler {
       schedule: provider.syncSchedule,
     });
 
-    console.log(`[SyncScheduler] Scheduled provider ${provider.id} with cron: ${provider.syncSchedule}`);
+    logger.info({ providerId: provider.id, syncSchedule: provider.syncSchedule }, '[SyncScheduler] Scheduled provider with cron');
   }
 
   /**
@@ -125,7 +126,7 @@ export class SyncScheduler {
     if (job) {
       job.cronTask.stop();
       this.scheduledJobs.delete(providerId);
-      console.log(`[SyncScheduler] Unscheduled provider ${providerId}`);
+      logger.info({ providerId }, '[SyncScheduler] Unscheduled provider');
     }
   }
 
@@ -310,7 +311,7 @@ export class SyncScheduler {
   shutdown(): void {
     for (const [providerId, job] of this.scheduledJobs) {
       job.cronTask.stop();
-      console.log(`[SyncScheduler] Stopped job for provider ${providerId}`);
+      logger.info({ providerId }, '[SyncScheduler] Stopped job for provider');
     }
     this.scheduledJobs.clear();
   }

@@ -10,6 +10,7 @@
 
 import { nanoid } from 'nanoid';
 
+import { logger } from '../logger.js';
 import { getRedisClient } from '../redis/index.js';
 
 /**
@@ -142,7 +143,7 @@ export class ActivityService {
     // Update aggregation
     await this.updateAggregation(scope, scopeId, activity);
 
-    console.log(`[Activity] Recorded ${type} activity in ${scope}:${scopeId}`);
+    logger.info({ type, scope, scopeId }, 'Activity recorded');
     return activity;
   }
 

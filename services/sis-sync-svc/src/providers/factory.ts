@@ -9,6 +9,7 @@
  */
 
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
+import { logger } from '../logger.js';
 import type { ISisProvider, SisProviderCredentials, SisProviderType } from './types.js';
 import { CleverProvider } from './clever.js';
 import { ClassLinkProvider } from './classlink.js';
@@ -87,7 +88,7 @@ export class ProviderFactory {
     }
 
     if (!providerConfig.enabled) {
-      console.warn('[ProviderFactory] Provider is disabled', { providerId });
+      logger.warn({ providerId }, '[ProviderFactory] Provider is disabled');
       return null;
     }
 
@@ -122,10 +123,7 @@ export class ProviderFactory {
           providers.push(provider);
         }
       } catch (error) {
-        console.error('[ProviderFactory] Failed to create provider', {
-          providerId: config.id,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
+        logger.error({ providerId: config.id, error: error instanceof Error ? error.message : 'Unknown error' }, '[ProviderFactory] Failed to create provider');
       }
     }
 
@@ -372,7 +370,7 @@ export class EnvSecretsResolver implements SecretsResolver {
       };
     }
 
-    console.warn('[EnvSecretsResolver] Unknown secrets type', { type, ref });
+    logger.warn({ type, ref }, '[EnvSecretsResolver] Unknown secrets type');
     return {};
   }
 }
@@ -393,7 +391,7 @@ export class VaultSecretsResolver implements SecretsResolver {
     const [type, path] = secretsRef.split(':');
 
     if (type !== 'vault') {
-      console.warn('[VaultSecretsResolver] Unknown secrets type', { type });
+      logger.warn({ type }, '[VaultSecretsResolver] Unknown secrets type');
       return {};
     }
 
@@ -412,7 +410,7 @@ export class VaultSecretsResolver implements SecretsResolver {
       const data = await response.json();
       return data.data?.data || data.data || {};
     } catch (error) {
-      console.error('[VaultSecretsResolver] Failed to fetch secrets', error);
+      logger.error({ err: error }, '[VaultSecretsResolver] Failed to fetch secrets');
       throw error;
     }
   }

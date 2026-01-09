@@ -1,4 +1,5 @@
 import { createPool } from '../db.js';
+import { logger } from '../logger.js';
 import { ensurePolicyOrThrow, getPolicy } from '../policies.js';
 import type { ResourceType, RetentionPolicy } from '../types.js';
 
@@ -80,7 +81,7 @@ async function enforceEvents(pool: PoolType) {
       softDeleteColumn: 'deleted_at',
       additionalUpdates: 'metadata = NULL',
     });
-    console.log(`events: tenant=${tenantId ?? 'global'} processed=${rowCount}`);
+    logger.info({ table: 'events', tenantId: tenantId ?? 'global', processed: rowCount }, 'events retention processed');
   }
 }
 
@@ -96,7 +97,7 @@ async function enforceHomeworkUploads(pool: PoolType) {
        AND deleted_at IS NULL`,
       tenantId === null ? [policy.retention_days] : [policy.retention_days, tenantId]
     );
-    console.log(`homework_uploads: tenant=${tenantId ?? 'global'} marked_deleted=${rowCount}`);
+    logger.info({ table: 'homework_uploads', tenantId: tenantId ?? 'global', markedDeleted: rowCount }, 'homework_uploads retention processed');
   }
 }
 
@@ -113,7 +114,7 @@ async function enforceAiIncidents(pool: PoolType) {
        AND details IS NOT NULL`,
       tenantId === null ? [policy.retention_days] : [policy.retention_days, tenantId]
     );
-    console.log(`ai_incidents: tenant=${tenantId ?? 'global'} anonymized=${rowCount}`);
+    logger.info({ table: 'ai_incidents', tenantId: tenantId ?? 'global', anonymized: rowCount }, 'ai_incidents retention processed');
   }
 }
 
@@ -128,10 +129,10 @@ async function enforceSessions(pool: PoolType) {
         softDeleteColumn: 'deleted_at',
         additionalUpdates: 'summary = NULL',
       });
-      console.log(`sessions: tenant=${tenantId ?? 'global'} processed=${rowCount}`);
+      logger.info({ table: 'sessions', tenantId: tenantId ?? 'global', processed: rowCount }, 'sessions retention processed');
     }
   } catch (err) {
-    console.warn('sessions: skipped (table may not exist)', err);
+    logger.warn({ err }, 'sessions: skipped (table may not exist)');
   }
 }
 
@@ -151,10 +152,10 @@ async function enforceAiCallLogs(pool: PoolType) {
          AND input_text IS NOT NULL`,
         tenantId === null ? [policy.retention_days] : [policy.retention_days, tenantId]
       );
-      console.log(`ai_call_logs: tenant=${tenantId ?? 'global'} anonymized=${rowCount}`);
+      logger.info({ table: 'ai_call_logs', tenantId: tenantId ?? 'global', anonymized: rowCount }, 'ai_call_logs retention processed');
     }
   } catch (err) {
-    console.warn('ai_call_logs: skipped (table may not exist)', err);
+    logger.warn({ err }, 'ai_call_logs: skipped (table may not exist)');
   }
 }
 
@@ -169,10 +170,10 @@ async function enforceRecommendations(pool: PoolType) {
         softDeleteColumn: 'deleted_at',
         additionalUpdates: 'rationale = NULL',
       });
-      console.log(`recommendations: tenant=${tenantId ?? 'global'} processed=${rowCount}`);
+      logger.info({ table: 'recommendations', tenantId: tenantId ?? 'global', processed: rowCount }, 'recommendations retention processed');
     }
   } catch (err) {
-    console.warn('recommendations: skipped (table may not exist)', err);
+    logger.warn({ err }, 'recommendations: skipped (table may not exist)');
   }
 }
 
@@ -192,10 +193,10 @@ async function enforceConsentLogs(pool: PoolType) {
          AND (${tenantId === null ? 'tenant_id IS NULL' : 'tenant_id = $2'})`,
         tenantId === null ? [policy.retention_days] : [policy.retention_days, tenantId]
       );
-      console.log(`consent_logs: tenant=${tenantId ?? 'global'} deleted=${rowCount}`);
+      logger.info({ table: 'consent_logs', tenantId: tenantId ?? 'global', deleted: rowCount }, 'consent_logs retention processed');
     }
   } catch (err) {
-    console.warn('consent_logs: skipped (table may not exist)', err);
+    logger.warn({ err }, 'consent_logs: skipped (table may not exist)');
   }
 }
 
@@ -205,14 +206,14 @@ async function enforceDsrExports(pool: PoolType) {
     const { rowCount } = await pool.query(
       `DELETE FROM dsr_export_artifacts WHERE expires_at < now()`
     );
-    console.log(`dsr_export_artifacts: expired_deleted=${rowCount}`);
+    logger.info({ table: 'dsr_export_artifacts', expiredDeleted: rowCount }, 'dsr_export_artifacts retention processed');
   } catch (err) {
-    console.warn('dsr_export_artifacts: skipped (table may not exist)', err);
+    logger.warn({ err }, 'dsr_export_artifacts: skipped (table may not exist)');
   }
 }
 
 export async function runRetentionEnforcement(pool = createPool()) {
-  console.log('Starting retention enforcement...');
+  logger.info('Starting retention enforcement...');
 
   for (const resource of RESOURCE_TYPES) {
     try {
@@ -243,11 +244,11 @@ export async function runRetentionEnforcement(pool = createPool()) {
           break;
       }
     } catch (err) {
-      console.error(`Failed to enforce retention for ${resource}:`, err);
+      logger.error({ err, resource }, 'Failed to enforce retention for resource');
     }
   }
 
-  console.log('Retention enforcement complete.');
+  logger.info('Retention enforcement complete.');
 }
 
 // Execute only when run directly (not when imported in tests)
@@ -260,7 +261,7 @@ if (process.argv[1] === new URL('', import.meta.url).pathname) {
       await pool.end();
     }
   })().catch((err: unknown) => {
-    console.error('Retention enforcement failed', err);
+    logger.error({ err }, 'Retention enforcement failed');
     process.exitCode = 1;
   });
 }

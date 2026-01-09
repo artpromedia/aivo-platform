@@ -18,6 +18,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { createHash } from 'crypto';
+import { logger } from '../../logger.js';
 import type {
   ISisProvider,
   SisSchool,
@@ -208,7 +209,7 @@ export class EdFiProvider implements ISisProvider {
 
       return this.accessToken;
     } catch (error) {
-      console.error('[EdFiProvider] Failed to get access token', error);
+      logger.error({ err: error }, '[EdFiProvider] Failed to get access token');
       throw new Error('Ed-Fi authentication failed');
     }
   }
@@ -224,7 +225,7 @@ export class EdFiProvider implements ISisProvider {
 
     // Validate by fetching a token
     await this.getAccessToken();
-    console.log('[EdFiProvider] Initialized successfully');
+    logger.info('[EdFiProvider] Initialized successfully');
   }
 
   /**
@@ -366,9 +367,7 @@ export class EdFiProvider implements ISisProvider {
     } catch (error) {
       // If change queries are not supported, fall back to full fetch
       if ((error as AxiosError).response?.status === 404) {
-        console.log(
-          '[EdFiProvider] Change queries not supported, using full fetch'
-        );
+        logger.info('[EdFiProvider] Change queries not supported, using full fetch');
         return this.fetchDeltaFallback(entityType, options);
       }
       throw error;
@@ -421,7 +420,7 @@ export class EdFiProvider implements ISisProvider {
         nextCursor: nextOffset?.toString(),
       };
     } catch (error) {
-      console.error('[EdFiProvider] Delta fetch failed', error);
+      logger.error({ err: error }, '[EdFiProvider] Delta fetch failed');
       throw error;
     }
   }

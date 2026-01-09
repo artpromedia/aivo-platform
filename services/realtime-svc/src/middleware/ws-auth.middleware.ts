@@ -12,6 +12,7 @@ import * as jose from 'jose';
 import type { Socket } from 'socket.io';
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import { getRedisClient } from '../redis/index.js';
 import type { DeviceType, JWTPayload } from '../types.js';
 
@@ -54,9 +55,9 @@ export class WsAuthMiddleware {
       } else if (config.jwt.secret) {
         this.jwtPublicKey = new TextEncoder().encode(config.jwt.secret);
       }
-      console.log('[Auth] WebSocket authentication middleware initialized');
+      logger.info('WebSocket authentication middleware initialized');
     } catch (error) {
-      console.error('[Auth] Failed to initialize authentication:', error);
+      logger.error({ err: error }, 'Failed to initialize authentication');
     }
   }
 
@@ -114,7 +115,7 @@ export class WsAuthMiddleware {
         user,
       };
     } catch (error) {
-      console.error('[Auth] Authentication error:', error);
+      logger.error({ err: error }, 'Authentication error');
       return {
         success: false,
         error: 'Authentication failed',
@@ -171,11 +172,11 @@ export class WsAuthMiddleware {
       return this.mapPayload(payload);
     } catch (error) {
       if (error instanceof jose.errors.JWTExpired) {
-        console.log('[Auth] Token expired');
+        logger.debug('Token expired');
       } else if (error instanceof jose.errors.JWTClaimValidationFailed) {
-        console.log('[Auth] Token claim validation failed:', error.message);
+        logger.debug({ message: error.message }, 'Token claim validation failed');
       } else {
-        console.error('[Auth] Token verification failed:', error);
+        logger.error({ err: error }, 'Token verification failed');
       }
       return null;
     }
@@ -257,7 +258,7 @@ export class WsAuthMiddleware {
   async blockUser(userId: string, durationSeconds = 3600): Promise<void> {
     const redis = getRedisClient();
     await redis.setex(`ws:blocked:${userId}`, durationSeconds, 'true');
-    console.log(`[Auth] User ${userId} blocked for ${durationSeconds} seconds`);
+    logger.info({ userId, durationSeconds }, 'User blocked');
   }
 
   /**
@@ -266,7 +267,7 @@ export class WsAuthMiddleware {
   async unblockUser(userId: string): Promise<void> {
     const redis = getRedisClient();
     await redis.del(`ws:blocked:${userId}`);
-    console.log(`[Auth] User ${userId} unblocked`);
+    logger.info({ userId }, 'User unblocked');
   }
 
   /**
@@ -328,7 +329,7 @@ export class WsAuthMiddleware {
       // to issue a new token
       return null;
     } catch (error) {
-      console.error('[Auth] Token refresh failed:', error);
+      logger.error({ err: error }, 'Token refresh failed');
       return null;
     }
   }

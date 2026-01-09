@@ -6,6 +6,7 @@ import { SyncEventEmitter } from './services/sync-events.js';
 import { syncRoutes } from './routes/sync-routes.js';
 import { webSocketHandler } from './websocket/websocket-handler.js';
 import { authMiddleware } from './middleware/auth.js';
+import { logger } from './logger.js';
 
 const fastify = Fastify({
   logger: {
@@ -53,13 +54,15 @@ async function main() {
       host: config.server.host,
     });
 
-    console.log(`
-🚀 Sync Service started
-   - HTTP: http://${config.server.host}:${config.server.port}
-   - WebSocket: ws://${config.server.host}:${config.server.port}/ws
-   - Delta Sync: ${config.features.deltaSync ? 'enabled' : 'disabled'}
-   - Auto Conflict Resolution: ${config.features.autoConflictResolution ? 'enabled' : 'disabled'}
-    `);
+    logger.info(
+      {
+        host: config.server.host,
+        port: config.server.port,
+        deltaSync: config.features.deltaSync,
+        autoConflictResolution: config.features.autoConflictResolution,
+      },
+      'Sync Service started'
+    );
   } catch (error) {
     fastify.log.error(error);
     process.exit(1);
@@ -68,7 +71,7 @@ async function main() {
 
 // Graceful shutdown
 async function shutdown() {
-  console.log('\n🛑 Shutting down...');
+  logger.info('Shutting down...');
 
   webSocketHandler.disconnectAll();
 

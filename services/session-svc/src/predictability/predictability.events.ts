@@ -5,6 +5,7 @@
  * TODO: Integrate with @aivo/events when predictability event schemas are added.
  */
 
+import { logger } from '../logger.js';
 import type {
   SessionOutlineItem,
   PredictabilityPreferences,
@@ -145,8 +146,8 @@ export interface PreferencesUpdatedPayload {
  */
 class PredictabilityEventPublisherService {
   private logEvent(eventType: string, payload: unknown): void {
-    // In development, log to console
-    console.log(`[PredictabilityEvent] ${eventType}:`, JSON.stringify(payload, null, 2));
+    // In development, log event
+    logger.info({ payload }, `[PredictabilityEvent] ${eventType}`);
   }
 
   /**
@@ -409,7 +410,7 @@ class PredictabilityEventPublisherService {
    */
   async close(): Promise<void> {
     // No-op for now; will be used when integrating with NATS
-    console.log('[PredictabilityEventPublisher] Closing publisher');
+    logger.info('[PredictabilityEventPublisher] Closing publisher');
   }
 }
 

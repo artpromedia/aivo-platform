@@ -5,6 +5,7 @@
  */
 
 import { PrismaClient } from '../generated/prisma-client/index.js';
+import { logger } from '../logger.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -505,7 +506,7 @@ export class SpeechTherapyService {
         'Speech therapy analysis requires Azure Cognitive Services. ' +
         'Please configure the required environment variables.';
 
-      console.error('[SpeechTherapy] Azure Speech not configured:', { missingVars });
+      logger.error({ missingVars }, '[SpeechTherapy] Azure Speech not configured');
 
       throw new Error(errorMessage);
     }
@@ -531,7 +532,7 @@ export class SpeechTherapyService {
 
       return analysis;
     } catch (error) {
-      console.error('[SpeechTherapy] Speech analysis failed:', error);
+      logger.error({ err: error }, '[SpeechTherapy] Speech analysis failed');
 
       // Return error analysis
       const errorAnalysis: RecordingAnalysis = {

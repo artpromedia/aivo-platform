@@ -17,6 +17,7 @@ import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { DeltaSyncEngine, SyncEntityType } from '../sync/delta-sync-engine.js';
 import { WebhookHandlerService, WebhookProviderType } from '../webhooks/webhook-handler.service.js';
 import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';
+import { logger } from '../logger.js';
 import type { ISisProvider, FieldMapping } from '../providers/types.js';
 
 /**
@@ -126,7 +127,7 @@ export async function registerSyncRoutes(
           enabledEntityTypes,
           force ?? false
         ).catch((error: unknown) => {
-          console.error('[SyncRoutes] Background sync failed', error);
+          logger.error({ err: error }, '[SyncRoutes] Background sync failed');
         });
 
         return reply.code(202).send({
@@ -136,7 +137,7 @@ export async function registerSyncRoutes(
         });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[SyncRoutes] Failed to start sync', error);
+        logger.error({ err: error }, '[SyncRoutes] Failed to start sync');
         return reply.code(500).send({ error: message });
       }
     }
@@ -323,7 +324,7 @@ export async function registerSyncRoutes(
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[SyncRoutes] Webhook processing failed', error);
+        logger.error({ err: error }, '[SyncRoutes] Webhook processing failed');
         return reply.code(500).send({ error: message });
       }
     }

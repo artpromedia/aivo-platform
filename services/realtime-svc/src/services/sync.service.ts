@@ -11,6 +11,7 @@
 
 import * as Y from 'yjs';
 
+import { logger } from '../logger.js';
 import { prisma } from '../prisma.js';
 import { getRedisClient } from '../redis/index.js';
 
@@ -82,7 +83,7 @@ export class SyncService {
       try {
         Y.applyUpdate(doc, new Uint8Array(cached));
       } catch (error) {
-        console.error(`[Sync] Failed to load document ${documentId} from cache:`, error);
+        logger.error({ documentId, err: error }, 'Failed to load document from cache');
       }
     } else {
       // Try loading from persistent storage (database)
@@ -91,7 +92,7 @@ export class SyncService {
         try {
           Y.applyUpdate(doc, stored.state);
         } catch (error) {
-          console.error(`[Sync] Failed to load document ${documentId} from database:`, error);
+          logger.error({ documentId, err: error }, 'Failed to load document from database');
         }
       }
     }
@@ -111,7 +112,7 @@ export class SyncService {
     // Cache in Redis
     await this.cacheDocument(documentId, doc);
 
-    console.log(`[Sync] Document ${documentId} loaded, version ${version}`);
+    logger.info({ documentId, version }, 'Document loaded');
     return state;
   }
 
@@ -142,14 +143,14 @@ export class SyncService {
       // Record update for history
       await this.recordUpdate(documentId, update, userId, state.version);
 
-      console.log(`[Sync] Update applied to ${documentId}, version ${state.version}`);
+      logger.info({ documentId, version: state.version }, 'Update applied');
 
       return {
         success: true,
         version: state.version,
       };
     } catch (error) {
-      console.error(`[Sync] Failed to apply update to ${documentId}:`, error);
+      logger.error({ documentId, err: error }, 'Failed to apply update');
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to apply update',
@@ -226,9 +227,9 @@ export class SyncService {
       await this.saveToDatabase(documentId, update, state.version);
 
       state.pendingPersist = false;
-      console.log(`[Sync] Document ${documentId} persisted, version ${state.version}`);
+      logger.info({ documentId, version: state.version }, 'Document persisted');
     } catch (error) {
-      console.error(`[Sync] Failed to persist document ${documentId}:`, error);
+      logger.error({ documentId, err: error }, 'Failed to persist document');
     }
   }
 
@@ -317,12 +318,12 @@ export class SyncService {
       await this.persistDocument(documentId);
       await this.cacheDocument(documentId, state.doc);
 
-      console.log(`[Sync] Document ${documentId} restored to version ${targetVersion}`);
+      logger.info({ documentId, targetVersion }, 'Document restored');
       return true;
     } catch (error) {
-      console.error(
-        `[Sync] Failed to restore document ${documentId} to version ${targetVersion}:`,
-        error
+      logger.error(
+        { documentId, targetVersion, err: error },
+        'Failed to restore document'
       );
       return false;
     }
@@ -354,7 +355,7 @@ export class SyncService {
       this.persistQueue.delete(documentId);
     }
 
-    console.log(`[Sync] Document ${documentId} unloaded from memory`);
+    logger.info({ documentId }, 'Document unloaded from memory');
   }
 
   /**
@@ -451,7 +452,7 @@ export class SyncService {
         version: docState.version,
       };
     } catch (error) {
-      console.error(`[Sync] Failed to load document ${documentId} from database:`, error);
+      logger.error({ documentId, err: error }, 'Failed to load document from database');
       return null;
     }
   }
@@ -519,9 +520,9 @@ export class SyncService {
         }
       }
 
-      console.log(`[Sync] Document ${documentId} persisted to database, version ${version}`);
+      logger.info({ documentId, version }, 'Document persisted to database');
     } catch (error) {
-      console.error(`[Sync] Failed to save document ${documentId} to database:`, error);
+      logger.error({ documentId, err: error }, 'Failed to save document to database');
 
       // Fallback: persist to Redis with longer TTL
       const redis = getRedisClient();
@@ -541,7 +542,7 @@ export class SyncService {
    * Shutdown - persist all documents
    */
   async shutdown(): Promise<void> {
-    console.log('[Sync] Shutting down, persisting all documents...');
+    logger.info('Shutting down sync service, persisting all documents');
 
     // Clear all persist timeouts
     for (const timeout of this.persistQueue.values()) {
@@ -558,7 +559,7 @@ export class SyncService {
     }
     this.documents.clear();
 
-    console.log('[Sync] Shutdown complete');
+    logger.info('Sync service shutdown complete');
   }
 }
 

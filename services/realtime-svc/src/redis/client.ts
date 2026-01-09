@@ -7,6 +7,7 @@
 import Redis from 'ioredis';
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 
 type RedisInstance = InstanceType<typeof Redis>;
 
@@ -46,11 +47,11 @@ function createRedisClient(name: string): Redis {
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
       if (times > 10) {
-        console.error(`[Redis:${name}] Max retries exceeded`);
+        logger.error({ name }, 'Redis max retries exceeded');
         return null;
       }
       const delay = Math.min(times * 200, 2000);
-      console.warn(`[Redis:${name}] Retry attempt ${times}, waiting ${delay}ms`);
+      logger.warn({ name, times, delay }, 'Redis retry attempt');
       return delay;
     },
     reconnectOnError: (err) => {
@@ -63,23 +64,23 @@ function createRedisClient(name: string): Redis {
   });
 
   client.on('connect', () => {
-    console.log(`[Redis:${name}] Connected`);
+    logger.info({ name }, 'Redis connected');
   });
 
   client.on('ready', () => {
-    console.log(`[Redis:${name}] Ready`);
+    logger.info({ name }, 'Redis ready');
   });
 
   client.on('error', (err) => {
-    console.error(`[Redis:${name}] Error:`, err.message);
+    logger.error({ name, err }, 'Redis error');
   });
 
   client.on('close', () => {
-    console.warn(`[Redis:${name}] Connection closed`);
+    logger.warn({ name }, 'Redis connection closed');
   });
 
   client.on('reconnecting', () => {
-    console.log(`[Redis:${name}] Reconnecting...`);
+    logger.info({ name }, 'Redis reconnecting');
   });
 
   return client;
@@ -94,7 +95,7 @@ export async function closeRedisConnections(): Promise<void> {
   if (redisClient) {
     promises.push(
       redisClient.quit().then(() => {
-        console.log('[Redis:main] Disconnected');
+        logger.info({ name: 'main' }, 'Redis disconnected');
         redisClient = null;
       })
     );
@@ -103,7 +104,7 @@ export async function closeRedisConnections(): Promise<void> {
   if (subscriberClient) {
     promises.push(
       subscriberClient.quit().then(() => {
-        console.log('[Redis:subscriber] Disconnected');
+        logger.info({ name: 'subscriber' }, 'Redis disconnected');
         subscriberClient = null;
       })
     );

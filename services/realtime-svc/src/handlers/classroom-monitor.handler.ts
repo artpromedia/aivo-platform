@@ -9,6 +9,7 @@
  */
 
 import type { WebSocketGateway } from '../gateway/websocket.gateway.js';
+import { logger } from '../logger.js';
 import { RedisKeys } from '../redis/index.js';
 import type { ClassroomMonitorService } from '../services/classroom-monitor.service.js';
 import type { MessageBrokerService } from '../services/message-broker.service.js';
@@ -70,7 +71,7 @@ export class ClassroomMonitorHandler {
       }
     );
 
-    console.log('[ClassroomMonitorHandler] Initialized');
+    logger.info('ClassroomMonitorHandler initialized');
   }
 
   /**
@@ -126,9 +127,7 @@ export class ClassroomMonitorHandler {
       });
     }
 
-    console.log(
-      `[ClassroomMonitorHandler] Processed activity update for student ${statusData.studentId}`
-    );
+    logger.info({ studentId: statusData.studentId, classroomId }, 'Processed activity update for student');
   }
 
   /**
@@ -145,7 +144,7 @@ export class ClassroomMonitorHandler {
       const { metrics, students } = await this.monitorService.getClassroomState(classroomId);
       const alerts = await this.monitorService.getActiveAlerts(classroomId);
 
-      console.log(`[ClassroomMonitorHandler] Teacher ${teacherId} subscribed to ${classroomId}`);
+      logger.info({ teacherId, classroomId }, 'Teacher subscribed to classroom monitoring');
 
       // Return initial state
       return {
@@ -154,7 +153,7 @@ export class ClassroomMonitorHandler {
         // This is just an acknowledgment
       };
     } catch (error) {
-      console.error('[ClassroomMonitorHandler] Subscribe error:', error);
+      logger.error({ error }, 'ClassroomMonitorHandler subscribe error');
       return {
         success: false,
         error: (error as Error).message,
@@ -182,10 +181,10 @@ export class ClassroomMonitorHandler {
         timestamp: new Date().toISOString(),
       });
 
-      console.log(`[ClassroomMonitorHandler] Alert ${alertId} acknowledged by ${teacherId}`);
+      logger.info({ alertId, teacherId, classroomId }, 'Alert acknowledged');
       return { success: true };
     } catch (error) {
-      console.error('[ClassroomMonitorHandler] Alert acknowledge error:', error);
+      logger.error({ error, alertId, classroomId }, 'Alert acknowledge error');
       return { success: false };
     }
   }
@@ -199,6 +198,6 @@ export class ClassroomMonitorHandler {
       this.unsubscribeActivity = null;
     }
 
-    console.log('[ClassroomMonitorHandler] Shutdown');
+    logger.info('ClassroomMonitorHandler shutdown');
   }
 }

@@ -7,6 +7,7 @@
  * - Subscribing to external service events
  */
 
+import { logger } from '../logger.js';
 import { getRedisClient, getSubscriberClient, RedisKeys } from '../redis/index.js';
 
 type MessageHandler = (message: unknown) => void;
@@ -45,17 +46,17 @@ export class MessageBrokerService {
             try {
               handler(parsed);
             } catch (error) {
-              console.error(`[MessageBroker] Handler error on ${channel}:`, error);
+              logger.error({ channel, err: error }, 'MessageBroker handler error');
             }
           }
         }
       } catch (error) {
-        console.error(`[MessageBroker] Failed to parse message on ${channel}:`, error);
+        logger.error({ channel, err: error }, 'Failed to parse message');
       }
     });
 
     this.isSubscribed = true;
-    console.log('[MessageBroker] Initialized with channels:', channels);
+    logger.info({ channels }, 'MessageBroker initialized');
   }
 
   /**
@@ -158,6 +159,6 @@ export class MessageBrokerService {
     this.handlers.clear();
     this.isSubscribed = false;
 
-    console.log('[MessageBroker] Shutdown complete');
+    logger.info('MessageBroker shutdown complete');
   }
 }

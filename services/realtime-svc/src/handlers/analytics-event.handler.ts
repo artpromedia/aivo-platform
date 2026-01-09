@@ -6,6 +6,7 @@
  */
 
 import type { WebSocketGateway } from '../gateway/websocket.gateway.js';
+import { logger } from '../logger.js';
 import { RedisKeys } from '../redis/index.js';
 import type { MessageBrokerService } from '../services/message-broker.service.js';
 import {
@@ -64,7 +65,7 @@ export class AnalyticsEventHandler {
       this.handleAlertEvent(message as AlertEvent);
     });
 
-    console.log('[AnalyticsEventHandler] Initialized');
+    logger.info('AnalyticsEventHandler initialized');
   }
 
   /**
@@ -86,7 +87,7 @@ export class AnalyticsEventHandler {
       const analyticsRoom = `analytics:${classId}`;
       this.gateway.broadcastToRoom(analyticsRoom, WSEventType.ANALYTICS_UPDATE, update);
 
-      console.log(`[AnalyticsEventHandler] Broadcasted ${metric} update for class ${classId}`);
+      logger.info({ metric, classId }, 'Broadcasted analytics update');
     }
   }
 
@@ -114,9 +115,7 @@ export class AnalyticsEventHandler {
     const analyticsRoom = `analytics:${event.classId}`;
     this.gateway.broadcastToRoom(analyticsRoom, WSEventType.ANALYTICS_ALERT, alert);
 
-    console.log(
-      `[AnalyticsEventHandler] Broadcasted ${event.type} alert for student ${event.studentId}`
-    );
+    logger.info({ alertType: event.type, studentId: event.studentId, classId: event.classId }, 'Broadcasted alert');
   }
 
   /**
@@ -165,6 +164,6 @@ export class AnalyticsEventHandler {
       this.unsubscribeAlerts = null;
     }
 
-    console.log('[AnalyticsEventHandler] Shutdown');
+    logger.info('AnalyticsEventHandler shutdown');
   }
 }

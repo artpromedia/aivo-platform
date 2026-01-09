@@ -12,6 +12,7 @@
 
 import { nanoid } from 'nanoid';
 
+import { logger } from '../logger.js';
 import { getRedisClient } from '../redis/index.js';
 
 /**
@@ -158,7 +159,7 @@ export class ChatService {
       }
     }
 
-    console.log(`[Chat] Message ${messageId} sent to room ${roomId}`);
+    logger.info({ messageId, roomId }, 'Message sent to room');
     return message;
   }
 
@@ -192,7 +193,7 @@ export class ChatService {
     // Save updated message
     await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
-    console.log(`[Chat] Message ${messageId} edited`);
+    logger.info({ messageId }, 'Message edited');
     return message;
   }
 
@@ -221,7 +222,7 @@ export class ChatService {
 
     await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
-    console.log(`[Chat] Message ${messageId} deleted`);
+    logger.info({ messageId }, 'Message deleted');
     return true;
   }
 
@@ -268,9 +269,7 @@ export class ChatService {
     // Save updated message
     await redis.setex(`chat:message:${messageId}`, this.MESSAGE_TTL, JSON.stringify(message));
 
-    console.log(
-      `[Chat] Reaction ${emoji} ${added ? 'added to' : 'removed from'} message ${messageId}`
-    );
+    logger.info({ emoji, action: added ? 'added' : 'removed', messageId }, 'Reaction toggled on message');
     return { added, reactions: message.reactions };
   }
 

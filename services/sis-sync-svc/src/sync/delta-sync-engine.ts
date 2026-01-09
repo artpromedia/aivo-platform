@@ -16,6 +16,7 @@
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { SyncStatus as SyncStatusValues } from '../providers/types';
 import { createHash } from 'crypto';
+import { logger } from '../logger.js';
 import type { ISisProvider } from '../providers/types.js';
 
 /**
@@ -185,10 +186,7 @@ export class DeltaSyncEngine {
     const startTime = Date.now();
     const stats: SyncStats = createEmptySyncStats();
 
-    console.log('[DeltaSync] Starting delta sync', {
-      tenantId: config.tenantId,
-      providerId: config.providerId,
-    });
+    logger.info({ tenantId: config.tenantId, providerId: config.providerId }, '[DeltaSync] Starting delta sync');
 
     // Get or create sync state
     let syncState = await this.getSyncState(config.tenantId, config.providerId);
@@ -239,22 +237,14 @@ export class DeltaSyncEngine {
       stats.duration = Date.now() - startTime;
       await this.completeSyncState(syncState.id, stats);
 
-      console.log('[DeltaSync] Delta sync completed', {
-        tenantId: config.tenantId,
-        providerId: config.providerId,
-        stats,
-      });
+      logger.info({ tenantId: config.tenantId, providerId: config.providerId, stats }, '[DeltaSync] Delta sync completed');
 
       return stats;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       await this.updateSyncStatus(syncState.id, 'error', message);
 
-      console.error('[DeltaSync] Delta sync failed', {
-        tenantId: config.tenantId,
-        providerId: config.providerId,
-        error: message,
-      });
+      logger.error({ tenantId: config.tenantId, providerId: config.providerId, error: message }, '[DeltaSync] Delta sync failed');
 
       throw error;
     }

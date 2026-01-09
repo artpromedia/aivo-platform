@@ -5,6 +5,7 @@
  */
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import type { SkillInfo } from '../types/domain.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -27,7 +28,7 @@ export async function getSkillById(skillId: string): Promise<SkillInfo | null> {
     return data;
   } catch (error) {
     // Log but don't fail - skill service might be unavailable
-    console.warn(`Failed to fetch skill ${skillId}:`, error);
+    logger.warn({ skillId, err: error }, 'Failed to fetch skill');
     return null;
   }
 }
@@ -49,7 +50,7 @@ export async function getSkillsByIds(skillIds: string[]): Promise<Map<string, Sk
       result.set(skill.id, skill);
     }
   } catch (error) {
-    console.warn('Failed to batch fetch skills:', error);
+    logger.warn({ err: error }, 'Failed to batch fetch skills');
   }
 
   return result;
@@ -91,7 +92,7 @@ export async function getSessionById(sessionId: string): Promise<SessionInfo | n
     const data = await response.json() as SessionInfo;
     return data;
   } catch (error) {
-    console.warn(`Failed to fetch session ${sessionId}:`, error);
+    logger.warn({ sessionId, err: error }, 'Failed to fetch session');
     return null;
   }
 }

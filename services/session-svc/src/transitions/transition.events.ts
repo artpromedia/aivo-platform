@@ -5,6 +5,7 @@
 // Publishes transition events to NATS JetStream.
 // TODO: Add transition event types to @aivo/events library
 
+import { logger } from '../logger.js';
 import type {
   TransitionPlan,
   TransitionContext,
@@ -110,7 +111,7 @@ export interface TransitionCompletedPayload {
  */
 class TransitionEventPublisherService {
   private logEvent(eventType: string, payload: unknown): void {
-    console.log(`[TransitionEvent] ${eventType}:`, JSON.stringify(payload, null, 2));
+    logger.info({ payload }, `[TransitionEvent] ${eventType}`);
   }
 
   /**

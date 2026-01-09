@@ -6,6 +6,7 @@
  */
 
 import type { WebSocketGateway } from '../gateway/websocket.gateway.js';
+import { logger } from '../logger.js';
 import { RedisKeys } from '../redis/index.js';
 import type { MessageBrokerService } from '../services/message-broker.service.js';
 import { WSEventType, type LiveSessionUpdate } from '../types.js';
@@ -45,7 +46,7 @@ export class SessionEventHandler {
       this.handleSessionEvent(message as SessionEvent);
     });
 
-    console.log('[SessionEventHandler] Initialized');
+    logger.info('SessionEventHandler initialized');
   }
 
   /**
@@ -86,7 +87,7 @@ export class SessionEventHandler {
     const analyticsRoom = `analytics:${classId}`;
     this.gateway.broadcastToRoom(analyticsRoom, eventType, update);
 
-    console.log(`[SessionEventHandler] Broadcasted ${type} event for session ${sessionId}`);
+    logger.info({ type, sessionId, classId }, 'Broadcasted session event');
   }
 
   /**
@@ -121,6 +122,6 @@ export class SessionEventHandler {
       this.unsubscribe = null;
     }
 
-    console.log('[SessionEventHandler] Shutdown');
+    logger.info('SessionEventHandler shutdown');
   }
 }

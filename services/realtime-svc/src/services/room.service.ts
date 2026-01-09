@@ -11,6 +11,7 @@
 import { nanoid } from 'nanoid';
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import { prisma } from '../prisma.js';
 import { getRedisClient, RedisKeys } from '../redis/index.js';
 import type {
@@ -80,7 +81,7 @@ export class RoomService {
 
       if (!roomConfig) {
         // No explicit config, allow access (default open for development)
-        console.log(`[Room] No config found for class ${classId}, allowing access`);
+        logger.debug({ classId }, 'No config found for class, allowing access');
         return true;
       }
 
@@ -103,7 +104,7 @@ export class RoomService {
 
       return true;
     } catch (error) {
-      console.error(`[Room] Error checking class access:`, error);
+      logger.error({ err: error }, 'Error checking class access');
       // Fail open for now, but log the error
       return true;
     }
@@ -140,7 +141,7 @@ export class RoomService {
       // Default allow for development
       return true;
     } catch (error) {
-      console.error(`[Room] Error checking session access:`, error);
+      logger.error({ err: error }, 'Error checking session access');
       return true;
     }
   }
@@ -190,7 +191,7 @@ export class RoomService {
       // Default allow for development
       return true;
     } catch (error) {
-      console.error(`[Room] Error checking document access:`, error);
+      logger.error({ err: error }, 'Error checking document access');
       return true;
     }
   }
@@ -215,7 +216,7 @@ export class RoomService {
       // Default allow planning access
       return true;
     } catch (error) {
-      console.error(`[Room] Error checking planning access:`, error);
+      logger.error({ err: error }, 'Error checking planning access');
       return true;
     }
   }
@@ -251,7 +252,7 @@ export class RoomService {
       }
     } catch (error) {
       // Don't fail on activity logging errors
-      console.warn(`[Room] Failed to log activity:`, error);
+      logger.warn({ err: error }, 'Failed to log room activity');
     }
   }
 
@@ -271,7 +272,7 @@ export class RoomService {
       lastActivity: new Date(),
     });
 
-    console.log(`[Room] Added member ${member.userId} to room ${roomId}`);
+    logger.info({ userId: member.userId, roomId }, 'Member added to room');
   }
 
   /**
@@ -295,7 +296,7 @@ export class RoomService {
       });
     }
 
-    console.log(`[Room] Removed socket ${socketId} from room ${roomId}`);
+    logger.info({ socketId, roomId }, 'Socket removed from room');
   }
 
   /**
@@ -432,7 +433,7 @@ export class RoomService {
     // Save atomically
     await redis.set(docKey, JSON.stringify(doc));
 
-    console.log(`[Room] Applied operation to document ${documentId}, version ${doc.version}`);
+    logger.info({ documentId, version: doc.version }, 'Operation applied to document');
 
     return {
       success: true,
@@ -566,9 +567,7 @@ export class RoomService {
 
     await redis.setex(lockKey, Math.ceil(duration / 1000), JSON.stringify(lock));
 
-    console.log(
-      `[Room] Lock acquired on ${documentId}${elementId ? `:${elementId}` : ''} by ${userId}`
-    );
+    logger.info({ documentId, elementId, userId }, 'Lock acquired');
 
     return {
       acquired: true,
@@ -605,9 +604,7 @@ export class RoomService {
     }
 
     await redis.del(lockKey);
-    console.log(
-      `[Room] Lock released on ${documentId}${elementId ? `:${elementId}` : ''} by ${userId}`
-    );
+    logger.info({ documentId, elementId, userId }, 'Lock released');
 
     return true;
   }
@@ -662,6 +659,6 @@ export class RoomService {
       redis.del(RedisKeys.roomMessages(roomId)),
     ]);
 
-    console.log(`[Room] Cleaned up room ${roomId}`);
+    logger.info({ roomId }, 'Room cleaned up');
   }
 }

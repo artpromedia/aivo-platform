@@ -8,6 +8,7 @@ import type { NatsConnection, JetStreamClient, ConsumerConfig } from 'nats';
 import { connect, StringCodec, RetentionPolicy, AckPolicy } from 'nats';
 
 import { config } from './config.js';
+import { logger } from './logger.js';
 import { prisma } from './prisma.js';
 import { processExportJob } from './services/exportService.js';
 
@@ -21,7 +22,7 @@ let js: JetStreamClient | null = null;
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function startWorker(): Promise<void> {
-  console.log('Starting export worker...');
+  logger.info('Starting export worker...');
 
   try {
     nc = await connect({
@@ -29,7 +30,7 @@ export async function startWorker(): Promise<void> {
       name: 'research-export-worker',
     });
 
-    console.log(`Connected to NATS at ${config.NATS_URL}`);
+    logger.info({ natsUrl: config.NATS_URL }, 'Connected to NATS');
 
     js = nc.jetstream();
 
@@ -46,7 +47,7 @@ export async function startWorker(): Promise<void> {
         max_msgs: 100000,
         max_age: 7 * 24 * 60 * 60 * 1000000000, // 7 days in nanoseconds
       });
-      console.log('Created RESEARCH stream');
+      logger.info('Created RESEARCH stream');
     }
 
     // Create durable consumer
@@ -62,25 +63,25 @@ export async function startWorker(): Promise<void> {
       await jsm.consumers.info('RESEARCH', 'export-processor');
     } catch {
       await jsm.consumers.add('RESEARCH', consumerConfig);
-      console.log('Created export-processor consumer');
+      logger.info('Created export-processor consumer');
     }
 
     // Subscribe and process
     const consumer = await js.consumers.get('RESEARCH', 'export-processor');
     const messages = await consumer.consume();
 
-    console.log('Listening for export jobs...');
+    logger.info('Listening for export jobs...');
 
     for await (const msg of messages) {
       const data = JSON.parse(sc.decode(msg.data));
-      console.log(`Processing export job: ${data.exportJobId}`);
+      logger.info({ exportJobId: data.exportJobId }, 'Processing export job');
 
       try {
         await processExportJob(data.exportJobId);
         msg.ack();
-        console.log(`Completed export job: ${data.exportJobId}`);
+        logger.info({ exportJobId: data.exportJobId }, 'Completed export job');
       } catch (error) {
-        console.error(`Failed export job ${data.exportJobId}:`, error);
+        logger.error({ err: error, exportJobId: data.exportJobId }, 'Failed export job');
 
         // Mark job as failed in database
         await prisma.researchExportJob.update({
@@ -103,7 +104,7 @@ export async function startWorker(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Worker error:', error);
+    logger.error({ err: error }, 'Worker error');
     throw error;
   }
 }
@@ -113,7 +114,7 @@ export async function startWorker(): Promise<void> {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function stopWorker(): Promise<void> {
-  console.log('Stopping export worker...');
+  logger.info('Stopping export worker...');
 
   if (nc) {
     await nc.drain();
@@ -121,7 +122,7 @@ export async function stopWorker(): Promise<void> {
   }
 
   await prisma.$disconnect();
-  console.log('Worker stopped');
+  logger.info('Worker stopped');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -142,7 +143,7 @@ if (isMainModule) {
   });
 
   await startWorker().catch((error: unknown) => {
-    console.error('Worker failed to start:', error);
+    logger.error({ err: error }, 'Worker failed to start');
     process.exit(1);
   });
 }

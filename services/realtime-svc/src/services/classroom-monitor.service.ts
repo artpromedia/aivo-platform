@@ -12,6 +12,7 @@
 
 import { nanoid } from 'nanoid';
 
+import { logger } from '../logger.js';
 import { getRedisClient } from '../redis/index.js';
 import type { AlertRulesEngine } from '../engine/alert-rules.js';
 
@@ -197,7 +198,7 @@ export class ClassroomMonitorService {
     // Record engagement pattern
     await this.recordEngagementPattern(classroomId);
 
-    console.log(`[ClassroomMonitor] Updated status for student ${status.studentId}`);
+    logger.info({ studentId: status.studentId, classroomId }, 'Updated student status');
   }
 
   /**
@@ -303,7 +304,7 @@ export class ClassroomMonitorService {
     await redis.ltrim(key, 0, 99); // Keep last 100
     await redis.expire(key, this.INTERVENTION_TTL);
 
-    console.log(`[ClassroomMonitor] Logged intervention ${interventionId}`);
+    logger.info({ interventionId, classroomId: intervention.classroomId }, 'Intervention logged');
     return interventionId;
   }
 

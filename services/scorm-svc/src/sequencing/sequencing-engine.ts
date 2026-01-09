@@ -28,6 +28,7 @@ import type {
   TerminationRequest,
 } from './types.js';
 import { DEFAULT_LEARNER_PREFERENCES } from './types.js';
+import { logger } from '../logger.js';
 
 // ============================================================================
 // SEQUENCING ERROR
@@ -79,7 +80,7 @@ export class SequencingEngine {
       await this.restoreSuspendedState(suspendedState);
     }
 
-    console.log('[Sequencing] Engine initialized', { attemptId });
+    logger.info({ attemptId }, '[Sequencing] Engine initialized');
   }
 
   /**
@@ -87,7 +88,7 @@ export class SequencingEngine {
    * Main entry point for all navigation actions
    */
   async processNavigationRequest(request: NavigationRequestEvent): Promise<DeliveryRequest> {
-    console.log('[Sequencing] Processing navigation request', { request });
+    logger.info({ request }, '[Sequencing] Processing navigation request');
 
     try {
       // Navigation Request Process (SN book, section NB)
@@ -601,7 +602,7 @@ export class SequencingEngine {
     // Set current activity
     this.globalState.currentActivity = activity;
 
-    console.log('[Sequencing] Activity delivered', { activityId });
+    logger.info({ activityId }, '[Sequencing] Activity delivered');
   }
 
   /**

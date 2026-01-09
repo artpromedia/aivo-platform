@@ -9,6 +9,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import * as jose from 'jose';
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import type { JWTPayload } from '../types.js';
 
 /**
@@ -38,9 +39,9 @@ export class HttpAuthMiddleware {
         this.jwtPublicKey = new TextEncoder().encode(config.jwt.secret);
       }
       this.initialized = true;
-      console.log('[Auth] HTTP authentication middleware initialized');
+      logger.info('HTTP authentication middleware initialized');
     } catch (error) {
-      console.error('[Auth] Failed to initialize HTTP auth:', error);
+      logger.error({ err: error }, 'Failed to initialize HTTP auth');
       throw error;
     }
   }
@@ -67,9 +68,9 @@ export class HttpAuthMiddleware {
       return this.mapPayload(payload);
     } catch (error) {
       if (error instanceof jose.errors.JWTExpired) {
-        console.log('[Auth] HTTP token expired');
+        logger.debug('HTTP token expired');
       } else if (error instanceof jose.errors.JWTClaimValidationFailed) {
-        console.log('[Auth] HTTP token claim validation failed:', (error as Error).message);
+        logger.debug({ message: (error as Error).message }, 'HTTP token claim validation failed');
       }
       return null;
     }

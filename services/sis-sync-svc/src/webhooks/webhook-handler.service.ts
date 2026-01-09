@@ -21,6 +21,7 @@
  */
 
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
+import { logger } from '../logger.js';
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { ISisProvider, FieldMapping, SisProviderType } from '../providers/types';
 import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine';
@@ -192,9 +193,7 @@ export class WebhookHandlerService {
       this.configs.set(`${config.tenantId}:${config.providerId}`, config as unknown as WebhookConfig);
     }
 
-    console.log('[WebhookHandler] Loaded webhook configs', {
-      count: configs.length,
-    });
+    logger.info({ count: configs.length }, '[WebhookHandler] Loaded webhook configs');
   }
 
   /**
@@ -208,11 +207,7 @@ export class WebhookHandlerService {
   ): Promise<WebhookResult> {
     const eventId = this.extractEventId(provider, headers, body);
 
-    console.log('[WebhookHandler] Processing webhook', {
-      provider,
-      eventId,
-      tenantId,
-    });
+    logger.info({ provider, eventId, tenantId }, '[WebhookHandler] Processing webhook');
 
     // Check rate limit
     const rateLimitKey = tenantId || 'global';
@@ -252,7 +247,7 @@ export class WebhookHandlerService {
 
       // Verify signature
       if (!this.verifySignature(provider, headers, body, config.webhookSecret)) {
-        console.warn('[WebhookHandler] Invalid signature', { eventId });
+        logger.warn({ eventId }, '[WebhookHandler] Invalid signature');
         return {
           success: false,
           eventId,
@@ -283,10 +278,7 @@ export class WebhookHandlerService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[WebhookHandler] Failed to process webhook', {
-        eventId,
-        error: message,
-      });
+      logger.error({ eventId, error: message }, '[WebhookHandler] Failed to process webhook');
 
       // Log failure
       await this.logWebhookEvent(tenantId || 'unknown', eventId, body, 'failed', message);
@@ -488,7 +480,7 @@ export class WebhookHandlerService {
   ): boolean {
     if (!secret) {
       // No secret configured, skip verification (development only!)
-      console.warn('[WebhookHandler] No webhook secret configured');
+      logger.warn('[WebhookHandler] No webhook secret configured');
       return true;
     }
 
@@ -508,7 +500,7 @@ export class WebhookHandlerService {
           return this.verifyGenericHmacSignature(headers, body, secret);
       }
     } catch (error) {
-      console.error('[WebhookHandler] Signature verification error', error);
+      logger.error({ err: error }, '[WebhookHandler] Signature verification error');
       return false;
     }
   }
@@ -614,10 +606,10 @@ export class WebhookHandlerService {
     if (!signature) {
       // In production, reject webhooks without signatures
       if (process.env.NODE_ENV === 'production') {
-        console.warn('[WebhookHandler] Missing signature header - rejecting webhook');
+        logger.warn('[WebhookHandler] Missing signature header - rejecting webhook');
         return false;
       }
-      console.warn('[WebhookHandler] Missing signature header - allowing in development only');
+      logger.warn('[WebhookHandler] Missing signature header - allowing in development only');
       return true;
     }
 
@@ -643,9 +635,7 @@ export class WebhookHandlerService {
     const entityType = this.mapResourceToEntityType(payload.resourceType);
 
     if (!entityType) {
-      console.log('[WebhookHandler] Unknown resource type', {
-        resourceType: payload.resourceType,
-      });
+      logger.info({ resourceType: payload.resourceType }, '[WebhookHandler] Unknown resource type');
       return;
     }
 
@@ -690,11 +680,7 @@ export class WebhookHandlerService {
       entityType
     );
 
-    console.log('[WebhookHandler] Event processed', {
-      eventId: payload.id,
-      entityType,
-      operation: deltaRecord.operation,
-    });
+    logger.info({ eventId: payload.id, entityType, operation: deltaRecord.operation }, '[WebhookHandler] Event processed');
   }
 
   /**
@@ -925,7 +911,7 @@ export class WebhookHandlerService {
         },
       });
     } catch (err) {
-      console.error('[WebhookHandler] Failed to log webhook event', err);
+      logger.error({ err }, '[WebhookHandler] Failed to log webhook event');
     }
   }
 
@@ -947,7 +933,7 @@ export class WebhookHandlerService {
         },
       });
     } catch (err) {
-      console.error('[WebhookHandler] Failed to add to dead letter queue', err);
+      logger.error({ err }, '[WebhookHandler] Failed to add to dead letter queue');
     }
   }
 

@@ -7,6 +7,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { logger } from '../logger.js';
 import { PredictabilityService } from '../predictability/predictability.service.js';
 import { predictabilityEventPublisher } from '../predictability/predictability.events.js';
 import type { SessionActivityInput, RoutineType } from '../predictability/predictability.types.js';
@@ -187,7 +188,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
     predictabilityEventPublisher
       .publishPreferencesUpdated(tenantId, learnerId, preferences, Object.keys(prefs))
       .catch((err) => {
-        console.error('[predictability] Failed to publish preferences.updated event:', err);
+        logger.error({ err }, '[predictability] Failed to publish preferences.updated event');
       });
 
     return reply.send(preferences);
@@ -261,7 +262,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
     predictabilityEventPublisher
       .publishSessionPlanCreated(tenantId, learnerId, plan.id, sessionId, plan.outline, structureType)
       .catch((err) => {
-        console.error('[predictability] Failed to publish plan.created event:', err);
+        logger.error({ err }, '[predictability] Failed to publish plan.created event');
       });
 
     return reply.status(201).send(plan);
@@ -369,7 +370,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
             result.progress
           )
           .catch((err) => {
-            console.error('[predictability] Failed to publish progress.updated event:', err);
+            logger.error({ err }, '[predictability] Failed to publish progress.updated event');
           });
       }
 
@@ -448,7 +449,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
           result.requiresApproval
         )
         .catch((err) => {
-          console.error('[predictability] Failed to publish change.requested event:', err);
+          logger.error({ err }, '[predictability] Failed to publish change.requested event');
         });
 
       return reply.status(201).send(result);
@@ -509,7 +510,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
         predictabilityEventPublisher
           .publishChangeApplied(tenantId, plan.learnerId, planId, plan.sessionId, changeId, 'skip', approved)
           .catch((err) => {
-            console.error('[predictability] Failed to publish change.applied event:', err);
+            logger.error({ err }, '[predictability] Failed to publish change.applied event');
           });
       }
 
@@ -605,7 +606,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
     predictabilityEventPublisher
       .publishAnxietyReported(tenantId, sessionId, learnerId, level, result.supportActions, triggerCategory, triggerId)
       .catch((err) => {
-        console.error('[predictability] Failed to publish anxiety.reported event:', err);
+        logger.error({ err }, '[predictability] Failed to publish anxiety.reported event');
       });
 
     return reply.status(201).send(result);

@@ -6,12 +6,13 @@
 
 import { buildApp, type AppServices } from './app.js';
 import { config } from './config.js';
+import { logger } from './logger.js';
 import { closeRedisConnections } from './redis/index.js';
 
 let services: AppServices | null = null;
 
 async function main() {
-  console.log('[Realtime] Starting service...');
+  logger.info('Starting service...');
 
   const { app, services: appServices } = await buildApp();
   services = appServices;
@@ -19,14 +20,12 @@ async function main() {
   // Start the server
   await app.listen({ port: config.port, host: '0.0.0.0' });
 
-  console.log(`[Realtime] Service running on port ${config.port}`);
-  console.log(`[Realtime] Environment: ${config.nodeEnv}`);
-  console.log(`[Realtime] Max connections per pod: ${config.maxConnectionsPerPod}`);
+  logger.info({ port: config.port, env: config.nodeEnv, maxConnections: config.maxConnectionsPerPod }, 'Service started');
 }
 
 // Graceful shutdown
 async function shutdown(signal: string) {
-  console.log(`[Realtime] Received ${signal}, shutting down gracefully...`);
+  logger.info({ signal }, 'Received shutdown signal, shutting down gracefully...');
 
   if (services) {
     // Shutdown event handlers
@@ -46,7 +45,7 @@ async function shutdown(signal: string) {
   // Close Redis connections
   await closeRedisConnections();
 
-  console.log('[Realtime] Shutdown complete');
+  logger.info('Shutdown complete');
   process.exit(0);
 }
 
@@ -54,6 +53,6 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 main().catch((error: unknown) => {
-  console.error('[Realtime] Failed to start:', error);
+  logger.error({ err: error }, 'Failed to start');
   process.exit(1);
 });

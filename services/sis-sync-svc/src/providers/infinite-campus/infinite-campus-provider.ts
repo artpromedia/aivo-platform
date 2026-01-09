@@ -18,6 +18,7 @@
  */
 
 import type { Pool } from 'pg';
+import { logger } from '../../logger.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -581,7 +582,7 @@ export class InfiniteCampusSyncService {
           results[entityType as keyof typeof results] = result;
         }
       } catch (error) {
-        console.error(`Failed to sync ${entityType} changes:`, error);
+        logger.error({ err: error, entityType }, `Failed to sync ${entityType} changes`);
       }
     }
 
@@ -981,7 +982,7 @@ export class InfiniteCampusSyncService {
           }
         }
       } catch (error) {
-        console.error(`Failed to sync contact ${contact.contactID}:`, error);
+        logger.error({ err: error, contactId: contact.contactID }, `Failed to sync contact`);
       }
     }
   }
@@ -1267,7 +1268,7 @@ export class InfiniteCampusSyncService {
   ): Promise<void> {
     // Implementation depends on entity type
     // This is a simplified version - full implementation would handle each type
-    console.log(`Upserting ${entityType}:`, _data);
+    logger.info({ entityType, data: _data }, `Upserting entity`);
   }
 
   /**
@@ -1278,7 +1279,7 @@ export class InfiniteCampusSyncService {
     _data: unknown
   ): Promise<void> {
     // Implementation depends on entity type
-    console.log(`Soft deleting ${entityType}:`, _data);
+    logger.info({ entityType, data: _data }, `Soft deleting entity`);
   }
 
   /**

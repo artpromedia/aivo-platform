@@ -4,6 +4,8 @@
  * Publishes domain events for research governance actions.
  */
 
+import { logger } from '../logger.js';
+
 // Event payload types
 export interface ProjectCreatedPayload {
   projectId: string;
@@ -88,33 +90,33 @@ export interface AccessRevokedPayload {
 // In production, these would use the @aivo/events library
 
 export async function publishProjectCreated(payload: ProjectCreatedPayload): Promise<void> {
-  console.log('[NATS] research.project.created', JSON.stringify(payload));
+  logger.info({ event: 'research.project.created', payload }, '[NATS] Publishing event');
 }
 
 export async function publishProjectApproved(payload: ProjectApprovedPayload): Promise<void> {
-  console.log('[NATS] research.project.approved', JSON.stringify(payload));
+  logger.info({ event: 'research.project.approved', payload }, '[NATS] Publishing event');
 }
 
 export async function publishProjectRejected(payload: ProjectRejectedPayload): Promise<void> {
-  console.log('[NATS] research.project.rejected', JSON.stringify(payload));
+  logger.info({ event: 'research.project.rejected', payload }, '[NATS] Publishing event');
 }
 
 export async function publishExportRequested(payload: ExportRequestedPayload): Promise<void> {
-  console.log('[NATS] research.export.requested', JSON.stringify(payload));
+  logger.info({ event: 'research.export.requested', payload }, '[NATS] Publishing event');
 }
 
 export async function publishExportCompleted(payload: ExportCompletedPayload): Promise<void> {
-  console.log('[NATS] research.export.completed', JSON.stringify(payload));
+  logger.info({ event: 'research.export.completed', payload }, '[NATS] Publishing event');
 }
 
 export async function publishExportFailed(payload: ExportFailedPayload): Promise<void> {
-  console.log('[NATS] research.export.failed', JSON.stringify(payload));
+  logger.info({ event: 'research.export.failed', payload }, '[NATS] Publishing event');
 }
 
 export async function publishAccessGranted(payload: AccessGrantedPayload): Promise<void> {
-  console.log('[NATS] research.access.granted', JSON.stringify(payload));
+  logger.info({ event: 'research.access.granted', payload }, '[NATS] Publishing event');
 }
 
 export async function publishAccessRevoked(payload: AccessRevokedPayload): Promise<void> {
-  console.log('[NATS] research.access.revoked', JSON.stringify(payload));
+  logger.info({ event: 'research.access.revoked', payload }, '[NATS] Publishing event');
 }

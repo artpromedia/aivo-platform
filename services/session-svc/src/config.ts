@@ -1,6 +1,10 @@
 import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import pino from 'pino';
+
+// Bootstrap logger for config loading (before main logger is available)
+const bootstrapLogger = pino({ name: 'session-svc-config' });
 
 function loadPublicKey(): string | undefined {
   const keyPath = process.env.JWT_PUBLIC_KEY_PATH;
@@ -8,7 +12,7 @@ function loadPublicKey(): string | undefined {
   try {
     return readFileSync(resolve(keyPath), 'utf-8');
   } catch {
-    console.warn(`Could not load JWT public key from ${keyPath}`);
+    bootstrapLogger.warn({ keyPath }, 'Could not load JWT public key');
     return undefined;
   }
 }

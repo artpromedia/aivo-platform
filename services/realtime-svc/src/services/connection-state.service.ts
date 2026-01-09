@@ -12,6 +12,7 @@ import os from 'os';
 
 import type { Server, Socket } from 'socket.io';
 
+import { logger } from '../logger.js';
 import { getRedisClient } from '../redis/index.js';
 
 /**
@@ -101,7 +102,7 @@ export class ConnectionStateManager {
     process.on('SIGTERM', () => void this.shutdown());
     process.on('SIGINT', () => void this.shutdown());
 
-    console.log(`[ConnectionManager] Initialized on server ${this.serverId}`);
+    logger.info({ serverId: this.serverId }, 'ConnectionManager initialized');
   }
 
   /**
@@ -397,7 +398,7 @@ export class ConnectionStateManager {
   }
 
   private async shutdown(): Promise<void> {
-    console.log(`[ConnectionManager] Shutting down server ${this.serverId}...`);
+    logger.info({ serverId: this.serverId }, 'ConnectionManager shutting down');
 
     if (this.metricsInterval) {
       clearInterval(this.metricsInterval);
@@ -418,7 +419,7 @@ export class ConnectionStateManager {
     }
 
     this.connections.clear();
-    console.log(`[ConnectionManager] Shutdown complete`);
+    logger.info('ConnectionManager shutdown complete');
   }
 }
 

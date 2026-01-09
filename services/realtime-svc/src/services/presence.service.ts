@@ -10,6 +10,7 @@
  */
 
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import { getRedisClient, RedisKeys } from '../redis/index.js';
 import type { UserPresence, PresenceEntry, UserStatus, PresenceUpdatePayload } from '../types.js';
 
@@ -62,7 +63,7 @@ export class PresenceService {
     // Add to sorted set for efficient queries
     await redis.zadd(RedisKeys.presenceSorted(tenantId), Date.now(), userId);
 
-    console.log(`[Presence] User ${userId} set online in tenant ${tenantId}`);
+    logger.info({ userId, tenantId }, 'User set online');
   }
 
   /**
@@ -87,7 +88,7 @@ export class PresenceService {
       await this.removePresence(userId, tenantId);
     }
 
-    console.log(`[Presence] User ${userId} set offline in tenant ${tenantId}`);
+    logger.info({ userId, tenantId }, 'User set offline');
   }
 
   /**
@@ -291,7 +292,7 @@ export class PresenceService {
       try {
         await this.cleanupStalePresences();
       } catch (error) {
-        console.error('[Presence] Cleanup error:', error);
+        logger.error({ err: error }, 'Presence cleanup error');
       }
     }, config.presence.cleanupInterval);
   }
@@ -302,7 +303,7 @@ export class PresenceService {
   private async cleanupStalePresences(): Promise<void> {
     // Note: In production, you'd use Redis SCAN to find all presence keys
     // and remove those that have expired but weren't cleaned up
-    console.log('[Presence] Running cleanup job');
+    logger.debug('Running presence cleanup job');
   }
 
   /**

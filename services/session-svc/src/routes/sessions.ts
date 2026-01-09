@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { logger } from '../logger.js';
 import { billingAccessPreHandler, checkAddonAccess } from '../middleware/billingAccess.js';
 import { prisma } from '../prisma.js';
 import { sessionEventPublisher } from '../services/event-publisher.js';
@@ -200,7 +201,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
           metadata: metadata as Record<string, unknown> | undefined,
         })
         .catch((err: unknown) => {
-          console.error('[sessions] Failed to publish session.started event:', err);
+          logger.error({ err }, '[sessions] Failed to publish session.started event');
         });
 
       return reply.status(201).send(session);
@@ -482,7 +483,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         endedAt: endTime,
       })
       .catch((err: unknown) => {
-        console.error('[sessions] Failed to publish session.ended event:', err);
+        logger.error({ err }, '[sessions] Failed to publish session.ended event');
       });
 
     return reply.send(updatedSession);

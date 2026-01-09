@@ -7,6 +7,7 @@
 
 import type { PrismaClient } from '@prisma/client';
 
+import { logger } from '../logger.js';
 import type { StateHistory, StateHistoryEntry } from './state-history.js';
 
 /**
@@ -392,7 +393,7 @@ export class SessionEmotionalMonitor {
       });
 
       if (!response.ok) {
-        console.error('Failed to analyze emotional state:', response.statusText);
+        logger.error({ statusText: response.statusText }, 'Failed to analyze emotional state');
         return null;
       }
 
@@ -417,7 +418,7 @@ export class SessionEmotionalMonitor {
 
       return analysis;
     } catch (error) {
-      console.error('Error analyzing emotional state:', error);
+      logger.error({ err: error }, 'Error analyzing emotional state');
       return null;
     }
   }
@@ -448,7 +449,7 @@ export class SessionEmotionalMonitor {
         }),
       });
     } catch (error) {
-      console.error('Error recording intervention outcome:', error);
+      logger.error({ err: error }, 'Error recording intervention outcome');
     }
   }
 
