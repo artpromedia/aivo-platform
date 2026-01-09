@@ -881,6 +881,375 @@ export class ParentService {
   }
 
   // ============================================================================
+  // DIFFICULTY ADJUSTMENT MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get pending difficulty recommendations for a child
+   */
+  async getDifficultyRecommendations(
+    parentId: string,
+    studentId: string
+  ): Promise<{
+    studentId: string;
+    pendingCount: number;
+    recommendations: Array<{
+      id: string;
+      domain: string | null;
+      currentLevel: number;
+      recommendedLevel: number;
+      reasonTitle: string;
+      reasonDescription: string;
+      evidence: unknown;
+      expiresAt: string;
+      createdAt: string;
+    }>;
+  }> {
+    await this.verifyParentAccess(parentId, studentId);
+
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl}/difficulty/recommendations/pending/${studentId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Parent-Id': parentId,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recommendations: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Failed to get difficulty recommendations', {
+        parentId,
+        studentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Respond to a difficulty recommendation (approve/modify/deny)
+   */
+  async respondToRecommendation(
+    parentId: string,
+    dto: { recommendationId: string; action: 'approve' | 'modify' | 'deny'; modifiedLevel?: number; parentNotes?: string }
+  ): Promise<{
+    success: boolean;
+    status: string;
+    appliedLevel?: number;
+    message: string;
+  }> {
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl}/difficulty/recommendations/respond`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Parent-Id': parentId,
+          },
+          body: JSON.stringify({
+            ...dto,
+            parentId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new BadRequestException(error.error || 'Failed to respond to recommendation');
+      }
+
+      const result = await response.json();
+
+      // Send notification about the action taken
+      await this.notifications.send({
+        userId: parentId,
+        userType: 'parent',
+        type: 'difficulty_response_confirmed',
+        title: 'Difficulty Adjustment Updated',
+        body: result.message,
+        data: {
+          recommendationId: dto.recommendationId,
+          action: dto.action,
+          appliedLevel: result.appliedLevel,
+        },
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to respond to recommendation', {
+        parentId,
+        recommendationId: dto.recommendationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get current difficulty levels for a child by domain
+   */
+  async getDifficultyLevels(
+    parentId: string,
+    studentId: string
+  ): Promise<{
+    studentId: string;
+    levels: Record<string, { level: number; source: string }>;
+  }> {
+    await this.verifyParentAccess(parentId, studentId);
+
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl}/difficulty/levels/${studentId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Parent-Id': parentId,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch difficulty levels: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return {
+        studentId,
+        levels: data.levels,
+      };
+    } catch (error) {
+      logger.error('Failed to get difficulty levels', {
+        parentId,
+        studentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Directly set difficulty level for a domain (parent override)
+   */
+  async setDomainDifficulty(
+    parentId: string,
+    dto: { studentId: string; domain: string; level: number; reason?: string }
+  ): Promise<{
+    success: boolean;
+    message: string;
+    domain: string;
+    level: number;
+  }> {
+    await this.verifyParentAccess(parentId, dto.studentId);
+
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl}/difficulty/domain/set`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Parent-Id': parentId,
+          },
+          body: JSON.stringify({
+            learnerId: dto.studentId,
+            domain: dto.domain,
+            level: dto.level,
+            reason: dto.reason,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new BadRequestException(error.error || 'Failed to set domain difficulty');
+      }
+
+      const result = await response.json();
+
+      logger.info('Parent set domain difficulty', {
+        parentId,
+        studentId: dto.studentId,
+        domain: dto.domain,
+        level: dto.level,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to set domain difficulty', {
+        parentId,
+        studentId: dto.studentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get difficulty preferences for a child
+   */
+  async getDifficultyPreferences(
+    parentId: string,
+    studentId: string
+  ): Promise<{
+    studentId: string;
+    preferences: {
+      autoApproveIncreases: boolean;
+      autoApproveDecreases: boolean;
+      notifyOnRecommendation: boolean;
+      domainOverrides: Record<string, unknown> | null;
+      maxDifficultyLevel: number | null;
+      minDifficultyLevel: number | null;
+    };
+  }> {
+    await this.verifyParentAccess(parentId, studentId);
+
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl}/difficulty/preferences/${studentId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Parent-Id': parentId,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch preferences: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return {
+        studentId,
+        preferences: data.preferences,
+      };
+    } catch (error) {
+      logger.error('Failed to get difficulty preferences', {
+        parentId,
+        studentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update difficulty preferences for a child
+   */
+  async updateDifficultyPreferences(
+    parentId: string,
+    dto: {
+      studentId: string;
+      autoApproveIncreases?: boolean;
+      autoApproveDecreases?: boolean;
+      notifyOnRecommendation?: boolean;
+      maxDifficultyLevel?: number | null;
+      minDifficultyLevel?: number | null;
+    }
+  ): Promise<{
+    success: boolean;
+    studentId: string;
+    preferences: unknown;
+  }> {
+    await this.verifyParentAccess(parentId, dto.studentId);
+
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl}/difficulty/preferences`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Parent-Id': parentId,
+          },
+          body: JSON.stringify({
+            learnerId: dto.studentId,
+            ...dto,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new BadRequestException(error.error || 'Failed to update preferences');
+      }
+
+      const result = await response.json();
+
+      logger.info('Parent updated difficulty preferences', {
+        parentId,
+        studentId: dto.studentId,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to update difficulty preferences', {
+        parentId,
+        studentId: dto.studentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get difficulty change history for a child
+   */
+  async getDifficultyHistory(
+    parentId: string,
+    studentId: string,
+    limit?: number
+  ): Promise<{
+    studentId: string;
+    count: number;
+    history: Array<{
+      id: string;
+      domain: string | null;
+      previousLevel: number;
+      newLevel: number;
+      changeSource: string;
+      changedByType: string;
+      wasEffective: boolean | null;
+      createdAt: string;
+    }>;
+  }> {
+    await this.verifyParentAccess(parentId, studentId);
+
+    try {
+      const url = new URL(`${config.learnerModelSvcUrl}/difficulty/history/${studentId}`);
+      if (limit) url.searchParams.set('limit', limit.toString());
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Parent-Id': parentId,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch history: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Failed to get difficulty history', {
+        parentId,
+        studentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  // ============================================================================
   // PRIVATE HELPER METHODS
   // ============================================================================
 

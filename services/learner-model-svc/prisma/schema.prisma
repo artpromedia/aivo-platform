@@ -667,6 +667,142 @@ model BiasReport {
   @@map("bias_reports")
 }
 
+// ── Difficulty Recommendations & Parent Approval ─────────────────────────────
+
+/// Status of a difficulty recommendation
+enum DifficultyRecommendationStatus {
+  PENDING           // Awaiting parent review
+  APPROVED          // Parent approved as-is
+  MODIFIED          // Parent approved with modifications
+  DENIED            // Parent denied the change
+  AUTO_APPLIED      // Auto-applied (parent opted for auto-approval)
+  EXPIRED           // Expired without action
+
+  @@map("difficulty_recommendation_status")
+}
+
+/// Type of difficulty adjustment
+enum DifficultyAdjustmentType {
+  INCREASE          // Learner is ready for harder content
+  DECREASE          // Learner needs easier content
+  DOMAIN_SPECIFIC   // Adjustment for specific domain only
+  OVERALL           // Overall difficulty adjustment
+
+  @@map("difficulty_adjustment_type")
+}
+
+/// Difficulty recommendations requiring parent approval.
+/// Generated when the system detects a learner is ready for a difficulty change.
+model DifficultyRecommendation {
+  id                  String                        @id @default(uuid()) @db.Uuid
+  tenantId            String                        @map("tenant_id") @db.Uuid
+  learnerId           String                        @map("learner_id") @db.Uuid
+  virtualBrainId      String                        @map("virtual_brain_id") @db.Uuid
+
+  // Recommendation details
+  adjustmentType      DifficultyAdjustmentType      @map("adjustment_type")
+  domain              SkillDomain?                  // Null if overall adjustment
+
+  // Current and proposed levels (1-5 scale matching LearningObject.difficultyLevel)
+  currentLevel        Int                           @map("current_level") @db.SmallInt
+  recommendedLevel    Int                           @map("recommended_level") @db.SmallInt
+  parentSetLevel      Int?                          @map("parent_set_level") @db.SmallInt  // If parent modifies
+
+  // Evidence for the recommendation
+  masteryScore        Decimal                       @map("mastery_score") @db.Decimal(4, 3)
+  recentAccuracy      Decimal                       @map("recent_accuracy") @db.Decimal(4, 3)
+  practiceCount       Int                           @map("practice_count")
+  consecutiveSuccesses Int                          @map("consecutive_successes")
+
+  // AI-generated explanation for the parent
+  reasonTitle         String                        @map("reason_title")
+  reasonDescription   String                        @map("reason_description")
+  evidenceSummary     Json?                         @map("evidence_summary")
+
+  // Status tracking
+  status              DifficultyRecommendationStatus
+  notificationSentAt  DateTime?                     @map("notification_sent_at") @db.Timestamptz
+  viewedAt            DateTime?                     @map("viewed_at") @db.Timestamptz
+  respondedAt         DateTime?                     @map("responded_at") @db.Timestamptz
+  respondedBy         String?                       @map("responded_by") @db.Uuid  // Parent ID
+  parentNotes         String?                       @map("parent_notes")  // Parent's reason for modification/denial
+
+  // Expiration
+  expiresAt           DateTime                      @map("expires_at") @db.Timestamptz
+
+  // Audit
+  createdAt           DateTime                      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime                      @updatedAt @map("updated_at") @db.Timestamptz
+  appliedAt           DateTime?                     @map("applied_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, status])
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([virtualBrainId, domain])
+  @@index([expiresAt, status])
+  @@map("difficulty_recommendations")
+}
+
+/// Parent's difficulty preferences for a learner.
+/// Allows parents to set baseline preferences and auto-approval rules.
+model ParentDifficultyPreference {
+  id                    String      @id @default(uuid()) @db.Uuid
+  tenantId              String      @map("tenant_id") @db.Uuid
+  learnerId             String      @map("learner_id") @db.Uuid
+  parentId              String      @map("parent_id") @db.Uuid
+
+  // Global settings
+  autoApproveIncreases  Boolean     @default(false) @map("auto_approve_increases")  // Auto-approve when going harder
+  autoApproveDecreases  Boolean     @default(false) @map("auto_approve_decreases")  // Auto-approve when going easier
+  notifyOnRecommendation Boolean    @default(true) @map("notify_on_recommendation")
+
+  // Per-domain overrides (parent can lock a domain to a specific level)
+  domainOverrides       Json?       @map("domain_overrides")  // { "MATH": { "lockedLevel": 3, "reason": "..." } }
+
+  // Maximum difficulty parent allows (safety cap)
+  maxDifficultyLevel    Int?        @map("max_difficulty_level") @db.SmallInt  // 1-5, null = no cap
+  minDifficultyLevel    Int?        @map("min_difficulty_level") @db.SmallInt  // 1-5, null = no floor
+
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, parentId])
+  @@index([tenantId, learnerId])
+  @@map("parent_difficulty_preferences")
+}
+
+/// History of difficulty changes applied to a learner.
+/// Tracks all changes for analytics and parent visibility.
+model DifficultyChangeHistory {
+  id                    String      @id @default(uuid()) @db.Uuid
+  tenantId              String      @map("tenant_id") @db.Uuid
+  learnerId             String      @map("learner_id") @db.Uuid
+  virtualBrainId        String      @map("virtual_brain_id") @db.Uuid
+  recommendationId      String?     @map("recommendation_id") @db.Uuid  // Link to original recommendation
+
+  // Change details
+  domain                SkillDomain?
+  previousLevel         Int         @map("previous_level") @db.SmallInt
+  newLevel              Int         @map("new_level") @db.SmallInt
+  changeSource          String      @map("change_source")  // "system_recommendation", "parent_override", "baseline_assessment"
+
+  // Who made the change
+  changedBy             String?     @map("changed_by") @db.Uuid  // Parent/Admin ID, null if system
+  changedByType         String      @map("changed_by_type")  // "system", "parent", "admin"
+
+  // Outcome tracking (filled in later)
+  outcomeTrackedAt      DateTime?   @map("outcome_tracked_at") @db.Timestamptz
+  postChangeMastery     Decimal?    @map("post_change_mastery") @db.Decimal(4, 3)
+  postChangeAccuracy    Decimal?    @map("post_change_accuracy") @db.Decimal(4, 3)
+  wasEffective          Boolean?    @map("was_effective")  // Did this change help the learner?
+
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@index([virtualBrainId, domain])
+  @@index([recommendationId])
+  @@map("difficulty_change_history")
+}
+
 /// Bias alerts requiring attention.
 /// Created when significant bias is detected in predictions.
 model BiasAlert {

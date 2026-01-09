@@ -427,3 +427,128 @@ export interface AcceptInviteResponse {
 export interface ParentWithStudents extends ParentProfile {
   students: StudentSummary[];
 }
+
+// ============================================================================
+// DIFFICULTY ADJUSTMENT TYPES
+// ============================================================================
+
+export enum DifficultyRecommendationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  MODIFIED = 'MODIFIED',
+  DENIED = 'DENIED',
+  AUTO_APPLIED = 'AUTO_APPLIED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum SkillDomain {
+  ELA = 'ELA',
+  MATH = 'MATH',
+  SCIENCE = 'SCIENCE',
+  SPEECH = 'SPEECH',
+  SEL = 'SEL',
+}
+
+export interface DifficultyRecommendation {
+  id: string;
+  domain: SkillDomain | null;
+  currentLevel: number;
+  recommendedLevel: number;
+  reasonTitle: string;
+  reasonDescription: string;
+  evidence: DifficultyEvidence;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface DifficultyEvidence {
+  masteryScore: number;
+  recentAccuracy: number;
+  practiceCount: number;
+  consecutiveSuccesses: number;
+}
+
+export interface DifficultyPreferences {
+  autoApproveIncreases: boolean;
+  autoApproveDecreases: boolean;
+  notifyOnRecommendation: boolean;
+  domainOverrides: Record<string, DomainOverride> | null;
+  maxDifficultyLevel: number | null;
+  minDifficultyLevel: number | null;
+}
+
+export interface DomainOverride {
+  lockedLevel: number;
+  reason?: string;
+  lockedAt?: string;
+}
+
+export interface DifficultyLevel {
+  level: number;
+  source: 'default' | 'calculated' | 'parent_override';
+}
+
+export interface DifficultyChangeRecord {
+  id: string;
+  domain: SkillDomain | null;
+  previousLevel: number;
+  newLevel: number;
+  changeSource: string;
+  changedByType: string;
+  wasEffective: boolean | null;
+  createdAt: string;
+}
+
+export class RespondToRecommendationDto {
+  @IsUUID()
+  recommendationId!: string;
+
+  @IsEnum(['approve', 'modify', 'deny'])
+  action!: 'approve' | 'modify' | 'deny';
+
+  @IsOptional()
+  modifiedLevel?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  parentNotes?: string;
+}
+
+export class SetDomainDifficultyDto {
+  @IsUUID()
+  studentId!: string;
+
+  @IsEnum(SkillDomain)
+  domain!: SkillDomain;
+
+  level!: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class UpdateDifficultyPreferencesDto {
+  @IsUUID()
+  studentId!: string;
+
+  @IsBoolean()
+  @IsOptional()
+  autoApproveIncreases?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  autoApproveDecreases?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  notifyOnRecommendation?: boolean;
+
+  @IsOptional()
+  maxDifficultyLevel?: number | null;
+
+  @IsOptional()
+  minDifficultyLevel?: number | null;
+}

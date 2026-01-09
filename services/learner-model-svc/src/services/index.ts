@@ -34,3 +34,21 @@ export type {
   SkillEstimate,
   CloneResult,
 } from './virtual-brain-template.js';
+
+// Difficulty recommendation & parent approval workflow
+export {
+  DifficultyRecommendationService,
+  createDifficultyRecommendationService,
+} from './difficulty-recommendation.js';
+
+export type {
+  DifficultyRecommendationStatus,
+  DifficultyAdjustmentType,
+  ParentPreferences,
+  LearnerDifficultyState,
+  RecommendationInput,
+  RecommendationResult,
+  ApprovalInput,
+  ApprovalResult,
+  ParentNotificationPayload,
+} from './difficulty-recommendation.js';
