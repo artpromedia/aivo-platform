@@ -15,6 +15,8 @@ import { OneRosterApiProvider } from './oneroster-api';
 import { OneRosterCsvProvider } from './oneroster-csv';
 import { GoogleWorkspaceProvider } from './google-workspace';
 import { MicrosoftEntraProvider } from './microsoft-entra';
+import { PowerSchoolClient, PowerSchoolSyncService } from './powerschool/powerschool-provider';
+import { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider';
 
 export function createProvider(providerType: SisProviderType): ISisProvider {
   switch (providerType) {
@@ -119,3 +121,7 @@ export { OneRosterApiProvider } from './oneroster-api';
 export { OneRosterCsvProvider } from './oneroster-csv';
 export { GoogleWorkspaceProvider, GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from './google-workspace';
 export { MicrosoftEntraProvider, MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from './microsoft-entra';
+export { PowerSchoolClient, PowerSchoolSyncService } from './powerschool/powerschool-provider';
+export * from './powerschool/powerschool-provider';
+export { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider';
+export * from './infinite-campus/infinite-campus-provider';

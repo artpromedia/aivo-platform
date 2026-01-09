@@ -16,3 +16,6 @@ export 'offline_manager.dart';
 export 'offline_storage.dart';
 export 'cached_activities.dart';
 export 'offline_regulation_service.dart';
+
+// HIGH-006: Offline Operation Queue
+export 'offline_queue.dart';
