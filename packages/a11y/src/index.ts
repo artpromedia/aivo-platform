@@ -8,6 +8,7 @@
  * - ARIA attribute utilities
  * - Color contrast utilities
  * - Reduced motion detection
+ * - Alt text validation and generation
  * - Accessible component patterns
  */
 
@@ -20,4 +21,5 @@ export * from './color-contrast';
 export * from './reduced-motion';
 export * from './skip-links';
 export * from './live-region';
+export * from './alt-text';
 export * from './types';

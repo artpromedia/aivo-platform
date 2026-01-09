@@ -27,7 +27,8 @@ export function ConsentManager({ studentId, studentName, studentAge }: ConsentMa
   const queryClient = useQueryClient();
   const [expandedType, setExpandedType] = useState<string | null>(null);
 
-  const isCoppaApplicable = studentAge !== undefined && studentAge < 13;
+  // COPPA applies to children 13 and under (Enterprise QA Audit fix)
+  const isCoppaApplicable = studentAge !== undefined && studentAge <= 13;
 
   const { data: consents, isLoading } = useQuery({
     queryKey: ['consent', studentId],

@@ -55,6 +55,8 @@ export interface DeliveryDecision {
 // CONSTANTS
 // ══════════════════════════════════════════════════════════════════════════════
 
+// COPPA applies to children 13 and under
+// Updated: January 2026 - Enterprise QA Audit bug fix
 const COPPA_AGE_THRESHOLD = 13;
 const DEFAULT_TIMEZONE = 'America/New_York';
 
@@ -200,11 +202,11 @@ export async function makeDeliveryDecision(
     };
   }
 
-  // COPPA routing - route to parent for children under 13
+  // COPPA routing - route to parent for children 13 and under
   let recipientUserId = userId;
   let recipientPreferences = preferences;
 
-  if (coppaConfig && coppaConfig.learnerAge < COPPA_AGE_THRESHOLD) {
+  if (coppaConfig && coppaConfig.learnerAge <= COPPA_AGE_THRESHOLD) {
     if (!coppaConfig.parentUserId) {
       // No parent configured, cannot deliver to child
       return {
@@ -360,8 +362,8 @@ export function shouldRouteToParent(
   notificationType: NotificationType,
   learnerAge: number
 ): boolean {
-  // Always route to parent for children under 13
-  if (learnerAge < COPPA_AGE_THRESHOLD) {
+  // Always route to parent for children 13 and under
+  if (learnerAge <= COPPA_AGE_THRESHOLD) {
     return true;
   }
 

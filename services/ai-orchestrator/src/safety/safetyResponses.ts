@@ -29,22 +29,32 @@ const SAFE_RESPONSES: Record<string, ResponseTemplate> = {
    *
    * IMPORTANT:
    * - Does NOT ask about plans or details
-   * - Does NOT provide hotline numbers (per Aivo K-12 policy)
+   * - Provides 988 Suicide & Crisis Lifeline (required for K-12 safety)
    * - Encourages reaching out to a trusted adult
    * - Uses neutral, supportive language
+   *
+   * Updated: January 2026 - Added crisis hotline per enterprise QA audit
    */
   SELF_HARM: {
-    en: `I hear that you're going through something really difficult right now, and I'm sorry you're feeling this way. This is something I'm not able to help with directly.
+    en: `I hear that you're going through something really difficult right now, and I'm sorry you're feeling this way. This is something I'm not able to help with directly, but please know that help is available.
 
-It's really important that you talk to a trusted adult right away — like a parent, guardian, teacher, or school counselor. They care about you and can help.
+**If you're in crisis, please reach out for help:**
+- **988 Suicide & Crisis Lifeline**: Call or text 988 (available 24/7)
+- **Crisis Text Line**: Text HOME to 741741
 
-Please reach out to someone you trust as soon as possible. You don't have to go through this alone.`,
+It's also really important to talk to a trusted adult — like a parent, guardian, teacher, or school counselor. They care about you and can help.
 
-    es: `Escucho que estás pasando por algo muy difícil en este momento, y lamento que te sientas así. Esto es algo con lo que no puedo ayudar directamente.
+You don't have to go through this alone. Please reach out to someone right away.`,
 
-Es muy importante que hables con un adulto de confianza de inmediato — como un padre, tutor, maestro o consejero escolar. Ellos se preocupan por ti y pueden ayudarte.
+    es: `Escucho que estás pasando por algo muy difícil en este momento, y lamento que te sientas así. Esto es algo con lo que no puedo ayudar directamente, pero quiero que sepas que hay ayuda disponible.
 
-Por favor, comunícate con alguien de tu confianza lo antes posible. No tienes que pasar por esto solo/a.`,
+**Si estás en crisis, por favor busca ayuda:**
+- **Línea 988 de Prevención del Suicidio y Crisis**: Llama o envía un mensaje de texto al 988 (disponible 24/7)
+- **Línea de Texto de Crisis**: Envía HOLA al 741741
+
+También es muy importante que hables con un adulto de confianza — como un padre, tutor, maestro o consejero escolar. Ellos se preocupan por ti y pueden ayudarte.
+
+No tienes que pasar por esto solo/a. Por favor, comunícate con alguien de inmediato.`,
   },
 
   /**

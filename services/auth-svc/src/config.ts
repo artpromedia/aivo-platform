@@ -68,6 +68,15 @@ export const config = {
     return key || 'dev-only-key-not-for-production';
   })(),
 
+  // MFA TOTP Secret Encryption (required in production)
+  mfaEncryptionKey: (() => {
+    const key = process.env.MFA_ENCRYPTION_KEY;
+    if (!key && process.env.NODE_ENV === 'production') {
+      throw new Error('MFA_ENCRYPTION_KEY is required in production');
+    }
+    return key || 'dev-only-mfa-key-not-for-production';
+  })(),
+
   // Service URLs
   notifyServiceUrl: process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4040',
 
