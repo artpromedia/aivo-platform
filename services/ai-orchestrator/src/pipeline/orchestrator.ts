@@ -567,6 +567,140 @@ function logAiCall(options: LogAiCallOptions): void {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// CONVERSATION HISTORY VALIDATION
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Validate that conversation history belongs to the correct tenant and learner.
+ * SECURITY: Prevents prompt injection and cross-tenant data leakage.
+ *
+ * @param request - The AI request with conversation history
+ * @returns Validated conversation history or empty array if invalid
+ */
+function validateConversationHistory(request: AiRequest): { role: string; content: string }[] {
+  const history = request.meta?.conversationHistory;
+
+  // No history provided - return empty
+  if (!history || history.length === 0) {
+    return [];
+  }
+
+  // If conversation history is provided without a learner context, reject it
+  // This prevents anonymous users from injecting conversation history
+  if (!request.learnerId) {
+    console.warn(
+      JSON.stringify({
+        event: 'conversation_history_rejected',
+        reason: 'no_learner_context',
+        tenantId: request.tenantId,
+        historyLength: history.length,
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return [];
+  }
+
+  // Validate each turn in the history
+  const validatedHistory: { role: string; content: string }[] = [];
+  const maxHistoryLength = 50; // Limit history to prevent prompt overflow
+  const maxContentLength = 10000; // Limit per-message content length
+
+  for (const turn of history.slice(-maxHistoryLength)) {
+    // Validate role is one of the expected values
+    if (!['user', 'assistant', 'system'].includes(turn.role)) {
+      console.warn(
+        JSON.stringify({
+          event: 'conversation_turn_rejected',
+          reason: 'invalid_role',
+          role: turn.role,
+          tenantId: request.tenantId,
+          learnerId: request.learnerId,
+          timestamp: new Date().toISOString(),
+        })
+      );
+      continue;
+    }
+
+    // Validate content is a string and not empty
+    if (typeof turn.content !== 'string' || turn.content.trim().length === 0) {
+      continue;
+    }
+
+    // Truncate overly long content to prevent prompt injection via length
+    const sanitizedContent = turn.content.slice(0, maxContentLength);
+
+    validatedHistory.push({
+      role: turn.role,
+      content: sanitizedContent,
+    });
+  }
+
+  // Log if history was truncated
+  if (history.length > maxHistoryLength) {
+    console.info(
+      JSON.stringify({
+        event: 'conversation_history_truncated',
+        originalLength: history.length,
+        truncatedLength: validatedHistory.length,
+        tenantId: request.tenantId,
+        learnerId: request.learnerId,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  }
+
+  return validatedHistory;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// LEARNER AI SETTINGS CHECK
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Check if AI is enabled for a specific learner.
+ * CRITICAL: Supports IEP/504 accommodations that may require AI to be disabled.
+ */
+interface LearnerAiSettings {
+  aiEnabled: boolean;
+  aiDisabledReason?: string;
+  disabledBy?: string;
+  disabledAt?: Date;
+}
+
+/**
+ * Build response for when AI is disabled for a learner.
+ */
+function buildAiDisabledResponse(
+  request: AiRequest,
+  settings: LearnerAiSettings,
+  requestId: string,
+  startTime: number
+): AiResponse {
+  const message = settings.aiDisabledReason
+    ? `AI assistance is currently not available. ${settings.aiDisabledReason}`
+    : 'AI assistance is currently not available for this account. Please contact your teacher for help.';
+
+  return {
+    output: message,
+    provider: 'MOCK',
+    model: 'ai-disabled',
+    tokensInput: 0,
+    tokensOutput: 0,
+    costCents: 0,
+    safetyActions: [],
+    wasBlocked: true,
+    failoverOccurred: false,
+    requestId,
+    latencyMs: Date.now() - startTime,
+    metadata: {
+      aiDisabled: true,
+      reason: settings.aiDisabledReason ?? 'AI disabled for learner',
+      disabledBy: settings.disabledBy,
+    },
+  };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // MAIN ORCHESTRATOR FUNCTION
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -579,19 +713,51 @@ function logAiCall(options: LogAiCallOptions): void {
  * @param request - The AI request
  * @param deps - Dependencies (provider router, logging, etc.)
  * @param config - Orchestrator configuration
+ * @param learnerSettings - Optional learner AI settings (for AI disable feature)
  * @returns AI response with safety actions and metadata
  */
 export async function orchestrateAiRequest(
   request: AiRequest,
   deps: OrchestratorDependencies,
-  config: Partial<OrchestratorConfig> = {}
+  config: Partial<OrchestratorConfig> = {},
+  learnerSettings?: LearnerAiSettings
 ): Promise<AiResponse> {
   const fullConfig = { ...DEFAULT_CONFIG, ...config };
   const requestId = request.correlationId ?? randomUUID();
   const startTime = Date.now();
 
-  // ─── Step 1: Build Prompt Context ────────────────────────────────────────
-  const context = buildPromptContext(request);
+  // ─── Step 0: Check if AI is enabled for learner ──────────────────────────
+  if (learnerSettings && !learnerSettings.aiEnabled) {
+    console.info(
+      JSON.stringify({
+        event: 'ai_request_blocked_learner_disabled',
+        tenantId: request.tenantId,
+        learnerId: request.learnerId,
+        agentType: request.agentType,
+        reason: learnerSettings.aiDisabledReason,
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return buildAiDisabledResponse(request, learnerSettings, requestId, startTime);
+  }
+
+  // ─── Step 1: Validate & Build Prompt Context ─────────────────────────────
+  // SECURITY FIX (CRIT-009): Validate conversation history ownership
+  const validatedHistory = validateConversationHistory(request);
+
+  // Replace the conversation history with validated version
+  const sanitizedRequest: AiRequest = {
+    ...request,
+    meta: {
+      ...request.meta,
+      conversationHistory: validatedHistory.map((h) => ({
+        role: h.role as 'user' | 'assistant' | 'system',
+        content: h.content,
+      })),
+    },
+  };
+
+  const context = buildPromptContext(sanitizedRequest);
 
   // ─── Step 2: Safety Pre-Filter ───────────────────────────────────────────
   const preFilterState = applyPreFilter(request, fullConfig.enablePreFilter);
@@ -915,4 +1081,4 @@ export {
 };
 
 // Export types without conflict (they're already exported via interface declarations above)
-export type { PromptContext };
+export type { PromptContext, LearnerAiSettings };

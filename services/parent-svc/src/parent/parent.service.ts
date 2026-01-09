@@ -656,6 +656,137 @@ export class ParentService {
   }
 
   // ============================================================================
+  // CHILD LINK MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Remove (unlink) a child from the parent's account.
+   * FERPA REQUIREMENT: Parents have the right to remove their child from the system.
+   *
+   * This performs a soft-revoke of the link (sets status to 'revoked')
+   * to maintain audit trail while removing active access.
+   */
+  async removeChildLink(
+    parentId: string,
+    studentId: string,
+    options: { reason?: string; ipAddress?: string; userAgent?: string } = {}
+  ): Promise<{ success: boolean; revokedAt: Date }> {
+    // Verify parent has an active link to this student
+    const link = await this.prisma.parentStudentLink.findUnique({
+      where: {
+        parentId_studentId: { parentId, studentId },
+      },
+      include: {
+        student: {
+          select: { id: true, givenName: true, familyName: true },
+        },
+      },
+    });
+
+    if (!link) {
+      throw new NotFoundException('No link found between this parent and student');
+    }
+
+    if (link.status === 'revoked') {
+      throw new BadRequestException('This link has already been removed');
+    }
+
+    const revokedAt = new Date();
+
+    // Update link status to revoked (soft delete for audit trail)
+    await this.prisma.parentStudentLink.update({
+      where: { id: link.id },
+      data: {
+        status: 'revoked',
+        updatedAt: revokedAt,
+      },
+    });
+
+    // Create audit log entry for compliance tracking
+    await this.prisma.consentRecord.create({
+      data: {
+        parentId,
+        studentId,
+        linkId: link.id,
+        consentType: 'link_removal',
+        granted: false,
+        consentVersion: '1.0',
+        ipAddress: options.ipAddress,
+        userAgent: options.userAgent,
+        revokedAt,
+        metadata: {
+          reason: options.reason ?? 'Parent requested link removal',
+          studentName: `${link.student.givenName} ${link.student.familyName}`,
+          ferpaCompliance: true,
+        },
+      },
+    });
+
+    // Emit event for downstream services to clean up
+    this.eventEmitter.emit('parent.child.unlinked', {
+      parentId,
+      studentId,
+      revokedAt,
+      reason: options.reason ?? 'Parent requested removal',
+    });
+
+    metrics.increment('parent.child_link.removed');
+    logger.info('Parent-child link removed', {
+      parentId,
+      studentId,
+      reason: options.reason ?? 'Parent requested removal',
+    });
+
+    return {
+      success: true,
+      revokedAt,
+    };
+  }
+
+  /**
+   * Get all linked students for a parent (including revoked for audit purposes)
+   */
+  async getLinkedStudents(
+    parentId: string,
+    options: { includeRevoked?: boolean } = {}
+  ): Promise<{
+    active: { studentId: string; studentName: string; relationship: string; linkedAt: Date }[];
+    revoked: { studentId: string; studentName: string; revokedAt: Date }[];
+  }> {
+    const links = await this.prisma.parentStudentLink.findMany({
+      where: {
+        parentId,
+        ...(options.includeRevoked ? {} : { status: 'active' }),
+      },
+      include: {
+        student: {
+          select: { id: true, givenName: true, familyName: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const active = links
+      .filter((l) => l.status === 'active')
+      .map((l) => ({
+        studentId: l.studentId,
+        studentName: `${l.student.givenName} ${l.student.familyName}`,
+        relationship: l.relationship,
+        linkedAt: l.createdAt,
+      }));
+
+    const revoked = links
+      .filter((l) => l.status === 'revoked')
+      .map((l) => ({
+        studentId: l.studentId,
+        studentName: `${l.student.givenName} ${l.student.familyName}`,
+        revokedAt: l.updatedAt,
+      }));
+
+    return { active, revoked };
+  }
+
+  // ============================================================================
   // CONSENT MANAGEMENT
   // ============================================================================
 

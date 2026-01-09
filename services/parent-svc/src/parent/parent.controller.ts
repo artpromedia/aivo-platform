@@ -179,4 +179,48 @@ export class ParentController {
   ) {
     return this.parentService.registerPushSubscription(req.parent!.id, body);
   }
+
+  // ============================================================================
+  // CHILD LINK MANAGEMENT (FERPA Compliance)
+  // ============================================================================
+
+  /**
+   * Get all linked students for the parent
+   */
+  @Get('students')
+  async getLinkedStudents(
+    @Req() req: ParentAuthRequest,
+    @Query('includeRevoked') includeRevoked?: string
+  ) {
+    return this.parentService.getLinkedStudents(req.parent!.id, {
+      includeRevoked: includeRevoked === 'true',
+    });
+  }
+
+  /**
+   * Remove (unlink) a child from the parent's account.
+   * FERPA REQUIREMENT: Parents have the right to request removal of their child's data.
+   *
+   * This endpoint allows parents to:
+   * - Revoke their connection to a child
+   * - Maintain audit trail for compliance
+   * - Trigger downstream data cleanup
+   */
+  @Delete('students/:studentId')
+  @HttpCode(HttpStatus.OK)
+  async removeChildLink(
+    @Req() req: ParentAuthRequest,
+    @Param('studentId') studentId: string,
+    @Body() body?: { reason?: string }
+  ) {
+    // Extract IP and user agent for audit logging
+    const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0];
+    const userAgent = req.headers['user-agent'];
+
+    return this.parentService.removeChildLink(req.parent!.id, studentId, {
+      reason: body?.reason,
+      ipAddress,
+      userAgent,
+    });
+  }
 }

@@ -323,23 +323,23 @@ model ProfileChangeLog {
   profileId           String          @map("profile_id") @db.Uuid
   tenantId            String          @map("tenant_id") @db.Uuid
   learnerId           String          @map("learner_id") @db.Uuid
-  
+
   /// Version after this change
   version             Int
-  
+
   /// What fields changed
   changedFields       String[]        @default([]) @map("changed_fields")
-  
+
   /// Snapshot of previous values (redacted if needed)
   previousValuesJson  Json?           @map("previous_values_json")
-  
+
   /// Who made the change
   changedByUserId     String          @map("changed_by_user_id") @db.Uuid
   changedByRole       String          @map("changed_by_role")
-  
+
   /// When
   changedAt           DateTime        @default(now()) @map("changed_at") @db.Timestamptz
-  
+
   // ── Relations ───────────────────────────────────────────────────────────────
   profile             LearnerProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -347,4 +347,118 @@ model ProfileChangeLog {
   @@index([tenantId, learnerId])
   @@index([changedAt])
   @@map("profile_change_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEARNER AI SETTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Reason why AI is disabled for a learner
+enum AiDisabledReason {
+  IEP_ACCOMMODATION     // IEP requires no AI assistance
+  PLAN_504              // 504 plan accommodation
+  PARENT_REQUEST        // Parent requested AI be disabled
+  TEACHER_DECISION      // Teacher professional decision
+  ADMIN_POLICY          // District/school policy
+  ASSESSMENT_MODE       // Temporarily disabled during assessment
+  BEHAVIORAL            // Behavioral intervention
+  OTHER                 // Other reason
+
+  @@map("ai_disabled_reason")
+}
+
+/// Per-learner AI settings for IEP/504 accommodation support.
+/// CRITICAL: Allows teachers to disable AI for specific students who need
+/// human-only instruction (e.g., certain IEP accommodations, assessment conditions).
+model LearnerAiSettings {
+  id                  String            @id @default(uuid()) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  learnerId           String            @map("learner_id") @db.Uuid
+
+  // ── AI Enable/Disable ──────────────────────────────────────────────────────
+  /// Whether AI features are enabled for this learner
+  aiEnabled           Boolean           @default(true) @map("ai_enabled")
+
+  /// Reason for disabling (if disabled)
+  disabledReason      AiDisabledReason? @map("disabled_reason")
+
+  /// Human-readable explanation (for audit/transparency)
+  disabledReasonText  String?           @map("disabled_reason_text")
+
+  /// When AI was disabled
+  disabledAt          DateTime?         @map("disabled_at") @db.Timestamptz
+
+  /// Who disabled AI
+  disabledByUserId    String?           @map("disabled_by_user_id") @db.Uuid
+
+  /// Role of user who disabled (teacher, admin, etc.)
+  disabledByRole      String?           @map("disabled_by_role")
+
+  // ── Per-Feature Settings ───────────────────────────────────────────────────
+  /// Allow AI tutor conversations
+  tutorEnabled        Boolean           @default(true) @map("tutor_enabled")
+
+  /// Allow AI homework helper
+  homeworkHelperEnabled Boolean         @default(true) @map("homework_helper_enabled")
+
+  /// Allow AI-generated hints
+  hintsEnabled        Boolean           @default(true) @map("hints_enabled")
+
+  /// Allow AI-powered focus mode
+  focusModeEnabled    Boolean           @default(true) @map("focus_mode_enabled")
+
+  /// Allow AI-generated content recommendations
+  recommendationsEnabled Boolean        @default(true) @map("recommendations_enabled")
+
+  // ── Temporary Disable (Assessment Mode) ────────────────────────────────────
+  /// If set, AI is temporarily disabled until this time
+  temporaryDisableUntil DateTime?       @map("temporary_disable_until") @db.Timestamptz
+
+  /// Reason for temporary disable
+  temporaryDisableReason String?        @map("temporary_disable_reason")
+
+  // ── Audit ──────────────────────────────────────────────────────────────────
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  createdByUserId     String            @map("created_by_user_id") @db.Uuid
+  updatedByUserId     String?           @map("updated_by_user_id") @db.Uuid
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@index([tenantId, aiEnabled])
+  @@index([temporaryDisableUntil])
+  @@map("learner_ai_settings")
+}
+
+/// Audit log for AI settings changes (compliance tracking)
+model LearnerAiSettingsLog {
+  id                  String            @id @default(uuid()) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  learnerId           String            @map("learner_id") @db.Uuid
+
+  /// Action taken
+  action              String            // 'DISABLED', 'ENABLED', 'FEATURE_TOGGLED', 'TEMPORARY_DISABLE'
+
+  /// Previous state
+  previousEnabled     Boolean           @map("previous_enabled")
+
+  /// New state
+  newEnabled          Boolean           @map("new_enabled")
+
+  /// Reason provided
+  reason              String?
+
+  /// Who made the change
+  changedByUserId     String            @map("changed_by_user_id") @db.Uuid
+  changedByRole       String            @map("changed_by_role")
+
+  /// When
+  changedAt           DateTime          @default(now()) @map("changed_at") @db.Timestamptz
+
+  /// Additional context (IEP reference, etc.)
+  metadata            Json?
+
+  @@index([tenantId, learnerId])
+  @@index([changedAt])
+  @@map("learner_ai_settings_logs")
 }
