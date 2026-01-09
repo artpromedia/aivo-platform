@@ -164,7 +164,7 @@ function InstallationCard({
       {installation.marketplaceItem.iconUrl ? (
         <img
           src={installation.marketplaceItem.iconUrl}
-          alt=""
+          alt={`${installation.marketplaceItem.title} icon`}
           className="h-12 w-12 rounded-lg object-cover"
         />
       ) : (

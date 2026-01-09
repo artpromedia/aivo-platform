@@ -170,7 +170,7 @@ function MarketplaceLineItem({
       {installation.marketplaceItem.iconUrl ? (
         <img
           src={installation.marketplaceItem.iconUrl}
-          alt=""
+          alt={`${installation.marketplaceItem.title} icon`}
           className="h-10 w-10 rounded-lg object-cover"
         />
       ) : (

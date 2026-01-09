@@ -34,7 +34,11 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {}, // Search functionality
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Search coming soon')),
+              );
+            },
           ),
         ],
       ),

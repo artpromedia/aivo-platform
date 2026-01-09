@@ -65,10 +65,10 @@ class _DesignSystemGalleryScreenState extends ConsumerState<DesignSystemGalleryS
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    ElevatedButton(onPressed: () {}, child: const Text('Primary')),
-                    FilledButton(onPressed: () {}, child: const Text('Filled')),
-                    OutlinedButton(onPressed: () {}, child: const Text('Outlined')),
-                    TextButton(onPressed: () {}, child: const Text('Text')),
+                    ElevatedButton(onPressed: () => _showDemoSnackbar(context, 'Primary'), child: const Text('Primary')),
+                    FilledButton(onPressed: () => _showDemoSnackbar(context, 'Filled'), child: const Text('Filled')),
+                    OutlinedButton(onPressed: () => _showDemoSnackbar(context, 'Outlined'), child: const Text('Outlined')),
+                    TextButton(onPressed: () => _showDemoSnackbar(context, 'Text'), child: const Text('Text')),
                   ],
                 ),
               ]),
@@ -134,6 +134,12 @@ class _Section extends StatelessWidget {
   }
 }
 
+void _showDemoSnackbar(BuildContext context, String buttonName) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('$buttonName button pressed')),
+  );
+}
+
 class _DemoCard extends StatelessWidget {
   const _DemoCard({required this.title, required this.body});
 
@@ -152,7 +158,7 @@ class _DemoCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(body, style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 12),
-            ElevatedButton(onPressed: () {}, child: const Text('Action')),
+            ElevatedButton(onPressed: () => _showDemoSnackbar(context, 'Action'), child: const Text('Action')),
           ],
         ),
       ),

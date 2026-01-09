@@ -140,7 +140,7 @@ export function AddToClassroomModal({ open, onClose, item }: Props) {
               {/* Item Summary */}
               <div className="mb-4 flex items-center gap-3 rounded-lg bg-surface-muted p-3">
                 {item.iconUrl ? (
-                  <img src={item.iconUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                  <img src={item.iconUrl} alt={`${item.title} icon`} className="h-10 w-10 rounded-lg object-cover" />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface text-xl">
                     {item.itemType === 'CONTENT_PACK' ? '📚' : '🔧'}

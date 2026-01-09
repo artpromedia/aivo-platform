@@ -129,7 +129,7 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             {item.iconUrl ? (
-              <img src={item.iconUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+              <img src={item.iconUrl} alt={`${item.title} icon`} className="h-10 w-10 rounded-lg object-cover" />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-muted text-lg">
                 📦

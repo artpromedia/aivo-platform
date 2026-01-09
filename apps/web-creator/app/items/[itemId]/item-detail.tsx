@@ -115,7 +115,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
           {item.iconUrl ? (
-            <img src={item.iconUrl} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            <img src={item.iconUrl} alt={`${item.title} icon`} className="h-16 w-16 rounded-xl object-cover" />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-3xl">
               {item.itemType === 'CONTENT_PACK' ? '📦' : '🔧'}

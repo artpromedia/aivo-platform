@@ -337,7 +337,7 @@ export function NewItemForm() {
           {formData.iconUrl ? (
             <img
               src={formData.iconUrl}
-              alt=""
+              alt={formData.title ? `${formData.title} icon` : 'Item icon preview'}
               className="h-16 w-16 rounded-lg object-cover"
             />
           ) : (

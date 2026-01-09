@@ -129,7 +129,7 @@ function CatalogItemCard({ item }: { item: MarketplaceCatalogItem }) {
       {/* Header with icon */}
       <div className="flex items-start gap-3 p-4">
         {item.iconUrl ? (
-          <img src={item.iconUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
+          <img src={item.iconUrl} alt={`${item.title} icon`} className="h-12 w-12 rounded-lg object-cover" />
         ) : (
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-muted">
             <ItemTypeIcon type={item.itemType} />

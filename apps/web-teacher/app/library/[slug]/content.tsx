@@ -92,7 +92,7 @@ export function LibraryItemContent({ slug }: Props) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
         {item.iconUrl ? (
-          <img src={item.iconUrl} alt="" className="h-24 w-24 rounded-xl object-cover" />
+          <img src={item.iconUrl} alt={`${item.title} icon`} className="h-24 w-24 rounded-xl object-cover" />
         ) : (
           <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-surface-muted text-4xl">
             {item.itemType === 'CONTENT_PACK' ? '📚' : '🔧'}

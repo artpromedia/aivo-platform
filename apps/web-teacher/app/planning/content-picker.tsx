@@ -370,7 +370,7 @@ function ContentItemCard({
       {item.iconUrl ? (
         <Image
           src={item.iconUrl}
-          alt=""
+          alt={`${item.title} icon`}
           width={40}
           height={40}
           className="h-10 w-10 rounded-lg object-cover"

@@ -271,7 +271,7 @@ const BlockPreview: React.FC<BlockPreviewProps> = ({
           {block.content.src ? (
             <img
               src={block.content.src}
-              alt={block.content.alt || ''}
+              alt={block.content.alt || 'Lesson image'}
               className="rounded-lg max-w-full mx-auto"
             />
           ) : (

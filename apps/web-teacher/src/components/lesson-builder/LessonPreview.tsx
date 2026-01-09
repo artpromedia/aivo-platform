@@ -237,7 +237,7 @@ function BlockRenderer({ block, mode }: BlockRendererProps) {
           {content.url ? (
             <img
               src={content.url}
-              alt={content.alt || ''}
+              alt={content.alt || 'Lesson image'}
               className={cn(
                 'rounded-lg',
                 settings.size === 'small' && 'max-w-sm',

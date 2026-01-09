@@ -86,7 +86,7 @@ export function ItemDetailContent({ slug }: Props) {
           {/* Header */}
           <div className="flex items-start gap-4">
             {item.iconUrl ? (
-              <img src={item.iconUrl} alt="" className="h-20 w-20 rounded-xl object-cover" />
+              <img src={item.iconUrl} alt={`${item.title} icon`} className="h-20 w-20 rounded-xl object-cover" />
             ) : (
               <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-surface-muted">
                 <ItemTypeIcon type={item.itemType} />
@@ -269,7 +269,7 @@ export function ItemDetailContent({ slug }: Props) {
               {item.vendor.logoUrl ? (
                 <img
                   src={item.vendor.logoUrl}
-                  alt=""
+                  alt={`${item.vendor.name} logo`}
                   className="h-10 w-10 rounded-lg object-cover"
                 />
               ) : (

@@ -96,7 +96,7 @@ function renderPreviewBlock(block: ContentBlock, _index: number): React.ReactNod
           {block.content.url ? (
             <Image
               src={block.content.url as string}
-              alt={(block.content.alt as string) || ''}
+              alt={(block.content.alt as string) || 'Content image'}
               width={800}
               height={600}
               className="max-w-full h-auto rounded-lg shadow-md"
