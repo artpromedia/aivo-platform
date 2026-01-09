@@ -11,8 +11,8 @@ export default function PricingPage() {
   return (
     <ComingSoonPage
       title="Pricing Plans"
-      description="Flexible pricing for families, educators, and institutions. Detailed pricing page coming soon!"
-      expectedDate="Q1 2025"
+      description="Flexible pricing for families, educators, and institutions. Contact us at sales@aivo.app for pricing information."
+      expectedDate="Contact Sales"
     />
   );
 }

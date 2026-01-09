@@ -12,8 +12,8 @@ export default function HowItWorksPage() {
   return (
     <ComingSoonPage
       title="How It Works"
-      description="Discover the science and technology behind AIVO's personalized learning approach. Coming soon!"
-      expectedDate="Q1 2025"
+      description="Discover the science and technology behind AIVO's personalized learning approach. We're putting the finishing touches on this page."
+      expectedDate="Coming Soon"
     />
   );
 }

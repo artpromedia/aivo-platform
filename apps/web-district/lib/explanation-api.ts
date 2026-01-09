@@ -66,7 +66,7 @@ const FALLBACK_MESSAGES: Record<string, string> = {
   RECOMMENDATION:
     "This recommendation was generated using learning analytics. We're enhancing our explanation system.",
   DEFAULT:
-    "This decision was made based on learning data and educational goals. Detailed explanations coming soon.",
+    "This decision was made based on learning data and educational goals aligned to the learner's progress.",
 };
 
 function createFallbackExplanation(

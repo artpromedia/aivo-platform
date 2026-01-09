@@ -107,7 +107,10 @@ class HomeworkHelperIntroScreen extends ConsumerWidget {
                   onPressed: () {
                     // TODO: Implement camera/image flow
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Camera feature coming soon!')),
+                      const SnackBar(
+                        content: Text('Photo support is being added. Please type your question for now.'),
+                        duration: Duration(seconds: 3),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.camera_alt_outlined),

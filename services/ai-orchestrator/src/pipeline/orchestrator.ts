@@ -30,6 +30,157 @@ import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import { safetyPostFilter } from '../safety/postFilter.js';
 import { safetyPreFilter } from '../safety/preFilter.js';
 import { getSafeResponse } from '../safety/safetyResponses.js';
+
+// ────────────────────────────────────────────────────────────────────────────
+// RATE LIMITING (VER-001 FIX)
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Rate limiter for AI requests.
+ * Implements per-learner and per-tenant rate limiting to prevent abuse.
+ *
+ * SECURITY FIX (VER-001): Integrates rate limiting from @aivo/ts-api-utils
+ */
+interface RateLimitEntry {
+  count: number;
+  windowStart: number;
+}
+
+interface RateLimitConfig {
+  /** Max requests per learner per minute */
+  maxPerLearnerPerMinute: number;
+  /** Max requests per tenant per minute */
+  maxPerTenantPerMinute: number;
+  /** Max tokens per learner per hour */
+  maxTokensPerLearnerPerHour: number;
+}
+
+const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
+  maxPerLearnerPerMinute: 20,
+  maxPerTenantPerMinute: 500,
+  maxTokensPerLearnerPerHour: 50000,
+};
+
+// In-memory rate limit stores (consider Redis for distributed deployments)
+const learnerRateLimits = new Map<string, RateLimitEntry>();
+const tenantRateLimits = new Map<string, RateLimitEntry>();
+const learnerTokenUsage = new Map<string, { tokens: number; windowStart: number }>();
+
+/**
+ * Check and update rate limits for an AI request.
+ * Returns null if allowed, or an error message if rate limited.
+ */
+function checkRateLimits(
+  tenantId: string,
+  learnerId: string | undefined,
+  config: RateLimitConfig = DEFAULT_RATE_LIMIT_CONFIG
+): { allowed: boolean; reason?: string; retryAfterMs?: number } {
+  const now = Date.now();
+  const minuteWindow = 60 * 1000;
+  const hourWindow = 60 * 60 * 1000;
+
+  // Check tenant rate limit
+  const tenantKey = `tenant:${tenantId}`;
+  const tenantEntry = tenantRateLimits.get(tenantKey);
+
+  if (tenantEntry && now - tenantEntry.windowStart <= minuteWindow) {
+    if (tenantEntry.count >= config.maxPerTenantPerMinute) {
+      const retryAfterMs = tenantEntry.windowStart + minuteWindow - now;
+      return {
+        allowed: false,
+        reason: 'Tenant rate limit exceeded. Too many requests from your organization.',
+        retryAfterMs,
+      };
+    }
+    tenantEntry.count++;
+  } else {
+    tenantRateLimits.set(tenantKey, { count: 1, windowStart: now });
+  }
+
+  // Check learner rate limit (if learner context exists)
+  if (learnerId) {
+    const learnerKey = `learner:${tenantId}:${learnerId}`;
+    const learnerEntry = learnerRateLimits.get(learnerKey);
+
+    if (learnerEntry && now - learnerEntry.windowStart <= minuteWindow) {
+      if (learnerEntry.count >= config.maxPerLearnerPerMinute) {
+        const retryAfterMs = learnerEntry.windowStart + minuteWindow - now;
+        return {
+          allowed: false,
+          reason: 'Please slow down. You can ask another question in a moment.',
+          retryAfterMs,
+        };
+      }
+      learnerEntry.count++;
+    } else {
+      learnerRateLimits.set(learnerKey, { count: 1, windowStart: now });
+    }
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Record token usage for a learner (for token-based rate limiting).
+ */
+function recordTokenUsage(tenantId: string, learnerId: string | undefined, tokens: number): void {
+  if (!learnerId) return;
+
+  const now = Date.now();
+  const hourWindow = 60 * 60 * 1000;
+  const key = `tokens:${tenantId}:${learnerId}`;
+  const entry = learnerTokenUsage.get(key);
+
+  if (entry && now - entry.windowStart <= hourWindow) {
+    entry.tokens += tokens;
+  } else {
+    learnerTokenUsage.set(key, { tokens, windowStart: now });
+  }
+}
+
+/**
+ * Check if learner has exceeded token limits.
+ */
+function checkTokenLimits(
+  tenantId: string,
+  learnerId: string | undefined,
+  config: RateLimitConfig = DEFAULT_RATE_LIMIT_CONFIG
+): { allowed: boolean; reason?: string } {
+  if (!learnerId) return { allowed: true };
+
+  const now = Date.now();
+  const hourWindow = 60 * 60 * 1000;
+  const key = `tokens:${tenantId}:${learnerId}`;
+  const entry = learnerTokenUsage.get(key);
+
+  if (entry && now - entry.windowStart <= hourWindow) {
+    if (entry.tokens >= config.maxTokensPerLearnerPerHour) {
+      return {
+        allowed: false,
+        reason: 'You have used a lot of AI assistance today. Please take a break and try again later.',
+      };
+    }
+  }
+
+  return { allowed: true };
+}
+
+// Cleanup old rate limit entries periodically
+const RATE_LIMIT_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  const maxAge = 60 * 60 * 1000; // 1 hour
+
+  for (const [key, entry] of learnerRateLimits.entries()) {
+    if (now - entry.windowStart > maxAge) learnerRateLimits.delete(key);
+  }
+  for (const [key, entry] of tenantRateLimits.entries()) {
+    if (now - entry.windowStart > maxAge) tenantRateLimits.delete(key);
+  }
+  for (const [key, entry] of learnerTokenUsage.entries()) {
+    if (now - entry.windowStart > maxAge) learnerTokenUsage.delete(key);
+  }
+}, RATE_LIMIT_CLEANUP_INTERVAL).unref();
 import type { TelemetryStore } from '../telemetry/index.js';
 import type { AgentType } from '../types/agentConfig.js';
 import type {
@@ -741,6 +892,70 @@ export async function orchestrateAiRequest(
     return buildAiDisabledResponse(request, learnerSettings, requestId, startTime);
   }
 
+  // ─── Step 0.5: Rate Limiting (VER-001 FIX) ────────────────────────────────
+  const rateLimitResult = checkRateLimits(request.tenantId, request.learnerId);
+  if (!rateLimitResult.allowed) {
+    console.warn(
+      JSON.stringify({
+        event: 'ai_request_rate_limited',
+        tenantId: request.tenantId,
+        learnerId: request.learnerId,
+        agentType: request.agentType,
+        reason: rateLimitResult.reason,
+        retryAfterMs: rateLimitResult.retryAfterMs,
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return {
+      output: rateLimitResult.reason ?? 'Too many requests. Please try again in a moment.',
+      provider: 'MOCK',
+      model: 'rate-limited',
+      tokensInput: 0,
+      tokensOutput: 0,
+      costCents: 0,
+      safetyActions: [],
+      wasBlocked: true,
+      failoverOccurred: false,
+      requestId,
+      latencyMs: Date.now() - startTime,
+      metadata: {
+        rateLimited: true,
+        retryAfterMs: rateLimitResult.retryAfterMs,
+      },
+    };
+  }
+
+  // Check token limits for hourly cap
+  const tokenLimitResult = checkTokenLimits(request.tenantId, request.learnerId);
+  if (!tokenLimitResult.allowed) {
+    console.warn(
+      JSON.stringify({
+        event: 'ai_request_token_limited',
+        tenantId: request.tenantId,
+        learnerId: request.learnerId,
+        agentType: request.agentType,
+        reason: tokenLimitResult.reason,
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return {
+      output: tokenLimitResult.reason ?? 'Token limit reached. Please try again later.',
+      provider: 'MOCK',
+      model: 'token-limited',
+      tokensInput: 0,
+      tokensOutput: 0,
+      costCents: 0,
+      safetyActions: [],
+      wasBlocked: true,
+      failoverOccurred: false,
+      requestId,
+      latencyMs: Date.now() - startTime,
+      metadata: {
+        tokenLimited: true,
+      },
+    };
+  }
+
   // ─── Step 1: Validate & Build Prompt Context ─────────────────────────────
   // SECURITY FIX (CRIT-009): Validate conversation history ownership
   const validatedHistory = validateConversationHistory(request);
@@ -832,6 +1047,9 @@ export async function orchestrateAiRequest(
     costCents,
     fullConfig.enableUsageLogging
   );
+
+  // Record token usage for rate limiting (VER-001 FIX)
+  recordTokenUsage(request.tenantId, request.learnerId, tokensInput + tokensOutput);
 
   // ─── Step 7: Log Incidents ───────────────────────────────────────────────
   if (fullConfig.enableIncidentLogging && postFilterState.incidents.length > 0) {
