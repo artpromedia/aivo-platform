@@ -3,7 +3,17 @@
  */
 
 const ANALYTICS_BASE_URL = process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:4030';
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_ANALYTICS_MOCK === 'true';
+
+// Production-safe mock mode check
+// CRITICAL: This pattern ensures mock data is NEVER returned in production
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+const MOCK_REQUESTED = process.env.NEXT_PUBLIC_USE_ANALYTICS_MOCK === 'true';
+const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
+
+// Warn if mock mode is requested in production (but don't enable it)
+if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
+  console.warn('[Classroom Analytics API] USE_MOCK ignored in production - using real API');
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

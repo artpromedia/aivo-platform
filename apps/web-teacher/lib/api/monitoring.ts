@@ -8,7 +8,17 @@
  */
 
 const REALTIME_SVC_URL = process.env.NEXT_PUBLIC_REALTIME_URL || 'http://localhost:3003';
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+
+// Production-safe mock mode check
+// CRITICAL: This pattern ensures mock data is NEVER returned in production
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+const MOCK_REQUESTED = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
+
+// Warn if mock mode is requested in production (but don't enable it)
+if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
+  console.warn('[Monitoring API] USE_MOCK ignored in production - using real API');
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

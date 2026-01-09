@@ -5,21 +5,15 @@
 
 const REPORTS_BASE_URL = process.env.NEXT_PUBLIC_REPORTS_URL || 'http://localhost:4050';
 
-/**
- * SECURITY FIX: Mock mode must be explicitly enabled via environment variable.
- * Previously had `|| true` which forced mock mode always on, even in production.
- *
- * - Development: Set NEXT_PUBLIC_USE_REPORTS_MOCK=true for local development
- * - Production: Do NOT set this variable (defaults to false)
- */
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_REPORTS_MOCK === 'true';
+// Production-safe mock mode check
+// CRITICAL: This pattern ensures mock data is NEVER returned in production
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+const MOCK_REQUESTED = process.env.NEXT_PUBLIC_USE_REPORTS_MOCK === 'true';
+const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
 
-// Warn if mock mode is enabled (visible in browser console)
-if (USE_MOCK && typeof window !== 'undefined') {
-  console.warn(
-    '[classroom-reports] ⚠️ Mock mode is enabled. Reports are showing sample data. ' +
-    'Set NEXT_PUBLIC_USE_REPORTS_MOCK=false or remove the variable for production.'
-  );
+// Warn if mock mode is requested in production (but don't enable it)
+if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
+  console.warn('[Classroom Reports API] USE_MOCK ignored in production - using real API');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

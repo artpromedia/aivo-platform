@@ -60,7 +60,17 @@ export interface BillingAccount {
 const entitlementsSvcUrl = process.env.ENTITLEMENTS_SVC_URL ?? 'http://localhost:4080';
 const billingSvcUrl = process.env.BILLING_SVC_URL ?? 'http://localhost:4060';
 
-const USE_MOCK = process.env.USE_BILLING_MOCK === 'true' || process.env.NODE_ENV === 'development';
+// Production-safe mock mode check
+// CRITICAL: This pattern ensures mock data is NEVER returned in production
+// NOTE: Previously enabled mock in ALL development environments which was dangerous
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+const MOCK_REQUESTED = process.env.USE_BILLING_MOCK === 'true';
+const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
+
+// Warn if mock mode is requested in production (but don't enable it)
+if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
+  console.warn('[Billing API] USE_MOCK ignored in production - using real API');
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // API FUNCTIONS
