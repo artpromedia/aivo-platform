@@ -8,6 +8,7 @@
  * - Zone of Proximal Development (ZPD) alignment
  * - Neurodiverse accommodations
  * - Fatigue management with breakpoints
+ * - CURRICULUM-AWARE CONTENT FILTERING (location-based)
  *
  * Research basis:
  * - Cepeda et al. (2006) - Distributed practice
@@ -28,6 +29,8 @@ import type {
   SessionPlanOptions,
   ActivityScore,
 } from './activity-sequencer-types.js';
+
+import { CurriculumContentFilter } from './curriculum-content-filter.js';
 
 /**
  * Dependencies for Activity Sequencer
@@ -53,7 +56,11 @@ export interface ActivitySequencerDependencies {
  * Activity Sequencer implementation
  */
 export class ActivitySequencer {
-  constructor(private readonly deps: ActivitySequencerDependencies) {}
+  private readonly curriculumFilter: CurriculumContentFilter;
+
+  constructor(private readonly deps: ActivitySequencerDependencies) {
+    this.curriculumFilter = new CurriculumContentFilter();
+  }
 
   /**
    * Generate an optimally sequenced learning session
@@ -73,13 +80,27 @@ export class ActivitySequencer {
     const skillIds = recommendations.map((r) => r.skillId);
     const candidateActivities = await this.deps.getActivitiesBySkills(skillIds, {
       excludeIds: options.excludeActivityIds,
-      limit: 50,
+      limit: 100, // Fetch more to allow for curriculum filtering
     });
 
+    // ────────────────────────────────────────────────────────────────────────────
+    // CURRICULUM-AWARE CONTENT FILTERING
+    // Filter activities based on learner's location/curriculum standards
+    // This ensures a learner in Texas gets TEKS-aligned content, not just Common Core
+    // ────────────────────────────────────────────────────────────────────────────
+    const curriculumFiltered = this.curriculumFilter.filterActivities(
+      candidateActivities,
+      learnerProfile,
+      {
+        strictMode: false, // Include universal content too
+        includeUnaligned: true,
+      }
+    );
+
     // Filter by focus skills if provided
-    let filteredActivities = candidateActivities;
+    let filteredActivities = curriculumFiltered;
     if (options.focusSkills && options.focusSkills.length > 0) {
-      filteredActivities = candidateActivities.filter((a) =>
+      filteredActivities = curriculumFiltered.filter((a) =>
         a.skillIds.some((s) => options.focusSkills?.includes(s))
       );
     }
@@ -219,6 +240,22 @@ export class ActivitySequencer {
   ): ActivityScore {
     let score = 0;
     const factors: string[] = [];
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // CURRICULUM ALIGNMENT SCORING
+    // Boost activities that align with learner's curriculum standards
+    // ────────────────────────────────────────────────────────────────────────────
+    const alignmentScore = this.curriculumFilter.scoreAlignment(activity, learnerProfile);
+    if (alignmentScore > 0.8) {
+      score += 15; // Strong alignment bonus
+      factors.push('curriculum_aligned');
+    } else if (alignmentScore > 0.5) {
+      score += 8; // Partial alignment bonus
+      factors.push('curriculum_partial');
+    } else if (alignmentScore === 0.5) {
+      // Neutral - universal content (no bonus/penalty)
+      factors.push('curriculum_universal');
+    }
 
     // ZPD alignment (highest weight)
     for (const skillId of activity.skillIds) {

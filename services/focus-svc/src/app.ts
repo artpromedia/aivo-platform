@@ -5,6 +5,7 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerFocusRoutes } from './routes/focus.js';
 import { registerGamesRoutes } from './routes/games.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { learningBreakRoutes } from './routes/learningBreaks.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -33,6 +34,9 @@ export async function buildApp() {
 
   // Games routes (also under /focus prefix for consistency)
   await app.register(registerGamesRoutes, { prefix: '/focus' });
+
+  // Learning break routes (personalized educational brain breaks)
+  await app.register(learningBreakRoutes, { prefix: '/focus' });
 
   return app;
 }

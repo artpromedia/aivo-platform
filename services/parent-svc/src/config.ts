@@ -41,6 +41,9 @@ const configSchema = z.object({
   // COPPA compliance
   coppaMinAge: z.coerce.number().default(13),
   parentInviteExpiryDays: z.coerce.number().default(7),
+
+  // Internal service URLs
+  learnerModelSvcUrl: z.string().default('http://localhost:4022'),
 });
 
 function loadConfig() {
@@ -71,6 +74,7 @@ function loadConfig() {
     awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     coppaMinAge: process.env.COPPA_MIN_AGE,
     parentInviteExpiryDays: process.env.PARENT_INVITE_EXPIRY_DAYS,
+    learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL,
   });
 
   if (!result.success) {

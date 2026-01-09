@@ -33,6 +33,15 @@ export interface LearnerProfile {
 
   /** Active accommodations */
   accommodations: string[];
+
+  /** Curriculum standards applicable to this learner (e.g., ['COMMON_CORE'], ['TEKS']) */
+  curriculumStandards?: string[];
+
+  /** State code for location-based curriculum (e.g., 'TX', 'CA') */
+  stateCode?: string;
+
+  /** ZIP code for district-level curriculum */
+  zipCode?: string;
 }
 
 /**
@@ -209,6 +218,8 @@ export interface ActivityRecord {
   isInteractive: boolean;
   prerequisites: string[];
   metadata: Record<string, unknown>;
+  /** Standards codes aligned to this activity (e.g., CCSS.MATH.3.NF.A.1, TEKS.M.3.1) */
+  standardCodes?: string[];
 }
 
 /**

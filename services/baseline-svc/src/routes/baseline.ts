@@ -2,6 +2,11 @@ import type { Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import {
+  getAdaptiveEngine,
+  clearAdaptiveEngine,
+  DIFFICULTY_LEVELS,
+} from '../lib/adaptiveDifficulty.js';
 import { generateBaselineQuestions, scoreResponse } from '../lib/aiOrchestrator.js';
 import { publishBaselineAccepted } from '../lib/eventPublisher.js';
 import { prisma } from '../prisma.js';
@@ -13,6 +18,7 @@ interface PromptJson {
   questionType: 'MULTIPLE_CHOICE' | 'OPEN_ENDED';
   questionText: string;
   options?: string[];
+  difficulty?: number;
 }
 
 interface CorrectAnswerJson {
@@ -187,7 +193,11 @@ export async function baselineRoutes(fastify: FastifyInstance) {
 
       const attemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
 
-      // Generate questions for all domains
+      // Initialize adaptive difficulty engine for this attempt
+      // (will be retrieved later during answer submission)
+      const initialDifficulty = DIFFICULTY_LEVELS.MEDIUM;
+
+      // Generate questions for all domains with initial difficulty
       const allItems: {
         domain: string;
         sequence: number;
@@ -202,6 +212,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
           gradeBand: profile.gradeBand,
           domain,
           skillCodes: DOMAIN_SKILL_CODES[domain],
+          difficulty: initialDifficulty, // Start at medium difficulty
         });
 
         questions.forEach((q: GeneratedQuestion, idx: number) => {
@@ -224,7 +235,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
           },
         });
 
-        // Create items
+        // Create items with difficulty included
         let globalSeq = 0;
         for (const item of allItems) {
           globalSeq++;
@@ -239,6 +250,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
                 questionType: item.question.questionType,
                 questionText: item.question.questionText,
                 options: item.question.options,
+                difficulty: item.question.difficulty ?? initialDifficulty,
               },
               correctAnswerJson: {
                 correctAnswer: item.question.correctAnswer,
@@ -264,6 +276,8 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         attemptId: attempt.id,
         attemptNumber: attempt.attemptNumber,
         totalItems: allItems.length,
+        adaptiveEnabled: true,
+        initialDifficulty,
       });
     }
   );
@@ -398,6 +412,19 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         rubric: correctAnswerData.rubric,
       });
 
+      // Record response with adaptive difficulty engine
+      const adaptiveEngine = getAdaptiveEngine(item.attempt.id);
+      adaptiveEngine.recordResponse({
+        domain: item.domain,
+        skillCode: prompt.skillCode,
+        isCorrect: scoreResult.isCorrect,
+        score: scoreResult.partialCredit,
+        difficulty: prompt.difficulty ?? DIFFICULTY_LEVELS.MEDIUM,
+      });
+
+      // Get adaptive state for this domain (for response)
+      const domainSummary = adaptiveEngine.getDomainSummary(item.domain);
+
       // Create response record
       const responseRecord = await prisma.baselineResponse.create({
         data: {
@@ -414,6 +441,13 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         responseId: responseRecord.id,
         isCorrect: responseRecord.isCorrect,
         score: responseRecord.score,
+        // Include adaptive info in response
+        adaptive: {
+          domain: item.domain,
+          currentDifficulty: domainSummary.difficulty,
+          estimatedAbility: domainSummary.estimatedAbility,
+          accuracy: domainSummary.accuracy,
+        },
       });
     }
   );
@@ -465,14 +499,22 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Calculate scores by domain and skill
-      const domainScores: Record<string, { correct: number; total: number }> = {};
-      const skillEstimates: { domain: string; skillCode: string; estimate: number }[] = [];
+      // Get adaptive engine for this attempt
+      const adaptiveEngine = getAdaptiveEngine(attemptId);
+
+      // Calculate scores by domain and skill using adaptive estimates
+      const domainScores: Record<string, { correct: number; total: number; adaptiveAbility: number }> = {};
+      const skillEstimates: { domain: string; skillCode: string; estimate: number; confidence: number }[] = [];
 
       for (const item of attempt.items) {
         const domain = item.domain;
         if (!domainScores[domain]) {
-          domainScores[domain] = { correct: 0, total: 0 };
+          const domainSummary = adaptiveEngine.getDomainSummary(domain);
+          domainScores[domain] = {
+            correct: 0,
+            total: 0,
+            adaptiveAbility: domainSummary.estimatedAbility,
+          };
         }
         domainScores[domain].total++;
 
@@ -489,31 +531,51 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         }
 
         const prompt = item.promptJson as PromptJson;
+
+        // Use adaptive ability estimate (0-1) scaled to (0-10) for this domain
+        const domainAbility = adaptiveEngine.getDomainSummary(domain).estimatedAbility;
+        const adaptiveEstimate = domainAbility * 10; // Scale to 0-10
+
+        // Blend individual score with adaptive domain estimate
+        // Weight: 60% adaptive estimate, 40% individual response
+        const blendedEstimate = 0.6 * adaptiveEstimate + 0.4 * (score * 10);
+
         skillEstimates.push({
           domain,
           skillCode: prompt.skillCode,
-          estimate: score,
+          estimate: blendedEstimate,
+          confidence: adaptiveEngine.getEstimateConfidence(domain),
         });
       }
 
-      // Calculate overall score
+      // Calculate overall score using adaptive estimates
       const totalCorrect = Object.values(domainScores).reduce((sum, d) => sum + d.correct, 0);
       const totalItems = attempt.items.length;
-      const overallScore = totalCorrect / totalItems;
+      const rawScore = totalCorrect / totalItems;
+
+      // Adaptive overall score (weighted average of domain abilities)
+      const domainAbilities = Object.values(domainScores).map((d) => d.adaptiveAbility);
+      const adaptiveOverallScore = domainAbilities.length > 0
+        ? domainAbilities.reduce((a, b) => a + b, 0) / domainAbilities.length
+        : rawScore;
 
       // Update in transaction
       const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        // Update attempt
+        // Update attempt with adaptive data
         const updatedAttempt = await tx.baselineAttempt.update({
           where: { id: attempt.id },
           data: {
             completedAt: new Date(),
             domainScoresJson: domainScores,
-            overallEstimateJson: { score: overallScore },
+            overallEstimateJson: {
+              score: rawScore,
+              adaptiveScore: adaptiveOverallScore,
+              adaptiveSummary: adaptiveEngine.getAllDomainSummaries(),
+            },
           },
         });
 
-        // Create skill estimates
+        // Create skill estimates with adaptive values
         for (const est of skillEstimates) {
           await tx.baselineSkillEstimate.create({
             data: {
@@ -521,7 +583,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
               domain: est.domain as 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL',
               skillCode: est.skillCode,
               estimatedLevel: est.estimate,
-              confidence: 0.8, // Placeholder confidence
+              confidence: est.confidence, // Adaptive confidence
             },
           });
         }
@@ -535,15 +597,20 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         return updatedAttempt;
       });
 
+      // Clean up adaptive engine for this attempt
+      clearAdaptiveEngine(attemptId);
+
       return reply.send({
         attemptId: result.id,
         status: 'COMPLETED',
-        score: overallScore,
+        score: rawScore,
+        adaptiveScore: adaptiveOverallScore,
         domainScores: Object.entries(domainScores).map(([domain, scores]) => ({
           domain,
           correct: scores.correct,
           total: scores.total,
           percentage: scores.correct / scores.total,
+          adaptiveAbility: scores.adaptiveAbility,
         })),
       });
     }

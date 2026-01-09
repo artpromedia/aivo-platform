@@ -4,6 +4,7 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { learnerModelRoutes } from './routes/learnerModel.js';
 import { planRoutes } from './routes/plan.js';
 import { virtualBrainRoutes } from './routes/virtualBrain.js';
+import { difficultyRecommendationRoutes } from './routes/difficultyRecommendation.js';
 
 export function buildApp(): FastifyInstance {
   const fastify = Fastify({
@@ -26,6 +27,7 @@ export function buildApp(): FastifyInstance {
   void fastify.register(virtualBrainRoutes);
   void fastify.register(planRoutes);
   void fastify.register(learnerModelRoutes);
+  void fastify.register(difficultyRecommendationRoutes);
 
   return fastify;
 }

@@ -24,6 +24,9 @@ import { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
 import {
   CreateConsentInput,
   UpdatePrivacySettingsInput,
+  RespondToRecommendationDto,
+  SetDomainDifficultyDto,
+  UpdateDifficultyPreferencesDto,
 } from './parent.types.js';
 
 @Controller('parent')
@@ -222,5 +225,93 @@ export class ParentController {
       ipAddress,
       userAgent,
     });
+  }
+
+  // ============================================================================
+  // DIFFICULTY ADJUSTMENT MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get pending difficulty recommendations for a child
+   */
+  @Get('students/:studentId/difficulty/recommendations')
+  async getDifficultyRecommendations(
+    @Req() req: ParentAuthRequest,
+    @Param('studentId') studentId: string
+  ) {
+    return this.parentService.getDifficultyRecommendations(req.parent!.id, studentId);
+  }
+
+  /**
+   * Respond to a difficulty recommendation (approve/modify/deny)
+   */
+  @Post('difficulty/recommendations/respond')
+  @HttpCode(HttpStatus.OK)
+  async respondToRecommendation(
+    @Req() req: ParentAuthRequest,
+    @Body() body: RespondToRecommendationDto
+  ) {
+    return this.parentService.respondToRecommendation(req.parent!.id, body);
+  }
+
+  /**
+   * Get current difficulty levels for a child by domain
+   */
+  @Get('students/:studentId/difficulty/levels')
+  async getDifficultyLevels(
+    @Req() req: ParentAuthRequest,
+    @Param('studentId') studentId: string
+  ) {
+    return this.parentService.getDifficultyLevels(req.parent!.id, studentId);
+  }
+
+  /**
+   * Directly set difficulty level for a domain (parent override)
+   */
+  @Post('difficulty/domain/set')
+  @HttpCode(HttpStatus.OK)
+  async setDomainDifficulty(
+    @Req() req: ParentAuthRequest,
+    @Body() body: SetDomainDifficultyDto
+  ) {
+    return this.parentService.setDomainDifficulty(req.parent!.id, body);
+  }
+
+  /**
+   * Get difficulty preferences for a child
+   */
+  @Get('students/:studentId/difficulty/preferences')
+  async getDifficultyPreferences(
+    @Req() req: ParentAuthRequest,
+    @Param('studentId') studentId: string
+  ) {
+    return this.parentService.getDifficultyPreferences(req.parent!.id, studentId);
+  }
+
+  /**
+   * Update difficulty preferences for a child
+   */
+  @Put('difficulty/preferences')
+  async updateDifficultyPreferences(
+    @Req() req: ParentAuthRequest,
+    @Body() body: UpdateDifficultyPreferencesDto
+  ) {
+    return this.parentService.updateDifficultyPreferences(req.parent!.id, body);
+  }
+
+  /**
+   * Get difficulty change history for a child
+   */
+  @Get('students/:studentId/difficulty/history')
+  async getDifficultyHistory(
+    @Req() req: ParentAuthRequest,
+    @Param('studentId') studentId: string,
+    @Query('limit') limit?: string
+  ) {
+    return this.parentService.getDifficultyHistory(
+      req.parent!.id,
+      studentId,
+      limit ? parseInt(limit, 10) : undefined
+    );
   }
 }

@@ -24,6 +24,10 @@ export const config = {
   sessionSvcUrl: process.env.SESSION_SVC_URL ?? 'http://localhost:4020',
   sessionSvcApiKey: process.env.SESSION_SVC_API_KEY ?? '',
 
+  // Learner Model Service (Virtual Brain)
+  learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL ?? 'http://localhost:4022',
+  learnerModelSvcApiKey: process.env.LEARNER_MODEL_SVC_API_KEY ?? '',
+
   // AI Orchestrator (for future FOCUS agent)
   aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL ?? 'http://localhost:4010',
   aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY ?? '',

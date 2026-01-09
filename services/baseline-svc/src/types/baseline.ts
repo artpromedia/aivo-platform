@@ -10,6 +10,8 @@ export interface BaselineQuestionGenerationPayload {
   gradeBand: GradeBand;
   domain: BaselineDomain;
   skillCodes: string[];
+  /** Target difficulty level (1-5 scale). Defaults to 3 (medium). */
+  difficulty?: number;
 }
 
 export interface GeneratedQuestion {
@@ -19,6 +21,8 @@ export interface GeneratedQuestion {
   options?: string[];
   correctAnswer: number | string;
   rubric?: string;
+  /** Difficulty level of this question (1-5). */
+  difficulty?: number;
 }
 
 export interface ScoreResponsePayload {
@@ -27,11 +31,17 @@ export interface ScoreResponsePayload {
   selectedOption?: number;
   openResponse?: string;
   rubric?: string;
+  /** Skill code for context in AI scoring */
+  skillCode?: string;
+  /** Grade band for context in AI scoring */
+  gradeBand?: GradeBand;
 }
 
 export interface ScoreResponseResult {
   isCorrect: boolean;
   partialCredit: number | null;
+  /** AI-generated feedback for the response (open-ended only) */
+  feedback?: string;
 }
 
 // ── Domain skill codes (deterministic mapping) ──────────────────────────────
