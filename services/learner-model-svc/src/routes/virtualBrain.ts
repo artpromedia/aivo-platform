@@ -870,4 +870,78 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
       }
     }
   );
+
+  // ── Internal API for Focus Service ──────────────────────────────────────────
+
+  /**
+   * GET /virtual-brains/learner/:learnerId/skills
+   *
+   * Lightweight endpoint for focus-svc to fetch learner skill data.
+   * Used for personalizing learning break games.
+   * Accepts service API key authentication.
+   */
+  fastify.get(
+    '/virtual-brains/learner/:learnerId/skills',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+
+      // Also allow internal API key authentication
+      const internalKey = request.headers['x-internal-api-key'] as string | undefined;
+      const isInternalCall = internalKey && process.env.INTERNAL_API_KEY === internalKey;
+
+      if (!user && !isInternalCall) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const params = request.params as { learnerId: string };
+      const learnerId = params.learnerId;
+
+      if (!learnerId) {
+        return reply.status(400).send({ error: 'Missing learnerId' });
+      }
+
+      // Find Virtual Brain with skill states
+      const virtualBrain = await prisma.virtualBrain.findFirst({
+        where: {
+          learnerId,
+          ...(user && { tenantId: user.tenantId }),
+        },
+        include: {
+          skillStates: {
+            include: {
+              skill: {
+                select: {
+                  skillCode: true,
+                  domain: true,
+                  gradeBand: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!virtualBrain) {
+        return reply.status(404).send({ error: 'Virtual brain not found' });
+      }
+
+      // Return lightweight skill snapshot for focus service
+      const skillStates = virtualBrain.skillStates.map((ss) => ({
+        skillId: ss.skillId,
+        skillCode: ss.skill.skillCode,
+        domain: ss.skill.domain,
+        masteryLevel: Number(ss.masteryLevel),
+        confidence: Number(ss.confidence),
+        lastAssessedAt: ss.lastAssessedAt.toISOString(),
+        practiceCount: ss.practiceCount,
+      }));
+
+      return reply.send({
+        id: virtualBrain.id,
+        learnerId: virtualBrain.learnerId,
+        gradeBand: virtualBrain.gradeBand,
+        skillStates,
+      });
+    }
+  );
 }

@@ -20,11 +20,140 @@ enum BreakActivityType {
   movement('movement', 'Movement Break'),
   grounding('grounding', 'Grounding Exercise'),
   mindfulPause('mindful_pause', 'Mindful Pause'),
-  simpleGame('simple_game', 'Simple Game');
+  simpleGame('simple_game', 'Simple Game'),
+  learningGame('learning_game', 'Learning Game');
 
   const BreakActivityType(this.code, this.displayName);
   final String code;
   final String displayName;
+}
+
+/// Types of learning break games.
+enum LearningGameType {
+  mathBubblePop('MATH_BUBBLE_POP', 'Math Bubble Pop'),
+  wordScramble('WORD_SCRAMBLE', 'Word Scramble Sprint'),
+  quickQuiz('QUICK_QUIZ', 'Quick Quiz Blast'),
+  patternPower('PATTERN_POWER', 'Pattern Power'),
+  factOrFiction('FACT_OR_FICTION', 'Fact or Fiction?'),
+  numberNinja('NUMBER_NINJA', 'Number Ninja'),
+  spellingBee('SPELLING_BEE', 'Spelling Bee Buzz');
+
+  const LearningGameType(this.code, this.displayName);
+  final String code;
+  final String displayName;
+}
+
+/// A learning-laced brain break game.
+class LearningBreakGame {
+  const LearningBreakGame({
+    required this.gameType,
+    required this.title,
+    required this.description,
+    required this.instructions,
+    required this.durationSeconds,
+    required this.targetDomain,
+    required this.targetSkillCodes,
+    required this.difficulty,
+    required this.gameConfig,
+    this.xpReward = 15,
+    this.coinReward = 5,
+  });
+
+  final LearningGameType gameType;
+  final String title;
+  final String description;
+  final List<String> instructions;
+  final int durationSeconds;
+  final String targetDomain;
+  final List<String> targetSkillCodes;
+  final int difficulty;
+  final Map<String, dynamic> gameConfig;
+  final int xpReward;
+  final int coinReward;
+
+  factory LearningBreakGame.fromJson(Map<String, dynamic> json) {
+    final typeCode = json['gameType']?.toString() ?? 'QUICK_QUIZ';
+    final type = LearningGameType.values.firstWhere(
+      (t) => t.code == typeCode,
+      orElse: () => LearningGameType.quickQuiz,
+    );
+
+    final instructionsList = json['instructions'] as List<dynamic>? ?? [];
+
+    return LearningBreakGame(
+      gameType: type,
+      title: json['title']?.toString() ?? 'Learning Break',
+      description: json['description']?.toString() ?? '',
+      instructions: instructionsList.map((i) => i.toString()).toList(),
+      durationSeconds: json['estimatedDurationSeconds'] is num
+          ? (json['estimatedDurationSeconds'] as num).toInt()
+          : 60,
+      targetDomain: json['targetDomain']?.toString() ?? 'MATH',
+      targetSkillCodes: (json['targetSkillCodes'] as List<dynamic>?)
+              ?.map((s) => s.toString())
+              .toList() ??
+          [],
+      difficulty: json['difficulty'] is num ? (json['difficulty'] as num).toInt() : 3,
+      gameConfig: json['gameConfig'] as Map<String, dynamic>? ?? {},
+      xpReward: json['xpReward'] is num ? (json['xpReward'] as num).toInt() : 15,
+      coinReward: json['coinReward'] is num ? (json['coinReward'] as num).toInt() : 5,
+    );
+  }
+}
+
+/// Result from generating a learning break.
+class LearningBreakResult {
+  const LearningBreakResult({
+    required this.game,
+    this.personalized = false,
+    this.skillsAnalyzed = 0,
+  });
+
+  final LearningBreakGame game;
+  final bool personalized;
+  final int skillsAnalyzed;
+
+  factory LearningBreakResult.fromJson(Map<String, dynamic> json) {
+    final gameJson = json['game'] as Map<String, dynamic>? ?? {};
+    final metaJson = json['meta'] as Map<String, dynamic>? ?? {};
+
+    return LearningBreakResult(
+      game: LearningBreakGame.fromJson(gameJson),
+      personalized: metaJson['personalized'] == true,
+      skillsAnalyzed: metaJson['skillsAnalyzed'] is num
+          ? (metaJson['skillsAnalyzed'] as num).toInt()
+          : 0,
+    );
+  }
+}
+
+/// Result from completing a learning break.
+class LearningBreakCompleteResult {
+  const LearningBreakCompleteResult({
+    required this.success,
+    this.score,
+    this.accuracy,
+    this.xpEarned = 0,
+    this.coinsEarned = 0,
+  });
+
+  final bool success;
+  final int? score;
+  final int? accuracy;
+  final int xpEarned;
+  final int coinsEarned;
+
+  factory LearningBreakCompleteResult.fromJson(Map<String, dynamic> json) {
+    final resultsJson = json['results'] as Map<String, dynamic>? ?? {};
+
+    return LearningBreakCompleteResult(
+      success: json['success'] == true,
+      score: resultsJson['score'] is num ? (resultsJson['score'] as num).toInt() : null,
+      accuracy: resultsJson['accuracy'] is num ? (resultsJson['accuracy'] as num).toInt() : null,
+      xpEarned: resultsJson['xpEarned'] is num ? (resultsJson['xpEarned'] as num).toInt() : 0,
+      coinsEarned: resultsJson['coinsEarned'] is num ? (resultsJson['coinsEarned'] as num).toInt() : 0,
+    );
+  }
 }
 
 /// Self-reported mood options.
@@ -288,6 +417,135 @@ class FocusService {
     }
   }
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // LEARNING BREAK GAMES
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Generate a personalized learning break game.
+  /// POST /focus/learning-breaks/generate
+  Future<LearningBreakResult> generateLearningBreak({
+    required String sessionId,
+    required String learnerId,
+    required String tenantId,
+    required String gradeBand,
+    String? preferredDomain,
+    int? maxDurationSeconds,
+  }) async {
+    if (_useFocusMock) {
+      _logMockWarning();
+      await Future.delayed(const Duration(milliseconds: 200));
+      return _mockLearningBreak(gradeBand, preferredDomain);
+    }
+
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/focus/learning-breaks/generate',
+        data: {
+          'sessionId': sessionId,
+          'learnerId': learnerId,
+          'tenantId': tenantId,
+          'gradeBand': gradeBand,
+          if (preferredDomain != null) 'preferredDomain': preferredDomain,
+          if (maxDurationSeconds != null) 'maxDurationSeconds': maxDurationSeconds,
+        },
+      );
+
+      if (response.data == null) {
+        throw const FocusException('No learning break returned');
+      }
+
+      return LearningBreakResult.fromJson(response.data!);
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
+  /// Notify that a learning break game has started.
+  /// POST /focus/learning-breaks/start
+  Future<void> notifyLearningBreakStarted({
+    required String sessionId,
+    required String learnerId,
+    required LearningGameType gameType,
+    required String targetDomain,
+    required List<String> targetSkillCodes,
+    required int difficulty,
+  }) async {
+    if (_useFocusMock) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      return;
+    }
+
+    try {
+      await _dio.post<void>(
+        '/focus/learning-breaks/start',
+        data: {
+          'sessionId': sessionId,
+          'learnerId': learnerId,
+          'gameType': gameType.code,
+          'targetDomain': targetDomain,
+          'targetSkillCodes': targetSkillCodes,
+          'difficulty': difficulty,
+        },
+      );
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
+  /// Notify that a learning break game has completed.
+  /// POST /focus/learning-breaks/complete
+  Future<LearningBreakCompleteResult> notifyLearningBreakComplete({
+    required String sessionId,
+    required String learnerId,
+    required LearningGameType gameType,
+    required bool completed,
+    int? score,
+    int? correctAnswers,
+    int? totalQuestions,
+    int? durationSeconds,
+    List<String>? targetSkillCodes,
+    int? helpfulnessRating,
+  }) async {
+    if (_useFocusMock) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      return LearningBreakCompleteResult(
+        success: true,
+        score: score,
+        accuracy: totalQuestions != null && totalQuestions > 0 && correctAnswers != null
+            ? ((correctAnswers / totalQuestions) * 100).round()
+            : null,
+        xpEarned: completed ? 15 : 0,
+        coinsEarned: completed ? 5 : 0,
+      );
+    }
+
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/focus/learning-breaks/complete',
+        data: {
+          'sessionId': sessionId,
+          'learnerId': learnerId,
+          'gameType': gameType.code,
+          'completed': completed,
+          if (score != null) 'score': score,
+          if (correctAnswers != null) 'correctAnswers': correctAnswers,
+          if (totalQuestions != null) 'totalQuestions': totalQuestions,
+          if (durationSeconds != null) 'durationSeconds': durationSeconds,
+          if (targetSkillCodes != null) 'targetSkillCodes': targetSkillCodes,
+          if (helpfulnessRating != null) 'helpfulnessRating': helpfulnessRating,
+        },
+      );
+
+      if (response.data == null) {
+        throw const FocusException('No completion result returned');
+      }
+
+      return LearningBreakCompleteResult.fromJson(response.data!);
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
   FocusException _handleError(DioException err) {
     final statusCode = err.response?.statusCode;
     final message = err.response?.data is Map
@@ -387,6 +645,67 @@ class FocusService {
       message: mood == SelfReportedMood.frustrated
           ? 'It looks like you might need a moment. These activities can help you reset.'
           : 'Here are some activities to help you take a break.',
+    );
+  }
+
+  LearningBreakResult _mockLearningBreak(String gradeBand, String? preferredDomain) {
+    // Generate a mock learning break game
+    final domain = preferredDomain ?? 'MATH';
+    final isK5 = gradeBand == 'K5';
+
+    late LearningGameType gameType;
+    late String title;
+    late String description;
+    late List<String> instructions;
+    late Map<String, dynamic> gameConfig;
+
+    if (domain == 'MATH') {
+      gameType = isK5 ? LearningGameType.mathBubblePop : LearningGameType.numberNinja;
+      title = isK5 ? 'Math Bubble Pop' : 'Number Ninja';
+      description = isK5
+          ? 'Pop the bubbles with the right answers!'
+          : 'Slice through math problems like a ninja!';
+      instructions = isK5
+          ? ['Bubbles float up with math problems', 'Tap the bubble with the correct answer', 'Pop as many as you can!']
+          : ['Math problems appear on screen', 'Swipe to the correct answer', 'Build your combo streak!'];
+      gameConfig = {
+        'mathProblems': [
+          {'expression': '5 + 3', 'correctAnswer': 8, 'options': [6, 7, 8, 9]},
+          {'expression': '9 - 4', 'correctAnswer': 5, 'options': [3, 4, 5, 6]},
+          {'expression': '2 × 6', 'correctAnswer': 12, 'options': [10, 11, 12, 14]},
+        ],
+        'timeLimit': 60,
+      };
+    } else {
+      gameType = LearningGameType.wordScramble;
+      title = 'Word Scramble Sprint';
+      description = 'Unscramble the letters to find hidden words!';
+      instructions = ['Look at the scrambled letters', 'Tap letters in order to spell the word', 'Use the hint if needed!'];
+      gameConfig = {
+        'words': [
+          {'word': 'happy', 'scrambled': 'pahyp', 'hint': 'Feeling joyful'},
+          {'word': 'friend', 'scrambled': 'rnfied', 'hint': 'Someone you play with'},
+        ],
+        'timeLimit': 90,
+      };
+    }
+
+    return LearningBreakResult(
+      game: LearningBreakGame(
+        gameType: gameType,
+        title: title,
+        description: description,
+        instructions: instructions,
+        durationSeconds: 60,
+        targetDomain: domain,
+        targetSkillCodes: ['${domain}_GENERAL'],
+        difficulty: 3,
+        gameConfig: gameConfig,
+        xpReward: 15,
+        coinReward: 5,
+      ),
+      personalized: false,
+      skillsAnalyzed: 0,
     );
   }
 }
