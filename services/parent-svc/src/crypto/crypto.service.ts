@@ -5,7 +5,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes, randomInt, createHash } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 
 const BCRYPT_ROUNDS = 12;
@@ -34,12 +34,14 @@ export class CryptoService {
   }
 
   /**
-   * Generate a short numeric code (for SMS/email verification)
+   * Generate a cryptographically secure numeric code (for SMS/email verification)
+   * Uses crypto.randomInt() instead of Math.random() for security
    */
   generateNumericCode(length: number = 6): string {
     const max = Math.pow(10, length);
     const min = Math.pow(10, length - 1);
-    const code = Math.floor(Math.random() * (max - min)) + min;
+    // Use cryptographically secure randomInt instead of Math.random()
+    const code = randomInt(min, max);
     return code.toString();
   }
 

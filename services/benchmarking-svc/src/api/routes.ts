@@ -14,6 +14,7 @@ import {
   AggregationService,
   InsightsService,
 } from '../services';
+import { requireAdminRole } from '../middleware/auth';
 import type { MetricCategory, InsightType } from '../types';
 
 // Request schemas
@@ -435,6 +436,7 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
    */
   app.get(
     '/api/v1/admin/participants',
+    { preHandler: [requireAdminRole] },
     async (
       request: FastifyRequest<{
         Querystring: {
@@ -446,8 +448,6 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
       }>,
       reply: FastifyReply
     ) => {
-      // TODO: Add admin authentication check
-
       const { status, state, limit, offset } = request.query;
 
       const result = await participationService.listParticipants({
@@ -466,6 +466,7 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
    */
   app.post(
     '/api/v1/admin/participants/:tenantId/activate',
+    { preHandler: [requireAdminRole] },
     async (
       request: FastifyRequest<{
         Headers: { 'x-admin-id': string };
@@ -473,10 +474,9 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
       }>,
       reply: FastifyReply
     ) => {
-      const adminId = request.headers['x-admin-id'];
+      // Extract admin ID from JWT user subject
+      const adminId = request.user?.sub ?? request.headers['x-admin-id'];
       const { tenantId } = request.params;
-
-      // TODO: Add admin authentication check
 
       const profile = await participationService.activate(tenantId, adminId ?? 'admin');
 
@@ -489,6 +489,7 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
    */
   app.post(
     '/api/v1/admin/participants/:tenantId/suspend',
+    { preHandler: [requireAdminRole] },
     async (
       request: FastifyRequest<{
         Headers: { 'x-admin-id': string };
@@ -497,11 +498,10 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
       }>,
       reply: FastifyReply
     ) => {
-      const adminId = request.headers['x-admin-id'];
+      // Extract admin ID from JWT user subject
+      const adminId = request.user?.sub ?? request.headers['x-admin-id'];
       const { tenantId } = request.params;
       const body = request.body as { reason?: string };
-
-      // TODO: Add admin authentication check
 
       await participationService.suspend(
         tenantId,
@@ -518,10 +518,9 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
    */
   app.post(
     '/api/v1/admin/cohorts/:cohortId/recompute',
+    { preHandler: [requireAdminRole] },
     async (request: FastifyRequest<{ Params: { cohortId: string } }>, reply: FastifyReply) => {
       const { cohortId } = request.params;
-
-      // TODO: Add admin authentication check
 
       await aggregationService.recomputeCohortAggregates(cohortId);
 
