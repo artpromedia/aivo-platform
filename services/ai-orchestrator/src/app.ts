@@ -13,6 +13,7 @@ import { registerBrainRoutes } from './routes/brain.js';
 import { emotionalStateRoutes } from './routes/emotionalState.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { socialStoryRoutes } from './routes/socialStories.js';
+import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
 import gameGenerationRoutes from './routes/game-generation.js';
 import generationRoutes from './routes/generation.js';
 import { LLMOrchestrator } from './providers/llm-orchestrator.js';
@@ -59,6 +60,9 @@ export function createApp(options: AppOptions = {}) {
 
   // Admin stats routes for compliance dashboard
   app.register(registerAdminStatsRoutes, { pool: policyPool });
+
+  // Teacher AI transparency routes (HIGH-001)
+  app.register(registerTeacherTransparencyRoutes, { pool: policyPool });
 
   // Brain update routes for virtual brain synchronization
   app.register(registerBrainRoutes, { prefix: '/internal/ai/brain', pool: policyPool });
