@@ -22,6 +22,7 @@ import { DeltaSyncEngine, SyncEntityType, SyncStats, createEmptySyncStats } from
 import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';
 import { WebhookHandlerService } from '../webhooks/webhook-handler.service.js';
 import type { FieldMapping } from '../providers/types.js';
+import { logger } from '../logger.js';
 
 /**
  * Job status
@@ -103,12 +104,12 @@ export class SyncJobProcessor {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      console.log('[SyncJobProcessor] Already running');
+      logger.info('SyncJobProcessor already running');
       return;
     }
 
     this.isRunning = true;
-    console.log('[SyncJobProcessor] Starting job processor');
+    logger.info('Starting SyncJobProcessor');
 
     // Load webhook configurations
     await this.webhookHandler.loadConfigs();
@@ -120,10 +121,10 @@ export class SyncJobProcessor {
 
     // Start processing queue
     this.processQueue().catch((error: unknown) => {
-      console.error('[SyncJobProcessor] Queue processing error', error);
+      logger.error({ err: error }, 'Queue processing error');
     });
 
-    console.log('[SyncJobProcessor] Job processor started');
+    logger.info('SyncJobProcessor started');
   }
 
   /**
@@ -135,7 +136,7 @@ export class SyncJobProcessor {
     // Stop all scheduled tasks
     for (const [id, task] of this.scheduledTasks) {
       task.stop();
-      console.log(`[SyncJobProcessor] Stopped scheduled task: ${id}`);
+      logger.info({ taskId: id }, 'Stopped scheduled task');
     }
     this.scheduledTasks.clear();
 
@@ -148,12 +149,10 @@ export class SyncJobProcessor {
     }
 
     if (this.activeJobs.size > 0) {
-      console.warn('[SyncJobProcessor] Forcing stop with active jobs', {
-        activeJobCount: this.activeJobs.size,
-      });
+      logger.warn({ activeJobCount: this.activeJobs.size }, 'Forcing stop with active jobs');
     }
 
-    console.log('[SyncJobProcessor] Job processor stopped');
+    logger.info('SyncJobProcessor stopped');
   }
 
   /**
@@ -184,12 +183,7 @@ export class SyncJobProcessor {
       },
     });
 
-    console.log('[SyncJobProcessor] Job queued', {
-      jobId: job.id,
-      tenantId,
-      providerId,
-      priority,
-    });
+    logger.info({ jobId: job.id, priority }, 'Job queued');
 
     return job.id;
   }
@@ -215,9 +209,7 @@ export class SyncJobProcessor {
       }
     }
 
-    console.log('[SyncJobProcessor] Initialized scheduled syncs', {
-      count: providers.length,
-    });
+    logger.info({ count: providers.length }, 'Initialized scheduled syncs');
   }
 
   /**
@@ -238,37 +230,24 @@ export class SyncJobProcessor {
 
     // Validate cron expression
     if (!cron.validate(cronExpression)) {
-      console.error('[SyncJobProcessor] Invalid cron expression', {
-        taskId,
-        cronExpression,
-      });
+      logger.error({ taskId, cronExpression }, 'Invalid cron expression');
       return;
     }
 
     // Create new scheduled task
     const task = cron.schedule(cronExpression, async () => {
-      console.log('[SyncJobProcessor] Running scheduled sync', {
-        tenantId,
-        providerId,
-      });
+      logger.info({ taskId }, 'Running scheduled sync');
 
       try {
         await this.queueJob(tenantId, providerId, undefined, 'normal');
       } catch (error) {
-        console.error('[SyncJobProcessor] Failed to queue scheduled sync', {
-          tenantId,
-          providerId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
+        logger.error({ taskId, err: error }, 'Failed to queue scheduled sync');
       }
     });
 
     this.scheduledTasks.set(taskId, task);
 
-    console.log('[SyncJobProcessor] Scheduled provider sync', {
-      taskId,
-      cronExpression,
-    });
+    logger.info({ taskId, cronExpression }, 'Scheduled provider sync');
   }
 
   /**
@@ -281,7 +260,7 @@ export class SyncJobProcessor {
     if (task) {
       task.stop();
       this.scheduledTasks.delete(taskId);
-      console.log('[SyncJobProcessor] Unscheduled provider sync', { taskId });
+      logger.info({ taskId }, 'Unscheduled provider sync');
     }
   }
 
@@ -316,13 +295,10 @@ export class SyncJobProcessor {
 
         // Process the job
         this.processJob(queueItem).catch((error: unknown) => {
-          console.error('[SyncJobProcessor] Job processing error', {
-            jobId: queueItem.id,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
+          logger.error({ jobId: queueItem.id, err: error }, 'Job processing error');
         });
       } catch (error: unknown) {
-        console.error('[SyncJobProcessor] Queue processing error', error);
+        logger.error({ err: error }, 'Queue processing error');
         await this.delay(5000);
       }
     }
@@ -358,12 +334,7 @@ export class SyncJobProcessor {
       data: { attempts: job.attempts },
     });
 
-    console.log('[SyncJobProcessor] Processing job', {
-      jobId,
-      tenantId,
-      providerId,
-      attempt: job.attempts,
-    });
+    logger.info({ jobId, attempt: job.attempts }, 'Processing job');
 
     // Create sync run record
     const syncRun = await this.prisma.sisSyncRun.create({
@@ -423,12 +394,7 @@ export class SyncJobProcessor {
         data: { lastSyncAt: new Date() },
       });
 
-      console.log('[SyncJobProcessor] Job completed successfully', {
-        jobId,
-        tenantId,
-        providerId,
-        stats,
-      });
+      logger.info({ jobId, entityCounts: stats.entityCounts }, 'Job completed successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -455,12 +421,7 @@ export class SyncJobProcessor {
           },
         });
 
-        console.error('[SyncJobProcessor] Job failed permanently', {
-          jobId,
-          tenantId,
-          providerId,
-          error: errorMessage,
-        });
+        logger.error({ jobId, error: errorMessage }, 'Job failed permanently');
       } else {
         // Schedule retry with exponential backoff
         const retryDelay = this.config.retryDelayMs * Math.pow(2, job.attempts - 1);
@@ -474,13 +435,7 @@ export class SyncJobProcessor {
           },
         });
 
-        console.warn('[SyncJobProcessor] Job failed, will retry', {
-          jobId,
-          tenantId,
-          providerId,
-          attempt: job.attempts,
-          retryAt,
-        });
+        logger.warn({ jobId, attempt: job.attempts, retryAt }, 'Job failed, will retry');
       }
     } finally {
       this.activeJobs.delete(jobId);
@@ -511,7 +466,7 @@ export class SyncJobProcessor {
       retried++;
     }
 
-    console.log('[SyncJobProcessor] Retried failed jobs', { count: retried });
+    logger.info({ count: retried }, 'Retried failed jobs');
     return retried;
   }
 

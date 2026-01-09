@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import { VendorType } from '../types/index.js';
+import { requireAdminRole, extractUserId } from '../middleware/auth.js';
 
 // ============================================================================
 // Schema Validation
@@ -120,12 +121,12 @@ async function getVendorBySlug(
 /**
  * POST /vendors
  * Register a new vendor (admin only)
+ * Note: Admin authorization is enforced via requireAdminRole preHandler
  */
 async function createVendor(
   request: FastifyRequest<{ Body: z.infer<typeof CreateVendorSchema> }>,
   reply: FastifyReply
 ) {
-  // TODO: Check admin authorization
   const data = CreateVendorSchema.parse(request.body);
 
   const existing = await prisma.vendor.findUnique({
@@ -157,6 +158,7 @@ async function createVendor(
 /**
  * PATCH /vendors/:slug
  * Update vendor profile
+ * Note: Authorization is enforced via requireAdminRole preHandler
  */
 async function updateVendor(
   request: FastifyRequest<{
@@ -165,7 +167,6 @@ async function updateVendor(
   }>,
   reply: FastifyReply
 ) {
-  // TODO: Check authorization (vendor owner or admin)
   const { slug } = VendorSlugSchema.parse(request.params);
   const data = UpdateVendorSchema.parse(request.body);
 
@@ -198,6 +199,7 @@ async function updateVendor(
 export async function vendorRoutes(fastify: FastifyInstance) {
   fastify.get('/', listVendors);
   fastify.get('/:slug', getVendorBySlug);
-  fastify.post('/', createVendor);
-  fastify.patch('/:slug', updateVendor);
+  // Admin-only routes
+  fastify.post('/', { preHandler: [requireAdminRole] }, createVendor);
+  fastify.patch('/:slug', { preHandler: [requireAdminRole] }, updateVendor);
 }

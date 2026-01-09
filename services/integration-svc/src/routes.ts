@@ -17,6 +17,7 @@ import {
   ExternalLearningEventSchema,
   API_KEY_HEADER,
 } from './types.js';
+import { requireAdminRole } from './middleware/auth.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FASTIFY AUGMENTATION
@@ -304,10 +305,10 @@ export async function registerRoutes(
 
   /**
    * List webhook endpoints for tenant
+   * Note: Admin authorization is enforced via requireAdminRole preHandler
    */
-  app.get('/admin/webhooks', async (request: FastifyRequest, reply: FastifyReply) => {
-    // TODO: Add proper admin auth (JWT from auth-svc)
-    const tenantId = request.headers['x-tenant-id'] as string;
+  app.get('/admin/webhooks', { preHandler: [requireAdminRole] }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const tenantId = request.user?.tenantId ?? (request.headers['x-tenant-id'] as string);
     if (!tenantId) {
       return reply.status(400).send({ error: 'Missing X-Tenant-Id header' });
     }
@@ -349,9 +350,10 @@ export async function registerRoutes(
     schema: {
       body: CreateWebhookEndpointSchema,
     },
+    preHandler: [requireAdminRole],
   }, async (request: FastifyRequest<{ Body: z.infer<typeof CreateWebhookEndpointSchema> }>, reply: FastifyReply) => {
-    const tenantId = request.headers['x-tenant-id'] as string;
-    const userId = request.headers['x-user-id'] as string;
+    const tenantId = request.user?.tenantId ?? (request.headers['x-tenant-id'] as string);
+    const userId = request.user?.sub ?? (request.headers['x-user-id'] as string);
     if (!tenantId || !userId) {
       return reply.status(400).send({ error: 'Missing X-Tenant-Id or X-User-Id header' });
     }
@@ -404,6 +406,7 @@ export async function registerRoutes(
       params: z.object({ id: z.string().uuid() }),
       body: UpdateWebhookEndpointSchema,
     },
+    preHandler: [requireAdminRole],
   }, async (request: FastifyRequest<{
     Params: { id: string };
     Body: z.infer<typeof UpdateWebhookEndpointSchema>;
@@ -446,6 +449,7 @@ export async function registerRoutes(
     schema: {
       params: z.object({ id: z.string().uuid() }),
     },
+    preHandler: [requireAdminRole],
   }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const tenantId = request.headers['x-tenant-id'] as string;
     if (!tenantId) {

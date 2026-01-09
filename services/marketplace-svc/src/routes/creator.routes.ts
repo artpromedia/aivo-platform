@@ -23,6 +23,7 @@ import {
   PricingModel,
   EmbeddedToolLaunchType,
 } from '../types/index.js';
+import { extractUserId } from '../middleware/auth.js';
 
 // ============================================================================
 // Schema Validation
@@ -168,8 +169,8 @@ async function listCreatorItems(
 ) {
   const { vendorId } = VendorIdParam.parse(request.params);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -224,8 +225,8 @@ async function createItem(
   const { vendorId } = VendorIdParam.parse(request.params);
   const body = CreateItemSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -299,8 +300,8 @@ async function getCreatorItem(
 ) {
   const { vendorId, itemId } = ItemIdParam.parse(request.params);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -349,8 +350,8 @@ async function updateItem(
   const { vendorId, itemId } = ItemIdParam.parse(request.params);
   const body = UpdateItemSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -416,8 +417,8 @@ async function createVersion(
   const { vendorId, itemId } = ItemIdParam.parse(request.params);
   const body = CreateVersionSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -557,8 +558,8 @@ async function setContentPackItems(
   const { vendorId, itemId, versionId } = VersionIdParam.parse(request.params);
   const body = AddContentPackItemsSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -626,8 +627,8 @@ async function setToolConfig(
   const { vendorId, itemId, versionId } = VersionIdParam.parse(request.params);
   const body = SetToolConfigSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -720,8 +721,8 @@ async function submitForReview(
   const { vendorId, itemId, versionId } = VersionIdParam.parse(request.params);
   const body = SubmitForReviewSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
@@ -808,8 +809,8 @@ async function discardVersion(
 ) {
   const { vendorId, itemId, versionId } = VersionIdParam.parse(request.params);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'current-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
   const access = await verifyVendorAccess(vendorId, userId);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });

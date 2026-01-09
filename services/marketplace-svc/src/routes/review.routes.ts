@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import { MarketplaceVersionStatus } from '../types/index.js';
 import { isValidTransition, getAllowedTransitions } from '../services/validation.service.js';
+import { extractUserId, requireAdminRole } from '../middleware/auth.js';
 
 // ============================================================================
 // Schema Validation
@@ -171,8 +172,8 @@ async function performReviewAction(
   const { versionId } = VersionIdParam.parse(request.params);
   const { action, notes } = ReviewActionSchema.parse(request.body);
 
-  // TODO: Extract user ID from JWT
-  const userId = 'reviewer-user-id';
+  // Extract user ID from JWT
+  const userId = extractUserId(request);
 
   const version = await prisma.marketplaceItemVersion.findUnique({
     where: { id: versionId },
