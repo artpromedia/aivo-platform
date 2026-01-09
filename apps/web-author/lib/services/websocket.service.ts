@@ -20,6 +20,20 @@ import type {
 import { getUserColor } from '../api/collaboration';
 
 // ══════════════════════════════════════════════════════════════════════════════
+// DEBUG HELPER
+// ══════════════════════════════════════════════════════════════════════════════
+
+const DEBUG = process.env.NODE_ENV === 'development';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function debugLog(message: string, ...args: any[]): void {
+  if (DEBUG) {
+    // eslint-disable-next-line no-console
+    console.debug(message, ...args);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -112,7 +126,7 @@ class WebSocketService {
 
       this.socket.on('connect', () => {
         this.reconnectCount = 0;
-        console.log('[WebSocket] Connected:', this.socket?.id);
+        debugLog('[WebSocket] Connected:', this.socket?.id);
         resolve();
       });
 
@@ -138,7 +152,7 @@ class WebSocketService {
 
     this.eventListeners.clear();
     this.pendingOperations.clear();
-    console.log('[WebSocket] Disconnected');
+    debugLog('[WebSocket] Disconnected');
   }
 
   /**
@@ -189,7 +203,7 @@ class WebSocketService {
         (response: { success: boolean; collaborators?: Collaborator[]; error?: string }) => {
           if (response.success && response.collaborators) {
             this.currentRoom = roomId;
-            console.log('[WebSocket] Joined room:', roomId);
+            debugLog('[WebSocket] Joined room:', roomId);
             resolve(response.collaborators);
           } else {
             reject(new Error(response.error || 'Failed to join room'));
@@ -206,7 +220,7 @@ class WebSocketService {
     if (!this.socket?.connected || !this.currentRoom) return;
 
     this.socket.emit('leave_room', { roomId: this.currentRoom });
-    console.log('[WebSocket] Left room:', this.currentRoom);
+    debugLog('[WebSocket] Left room:', this.currentRoom);
     this.currentRoom = null;
   }
 
@@ -408,12 +422,12 @@ class WebSocketService {
 
     // Connection events
     this.socket.on('disconnect', (reason) => {
-      console.log('[WebSocket] Disconnected:', reason);
+      debugLog('[WebSocket] Disconnected:', reason);
       this.emitLocalEvent('error', { type: 'disconnect', reason });
     });
 
     this.socket.on('reconnect', (attempt) => {
-      console.log('[WebSocket] Reconnected after', attempt, 'attempts');
+      debugLog('[WebSocket] Reconnected after', attempt, 'attempts');
 
       // Rejoin room if we were in one
       if (this.currentRoom && this.userId && this.userName) {
@@ -429,7 +443,7 @@ class WebSocketService {
 
     this.socket.on('reconnect_attempt', (attempt: number) => {
       this.reconnectCount = attempt;
-      console.log('[WebSocket] Reconnection attempt:', attempt);
+      debugLog('[WebSocket] Reconnection attempt:', attempt);
     });
 
     this.socket.on('reconnect_failed', () => {
@@ -439,12 +453,12 @@ class WebSocketService {
 
     // Collaboration events
     this.socket.on('user_joined', (data: Collaborator) => {
-      console.log('[WebSocket] User joined:', data.userName);
+      debugLog('[WebSocket] User joined:', data.userName);
       this.emitLocalEvent('user_joined', data);
     });
 
     this.socket.on('user_left', (data: { userId: string; userName: string }) => {
-      console.log('[WebSocket] User left:', data.userName);
+      debugLog('[WebSocket] User left:', data.userName);
       this.emitLocalEvent('user_left', data);
     });
 

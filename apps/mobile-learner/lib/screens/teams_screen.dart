@@ -333,7 +333,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isActive ? 'Active Now' : 'Coming Soon',
+                      isActive ? 'Active Now' : 'Scheduled',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

@@ -35,8 +35,10 @@ export function Header({ title, className }: HeaderProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement global search
-    console.log('Search:', searchQuery);
+    // Navigate to search results page with query
+    if (searchQuery.trim()) {
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+    }
   };
 
   return (

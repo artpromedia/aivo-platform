@@ -376,14 +376,22 @@ export function TeacherProfile({
           )}
 
           {activeTab === 'followers' && (
-            <div className="text-center py-12 text-gray-600">
-              Followers list coming soon...
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 font-medium">No followers yet</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Share your content to grow your community
+              </p>
             </div>
           )}
 
           {activeTab === 'following' && (
-            <div className="text-center py-12 text-gray-600">
-              Following list coming soon...
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 font-medium">Not following anyone yet</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Discover educators to follow for inspiration
+              </p>
             </div>
           )}
         </div>

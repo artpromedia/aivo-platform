@@ -192,8 +192,14 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
         />
       )}
       {!['multiple_choice', 'matching', 'fill_in_blank', 'ordering', 'free_response'].includes(activity.type) && (
-        <div className="bg-surface rounded-lg p-4 shadow-sm text-center text-muted">
-          <p>Editor for {activity.type.replace(/_/g, ' ')} activities coming soon.</p>
+        <div className="bg-surface rounded-lg p-6 shadow-sm text-center border-2 border-dashed border-muted">
+          <div className="text-4xl mb-3">🛠️</div>
+          <p className="text-muted font-medium">
+            Editor for {activity.type.replace(/_/g, ' ')} activities
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            This activity type is not yet supported for editing. Please contact support if you need this feature.
+          </p>
         </div>
       )}
     </div>

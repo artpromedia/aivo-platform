@@ -18,8 +18,7 @@ export default function NewAssignmentPage() {
   const handleSubmit = async (data: CreateAssignmentDto) => {
     setLoading(true);
     try {
-      // In production, call API
-      console.log('Creating assignment:', data);
+      // TODO: Replace with actual API call when backend is ready
       await new Promise((resolve) => setTimeout(resolve, 1000));
       router.push('/assignments');
     } finally {

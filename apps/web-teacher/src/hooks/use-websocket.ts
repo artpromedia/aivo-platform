@@ -83,12 +83,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
     });
 
     socket.on('connect', () => {
-      console.log('[WebSocket] Connected');
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug('[WebSocket] Connected');
+      }
       setStatus('connected');
     });
 
     socket.on('disconnect', (reason) => {
-      console.log('[WebSocket] Disconnected:', reason);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug('[WebSocket] Disconnected:', reason);
+      }
       setStatus('disconnected');
     });
 

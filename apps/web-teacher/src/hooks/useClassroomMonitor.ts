@@ -369,9 +369,13 @@ export function useClassroomMonitor(
           throw new Error('Failed to send intervention');
         }
 
-        console.log('[ClassroomMonitor] Intervention sent:', { studentId, type });
+        // Intervention sent successfully
       } catch (err) {
-        console.error('[ClassroomMonitor] Failed to send intervention:', err);
+        // Keep error logging for debugging failed interventions
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[ClassroomMonitor] Failed to send intervention:', err);
+        }
         throw err;
       }
     },

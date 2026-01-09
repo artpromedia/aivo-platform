@@ -13,7 +13,7 @@ export default function HowItWorksPage() {
     <ComingSoonPage
       title="How It Works"
       description="Discover the science and technology behind AIVO's personalized learning approach. We're putting the finishing touches on this page."
-      expectedDate="Coming Soon"
+      expectedDate="Q1 2026"
     />
   );
 }

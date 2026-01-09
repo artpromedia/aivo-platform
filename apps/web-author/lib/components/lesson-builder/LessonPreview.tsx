@@ -363,8 +363,14 @@ function ActivityRenderer({ activity, state, onStateChange, onSubmit }: Activity
       );
     default:
       return (
-        <div className="text-center text-gray-500 py-8">
-          Preview for {activity.type.replace(/_/g, ' ')} coming soon
+        <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="text-4xl mb-3">👀</div>
+          <p className="text-gray-600 font-medium">
+            Preview for {activity.type.replace(/_/g, ' ')}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            This activity type does not have a preview available yet.
+          </p>
         </div>
       );
   }
