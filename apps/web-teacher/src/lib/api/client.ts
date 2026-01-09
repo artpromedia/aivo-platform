@@ -5,7 +5,13 @@
  * HTTP client with authentication, error handling, and retry logic
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { getEnvUrl } from '../utils';
+
+const API_BASE_URL = getEnvUrl(
+  'NEXT_PUBLIC_API_URL',
+  'http://localhost:4000',
+  { serviceName: 'Teacher API' }
+);
 
 export interface APIError extends Error {
   status: number;

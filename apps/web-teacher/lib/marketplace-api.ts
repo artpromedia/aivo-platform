@@ -5,7 +5,13 @@
  * and approved for the teacher's school/district.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:3007/api';
+import { getServiceUrl } from './env-utils';
+
+const API_BASE = getServiceUrl(
+  'NEXT_PUBLIC_MARKETPLACE_API_URL',
+  'http://localhost:3007/api',
+  'Marketplace API'
+);
 
 // ============================================================================
 // Types

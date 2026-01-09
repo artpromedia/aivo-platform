@@ -5,7 +5,13 @@
  * Backend Service: content-svc (port 3010)
  */
 
-const CONTENT_SVC_URL = process.env.NEXT_PUBLIC_CONTENT_SVC_URL || 'http://localhost:3010';
+import { getServiceUrl } from '../env-utils';
+
+const CONTENT_SVC_URL = getServiceUrl(
+  'NEXT_PUBLIC_CONTENT_SVC_URL',
+  'http://localhost:3010',
+  'Content API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production

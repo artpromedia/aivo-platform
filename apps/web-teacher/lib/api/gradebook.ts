@@ -8,7 +8,13 @@
  * Production builds will ALWAYS use the real API.
  */
 
-const GRADEBOOK_SVC_URL = process.env.NEXT_PUBLIC_GRADEBOOK_SVC_URL || 'http://localhost:3030';
+import { getServiceUrl } from '../env-utils';
+
+const GRADEBOOK_SVC_URL = getServiceUrl(
+  'NEXT_PUBLIC_GRADEBOOK_SVC_URL',
+  'http://localhost:3030',
+  'Gradebook API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production

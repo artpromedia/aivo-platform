@@ -3,7 +3,13 @@
  * Types and fetch functions for teacher analytics dashboard.
  */
 
-const ANALYTICS_BASE_URL = process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:4030';
+import { getServiceUrl } from './env-utils';
+
+const ANALYTICS_BASE_URL = getServiceUrl(
+  'NEXT_PUBLIC_ANALYTICS_URL',
+  'http://localhost:4030',
+  'Classroom Analytics API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production

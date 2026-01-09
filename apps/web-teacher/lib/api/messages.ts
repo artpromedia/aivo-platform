@@ -5,7 +5,13 @@
  * Backend Service: messaging-svc (port 3081)
  */
 
-const MESSAGING_SVC_URL = process.env.NEXT_PUBLIC_MESSAGING_SVC_URL || 'http://localhost:3081';
+import { getServiceUrl } from '../env-utils';
+
+const MESSAGING_SVC_URL = getServiceUrl(
+  'NEXT_PUBLIC_MESSAGING_SVC_URL',
+  'http://localhost:3081',
+  'Messaging API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production

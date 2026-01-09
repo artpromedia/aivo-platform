@@ -7,7 +7,13 @@
  * This API provides REST endpoints for initial data loading and actions.
  */
 
-const REALTIME_SVC_URL = process.env.NEXT_PUBLIC_REALTIME_URL || 'http://localhost:3003';
+import { getServiceUrl } from '../env-utils';
+
+const REALTIME_SVC_URL = getServiceUrl(
+  'NEXT_PUBLIC_REALTIME_URL',
+  'http://localhost:3003',
+  'Realtime Monitoring API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production

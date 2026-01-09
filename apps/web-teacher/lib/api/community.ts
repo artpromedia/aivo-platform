@@ -5,7 +5,13 @@
  * Backend Service: community-svc (port 3050)
  */
 
-const COMMUNITY_SVC_URL = process.env.NEXT_PUBLIC_COMMUNITY_SVC_URL || 'http://localhost:3050';
+import { getServiceUrl } from '../env-utils';
+
+const COMMUNITY_SVC_URL = getServiceUrl(
+  'NEXT_PUBLIC_COMMUNITY_SVC_URL',
+  'http://localhost:3050',
+  'Community API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production

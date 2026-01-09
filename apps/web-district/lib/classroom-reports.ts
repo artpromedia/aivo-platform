@@ -3,7 +3,13 @@
  * Fetches classroom summary reports from reports-svc.
  */
 
-const REPORTS_BASE_URL = process.env.NEXT_PUBLIC_REPORTS_URL || 'http://localhost:4050';
+import { getServiceUrl } from './env-utils';
+
+const REPORTS_BASE_URL = getServiceUrl(
+  'NEXT_PUBLIC_REPORTS_URL',
+  'http://localhost:4050',
+  'Classroom Reports API'
+);
 
 // Production-safe mock mode check
 // CRITICAL: This pattern ensures mock data is NEVER returned in production
