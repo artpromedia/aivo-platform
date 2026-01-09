@@ -29,6 +29,70 @@ enum GradeBand {
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
+// ── Virtual Brain Templates ───────────────────────────────────────────────────
+
+/// Pre-configured Virtual Brain templates for each grade band.
+/// These templates serve as the "Main AIVO Brain" that gets cloned and personalized
+/// for each learner after baseline assessment.
+model VirtualBrainTemplate {
+  id               String    @id @default(uuid()) @db.Uuid
+  gradeBand        GradeBand @unique @map("grade_band")
+  name             String
+  description      String?
+  version          String    @default("1.0")
+  isActive         Boolean   @default(true) @map("is_active")
+
+  // Default curriculum standards for this grade band
+  defaultCurriculumStandards String[] @default([]) @map("default_curriculum_standards")
+
+  // Default reading level ranges for grade band
+  defaultLexileMin Int?      @map("default_lexile_min")
+  defaultLexileMax Int?      @map("default_lexile_max")
+
+  // Template skill states
+  templateSkillStates TemplateSkillState[]
+
+  // Template BKT parameters (domain-level defaults)
+  templateBktDefaults Json?   @map("template_bkt_defaults")
+
+  // Metadata for template tuning
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+
+  @@map("virtual_brain_templates")
+}
+
+/// Default skill states in a template.
+/// When cloning, these values are copied and then personalized with baseline results.
+model TemplateSkillState {
+  id               String   @id @default(uuid()) @db.Uuid
+  templateId       String   @map("template_id") @db.Uuid
+  skillCode        String   @map("skill_code")
+  domain           SkillDomain
+
+  // Default mastery level for this grade band (0-10 scale)
+  defaultMastery   Decimal  @default(0) @map("default_mastery") @db.Decimal(6, 3)
+
+  // Default BKT parameters for this skill
+  defaultPLearn    Decimal  @default(0.1) @map("default_p_learn") @db.Decimal(6, 5)
+  defaultPTransit  Decimal  @default(0.1) @map("default_p_transit") @db.Decimal(6, 5)
+  defaultPGuess    Decimal  @default(0.2) @map("default_p_guess") @db.Decimal(6, 5)
+  defaultPSlip     Decimal  @default(0.1) @map("default_p_slip") @db.Decimal(6, 5)
+
+  // Difficulty progression parameters
+  difficultyMultiplier Decimal @default(1.0) @map("difficulty_multiplier") @db.Decimal(4, 2)
+
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  template         VirtualBrainTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, skillCode])
+  @@index([templateId, domain])
+  @@map("template_skill_states")
+}
+
 /// Master catalog of skills in the learning graph.
 /// Seeded from skills library; rarely changes at runtime.
 model Skill {
@@ -90,7 +154,7 @@ model LearnerSkillState {
 }
 
 /// A learner's Virtual Brain - their personalized learning model.
-/// Initialized from baseline assessment, evolves over time.
+/// Cloned from a grade-band template and personalized with baseline assessment results.
 model VirtualBrain {
   id                 String   @id @default(uuid()) @db.Uuid
   tenantId           String   @map("tenant_id") @db.Uuid
@@ -98,6 +162,11 @@ model VirtualBrain {
   baselineProfileId  String?  @map("baseline_profile_id") @db.Uuid
   baselineAttemptId  String?  @map("baseline_attempt_id") @db.Uuid
   gradeBand          GradeBand @map("grade_band")
+
+  // Reference to the template this Virtual Brain was cloned from
+  sourceTemplateId   String?  @map("source_template_id") @db.Uuid
+  templateVersion    String?  @map("template_version")
+
   initializationJson Json?    @map("initialization_json")
 
   // Geographic location for curriculum alignment

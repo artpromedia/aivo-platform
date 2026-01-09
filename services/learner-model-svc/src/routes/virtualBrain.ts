@@ -1,8 +1,9 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, SkillDomain } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
+import { virtualBrainTemplateService } from '../services/virtual-brain-template.js';
 
 // --- Type definitions ---
 
@@ -177,10 +178,12 @@ function canAccessTenant(
 export async function virtualBrainRoutes(fastify: FastifyInstance) {
   /**
    * POST /virtual-brains/initialize
-   * Initialize a Virtual Brain from baseline assessment results.
+   * Initialize a Virtual Brain by cloning from a grade-band template
+   * and personalizing with baseline assessment results.
    *
    * Called by baseline-svc after accept-final.
-   * Maps baseline skill estimates to the skill graph and creates learner skill states.
+   * Uses the "Main AIVO Brain" template for the grade band and personalizes
+   * it with the learner's baseline skill estimates.
    */
   fastify.post(
     '/virtual-brains/initialize',
@@ -225,98 +228,56 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Fetch all skills to map skillCode -> skillId
-      const allSkills: SkillRecord[] = await prisma.skill.findMany({
-        select: { id: true, skillCode: true },
-      });
+      try {
+        // Clone from the grade-band template and personalize with baseline results
+        const cloneResult = await virtualBrainTemplateService.cloneTemplateForLearner({
+          tenantId,
+          learnerId,
+          gradeBand,
+          baselineProfileId,
+          baselineAttemptId,
+          skillEstimates: skillEstimates.map((e) => ({
+            skillCode: e.skillCode,
+            domain: e.domain as SkillDomain,
+            estimatedLevel: e.estimatedLevel,
+            confidence: e.confidence,
+          })),
+          location,
+          curriculumStandards,
+        });
 
-      const skillCodeToId = new Map<string, string>(allSkills.map((s) => [s.skillCode, s.id]));
+        const result: InitializationResult & {
+          sourceTemplateId: string;
+          templateVersion: string;
+          skillsPersonalized: number;
+        } = {
+          virtualBrainId: cloneResult.virtualBrainId,
+          learnerId,
+          skillsInitialized: cloneResult.skillsInitialized,
+          skillsMissing: cloneResult.skillsMissing,
+          createdAt: new Date().toISOString(),
+          location: location
+            ? {
+                stateCode: location.stateCode,
+                zipCode: location.zipCode,
+                ncesDistrictId: location.ncesDistrictId,
+              }
+            : undefined,
+          curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
+          // New fields from template cloning
+          sourceTemplateId: cloneResult.sourceTemplateId,
+          templateVersion: cloneResult.templateVersion,
+          skillsPersonalized: cloneResult.skillsPersonalized,
+        };
 
-      // Map skill estimates to skill states
-      const skillStatesToCreate: {
-        skillId: string;
-        masteryLevel: number;
-        confidence: number;
-        lastAssessedAt: Date;
-      }[] = [];
-
-      const missingSkills: string[] = [];
-
-      for (const estimate of skillEstimates) {
-        const skillId = skillCodeToId.get(estimate.skillCode);
-        if (!skillId) {
-          missingSkills.push(estimate.skillCode);
-          continue;
-        }
-
-        skillStatesToCreate.push({
-          skillId,
-          masteryLevel: estimate.estimatedLevel,
-          confidence: estimate.confidence,
-          lastAssessedAt: new Date(),
+        return reply.status(201).send(result);
+      } catch (error) {
+        console.error('[VirtualBrain] Clone failed:', error);
+        return reply.status(500).send({
+          error: 'Failed to initialize Virtual Brain from template',
+          details: error instanceof Error ? error.message : 'Unknown error',
         });
       }
-
-      // Create virtual brain and skill states in transaction
-      const virtualBrain = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const vb = await tx.virtualBrain.create({
-          data: {
-            tenantId,
-            learnerId,
-            baselineProfileId,
-            baselineAttemptId,
-            gradeBand,
-            // Geographic location for curriculum alignment
-            stateCode: location?.stateCode,
-            zipCode: location?.zipCode,
-            ncesDistrictId: location?.ncesDistrictId,
-            // Curriculum standards (auto-detected or provided)
-            curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
-            curriculumVersion: '1.0',
-            initializationJson: {
-              source: 'baseline',
-              skillEstimatesCount: skillEstimates.length,
-              missingSkillCodes: missingSkills,
-              initializedAt: new Date().toISOString(),
-              location: location ?? null,
-              curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
-            },
-          },
-        });
-
-        // Create skill states
-        for (const state of skillStatesToCreate) {
-          await tx.learnerSkillState.create({
-            data: {
-              virtualBrainId: vb.id,
-              skillId: state.skillId,
-              masteryLevel: state.masteryLevel,
-              confidence: state.confidence,
-              lastAssessedAt: state.lastAssessedAt,
-              practiceCount: 0,
-              correctStreak: 0,
-            },
-          });
-        }
-
-        return vb;
-      });
-
-      const result: InitializationResult = {
-        virtualBrainId: virtualBrain.id,
-        learnerId: virtualBrain.learnerId,
-        skillsInitialized: skillStatesToCreate.length,
-        skillsMissing: missingSkills,
-        createdAt: virtualBrain.createdAt.toISOString(),
-        location: location ? {
-          stateCode: location.stateCode,
-          zipCode: location.zipCode,
-          ncesDistrictId: location.ncesDistrictId,
-        } : undefined,
-        curriculumStandards: curriculumStandards ?? ['COMMON_CORE'],
-      };
-
-      return reply.status(201).send(result);
     }
   );
 
@@ -829,6 +790,84 @@ export async function virtualBrainRoutes(fastify: FastifyInstance) {
         },
         updatedAt: updated.updatedAt.toISOString(),
       });
+    }
+  );
+
+  // ── Template Management Routes ─────────────────────────────────────────────
+
+  /**
+   * GET /virtual-brains/templates
+   * Get all Virtual Brain templates (Main AIVO Brain templates).
+   * Used for admin monitoring of template configuration.
+   */
+  fastify.get(
+    '/virtual-brains/templates',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      // Only service accounts or admins can view templates
+      if (user.role !== 'service' && user.role !== 'admin') {
+        return reply.status(403).send({ error: 'Forbidden: admin access required' });
+      }
+
+      try {
+        const templates = await virtualBrainTemplateService.getAllTemplates();
+        return reply.send({
+          templates,
+          count: templates.length,
+        });
+      } catch (error) {
+        console.error('[VirtualBrain] Failed to get templates:', error);
+        return reply.status(500).send({
+          error: 'Failed to retrieve templates',
+        });
+      }
+    }
+  );
+
+  /**
+   * GET /virtual-brains/templates/:gradeBand
+   * Get a specific grade band template details.
+   */
+  fastify.get(
+    '/virtual-brains/templates/:gradeBand',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const params = request.params as { gradeBand: string };
+      const gradeBand = params.gradeBand as 'K5' | 'G6_8' | 'G9_12';
+
+      if (!['K5', 'G6_8', 'G9_12'].includes(gradeBand)) {
+        return reply.status(400).send({ error: 'Invalid grade band' });
+      }
+
+      try {
+        const template = await virtualBrainTemplateService.getOrCreateTemplate(gradeBand);
+        return reply.send({
+          id: template.id,
+          gradeBand: template.gradeBand,
+          name: template.name,
+          version: template.version,
+          defaultCurriculumStandards: template.defaultCurriculumStandards,
+          lexileRange: {
+            min: template.defaultLexileMin,
+            max: template.defaultLexileMax,
+          },
+          skillStateCount: template.templateSkillStates.length,
+          bktDefaults: template.templateBktDefaults,
+        });
+      } catch (error) {
+        console.error('[VirtualBrain] Failed to get template:', error);
+        return reply.status(500).send({
+          error: 'Failed to retrieve template',
+        });
+      }
     }
   );
 }
