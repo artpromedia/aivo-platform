@@ -3,11 +3,17 @@
  *
  * Main dashboard with platform-wide metrics, AI model management,
  * license tracking, and audit logging.
+ *
+ * Enhanced with:
+ * - Multi-provider AI orchestration panel (Anthropic, OpenAI, Google, Meta)
+ * - Enhanced system health monitoring with resource metrics
+ * - Live operations feed
  */
 
 import { Suspense } from 'react';
 
 import { AIModelManagement } from './components/ai-model-management';
+import { AIOrchestrationPanel } from './components/ai-orchestration-panel';
 import { AuditLogViewer } from './components/audit-log-viewer';
 import { IntegrationStatus } from './components/integration-status';
 import { LicenseManagement } from './components/license-management';
@@ -15,6 +21,7 @@ import { MetricCards } from './components/metric-cards';
 import { QuickActions } from './components/quick-actions';
 import { RecentActivity } from './components/recent-activity';
 import { SystemHealth } from './components/system-health';
+import { SystemHealthEnhanced } from './components/system-health-enhanced';
 
 export const metadata = {
   title: 'Dashboard | Aivo Platform Admin',
@@ -55,6 +62,16 @@ export default function DashboardPage() {
           <QuickActions />
         </div>
       </div>
+
+      {/* AI Orchestration Panel - Multi-provider management */}
+      <Suspense fallback={<CardSkeleton title="AI Orchestration" />}>
+        <AIOrchestrationPanel />
+      </Suspense>
+
+      {/* Enhanced System Health - Detailed resource monitoring */}
+      <Suspense fallback={<CardSkeleton title="System Health (Enhanced)" />}>
+        <SystemHealthEnhanced />
+      </Suspense>
 
       {/* AI Model Management - Full Width */}
       <Suspense fallback={<CardSkeleton title="AI Model Management" />}>

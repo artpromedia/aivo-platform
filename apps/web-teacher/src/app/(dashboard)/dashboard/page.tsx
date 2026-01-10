@@ -2,14 +2,18 @@
  * Teacher Dashboard Page
  *
  * Main dashboard with overview of classes, metrics, analytics, and AI tools
+ * Enhanced with real-time monitoring and SEL observation capabilities
  */
 
 'use client';
 
 import Link from 'next/link';
 import * as React from 'react';
+import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
+import { RealTimeMonitor } from '@/components/dashboard/real-time-monitor';
+import { SELObservationRecorder } from '@/components/dashboard/sel-observation-recorder';
 
 // Mock data - in production would fetch from API
 const stats = [
@@ -117,6 +121,9 @@ const atRiskStudents = [
 ];
 
 export default function DashboardPage() {
+  const [showSELRecorder, setShowSELRecorder] = useState(false);
+  const [selectedStudentForSEL, setSelectedStudentForSEL] = useState<{id: string; name: string} | null>(null);
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -125,6 +132,11 @@ export default function DashboardPage() {
   });
 
   const greeting = getGreeting();
+
+  const handleSELObservation = (studentId: string, studentName: string) => {
+    setSelectedStudentForSEL({ id: studentId, name: studentName });
+    setShowSELRecorder(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -197,6 +209,73 @@ export default function DashboardPage() {
             title="Feedback Assistant"
             description="Personalized student feedback"
           />
+        </div>
+      </div>
+
+      {/* Real-Time Monitoring Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Live Classroom Monitor */}
+        <RealTimeMonitor
+          onStudentClick={(student) => {
+            console.log('View student:', student);
+          }}
+          onSendMessage={(studentId) => {
+            console.log('Send message to:', studentId);
+          }}
+        />
+
+        {/* SEL Quick Actions */}
+        <div className="rounded-xl border border-border bg-surface">
+          <div className="flex items-center justify-between border-b border-border p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">💚</span>
+              <div>
+                <h2 className="font-semibold text-text">SEL Observations</h2>
+                <p className="text-sm text-muted">Record social-emotional learning moments</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSELRecorder(true)}
+              className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            >
+              + New Observation
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="space-y-3">
+              {/* Recent SEL observations */}
+              <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-green-800">Emma Wilson</span>
+                  <span className="text-xs text-green-600">Today, 10:30 AM</span>
+                </div>
+                <p className="text-sm text-green-700">Self-Management - Independent</p>
+                <p className="text-xs text-green-600 mt-1">Showed excellent focus during independent work</p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-blue-800">Liam Chen</span>
+                  <span className="text-xs text-blue-600">Today, 9:15 AM</span>
+                </div>
+                <p className="text-sm text-blue-700">Relationship Skills - With Support</p>
+                <p className="text-xs text-blue-600 mt-1">Working on group collaboration skills</p>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-amber-800">Sophia Martinez</span>
+                  <span className="text-xs text-amber-600">Yesterday</span>
+                </div>
+                <p className="text-sm text-amber-700">Social Awareness - Prompted</p>
+                <p className="text-xs text-amber-600 mt-1">⚠️ Follow-up needed</p>
+              </div>
+            </div>
+            <Link
+              href="/sel/observations"
+              className="mt-4 block text-center text-sm text-primary hover:underline"
+            >
+              View All SEL Observations →
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -422,6 +501,28 @@ export default function DashboardPage() {
           <QuickAction href="/messages" icon="✉️" title="Messages" description="Parent communication" />
         </div>
       </div>
+
+      {/* SEL Observation Modal */}
+      {showSELRecorder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <SELObservationRecorder
+              studentId={selectedStudentForSEL?.id || ''}
+              studentName={selectedStudentForSEL?.name || 'Select Student'}
+              isOpen={showSELRecorder}
+              onSubmit={async (observation) => {
+                console.log('SEL Observation submitted:', observation);
+                setShowSELRecorder(false);
+                setSelectedStudentForSEL(null);
+              }}
+              onCancel={() => {
+                setShowSELRecorder(false);
+                setSelectedStudentForSEL(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

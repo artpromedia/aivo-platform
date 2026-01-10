@@ -3,16 +3,20 @@
  *
  * Comprehensive dashboard for district administrators with:
  * - Overview metrics and KPIs
- * - Compliance tracking
- * - School performance analytics
+ * - Compliance tracking (FERPA, COPPA, IDEA/IEP)
+ * - School performance analytics with enhanced grid
  * - License management overview
  * - IEP compliance tracking
  * - Recent activity feed
+ *
+ * Enhanced with compliance panel and school performance grid from legacy repos
  */
 
 import Link from 'next/link';
 
 import { resolveTenant } from '../../lib/tenant';
+import { CompliancePanel } from './components/compliance-panel';
+import { SchoolPerformanceGrid } from './components/school-performance-grid';
 
 // Mock data - in production would fetch from API
 const districtMetrics = {
@@ -140,6 +144,19 @@ export default async function DashboardPage() {
             Manage Licenses →
           </Link>
         </div>
+      </div>
+
+      {/* Enhanced Compliance & School Performance Grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Compliance Panel - Enhanced with FERPA, COPPA, IDEA tracking */}
+        <CompliancePanel />
+
+        {/* School Performance Grid - Visual school cards */}
+        <SchoolPerformanceGrid
+          onSchoolClick={(schoolId) => {
+            console.log('Navigate to school:', schoolId);
+          }}
+        />
       </div>
 
       {/* Main Content Grid */}
