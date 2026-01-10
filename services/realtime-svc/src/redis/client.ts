@@ -117,6 +117,9 @@ export async function closeRedisConnections(): Promise<void> {
  * Redis key prefixes for different data types
  */
 export const RedisKeys = {
+  // Global prefix for all dashboard keys
+  prefix: 'aivo',
+
   // Presence keys
   presence: (tenantId: string, userId: string) => `presence:${tenantId}:user:${userId}`,
   tenantOnline: (tenantId: string) => `presence:${tenantId}:online`,
@@ -139,6 +142,22 @@ export const RedisKeys = {
   serverMetrics: (serverId: string) => `server:${serverId}:metrics`,
   serverHeartbeat: (serverId: string) => `server:${serverId}:heartbeat`,
 
+  // Dashboard keys
+  activity: (tenantId: string, classId: string, studentId: string) =>
+    `aivo:activity:${tenantId}:${classId}:${studentId}`,
+  session: (tenantId: string, learnerId: string) =>
+    `aivo:session:${tenantId}:${learnerId}`,
+  daily: (tenantId: string, learnerId: string, date: string) =>
+    `aivo:daily:${tenantId}:${learnerId}:${date}`,
+  activities: (tenantId: string, learnerId: string) =>
+    `aivo:activities:${tenantId}:${learnerId}`,
+  alertsList: (tenantId: string, learnerId: string) =>
+    `aivo:alerts:${tenantId}:${learnerId}`,
+  schoolClasses: (tenantId: string, schoolId: string) =>
+    `aivo:school:${tenantId}:${schoolId}:classes`,
+  districtSchools: (tenantId: string) =>
+    `aivo:district:${tenantId}:schools`,
+
   // Pub/Sub channels
   channels: {
     broadcast: 'realtime:broadcast',
@@ -146,5 +165,7 @@ export const RedisKeys = {
     session: 'realtime:session',
     analytics: 'realtime:analytics',
     alerts: 'realtime:alerts',
+    activity: 'realtime:activity',
+    focus: 'realtime:focus',
   },
 };

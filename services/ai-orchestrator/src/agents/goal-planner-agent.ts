@@ -15,21 +15,16 @@
  * @module ai-orchestrator/agents/goal-planner-agent
  */
 
-import { BaseAgent, AgentContext, AgentResponse, AgentConfig } from './base-agent.js';
+import { BaseAgent, AgentContext, AgentResponse } from './base-agent.js';
+import type { PromptBuilder } from '../prompts/prompt-builder.js';
+import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
+import type { SafetyFilter } from '../safety/safety-filter-v2.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ════════════════════════════════════════════════════════════════════════════════
 
-export interface GoalPlannerConfig extends AgentConfig {
-  maxGoalsPerPlan: number;
-  maxMilestonesPerGoal: number;
-  defaultPlanHorizonDays: number;
-  enableIepAlignment: boolean;
-  enableProgressPrediction: boolean;
-}
-
-export interface LearnerContext {
+export interface LearnerGoalContext {
   learnerId: string;
   gradeLevel: number;
   age: number;
@@ -177,6 +172,15 @@ export interface AdaptationTrigger {
   description: string;
 }
 
+export interface GoalAdjustment {
+  goalId: string;
+  adjustmentType: 'extend_deadline' | 'reduce_scope' | 'add_support' | 'pause' | 'accelerate';
+  reason: string;
+  newEstimatedDays?: number;
+  additionalSupport?: string[];
+  modifiedMilestones?: Milestone[];
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // GOAL PLANNING PROMPTS
 // ════════════════════════════════════════════════════════════════════════════════
@@ -201,69 +205,52 @@ Key principles:
 
 Always respond with structured JSON matching the GoalPlan schema.`;
 
-const GOAL_DECOMPOSITION_PROMPT = `Given the following high-level objective, decompose it into achievable sub-goals with milestones:
-
-Objective: {{objective}}
-Learner Profile:
-- Grade Level: {{gradeLevel}}
-- Current Skill Levels: {{skillLevels}}
-- Learning Velocity: {{velocity}}
-- Neurodiversity Profile: {{neurodiversity}}
-- Accommodations: {{accommodations}}
-
-Create a structured plan with:
-1. 2-4 sub-goals that build toward the objective
-2. 2-3 milestones per sub-goal
-3. Realistic timelines based on learning velocity
-4. Specific accommodations for each goal if needed
-5. Clear success criteria`;
-
-const PROGRESS_ADJUSTMENT_PROMPT = `Based on the learner's progress data, recommend adjustments to their current goal plan:
-
-Current Goals: {{currentGoals}}
-Recent Progress: {{recentProgress}}
-Challenges Encountered: {{challenges}}
-Time Remaining: {{timeRemaining}}
-
-Analyze and recommend:
-1. Which goals are on track vs. need adjustment
-2. Specific timeline or scope modifications
-3. Additional support or scaffolding needed
-4. Goals that should be paused or accelerated
-5. New focus areas based on progress patterns`;
-
 // ════════════════════════════════════════════════════════════════════════════════
 // GOAL PLANNER AGENT
 // ════════════════════════════════════════════════════════════════════════════════
 
 export class GoalPlannerAgent extends BaseAgent {
-  private readonly config: GoalPlannerConfig;
+  readonly agentType = 'goal-planner';
+  readonly systemPrompt = GOAL_PLANNING_SYSTEM_PROMPT;
 
-  constructor(config?: Partial<GoalPlannerConfig>) {
-    super({
-      agentId: 'goal-planner-v2',
-      name: 'Goal Planning Agent',
-      description: 'AI-powered goal planning and progress monitoring',
-      version: '2.0.0',
-      capabilities: [
-        'goal_decomposition',
-        'milestone_planning',
-        'progress_prediction',
-        'iep_alignment',
-        'adaptive_adjustments',
-      ],
-      maxTokensPerRequest: 4000,
-      temperatureDefault: 0.7,
-    });
+  private readonly maxGoalsPerPlan: number;
+  private readonly maxMilestonesPerGoal: number;
+  private readonly defaultPlanHorizonDays: number;
+  private readonly enableIepAlignment: boolean;
+  private readonly enableProgressPrediction: boolean;
 
-    this.config = {
-      maxGoalsPerPlan: config?.maxGoalsPerPlan ?? 5,
-      maxMilestonesPerGoal: config?.maxMilestonesPerGoal ?? 4,
-      defaultPlanHorizonDays: config?.defaultPlanHorizonDays ?? 30,
-      enableIepAlignment: config?.enableIepAlignment ?? true,
-      enableProgressPrediction: config?.enableProgressPrediction ?? true,
-      ...config,
-    };
+  constructor(
+    llm: LLMOrchestrator,
+    safetyFilter: SafetyFilter,
+    promptBuilder: PromptBuilder,
+    options?: {
+      maxGoalsPerPlan?: number;
+      maxMilestonesPerGoal?: number;
+      defaultPlanHorizonDays?: number;
+      enableIepAlignment?: boolean;
+      enableProgressPrediction?: boolean;
+    }
+  ) {
+    super(llm, safetyFilter, promptBuilder);
+    this.maxGoalsPerPlan = options?.maxGoalsPerPlan ?? 5;
+    this.maxMilestonesPerGoal = options?.maxMilestonesPerGoal ?? 4;
+    this.defaultPlanHorizonDays = options?.defaultPlanHorizonDays ?? 30;
+    this.enableIepAlignment = options?.enableIepAlignment ?? true;
+    this.enableProgressPrediction = options?.enableProgressPrediction ?? true;
+  }
+
+  /**
+   * Override temperature for goal planning (slightly lower for consistency)
+   */
+  protected getTemperature(): number {
+    return 0.6;
+  }
+
+  /**
+   * Override max tokens for goal planning (need more for structured output)
+   */
+  protected getMaxTokens(): number {
+    return 2000;
   }
 
   /**
@@ -271,77 +258,66 @@ export class GoalPlannerAgent extends BaseAgent {
    */
   async createGoalPlan(
     context: AgentContext,
-    learnerContext: LearnerContext,
+    learnerContext: LearnerGoalContext,
     request: GoalPlanRequest
-  ): Promise<AgentResponse<GoalPlan>> {
+  ): Promise<{ success: boolean; plan?: GoalPlan; error?: string }> {
     const startTime = Date.now();
 
     try {
-      // Validate consent for AI goal planning
-      await this.validateConsent(context, ['AI_PERSONALIZATION', 'DATA_PROCESSING']);
-
       // Build the prompt with learner context
       const prompt = this.buildGoalPlanPrompt(learnerContext, request);
 
-      // Generate plan using LLM
-      const llmResponse = await this.generateResponse(context, {
-        systemPrompt: GOAL_PLANNING_SYSTEM_PROMPT,
-        userPrompt: prompt,
-        temperature: 0.7,
-        maxTokens: this.config.maxTokensPerRequest,
-        responseFormat: 'json',
+      // Use the base class respond method
+      const response = await this.respond(prompt, {
+        ...context,
+        learnerProfile: {
+          gradeLevel: learnerContext.gradeLevel,
+          age: learnerContext.age,
+          neurodiversityProfile: learnerContext.neurodiversityProfile,
+          accommodations: learnerContext.accommodations,
+        },
       });
 
       // Parse and validate the response
-      const plan = this.parseGoalPlanResponse(llmResponse, learnerContext, request);
+      const plan = this.parseGoalPlanResponse(response.content, learnerContext, request);
 
       // Apply neurodiversity adaptations
       this.applyNeurodiversityAdaptations(plan, learnerContext);
 
       // Validate IEP alignment if enabled
-      if (this.config.enableIepAlignment && learnerContext.iepGoals) {
+      if (this.enableIepAlignment && learnerContext.iepGoals) {
         this.validateIepAlignment(plan, learnerContext.iepGoals);
       }
 
       // Add progress prediction if enabled
-      if (this.config.enableProgressPrediction) {
+      if (this.enableProgressPrediction) {
         plan.expectedOutcomes = this.predictOutcomes(plan, learnerContext);
       }
 
       // Add adaptation triggers
       plan.adaptationTriggers = this.generateAdaptationTriggers(plan, learnerContext);
 
-      // Log for audit
-      await this.logAgentAction(context, {
-        action: 'goal_plan_created',
+      console.log(JSON.stringify({
+        event: 'goal_plan_created',
         learnerId: request.learnerId,
         planId: plan.id,
         goalsCount: plan.goals.length,
         durationMs: Date.now() - startTime,
-      });
+      }));
 
-      return {
-        success: true,
-        data: plan,
-        metadata: {
-          tokensUsed: llmResponse.tokensUsed,
-          processingTimeMs: Date.now() - startTime,
-          modelVersion: llmResponse.modelVersion,
-        },
-      };
+      return { success: true, plan };
 
     } catch (error) {
-      await this.logAgentError(context, error as Error, {
-        action: 'goal_plan_creation_failed',
+      console.error(JSON.stringify({
+        event: 'goal_plan_creation_failed',
         learnerId: request.learnerId,
-      });
+        error: error instanceof Error ? error.message : 'Unknown error',
+        durationMs: Date.now() - startTime,
+      }));
 
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create goal plan',
-        metadata: {
-          processingTimeMs: Date.now() - startTime,
-        },
       };
     }
   }
@@ -351,46 +327,46 @@ export class GoalPlannerAgent extends BaseAgent {
    */
   async decomposeObjective(
     context: AgentContext,
-    learnerContext: LearnerContext,
+    learnerContext: LearnerGoalContext,
     objective: string
-  ): Promise<AgentResponse<PlannedGoal[]>> {
-    const startTime = Date.now();
-
+  ): Promise<{ success: boolean; goals?: PlannedGoal[]; error?: string }> {
     try {
-      const prompt = GOAL_DECOMPOSITION_PROMPT
-        .replace('{{objective}}', objective)
-        .replace('{{gradeLevel}}', learnerContext.gradeLevel.toString())
-        .replace('{{skillLevels}}', JSON.stringify(learnerContext.skillLevels))
-        .replace('{{velocity}}', JSON.stringify(learnerContext.learningVelocity))
-        .replace('{{neurodiversity}}', JSON.stringify(learnerContext.neurodiversityProfile ?? {}))
-        .replace('{{accommodations}}', JSON.stringify(learnerContext.accommodations ?? []));
+      const prompt = `Given the following high-level objective, decompose it into achievable sub-goals with milestones:
 
-      const llmResponse = await this.generateResponse(context, {
-        systemPrompt: GOAL_PLANNING_SYSTEM_PROMPT,
-        userPrompt: prompt,
-        temperature: 0.7,
-        maxTokens: 2000,
-        responseFormat: 'json',
+Objective: ${objective}
+Learner Profile:
+- Grade Level: ${learnerContext.gradeLevel}
+- Current Skill Levels: ${JSON.stringify(learnerContext.skillLevels)}
+- Learning Velocity: ${JSON.stringify(learnerContext.learningVelocity)}
+- Neurodiversity Profile: ${JSON.stringify(learnerContext.neurodiversityProfile ?? {})}
+- Accommodations: ${JSON.stringify(learnerContext.accommodations ?? [])}
+
+Create a structured plan with:
+1. 2-4 sub-goals that build toward the objective
+2. 2-3 milestones per sub-goal
+3. Realistic timelines based on learning velocity
+4. Specific accommodations for each goal if needed
+5. Clear success criteria
+
+Respond with a JSON object containing a "goals" array.`;
+
+      const response = await this.respond(prompt, {
+        ...context,
+        learnerProfile: {
+          gradeLevel: learnerContext.gradeLevel,
+          age: learnerContext.age,
+          neurodiversityProfile: learnerContext.neurodiversityProfile,
+          accommodations: learnerContext.accommodations,
+        },
       });
 
-      const goals = this.parseGoalsFromResponse(llmResponse);
-
-      return {
-        success: true,
-        data: goals,
-        metadata: {
-          tokensUsed: llmResponse.tokensUsed,
-          processingTimeMs: Date.now() - startTime,
-        },
-      };
+      const goals = this.parseGoalsFromResponse(response.content);
+      return { success: true, goals };
 
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to decompose objective',
-        metadata: {
-          processingTimeMs: Date.now() - startTime,
-        },
       };
     }
   }
@@ -400,49 +376,48 @@ export class GoalPlannerAgent extends BaseAgent {
    */
   async recommendAdjustments(
     context: AgentContext,
-    learnerContext: LearnerContext,
+    learnerContext: LearnerGoalContext,
     progressData: {
       currentGoals: ExistingGoal[];
       recentProgress: Array<{ goalId: string; progress: number; date: Date }>;
       challenges: string[];
       daysRemaining: number;
     }
-  ): Promise<AgentResponse<GoalAdjustment[]>> {
-    const startTime = Date.now();
-
+  ): Promise<{ success: boolean; adjustments?: GoalAdjustment[]; error?: string }> {
     try {
-      const prompt = PROGRESS_ADJUSTMENT_PROMPT
-        .replace('{{currentGoals}}', JSON.stringify(progressData.currentGoals))
-        .replace('{{recentProgress}}', JSON.stringify(progressData.recentProgress))
-        .replace('{{challenges}}', JSON.stringify(progressData.challenges))
-        .replace('{{timeRemaining}}', `${progressData.daysRemaining} days`);
+      const prompt = `Based on the learner's progress data, recommend adjustments to their current goal plan:
 
-      const llmResponse = await this.generateResponse(context, {
-        systemPrompt: GOAL_PLANNING_SYSTEM_PROMPT,
-        userPrompt: prompt,
-        temperature: 0.6,
-        maxTokens: 1500,
-        responseFormat: 'json',
+Current Goals: ${JSON.stringify(progressData.currentGoals)}
+Recent Progress: ${JSON.stringify(progressData.recentProgress)}
+Challenges Encountered: ${JSON.stringify(progressData.challenges)}
+Time Remaining: ${progressData.daysRemaining} days
+
+Analyze and recommend:
+1. Which goals are on track vs. need adjustment
+2. Specific timeline or scope modifications
+3. Additional support or scaffolding needed
+4. Goals that should be paused or accelerated
+5. New focus areas based on progress patterns
+
+Respond with a JSON object containing an "adjustments" array.`;
+
+      const response = await this.respond(prompt, {
+        ...context,
+        learnerProfile: {
+          gradeLevel: learnerContext.gradeLevel,
+          age: learnerContext.age,
+          neurodiversityProfile: learnerContext.neurodiversityProfile,
+          accommodations: learnerContext.accommodations,
+        },
       });
 
-      const adjustments = this.parseAdjustmentsFromResponse(llmResponse);
-
-      return {
-        success: true,
-        data: adjustments,
-        metadata: {
-          tokensUsed: llmResponse.tokensUsed,
-          processingTimeMs: Date.now() - startTime,
-        },
-      };
+      const adjustments = this.parseAdjustmentsFromResponse(response.content);
+      return { success: true, adjustments };
 
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to generate adjustments',
-        metadata: {
-          processingTimeMs: Date.now() - startTime,
-        },
       };
     }
   }
@@ -453,12 +428,10 @@ export class GoalPlannerAgent extends BaseAgent {
   async suggestMilestones(
     context: AgentContext,
     goal: PlannedGoal,
-    learnerContext: LearnerContext
-  ): Promise<AgentResponse<Milestone[]>> {
-    const startTime = Date.now();
-
+    learnerContext: LearnerGoalContext
+  ): Promise<{ success: boolean; milestones?: Milestone[]; error?: string }> {
     try {
-      const prompt = `Generate ${this.config.maxMilestonesPerGoal} milestones for this goal:
+      const prompt = `Generate ${this.maxMilestonesPerGoal} milestones for this goal:
 
 Goal: ${goal.title}
 Description: ${goal.description}
@@ -472,33 +445,27 @@ Create milestones with:
 2. Appropriate spacing based on learning velocity
 3. Varied assessment types
 4. Achievable pass thresholds
-5. Progressive difficulty`;
+5. Progressive difficulty
 
-      const llmResponse = await this.generateResponse(context, {
-        systemPrompt: GOAL_PLANNING_SYSTEM_PROMPT,
-        userPrompt: prompt,
-        temperature: 0.6,
-        maxTokens: 1000,
-        responseFormat: 'json',
+Respond with a JSON object containing a "milestones" array.`;
+
+      const response = await this.respond(prompt, {
+        ...context,
+        learnerProfile: {
+          gradeLevel: learnerContext.gradeLevel,
+          age: learnerContext.age,
+          neurodiversityProfile: learnerContext.neurodiversityProfile,
+          accommodations: learnerContext.accommodations,
+        },
       });
 
-      const milestones = this.parseMilestonesFromResponse(llmResponse);
-
-      return {
-        success: true,
-        data: milestones,
-        metadata: {
-          processingTimeMs: Date.now() - startTime,
-        },
-      };
+      const milestones = this.parseMilestonesFromResponse(response.content);
+      return { success: true, milestones };
 
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to generate milestones',
-        metadata: {
-          processingTimeMs: Date.now() - startTime,
-        },
       };
     }
   }
@@ -508,7 +475,7 @@ Create milestones with:
   // ──────────────────────────────────────────────────────────────────────────────
 
   private buildGoalPlanPrompt(
-    learnerContext: LearnerContext,
+    learnerContext: LearnerGoalContext,
     request: GoalPlanRequest
   ): string {
     const focusAreas = request.focusAreas?.length
@@ -520,14 +487,14 @@ Create milestones with:
       : 'No specific constraints';
 
     const iepSection = learnerContext.iepGoals?.length
-      ? `IEP Goals to align with:\n${learnerContext.iepGoals.map(g => `- ${g.objective} (Target: ${g.targetDate.toLocaleDateString()})`).join('\n')}`
+      ? `IEP Goals to align with:\n${learnerContext.iepGoals.map(g => `- ${g.objective} (Target: ${new Date(g.targetDate).toLocaleDateString()})`).join('\n')}`
       : '';
 
     const existingGoalsSection = learnerContext.existingGoals?.length
       ? `Existing active goals:\n${learnerContext.existingGoals.filter(g => g.status === 'ACTIVE').map(g => `- ${g.title}: ${g.progress}% complete`).join('\n')}`
       : '';
 
-    return `Create a ${request.timeHorizonDays ?? this.config.defaultPlanHorizonDays}-day goal plan for this learner:
+    return `Create a ${request.timeHorizonDays ?? this.defaultPlanHorizonDays}-day goal plan for this learner:
 
 LEARNER PROFILE:
 - ID: ${learnerContext.learnerId}
@@ -561,26 +528,35 @@ REQUEST:
 - ${constraints}
 
 Create a comprehensive goal plan with:
-1. ${this.config.maxGoalsPerPlan} prioritized goals
-2. Up to ${this.config.maxMilestonesPerGoal} milestones per goal
+1. ${this.maxGoalsPerPlan} prioritized goals
+2. Up to ${this.maxMilestonesPerGoal} milestones per goal
 3. Weekly schedule with specific activities
 4. Expected outcomes with confidence levels
-5. Clear rationale for each recommendation`;
+5. Clear rationale for each recommendation
+
+Respond with a JSON object matching the GoalPlan structure.`;
   }
 
   private parseGoalPlanResponse(
-    llmResponse: LLMResponse,
-    learnerContext: LearnerContext,
+    content: string,
+    learnerContext: LearnerGoalContext,
     request: GoalPlanRequest
   ): GoalPlan {
-    const parsed = JSON.parse(llmResponse.content);
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonContent = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonContent);
 
     return {
       id: `plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       learnerId: request.learnerId,
       createdAt: new Date(),
-      planHorizonDays: request.timeHorizonDays ?? this.config.defaultPlanHorizonDays,
-      goals: (parsed.goals || []).slice(0, this.config.maxGoalsPerPlan).map((g: unknown) =>
+      planHorizonDays: request.timeHorizonDays ?? this.defaultPlanHorizonDays,
+      goals: (parsed.goals || []).slice(0, this.maxGoalsPerPlan).map((g: unknown) =>
         this.normalizeGoal(g as Record<string, unknown>)
       ),
       weeklySchedule: parsed.weeklySchedule || this.generateDefaultSchedule(parsed.goals || []),
@@ -624,7 +600,7 @@ Create a comprehensive goal plan with:
 
   private applyNeurodiversityAdaptations(
     plan: GoalPlan,
-    learnerContext: LearnerContext
+    learnerContext: LearnerGoalContext
   ): void {
     const profile = learnerContext.neurodiversityProfile;
     if (!profile) return;
@@ -705,7 +681,7 @@ Create a comprehensive goal plan with:
 
   private predictOutcomes(
     plan: GoalPlan,
-    learnerContext: LearnerContext
+    learnerContext: LearnerGoalContext
   ): ExpectedOutcome[] {
     const outcomes: ExpectedOutcome[] = [];
 
@@ -744,7 +720,7 @@ Create a comprehensive goal plan with:
 
   private generateAdaptationTriggers(
     plan: GoalPlan,
-    learnerContext: LearnerContext
+    learnerContext: LearnerGoalContext
   ): AdaptationTrigger[] {
     const triggers: AdaptationTrigger[] = [
       {
@@ -813,43 +789,42 @@ Create a comprehensive goal plan with:
     };
   }
 
-  private parseGoalsFromResponse(llmResponse: LLMResponse): PlannedGoal[] {
-    const parsed = JSON.parse(llmResponse.content);
+  private parseGoalsFromResponse(content: string): PlannedGoal[] {
+    let jsonContent = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonContent);
     return (parsed.goals || parsed || []).map((g: unknown) =>
       this.normalizeGoal(g as Record<string, unknown>)
     );
   }
 
-  private parseAdjustmentsFromResponse(llmResponse: LLMResponse): GoalAdjustment[] {
-    const parsed = JSON.parse(llmResponse.content);
+  private parseAdjustmentsFromResponse(content: string): GoalAdjustment[] {
+    let jsonContent = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonContent);
     return parsed.adjustments || [];
   }
 
-  private parseMilestonesFromResponse(llmResponse: LLMResponse): Milestone[] {
-    const parsed = JSON.parse(llmResponse.content);
+  private parseMilestonesFromResponse(content: string): Milestone[] {
+    let jsonContent = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonContent);
     return (parsed.milestones || parsed || []).map((m: unknown) =>
       this.normalizeMilestone(m as Record<string, unknown>)
     );
   }
-}
-
-// ════════════════════════════════════════════════════════════════════════════════
-// SUPPORTING TYPES
-// ════════════════════════════════════════════════════════════════════════════════
-
-interface LLMResponse {
-  content: string;
-  tokensUsed: number;
-  modelVersion: string;
-}
-
-export interface GoalAdjustment {
-  goalId: string;
-  adjustmentType: 'extend_deadline' | 'reduce_scope' | 'add_support' | 'pause' | 'accelerate';
-  reason: string;
-  newEstimatedDays?: number;
-  additionalSupport?: string[];
-  modifiedMilestones?: Milestone[];
 }
 
 export default GoalPlannerAgent;
