@@ -4,7 +4,10 @@
  * Common types shared between SAML and OIDC implementations.
  */
 
-import type { IdpProtocol, UserRoleEnum } from '../../generated/prisma-client/index.js';
+import type { IdpProtocol, UserRoleEnum as PrismaUserRoleEnum } from '@prisma/client';
+
+// Re-export UserRoleEnum for use by provider modules
+export type UserRoleEnum = PrismaUserRoleEnum;
 
 // ============================================================================
 // SSO CONFIGURATION
@@ -92,9 +95,9 @@ export interface SsoUserClaims {
 export interface MappedSsoUser {
   externalId: string;
   email: string;
-  name: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   /** Mapped Aivo roles */
   roles: UserRoleEnum[];
 }

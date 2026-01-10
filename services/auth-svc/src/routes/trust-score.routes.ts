@@ -118,7 +118,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const userId = request.user.id;
+      const userId = request.user!.userId;
       const result = await trustScoreService.getTrustScore(userId);
       return result;
     }
@@ -134,7 +134,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const userId = request.user.id;
+      const userId = request.user!.userId;
       const result = await trustScoreService.getTrustScoreExplanation(userId);
       return result;
     }
@@ -150,7 +150,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate],
     },
     async (request: FastifyRequest<{ Querystring: z.infer<typeof GetHistoryQuerySchema> }>, reply: FastifyReply) => {
-      const userId = request.user.id;
+      const userId = request.user!.userId;
       const query = GetHistoryQuerySchema.parse(request.query);
 
       const history = await trustScoreService.getScoreHistory(userId, {
@@ -173,7 +173,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate],
     },
     async (request: FastifyRequest<{ Body: z.infer<typeof RecalculateBodySchema> }>, reply: FastifyReply) => {
-      const userId = request.user.id;
+      const userId = request.user!.userId;
       const body = RecalculateBodySchema.parse(request.body ?? {});
 
       const result = await trustScoreService.recalculate(userId, body.triggerEvent ?? 'MANUAL_RECALCULATION');
@@ -237,7 +237,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate],
     },
     async (request: FastifyRequest<{ Body: z.infer<typeof CheckEligibilityBodySchema> }>, reply: FastifyReply) => {
-      const userId = request.user.id;
+      const userId = request.user!.userId;
       const body = CheckEligibilityBodySchema.parse(request.body);
 
       // Get user's trust score and build eligibility data
@@ -317,7 +317,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const userId = request.user.id;
+      const userId = request.user!.userId;
       const [records, stats] = await Promise.all([
         complianceRepository.findMany({ userId }, { take: 50 }),
         complianceRepository.getUserStats(userId),
@@ -459,7 +459,7 @@ export async function trustScoreRoutes(
     },
     async (request: FastifyRequest<{ Body: z.infer<typeof CreateThresholdSchema> }>, reply: FastifyReply) => {
       const body = CreateThresholdSchema.parse(request.body);
-      const threshold = await thresholdService.createThreshold(body, request.user.id);
+      const threshold = await thresholdService.createThreshold(body, request.user!.userId);
       return reply.status(201).send(threshold);
     }
   );
@@ -525,7 +525,7 @@ export async function trustScoreRoutes(
       preHandler: [fastify.authenticate, fastify.authorize(['admin'])],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const thresholds = await thresholdService.createPresetThresholds(request.user.id);
+      const thresholds = await thresholdService.createPresetThresholds(request.user!.userId);
       return reply.status(201).send({ thresholds });
     }
   );
@@ -599,13 +599,5 @@ declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     authorize: (permissions: string[]) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-  }
-
-  interface FastifyRequest {
-    user: {
-      id: string;
-      email: string;
-      permissions: string[];
-    };
   }
 }

@@ -7,13 +7,13 @@
 
 import type { Role } from '@aivo/ts-rbac';
 
-import type { IdpConfig as PrismaIdpConfig, Tenant, UserRoleEnum } from '../../generated/prisma-client/index.js';
+import type { IdpConfig as PrismaIdpConfig, Tenant, UserRoleEnum } from '@prisma/client';
 import { signAccessToken, signRefreshToken } from '../jwt.js';
 import { prisma } from '../../prisma.js';
 
 import { OidcService } from './oidc.js';
 import { SamlService } from './saml.js';
-import { generateSsoState, validateSsoState, SsoStateError } from './state.js';
+import { generateSsoState, validateSsoState, peekSsoState, SsoStateError } from './state.js';
 import { generatePKCE } from './pkce.js';
 import { validateRedirectUri } from './redirect-validator.js';
 import type {
@@ -22,6 +22,7 @@ import type {
   SsoErrorCode,
   SsoAttemptLog,
   MappedSsoUser,
+  SsoResult,
 } from './types.js';
 
 // ============================================================================
@@ -109,7 +110,7 @@ export class SsoService {
     // Generate redirect URL based on protocol
     if (idpConfig.protocol === 'SAML') {
       // Generate state for SAML
-      const state = generateSsoState({
+      const state = await generateSsoState({
         tenantId: tenant.id,
         idpConfigId: idpConfig.id,
         protocol: idpConfig.protocol,
@@ -120,7 +121,7 @@ export class SsoService {
 
       const samlConfig = this.toSamlConfig(idpConfig);
       const acsUrl = `${this.config.baseUrl}/auth/saml/acs/${options.tenantSlug}`;
-      
+
       const { url } = await this.samlService.generateAuthnRequest(samlConfig, {
         acsUrl,
         relayState: state,
@@ -132,12 +133,12 @@ export class SsoService {
       // OIDC flow with PKCE (RFC 7636)
       const oidcConfig = this.toOidcConfig(idpConfig);
       const callbackUrl = `${this.config.baseUrl}/auth/oidc/callback/${options.tenantSlug}`;
-      
+
       // SECURITY: Generate PKCE challenge for authorization code protection
       const pkce = generatePKCE();
 
       // Generate state with PKCE code_verifier stored securely
-      const state = generateSsoState({
+      const state = await generateSsoState({
         tenantId: tenant.id,
         idpConfigId: idpConfig.id,
         protocol: idpConfig.protocol,
@@ -147,23 +148,15 @@ export class SsoService {
         codeVerifier: pkce.codeVerifier, // Stored encrypted in state
       });
 
-      // Peek at state to get the nonce (state is still valid, not consumed)
-      const ssoStateData = validateSsoState(state);
-      
-      // Regenerate state since we consumed it above
-      const finalState = generateSsoState({
-        tenantId: tenant.id,
-        idpConfigId: idpConfig.id,
-        protocol: idpConfig.protocol,
-        redirectUri: options.redirectUri,
-        clientType: options.clientType,
-        loginHint: options.loginHint,
-        codeVerifier: pkce.codeVerifier,
-      });
+      // Peek at state to get the nonce (without consuming the state)
+      const ssoStateData = await peekSsoState(state);
+      if (!ssoStateData) {
+        throw new SsoError('INVALID_STATE', 'Failed to read SSO state');
+      }
 
       const url = this.oidcService.generateAuthorizationUrl(oidcConfig, {
         redirectUri: callbackUrl,
-        state: finalState,
+        state,
         nonce: ssoStateData.nonce,
         loginHint: options.loginHint,
         // PKCE parameters
@@ -171,7 +164,7 @@ export class SsoService {
         codeChallengeMethod: pkce.codeChallengeMethod,
       });
 
-      return { redirectUrl: url, state: finalState };
+      return { redirectUrl: url, state };
     }
   }
 
@@ -195,7 +188,7 @@ export class SsoService {
 
     try {
       // Validate state
-      ssoState = validateSsoState(options.relayState);
+      ssoState = await validateSsoState(options.relayState);
 
       // Get tenant and IdP config
       tenant = await this.getTenantBySlug(options.tenantSlug);
@@ -216,6 +209,7 @@ export class SsoService {
       const result = await this.samlService.validateResponse(options.samlResponse, samlConfig);
 
       if (!result.success) {
+        const errorResult = result as { success: false; error: SsoErrorCode; message: string };
         await this.logSsoAttempt({
           idpConfigId: idpConfig.id,
           tenantId: tenant.id,
@@ -224,15 +218,15 @@ export class SsoService {
           userAgent: options.userAgent ?? null,
           success: false,
           userId: null,
-          errorCode: result.error,
-          errorMessage: result.message,
+          errorCode: errorResult.error,
+          errorMessage: errorResult.message,
           completedAt: new Date(),
         });
 
         return {
           success: false,
-          error: result.error,
-          message: result.message,
+          error: errorResult.error,
+          message: errorResult.message,
         };
       }
 
@@ -333,7 +327,7 @@ export class SsoService {
 
     try {
       // Validate state
-      ssoState = validateSsoState(options.state);
+      ssoState = await validateSsoState(options.state);
 
       // Get tenant and IdP config
       tenant = await this.getTenantBySlug(options.tenantSlug);
@@ -368,6 +362,7 @@ export class SsoService {
       );
 
       if (!result.success) {
+        const errorResult = result as { success: false; error: SsoErrorCode; message: string };
         await this.logSsoAttempt({
           idpConfigId: idpConfig.id,
           tenantId: tenant.id,
@@ -376,15 +371,15 @@ export class SsoService {
           userAgent: options.userAgent ?? null,
           success: false,
           userId: null,
-          errorCode: result.error,
-          errorMessage: result.message,
+          errorCode: errorResult.error,
+          errorMessage: errorResult.message,
           completedAt: new Date(),
         });
 
         return {
           success: false,
-          error: result.error,
-          message: result.message,
+          error: errorResult.error,
+          message: errorResult.message,
         };
       }
 

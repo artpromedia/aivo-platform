@@ -440,3 +440,187 @@ model MfaChallenge {
   @@index([sessionId])
   @@index([expiresAt])
 }
+
+// ============================================================================
+// TRUST SCORE SYSTEM
+// ============================================================================
+
+/// Trust Score tiers
+enum TrustTier {
+  EMERGING
+  ESTABLISHED
+  TRUSTED
+  HIGHLY_TRUSTED
+  ELITE
+}
+
+/// Trust Score trends
+enum TrustTrend {
+  RISING
+  STABLE
+  DECLINING
+}
+
+/// Compliance event types
+enum ComplianceEventType {
+  DATA_TRANSFER_ATTEMPT
+  UNAUTHORIZED_APP
+  POLICY_VIOLATION
+  SESSION_ANOMALY
+  SCREENSHOT_ATTEMPT
+  SCREEN_SHARE_ATTEMPT
+}
+
+/// Compliance severity levels
+enum ComplianceSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// Threshold context types
+enum ThresholdContextType {
+  JOB
+  TENANT
+  POD_TEMPLATE
+  GLOBAL
+}
+
+/// Verification levels
+enum VerificationLevel {
+  NONE
+  EMAIL
+  BASIC
+  ENHANCED
+  PREMIUM
+}
+
+/// User trust score
+model TrustScore {
+  id                  String    @id @default(uuid()) @db.Uuid
+  userId              String    @unique @db.Uuid
+
+  // Component scores
+  overallScore        Int       @default(50)
+  reviewScore         Int       @default(0)
+  complianceScore     Int       @default(100)
+  verificationScore   Int       @default(0)
+  tenureScore         Int       @default(0)
+  activityScore       Int       @default(0)
+
+  // Weights
+  reviewWeight        Int       @default(40)
+  complianceWeight    Int       @default(25)
+  verificationWeight  Int       @default(20)
+  tenureWeight        Int       @default(10)
+  activityWeight      Int       @default(5)
+
+  // Status
+  tier                TrustTier @default(EMERGING)
+  trend               TrustTrend @default(STABLE)
+  previousScore       Int?
+  scoreChangeAmount   Int?
+
+  // Calculation metadata
+  lastCalculatedAt    DateTime  @default(now())
+  calculationVersion  Int       @default(1)
+  factors             Json      @default("{}")
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // History
+  history             TrustScoreHistory[]
+
+  @@index([tier])
+  @@index([trend])
+  @@index([overallScore])
+}
+
+/// Trust score history for tracking changes over time
+model TrustScoreHistory {
+  id                  String    @id @default(uuid()) @db.Uuid
+  trustScoreId        String    @db.Uuid
+
+  // Snapshot of scores
+  overallScore        Int
+  reviewScore         Int
+  complianceScore     Int
+  verificationScore   Int
+  tenureScore         Int
+  activityScore       Int
+  tier                TrustTier
+
+  // What triggered this snapshot
+  triggerEvent        String
+
+  createdAt           DateTime  @default(now())
+
+  trustScore          TrustScore @relation(fields: [trustScoreId], references: [id], onDelete: Cascade)
+
+  @@index([trustScoreId])
+  @@index([createdAt])
+}
+
+/// SkillPod compliance records for tracking violations
+model SkillPodComplianceRecord {
+  id                  String              @id @default(uuid()) @db.Uuid
+  userId              String              @db.Uuid
+  sessionId           String              @db.Uuid
+
+  // Event details
+  eventType           ComplianceEventType
+  severity            ComplianceSeverity
+  description         String
+  metadata            Json                @default("{}")
+
+  // Resolution
+  isResolved          Boolean             @default(false)
+  resolvedAt          DateTime?
+  resolvedBy          String?             @db.Uuid
+  resolutionNotes     String?
+
+  // Impact
+  scoreImpact         Int                 @default(0)
+
+  createdAt           DateTime            @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([isResolved])
+  @@index([createdAt])
+}
+
+/// Trust thresholds for access control
+model TrustThreshold {
+  id                      String              @id @default(uuid()) @db.Uuid
+
+  // Context
+  contextType             ThresholdContextType
+  contextId               String?             @db.Uuid
+
+  // Requirements
+  minimumScore            Int                 @default(0)
+  minimumTier             TrustTier?
+  requireVerification     Boolean             @default(false)
+  minimumVerificationLevel VerificationLevel?
+  requireMfa              Boolean             @default(false)
+  minimumReviews          Int?
+  minimumCompletedJobs    Int?
+
+  // Metadata
+  name                    String?
+  description             String?
+  isActive                Boolean             @default(true)
+  createdBy               String              @db.Uuid
+
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  @@unique([contextType, contextId])
+  @@index([contextType])
+  @@index([isActive])
+}
