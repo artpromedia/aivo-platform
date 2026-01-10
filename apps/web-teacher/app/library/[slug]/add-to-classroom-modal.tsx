@@ -5,12 +5,21 @@
  *
  * Allows teachers to select one or more classrooms to add
  * a marketplace item to.
+ *
+ * Enterprise UI Audit: RE-AUDIT-AUTH-001
+ * - Uses auth context for teacher ID
+ * - Fetches classrooms from API instead of mock data
  */
 
 import { Button } from '@aivo/ui-web';
 import { useState, useEffect } from 'react';
 
-import { type MarketplaceLibraryItem, addContentToClassroom } from '../../../lib/marketplace-api';
+import { useAuth } from '../../../components/providers';
+import {
+  type MarketplaceLibraryItem,
+  addContentToClassroom,
+  getTeacherClassrooms,
+} from '../../../lib/marketplace-api';
 
 interface Classroom {
   id: string;
@@ -25,23 +34,8 @@ interface Props {
   item: MarketplaceLibraryItem;
 }
 
-// TODO: Replace with actual API call
-const MOCK_CLASSROOMS: Classroom[] = [
-  { id: 'classroom-1', name: 'Period 1 - Algebra I', gradeBand: 'GRADES_6_8', studentCount: 24 },
-  { id: 'classroom-2', name: 'Period 2 - Geometry', gradeBand: 'GRADES_9_12', studentCount: 28 },
-  {
-    id: 'classroom-3',
-    name: 'Period 3 - Pre-Calculus',
-    gradeBand: 'GRADES_9_12',
-    studentCount: 22,
-  },
-  { id: 'classroom-4', name: 'Period 4 - Algebra II', gradeBand: 'GRADES_9_12', studentCount: 26 },
-];
-
-// TODO: Get from auth context
-const MOCK_TEACHER_ID = 'teacher-123';
-
 export function AddToClassroomModal({ open, onClose, item }: Props) {
+  const { userId } = useAuth();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [selectedClassrooms, setSelectedClassrooms] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -50,18 +44,32 @@ export function AddToClassroomModal({ open, onClose, item }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
+    async function loadClassrooms() {
+      if (!userId) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setSelectedClassrooms(new Set());
       setSuccess(false);
       setError(null);
-      // TODO: Fetch actual classrooms from API
-      setTimeout(() => {
-        setClassrooms(MOCK_CLASSROOMS);
+
+      try {
+        const result = await getTeacherClassrooms(userId);
+        setClassrooms(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load classrooms');
+      } finally {
         setLoading(false);
-      }, 300);
+      }
     }
-  }, [open]);
+
+    if (open) {
+      void loadClassrooms();
+    }
+  }, [open, userId]);
 
   function toggleClassroom(id: string) {
     setSelectedClassrooms((prev) => {
@@ -84,7 +92,7 @@ export function AddToClassroomModal({ open, onClose, item }: Props) {
   }
 
   async function handleAdd() {
-    if (selectedClassrooms.size === 0) return;
+    if (selectedClassrooms.size === 0 || !userId) return;
 
     setAdding(true);
     setError(null);
@@ -93,7 +101,7 @@ export function AddToClassroomModal({ open, onClose, item }: Props) {
       // Add to all selected classrooms
       await Promise.all(
         Array.from(selectedClassrooms).map((classroomId) =>
-          addContentToClassroom(classroomId, item.id, MOCK_TEACHER_ID)
+          addContentToClassroom(classroomId, item.id, userId)
         )
       );
       setSuccess(true);

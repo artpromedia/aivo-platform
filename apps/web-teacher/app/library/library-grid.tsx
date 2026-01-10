@@ -5,12 +5,17 @@
  *
  * Displays available marketplace items in a grid layout.
  * Teachers can view details and add items to their classrooms.
+ *
+ * Enterprise UI Audit: RE-AUDIT-AUTH-001
+ * - Uses auth context for teacher ID instead of mock value
+ * - Removed hardcoded admin email
  */
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { useAuth } from '../../components/providers';
 import {
   type MarketplaceLibraryItem,
   type MarketplaceItemType,
@@ -19,10 +24,8 @@ import {
   getSubjectLabel,
 } from '../../lib/marketplace-api';
 
-// TODO: Get from auth context
-const MOCK_TEACHER_ID = 'teacher-123';
-
 export function LibraryGrid() {
+  const { userId } = useAuth();
   const searchParams = useSearchParams();
   const [items, setItems] = useState<MarketplaceLibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +33,12 @@ export function LibraryGrid() {
 
   useEffect(() => {
     async function loadLibrary() {
+      if (!userId) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -38,7 +47,7 @@ export function LibraryGrid() {
         const gradeBand = searchParams.get('gradeBand');
         const search = searchParams.get('q');
 
-        const result = await getTeacherLibrary(MOCK_TEACHER_ID, {
+        const result = await getTeacherLibrary(userId, {
           type: type || undefined,
           subject: subject || undefined,
           gradeBand: gradeBand || undefined,
@@ -52,7 +61,7 @@ export function LibraryGrid() {
       }
     }
     void loadLibrary();
-  }, [searchParams]);
+  }, [searchParams, userId]);
 
   if (loading) {
     return (
@@ -159,8 +168,8 @@ function EmptyState() {
         to request new content packs and tools.
       </p>
       <div className="mt-6">
-        <a
-          href="mailto:admin@example.com?subject=Marketplace%20Content%20Request"
+        <Link
+          href="/help/content-request"
           className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -172,7 +181,7 @@ function EmptyState() {
             />
           </svg>
           Request Content
-        </a>
+        </Link>
       </div>
     </div>
   );

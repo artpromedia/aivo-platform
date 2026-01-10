@@ -2,6 +2,9 @@
  * Header Component
  *
  * Top navigation bar with search, notifications, and user menu
+ *
+ * Enterprise UI Audit: RE-AUDIT-AUTH-001
+ * - Uses auth context for user data instead of hardcoded values
  */
 
 'use client';
@@ -10,6 +13,7 @@ import Link from 'next/link';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { useAuth } from '../../../../components/providers';
 
 interface HeaderProps {
   title?: string;
@@ -17,9 +21,16 @@ interface HeaderProps {
 }
 
 export function Header({ title, className }: HeaderProps) {
+  const { userName, userInitials, userRole, userEmail } = useAuth();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+
+  // Use auth context data with fallbacks for display
+  const displayName = userName || 'User';
+  const displayInitials = userInitials || 'U';
+  const displayRole = userRole || 'Teacher';
+  const displayEmail = userEmail || 'teacher@school.edu';
 
   // Close dropdowns when clicking outside
   React.useEffect(() => {
@@ -139,11 +150,11 @@ export function Header({ title, className }: HeaderProps) {
             className="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-100"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
-              JD
+              {displayInitials}
             </div>
             <div className="hidden text-left md:block">
-              <p className="text-sm font-medium text-gray-900">Jane Doe</p>
-              <p className="text-xs text-gray-500">Math Teacher</p>
+              <p className="text-sm font-medium text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-500">{displayRole}</p>
             </div>
             <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -159,6 +170,8 @@ export function Header({ title, className }: HeaderProps) {
               onClose={() => {
                 setShowUserMenu(false);
               }}
+              userName={displayName}
+              userEmail={displayEmail}
             />
           )}
         </div>
@@ -220,6 +233,11 @@ function QuickAddButton() {
 
 interface DropdownProps {
   onClose: () => void;
+}
+
+interface UserMenuDropdownProps extends DropdownProps {
+  userName: string;
+  userEmail: string;
 }
 
 function NotificationsDropdown({ onClose }: DropdownProps) {
@@ -308,7 +326,7 @@ function NotificationsDropdown({ onClose }: DropdownProps) {
   );
 }
 
-function UserMenuDropdown({ onClose }: DropdownProps) {
+function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProps) {
   const menuItems = [
     { label: 'My Profile', href: '/profile', icon: '👤' },
     { label: 'Account Settings', href: '/settings/account', icon: '⚙️' },
@@ -321,8 +339,8 @@ function UserMenuDropdown({ onClose }: DropdownProps) {
   return (
     <div className="absolute right-0 mt-2 w-56 rounded-lg border bg-white py-1 shadow-lg">
       <div className="border-b px-4 py-3">
-        <p className="font-medium text-gray-900">Jane Doe</p>
-        <p className="text-sm text-gray-500">jane.doe@school.edu</p>
+        <p className="font-medium text-gray-900">{userName}</p>
+        <p className="text-sm text-gray-500">{userEmail}</p>
       </div>
       <div className="py-1">
         {menuItems.map((item, index) => {

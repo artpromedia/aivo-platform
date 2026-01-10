@@ -1,8 +1,15 @@
 /* eslint-disable import/order */
+/**
+ * Contract Detail Page
+ *
+ * Enterprise UI Audit: RE-AUDIT-AUTH-001
+ * - Uses auth context for tenant ID instead of mock value
+ * - Fetches account manager dynamically from API
+ */
 import { Badge, Button } from '@aivo/ui-web';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import {
   calculateDaysUntilEnd,
@@ -10,7 +17,9 @@ import {
   fetchContractInvoices,
   fetchContractLineItems,
   fetchSeatCommitments,
+  fetchAccountManager,
 } from '../../../../lib/billing-api';
+import { getAuthSession } from '../../../../lib/auth';
 import { ContractInvoicesSection, SeatCommitmentsCard } from '../../components';
 import { PrintButton } from './print-button';
 
@@ -56,9 +65,12 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   // Await params in Next.js 15 style
   const { id: _contractId } = await params;
 
-  // For now, fetch the active contract (in a real app, would fetch by ID)
-  // TODO: Replace with actual tenant ID from auth context
-  const tenantId = 'mock-tenant';
+  // Get tenant ID from auth session
+  const session = await getAuthSession();
+  if (!session) {
+    redirect('/login');
+  }
+  const { tenantId } = session;
 
   const contract = await fetchActiveContract(tenantId);
 
@@ -66,10 +78,11 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
     notFound();
   }
 
-  const [lineItems, seatCommitments, invoices] = await Promise.all([
+  const [lineItems, seatCommitments, invoices, accountManager] = await Promise.all([
     fetchContractLineItems(contract.id),
     fetchSeatCommitments(contract.id),
     fetchContractInvoices(contract.id),
+    fetchAccountManager(tenantId),
   ]);
 
   const daysUntilEnd = calculateDaysUntilEnd(contract.endDate);
@@ -303,23 +316,25 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
             </div>
 
             {/* Account Manager */}
-            <div className="rounded-xl border border-border bg-surface p-6 shadow-soft">
-              <h3 className="font-semibold text-text">Your Account Manager</h3>
-              <div className="mt-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  JD
-                </div>
-                <div>
-                  <div className="font-medium text-text">Jane Doe</div>
-                  <a
-                    href="mailto:jane.doe@aivo.com"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    jane.doe@aivo.com
-                  </a>
+            {accountManager && (
+              <div className="rounded-xl border border-border bg-surface p-6 shadow-soft">
+                <h3 className="font-semibold text-text">Your Account Manager</h3>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {accountManager.initials}
+                  </div>
+                  <div>
+                    <div className="font-medium text-text">{accountManager.name}</div>
+                    <a
+                      href={`mailto:${accountManager.email}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {accountManager.email}
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -173,6 +173,32 @@ export async function removeContentFromClassroom(
   }
 }
 
+/**
+ * Get teacher's classrooms for adding content
+ * Enterprise UI Audit: RE-AUDIT-AUTH-001 - Added to replace mock classroom data
+ */
+export interface TeacherClassroom {
+  id: string;
+  name: string;
+  gradeBand: string;
+  studentCount: number;
+}
+
+export async function getTeacherClassrooms(
+  teacherId: string
+): Promise<{ data: TeacherClassroom[] }> {
+  const res = await fetch(`${API_BASE}/teacher/${teacherId}/classrooms`, {
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch teacher classrooms: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================

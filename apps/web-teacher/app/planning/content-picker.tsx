@@ -9,12 +9,16 @@
  * Features:
  * - Aivo Content tab: Native LOs
  * - Partner Content tab: Licensed third-party content packs
+ *
+ * Enterprise UI Audit: RE-AUDIT-AUTH-001
+ * - Uses auth context for teacher/tenant IDs instead of mock values
  */
 
 import { Button } from '@aivo/ui-web';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
+import { useAuth } from '../../components/providers';
 import {
   type MarketplaceLibraryItem,
   type PartnerContentItem,
@@ -31,10 +35,6 @@ interface Props {
   readonly subject?: string;
 }
 
-// FIXME: Get from auth context
-const MOCK_TEACHER_ID = 'teacher-123';
-const MOCK_TENANT_ID = 'tenant-456';
-
 type ContentTab = 'aivo' | 'partner';
 
 function getItemIcon(isPartner: boolean, itemType: string): string {
@@ -44,6 +44,7 @@ function getItemIcon(isPartner: boolean, itemType: string): string {
 }
 
 export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: Props) {
+  const { userId, tenantId } = useAuth();
   const [activeTab, setActiveTab] = useState<ContentTab>('aivo');
   const [aivoItems, setAivoItems] = useState<MarketplaceLibraryItem[]>([]);
   const [partnerItems, setPartnerItems] = useState<PartnerContentItem[]>([]);
@@ -53,23 +54,28 @@ export function ContentPicker({ open, onClose, onSelect, gradeBand, subject }: P
   const [partnerContentAvailable, setPartnerContentAvailable] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (open && userId && tenantId) {
       void loadContent();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, gradeBand, subject]);
+  }, [open, gradeBand, subject, userId, tenantId]);
 
   async function loadContent() {
+    if (!userId || !tenantId) {
+      setError('Authentication required');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       // Load both Aivo content and partner content in parallel
       const [aivoResult, partnerResult] = await Promise.all([
-        getTeacherLibrary(MOCK_TEACHER_ID, {
+        getTeacherLibrary(userId, {
           gradeBand: gradeBand || undefined,
           subject: subject || undefined,
         }),
-        getEntitledPartnerContent(MOCK_TENANT_ID, {
+        getEntitledPartnerContent(tenantId, {
           gradeBand: gradeBand || undefined,
           subject: subject || undefined,
           itemType: 'CONTENT_PACK',

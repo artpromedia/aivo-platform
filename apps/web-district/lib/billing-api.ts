@@ -1100,6 +1100,50 @@ export async function markNotificationRead(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ACCOUNT MANAGER
+// Enterprise UI Audit: RE-AUDIT-AUTH-001 - Added to replace hardcoded account manager data
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface AccountManager {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  initials: string;
+}
+
+/**
+ * Fetch account manager for a tenant.
+ */
+export async function fetchAccountManager(
+  tenantId: string,
+  accessToken?: string
+): Promise<AccountManager | null> {
+  if (USE_MOCK) {
+    // Return mock data in development - should be replaced with API call
+    return {
+      id: 'am-1',
+      name: 'Account Manager',
+      email: 'support@aivo.com',
+      phone: '1-800-555-1234',
+      initials: 'AM',
+    };
+  }
+
+  const res = await fetch(`${billingSvcUrl}/billing/tenants/${tenantId}/account-manager`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    next: { revalidate: 300 },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`Failed to fetch account manager: ${res.status}`);
+  }
+
+  return res.json() as Promise<AccountManager>;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // SEAT USAGE HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 
