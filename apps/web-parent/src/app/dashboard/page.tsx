@@ -1,91 +1,167 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
   Clock,
   TrendingUp,
   MessageSquare,
   Download,
-  ChevronDown,
   CheckCircle,
-  AlertCircle,
+  AlertTriangle,
 } from 'lucide-react';
+
+// Components
 import { ProgressCard } from '@/components/progress-card';
 import { SubjectProgress } from '@/components/subject-progress';
 import { ActivityFeed } from '@/components/activity-feed';
 import { TeacherNotes } from '@/components/teacher-notes';
 import { ChildSelector } from '@/components/child-selector';
-import { api } from '@/lib/api';
+import { StreakWidget } from '@/components/streak-widget';
+import { AchievementBadges } from '@/components/achievement-badges';
+import { DailyUsageTracker } from '@/components/daily-usage-tracker';
+import { HomeworkHelperSection } from '@/components/homework-helper-section';
+import { MessagesPreview } from '@/components/messages-preview';
+import { DifficultyRecommendations } from '@/components/difficulty-recommendations';
+
+// Hooks
+import {
+  useParentProfile,
+  useStudentSummary,
+  useWeeklySummary,
+  useHomeworkSessions,
+  useMessages,
+  useDifficultyRecommendations,
+  useRespondToRecommendation,
+  useDownloadReport,
+  useUpdateDailyGoal,
+} from '@/lib/hooks';
+import { isDevMode } from '@/lib/mock-data';
 
 export default function DashboardPage() {
   const { t } = useTranslation('parent');
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
-  // Fetch parent profile with children
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['parent-profile'],
-    queryFn: () => api.get('/parent/profile'),
-  });
+  // Data hooks
+  const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
+  const { data: summary, isLoading: summaryLoading } = useStudentSummary(selectedChildId);
+  const { data: weeklyProgress } = useWeeklySummary(selectedChildId);
+  const { data: homeworkSessions } = useHomeworkSessions(selectedChildId);
+  const { data: messages } = useMessages();
+  const { data: recommendations } = useDifficultyRecommendations(selectedChildId);
 
-  // Fetch selected child's summary
-  const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['student-summary', selectedChildId],
-    queryFn: () => api.get(`/parent/students/${selectedChildId}/summary`),
-    enabled: !!selectedChildId,
-  });
+  // Mutations
+  const downloadReport = useDownloadReport();
+  const respondToRecommendation = useRespondToRecommendation();
+  const updateDailyGoal = useUpdateDailyGoal();
 
-  // Fetch weekly progress
-  const { data: weeklyProgress } = useQuery({
-    queryKey: ['weekly-summary', selectedChildId],
-    queryFn: () => api.get(`/parent/students/${selectedChildId}/weekly-summary`),
-    enabled: !!selectedChildId,
-  });
+  // Auto-select first child when profile loads
+  useEffect(() => {
+    if (profile?.students?.length && !selectedChildId) {
+      setSelectedChildId(profile.students[0].id);
+    }
+  }, [profile, selectedChildId]);
 
-  // Auto-select first child
-  if (profile?.students?.length && !selectedChildId) {
-    setSelectedChildId(profile.students[0].id);
-  }
-
-  const handleDownloadReport = async () => {
-    if (!selectedChildId) return;
-    
-    const response = await api.getBlob(`/reports/students/${selectedChildId}/progress.pdf`);
-    const url = window.URL.createObjectURL(response);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `progress-report-${summary?.name || 'student'}.pdf`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const handleDownloadReport = () => {
+    if (!selectedChildId || !summary) return;
+    downloadReport.mutate({
+      studentId: selectedChildId,
+      studentName: summary.name,
+    });
   };
 
+  const handleRespondToRecommendation = (
+    recommendationId: string,
+    action: 'approve' | 'modify' | 'deny',
+    modifiedLevel?: number
+  ) => {
+    respondToRecommendation.mutate({
+      recommendationId,
+      action,
+      modifiedLevel,
+    });
+  };
+
+  const handleSetDailyGoal = (minutes: number) => {
+    if (!selectedChildId) return;
+    updateDailyGoal.mutate({
+      studentId: selectedChildId,
+      goalMinutes: minutes,
+    });
+  };
+
+  // Loading state
   if (profileLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-      </div>
+      <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />
+            <p className="mt-4 text-gray-500">Loading your dashboard...</p>
+          </div>
+        </div>
+      </main>
     );
   }
 
+  // Error state (in production only)
+  if (profileError && !isDevMode()) {
+    return (
+      <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to load dashboard</h2>
+            <p className="text-gray-500 mb-4">Please try refreshing the page or sign in again.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Dev mode indicator
+  const DevModeIndicator = () => {
+    if (!isDevMode()) return null;
+    return (
+      <div className="fixed bottom-4 left-4 px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full border border-amber-200 shadow-sm z-50">
+        DEV MODE - Using mock data
+      </div>
+    );
+  };
+
+  const selectedChild = profile?.students?.find(s => s.id === selectedChildId);
+
   return (
     <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
+      <DevModeIndicator />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {t('dashboard.title')}
+            {t('dashboard.title', 'Parent Dashboard')}
           </h1>
           <p className="text-gray-600 mt-1">
-            {t('dashboard.welcome', { name: profile?.firstName })}
+            {t('dashboard.welcome', { name: profile?.firstName, defaultValue: `Welcome back, ${profile?.firstName || 'Parent'}` })}
           </p>
         </div>
 
         <div className="mt-4 md:mt-0 flex items-center gap-4">
           {/* Child Selector */}
           <ChildSelector
-            children={profile?.students || []}
+            children={profile?.students?.map(s => ({
+              id: s.id,
+              name: s.name || `${s.firstName} ${s.lastName}`,
+              grade: s.grade,
+              avatar: s.avatar,
+            })) || []}
             selectedId={selectedChildId}
             onSelect={setSelectedChildId}
           />
@@ -93,135 +169,220 @@ export default function DashboardPage() {
           {/* Download Report Button */}
           <button
             onClick={handleDownloadReport}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            aria-label={t('dashboard.downloadReport')}
+            disabled={!selectedChildId || downloadReport.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={t('dashboard.downloadReport', 'Download Report')}
           >
             <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('dashboard.downloadReport')}</span>
+            <span className="hidden sm:inline">
+              {downloadReport.isPending ? 'Downloading...' : t('dashboard.downloadReport', 'Download Report')}
+            </span>
           </button>
         </div>
       </div>
+
+      {/* Loading indicator for student data */}
+      {summaryLoading && selectedChildId && (
+        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
+            <span className="text-gray-600">Loading {selectedChild?.name || 'student'}'s data...</span>
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <ProgressCard
             icon={<Clock className="w-5 h-5" />}
-            label={t('progress.timeSpent')}
-            value={`${summary.weeklyTimeSpent}`}
-            unit={t('progress.minutes')}
+            label={t('progress.timeSpent', 'Time This Week')}
+            value={summary.weeklyTimeSpent}
+            unit={t('progress.minutes', 'min')}
             trend={summary.timeTrend}
           />
           <ProgressCard
             icon={<BookOpen className="w-5 h-5" />}
-            label={t('progress.activeDays')}
+            label={t('progress.activeDays', 'Active Days')}
             value={summary.activeDays}
             unit="/7"
           />
           <ProgressCard
             icon={<TrendingUp className="w-5 h-5" />}
-            label={t('progress.avgScore')}
+            label={t('progress.avgScore', 'Avg. Score')}
             value={`${summary.averageScore}%`}
             trend={summary.scoreTrend}
           />
           <ProgressCard
             icon={<CheckCircle className="w-5 h-5" />}
-            label={t('progress.completed')}
+            label={t('progress.completed', 'Activities')}
             value={summary.activitiesCompleted}
-            unit={t('progress.activities')}
+            unit={t('progress.activities', 'completed')}
+          />
+        </div>
+      )}
+
+      {/* Difficulty Recommendations (if any) */}
+      {recommendations && recommendations.length > 0 && (
+        <div className="mb-8">
+          <DifficultyRecommendations
+            recommendations={recommendations}
+            onRespond={handleRespondToRecommendation}
+            isLoading={respondToRecommendation.isPending}
           />
         </div>
       )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Subject Progress - 2 columns */}
-        <div className="lg:col-span-2">
+        {/* Left Column - Main Content (2 columns) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Streak and Daily Usage Row */}
+          {summary && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <StreakWidget
+                currentStreak={summary.currentStreak}
+                longestStreak={summary.longestStreak}
+                weeklyActivity={summary.weeklyActivity}
+                lastActiveDate={summary.lastActiveDate}
+              />
+              <DailyUsageTracker
+                todayUsage={summary.dailyUsage}
+                weeklyUsage={summary.weeklyUsageHistory}
+                dailyGoalMinutes={30}
+                onSetGoal={handleSetDailyGoal}
+              />
+            </div>
+          )}
+
+          {/* Subject Progress */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('dashboard.subjects')}
+              {t('dashboard.subjects', 'Subjects')}
             </h2>
             {summary?.subjectProgress ? (
               <SubjectProgress subjects={summary.subjectProgress} />
             ) : (
-              <p className="text-gray-500">{t('common.loading')}</p>
+              <div className="py-8 text-center text-gray-500">
+                <BookOpen className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p>{t('dashboard.noSubjectData', 'No subject progress data yet')}</p>
+              </div>
             )}
           </div>
 
           {/* Recent Activity */}
-          <div className="card mt-6">
+          <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">
-                {t('dashboard.recentActivity')}
+                {t('dashboard.recentActivity', 'Recent Activity')}
               </h2>
               <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
-                {t('dashboard.viewAll')}
+                {t('dashboard.viewAll', 'View All')}
               </button>
             </div>
-            {summary?.recentActivity ? (
+            {summary?.recentActivity && summary.recentActivity.length > 0 ? (
               <ActivityFeed activities={summary.recentActivity} />
             ) : (
-              <p className="text-gray-500">{t('common.loading')}</p>
+              <p className="text-gray-500 py-4 text-center">
+                {t('dashboard.noActivity', 'No recent activity')}
+              </p>
             )}
           </div>
+
+          {/* Homework Helper Section */}
+          {homeworkSessions && (
+            <HomeworkHelperSection
+              sessions={homeworkSessions}
+              onViewAll={() => {
+                // Navigate to homework helper page
+                window.location.href = '/homework';
+              }}
+            />
+          )}
         </div>
 
-        {/* Sidebar - 1 column */}
+        {/* Right Column - Sidebar (1 column) */}
         <div className="space-y-6">
+          {/* Achievements */}
+          {summary?.achievements && (
+            <AchievementBadges
+              achievements={summary.achievements}
+              showLocked={true}
+              maxDisplay={6}
+            />
+          )}
+
           {/* Upcoming Assignments */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('dashboard.upcomingAssignments')}
+              {t('dashboard.upcomingAssignments', 'Upcoming Assignments')}
             </h2>
-            {summary?.upcomingAssignments?.length > 0 ? (
+            {summary?.upcomingAssignments && summary.upcomingAssignments.length > 0 ? (
               <ul className="space-y-3">
-                {summary.upcomingAssignments.map((assignment: any) => (
+                {summary.upcomingAssignments.map((assignment) => (
                   <li
                     key={assignment.id}
                     className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
                   >
                     <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        assignment.dueIn <= 1 ? 'bg-red-500' : 'bg-yellow-500'
+                      className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                        assignment.dueIn <= 1 ? 'bg-red-500' : assignment.dueIn <= 3 ? 'bg-amber-500' : 'bg-green-500'
                       }`}
                     />
                     <div>
                       <p className="font-medium text-gray-900">{assignment.title}</p>
                       <p className="text-sm text-gray-500">
-                        {assignment.subject} • Due in {assignment.dueIn} days
+                        {assignment.subject} - Due in {assignment.dueIn} day{assignment.dueIn !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500 text-sm">No upcoming assignments</p>
+              <p className="text-gray-500 text-sm py-4 text-center">
+                {t('dashboard.noAssignments', 'No upcoming assignments')}
+              </p>
             )}
           </div>
+
+          {/* Messages Preview */}
+          {messages && (
+            <MessagesPreview
+              messages={messages}
+              onViewAll={() => {
+                window.location.href = '/messages';
+              }}
+              onMessageClick={(id) => {
+                window.location.href = `/messages/${id}`;
+              }}
+            />
+          )}
 
           {/* Teacher Notes */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">
-                {t('dashboard.teacherNotes')}
+                {t('dashboard.teacherNotes', 'Teacher Notes')}
               </h2>
               <MessageSquare className="w-5 h-5 text-gray-400" />
             </div>
-            {summary?.teacherNotes?.length > 0 ? (
+            {summary?.teacherNotes && summary.teacherNotes.length > 0 ? (
               <TeacherNotes notes={summary.teacherNotes} />
             ) : (
-              <p className="text-gray-500 text-sm">{t('dashboard.noNotes')}</p>
+              <p className="text-gray-500 text-sm py-4 text-center">
+                {t('dashboard.noNotes', 'No teacher notes yet')}
+              </p>
             )}
           </div>
 
           {/* Weekly Highlights */}
-          {weeklyProgress?.highlights && (
+          {weeklyProgress?.highlights && weeklyProgress.highlights.length > 0 && (
             <div className="card bg-gradient-to-br from-green-50 to-emerald-50 border-green-100">
               <h2 className="text-lg font-semibold text-green-900 mb-4">
-                {t('dashboard.weeklyProgress')}
+                {t('dashboard.weeklyHighlights', 'Weekly Highlights')}
               </h2>
               <ul className="space-y-2">
-                {weeklyProgress.highlights.map((highlight: string, index: number) => (
+                {weeklyProgress.highlights.map((highlight, index) => (
                   <li key={index} className="flex items-start gap-2 text-green-800">
                     <CheckCircle className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" />
                     <span className="text-sm">{highlight}</span>
