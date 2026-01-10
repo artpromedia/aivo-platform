@@ -10,7 +10,7 @@ import type { Redis } from 'ioredis';
 
 import type { Role } from '@aivo/ts-rbac';
 
-import type { PrismaClient, User, Session, UserRole } from '../generated/prisma-client/index.js';
+import type { PrismaClient, User, Session, UserRole } from '@prisma/client';
 import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
 import { config } from '../config.js';
 import { notifyClient } from '../lib/notify-client.js';

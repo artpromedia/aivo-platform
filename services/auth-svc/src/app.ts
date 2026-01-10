@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerAuthRoutes } from './routes/auth.js';
@@ -22,10 +23,10 @@ export function createApp() {
     }
   );
 
-  app.register(authMiddleware);
-  app.register(registerAuthRoutes, { prefix: '/auth' });
-  app.register(registerSsoRoutes, { prefix: '/auth' });
-  app.register(registerDemoRoutes);
+  void app.register(authMiddleware);
+  void app.register(registerAuthRoutes as FastifyPluginAsync, { prefix: '/auth' });
+  void app.register(registerSsoRoutes as FastifyPluginAsync, { prefix: '/auth' });
+  void app.register(registerDemoRoutes as FastifyPluginAsync);
 
   return app;
 }

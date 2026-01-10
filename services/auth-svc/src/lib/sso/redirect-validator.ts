@@ -168,7 +168,6 @@ export class RedirectValidator {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
       select: {
-        allowedRedirectDomains: true,
         domain: true,
       },
     });
@@ -178,8 +177,6 @@ export class RedirectValidator {
       ...this.config.globalAllowedDomains,
       // Add tenant's primary domain
       ...(tenant?.domain ? [tenant.domain] : []),
-      // Add tenant's configured allowed redirect domains
-      ...((tenant?.allowedRedirectDomains as string[] | undefined) ?? []),
     ];
 
     // Cache the result

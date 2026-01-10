@@ -471,7 +471,7 @@ export class ScimService {
         if (!path || path === '') {
           // Replace entire resource
           if (typeof op.value === 'object' && op.value !== null) {
-            Object.assign(updates, this.mapPatchValue(op.value));
+            Object.assign(updates, this.mapPatchValue(op.value as Record<string, unknown>));
           }
         } else if (path === 'active') {
           updates.active = op.value as boolean;

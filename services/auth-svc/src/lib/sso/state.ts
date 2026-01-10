@@ -273,9 +273,9 @@ function cleanupExpiredStates(): void {
   }
   lastCleanup = now;
 
-  for (const [key, entry] of stateStore.entries()) {
+  for (const [key, entry] of memoryStore.entries()) {
     if (now > entry.expiresAt) {
-      stateStore.delete(key);
+      memoryStore.delete(key);
     }
   }
 }

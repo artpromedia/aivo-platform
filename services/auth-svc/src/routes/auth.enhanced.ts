@@ -136,7 +136,12 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
 
     try {
       const result = await authService.register({
-        ...parsed.data,
+        email: parsed.data.email,
+        password: parsed.data.password,
+        phone: parsed.data.phone,
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        role: parsed.data.role,
         tenantId: parsed.data.tenantId || config.consumerTenantId,
         deviceInfo,
       });
