@@ -1,6 +1,6 @@
 import type { RegistrationContext, PlanId, BillingInterval } from './types';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
 
 /**
  * Build registration URL with context parameters

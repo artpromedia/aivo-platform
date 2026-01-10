@@ -68,7 +68,7 @@ const itemVariants = {
 };
 
 export function HowItWorks() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
 
   return (
     <Section id="how-it-works" background="gray" padding="lg">

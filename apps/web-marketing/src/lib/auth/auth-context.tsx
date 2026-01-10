@@ -25,7 +25,7 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>({

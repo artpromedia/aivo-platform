@@ -86,7 +86,7 @@ export function scrollToElement(elementId: string, offset = 80): void {
  * Get app URLs from environment
  */
 export function getAppUrl(path = ''): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
   return `${baseUrl}${path}`;
 }
 

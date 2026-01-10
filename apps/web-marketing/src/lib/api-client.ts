@@ -11,7 +11,7 @@ import type { User, Subscription, AuthSession, CheckoutParams, ApiResponse } fro
 // CONFIGURATION
 // ============================================
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
 const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3001';
 
 /**

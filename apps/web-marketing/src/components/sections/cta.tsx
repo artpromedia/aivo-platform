@@ -29,7 +29,7 @@ const trustPoints = [
 ];
 
 export function CTA() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
 
   return (
     <section className="relative py-24 overflow-hidden">
