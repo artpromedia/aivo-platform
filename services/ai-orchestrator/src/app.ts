@@ -11,6 +11,7 @@ import type { AgentConfigStore } from './registry/store.js';
 import { registerAdminStatsRoutes } from './routes/adminStats.js';
 import { registerBrainRoutes } from './routes/brain.js';
 import { emotionalStateRoutes } from './routes/emotionalState.js';
+import iepGenerationRoutes from './routes/iep-generation.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { socialStoryRoutes } from './routes/socialStories.js';
 import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
@@ -84,6 +85,9 @@ export function createApp(options: AppOptions = {}) {
 
   // AI-Generated Adaptive Games routes
   app.register(gameGenerationRoutes, { llmOrchestrator });
+
+  // AI-Powered IEP Goal Generation routes
+  app.register(iepGenerationRoutes, { prefix: '/iep' });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;

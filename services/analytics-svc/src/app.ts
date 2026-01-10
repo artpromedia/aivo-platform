@@ -8,6 +8,7 @@ import { auditRoutes } from './routes/auditRoutes.js';
 import { classroomAnalyticsRoutes } from './routes/classroomAnalytics.js';
 import { collaborationAnalyticsRoutes } from './routes/collaborationAnalytics.js';
 import dashboardRoutes from './routes/dashboards.routes.js';
+import dashboardSummaryRoutes from './routes/dashboard-summary.routes.js';
 import { eventsAdminRoutes } from './routes/events-admin.js';
 import eventsRoutes from './routes/events.routes.js';
 import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
@@ -73,6 +74,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register V2 teacher analytics routes (comprehensive dashboards)
   await app.register(teacherAnalyticsV2Routes, { prefix: '/v2/teacher-analytics' });
+
+  // Register teacher dashboard summary routes (aggregated data)
+  await app.register(dashboardSummaryRoutes, { prefix: '/v2/dashboard' });
 
   return app;
 }
