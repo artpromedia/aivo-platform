@@ -28,7 +28,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // ════════════════════════════════════════════════════════════════════════════
   // CORS (for development)
   // ════════════════════════════════════════════════════════════════════════════
-  app.addHook('onRequest', async (request, reply) => {
+  app.addHook('onRequest', async (request, reply): Promise<void> => {
     reply.header('Access-Control-Allow-Origin', '*');
     reply.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     reply.header(
@@ -37,7 +37,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     );
 
     if (request.method === 'OPTIONS') {
-      return reply.status(204).send();
+      await reply.status(204).send();
+      return;
     }
   });
 

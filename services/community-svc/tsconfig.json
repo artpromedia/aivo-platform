@@ -11,7 +11,8 @@
     "sourceMap": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "strictNullChecks": true
   },
   "include": ["src/**/*", "generated/**/*"],
   "exclude": ["node_modules", "dist", "tests"]

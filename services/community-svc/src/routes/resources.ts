@@ -5,8 +5,9 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { resourceService } from '../services/resource.service.js';
+
 import { ResourceType } from '../prisma.js';
+import { resourceService, type Resource, type ResourceWithCount } from '../services/resource.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -62,6 +63,56 @@ function getUserContext(request: FastifyRequest): UserContext {
   return { tenantId, userId, userName };
 }
 
+/**
+ * Format a resource for API response
+ */
+function formatResource(r: Resource) {
+  return {
+    id: r.id,
+    author: {
+      id: r.authorId,
+      name: r.authorName,
+    },
+    title: r.title,
+    description: r.description,
+    type: String(r.type).toLowerCase().replace('_', '-'),
+    subject: r.subject,
+    gradeLevel: r.gradeLevel,
+    fileUrl: r.fileUrl,
+    fileName: r.fileName,
+    fileSize: r.fileSize,
+    thumbnailUrl: r.thumbnailUrl,
+    downloads: r.downloadCount,
+    likes: r.likesCount,
+    createdAt: r.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Format a resource with count for API response
+ */
+function formatResourceWithCount(r: ResourceWithCount) {
+  return {
+    id: r.id,
+    author: {
+      id: r.authorId,
+      name: r.authorName,
+    },
+    title: r.title,
+    description: r.description,
+    type: String(r.type).toLowerCase().replace('_', '-'),
+    subject: r.subject,
+    gradeLevel: r.gradeLevel,
+    fileUrl: r.fileUrl,
+    fileName: r.fileName,
+    fileSize: r.fileSize,
+    thumbnailUrl: r.thumbnailUrl,
+    downloads: r.downloadCount,
+    likes: r.likesCount,
+    createdAt: r.createdAt.toISOString(),
+  };
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -87,25 +138,7 @@ export async function registerResourceRoutes(app: FastifyInstance): Promise<void
       });
 
       return reply.send({
-        data: result.items.map((r) => ({
-          id: r.id,
-          author: {
-            id: r.authorId,
-            name: r.authorName,
-          },
-          title: r.title,
-          description: r.description,
-          type: r.type.toLowerCase().replace('_', '-'),
-          subject: r.subject,
-          gradeLevel: r.gradeLevel,
-          fileUrl: r.fileUrl,
-          fileName: r.fileName,
-          fileSize: r.fileSize,
-          thumbnailUrl: r.thumbnailUrl,
-          downloads: r.downloadCount,
-          likes: r.likesCount,
-          createdAt: r.createdAt.toISOString(),
-        })),
+        data: result.items.map(formatResource),
         pagination: {
           total: result.total,
           limit: result.limit,
@@ -135,25 +168,7 @@ export async function registerResourceRoutes(app: FastifyInstance): Promise<void
       }
 
       return reply.send({
-        data: {
-          id: resource.id,
-          author: {
-            id: resource.authorId,
-            name: resource.authorName,
-          },
-          title: resource.title,
-          description: resource.description,
-          type: resource.type.toLowerCase().replace('_', '-'),
-          subject: resource.subject,
-          gradeLevel: resource.gradeLevel,
-          fileUrl: resource.fileUrl,
-          fileName: resource.fileName,
-          fileSize: resource.fileSize,
-          thumbnailUrl: resource.thumbnailUrl,
-          downloads: resource.downloadCount,
-          likes: resource.likesCount,
-          createdAt: resource.createdAt.toISOString(),
-        },
+        data: formatResourceWithCount(resource),
       });
     }
   );
@@ -172,27 +187,21 @@ export async function registerResourceRoutes(app: FastifyInstance): Promise<void
         tenantId: ctx.tenantId,
         authorId: ctx.userId,
         authorName: ctx.userName,
-        ...body,
+        title: body.title,
+        type: body.type,
+        description: body.description,
+        subject: body.subject,
+        gradeLevel: body.gradeLevel,
+        fileUrl: body.fileUrl,
+        fileName: body.fileName,
+        fileSize: body.fileSize,
+        thumbnailUrl: body.thumbnailUrl,
       });
 
       app.log.info({ resourceId: resource.id }, 'Resource created');
 
       return reply.status(201).send({
-        data: {
-          id: resource.id,
-          author: {
-            id: resource.authorId,
-            name: resource.authorName,
-          },
-          title: resource.title,
-          description: resource.description,
-          type: resource.type.toLowerCase().replace('_', '-'),
-          subject: resource.subject,
-          gradeLevel: resource.gradeLevel,
-          downloads: 0,
-          likes: 0,
-          createdAt: resource.createdAt.toISOString(),
-        },
+        data: formatResource(resource),
       });
     }
   );

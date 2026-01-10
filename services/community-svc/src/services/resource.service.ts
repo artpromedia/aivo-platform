@@ -9,6 +9,36 @@ import { prisma, ResourceType } from '../prisma.js';
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Represents a shared resource from the database
+ */
+export interface Resource {
+  id: string;
+  tenantId: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  description: string | null;
+  type: ResourceType;
+  subject: string | null;
+  gradeLevel: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  thumbnailUrl: string | null;
+  downloadCount: number;
+  likesCount: number;
+  isPublished: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResourceWithCount extends Resource {
+  _count?: {
+    likes: number;
+  };
+}
+
 export interface CreateResourceInput {
   tenantId: string;
   authorId: string;
@@ -54,7 +84,7 @@ export const resourceService = {
   /**
    * Create a new resource
    */
-  async createResource(input: CreateResourceInput) {
+  async createResource(input: CreateResourceInput): Promise<Resource> {
     return prisma.sharedResource.create({
       data: {
         tenantId: input.tenantId,
@@ -76,7 +106,7 @@ export const resourceService = {
   /**
    * Get resource by ID
    */
-  async getResourceById(id: string, tenantId: string) {
+  async getResourceById(id: string, tenantId: string): Promise<ResourceWithCount | null> {
     return prisma.sharedResource.findFirst({
       where: { id, tenantId, isPublished: true },
       include: {
@@ -90,7 +120,7 @@ export const resourceService = {
   /**
    * List resources with optional filtering
    */
-  async listResources(options: ListResourcesOptions) {
+  async listResources(options: ListResourcesOptions): Promise<{ items: Resource[]; total: number; limit: number; offset: number }> {
     const { tenantId, type, subject, gradeLevel, authorId, limit = 20, offset = 0 } = options;
 
     const where = {
@@ -123,7 +153,7 @@ export const resourceService = {
     tenantId: string,
     authorId: string,
     input: UpdateResourceInput
-  ) {
+  ): Promise<Resource | null> {
     const resource = await prisma.sharedResource.findFirst({
       where: { id, tenantId, authorId },
     });
@@ -141,7 +171,7 @@ export const resourceService = {
   /**
    * Delete a resource
    */
-  async deleteResource(id: string, tenantId: string, authorId: string) {
+  async deleteResource(id: string, tenantId: string, authorId: string): Promise<boolean> {
     const resource = await prisma.sharedResource.findFirst({
       where: { id, tenantId, authorId },
     });
@@ -157,7 +187,7 @@ export const resourceService = {
   /**
    * Like a resource
    */
-  async likeResource(resourceId: string, tenantId: string, userId: string) {
+  async likeResource(resourceId: string, tenantId: string, userId: string): Promise<{ alreadyLiked?: boolean; success?: boolean }> {
     const existingLike = await prisma.resourceLike.findUnique({
       where: { resourceId_userId: { resourceId, userId } },
     });
@@ -182,7 +212,7 @@ export const resourceService = {
   /**
    * Unlike a resource
    */
-  async unlikeResource(resourceId: string, userId: string) {
+  async unlikeResource(resourceId: string, userId: string): Promise<{ notLiked?: boolean; success?: boolean }> {
     const existingLike = await prisma.resourceLike.findUnique({
       where: { resourceId_userId: { resourceId, userId } },
     });
@@ -207,7 +237,7 @@ export const resourceService = {
   /**
    * Increment download count
    */
-  async incrementDownload(resourceId: string) {
+  async incrementDownload(resourceId: string): Promise<void> {
     await prisma.sharedResource.update({
       where: { id: resourceId },
       data: { downloadCount: { increment: 1 } },

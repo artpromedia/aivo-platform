@@ -46,10 +46,9 @@ export default function OnboardingPage() {
     setIsLoading(true);
 
     try {
-      const parentServiceUrl = process.env.NEXT_PUBLIC_PARENT_SERVICE_URL || 'http://localhost:4009';
       const token = localStorage.getItem('accessToken');
 
-      const response = await fetch(`${parentServiceUrl}/onboarding/register-learner`, {
+      const response = await fetch('/api/onboarding/register-learner', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

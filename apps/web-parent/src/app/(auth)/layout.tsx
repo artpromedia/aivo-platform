@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 /**
  * Auth Layout
@@ -13,13 +14,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-700">
-            <span className="text-xl font-bold text-white">A</span>
-          </div>
-          <span className="text-xl font-bold text-gray-900">AIVO</span>
+          <Image
+            src="/images/aivo-logo-horizontal-purple.svg"
+            alt="AIVO"
+            width={120}
+            height={40}
+          />
         </Link>
         <Link
-          href="https://aivolearning.com"
+          href="http://localhost:3001"
           className="text-sm text-gray-600 hover:text-violet-600"
         >
           Back to website

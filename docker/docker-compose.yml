@@ -139,7 +139,7 @@ services:
   # ════════════════════════════════════════════════════════════════════════════
 
   kong:
-    image: kong:3.4-alpine
+    image: kong:3.4
     <<: *service-defaults
     ports:
       - "8000:8000"   # HTTP proxy

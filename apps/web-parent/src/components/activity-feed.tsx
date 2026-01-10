@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDistanceToNow } from 'date-fns';
-import { BookOpen, FileText, CheckCircle, Award } from 'lucide-react';
+import { BookOpen, FileText, CheckCircle, Award, ChevronRight, ArrowRight } from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -14,9 +14,11 @@ interface Activity {
 
 interface ActivityFeedProps {
   activities: Activity[];
+  onActivityClick?: (activity: Activity) => void;
+  onViewAll?: () => void;
 }
 
-export function ActivityFeed({ activities }: ActivityFeedProps) {
+export function ActivityFeed({ activities, onActivityClick, onViewAll }: ActivityFeedProps) {
   const getIcon = (type: string) => {
     switch (type) {
       case 'lesson':
@@ -54,12 +56,13 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
   return (
     <div className="space-y-3">
       {activities.map((activity) => (
-        <div
+        <button
           key={activity.id}
-          className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+          onClick={() => onActivityClick?.(activity)}
+          className="w-full text-left flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
         >
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${getIconColor(
+            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getIconColor(
               activity.type
             )}`}
           >
@@ -91,8 +94,21 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
               </span>
             </div>
           </div>
-        </div>
+          {onActivityClick && (
+            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-600 transition-colors flex-shrink-0 mt-1" />
+          )}
+        </button>
       ))}
+      
+      {onViewAll && (
+        <button
+          onClick={onViewAll}
+          className="w-full mt-2 text-center text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center justify-center gap-1 py-2"
+        >
+          View All Activity
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }

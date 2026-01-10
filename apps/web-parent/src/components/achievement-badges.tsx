@@ -24,6 +24,7 @@ interface AchievementBadgesProps {
   achievements: Achievement[];
   showLocked?: boolean;
   maxDisplay?: number;
+  onViewAll?: () => void;
 }
 
 const categoryColors = {
@@ -57,6 +58,7 @@ export function AchievementBadges({
   achievements,
   showLocked = false,
   maxDisplay = 6,
+  onViewAll,
 }: AchievementBadgesProps) {
   const earnedAchievements = achievements.filter((a) => a.earnedAt);
   const lockedAchievements = achievements.filter((a) => !a.earnedAt);
@@ -101,7 +103,10 @@ export function AchievementBadges({
 
       {/* View All Link */}
       {achievements.length > maxDisplay && (
-        <button className="mt-4 w-full text-center text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+        <button 
+          onClick={onViewAll}
+          className="mt-4 w-full text-center text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+        >
           View All Achievements
         </button>
       )}

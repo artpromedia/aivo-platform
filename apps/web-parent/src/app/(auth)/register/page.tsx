@@ -65,9 +65,8 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const authServiceUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:4001';
-
-      const response = await fetch(`${authServiceUrl}/register`, {
+      // Use local API route which handles dev/prod environments
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

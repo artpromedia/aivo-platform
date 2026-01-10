@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import {
   BookOpen,
@@ -10,6 +11,8 @@ import {
   Download,
   CheckCircle,
   AlertTriangle,
+  Settings,
+  Award,
 } from 'lucide-react';
 
 // Components
@@ -41,6 +44,7 @@ import { isDevMode } from '@/lib/mock-data';
 
 export default function DashboardPage() {
   const { t } = useTranslation('parent');
+  const router = useRouter();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   // Data hooks
@@ -178,6 +182,15 @@ export default function DashboardPage() {
               {downloadReport.isPending ? 'Downloading...' : t('dashboard.downloadReport', 'Download Report')}
             </span>
           </button>
+
+          {/* Settings Button */}
+          <button
+            onClick={() => router.push('/settings')}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Settings"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -200,24 +213,28 @@ export default function DashboardPage() {
             value={summary.weeklyTimeSpent}
             unit={t('progress.minutes', 'min')}
             trend={summary.timeTrend}
+            onClick={() => router.push('/activity')}
           />
           <ProgressCard
             icon={<BookOpen className="w-5 h-5" />}
             label={t('progress.activeDays', 'Active Days')}
             value={summary.activeDays}
             unit="/7"
+            onClick={() => router.push('/activity')}
           />
           <ProgressCard
             icon={<TrendingUp className="w-5 h-5" />}
             label={t('progress.avgScore', 'Avg. Score')}
             value={`${summary.averageScore}%`}
             trend={summary.scoreTrend}
+            onClick={() => router.push('/activity')}
           />
           <ProgressCard
             icon={<CheckCircle className="w-5 h-5" />}
             label={t('progress.completed', 'Activities')}
             value={summary.activitiesCompleted}
             unit={t('progress.activities', 'completed')}
+            onClick={() => router.push('/activity')}
           />
         </div>
       )}
@@ -276,12 +293,19 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {t('dashboard.recentActivity', 'Recent Activity')}
               </h2>
-              <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+              <button 
+                onClick={() => router.push('/activity')}
+                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+              >
                 {t('dashboard.viewAll', 'View All')}
               </button>
             </div>
             {summary?.recentActivity && summary.recentActivity.length > 0 ? (
-              <ActivityFeed activities={summary.recentActivity} />
+              <ActivityFeed 
+                activities={summary.recentActivity}
+                onActivityClick={() => router.push('/activity')}
+                onViewAll={() => router.push('/activity')}
+              />
             ) : (
               <p className="text-gray-500 py-4 text-center">
                 {t('dashboard.noActivity', 'No recent activity')}
@@ -294,8 +318,7 @@ export default function DashboardPage() {
             <HomeworkHelperSection
               sessions={homeworkSessions}
               onViewAll={() => {
-                // Navigate to homework helper page
-                window.location.href = '/homework';
+                router.push('/homework');
               }}
             />
           )}
@@ -309,6 +332,7 @@ export default function DashboardPage() {
               achievements={summary.achievements}
               showLocked={true}
               maxDisplay={6}
+              onViewAll={() => router.push('/achievements')}
             />
           )}
 
@@ -350,10 +374,10 @@ export default function DashboardPage() {
             <MessagesPreview
               messages={messages}
               onViewAll={() => {
-                window.location.href = '/messages';
+                router.push('/messages');
               }}
               onMessageClick={(id) => {
-                window.location.href = `/messages/${id}`;
+                router.push(`/messages?id=${id}`);
               }}
             />
           )}
