@@ -45,3 +45,10 @@ export {
   type UseClassroomRiskResult,
   type UseRiskRealtimeOptions,
 } from './use-student-risk';
+
+// Dashboard hooks
+export {
+  useDashboard,
+  type UseDashboardOptions,
+  type UseDashboardReturn,
+} from './use-dashboard';

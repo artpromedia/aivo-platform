@@ -102,24 +102,24 @@ export function Sidebar({ collapsed = false, onToggle, className }: SidebarProps
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r bg-white transition-all duration-300',
+        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-surface transition-all duration-300',
         collapsed ? 'w-16' : 'w-64',
         className
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b px-4">
+      <div className="flex h-16 items-center justify-between border-b border-border px-4">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold">
               A
             </div>
-            <span className="text-xl font-bold text-gray-900">Aivo</span>
+            <span className="text-xl font-bold text-text">Aivo</span>
           </Link>
         )}
         <button
           onClick={onToggle}
-          className={cn('rounded-lg p-2 text-gray-500 hover:bg-gray-100', collapsed && 'mx-auto')}
+          className={cn('rounded-lg p-2 text-muted hover:bg-surface-muted', collapsed && 'mx-auto')}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -160,7 +160,7 @@ export function Sidebar({ collapsed = false, onToggle, className }: SidebarProps
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="border-t py-4">
+      <div className="border-t border-border py-4">
         <ul className="space-y-1 px-2">
           {bottomNavItems.map((item) => (
             <NavItemComponent
@@ -205,7 +205,7 @@ function NavItemComponent({
           onClick={onToggleExpand}
           className={cn(
             'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-            isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+            isActive ? 'bg-surface-muted text-primary' : 'text-text hover:bg-surface-muted'
           )}
         >
           <span className="flex items-center gap-3">
@@ -233,8 +233,8 @@ function NavItemComponent({
                   className={cn(
                     'block rounded-lg px-3 py-2 text-sm transition-colors',
                     pathname === child.href
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-surface-muted text-primary font-medium'
+                      : 'text-muted hover:bg-surface-muted'
                   )}
                 >
                   {child.label}
@@ -253,7 +253,7 @@ function NavItemComponent({
         href={item.href}
         className={cn(
           'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-          isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100',
+          isActive ? 'bg-surface-muted text-primary' : 'text-text hover:bg-surface-muted',
           collapsed && 'justify-center'
         )}
         title={collapsed ? item.label : undefined}
