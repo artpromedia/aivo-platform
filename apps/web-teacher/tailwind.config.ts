@@ -4,7 +4,12 @@ import type { Config } from 'tailwindcss';
 const { createGradeThemePlugin } = require('../../libs/ui-web/src/tailwind/gradeThemePlugin.cjs');
 
 const config: Config = {
-  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}', '../../libs/ui-web/src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    '../../libs/ui-web/src/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       fontFamily: {
@@ -41,7 +46,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [createGradeThemePlugin('G6_8')],
+  plugins: [createGradeThemePlugin('navigator')],
 };
 
 export default config;

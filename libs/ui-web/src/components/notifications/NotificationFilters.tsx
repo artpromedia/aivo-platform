@@ -3,9 +3,9 @@
 import { X } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '../../utils/cn.js';
-import { Badge } from '../badge.js';
-import { Button } from '../button.js';
+import { cn } from '../../utils/cn';
+import { Badge } from '../badge';
+import { Button } from '../button';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -124,19 +124,17 @@ export function NotificationFilters({
       {/* Categories */}
       <div className="space-y-3">
         {categories.map((category) => {
-          const categoryTypes = notificationTypes.filter(
-            (t) => t.category === category.id
-          );
-          const selectedCount = categoryTypes.filter((t) =>
-            selectedTypes.includes(t.id)
-          ).length;
+          const categoryTypes = notificationTypes.filter((t) => t.category === category.id);
+          const selectedCount = categoryTypes.filter((t) => selectedTypes.includes(t.id)).length;
           const allSelected = selectedCount === categoryTypes.length;
 
           return (
             <div key={category.id} className="space-y-2">
               <button
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => { toggleCategory(category.id); }}
+                onClick={() => {
+                  toggleCategory(category.id);
+                }}
               >
                 <span
                   className={cn(
@@ -153,17 +151,9 @@ export function NotificationFilters({
                       strokeWidth={3}
                     >
                       {allSelected ? (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       ) : (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 12h14"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
                       )}
                     </svg>
                   )}
@@ -180,16 +170,14 @@ export function NotificationFilters({
                       tone={isSelected ? 'info' : 'neutral'}
                       className={cn(
                         'cursor-pointer transition-colors',
-                        isSelected
-                          ? 'hover:bg-primary/80'
-                          : 'hover:bg-muted'
+                        isSelected ? 'hover:bg-primary/80' : 'hover:bg-muted'
                       )}
-                      onClick={() => { toggleType(type.id); }}
+                      onClick={() => {
+                        toggleType(type.id);
+                      }}
                     >
                       {type.label}
-                      {isSelected && (
-                        <X className="h-3 w-3 ml-1" />
-                      )}
+                      {isSelected && <X className="h-3 w-3 ml-1" />}
                     </Badge>
                   );
                 })}

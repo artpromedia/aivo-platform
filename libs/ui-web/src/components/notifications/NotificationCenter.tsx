@@ -1,18 +1,13 @@
 'use client';
 
-import {
-  Bell,
-  CheckCheck,
-  Filter,
-  Loader2,
-  Settings,
-} from 'lucide-react';
+import { Bell, CheckCheck, Filter, Loader2, Settings } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '../../utils/cn.js';
-import { Button } from '../button.js';
-import { NotificationFilters } from './NotificationFilters.js';
-import { NotificationItem } from './NotificationItem.js';
+import { cn } from '../../utils/cn';
+import { Button } from '../button';
+
+import { NotificationFilters } from './NotificationFilters';
+import { NotificationItem } from './NotificationItem';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -154,19 +149,16 @@ export function NotificationCenter({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => { setShowFilters(!showFilters); }}
+            onClick={() => {
+              setShowFilters(!showFilters);
+            }}
             aria-label="Filter notifications"
           >
             <Filter className="h-4 w-4" />
           </Button>
 
           {unreadCount > 0 && onMarkAllAsRead && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onMarkAllAsRead}
-              className="text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={onMarkAllAsRead} className="text-xs">
               <CheckCheck className="h-4 w-4 mr-1" />
               Mark all read
             </Button>
@@ -191,7 +183,12 @@ export function NotificationCenter({
         <div className="p-4 border-b bg-muted/50">
           <NotificationFilters
             filters={filters}
-            onChange={onFiltersChange ?? ((_f: { types?: string[] }) => { /* no-op */ })}
+            onChange={
+              onFiltersChange ??
+              ((_f: { types?: string[] }) => {
+                /* no-op */
+              })
+            }
           />
         </div>
       )}
@@ -223,19 +220,12 @@ export function NotificationCenter({
       </div>
 
       {/* Notification List */}
-      <div className="flex-1 overflow-y-auto max-h-[400px]">
-        {renderContent()}
-      </div>
+      <div className="flex-1 overflow-y-auto max-h-[400px]">{renderContent()}</div>
 
       {/* Footer */}
       {onViewAllClick && (
         <div className="p-2 border-t text-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full"
-            onClick={onViewAllClick}
-          >
+          <Button variant="ghost" size="sm" className="w-full" onClick={onViewAllClick}>
             View all notifications
           </Button>
         </div>
@@ -277,14 +267,8 @@ export function NotificationCenter({
 
         {hasMore && (
           <div className="p-4 text-center">
-            <Button
-              variant="ghost"
-              onClick={onLoadMore}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
+            <Button variant="ghost" onClick={onLoadMore} disabled={isLoading}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Load more
             </Button>
           </div>

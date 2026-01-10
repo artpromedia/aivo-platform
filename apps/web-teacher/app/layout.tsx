@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-grade-theme="G6_8">
+    <html lang="en" data-grade-theme="navigator">
       <body className="min-h-screen bg-background text-text antialiased">
         <Providers>
           <Nav />

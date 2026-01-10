@@ -15,9 +15,6 @@ const nextConfig = {
   // Enable React Strict Mode for better development experience
   reactStrictMode: true,
 
-  // Enable SWC minification (faster than Terser)
-  swcMinify: true,
-
   // Optimize production builds
   productionBrowserSourceMaps: false,
 

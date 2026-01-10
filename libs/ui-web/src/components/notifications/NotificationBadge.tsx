@@ -3,7 +3,7 @@
 import { Bell } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '../../utils/cn.js';
+import { cn } from '../../utils/cn';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -122,8 +122,8 @@ export function NotificationBadge({
       {icon ?? <Bell className={cn(sizes.icon, hasUnread && 'text-primary')} />}
 
       {/* Badge */}
-      {hasUnread && (
-        dot ? (
+      {hasUnread &&
+        (dot ? (
           <span
             className={cn(
               'absolute rounded-full bg-destructive',
@@ -143,8 +143,7 @@ export function NotificationBadge({
           >
             {displayCount}
           </span>
-        )
-      )}
+        ))}
     </button>
   );
 }

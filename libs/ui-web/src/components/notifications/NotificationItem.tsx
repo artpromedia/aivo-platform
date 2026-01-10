@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '../../utils/cn.js';
-import { Button } from '../button.js';
+import { cn } from '../../utils/cn';
+import { Button } from '../button';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -61,33 +61,36 @@ const typeIcons: Record<string, { icon: React.ElementType; color: string }> = {
   SESSION_SUMMARY: { icon: BookOpen, color: 'text-green-500' },
   REMINDER: { icon: Calendar, color: 'text-blue-500' },
   GOAL_UPDATE: { icon: Target, color: 'text-purple-500' },
-  
+
   // Assessments
   'assessment.assigned': { icon: FileText, color: 'text-purple-500' },
   'assessment.graded': { icon: FileText, color: 'text-green-500' },
   'assessment.due_soon': { icon: FileText, color: 'text-orange-500' },
-  
+
   // Social
   MESSAGE: { icon: MessageCircle, color: 'text-blue-500' },
   'comment.new': { icon: MessageCircle, color: 'text-blue-500' },
   'comment.reply': { icon: MessageCircle, color: 'text-blue-500' },
   mention: { icon: MessageCircle, color: 'text-purple-500' },
-  
+
   // Streaks
   'streak.milestone': { icon: Zap, color: 'text-orange-500' },
   'streak.at_risk': { icon: AlertTriangle, color: 'text-red-500' },
-  
+
   // Class
   'class.announcement': { icon: Megaphone, color: 'text-blue-500' },
   'class.assignment': { icon: FileText, color: 'text-purple-500' },
-  
+
   // System
   SYSTEM: { icon: Bell, color: 'text-gray-500' },
   ALERT: { icon: AlertTriangle, color: 'text-red-500' },
   CONSENT_REQUEST: { icon: Users, color: 'text-blue-500' },
 };
 
-const defaultIcon: { icon: React.ElementType; color: string } = { icon: Bell, color: 'text-gray-500' };
+const defaultIcon: { icon: React.ElementType; color: string } = {
+  icon: Bell,
+  color: 'text-gray-500',
+};
 
 function getIconForType(type: string): { icon: React.ElementType; color: string } {
   return typeIcons[type] ?? defaultIcon;
@@ -130,7 +133,9 @@ export function NotificationItem({
     }
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => { document.removeEventListener('mousedown', handleClickOutside); };
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleMenuClick = (e: React.MouseEvent) => {
@@ -160,12 +165,7 @@ export function NotificationItem({
     >
       {/* Icon */}
       <div className="flex-shrink-0 mt-0.5">
-        <div
-          className={cn(
-            'p-2 rounded-full',
-            notification.isRead ? 'bg-muted' : 'bg-primary/10'
-          )}
-        >
+        <div className={cn('p-2 rounded-full', notification.isRead ? 'bg-muted' : 'bg-primary/10')}>
           <IconComponent className={cn('h-5 w-5', color)} />
         </div>
       </div>
@@ -174,17 +174,10 @@ export function NotificationItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p
-              className={cn(
-                'text-sm line-clamp-1',
-                !notification.isRead && 'font-medium'
-              )}
-            >
+            <p className={cn('text-sm line-clamp-1', !notification.isRead && 'font-medium')}>
               {notification.title}
             </p>
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-              {notification.body}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{notification.body}</p>
           </div>
 
           {/* Unread indicator */}

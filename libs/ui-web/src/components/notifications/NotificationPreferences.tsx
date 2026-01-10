@@ -1,19 +1,10 @@
 'use client';
 
-import {
-  Bell,
-  Clock,
-  Loader2,
-  Mail,
-  MessageSquare,
-  Moon,
-  Save,
-  Smartphone,
-} from 'lucide-react';
+import { Bell, Clock, Loader2, Mail, MessageSquare, Moon, Save, Smartphone } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '../../utils/cn.js';
-import { Button } from '../button.js';
+import { cn } from '../../utils/cn';
+import { Button } from '../button';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -37,14 +28,17 @@ export interface NotificationPreferencesData {
     frequency: 'realtime' | 'hourly' | 'daily' | 'weekly';
     time: string;
   };
-  types: Record<string, {
-    enabled: boolean;
-    channels?: {
-      inApp?: boolean;
-      push?: boolean;
-      email?: boolean;
-    };
-  }>;
+  types: Record<
+    string,
+    {
+      enabled: boolean;
+      channels?: {
+        inApp?: boolean;
+        push?: boolean;
+        email?: boolean;
+      };
+    }
+  >;
 }
 
 export interface NotificationPreferencesProps {
@@ -64,8 +58,16 @@ const notificationTypeGroups = [
     label: 'Learning',
     description: 'Notifications about your learning progress',
     types: [
-      { id: 'ACHIEVEMENT', label: 'Achievements', description: 'When you earn badges or complete milestones' },
-      { id: 'SESSION_SUMMARY', label: 'Session Summaries', description: 'After completing a learning session' },
+      {
+        id: 'ACHIEVEMENT',
+        label: 'Achievements',
+        description: 'When you earn badges or complete milestones',
+      },
+      {
+        id: 'SESSION_SUMMARY',
+        label: 'Session Summaries',
+        description: 'After completing a learning session',
+      },
       { id: 'REMINDER', label: 'Reminders', description: 'Study reminders and scheduled sessions' },
       { id: 'GOAL_UPDATE', label: 'Goal Updates', description: 'Progress on your learning goals' },
     ],
@@ -83,8 +85,17 @@ const notificationTypeGroups = [
     label: 'Account & Security',
     description: 'Important account notifications',
     types: [
-      { id: 'CONSENT_REQUEST', label: 'Consent Requests', description: 'Parental consent requests' },
-      { id: 'ALERT', label: 'Security Alerts', description: 'Important security notifications', disabled: true },
+      {
+        id: 'CONSENT_REQUEST',
+        label: 'Consent Requests',
+        description: 'Parental consent requests',
+      },
+      {
+        id: 'ALERT',
+        label: 'Security Alerts',
+        description: 'Important security notifications',
+        disabled: true,
+      },
     ],
   },
 ];
@@ -175,14 +186,14 @@ export function NotificationPreferences({
           <Bell className="h-5 w-5 text-muted-foreground" />
           <div>
             <p className="font-medium">All Notifications</p>
-            <p className="text-sm text-muted-foreground">
-              Turn off to disable all notifications
-            </p>
+            <p className="text-sm text-muted-foreground">Turn off to disable all notifications</p>
           </div>
         </div>
         <ToggleSwitch
           checked={localPrefs.enabled}
-          onChange={(checked) => { setLocalPrefs((prev) => ({ ...prev, enabled: checked })); }}
+          onChange={(checked) => {
+            setLocalPrefs((prev) => ({ ...prev, enabled: checked }));
+          }}
         />
       </div>
 
@@ -199,7 +210,9 @@ export function NotificationPreferences({
             title="In-App"
             description="Notifications within the app"
             checked={localPrefs.channels.inApp}
-            onChange={(checked) => { updateChannel('inApp', checked); }}
+            onChange={(checked) => {
+              updateChannel('inApp', checked);
+            }}
             disabled={!localPrefs.enabled}
           />
           <ChannelCard
@@ -207,7 +220,9 @@ export function NotificationPreferences({
             title="Push Notifications"
             description="Mobile and browser push notifications"
             checked={localPrefs.channels.push}
-            onChange={(checked) => { updateChannel('push', checked); }}
+            onChange={(checked) => {
+              updateChannel('push', checked);
+            }}
             disabled={!localPrefs.enabled}
           />
           <ChannelCard
@@ -215,7 +230,9 @@ export function NotificationPreferences({
             title="Email"
             description="Email notifications"
             checked={localPrefs.channels.email}
-            onChange={(checked) => { updateChannel('email', checked); }}
+            onChange={(checked) => {
+              updateChannel('email', checked);
+            }}
             disabled={!localPrefs.enabled}
           />
         </div>
@@ -235,7 +252,9 @@ export function NotificationPreferences({
           </div>
           <ToggleSwitch
             checked={localPrefs.quietHours.enabled}
-            onChange={(checked) => { updateQuietHours('enabled', checked); }}
+            onChange={(checked) => {
+              updateQuietHours('enabled', checked);
+            }}
             disabled={!localPrefs.enabled}
           />
         </div>
@@ -243,22 +262,30 @@ export function NotificationPreferences({
         {localPrefs.quietHours.enabled && localPrefs.enabled && (
           <div className="flex items-center gap-4 pl-7">
             <div className="flex items-center gap-2">
-              <label htmlFor="quiet-hours-start" className="text-sm text-muted-foreground">From</label>
+              <label htmlFor="quiet-hours-start" className="text-sm text-muted-foreground">
+                From
+              </label>
               <input
                 id="quiet-hours-start"
                 type="time"
                 value={localPrefs.quietHours.start}
-                onChange={(e) => { updateQuietHours('start', e.target.value); }}
+                onChange={(e) => {
+                  updateQuietHours('start', e.target.value);
+                }}
                 className="px-3 py-1.5 border rounded-md text-sm"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="quiet-hours-end" className="text-sm text-muted-foreground">To</label>
+              <label htmlFor="quiet-hours-end" className="text-sm text-muted-foreground">
+                To
+              </label>
               <input
                 id="quiet-hours-end"
                 type="time"
                 value={localPrefs.quietHours.end}
-                onChange={(e) => { updateQuietHours('end', e.target.value); }}
+                onChange={(e) => {
+                  updateQuietHours('end', e.target.value);
+                }}
                 className="px-3 py-1.5 border rounded-md text-sm"
               />
             </div>
@@ -280,7 +307,9 @@ export function NotificationPreferences({
           </div>
           <ToggleSwitch
             checked={localPrefs.digest.enabled}
-            onChange={(checked) => { updateDigest('enabled', checked); }}
+            onChange={(checked) => {
+              updateDigest('enabled', checked);
+            }}
             disabled={!localPrefs.enabled}
           />
         </div>
@@ -288,11 +317,15 @@ export function NotificationPreferences({
         {localPrefs.digest.enabled && localPrefs.enabled && (
           <div className="flex items-center gap-4 pl-7">
             <div className="flex items-center gap-2">
-              <label htmlFor="digest-frequency" className="text-sm text-muted-foreground">Frequency</label>
+              <label htmlFor="digest-frequency" className="text-sm text-muted-foreground">
+                Frequency
+              </label>
               <select
                 id="digest-frequency"
                 value={localPrefs.digest.frequency}
-                onChange={(e) => { updateDigest('frequency', e.target.value); }}
+                onChange={(e) => {
+                  updateDigest('frequency', e.target.value);
+                }}
                 className="px-3 py-1.5 border rounded-md text-sm"
               >
                 <option value="hourly">Hourly</option>
@@ -302,12 +335,16 @@ export function NotificationPreferences({
             </div>
             {localPrefs.digest.frequency === 'daily' && (
               <div className="flex items-center gap-2">
-                <label htmlFor="digest-time" className="text-sm text-muted-foreground">At</label>
+                <label htmlFor="digest-time" className="text-sm text-muted-foreground">
+                  At
+                </label>
                 <input
                   id="digest-time"
                   type="time"
                   value={localPrefs.digest.time}
-                  onChange={(e) => { updateDigest('time', e.target.value); }}
+                  onChange={(e) => {
+                    updateDigest('time', e.target.value);
+                  }}
                   className="px-3 py-1.5 border rounded-md text-sm"
                 />
               </div>
@@ -335,19 +372,16 @@ export function NotificationPreferences({
               {group.types.map((type) => {
                 const typePrefs = localPrefs.types[type.id] || { enabled: true };
                 return (
-                  <div
-                    key={type.id}
-                    className="flex items-center justify-between py-2"
-                  >
+                  <div key={type.id} className="flex items-center justify-between py-2">
                     <div>
                       <p className="text-sm font-medium">{type.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {type.description}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{type.description}</p>
                     </div>
                     <ToggleSwitch
                       checked={typePrefs.enabled}
-                      onChange={(checked) => { updateTypePreference(type.id, checked); }}
+                      onChange={(checked) => {
+                        updateTypePreference(type.id, checked);
+                      }}
                       disabled={!localPrefs.enabled || Boolean(type.disabled)}
                     />
                   </div>
@@ -361,11 +395,7 @@ export function NotificationPreferences({
       {/* Save Button */}
       {hasChanges && (
         <div className="sticky bottom-0 bg-background border-t py-4">
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full sm:w-auto"
-          >
+          <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
@@ -396,7 +426,9 @@ function ToggleSwitch({ checked, onChange, disabled }: Readonly<ToggleSwitchProp
       role="switch"
       aria-checked={checked}
       disabled={disabled}
-      onClick={() => { onChange(!checked); }}
+      onClick={() => {
+        onChange(!checked);
+      }}
       className={cn(
         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',

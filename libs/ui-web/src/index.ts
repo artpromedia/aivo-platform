@@ -89,3 +89,15 @@ export type {
   Competition,
   CompetitionStatus,
 } from './components/gamification';
+
+// Notification Components
+export {
+  NotificationCenter,
+  NotificationItem,
+  NotificationFilters,
+  NotificationBadge,
+  NotificationPreferences,
+  WebPushProvider,
+  WebPushManager,
+  NotificationApiClient,
+} from './components/notifications';

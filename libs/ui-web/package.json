@@ -6,7 +6,8 @@
   "sideEffects": false,
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./components/notifications": "./src/components/notifications/index.ts"
   },
   "scripts": {
     "lint": "eslint src --ext .ts,.tsx",
