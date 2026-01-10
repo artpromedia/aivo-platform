@@ -29,7 +29,10 @@ export type SmsTemplateName =
   | 'grade-posted'
   | 'absence-alert'
   | 'consent-confirmation'
-  | 'help-response';
+  | 'help-response'
+  | 'download-parent-app'
+  | 'download-learner-app'
+  | 'baseline-complete';
 
 /**
  * Template registry with character counts and compliance notes
@@ -209,6 +212,43 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: true,
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ONBOARDING TEMPLATES
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Sent to parent after learner completes baseline
+   * ~150 chars
+   */
+  'download-parent-app': {
+    template: '🎉 {{learnerName}} finished their assessment! Download the Aivo Parent app to see results: {{downloadLink}} Reply STOP to opt out.',
+    maxSegments: 1,
+    requiresOptOut: true,
+    bypassConsent: false,
+  },
+
+  /**
+   * Sent to parent with learner app download link
+   * ~155 chars
+   */
+  'download-learner-app': {
+    template: '📱 Set up {{learnerName}}\'s learning device! Download Aivo Learner: {{downloadLink}} PIN: {{learnerPin}} Reply STOP to opt out.',
+    maxSegments: 1,
+    requiresOptOut: true,
+    bypassConsent: false,
+  },
+
+  /**
+   * Notification when baseline is complete
+   * ~140 chars
+   */
+  'baseline-complete': {
+    template: '✨ {{learnerName}} completed their baseline! View their learning profile in the Aivo Parent app. Reply STOP to opt out.',
+    maxSegments: 1,
+    requiresOptOut: true,
+    bypassConsent: false,
   },
 };
 

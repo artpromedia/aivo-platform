@@ -1,0 +1,329 @@
+{{!-- Download Learner App Email Template --}}
+{{!-- Sent to parents after they add a child in the parent app --}}
+{{!-- Contains links for the child's device to download the learner app --}}
+
+<!DOCTYPE html>
+<html lang="{{locale}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set Up {{learnerName}}'s Learning Device</title>
+  <style>
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fc;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(124, 58, 237, 0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .header p {
+      color: rgba(255, 255, 255, 0.9);
+      margin: 12px 0 0;
+      font-size: 16px;
+    }
+    .device-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    .content {
+      padding: 40px 32px;
+    }
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+    .step-card {
+      background: #f8f9fc;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      border-left: 4px solid #7C3AED;
+    }
+    .step-number {
+      background: #7C3AED;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      margin-right: 12px;
+    }
+    .step-title {
+      font-weight: 700;
+      color: #1a1a2e;
+      font-size: 16px;
+    }
+    .step-description {
+      color: #4a5568;
+      margin-top: 12px;
+      padding-left: 40px;
+    }
+    .app-download-section {
+      margin: 32px 0;
+      text-align: center;
+      background: linear-gradient(135deg, #E8F5E9 0%, #F0E7FF 100%);
+      border-radius: 16px;
+      padding: 32px;
+    }
+    .app-download-section h3 {
+      color: #1a1a2e;
+      margin-bottom: 8px;
+      font-size: 20px;
+    }
+    .app-download-section p {
+      color: #4a5568;
+      margin-bottom: 24px;
+    }
+    .store-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .store-button {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: transform 0.2s;
+    }
+    .store-button:hover {
+      transform: translateY(-2px);
+    }
+    .store-button.ios {
+      background-color: #000000;
+      color: #ffffff;
+    }
+    .store-button.android {
+      background-color: #34A853;
+      color: #ffffff;
+    }
+    .qr-section {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px dashed #cbd5e0;
+    }
+    .qr-section p {
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 16px;
+    }
+    .qr-code {
+      width: 150px;
+      height: 150px;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 8px;
+      display: inline-block;
+    }
+    .pin-section {
+      background: #FEF3C7;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+    .pin-section h4 {
+      color: #92400E;
+      margin: 0 0 12px;
+    }
+    .pin-code {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      color: #1a1a2e;
+      background: #ffffff;
+      padding: 16px 32px;
+      border-radius: 8px;
+      display: inline-block;
+      font-family: 'Monaco', 'Consolas', monospace;
+    }
+    .pin-note {
+      font-size: 14px;
+      color: #92400E;
+      margin-top: 12px;
+    }
+    .child-friendly-note {
+      background: #EBF8FF;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+      display: flex;
+      align-items: flex-start;
+    }
+    .note-icon {
+      font-size: 24px;
+      margin-right: 16px;
+    }
+    .note-content h4 {
+      color: #2B6CB0;
+      margin: 0 0 8px;
+    }
+    .note-content p {
+      color: #4a5568;
+      margin: 0;
+      font-size: 14px;
+    }
+    .footer {
+      background-color: #f8f9fc;
+      padding: 24px 32px;
+      text-align: center;
+      font-size: 14px;
+      color: #718096;
+    }
+    .footer a {
+      color: #7C3AED;
+      text-decoration: none;
+    }
+    @media (max-width: 480px) {
+      .store-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      .store-button {
+        width: 200px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="device-icon">📱</div>
+      <h1>Set Up {{learnerName}}'s Learning Device</h1>
+      <p>Just a few steps to start their learning adventure</p>
+    </div>
+
+    <div class="content">
+      <p class="greeting">Hi {{parentName}},</p>
+
+      <p>
+        You've added <strong>{{learnerName}}</strong> to your AIVO family account!
+        Now let's get their learning device set up so they can start their personalized learning journey.
+      </p>
+
+      <div class="app-download-section">
+        <h3>📲 Download AIVO Learner</h3>
+        <p>Open this email on {{learnerName}}'s device and tap a button below:</p>
+
+        <div class="store-buttons">
+          <a href="{{iosLink}}" class="store-button ios">
+            🍎 Download for iPad/iPhone
+          </a>
+          <a href="{{androidLink}}" class="store-button android">
+            🤖 Download for Android
+          </a>
+        </div>
+
+        {{#if qrCodeUrl}}
+        <div class="qr-section">
+          <p>Or scan this QR code with {{learnerName}}'s device:</p>
+          <img src="{{qrCodeUrl}}" alt="QR Code to download AIVO Learner" class="qr-code">
+        </div>
+        {{/if}}
+      </div>
+
+      {{#if learnerPin}}
+      <div class="pin-section">
+        <h4>🔐 {{learnerName}}'s Login PIN</h4>
+        <div class="pin-code">{{learnerPin}}</div>
+        <p class="pin-note">
+          {{learnerName}} will use this PIN to log in. Keep it safe!
+        </p>
+      </div>
+      {{/if}}
+
+      <h4>Setup Steps:</h4>
+
+      <div class="step-card">
+        <span class="step-number">1</span>
+        <span class="step-title">Download the App</span>
+        <p class="step-description">
+          Tap the download button above on {{learnerName}}'s tablet or phone.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <span class="step-number">2</span>
+        <span class="step-title">Open & Enter PIN</span>
+        <p class="step-description">
+          Open AIVO Learner and enter {{learnerName}}'s PIN: <strong>{{learnerPin}}</strong>
+        </p>
+      </div>
+
+      <div class="step-card">
+        <span class="step-number">3</span>
+        <span class="step-title">Complete Baseline Assessment</span>
+        <p class="step-description">
+          {{learnerName}} will answer fun questions so we can personalize their learning.
+          This takes about 15-20 minutes.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <span class="step-number">4</span>
+        <span class="step-title">Start Learning!</span>
+        <p class="step-description">
+          Once complete, {{learnerName}} will have a personalized daily learning plan.
+          You'll receive updates in your Parent app.
+        </p>
+      </div>
+
+      <div class="child-friendly-note">
+        <span class="note-icon">👶</span>
+        <div class="note-content">
+          <h4>COPPA Compliant & Kid-Safe</h4>
+          <p>
+            AIVO Learner is designed for children. No ads, no external links,
+            and all data is protected under COPPA guidelines. You maintain
+            full control through your Parent app.
+          </p>
+        </div>
+      </div>
+
+      <p>
+        Once {{learnerName}} completes their baseline assessment, you'll receive
+        a notification in your Parent app with their learning profile results.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>
+        Need help? Contact us at
+        <a href="mailto:support@aivolearning.com">support@aivolearning.com</a>
+      </p>
+      <p>© {{currentYear}} AIVO Learning. All rights reserved.</p>
+      <p>
+        <a href="{{unsubscribeUrl}}">Manage notification preferences</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

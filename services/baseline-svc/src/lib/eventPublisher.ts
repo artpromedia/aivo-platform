@@ -1,10 +1,17 @@
 /**
- * Event publisher for Virtual Brain initialization.
- * Calls learner-model-svc to initialize the virtual brain after baseline is accepted.
+ * Event publisher for Virtual Brain initialization and parent notifications.
+ *
+ * After baseline is accepted:
+ * 1. Calls learner-model-svc to initialize the virtual brain
+ * 2. Calls notify-svc to send parent app download notification
  */
 
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TYPES
+// ══════════════════════════════════════════════════════════════════════════════
 
 export interface BaselineAcceptedEvent {
   type: 'BASELINE_ACCEPTED';
@@ -119,6 +126,9 @@ export async function publishBaselineAccepted(
 
     console.log('[EventPublisher] Virtual brain initialized:', result.virtualBrainId);
 
+    // Send parent notification for app download
+    await notifyParentOfBaselineCompletion(event, profile.finalAttempt.skillEstimates.length);
+
     return {
       success: true,
       virtualBrainId: result.virtualBrainId,
@@ -131,5 +141,125 @@ export async function publishBaselineAccepted(
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARENT NOTIFICATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface ParentInfo {
+  parentId: string;
+  parentEmail: string;
+  parentPhone?: string;
+  parentName: string;
+}
+
+/**
+ * Notify parent that learner completed baseline assessment.
+ * Sends email/SMS with parent app download link.
+ */
+async function notifyParentOfBaselineCompletion(
+  event: Omit<BaselineAcceptedEvent, 'type' | 'timestamp'>,
+  domainsAssessed: number
+): Promise<void> {
+  try {
+    // Find the parent linked to this learner
+    const parentInfo = await findParentForLearner(event.tenantId, event.learnerId);
+
+    if (!parentInfo) {
+      console.log('[EventPublisher] No parent found for learner, skipping notification');
+      return;
+    }
+
+    // Get learner name
+    const learner = await prisma.baselineProfile.findFirst({
+      where: { learnerId: event.learnerId },
+      select: { learnerId: true },
+    });
+
+    // Fetch learner details from learner table if available
+    let learnerName = 'Your child';
+    try {
+      const learnerData = await prisma.$queryRaw<{ firstName: string }[]>`
+        SELECT "firstName" FROM "learners" WHERE id = ${event.learnerId} LIMIT 1
+      `;
+      if (learnerData?.[0]?.firstName) {
+        learnerName = learnerData[0].firstName;
+      }
+    } catch {
+      // Table might not exist in test environment, use default name
+    }
+
+    // Call notify-svc to send the notification
+    const notifySvcUrl = config.notifySvcUrl || 'http://localhost:4012';
+
+    const payload = {
+      tenantId: event.tenantId,
+      learnerId: event.learnerId,
+      learnerName,
+      parentId: parentInfo.parentId,
+      parentEmail: parentInfo.parentEmail,
+      parentPhone: parentInfo.parentPhone,
+      parentName: parentInfo.parentName,
+      domainsAssessed: domainsAssessed > 0 ? domainsAssessed : 5, // Default to 5 domains
+    };
+
+    console.log('[EventPublisher] Sending parent notification:', JSON.stringify(payload));
+
+    const response = await fetch(`${notifySvcUrl}/onboarding/baseline-complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[EventPublisher] Parent notification failed:', response.status, errorBody);
+      return;
+    }
+
+    const result = await response.json();
+    console.log('[EventPublisher] Parent notification sent:', JSON.stringify(result));
+  } catch (error) {
+    // Don't fail the main flow if notification fails
+    console.error('[EventPublisher] Error sending parent notification:', error);
+  }
+}
+
+/**
+ * Find parent information for a learner.
+ * Queries parent-learner link table.
+ */
+async function findParentForLearner(
+  tenantId: string,
+  learnerId: string
+): Promise<ParentInfo | null> {
+  try {
+    // Query the parent-learner link to find the parent
+    const result = await prisma.$queryRaw<ParentInfo[]>`
+      SELECT
+        p.id as "parentId",
+        p.email as "parentEmail",
+        p.phone as "parentPhone",
+        COALESCE(p."givenName", p."firstName", 'Parent') as "parentName"
+      FROM "parentLearnerLinks" pll
+      JOIN "parents" p ON p.id = pll."parentId"
+      WHERE pll."learnerId" = ${learnerId}
+        AND pll."isPrimary" = true
+      LIMIT 1
+    `;
+
+    if (result && result.length > 0) {
+      return result[0];
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[EventPublisher] Error finding parent:', error);
+    return null;
   }
 }

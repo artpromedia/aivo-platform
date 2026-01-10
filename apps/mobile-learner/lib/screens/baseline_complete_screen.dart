@@ -109,6 +109,31 @@ class BaselineCompleteScreen extends ConsumerWidget {
                 ),
               ),
 
+              const SizedBox(height: 16),
+
+              // Email notification card
+              Card(
+                color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.email_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'We sent your grown-up an email with a link to download the Parent app!',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               const Spacer(),
 
               // What happens next

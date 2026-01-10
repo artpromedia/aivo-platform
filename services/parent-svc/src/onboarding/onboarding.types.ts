@@ -51,6 +51,7 @@ export interface RegisterLearnerInput {
 
 export interface RegisterLearnerResult {
   learnerId: string;
+  learnerPin: string;
   location: LocationInput;
   district?: DistrictInfo;
   curriculumStandards: string[];

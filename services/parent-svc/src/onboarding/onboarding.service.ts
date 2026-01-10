@@ -32,9 +32,11 @@ const DEFAULT_CURRICULUM: CurriculumInfo = {
 @Injectable()
 export class OnboardingService {
   private readonly tenantServiceUrl: string;
+  private readonly notifySvcUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
     this.tenantServiceUrl = process.env.TENANT_SERVICE_URL || 'http://tenant-svc:3000';
+    this.notifySvcUrl = process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4012';
   }
 
   /**
@@ -143,6 +145,9 @@ export class OnboardingService {
       }
     }
 
+    // Generate a PIN for the learner
+    const learnerPin = this.generateLearnerPin();
+
     // Create learner record in parent-svc database
     // Note: This creates the parent-learner link. The actual learner profile
     // is managed by profile-svc, and virtual brain by learner-model-svc
@@ -152,6 +157,7 @@ export class OnboardingService {
         lastName: input.lastName,
         dateOfBirth: new Date(input.dateOfBirth),
         gradeLevel: input.gradeLevel,
+        pin: learnerPin,
         // Location info for curriculum alignment
         stateCode: input.location.stateCode || district?.stateCode || null,
         zipCode: input.location.zipCode,
@@ -169,13 +175,81 @@ export class OnboardingService {
       },
     });
 
+    // Get parent details for notification
+    const parent = await this.prisma.parent.findUnique({
+      where: { id: parentId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        givenName: true,
+        familyName: true,
+      },
+    });
+
+    // Send learner app download notification to parent
+    if (parent) {
+      await this.sendLearnerAppDownloadNotification({
+        tenantId: process.env.CONSUMER_TENANT_ID || 'consumer',
+        learnerId: learner.id,
+        learnerName: input.firstName,
+        learnerPin,
+        parentId: parent.id,
+        parentEmail: parent.email,
+        parentPhone: parent.phone || undefined,
+        parentName: parent.givenName || 'Parent',
+      });
+    }
+
     return {
       learnerId: learner.id,
+      learnerPin,
       location: input.location,
       district,
       curriculumStandards: locationResult.curriculum.curriculumStandards,
       needsBaseline: true, // New learners need baseline assessment
     };
+  }
+
+  /**
+   * Generate a 6-digit PIN for learner login
+   */
+  private generateLearnerPin(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  /**
+   * Send notification to parent with learner app download link
+   */
+  private async sendLearnerAppDownloadNotification(payload: {
+    tenantId: string;
+    learnerId: string;
+    learnerName: string;
+    learnerPin: string;
+    parentId: string;
+    parentEmail: string;
+    parentPhone?: string;
+    parentName: string;
+  }): Promise<void> {
+    try {
+      const response = await fetch(`${this.notifySvcUrl}/onboarding/learner-added`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('[OnboardingService] Failed to send learner app notification:', errorBody);
+      } else {
+        console.log('[OnboardingService] Learner app download notification sent successfully');
+      }
+    } catch (error) {
+      // Don't fail the registration if notification fails
+      console.error('[OnboardingService] Error sending learner app notification:', error);
+    }
   }
 
   /**

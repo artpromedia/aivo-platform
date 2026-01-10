@@ -23,6 +23,7 @@ import {
   registerWebhookRoutes,
   registerEmailRoutes,
 } from './routes/index.js';
+import { onboardingRoutes } from './onboarding/index.js';
 
 // Extend Fastify instance type
 declare module 'fastify' {
@@ -127,6 +128,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerWebhookRoutes(app);
   await registerEmailRoutes(app);
 
+  // Onboarding routes (internal API for cross-app flows)
+  await app.register(onboardingRoutes, { prefix: '/onboarding' });
+
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT
   // ════════════════════════════════════════════════════════════════════════════
@@ -140,6 +144,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       preferences: '/preferences',
       devices: '/devices',
       learnerSettings: '/learner-settings',
+      onboarding: '/onboarding',
     },
   }));
 
