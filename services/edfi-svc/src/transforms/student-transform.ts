@@ -131,7 +131,7 @@ export function transformToEdfiStudent(
 
   // Add source system identifier
   student.personId = learner.id;
-  student.sourceSystemDescriptor = 'uri://aivo.com/SourceSystemDescriptor#Aivo';
+  student.sourceSystemDescriptor = 'uri://aivolearning.com/SourceSystemDescriptor#Aivo';
 
   return { success: true, data: student, warnings };
 }

@@ -288,10 +288,10 @@ export const XapiActivityTypes = {
   question: 'http://adlnet.gov/expapi/activities/question',
   simulation: 'http://adlnet.gov/expapi/activities/simulation',
   // Aivo-specific
-  lesson_activity: 'https://aivo.com/xapi/activity-types/lesson-activity',
-  practice_problem: 'https://aivo.com/xapi/activity-types/practice-problem',
-  skill: 'https://aivo.com/xapi/activity-types/skill',
-  learning_objective: 'https://aivo.com/xapi/activity-types/learning-objective',
+  lesson_activity: 'https://aivolearning.com/xapi/activity-types/lesson-activity',
+  practice_problem: 'https://aivolearning.com/xapi/activity-types/practice-problem',
+  skill: 'https://aivolearning.com/xapi/activity-types/skill',
+  learning_objective: 'https://aivolearning.com/xapi/activity-types/learning-objective',
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════════

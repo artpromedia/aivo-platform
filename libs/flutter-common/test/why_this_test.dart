@@ -95,7 +95,7 @@ void main() {
   setUp(() {
     mockHttpClient = MockHttpClient();
     explanationService = TestableExplanationService(
-      baseUrl: 'https://api.test.aivo.com',
+      baseUrl: 'https://api.test.aivolearning.com',
       getAuthToken: () async => 'test-token',
       httpClient: mockHttpClient,
     );

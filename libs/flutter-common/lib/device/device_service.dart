@@ -21,7 +21,7 @@ import 'device_models.dart';
 /// Usage:
 /// ```dart
 /// final service = DeviceService(
-///   baseUrl: 'https://api.aivo.com',
+///   baseUrl: 'https://api.aivolearning.com',
 ///   tenantId: 'tenant-uuid',
 /// );
 /// await service.initialize();

@@ -53,19 +53,19 @@ export default function LMSLTIPage() {
         <tbody>
           <tr>
             <td>Tool URL</td>
-            <td><code>https://lti.aivo.com/launch</code></td>
+            <td><code>https://lti.aivolearning.com/launch</code></td>
           </tr>
           <tr>
             <td>OIDC Login URL</td>
-            <td><code>https://lti.aivo.com/oidc/login</code></td>
+            <td><code>https://lti.aivolearning.com/oidc/login</code></td>
           </tr>
           <tr>
             <td>JWKS URL</td>
-            <td><code>https://lti.aivo.com/.well-known/jwks.json</code></td>
+            <td><code>https://lti.aivolearning.com/.well-known/jwks.json</code></td>
           </tr>
           <tr>
             <td>Deep Linking URL</td>
-            <td><code>https://lti.aivo.com/deep-link</code></td>
+            <td><code>https://lti.aivolearning.com/deep-link</code></td>
           </tr>
         </tbody>
       </table>
@@ -170,7 +170,7 @@ export default function LMSLTIPage() {
     {
       "type": "ltiResourceLink",
       "title": "Fractions Practice",
-      "url": "https://lti.aivo.com/launch?content=fractions_unit_1",
+      "url": "https://lti.aivolearning.com/launch?content=fractions_unit_1",
       "lineItem": {
         "label": "Fractions Practice",
         "scoreMaximum": 100

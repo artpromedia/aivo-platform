@@ -262,9 +262,9 @@ const DEFAULT_CONFIG: XAPIServiceConfig = {
   authority: {
     objectType: 'Agent',
     name: 'AIVO Platform',
-    mbox: 'mailto:xapi@aivo.com',
+    mbox: 'mailto:xapi@aivolearning.com',
   },
-  homePage: 'https://app.aivo.com',
+  homePage: 'https://app.aivolearning.com',
   bufferSize: 50,
   flushIntervalMs: 10000,
   enabled: true,
@@ -464,7 +464,7 @@ export class XAPIService {
       platform: 'AIVO Platform',
       language: context.language ?? 'en-US',
       extensions: {
-        'https://aivo.com/xapi/extensions/tenant': context.tenantId,
+        'https://aivolearning.com/xapi/extensions/tenant': context.tenantId,
       },
     };
 

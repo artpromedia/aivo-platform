@@ -282,7 +282,7 @@ def handle_webhook():
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X POST "https://api.aivo.com/admin/webhooks" \\
+        code={`curl -X POST "https://api.aivolearning.com/admin/webhooks" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID" \\
   -H "Content-Type: application/json" \\
@@ -299,7 +299,7 @@ def handle_webhook():
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X GET "https://api.aivo.com/admin/webhooks" \\
+        code={`curl -X GET "https://api.aivolearning.com/admin/webhooks" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID"`}
       />
@@ -309,7 +309,7 @@ def handle_webhook():
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X GET "https://api.aivo.com/admin/webhooks/wh_abc123/deliveries" \\
+        code={`curl -X GET "https://api.aivolearning.com/admin/webhooks/wh_abc123/deliveries" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID"`}
       />

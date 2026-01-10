@@ -364,7 +364,7 @@ export class ScimService {
   getServiceProviderConfig() {
     return {
       schemas: [SCIM_SCHEMAS.SERVICE_PROVIDER_CONFIG],
-      documentationUri: 'https://docs.aivo.com/scim',
+      documentationUri: 'https://docs.aivolearning.com/scim',
       patch: { supported: true },
       bulk: {
         supported: true,

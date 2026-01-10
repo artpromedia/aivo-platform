@@ -126,7 +126,7 @@ function LtiError({ error, message }: Readonly<{ error: string; message?: string
             Close Window
           </button>
           <a
-            href="mailto:support@aivo.com"
+            href="mailto:support@aivolearning.com"
             className="text-center text-sm text-primary hover:underline"
           >
             Contact Support

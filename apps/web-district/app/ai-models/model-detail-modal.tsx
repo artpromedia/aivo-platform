@@ -230,7 +230,7 @@ export function ModelDetailModal({ model }: ModelDetailModalProps) {
             <div className="sticky bottom-0 bg-surface-muted border-t border-border px-6 py-4">
               <p className="text-xs text-muted text-center">
                 For questions about this AI model or to report concerns,{' '}
-                <a href="mailto:support@aivo.com" className="text-primary hover:underline">
+                <a href="mailto:support@aivolearning.com" className="text-primary hover:underline">
                   contact Aivo support
                 </a>
                 .

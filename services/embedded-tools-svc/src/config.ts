@@ -25,7 +25,7 @@ export const config = {
     | 'development'
     | 'staging'
     | 'production',
-  messageOrigin: process.env.MESSAGE_ORIGIN ?? 'https://app.aivo.com',
+  messageOrigin: process.env.MESSAGE_ORIGIN ?? 'https://app.aivolearning.com',
 
   // Marketplace service URL (for fetching tool configs)
   marketplaceSvcUrl: process.env.MARKETPLACE_SVC_URL ?? 'http://localhost:4070',

@@ -407,11 +407,11 @@ describe('Contact CTAs', () => {
   });
 
   it('contact support mailto is properly formatted', () => {
-    const supportEmail = 'support@aivo.com';
+    const supportEmail = 'support@aivolearning.com';
     const subject = encodeURIComponent('Billing Support Request');
 
     const mailtoUrl = `mailto:${supportEmail}?subject=${subject}`;
-    expect(mailtoUrl).toBe('mailto:support@aivo.com?subject=Billing%20Support%20Request');
+    expect(mailtoUrl).toBe('mailto:support@aivolearning.com?subject=Billing%20Support%20Request');
   });
 
   it('request modules CTA includes disabled modules list', () => {

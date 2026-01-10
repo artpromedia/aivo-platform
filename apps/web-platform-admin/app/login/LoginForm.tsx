@@ -49,7 +49,7 @@ export function LoginForm() {
             setEmail(e.target.value);
           }}
           className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-          placeholder="admin@aivo.internal"
+          placeholder="admin@aivolearning.com"
           required
         />
       </div>

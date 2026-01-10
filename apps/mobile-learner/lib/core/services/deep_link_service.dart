@@ -24,9 +24,9 @@ class DeepLinkService {
 
   /// Supported hosts for universal/app links
   static const List<String> supportedHosts = [
-    'learn.aivo.com',
-    'app.aivo.com',
-    'aivo.com',
+    'learn.aivolearning.com',
+    'app.aivolearning.com',
+    'aivolearning.com',
   ];
 
   DeepLinkService(this._ref);
@@ -86,7 +86,7 @@ class DeepLinkService {
       return _mapAppSchemeUri(uri);
     }
 
-    // Handle universal/app links (https://learn.aivo.com/...)
+    // Handle universal/app links (https://learn.aivolearning.com/...)
     if (uri.scheme == httpsScheme && supportedHosts.contains(uri.host)) {
       return _mapWebUri(uri);
     }
@@ -270,7 +270,7 @@ class DeepLinkService {
   }) {
     final uri = Uri(
       scheme: httpsScheme,
-      host: 'learn.aivo.com',
+      host: 'learn.aivolearning.com',
       path: '/share',
       queryParameters: {
         'type': type,

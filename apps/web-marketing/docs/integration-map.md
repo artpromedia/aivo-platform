@@ -296,7 +296,7 @@ window.location.href = buildRegistrationUrl({
   referralCode: 'FRIEND20',
 });
 
-// Builds: https://app.aivo.com/register?plan=pro&interval=annual&source=marketing_hero&ref=FRIEND20
+// Builds: https://app.aivolearning.com/register?plan=pro&interval=annual&source=marketing_hero&ref=FRIEND20
 ```
 
 ### 3. Checkout Flow
@@ -307,7 +307,7 @@ For authenticated users:
 // User selects plan on pricing page
 goToCheckout('pro', 'annual');
 
-// Redirects to: https://app.aivo.com/checkout?plan=pro&interval=annual&source=marketing
+// Redirects to: https://app.aivolearning.com/checkout?plan=pro&interval=annual&source=marketing
 ```
 
 The main app handles:
@@ -323,7 +323,7 @@ The main app handles:
 // User clicks "Sign In"
 window.location.href = buildLoginUrl(window.location.pathname);
 
-// Redirects to: https://app.aivo.com/login?returnUrl=/pricing
+// Redirects to: https://app.aivolearning.com/login?returnUrl=/pricing
 ```
 
 ### 5. Dashboard Access
@@ -332,7 +332,7 @@ window.location.href = buildLoginUrl(window.location.pathname);
 // Authenticated user clicks "Dashboard"
 goToDashboard('/settings');
 
-// Redirects to: https://app.aivo.com/dashboard/settings
+// Redirects to: https://app.aivolearning.com/dashboard/settings
 ```
 
 ---

@@ -36,7 +36,7 @@ describe('Lti11ContentItemService', () => {
     updatedAt: new Date(),
   };
 
-  const baseUrl = 'https://lti.aivo.com';
+  const baseUrl = 'https://lti.aivolearning.com';
 
   beforeEach(() => {
     mockPrisma = createMockPrisma();
@@ -85,11 +85,11 @@ describe('Lti11ContentItemService', () => {
       const item = service.buildLtiLinkItem({
         title: 'Lecture Video',
         launchUrl: `${baseUrl}/lti/1.1/launch?content_id=video-789`,
-        icon: 'https://cdn.aivo.com/icons/video-icon.png',
+        icon: 'https://cdn.aivolearning.com/icons/video-icon.png',
       });
 
       expect(item.icon).toEqual({
-        '@id': 'https://cdn.aivo.com/icons/video-icon.png',
+        '@id': 'https://cdn.aivolearning.com/icons/video-icon.png',
         width: 50,
         height: 50,
       });
@@ -118,7 +118,7 @@ describe('Lti11ContentItemService', () => {
       const item = service.buildFileItem({
         title: 'Study Guide PDF',
         text: 'Chapter 1-5 study materials',
-        url: 'https://cdn.aivo.com/files/study-guide.pdf',
+        url: 'https://cdn.aivolearning.com/files/study-guide.pdf',
         mediaType: 'application/pdf',
       });
 
@@ -126,7 +126,7 @@ describe('Lti11ContentItemService', () => {
         '@type': 'FileItem',
         title: 'Study Guide PDF',
         text: 'Chapter 1-5 study materials',
-        url: 'https://cdn.aivo.com/files/study-guide.pdf',
+        url: 'https://cdn.aivolearning.com/files/study-guide.pdf',
         mediaType: 'application/pdf',
       });
     });
@@ -134,13 +134,13 @@ describe('Lti11ContentItemService', () => {
     it('should include thumbnail when provided', () => {
       const item = service.buildFileItem({
         title: 'Video Lecture',
-        url: 'https://cdn.aivo.com/videos/lecture-1.mp4',
+        url: 'https://cdn.aivolearning.com/videos/lecture-1.mp4',
         mediaType: 'video/mp4',
-        thumbnail: 'https://cdn.aivo.com/thumbnails/lecture-1.jpg',
+        thumbnail: 'https://cdn.aivolearning.com/thumbnails/lecture-1.jpg',
       });
 
       expect(item.thumbnail).toEqual({
-        '@id': 'https://cdn.aivo.com/thumbnails/lecture-1.jpg',
+        '@id': 'https://cdn.aivolearning.com/thumbnails/lecture-1.jpg',
         width: 128,
         height: 128,
       });

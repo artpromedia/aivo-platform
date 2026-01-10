@@ -31,8 +31,8 @@ class DeepLinkHandler {
         );
       }
 
-      // Handle universal links: https://app.aivo.com/...
-      if (uri.scheme == 'https' && uri.host == 'app.aivo.com') {
+      // Handle universal links: https://app.aivolearning.com/...
+      if (uri.scheme == 'https' && uri.host == 'app.aivolearning.com') {
         // Remove app prefix from path (/learner/..., /parent/..., /teacher/...)
         String path = uri.path;
         final prefixes = ['/learner', '/parent', '/teacher'];
@@ -106,7 +106,7 @@ class DeepLinkHandler {
   }) {
     return Uri(
       scheme: 'https',
-      host: 'app.aivo.com',
+      host: 'app.aivolearning.com',
       path: '$appPrefix$path',
       queryParameters: queryParameters?.isEmpty == true ? null : queryParameters,
     );
@@ -146,7 +146,7 @@ enum DeepLinkSource {
   /// Custom URL scheme (aivo-learner://)
   customScheme,
 
-  /// Universal/App link (https://app.aivo.com/...)
+  /// Universal/App link (https://app.aivolearning.com/...)
   universalLink,
 
   /// Push notification

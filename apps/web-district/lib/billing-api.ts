@@ -1124,7 +1124,7 @@ export async function fetchAccountManager(
     return {
       id: 'am-1',
       name: 'Account Manager',
-      email: 'support@aivo.com',
+      email: 'support@aivolearning.com',
       phone: '1-800-555-1234',
       initials: 'AM',
     };

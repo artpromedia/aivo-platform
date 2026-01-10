@@ -28,7 +28,7 @@
  * function App() {
  *   return (
  *     <CollaborationProvider
- *       serverUrl="wss://realtime.aivo.com"
+ *       serverUrl="wss://realtime.aivolearning.com"
  *       token={authToken}
  *       userId={user.id}
  *       displayName={user.name}

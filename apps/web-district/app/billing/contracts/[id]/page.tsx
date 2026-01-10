@@ -271,7 +271,7 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
               <h3 className="font-semibold text-text">Need Help?</h3>
               <div className="mt-4 space-y-3">
                 <a
-                  href="mailto:support@aivo.com"
+                  href="mailto:support@aivolearning.com"
                   className="flex items-center gap-3 text-sm text-muted hover:text-text"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -285,7 +285,7 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
                   Contact Support
                 </a>
                 <a
-                  href="mailto:billing@aivo.com"
+                  href="mailto:billing@aivolearning.com"
                   className="flex items-center gap-3 text-sm text-muted hover:text-text"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

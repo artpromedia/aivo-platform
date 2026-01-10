@@ -242,7 +242,7 @@ export class EmailChannel implements NotificationChannel {
       }
     </div>
     <div style="padding: 15px 20px; background: #f5f5f5; font-size: 12px; color: #666;">
-      <p style="margin: 0;">This notification was sent by Aivo. <a href="https://app.aivo.com/settings/notifications">Manage your preferences</a></p>
+      <p style="margin: 0;">This notification was sent by Aivo. <a href="https://app.aivolearning.com/settings/notifications">Manage your preferences</a></p>
     </div>
   </div>
 </body>

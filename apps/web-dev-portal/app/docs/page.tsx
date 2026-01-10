@@ -104,7 +104,7 @@ export default function DocsOverviewPage() {
         <li><Link href="/docs/guides">Step-by-step guides</Link> for common integration scenarios</li>
         <li><Link href="/api-reference">Interactive API reference</Link> with example requests</li>
         <li><Link href="/sandbox">Sandbox environment</Link> for testing</li>
-        <li><a href="mailto:partners@aivo.com">Email our partner team</a> for technical support</li>
+        <li><a href="mailto:partners@aivolearning.com">Email our partner team</a> for technical support</li>
       </ul>
     </div>
   );

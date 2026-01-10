@@ -216,7 +216,7 @@ const DEFAULT_CONFIG: ReportServiceConfig = {
   reportTtlDays: 30,
   maxReportSize: 50 * 1024 * 1024, // 50MB
   enableEmailDelivery: true,
-  fromEmail: process.env['REPORTS_FROM_EMAIL'] ?? 'reports@aivo.com',
+  fromEmail: process.env['REPORTS_FROM_EMAIL'] ?? 'reports@aivolearning.com',
   companyName: 'AIVO',
   logoUrl: undefined,
 };

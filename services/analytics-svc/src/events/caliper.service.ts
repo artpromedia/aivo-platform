@@ -274,7 +274,7 @@ export interface CaliperEventInput {
 const DEFAULT_CONFIG: CaliperServiceConfig = {
   endpoint: process.env['CALIPER_ENDPOINT'] ?? 'http://localhost:8080/caliper',
   apiKey: process.env['CALIPER_API_KEY'] ?? '',
-  sensorId: 'https://aivo.com/sensor/1',
+  sensorId: 'https://aivolearning.com/sensor/1',
   dataVersion: 'http://purl.imsglobal.org/ctx/caliper/v1p2',
   bufferSize: 50,
   flushIntervalMs: 10000,

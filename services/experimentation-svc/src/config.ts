@@ -42,5 +42,5 @@ export const config = {
   // JWT verification (optional, for authenticated endpoints)
   jwtSecret: requireEnvInProduction('JWT_SECRET', 'dev-secret-change-in-prod'),
   jwtAudience: process.env.JWT_AUDIENCE ?? 'aivo-api',
-  jwtIssuer: process.env.JWT_ISSUER ?? 'auth.aivo.com',
+  jwtIssuer: process.env.JWT_ISSUER ?? 'auth.aivolearning.com',
 };

@@ -20,7 +20,7 @@ export function SeatWarningBanner({ seatUsage }: SeatWarningBannerProps) {
 
   const handleRequestSeats = () => {
     window.open(
-      `mailto:sales@aivo.com?subject=Seat%20Capacity%20Request&body=Hi%2C%0A%0AWe%20are%20currently%20using%20${seatUsage.usedSeats}%20of%20${seatUsage.totalSeats}%20seats%20(${percentage}%25%20capacity).%0A%0AWe%20would%20like%20to%20request%20additional%20seats%20for%20our%20district.%0A%0APlease%20contact%20me%20to%20discuss%20options.`,
+      `mailto:sales@aivolearning.com?subject=Seat%20Capacity%20Request&body=Hi%2C%0A%0AWe%20are%20currently%20using%20${seatUsage.usedSeats}%20of%20${seatUsage.totalSeats}%20seats%20(${percentage}%25%20capacity).%0A%0AWe%20would%20like%20to%20request%20additional%20seats%20for%20our%20district.%0A%0APlease%20contact%20me%20to%20discuss%20options.`,
       '_blank'
     );
   };

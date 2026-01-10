@@ -192,7 +192,7 @@ export default function SandboxPage() {
       {/* Footer */}
       <footer className="bg-gray-50 border-t border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-600">
-          <p>Need help? Contact us at <a href="mailto:partners@aivo.com" className="text-portal-primary">partners@aivo.com</a></p>
+          <p>Need help? Contact us at <a href="mailto:partners@aivolearning.com" className="text-portal-primary">partners@aivolearning.com</a></p>
         </div>
       </footer>
     </div>

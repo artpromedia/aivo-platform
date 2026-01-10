@@ -471,7 +471,7 @@ VALUES (
     'aivo',
     'Aivo Learning',
     'AIVO',
-    'marketplace@aivo.com',
+    'marketplace@aivolearning.com',
     'First-party content packs and tools from the Aivo team',
     TRUE,
     TRUE

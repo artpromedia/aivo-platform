@@ -48,7 +48,7 @@ function createMockSAMLResponse(options: {
       <saml:Issuer>${options.issuer || 'https://idp.example.com'}</saml:Issuer>
       <saml:Conditions NotBefore="${notBefore}" NotOnOrAfter="${notOnOrAfter}">
         <saml:AudienceRestriction>
-          <saml:Audience>${options.audience || 'https://app.aivo.com'}</saml:Audience>
+          <saml:Audience>${options.audience || 'https://app.aivolearning.com'}</saml:Audience>
         </saml:AudienceRestriction>
       </saml:Conditions>
       <saml:AttributeStatement>
@@ -277,7 +277,7 @@ describe('OAuth/OIDC Security', () => {
     it('should REQUIRE code_challenge in authorization request', async () => {
       const authRequest = {
         client_id: 'test-client',
-        redirect_uri: 'https://app.aivo.com/callback',
+        redirect_uri: 'https://app.aivolearning.com/callback',
         response_type: 'code',
         scope: 'openid profile email',
         state: randomBytes(16).toString('hex'),
@@ -296,7 +296,7 @@ describe('OAuth/OIDC Security', () => {
     it('should REJECT plain code_challenge_method', async () => {
       const authRequest = {
         client_id: 'test-client',
-        redirect_uri: 'https://app.aivo.com/callback',
+        redirect_uri: 'https://app.aivolearning.com/callback',
         response_type: 'code',
         scope: 'openid profile email',
         state: randomBytes(16).toString('hex'),
@@ -410,7 +410,7 @@ describe('OAuth/OIDC Security', () => {
     });
 
     it('should REJECT open redirect via path traversal', async () => {
-      const pathTraversal = 'https://app.aivo.com/../../../evil.com/steal';
+      const pathTraversal = 'https://app.aivolearning.com/../../../evil.com/steal';
 
       // URL normalization should prevent this
       const normalized = new URL(pathTraversal);
@@ -419,7 +419,7 @@ describe('OAuth/OIDC Security', () => {
     });
 
     it('should REJECT HTTP redirects in production', async () => {
-      const httpRedirect = 'http://app.aivo.com/callback';
+      const httpRedirect = 'http://app.aivolearning.com/callback';
 
       // In production, should require HTTPS
       // const result = await redirectValidator.validate(httpRedirect, { requireHttps: true });
@@ -430,7 +430,7 @@ describe('OAuth/OIDC Security', () => {
     });
 
     it('should REJECT redirects with credentials in URL', async () => {
-      const credentialsInUrl = 'https://user:pass@app.aivo.com/callback';
+      const credentialsInUrl = 'https://user:pass@app.aivolearning.com/callback';
 
       const url = new URL(credentialsInUrl);
       expect(url.username).toBe('user');

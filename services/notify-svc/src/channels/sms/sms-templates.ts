@@ -105,7 +105,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~130 chars
    */
   'security-alert': {
-    template: 'Aivo Security: {{alertType}} detected on your account at {{time}}. If this wasn\'t you, secure your account at aivo.com/security',
+    template: 'Aivo Security: {{alertType}} detected on your account at {{time}}. If this wasn\'t you, secure your account at aivolearning.com/security',
     maxSegments: 1,
     requiresOptOut: false,
     bypassConsent: true,
@@ -120,7 +120,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~140 chars
    */
   'session-reminder': {
-    template: 'Reminder: {{studentName}}\'s {{subject}} session starts in {{timeUntil}}. Join at aivo.com/session/{{sessionId}}. Reply STOP to opt out.',
+    template: 'Reminder: {{studentName}}\'s {{subject}} session starts in {{timeUntil}}. Join at aivolearning.com/session/{{sessionId}}. Reply STOP to opt out.',
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: false,
@@ -131,7 +131,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~125 chars
    */
   'class-reminder': {
-    template: '{{className}} starts in {{timeUntil}}. Room: {{room}}. Join: aivo.com/class/{{classId}}. Reply STOP to opt out.',
+    template: '{{className}} starts in {{timeUntil}}. Room: {{room}}. Join: aivolearning.com/class/{{classId}}. Reply STOP to opt out.',
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: false,
@@ -142,7 +142,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~120 chars
    */
   'homework-due': {
-    template: 'Reminder: "{{assignmentName}}" is due {{dueDate}}. Submit at aivo.com/hw/{{assignmentId}}. Reply STOP to opt out.',
+    template: 'Reminder: "{{assignmentName}}" is due {{dueDate}}. Submit at aivolearning.com/hw/{{assignmentId}}. Reply STOP to opt out.',
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: false,
@@ -157,7 +157,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~145 chars
    */
   'parent-alert': {
-    template: 'Aivo: {{alertMessage}} for {{studentName}} at {{time}}. View details: aivo.com/parent. Reply STOP to opt out.',
+    template: 'Aivo: {{alertMessage}} for {{studentName}} at {{time}}. View details: aivolearning.com/parent. Reply STOP to opt out.',
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: false,
@@ -168,7 +168,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~135 chars
    */
   'grade-posted': {
-    template: 'New grade for {{studentName}}: {{grade}} on "{{assignmentName}}" in {{className}}. View: aivo.com/grades. Reply STOP to opt out.',
+    template: 'New grade for {{studentName}}: {{grade}} on "{{assignmentName}}" in {{className}}. View: aivolearning.com/grades. Reply STOP to opt out.',
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: false,
@@ -205,7 +205,7 @@ const templates: Record<SmsTemplateName, SmsTemplate> = {
    * ~145 chars
    */
   'help-response': {
-    template: 'Aivo SMS: For support visit aivo.com/help or email support@aivo.com. Reply STOP to unsubscribe. Msg freq varies. Msg&data rates may apply.',
+    template: 'Aivo SMS: For support visit aivolearning.com/help or email support@aivolearning.com. Reply STOP to unsubscribe. Msg freq varies. Msg&data rates may apply.',
     maxSegments: 1,
     requiresOptOut: true,
     bypassConsent: true,

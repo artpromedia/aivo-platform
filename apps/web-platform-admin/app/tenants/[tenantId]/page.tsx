@@ -26,7 +26,7 @@ const MOCK_TENANT: Tenant = {
   name: 'North Valley District',
   type: 'DISTRICT',
   status: 'ACTIVE',
-  primaryDomain: 'northvalley.aivo.com',
+  primaryDomain: 'northvalley.aivolearning.com',
   settings: {
     maxLearners: 10000,
     maxEducators: 500,

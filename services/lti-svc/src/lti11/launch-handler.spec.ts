@@ -107,7 +107,7 @@ describe('Lti11LaunchHandler', () => {
     updatedAt: new Date(),
   };
 
-  const baseUrl = 'https://lti.aivo.com';
+  const baseUrl = 'https://lti.aivolearning.com';
   const launchUrl = `${baseUrl}/lti/1.1/launch`;
 
   beforeEach(() => {

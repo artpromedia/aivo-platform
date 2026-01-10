@@ -1,5 +1,5 @@
 # App Store Connect credentials
 app_identifier("com.aivo.parent")
-apple_id(ENV["APPLE_ID"] || "developer@aivo.com")
+apple_id(ENV["APPLE_ID"] || "developer@aivolearning.com")
 itc_team_id(ENV["ITC_TEAM_ID"])
 team_id(ENV["APPLE_TEAM_ID"])

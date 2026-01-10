@@ -100,7 +100,7 @@ enroll_002,active,2024-12-01T00:00:00Z,class_001,school_001,user_002,teacher,tru
       <CodeBlock
         language="text"
         filename="SFTP Details"
-        code={`Host: sftp.aivo.com
+        code={`Host: sftp.aivolearning.com
 Port: 22
 Username: your_tenant_id
 Directory: /incoming/oneroster/
@@ -195,7 +195,7 @@ File naming convention:
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X GET "https://api.aivo.com/admin/roster/imports" \\
+        code={`curl -X GET "https://api.aivolearning.com/admin/roster/imports" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID"`}
       />

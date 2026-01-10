@@ -108,15 +108,15 @@ class EnvConfig {
   static void _initStaging() {
     apiBaseUrl = const String.fromEnvironment(
       'API_URL',
-      defaultValue: 'https://staging-api.aivo.com/api',
+      defaultValue: 'https://staging-api.aivolearning.com/api',
     );
     wsBaseUrl = const String.fromEnvironment(
       'WS_URL',
-      defaultValue: 'wss://staging-api.aivo.com',
+      defaultValue: 'wss://staging-api.aivolearning.com',
     );
     cdnUrl = const String.fromEnvironment(
       'CDN_URL',
-      defaultValue: 'https://staging-cdn.aivo.com',
+      defaultValue: 'https://staging-cdn.aivolearning.com',
     );
     sentryDsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
     showDebugBanner = true;
@@ -128,15 +128,15 @@ class EnvConfig {
   static void _initProd() {
     apiBaseUrl = const String.fromEnvironment(
       'API_URL',
-      defaultValue: 'https://api.aivo.com/api',
+      defaultValue: 'https://api.aivolearning.com/api',
     );
     wsBaseUrl = const String.fromEnvironment(
       'WS_URL',
-      defaultValue: 'wss://api.aivo.com',
+      defaultValue: 'wss://api.aivolearning.com',
     );
     cdnUrl = const String.fromEnvironment(
       'CDN_URL',
-      defaultValue: 'https://cdn.aivo.com',
+      defaultValue: 'https://cdn.aivolearning.com',
     );
     sentryDsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
     showDebugBanner = false;

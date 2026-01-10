@@ -137,7 +137,7 @@ export function ContractOverview({ contract, daysUntilEnd, renewalStatus }: Cont
                 variant="secondary"
                 onClick={() => {
                   window.open(
-                    'mailto:renewals@aivo.com?subject=Contract%20Renewal%20Request',
+                    'mailto:renewals@aivolearning.com?subject=Contract%20Renewal%20Request',
                     '_blank'
                   );
                 }}

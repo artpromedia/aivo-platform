@@ -15,13 +15,13 @@ export default function PublicAPIsPage() {
       <CodeBlock
         language="text"
         filename="Production"
-        code={`https://api.aivo.com/public/v1`}
+        code={`https://api.aivolearning.com/public/v1`}
       />
 
       <CodeBlock
         language="text"
         filename="Sandbox"
-        code={`https://sandbox.aivo.com/api/public/v1`}
+        code={`https://sandbox.aivolearning.com/api/public/v1`}
       />
 
       <h2>Authentication</h2>
@@ -76,7 +76,7 @@ Content-Type: application/json`}
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X GET "https://api.aivo.com/public/v1/learners/learner_abc123/progress" \\
+        code={`curl -X GET "https://api.aivolearning.com/public/v1/learners/learner_abc123/progress" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID"`}
       />
@@ -165,7 +165,7 @@ Content-Type: application/json`}
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X GET "https://api.aivo.com/public/v1/learners/learner_abc123/sessions?limit=10&startDate=2024-12-01" \\
+        code={`curl -X GET "https://api.aivolearning.com/public/v1/learners/learner_abc123/sessions?limit=10&startDate=2024-12-01" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID"`}
       />
@@ -218,7 +218,7 @@ Content-Type: application/json`}
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X POST "https://api.aivo.com/public/v1/events/external-learning" \\
+        code={`curl -X POST "https://api.aivolearning.com/public/v1/events/external-learning" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID" \\
   -H "Content-Type: application/json" \\

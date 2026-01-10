@@ -42,7 +42,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.aivo.com',
+        hostname: '**.aivolearning.com',
       },
       {
         protocol: 'https',

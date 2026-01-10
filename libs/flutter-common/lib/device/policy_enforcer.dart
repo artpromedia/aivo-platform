@@ -351,7 +351,7 @@ mixin PolicyAwareMixin {
     if (!policyEnforcer.areExternalLinksRestricted) return false;
     
     // Allow whitelisted domains
-    final allowedDomains = ['aivo.com', 'aivo.ai'];
+    final allowedDomains = ['aivolearning.com', 'aivo.ai'];
     final uri = Uri.tryParse(url);
     if (uri == null) return true;
     

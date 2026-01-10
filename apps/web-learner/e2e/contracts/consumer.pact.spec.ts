@@ -188,7 +188,7 @@ describe('Web Learner API Consumer Contracts', () => {
               id: uuid(),
               email: email(),
               name: string('Test User'),
-              avatar: like('https://cdn.aivo.com/avatars/default.png'),
+              avatar: like('https://cdn.aivolearning.com/avatars/default.png'),
               role: regex('learner|parent|teacher', 'learner'),
               isChild: boolean(false),
               preferences: {
@@ -298,7 +298,7 @@ describe('Web Learner API Consumer Contracts', () => {
                 id: uuid(),
                 title: string('Introduction to Mathematics'),
                 description: string('Learn the basics of math'),
-                thumbnail: like('https://cdn.aivo.com/courses/math-intro.jpg'),
+                thumbnail: like('https://cdn.aivolearning.com/courses/math-intro.jpg'),
                 duration: integer(120),
                 lessonsCount: integer(10),
                 difficulty: regex('beginner|intermediate|advanced', 'beginner'),
@@ -389,11 +389,11 @@ describe('Web Learner API Consumer Contracts', () => {
               title: string('Introduction to Mathematics'),
               description: string('A comprehensive math course'),
               longDescription: like('Detailed course description...'),
-              thumbnail: like('https://cdn.aivo.com/courses/math.jpg'),
+              thumbnail: like('https://cdn.aivolearning.com/courses/math.jpg'),
               instructor: {
                 id: uuid(),
                 name: string('Dr. Math'),
-                avatar: like('https://cdn.aivo.com/avatars/instructor.jpg'),
+                avatar: like('https://cdn.aivolearning.com/avatars/instructor.jpg'),
               },
               lessons: eachLike({
                 id: uuid(),
@@ -500,7 +500,7 @@ describe('Web Learner API Consumer Contracts', () => {
                 id: uuid(),
                 type: regex('video|text|quiz|interactive', 'video'),
                 content: like({
-                  videoUrl: 'https://cdn.aivo.com/videos/lesson.mp4',
+                  videoUrl: 'https://cdn.aivolearning.com/videos/lesson.mp4',
                 }),
                 order: integer(1),
               }),
@@ -621,7 +621,7 @@ describe('Web Learner API Consumer Contracts', () => {
               children: eachLike({
                 id: uuid(),
                 name: string('Child Name'),
-                avatar: like('https://cdn.aivo.com/avatars/child.png'),
+                avatar: like('https://cdn.aivolearning.com/avatars/child.png'),
                 age: integer(8),
                 settings: {
                   dailyTimeLimit: integer(60),

@@ -174,8 +174,8 @@ export function ContractInvoicesSection({ invoices, contractId }: ContractInvoic
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted">
               Questions about billing? Contact{' '}
-              <a href="mailto:billing@aivo.com" className="text-primary hover:underline">
-                billing@aivo.com
+              <a href="mailto:billing@aivolearning.com" className="text-primary hover:underline">
+                billing@aivolearning.com
               </a>
             </span>
             <Link href={`/billing/contracts/${contractId}`}>

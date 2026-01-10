@@ -49,7 +49,7 @@ export default function QuickstartPage() {
       <CodeBlock
         language="bash"
         filename="Terminal"
-        code={`curl -X GET "https://sandbox.aivo.com/api/public/v1/learners" \\
+        code={`curl -X GET "https://sandbox.aivolearning.com/api/public/v1/learners" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID" \\
   -H "Content-Type: application/json"`}
@@ -97,7 +97,7 @@ export default function QuickstartPage() {
       <CodeBlock
         language="bash"
         filename="Terminal"
-        code={`curl -X GET "https://sandbox.aivo.com/api/public/v1/learners/learner_abc123/progress" \\
+        code={`curl -X GET "https://sandbox.aivolearning.com/api/public/v1/learners/learner_abc123/progress" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID"`}
       />
@@ -137,7 +137,7 @@ export default function QuickstartPage() {
       <CodeBlock
         language="bash"
         filename="Terminal"
-        code={`curl -X POST "https://sandbox.aivo.com/api/admin/webhooks" \\
+        code={`curl -X POST "https://sandbox.aivolearning.com/api/admin/webhooks" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "X-Tenant-ID: YOUR_TENANT_ID" \\
   -H "Content-Type: application/json" \\
@@ -189,7 +189,7 @@ export default function QuickstartPage() {
         code={`import axios from 'axios';
 
 const aivoClient = axios.create({
-  baseURL: 'https://sandbox.aivo.com/api/public/v1',
+  baseURL: 'https://sandbox.aivolearning.com/api/public/v1',
   headers: {
     'Authorization': \`Bearer \${process.env.AIVO_API_KEY}\`,
     'X-Tenant-ID': process.env.AIVO_TENANT_ID,
@@ -225,7 +225,7 @@ import requests
 
 class AivoClient:
     def __init__(self):
-        self.base_url = "https://sandbox.aivo.com/api/public/v1"
+        self.base_url = "https://sandbox.aivolearning.com/api/public/v1"
         self.headers = {
             "Authorization": f"Bearer {os.environ['AIVO_API_KEY']}",
             "X-Tenant-ID": os.environ["AIVO_TENANT_ID"],

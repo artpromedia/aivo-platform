@@ -84,11 +84,11 @@ environments:
     auth_bypass: true
     mock_payments: true
   staging:
-    api_base_url: https://api-staging.aivo.com
+    api_base_url: https://api-staging.aivolearning.com
     auth_bypass: false
     mock_payments: true
   production:
-    api_base_url: https://api.aivo.com
+    api_base_url: https://api.aivolearning.com
     auth_bypass: false
     mock_payments: false
 

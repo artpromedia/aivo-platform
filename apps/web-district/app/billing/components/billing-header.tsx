@@ -31,7 +31,7 @@ export function BillingHeader() {
         }
         onClick={() => {
           window.open(
-            'mailto:support@aivo.com?subject=Billing%20Support%20Request&body=District%20Tenant%20ID%3A%20%5BYour%20Tenant%20ID%5D%0A%0APlease%20describe%20your%20billing%20question%3A',
+            'mailto:support@aivolearning.com?subject=Billing%20Support%20Request&body=District%20Tenant%20ID%3A%20%5BYour%20Tenant%20ID%5D%0A%0APlease%20describe%20your%20billing%20question%3A',
             '_blank'
           );
         }}

@@ -221,7 +221,7 @@ function QuoteRow({ quote }: { quote: Quote }) {
           variant="secondary"
           onClick={() => {
             window.open(
-              `mailto:renewals@aivo.com?subject=Question%20about%20Quote%20${quote.quoteNumber}`,
+              `mailto:renewals@aivolearning.com?subject=Question%20about%20Quote%20${quote.quoteNumber}`,
               '_blank'
             );
           }}

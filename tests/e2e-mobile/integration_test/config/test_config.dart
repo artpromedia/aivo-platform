@@ -25,9 +25,9 @@ class TestConfig {
       case TestEnvironment.test:
         return 'http://localhost:3000';
       case TestEnvironment.staging:
-        return 'https://api-staging.aivo.com';
+        return 'https://api-staging.aivolearning.com';
       case TestEnvironment.production:
-        return 'https://api.aivo.com';
+        return 'https://api.aivolearning.com';
     }
   }
 

@@ -53,7 +53,7 @@ export default function AuthenticationPage() {
       <CodeBlock
         language="bash"
         filename="Request"
-        code={`curl -X GET "https://api.aivo.com/public/v1/learners" \\
+        code={`curl -X GET "https://api.aivolearning.com/public/v1/learners" \\
   -H "Authorization: Bearer aivo_sk_live_abc123..." \\
   -H "X-Tenant-ID: tenant_xyz789"`}
       />
@@ -140,7 +140,7 @@ export default function AuthenticationPage() {
       <CodeBlock
         language="text"
         filename="Authorization URL"
-        code={`https://auth.aivo.com/oauth/authorize?
+        code={`https://auth.aivolearning.com/oauth/authorize?
   client_id=YOUR_CLIENT_ID&
   redirect_uri=https://your-app.com/callback&
   response_type=code&
@@ -153,7 +153,7 @@ export default function AuthenticationPage() {
       <CodeBlock
         language="bash"
         filename="Token Request"
-        code={`curl -X POST "https://auth.aivo.com/oauth/token" \\
+        code={`curl -X POST "https://auth.aivolearning.com/oauth/token" \\
   -H "Content-Type: application/x-www-form-urlencoded" \\
   -d "grant_type=authorization_code" \\
   -d "client_id=YOUR_CLIENT_ID" \\
@@ -179,7 +179,7 @@ export default function AuthenticationPage() {
       <CodeBlock
         language="bash"
         filename="Authenticated Request"
-        code={`curl -X GET "https://api.aivo.com/public/v1/learners/me/progress" \\
+        code={`curl -X GET "https://api.aivolearning.com/public/v1/learners/me/progress" \\
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIs..."`}
       />
 

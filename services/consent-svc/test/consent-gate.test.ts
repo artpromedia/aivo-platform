@@ -71,7 +71,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({ requiredConsents: ['BASELINE_ASSESSMENT'] });
@@ -94,7 +94,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({ requiredConsents: ['BASELINE_ASSESSMENT'] });
@@ -126,7 +126,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({
@@ -156,7 +156,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({ requiredConsents: ['BASELINE_ASSESSMENT'] });
@@ -182,7 +182,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({ requiredConsents: ['AI_TUTOR'] });
@@ -206,7 +206,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({ requiredConsents: ['AI_TUTOR'] });
@@ -230,7 +230,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({ requiredConsents: ['AI_TUTOR'] });
@@ -262,7 +262,7 @@ describe('Consent Gate Middleware', () => {
 
       const options: ConsentGateOptions = {
         pool: mockPool,
-        consentBaseUrl: 'https://app.aivo.com',
+        consentBaseUrl: 'https://app.aivolearning.com',
       };
       const consentGate = createConsentGate(options);
       const middleware = consentGate({

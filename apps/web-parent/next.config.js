@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@aivo/ui-web', '@aivo/ts-types'],
   images: {
-    domains: ['localhost', 'api.aivo.com'],
+    domains: ['localhost', 'api.aivolearning.com'],
   },
   async rewrites() {
     return [

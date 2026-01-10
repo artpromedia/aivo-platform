@@ -20,7 +20,7 @@ import 'shared_device_models.dart';
 /// Usage:
 /// ```dart
 /// final service = SharedDeviceService(
-///   baseUrl: 'https://api.aivo.com',
+///   baseUrl: 'https://api.aivolearning.com',
 ///   tenantId: 'tenant-uuid',
 ///   deviceService: deviceService,
 /// );

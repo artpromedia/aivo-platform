@@ -167,7 +167,7 @@ export default function HomePage() {
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><a href="mailto:partners@aivo.com" className="hover:text-portal-primary">Contact Us</a></li>
+                <li><a href="mailto:partners@aivolearning.com" className="hover:text-portal-primary">Contact Us</a></li>
                 <li><Link href="/status" className="hover:text-portal-primary">System Status</Link></li>
                 <li><Link href="/changelog" className="hover:text-portal-primary">Changelog</Link></li>
               </ul>

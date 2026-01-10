@@ -498,7 +498,7 @@ export function generateDailyDigestTemplate(data: {
         .join('')}
       
       <p style="margin-top: 20px;">
-        <a href="https://app.aivo.com/dashboard" style="display: inline-block; padding: 12px 24px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">View Full Dashboard</a>
+        <a href="https://app.aivolearning.com/dashboard" style="display: inline-block; padding: 12px 24px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">View Full Dashboard</a>
       </p>
     </div>
   </div>

@@ -77,7 +77,7 @@ function buildConsentRequiredResponse(
  *
  * @example
  * ```ts
- * const consentGate = createConsentGate({ pool, consentBaseUrl: 'https://app.aivo.com' });
+ * const consentGate = createConsentGate({ pool, consentBaseUrl: 'https://app.aivolearning.com' });
  *
  * fastify.post('/baseline/start', {
  *   preHandler: [

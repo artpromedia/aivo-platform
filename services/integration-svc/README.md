@@ -51,7 +51,7 @@ Partners manage their integrations through admin APIs:
 All public API requests require an API key in the `X-Aivo-Api-Key` header:
 
 ```bash
-curl -X GET "https://api.aivo.com/public/learners/learner-123/progress" \
+curl -X GET "https://api.aivolearning.com/public/learners/learner-123/progress" \
   -H "X-Aivo-Api-Key: aivo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 

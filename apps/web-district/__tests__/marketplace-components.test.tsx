@@ -383,7 +383,7 @@ describe('Safety Details Modal', () => {
       policyTags: ['NO_CHAT'],
       dataCategoriesAccessed: ['LEARNER_ID', 'PROGRESS_DATA'],
       lastReviewedAt: '2024-01-15T10:00:00Z',
-      lastReviewedBy: 'reviewer@aivo.com',
+      lastReviewedBy: 'reviewer@aivolearning.com',
       automatedChecksPassed: true,
       explanations: {
         safetyRating: 'This item has been reviewed and approved for K-12 classroom use.',

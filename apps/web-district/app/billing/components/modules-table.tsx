@@ -17,7 +17,7 @@ export function ModulesTable({ entitlements }: ModulesTableProps) {
       .join(', ');
 
     window.open(
-      `mailto:sales@aivo.com?subject=Module%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20request%20additional%20modules%20for%20our%20district.%0A%0AModules%20of%20interest%3A%20${encodeURIComponent(modulesList)}%0A%0APlease%20contact%20me%20to%20discuss.`,
+      `mailto:sales@aivolearning.com?subject=Module%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20request%20additional%20modules%20for%20our%20district.%0A%0AModules%20of%20interest%3A%20${encodeURIComponent(modulesList)}%0A%0APlease%20contact%20me%20to%20discuss.`,
       '_blank'
     );
   };

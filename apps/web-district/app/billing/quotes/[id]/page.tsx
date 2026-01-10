@@ -309,7 +309,7 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
                     onClick={() => {
                       // In a real app, this would open a modal or redirect to acceptance flow
                       window.open(
-                        `mailto:renewals@aivo.com?subject=Accept%20Quote%20${quote.quoteNumber}&body=I%20would%20like%20to%20accept%20quote%20${quote.quoteNumber}%20for%20${formatCurrency(quote.totalAmountCents, quote.currency)}.%0A%0APlease%20send%20me%20the%20contract%20and%20PO%20details.`,
+                        `mailto:renewals@aivolearning.com?subject=Accept%20Quote%20${quote.quoteNumber}&body=I%20would%20like%20to%20accept%20quote%20${quote.quoteNumber}%20for%20${formatCurrency(quote.totalAmountCents, quote.currency)}.%0A%0APlease%20send%20me%20the%20contract%20and%20PO%20details.`,
                         '_blank'
                       );
                     }}
@@ -321,7 +321,7 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
                     className="w-full"
                     onClick={() => {
                       window.open(
-                        `mailto:renewals@aivo.com?subject=Question%20about%20Quote%20${quote.quoteNumber}`,
+                        `mailto:renewals@aivolearning.com?subject=Question%20about%20Quote%20${quote.quoteNumber}`,
                         '_blank'
                       );
                     }}
@@ -392,7 +392,7 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
               </p>
               <div className="mt-4 space-y-3">
                 <a
-                  href="mailto:renewals@aivo.com"
+                  href="mailto:renewals@aivolearning.com"
                   className="flex items-center gap-3 text-sm text-muted hover:text-text"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -403,7 +403,7 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  renewals@aivo.com
+                  renewals@aivolearning.com
                 </a>
                 <a
                   href="tel:+18005551234"

@@ -87,7 +87,7 @@ describe('SMS Templates', () => {
     });
     
     it('should render session reminder template', () => {
-      const template = "Reminder: {{studentName}}'s {{subject}} session starts in {{timeUntil}}. Join at aivo.com/session/{{sessionId}}. Reply STOP to opt out.";
+      const template = "Reminder: {{studentName}}'s {{subject}} session starts in {{timeUntil}}. Join at aivolearning.com/session/{{sessionId}}. Reply STOP to opt out.";
       const context = {
         studentName: 'Alex',
         subject: 'Math',
@@ -250,7 +250,7 @@ describe('SMS Consent', () => {
     });
     
     it('should respond with support information', () => {
-      const response = 'Aivo SMS: For support visit aivo.com/help or email support@aivo.com. Reply STOP to unsubscribe.';
+      const response = 'Aivo SMS: For support visit aivolearning.com/help or email support@aivolearning.com. Reply STOP to unsubscribe.';
       
       expect(response).toContain('support');
       expect(response).toContain('STOP');

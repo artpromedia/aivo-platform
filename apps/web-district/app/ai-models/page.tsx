@@ -319,7 +319,7 @@ export default function AIModelsPage() {
       <div className="text-center text-sm text-muted pt-4">
         <p>
           Questions about AI in your district?{' '}
-          <a href="mailto:support@aivo.com" className="text-primary hover:underline">
+          <a href="mailto:support@aivolearning.com" className="text-primary hover:underline">
             Contact Support
           </a>
         </p>

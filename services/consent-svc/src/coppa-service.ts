@@ -39,7 +39,7 @@ import type {
 
 export interface CoppaServiceOptions {
   pool: Pool;
-  /** Base URL for consent links (e.g., https://app.aivo.com) */
+  /** Base URL for consent links (e.g., https://app.aivolearning.com) */
   baseUrl: string;
   /** Email service for sending consent requests */
   sendEmail: (params: EmailParams) => Promise<void>;
@@ -154,7 +154,7 @@ export class CoppaConsentService {
         consentType: this.getConsentTypeDescription(params.consentType),
         consentUrl,
         expiresInHours: settings.consent_link_expiry_hours,
-        supportEmail: 'support@aivo.com',
+        supportEmail: 'support@aivolearning.com',
       },
     });
 
@@ -242,7 +242,7 @@ export class CoppaConsentService {
         consentType: this.getConsentTypeDescription(consent.consent_type),
         consentUrl,
         expiresInHours: settings.consent_link_expiry_hours,
-        supportEmail: 'support@aivo.com',
+        supportEmail: 'support@aivolearning.com',
       },
     });
 

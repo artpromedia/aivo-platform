@@ -18,7 +18,7 @@ const configSchema = z.object({
   smtpPort: z.coerce.number().default(587),
   smtpUser: z.string().optional(),
   smtpPassword: z.string().optional(),
-  emailFrom: z.string().default('noreply@aivo.com'),
+  emailFrom: z.string().default('noreply@aivolearning.com'),
 
   // Push notification configuration
   firebaseProjectId: z.string().optional(),
