@@ -41,7 +41,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [createGradeThemePlugin('G6_8')],
+  plugins: [createGradeThemePlugin('navigator')],
 };
 
 export default config;

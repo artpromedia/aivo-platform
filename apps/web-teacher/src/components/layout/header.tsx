@@ -44,7 +44,7 @@ export function Header({ title, className }: HeaderProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-6',
+        'sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-6',
         className
       )}
     >
