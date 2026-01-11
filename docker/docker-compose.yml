@@ -190,8 +190,13 @@ services:
       SERVICE_NAME: auth-svc
       DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_auth
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      JWT_PRIVATE_KEY_PATH: /app/secrets/jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: /app/secrets/jwt-public.pem
+      SSO_STATE_ENCRYPTION_KEY: ${SSO_STATE_ENCRYPTION_KEY:-wNUjg+xgBo+DKIyV2zsh+k1OzdFDFUTz0/OxhRpWxqQ=}
       JWT_EXPIRES_IN: 24h
       REFRESH_TOKEN_EXPIRES_IN: 7d
+    volumes:
+      - ../config/secrets:/app/secrets:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -199,7 +204,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/health"]
 
   tenant-svc:
     <<: *node-service

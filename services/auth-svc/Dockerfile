@@ -40,8 +40,8 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and OpenSSL for Prisma
+RUN apk add --no-cache dumb-init openssl
 
 # Copy built application from the deploy bundle
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules

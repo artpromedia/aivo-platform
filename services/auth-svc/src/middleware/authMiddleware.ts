@@ -7,9 +7,9 @@ const auth = sharedAuthMiddleware({ publicKey: config.jwtPublicKey });
 
 export const authMiddleware = fp(async (fastify) => {
   fastify.addHook('preHandler', async (request, reply) => {
-    // Public auth endpoints remain open
+    // Public endpoints remain open
     const path = request.routeOptions?.url || '';
-    if (path.startsWith('/auth')) return;
+    if (path.startsWith('/auth') || path === '/health') return;
 
     // Everything else requires a valid bearer token
     await auth(request as any, reply as any);
