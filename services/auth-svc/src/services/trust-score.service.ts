@@ -5,7 +5,7 @@
  * Coordinates data collection, calculation, caching, and notifications.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
 import type {

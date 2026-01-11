@@ -6,7 +6,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import type { Redis } from 'ioredis';
 import { TrustScoreService, type DataProviders } from '../services/trust-score.service.js';
 import { TrustThresholdService, type UserEligibilityData } from '../services/trust-threshold.service.js';

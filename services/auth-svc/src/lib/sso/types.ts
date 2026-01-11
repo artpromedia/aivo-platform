@@ -4,7 +4,7 @@
  * Common types shared between SAML and OIDC implementations.
  */
 
-import type { IdpProtocol, UserRoleEnum as PrismaUserRoleEnum } from '@prisma/client';
+import type { IdpProtocol, UserRoleEnum as PrismaUserRoleEnum } from '../../prisma.js';
 
 // Re-export UserRoleEnum for use by provider modules
 export type UserRoleEnum = PrismaUserRoleEnum;

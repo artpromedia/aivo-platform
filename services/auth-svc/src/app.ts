@@ -1,5 +1,4 @@
 import Fastify from 'fastify';
-import type { FastifyPluginAsync } from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerAuthRoutes } from './routes/auth.js';
@@ -23,10 +22,15 @@ export function createApp() {
     }
   );
 
-  void app.register(authMiddleware);
-  void app.register(registerAuthRoutes as FastifyPluginAsync, { prefix: '/auth' });
-  void app.register(registerSsoRoutes as FastifyPluginAsync, { prefix: '/auth' });
-  void app.register(registerDemoRoutes as FastifyPluginAsync);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  void app.register(authMiddleware as any);
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  void app.register(registerAuthRoutes as any, { prefix: '/auth' });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  void app.register(registerSsoRoutes as any, { prefix: '/auth' });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  void app.register(registerDemoRoutes as any);
 
   return app;
 }

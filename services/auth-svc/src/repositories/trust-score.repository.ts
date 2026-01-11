@@ -4,7 +4,8 @@
  * Data access layer for trust scores and history
  */
 
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { Prisma } from '../prisma.js';
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import type {
   TrustScoreEntity,
   TrustScoreHistoryEntity,

@@ -4,7 +4,8 @@
  * Manages trust score thresholds for job eligibility and access control
  */
 
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { Prisma } from '../prisma.js';
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import type {
   TrustThresholdEntity,
   TrustThresholdRequirements,
@@ -55,7 +56,7 @@ export class TrustThresholdService {
    * Create a new threshold
    */
   async createThreshold(input: CreateThresholdInput, createdBy: string): Promise<TrustThresholdEntity> {
-    const threshold = await this.prisma.trustScoreThreshold.create({
+    const threshold = await this.prisma.trustThreshold.create({
       data: {
         contextType: input.contextType,
         contextId: input.contextId,
@@ -79,7 +80,7 @@ export class TrustThresholdService {
    * Update a threshold
    */
   async updateThreshold(id: string, input: UpdateThresholdInput): Promise<TrustThresholdEntity> {
-    const threshold = await this.prisma.trustScoreThreshold.update({
+    const threshold = await this.prisma.trustThreshold.update({
       where: { id },
       data: {
         minimumScore: input.minimumScore,
@@ -102,7 +103,7 @@ export class TrustThresholdService {
    * Delete a threshold
    */
   async deleteThreshold(id: string): Promise<void> {
-    await this.prisma.trustScoreThreshold.delete({
+    await this.prisma.trustThreshold.delete({
       where: { id },
     });
   }
@@ -111,7 +112,7 @@ export class TrustThresholdService {
    * Get threshold by ID
    */
   async getThreshold(id: string): Promise<TrustThresholdEntity | null> {
-    const threshold = await this.prisma.trustScoreThreshold.findUnique({
+    const threshold = await this.prisma.trustThreshold.findUnique({
       where: { id },
     });
 
@@ -129,7 +130,7 @@ export class TrustThresholdService {
     contextType: ThresholdContextType,
     contextId?: string
   ): Promise<TrustThresholdEntity | null> {
-    const threshold = await this.prisma.trustScoreThreshold.findFirst({
+    const threshold = await this.prisma.trustThreshold.findFirst({
       where: {
         contextType,
         contextId: contextId ?? null,
@@ -148,7 +149,7 @@ export class TrustThresholdService {
    * Get all thresholds for a context type
    */
   async getThresholdsByContextType(contextType: ThresholdContextType): Promise<TrustThresholdEntity[]> {
-    const thresholds = await this.prisma.trustScoreThreshold.findMany({
+    const thresholds = await this.prisma.trustThreshold.findMany({
       where: { contextType, isActive: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -160,7 +161,7 @@ export class TrustThresholdService {
    * Get all active thresholds
    */
   async getAllActiveThresholds(): Promise<TrustThresholdEntity[]> {
-    const thresholds = await this.prisma.trustScoreThreshold.findMany({
+    const thresholds = await this.prisma.trustThreshold.findMany({
       where: { isActive: true },
       orderBy: [{ contextType: 'asc' }, { createdAt: 'desc' }],
     });
@@ -458,7 +459,7 @@ export class TrustThresholdService {
   // ============================================================================
 
   private mapToEntity(
-    threshold: Awaited<ReturnType<typeof this.prisma.trustScoreThreshold.findUnique>>
+    threshold: Awaited<ReturnType<typeof this.prisma.trustThreshold.findUnique>>
   ): TrustThresholdEntity {
     if (!threshold) {
       throw new Error('Threshold not found');

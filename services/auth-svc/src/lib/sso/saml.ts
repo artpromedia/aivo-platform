@@ -13,7 +13,7 @@ import { createVerify, randomBytes } from 'node:crypto';
 import { promisify } from 'node:util';
 import { deflate } from 'node:zlib';
 
-import type { SamlIdpConfig, SsoUserClaims, SsoResult } from './types.js';
+import type { SamlIdpConfig, SsoUserClaims, SsoResult, MappedSsoUser, UserRoleEnum } from './types.js';
 
 const deflateAsync = promisify(deflate);
 
@@ -406,9 +406,9 @@ export class SamlService {
   private mapUserClaims(
     claims: SsoUserClaims,
     idpConfig: SamlIdpConfig
-  ): SsoUserClaims & { roles: string[] } {
-    const roleMapping = idpConfig.roleMapping as Record<string, string>;
-    const mappedRoles: string[] = [];
+  ): MappedSsoUser {
+    const roleMapping = idpConfig.roleMapping as Record<string, UserRoleEnum>;
+    const mappedRoles: UserRoleEnum[] = [];
 
     for (const rawRole of claims.rawRoles) {
       const mapped = roleMapping[rawRole];
@@ -423,7 +423,11 @@ export class SamlService {
     }
 
     return {
-      ...claims,
+      externalId: claims.externalId,
+      email: claims.email,
+      name: claims.name,
+      firstName: claims.firstName,
+      lastName: claims.lastName,
       roles: mappedRoles,
     };
   }

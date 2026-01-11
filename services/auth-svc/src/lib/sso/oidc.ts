@@ -13,7 +13,7 @@
 
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 
-import type { OidcIdpConfig, SsoUserClaims, SsoResult } from './types.js';
+import type { OidcIdpConfig, SsoUserClaims, SsoResult, MappedSsoUser, UserRoleEnum } from './types.js';
 
 // ============================================================================
 // SECRETS RESOLVER
@@ -420,9 +420,9 @@ export class OidcService {
   private mapUserClaims(
     claims: SsoUserClaims,
     idpConfig: OidcIdpConfig
-  ): SsoUserClaims & { roles: string[] } {
-    const roleMapping = idpConfig.roleMapping as Record<string, string>;
-    const mappedRoles: string[] = [];
+  ): MappedSsoUser {
+    const roleMapping = idpConfig.roleMapping as Record<string, UserRoleEnum>;
+    const mappedRoles: UserRoleEnum[] = [];
 
     for (const rawRole of claims.rawRoles) {
       const mapped = roleMapping[rawRole];
@@ -437,7 +437,11 @@ export class OidcService {
     }
 
     return {
-      ...claims,
+      externalId: claims.externalId,
+      email: claims.email,
+      name: claims.name,
+      firstName: claims.firstName,
+      lastName: claims.lastName,
       roles: mappedRoles,
     };
   }

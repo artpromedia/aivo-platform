@@ -7,7 +7,7 @@
 
 import type { Role } from '@aivo/ts-rbac';
 
-import type { IdpConfig as PrismaIdpConfig, Tenant, UserRoleEnum } from '@prisma/client';
+import type { IdpConfig as PrismaIdpConfig, Tenant, UserRoleEnum } from '../../prisma.js';
 import { signAccessToken, signRefreshToken } from '../jwt.js';
 import { prisma } from '../../prisma.js';
 
