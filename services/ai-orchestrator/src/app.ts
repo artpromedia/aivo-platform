@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import Fastify, { type FastifyRequest } from 'fastify';
 import { Pool } from 'pg';
+import Redis from 'ioredis';
 
 import { config } from './config.js';
 import { IncidentService } from './incidents/index.js';
@@ -17,6 +18,8 @@ import { socialStoryRoutes } from './routes/socialStories.js';
 import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
 import gameGenerationRoutes from './routes/game-generation.js';
 import generationRoutes from './routes/generation.js';
+import { registerPromptDebuggingRoutes } from './routes/prompt-debugging.js';
+import { registerFineTuningRoutes } from './routes/fine-tuning.js';
 import { LLMOrchestrator } from './providers/llm-orchestrator.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
@@ -48,6 +51,9 @@ export function createApp(options: AppOptions = {}) {
   // Initialize AI safety and monitoring services
   const incidentService = options.incidentService ?? new IncidentService(policyPool);
   const usageTracker = options.usageTracker ?? new UsageTracker(policyPool);
+
+  // Initialize Redis for caching and pub/sub
+  const redis = new Redis(config.redisUrl || 'redis://localhost:6379');
 
   app.addHook('onRequest', async (request, reply) => {
     const incoming = request.headers['x-correlation-id'];
@@ -89,6 +95,12 @@ export function createApp(options: AppOptions = {}) {
   // AI-Powered IEP Goal Generation routes
   app.register(iepGenerationRoutes, { prefix: '/iep' });
 
+  // Prompt Debugging Dashboard API routes
+  app.register(registerPromptDebuggingRoutes, { pool: policyPool, redis });
+
+  // RLHF Fine-Tuning API routes
+  app.register(registerFineTuningRoutes, { pool: policyPool, redis });
+
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
     app.log.error({ err: error, correlationId }, 'request failed');
@@ -111,6 +123,8 @@ export function createApp(options: AppOptions = {}) {
     }
     // Clean up policy pool
     await policyPool.end();
+    // Clean up Redis connection
+    await redis.quit();
   });
 
   return app;
