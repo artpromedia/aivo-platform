@@ -1,7 +1,7 @@
 # ==============================================================================
 # AIVO Platform - Auth Service Dockerfile
 # ==============================================================================
-# Multi-stage build for NestJS services
+# Multi-stage build for Fastify services
 
 # Stage 1: Builder
 FROM node:20-alpine AS builder
@@ -25,11 +25,11 @@ COPY services/auth-svc/ ./services/auth-svc/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build the service
+# Build the service (includes dependencies like ts-data-access and ts-rbac)
 RUN pnpm turbo build --filter="@aivo/auth-svc"
 
-# Prune dev dependencies
-RUN pnpm prune --prod
+# Deploy production dependencies using pnpm deploy
+RUN pnpm deploy --filter="@aivo/auth-svc" --prod /deploy
 
 # Stage 2: Runner
 FROM node:20-alpine AS runner
@@ -43,10 +43,11 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Copy built application from deploy directory
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/auth-svc/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/auth-svc/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/services/auth-svc/generated ./generated
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
 ENV NODE_ENV=production \
@@ -65,4 +66,4 @@ USER nodejs
 # Use dumb-init as entrypoint
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/index.js"]

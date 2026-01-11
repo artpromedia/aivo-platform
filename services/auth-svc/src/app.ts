@@ -23,6 +23,11 @@ export function createApp() {
     }
   );
 
+  // Root-level health check for container orchestration
+  app.get('/health', async (_request, reply) => {
+    return reply.status(200).send({ status: 'ok', service: 'auth-svc' });
+  });
+
   void app.register(authMiddleware);
   void app.register(registerAuthRoutes as FastifyPluginAsync, { prefix: '/auth' });
   void app.register(registerSsoRoutes as FastifyPluginAsync, { prefix: '/auth' });
