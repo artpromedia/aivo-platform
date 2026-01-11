@@ -1,7 +1,7 @@
 # ==============================================================================
 # AIVO Platform - Auth Service Dockerfile
 # ==============================================================================
-# Multi-stage build for NestJS services
+# Multi-stage build for Fastify services
 
 # Stage 1: Builder
 FROM node:20-alpine AS builder
@@ -25,7 +25,7 @@ COPY services/auth-svc/ ./services/auth-svc/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build the service
+# Build the service (includes dependencies like ts-data-access and ts-rbac)
 RUN pnpm turbo build --filter="@aivo/auth-svc"
 
 # Create a deployable bundle with all production dependencies

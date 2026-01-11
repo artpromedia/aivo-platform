@@ -22,6 +22,11 @@ export function createApp() {
     }
   );
 
+  // Root-level health check for container orchestration
+  app.get('/health', async (_request, reply) => {
+    return reply.status(200).send({ status: 'ok', service: 'auth-svc' });
+  });
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   void app.register(authMiddleware as any);
 
