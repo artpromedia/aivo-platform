@@ -6,9 +6,19 @@
  */
 
 export interface LLMMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
   name?: string;
+  /** Tool calls made by the assistant (for function calling) */
+  toolCalls?: LLMToolCall[];
+  /** Tool call ID (for tool role messages) */
+  toolCallId?: string;
+}
+
+export interface LLMToolCall {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
 }
 
 export interface LLMCompletionOptions {
@@ -25,7 +35,12 @@ export interface LLMCompletionOptions {
     userId: string;
     agentType: string;
     sessionId?: string;
+    [key: string]: unknown;
   };
+  /** Tools available for the model to call (function calling) */
+  tools?: unknown[];
+  /** How the model should choose tools */
+  toolChoice?: 'auto' | 'required' | 'none' | { type: string; function?: { name: string } };
 }
 
 export interface LLMCompletionResult {
@@ -37,9 +52,13 @@ export interface LLMCompletionResult {
     completionTokens: number;
     totalTokens: number;
   };
-  finishReason: 'stop' | 'length' | 'content_filter' | 'error';
+  finishReason: 'stop' | 'length' | 'content_filter' | 'error' | 'tool_calls';
   latencyMs: number;
   cached: boolean;
+  /** Tool calls requested by the model */
+  toolCalls?: LLMToolCall[];
+  /** Raw response from the provider (for advanced parsing) */
+  rawResponse?: unknown;
 }
 
 export interface LLMStreamChunk {

@@ -92,11 +92,7 @@ export class OpenAIProvider implements LLMProviderInterface {
     try {
       const response = await this.client.chat.completions.create({
         model,
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-          name: m.name,
-        })),
+        messages: messages.map((m) => this.convertMessage(m)),
         temperature: options.temperature ?? 0.7,
         max_tokens: options.maxTokens ?? 1000,
         top_p: options.topP ?? 1,
@@ -104,10 +100,19 @@ export class OpenAIProvider implements LLMProviderInterface {
         presence_penalty: options.presencePenalty ?? 0,
         stop: options.stop,
         user: options.user ?? options.metadata?.userId,
+        ...(options.tools && { tools: options.tools }),
+        ...(options.toolChoice && { tool_choice: options.toolChoice }),
       });
 
+      const message = response.choices[0]?.message;
+      const toolCalls = message?.tool_calls?.map(tc => ({
+        id: tc.id,
+        name: tc.function.name,
+        arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
+      }));
+
       const result: LLMCompletionResult = {
-        content: response.choices[0]?.message?.content ?? '',
+        content: message?.content ?? '',
         model: response.model,
         provider: this.name,
         usage: {
@@ -118,6 +123,8 @@ export class OpenAIProvider implements LLMProviderInterface {
         finishReason: this.mapFinishReason(response.choices[0]?.finish_reason),
         latencyMs: Date.now() - startTime,
         cached: false,
+        toolCalls,
+        rawResponse: response,
       };
 
       // Record metrics
@@ -146,15 +153,13 @@ export class OpenAIProvider implements LLMProviderInterface {
 
     const stream = await this.client.chat.completions.create({
       model,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-        name: m.name,
-      })),
+      messages: messages.map((m) => this.convertMessage(m)),
       temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens ?? 1000,
       stream: true,
       user: options.user ?? options.metadata?.userId,
+      ...(options.tools && { tools: options.tools }),
+      ...(options.toolChoice && { tool_choice: options.toolChoice }),
     });
 
     for await (const chunk of stream) {
@@ -220,6 +225,8 @@ export class OpenAIProvider implements LLMProviderInterface {
         return 'length';
       case 'content_filter':
         return 'content_filter';
+      case 'tool_calls':
+        return 'tool_calls';
       default:
         return 'error';
     }
@@ -276,5 +283,48 @@ export class OpenAIProvider implements LLMProviderInterface {
     } else if (error instanceof OpenAI.APIConnectionError) {
       incrementCounter('llm.connection.failed', tags);
     }
+  }
+
+  /**
+   * Convert internal LLMMessage to OpenAI's ChatCompletionMessageParam format
+   */
+  private convertMessage(message: LLMMessage): OpenAI.Chat.ChatCompletionMessageParam {
+    if (message.role === 'tool') {
+      // Tool message format for OpenAI
+      return {
+        role: 'tool',
+        content: message.content,
+        tool_call_id: message.toolCallId ?? '',
+      };
+    }
+
+    if (message.role === 'assistant' && message.toolCalls && message.toolCalls.length > 0) {
+      // Assistant message with tool calls
+      return {
+        role: 'assistant',
+        content: message.content || null,
+        tool_calls: message.toolCalls.map(tc => ({
+          id: tc.id,
+          type: 'function' as const,
+          function: {
+            name: tc.name,
+            arguments: JSON.stringify(tc.arguments),
+          },
+        })),
+      };
+    }
+
+    // Standard message
+    const baseMessage: OpenAI.Chat.ChatCompletionMessageParam = {
+      role: message.role as 'system' | 'user' | 'assistant',
+      content: message.content,
+    };
+
+    // Add name if present (for user messages)
+    if (message.name && message.role === 'user') {
+      (baseMessage as OpenAI.Chat.ChatCompletionUserMessageParam).name = message.name;
+    }
+
+    return baseMessage;
   }
 }
