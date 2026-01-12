@@ -11,6 +11,22 @@
  * @module ai-orchestrator/self-learning
  */
 
+import type { Pool } from 'pg';
+import type { Redis } from 'ioredis';
+import type {
+  OutcomeTracker,
+  OutcomeTrackerConfig,
+  TrackedAIAction,
+  ActionFeedback,
+} from './outcome-tracker.js';
+import type { PromptOptimizer, PromptOptimizerConfig } from './prompt-optimizer.js';
+import type {
+  LearningSignalProcessor,
+  LearningSignalProcessorConfig,
+  LearningSignalType,
+  TrainingExportFormat,
+} from './learning-signal-processor.js';
+
 // Outcome Tracker - Track AI action effectiveness
 export {
   // Types
@@ -66,9 +82,9 @@ export {
 
 // Re-export combined types for convenience
 export type SelfLearningConfig = {
-  outcomeTracker: import('./outcome-tracker.js').OutcomeTrackerConfig;
-  promptOptimizer: import('./prompt-optimizer.js').PromptOptimizerConfig;
-  learningSignalProcessor: import('./learning-signal-processor.js').LearningSignalProcessorConfig;
+  outcomeTracker: OutcomeTrackerConfig;
+  promptOptimizer: PromptOptimizerConfig;
+  learningSignalProcessor: LearningSignalProcessorConfig;
 };
 
 /**
@@ -104,15 +120,14 @@ export function createDefaultSelfLearningConfig(): SelfLearningConfig {
  * Coordinates all self-learning components for unified operation.
  */
 export class SelfLearningManager {
-  private outcomeTracker: import('./outcome-tracker.js').OutcomeTracker | null = null;
-  private promptOptimizer: import('./prompt-optimizer.js').PromptOptimizer | null = null;
-  private learningProcessor: import('./learning-signal-processor.js').LearningSignalProcessor | null =
-    null;
+  private outcomeTracker: OutcomeTracker | null = null;
+  private promptOptimizer: PromptOptimizer | null = null;
+  private learningProcessor: LearningSignalProcessor | null = null;
   private initialized = false;
 
   constructor(
-    private db: import('pg').Pool,
-    private redis: import('ioredis').Redis,
+    private db: Pool,
+    private redis: Redis,
     private config: SelfLearningConfig = createDefaultSelfLearningConfig()
   ) {}
 
@@ -145,8 +160,8 @@ export class SelfLearningManager {
   /**
    * Get the outcome tracker instance
    */
-  getOutcomeTracker(): import('./outcome-tracker.js').OutcomeTracker {
-    if (!this.outcomeTracker) {
+  getOutcomeTracker(): OutcomeTracker {
+    if (this.outcomeTracker === null) {
       throw new Error('SelfLearningManager not initialized. Call initialize() first.');
     }
     return this.outcomeTracker;
@@ -155,8 +170,8 @@ export class SelfLearningManager {
   /**
    * Get the prompt optimizer instance
    */
-  getPromptOptimizer(): import('./prompt-optimizer.js').PromptOptimizer {
-    if (!this.promptOptimizer) {
+  getPromptOptimizer(): PromptOptimizer {
+    if (this.promptOptimizer === null) {
       throw new Error('SelfLearningManager not initialized. Call initialize() first.');
     }
     return this.promptOptimizer;
@@ -165,8 +180,8 @@ export class SelfLearningManager {
   /**
    * Get the learning signal processor instance
    */
-  getLearningProcessor(): import('./learning-signal-processor.js').LearningSignalProcessor {
-    if (!this.learningProcessor) {
+  getLearningProcessor(): LearningSignalProcessor {
+    if (this.learningProcessor === null) {
       throw new Error('SelfLearningManager not initialized. Call initialize() first.');
     }
     return this.learningProcessor;
@@ -176,7 +191,7 @@ export class SelfLearningManager {
    * Record an AI action and its outcome
    */
   async recordActionWithOutcome(
-    action: Omit<import('./outcome-tracker.js').TrackedAIAction, 'id' | 'createdAt'>
+    action: Omit<TrackedAIAction, 'id' | 'createdAt'>
   ): Promise<string> {
     const tracker = this.getOutcomeTracker();
     return tracker.trackAction(action);
@@ -187,7 +202,7 @@ export class SelfLearningManager {
    */
   async recordFeedbackWithSignal(
     actionId: string,
-    feedback: Omit<import('./outcome-tracker.js').ActionFeedback, 'actionId' | 'feedbackAt'>
+    feedback: Omit<ActionFeedback, 'actionId' | 'feedbackAt'>
   ): Promise<void> {
     const tracker = this.getOutcomeTracker();
     const processor = this.getLearningProcessor();
@@ -254,7 +269,7 @@ export class SelfLearningManager {
    * Export training data for fine-tuning
    */
   async exportTrainingData(
-    format: import('./learning-signal-processor.js').TrainingExportFormat = 'openai_jsonl',
+    format: TrainingExportFormat = 'openai_jsonl',
     options: { minScore?: number; limit?: number } = {}
   ): Promise<string> {
     const processor = this.getLearningProcessor();
@@ -273,13 +288,22 @@ export class SelfLearningManager {
     patternsDetected: number;
     trainingExamples: number;
   }> {
-    const tracker = this.getOutcomeTracker();
     const optimizer = this.getPromptOptimizer();
-    const processor = this.getLearningProcessor();
+
+    interface ActionStatsRow {
+      total_actions: string;
+      feedback_rate: string | null;
+      acceptance_rate: string | null;
+      avg_rating: string | null;
+    }
+
+    interface CountRow {
+      count: string;
+    }
 
     // Get metrics from each component
     const [actionStats, experiments, patterns, examples] = await Promise.all([
-      this.db.query(`
+      this.db.query<ActionStatsRow>(`
         SELECT
           COUNT(*) as total_actions,
           COUNT(CASE WHEN feedback_received THEN 1 END)::float / NULLIF(COUNT(*), 0) as feedback_rate,
@@ -289,22 +313,27 @@ export class SelfLearningManager {
         WHERE created_at > NOW() - INTERVAL '30 days'
       `),
       optimizer.getActiveExperiments(),
-      this.db.query(`SELECT COUNT(*) as count FROM learning_patterns WHERE is_active = true`),
-      this.db.query(
+      this.db.query<CountRow>(`SELECT COUNT(*) as count FROM learning_patterns WHERE is_active = true`),
+      this.db.query<CountRow>(
         `SELECT COUNT(*) as count FROM training_examples WHERE status = 'approved' OR status = 'pending'`
       ),
     ]);
 
-    const stats = actionStats.rows[0] || {};
+    const stats: ActionStatsRow = actionStats.rows[0] ?? {
+      total_actions: '0',
+      feedback_rate: null,
+      acceptance_rate: null,
+      avg_rating: null,
+    };
 
     return {
-      totalActions: parseInt(stats.total_actions) || 0,
-      feedbackRate: parseFloat(stats.feedback_rate) || 0,
-      acceptanceRate: parseFloat(stats.acceptance_rate) || 0,
-      avgRating: parseFloat(stats.avg_rating) || 0,
+      totalActions: parseInt(stats.total_actions, 10) || 0,
+      feedbackRate: parseFloat(stats.feedback_rate ?? '0') || 0,
+      acceptanceRate: parseFloat(stats.acceptance_rate ?? '0') || 0,
+      avgRating: parseFloat(stats.avg_rating ?? '0') || 0,
       activeExperiments: experiments.length,
-      patternsDetected: parseInt(patterns.rows[0]?.count) || 0,
-      trainingExamples: parseInt(examples.rows[0]?.count) || 0,
+      patternsDetected: parseInt(patterns.rows[0]?.count ?? '0', 10) || 0,
+      trainingExamples: parseInt(examples.rows[0]?.count ?? '0', 10) || 0,
     };
   }
 
@@ -312,8 +341,8 @@ export class SelfLearningManager {
    * Convert feedback type to learning signal type
    */
   private feedbackToSignalType(
-    feedback: Omit<import('./outcome-tracker.js').ActionFeedback, 'actionId' | 'feedbackAt'>
-  ): import('./learning-signal-processor.js').LearningSignalType | null {
+    feedback: Omit<ActionFeedback, 'actionId' | 'feedbackAt'>
+  ): LearningSignalType | null {
     if (feedback.wasAccepted === true) {
       return 'ACCEPTANCE';
     }

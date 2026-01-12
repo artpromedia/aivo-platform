@@ -180,23 +180,23 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
         const countResult = await pool.query(`SELECT COUNT(*) FROM federated_rounds`);
 
         reply.code(200).send({
-          data: result.rows.map((row) => ({
+          data: result.rows.map((row: Record<string, unknown>) => ({
             roundId: row.round_id,
             modelType: row.model_type,
             status: row.status,
-            eligibleTenants: row.eligible_count || 0,
-            participatingTenants: row.participant_count || 0,
-            contributions: row.contribution_count || 0,
-            distributed: row.distributed_count || 0,
+            eligibleTenants: (row.eligible_count as number) || 0,
+            participatingTenants: (row.participant_count as number) || 0,
+            contributions: (row.contribution_count as number) || 0,
+            distributed: (row.distributed_count as number) || 0,
             startedAt: row.started_at,
             completedAt: row.completed_at,
-            hasErrors: (row.errors || []).length > 0,
+            hasErrors: ((row.errors as unknown[]) || []).length > 0,
           })),
           pagination: {
             page,
             limit,
-            total: parseInt(countResult.rows[0].count),
-            totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit),
+            total: parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
+            totalPages: Math.ceil(parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / limit),
           },
         });
       } catch (error) {
@@ -243,19 +243,19 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           return;
         }
 
-        const row = result.rows[0];
+        const row = result.rows[0] as Record<string, unknown>;
         reply.code(200).send({
           roundId: row.round_id,
           modelType: row.model_type,
           status: row.status,
           config: row.config,
-          eligibleTenants: (row.eligible_tenants || []).length,
-          participatingTenants: (row.participating_tenants || []).length,
-          contributions: row.contribution_count || 0,
-          distributed: row.distributed_count || 0,
+          eligibleTenants: ((row.eligible_tenants as unknown[]) || []).length,
+          participatingTenants: ((row.participating_tenants as unknown[]) || []).length,
+          contributions: (row.contribution_count as number) || 0,
+          distributed: (row.distributed_count as number) || 0,
           startedAt: row.started_at,
           completedAt: row.completed_at,
-          errors: row.errors || [],
+          errors: (row.errors as unknown[]) || [],
         });
       } catch (error) {
         fastify.log.error(error, 'Failed to get round');
@@ -274,7 +274,7 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
      */
     fastify.get('/federated/tenant/config', async (request, reply) => {
       // In a real implementation, tenantId would come from auth context
-      const tenantId = (request.headers['x-tenant-id'] as string) || 'default';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
 
       try {
         const result = await pool.query(
@@ -291,16 +291,16 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           return;
         }
 
-        const row = result.rows[0];
+        const row = result.rows[0] as Record<string, unknown>;
         reply.code(200).send({
           tenantId: row.tenant_id,
           enabled: row.enabled,
           autoParticipate: row.auto_participate,
           privacyLevel: row.privacy_level,
-          maxPrivacyBudget: parseFloat(row.max_privacy_budget),
-          currentPrivacyBudget: parseFloat(row.current_privacy_budget),
+          maxPrivacyBudget: parseFloat(String(row.max_privacy_budget)),
+          currentPrivacyBudget: parseFloat(String(row.current_privacy_budget)),
           remainingBudget:
-            parseFloat(row.max_privacy_budget) - parseFloat(row.current_privacy_budget),
+            parseFloat(String(row.max_privacy_budget)) - parseFloat(String(row.current_privacy_budget)),
           sharePatterns: row.share_patterns,
           shareEffectiveness: row.share_effectiveness,
           shareEmbeddings: row.share_embeddings,
@@ -322,7 +322,7 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
      * Update tenant's federated learning configuration
      */
     fastify.put('/federated/tenant/config', async (request, reply) => {
-      const tenantId = (request.headers['x-tenant-id'] as string) || 'default';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
 
       try {
         const body = tenantConfigSchema.parse(request.body);
@@ -386,7 +386,7 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
      * Contribute to an active round
      */
     fastify.post('/federated/tenant/contribute', async (request, reply) => {
-      const tenantId = (request.headers['x-tenant-id'] as string) || 'default';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
 
       try {
         const body = contributeSchema.parse(request.body);
@@ -445,7 +445,7 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
      * Get tenant's participation history
      */
     fastify.get('/federated/tenant/participation', async (request, reply) => {
-      const tenantId = (request.headers['x-tenant-id'] as string) || 'default';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
       const query = paginationSchema.parse(request.query);
 
       try {
@@ -476,13 +476,13 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
         );
 
         reply.code(200).send({
-          data: result.rows.map((row) => ({
+          data: result.rows.map((row: Record<string, unknown>) => ({
             roundId: row.round_id,
             modelType: row.model_type,
             roundStatus: row.round_status,
             contributed: row.contributed,
             sampleWeight: row.sample_weight,
-            privacyEpsilonUsed: parseFloat(row.privacy_epsilon_used),
+            privacyEpsilonUsed: parseFloat(String(row.privacy_epsilon_used)),
             localMetrics: row.local_metrics,
             startedAt: row.started_at,
             completedAt: row.completed_at,
@@ -490,8 +490,8 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           pagination: {
             page: query.page,
             limit: query.limit,
-            total: parseInt(countResult.rows[0].count),
-            totalPages: Math.ceil(parseInt(countResult.rows[0].count) / query.limit),
+            total: parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
+            totalPages: Math.ceil(parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / query.limit),
           },
         });
       } catch (error) {
@@ -554,22 +554,22 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
         );
 
         reply.code(200).send({
-          data: result.rows.map((row) => ({
+          data: result.rows.map((row: Record<string, unknown>) => ({
             id: row.id,
             roundId: row.round_id,
             modelType: row.model_type,
             version: row.version,
             contributingTenants: row.contributing_tenants,
             totalSamples: row.total_samples,
-            privacyEpsilon: parseFloat(row.privacy_epsilon),
+            privacyEpsilon: parseFloat(String(row.privacy_epsilon)),
             metrics: row.metrics,
             aggregatedAt: row.aggregated_at,
           })),
           pagination: {
             page: query.page,
             limit: query.limit,
-            total: parseInt(countResult.rows[0].count),
-            totalPages: Math.ceil(parseInt(countResult.rows[0].count) / query.limit),
+            total: parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
+            totalPages: Math.ceil(parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / query.limit),
           },
         });
       } catch (error) {
@@ -601,14 +601,14 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
         `);
 
         reply.code(200).send({
-          models: result.rows.map((row) => ({
+          models: result.rows.map((row: Record<string, unknown>) => ({
             id: row.id,
             roundId: row.round_id,
             modelType: row.model_type,
             version: row.version,
             contributingTenants: row.contributing_tenants,
             totalSamples: row.total_samples,
-            privacyEpsilon: parseFloat(row.privacy_epsilon),
+            privacyEpsilon: parseFloat(String(row.privacy_epsilon)),
             metrics: row.metrics,
             aggregatedAt: row.aggregated_at,
           })),
@@ -659,30 +659,30 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           `),
         ]);
 
-        const rounds = roundStats.rows[0] || {};
-        const tenants = tenantStats.rows[0] || {};
-        const models = modelStats.rows[0] || {};
+        const rounds = (roundStats.rows[0] || {}) as Record<string, unknown>;
+        const tenants = (tenantStats.rows[0] || {}) as Record<string, unknown>;
+        const models = (modelStats.rows[0] || {}) as Record<string, unknown>;
 
         reply.code(200).send({
           rounds: {
-            total: parseInt(rounds.total_rounds) || 0,
-            completed: parseInt(rounds.completed_rounds) || 0,
-            failed: parseInt(rounds.failed_rounds) || 0,
-            avgContributions: parseFloat(rounds.avg_contributions) || 0,
-            totalDistributions: parseInt(rounds.total_distributions) || 0,
+            total: parseInt(String(rounds.total_rounds)) || 0,
+            completed: parseInt(String(rounds.completed_rounds)) || 0,
+            failed: parseInt(String(rounds.failed_rounds)) || 0,
+            avgContributions: parseFloat(String(rounds.avg_contributions)) || 0,
+            totalDistributions: parseInt(String(rounds.total_distributions)) || 0,
           },
           tenants: {
-            total: parseInt(tenants.total_tenants) || 0,
-            enabled: parseInt(tenants.enabled_tenants) || 0,
-            autoParticipate: parseInt(tenants.auto_participate_tenants) || 0,
-            avgPrivacyUsed: parseFloat(tenants.avg_privacy_used) || 0,
-            avgPrivacyRemaining: parseFloat(tenants.avg_privacy_remaining) || 0,
+            total: parseInt(String(tenants.total_tenants)) || 0,
+            enabled: parseInt(String(tenants.enabled_tenants)) || 0,
+            autoParticipate: parseInt(String(tenants.auto_participate_tenants)) || 0,
+            avgPrivacyUsed: parseFloat(String(tenants.avg_privacy_used)) || 0,
+            avgPrivacyRemaining: parseFloat(String(tenants.avg_privacy_remaining)) || 0,
           },
           models: {
-            total: parseInt(models.total_models) || 0,
-            types: parseInt(models.model_types) || 0,
-            totalTrainingSamples: parseInt(models.total_training_samples) || 0,
-            avgContributors: parseFloat(models.avg_contributors) || 0,
+            total: parseInt(String(models.total_models)) || 0,
+            types: parseInt(String(models.model_types)) || 0,
+            totalTrainingSamples: parseInt(String(models.total_training_samples)) || 0,
+            avgContributors: parseFloat(String(models.avg_contributors)) || 0,
           },
           activeRounds: server.getActiveRounds().length,
         });

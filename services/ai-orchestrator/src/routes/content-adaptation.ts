@@ -107,11 +107,12 @@ interface JwtUser {
 }
 
 function getUserFromRequest(request: FastifyRequest): { sub: string; tenantId: string } | null {
-  const user = (request as unknown as { user?: JwtUser }).user;
-  if (!user) return null;
+  const requestWithUser = request as unknown as { user?: JwtUser };
+  if (!requestWithUser.user) return null;
+  const user = requestWithUser.user;
   return {
     sub: user.sub,
-    tenantId: user.tenantId ?? user.tenant_id ?? '',
+    tenantId: user.tenantId || user.tenant_id || '',
   };
 }
 
@@ -142,7 +143,7 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const data = parseResult.data;
+      const data = parseResult.data as z.infer<typeof AdaptContentSchema>;
 
       try {
         const result = await adaptationService.adaptContent({
@@ -177,7 +178,7 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { text, context } = parseResult.data;
+      const { text, context } = parseResult.data as z.infer<typeof AnalyzeReadabilitySchema>;
 
       try {
         const result = await readabilityService.analyzeReadability(text, context);
@@ -209,7 +210,7 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { text, context } = parseResult.data;
+      const { text, context } = parseResult.data as z.infer<typeof EstimateLexileSchema>;
 
       try {
         const result = await readabilityService.estimateLexileLevel({
@@ -246,7 +247,7 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { content, levels, subject, preserveTerms, learnerCurrentLexile } = parseResult.data;
+      const { content, levels, subject, preserveTerms, learnerCurrentLexile } = parseResult.data as z.infer<typeof ScaffoldContentSchema>;
 
       try {
         const result = await adaptationService.generateScaffoldedVersions(content, {
@@ -285,7 +286,7 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { question, targetLexile, subject, preserveTerms } = parseResult.data;
+      const { question, targetLexile, subject, preserveTerms } = parseResult.data as z.infer<typeof AdaptQuestionSchema>;
 
       try {
         const result = await adaptationService.adaptQuestion(question, targetLexile, {
@@ -322,7 +323,7 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { items, targetLexile, subject, preserveTerms } = parseResult.data;
+      const { items, targetLexile, subject, preserveTerms } = parseResult.data as z.infer<typeof BatchAdaptSchema>;
 
       try {
         const results = await adaptationService.batchAdapt({

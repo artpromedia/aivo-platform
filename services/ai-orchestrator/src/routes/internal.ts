@@ -157,10 +157,6 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     if (data.isActive !== undefined) patch.isActive = data.isActive;
 
     const updated = await registry.update(request.params.id, patch);
-    if (!updated) {
-      reply.code(404).send({ error: 'Config not found' });
-      return;
-    }
     reply.code(200).send({ config: updated });
   });
 
@@ -169,10 +165,6 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       rolloutPercentage: 0,
       isActive: false,
     });
-    if (!updated) {
-      reply.code(404).send({ error: 'Config not found' });
-      return;
-    }
     reply.code(200).send({ config: updated });
   });
 
@@ -247,7 +239,7 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
   app.get('/ai/metrics/summary', async (request, reply) => {
     const tenantId =
       typeof request.query === 'object' && request.query !== null
-        ? (request.query as Record<string, string> | undefined)?.tenantId
+        ? (request.query as Record<string, string>).tenantId
         : undefined;
 
     const summary = await telemetryStore.summary(tenantId);
@@ -261,24 +253,11 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
   app.get('/ai/metrics/agents', async (request, reply) => {
     const tenantId =
       typeof request.query === 'object' && request.query !== null
-        ? (request.query as Record<string, string> | undefined)?.tenantId
+        ? (request.query as Record<string, string>).tenantId
         : undefined;
 
-    if (telemetryStore.agentMetrics) {
-      const metrics = await telemetryStore.agentMetrics(tenantId);
-      reply.code(200).send({ metrics });
-    } else {
-      // Fallback for stores that don't support agentMetrics
-      reply.code(200).send({
-        metrics: {
-          callsByAgent: {},
-          safetyViolationsByAgent: {},
-          needsReviewByAgent: {},
-          avgLatencyByAgent: {},
-          callsByUseCase: {},
-        },
-      });
-    }
+    const metrics = await telemetryStore.agentMetrics(tenantId);
+    reply.code(200).send({ metrics });
   });
 
   /**
@@ -314,11 +293,11 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
         questions: result.questions,
         generationId: result.generationId,
       });
-    } catch (error) {
-      console.error('Baseline question generation failed', { error, tenantId, learnerId });
+    } catch (err: unknown) {
+      console.error('Baseline question generation failed', { error: err, tenantId, learnerId });
       reply.code(500).send({
         error: 'Baseline question generation failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: err instanceof Error ? err.message : 'Unknown error',
       });
     }
   });

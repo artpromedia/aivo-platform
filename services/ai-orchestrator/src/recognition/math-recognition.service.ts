@@ -166,12 +166,12 @@ Respond ONLY with valid JSON, no markdown or explanation.`;
 
       // Extract text content from response
       const textContent = response.content.find((c) => c.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
+      if (!textContent) {
         throw new Error('No text response from model');
       }
 
-      // Parse JSON response
-      const result = JSON.parse(textContent.text) as MathRecognitionResult;
+      // Parse JSON response - cast as Partial since JSON may have missing fields
+      const result = JSON.parse(textContent.text) as Partial<MathRecognitionResult>;
 
       // Validate and sanitize result
       return this.validateResult(result, evaluateExpression);
@@ -207,7 +207,7 @@ Respond ONLY with valid JSON, no markdown or explanation.`;
     feedback?: string;
     partialCredit?: number;
   }> {
-    const { allowEquivalent = true, tolerance = 0.0001 } = options ?? {};
+    const { allowEquivalent = true, tolerance = 0.0001 } = options || {};
 
     // Try exact match first
     if (submittedAnswer.trim() === expectedAnswer.trim()) {
@@ -283,7 +283,7 @@ Respond with JSON:
       });
 
       const textContent = response.content.find((c) => c.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
+      if (!textContent) {
         return { isCorrect: false };
       }
 
@@ -338,23 +338,27 @@ Respond with JSON:
   /**
    * Validate and enhance recognition result
    */
-  private validateResult(result: MathRecognitionResult, shouldEvaluate: boolean): MathRecognitionResult {
-    // Ensure required fields
-    const validated: MathRecognitionResult = {
-      recognizedText: result.recognizedText || '',
-      confidence: Math.max(0, Math.min(1, result.confidence || 0)),
-      alternatives: result.alternatives || [],
-      expressionType: result.expressionType || 'unknown',
-      latexRepresentation: result.latexRepresentation,
-      evaluation: result.evaluation,
-    };
+  private validateResult(result: Partial<MathRecognitionResult>, shouldEvaluate: boolean): MathRecognitionResult {
+    // Ensure required fields - result from JSON.parse may have missing fields
+    const recognizedText = result.recognizedText || '';
+    const confidence = Math.max(0, Math.min(1, result.confidence || 0));
+    const alternatives = result.alternatives || [];
+    const expressionType = result.expressionType || 'unknown';
+    let evaluation = result.evaluation;
 
     // Try to evaluate if not already done
-    if (shouldEvaluate && validated.recognizedText && !validated.evaluation) {
-      validated.evaluation = this.evaluateExpression(validated.recognizedText);
+    if (shouldEvaluate && recognizedText && !evaluation) {
+      evaluation = this.evaluateExpression(recognizedText);
     }
 
-    return validated;
+    return {
+      recognizedText,
+      confidence,
+      alternatives,
+      expressionType,
+      latexRepresentation: result.latexRepresentation,
+      evaluation,
+    };
   }
 
   /**
@@ -394,7 +398,7 @@ Respond with JSON:
       }
 
       // Use mathjs for safe expression evaluation
-      const result = mathEvaluate(expr);
+      const result: unknown = mathEvaluate(expr);
 
       if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
         return {
@@ -408,7 +412,7 @@ Respond with JSON:
         isValid: true,
         formattedResult: expression,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         isValid: false,
         error: 'Could not evaluate expression',

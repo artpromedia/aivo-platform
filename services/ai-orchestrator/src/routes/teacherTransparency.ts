@@ -122,9 +122,9 @@ function generateMockInteraction(index: number, studentId: string): AiInteractio
     'Main idea identification',
   ];
 
-  const requestType = requestTypes[index % requestTypes.length];
-  const subject = subjects[index % subjects.length];
-  const topic = topics[index % topics.length];
+  const requestType = requestTypes[index % requestTypes.length]!;
+  const subject = subjects[index % subjects.length]!;
+  const topic = topics[index % topics.length]!;
 
   const masteryLevel = 0.3 + Math.random() * 0.5;
   const recentAccuracy = 0.5 + Math.random() * 0.4;
@@ -132,14 +132,14 @@ function generateMockInteraction(index: number, studentId: string): AiInteractio
   return {
     id: `ai-call-${studentId}-${index}`,
     timestamp: new Date(Date.now() - index * 3600000 * 4).toISOString(),
-    requestType: requestType ?? 'homework_help',
-    topic: topic ?? 'General practice',
-    subject: subject ?? 'Math',
+    requestType,
+    topic,
+    subject,
     decisionFactors: {
       masteryLevel,
       recentAccuracy,
       attemptCount: Math.floor(Math.random() * 5) + 1,
-      learningGoals: ['Improve ' + (subject ?? 'Math').toLowerCase() + ' skills'],
+      learningGoals: ['Improve ' + subject.toLowerCase() + ' skills'],
       focusScore: 0.6 + Math.random() * 0.3,
       sessionDurationMinutes: Math.floor(Math.random() * 30) + 5,
     },
@@ -151,7 +151,7 @@ function generateMockInteraction(index: number, studentId: string): AiInteractio
     },
     model: 'claude-3-haiku-20240307',
     provider: 'anthropic',
-    explanation: generateExplanation(requestType ?? 'homework_help', masteryLevel, recentAccuracy),
+    explanation: generateExplanation(requestType, masteryLevel, recentAccuracy),
     confidence: 0.75 + Math.random() * 0.2,
   };
 }
@@ -281,8 +281,8 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<TeacherTransp
     const { days, limit } = parsed.data;
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const teacherId = (request.user as { sub?: string }).sub;
+    const tenantId = (request.user as { tenant_id?: string }).tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });
@@ -326,8 +326,8 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<TeacherTransp
     const { interactionId } = request.params;
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const teacherId = (request.user as { sub?: string }).sub;
+    const tenantId = (request.user as { tenant_id?: string }).tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });
@@ -366,8 +366,8 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<TeacherTransp
     const { type, description } = parsed.data;
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const teacherId = (request.user as { sub?: string }).sub;
+    const tenantId = (request.user as { tenant_id?: string }).tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });
@@ -409,8 +409,8 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<TeacherTransp
     const days = parseInt(request.query.days ?? '7', 10);
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const teacherId = (request.user as { sub?: string }).sub;
+    const tenantId = (request.user as { tenant_id?: string }).tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });

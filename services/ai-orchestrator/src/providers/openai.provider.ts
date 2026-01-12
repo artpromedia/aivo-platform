@@ -64,7 +64,7 @@ export class OpenAIProvider implements LLMProviderInterface {
     try {
       await this.client.models.list();
       return true;
-    } catch (error) {
+    } catch {
       incrementCounter('llm.provider.health_check.failed', { provider: this.name });
       return false;
     }

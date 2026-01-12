@@ -84,7 +84,7 @@ interface AccommodationSuggestion {
 // ────────────────────────────────────────────────────────────────────────────
 
 function generateIEPGoals(request: z.infer<typeof iepGoalGenerationSchema>): IEPGoal[] {
-  const { domain, gradeLevel, currentPerformance, numberOfGoals, strengthsAndWeaknesses } = request;
+  const { domain, gradeLevel, currentPerformance, numberOfGoals, strengthsAndWeaknesses: _strengthsAndWeaknesses } = request;
 
   // Domain-specific goal templates
   const domainGoals: Record<string, IEPGoal[]> = {
@@ -302,7 +302,7 @@ function generateIEPGoals(request: z.infer<typeof iepGoalGenerationSchema>): IEP
     ],
   };
 
-  const goals = domainGoals[domain] || domainGoals['MATH'];
+  const goals = domainGoals[domain] ?? domainGoals['MATH']!;
   return goals.slice(0, numberOfGoals);
 }
 
@@ -329,7 +329,7 @@ function generateObjectives(request: z.infer<typeof iepObjectiveGenerationSchema
   ].slice(0, request.numberOfObjectives);
 }
 
-function generateAccommodations(request: z.infer<typeof accommodationSuggestionSchema>): AccommodationSuggestion[] {
+function generateAccommodations(_request: z.infer<typeof accommodationSuggestionSchema>): AccommodationSuggestion[] {
   const accommodations: AccommodationSuggestion[] = [
     {
       category: 'Presentation',

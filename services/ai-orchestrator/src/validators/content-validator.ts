@@ -109,7 +109,7 @@ export class ContentValidator {
     }
 
     // Validate objectives
-    if (!input.objectives || input.objectives.length === 0) {
+    if (input.objectives.length === 0) {
       issues.push({
         type: 'error',
         code: 'NO_OBJECTIVES',
@@ -124,7 +124,7 @@ export class ContentValidator {
     }
 
     // Validate blocks
-    if (!input.blocks || input.blocks.length === 0) {
+    if (input.blocks.length === 0) {
       issues.push({
         type: 'error',
         code: 'NO_CONTENT',
@@ -185,7 +185,7 @@ export class ContentValidator {
 
     // Validate options for multiple choice
     if (input.type === 'multiple_choice' || input.type === 'multi_select') {
-      if (!input.options || input.options.length < 2) {
+      if (input.options === undefined || input.options.length < 2) {
         issues.push({
           type: 'error',
           code: 'INSUFFICIENT_OPTIONS',
@@ -278,7 +278,7 @@ export class ContentValidator {
     }
 
     // Check for strengths
-    if (!feedback.strengths || feedback.strengths.length === 0) {
+    if (feedback.strengths.length === 0) {
       warnings.push({
         code: 'NO_STRENGTHS',
         message: 'Feedback should include specific strengths',
@@ -287,7 +287,7 @@ export class ContentValidator {
     }
 
     // Check for constructive improvement areas
-    if (!feedback.areasForImprovement || feedback.areasForImprovement.length === 0) {
+    if (feedback.areasForImprovement.length === 0) {
       warnings.push({
         code: 'NO_IMPROVEMENTS',
         message: 'Feedback should include areas for improvement',
@@ -316,8 +316,8 @@ export class ContentValidator {
 
     const allFeedbackText = [
       feedback.specificFeedback,
-      ...(feedback.strengths ?? []),
-      ...(feedback.areasForImprovement ?? []),
+      ...feedback.strengths,
+      ...feedback.areasForImprovement,
       feedback.encouragement,
     ].join(' ');
 
@@ -424,7 +424,7 @@ export class ContentValidator {
     // Check text blocks for readability
     const textBlocks = blocks.filter((b) => b.type === 'text' || b.type === 'paragraph');
     for (const block of textBlocks) {
-      const content = (block.data.content ?? block.data.text ?? '') as string;
+      const content = (block.data.content || block.data.text || '') as string;
       if (content) {
         const readability = this.checkReadability(content, gradeLevel);
         warnings.push(...readability.warnings);

@@ -11,23 +11,25 @@ let observabilityMetrics: {
   histogram: (name: string, value: number, tags?: Record<string, string>) => void;
 } | null = null;
 
+// Type for the observability module
+type ObservabilityModule = {
+  metrics?: typeof observabilityMetrics;
+};
+
 // Attempt to load observability lib
-try {
-  // Dynamic import to handle missing package gracefully
-  const loadObservability = async () => {
-    try {
-      const obs = await import('@aivo/ts-observability');
-      if (obs.metrics) {
-        observabilityMetrics = obs.metrics;
-      }
-    } catch {
-      // Observability lib not available, use console logging
+const loadObservability = async (): Promise<void> => {
+  try {
+    const obs = (await import('@aivo/ts-observability')) as ObservabilityModule;
+    if (obs.metrics) {
+      observabilityMetrics = obs.metrics;
     }
-  };
-  loadObservability();
-} catch {
-  // Ignore
-}
+  } catch {
+    // Observability lib not available, use console logging
+  }
+};
+
+// Fire and forget - intentionally not awaited
+void loadObservability();
 
 /**
  * Increment a counter metric

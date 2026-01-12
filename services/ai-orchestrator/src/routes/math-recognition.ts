@@ -247,7 +247,7 @@ export async function mathRecognitionRoutes(fastify: FastifyInstance) {
       }
 
       const session: ScratchPadSession = {
-        id: `sp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         learnerId: parsed.data.learnerId,
         activityId: parsed.data.activityId,
         questionId: parsed.data.questionId,

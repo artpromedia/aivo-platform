@@ -166,16 +166,18 @@ class OpenAIFineTuningAdapter implements FineTuningProviderAdapter {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(Array.isArray(options.headers)
+          ? Object.fromEntries(options.headers)
+          : options.headers),
       },
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      const error = await response.json().catch(() => ({ error: { message: response.statusText } })) as { error?: { message?: string } };
       throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   async uploadTrainingFile(data: string, purpose: string): Promise<string> {
@@ -192,11 +194,11 @@ class OpenAIFineTuningAdapter implements FineTuningProviderAdapter {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      const error = await response.json().catch(() => ({ error: { message: response.statusText } })) as { error?: { message?: string } };
       throw new Error(`OpenAI file upload error: ${error.error?.message || response.statusText}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as { id: string };
     return result.id;
   }
 
@@ -253,8 +255,8 @@ class OpenAIFineTuningAdapter implements FineTuningProviderAdapter {
     return {
       id: result.id,
       status: this.mapStatus(result.status),
-      fineTunedModel: result.fine_tuned_model || undefined,
-      trainedTokens: result.trained_tokens || undefined,
+      fineTunedModel: result.fine_tuned_model ?? undefined,
+      trainedTokens: result.trained_tokens ?? undefined,
       error: result.error?.message,
     };
   }
@@ -285,8 +287,8 @@ class OpenAIFineTuningAdapter implements FineTuningProviderAdapter {
     return result.data.map((job) => ({
       id: job.id,
       status: this.mapStatus(job.status),
-      fineTunedModel: job.fine_tuned_model || undefined,
-      trainedTokens: job.trained_tokens || undefined,
+      fineTunedModel: job.fine_tuned_model ?? undefined,
+      trainedTokens: job.trained_tokens ?? undefined,
       error: job.error?.message,
     }));
   }
@@ -323,16 +325,18 @@ class AnthropicFineTuningAdapter implements FineTuningProviderAdapter {
         'x-api-key': this.apiKey,
         'anthropic-version': '2024-01-01',
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(Array.isArray(options.headers)
+          ? Object.fromEntries(options.headers)
+          : options.headers),
       },
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      const error = await response.json().catch(() => ({ error: { message: response.statusText } })) as { error?: { message?: string } };
       throw new Error(`Anthropic API error: ${error.error?.message || response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   async uploadTrainingFile(data: string, _purpose: string): Promise<string> {
@@ -426,7 +430,7 @@ class AnthropicFineTuningAdapter implements FineTuningProviderAdapter {
 
 export class FineTuningManager {
   private providers: Map<FineTuningProvider, FineTuningProviderAdapter> = new Map();
-  private pollInterval: NodeJS.Timeout | null = null;
+  private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private db: Pool,
@@ -560,13 +564,14 @@ export class FineTuningManager {
       };
     } catch (error) {
       // Update job status to failed
+      const errorMessage = error instanceof Error ? error.message : String(error);
       await this.db.query(
         `
         UPDATE fine_tuning_jobs
         SET status = 'failed', error = $1
         WHERE id = $2
       `,
-        [(error as Error).message, job.id]
+        [errorMessage, job.id]
       );
 
       throw error;
@@ -763,7 +768,8 @@ export class FineTuningManager {
       await provider.deleteModel(model.providerModelId);
     } catch (error) {
       // Log but don't fail if provider delete fails
-      console.error(`Failed to delete model from provider: ${(error as Error).message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Failed to delete model from provider: ${errorMessage}`);
     }
 
     await this.db.query(
@@ -1008,13 +1014,13 @@ export class FineTuningManager {
       validationFileId: row.validation_file_id as string | null,
       trainingExampleCount: row.training_example_count as number,
       validationExampleCount: row.validation_example_count as number,
-      hyperparameters: (row.hyperparameters as HyperParameters) || {},
+      hyperparameters: (row.hyperparameters as HyperParameters | null) ?? {},
       metrics: row.metrics as TrainingMetrics | null,
       error: row.error as string | null,
       createdAt: new Date(row.created_at as string),
       startedAt: row.started_at ? new Date(row.started_at as string) : null,
       completedAt: row.completed_at ? new Date(row.completed_at as string) : null,
-      metadata: (row.metadata as Record<string, string>) || {},
+      metadata: (row.metadata as Record<string, string> | null) ?? {},
     };
   }
 
@@ -1032,7 +1038,7 @@ export class FineTuningManager {
       metrics: row.metrics as TrainingMetrics,
       deployedAt: row.deployed_at ? new Date(row.deployed_at as string) : null,
       createdAt: new Date(row.created_at as string),
-      metadata: (row.metadata as Record<string, string>) || {},
+      metadata: (row.metadata as Record<string, string> | null) ?? {},
     };
   }
 

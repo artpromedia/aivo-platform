@@ -167,8 +167,8 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const parsed = gameGenerationSchema.parse(request.body);
 
-      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
-      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const game = await gameService.generateGame({
         ...parsed,
@@ -197,8 +197,8 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const parsed = randomGameSchema.parse(request.body);
 
-      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
-      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const game = await gameService.generateRandomGame(
         parsed.learnerId,
@@ -322,8 +322,8 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const { sessionId } = request.body;
 
-      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
-      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const adjustment = await adaptiveEngine.analyzeDifficulty(sessionId, tenantId, userId);
 
@@ -354,8 +354,8 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const parsed = hintRequestSchema.parse(request.body);
 
-      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
-      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const hint = await adaptiveEngine.generateHint(
         {
@@ -387,8 +387,8 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const parsed = feedbackRequestSchema.parse(request.body);
 
-      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
-      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const feedback = await adaptiveEngine.generateFeedback(
         {
@@ -431,8 +431,8 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const parsed = celebrationRequestSchema.parse(request.body);
 
-      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
-      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+      const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const celebration = await adaptiveEngine.generateCelebration(parsed, tenantId, userId);
 
