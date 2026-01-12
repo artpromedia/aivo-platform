@@ -256,7 +256,7 @@ jobs:
           path: docs/build
 
       - name: Update Algolia index
-        uses: darrenjennings/algolia-docsearch-action@master
+        uses: darrenjennings/algolia-docsearch-action@v1.1.1
         with:
           algolia_application_id: ${{ secrets.ALGOLIA_APP_ID }}
           algolia_api_key: ${{ secrets.ALGOLIA_ADMIN_API_KEY }}

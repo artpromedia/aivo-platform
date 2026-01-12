@@ -715,7 +715,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Snyk scan
-        uses: snyk/actions/node@master
+        uses: snyk/actions/node@0.4.0
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -731,7 +731,7 @@ jobs:
           allow_issue_writing: false
 
       - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.63.0
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}

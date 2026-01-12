@@ -81,6 +81,7 @@ export interface Alert {
  */
 export interface UseClassroomMonitorOptions {
   classroomId: string;
+  teacherId: string;
   autoConnect?: boolean;
 }
 
@@ -107,7 +108,7 @@ const API_URL = process.env.NEXT_PUBLIC_REALTIME_URL || 'http://localhost:3003';
 export function useClassroomMonitor(
   options: UseClassroomMonitorOptions
 ): UseClassroomMonitorReturn {
-  const { classroomId, autoConnect = true } = options;
+  const { classroomId, teacherId, autoConnect = true } = options;
 
   const { isConnected, emit, on, joinRoom, leaveRoom } = useWebSocket({
     autoConnect,
@@ -349,7 +350,6 @@ export function useClassroomMonitor(
     async (studentId: string, type: string, message?: string) => {
       try {
         const token = localStorage.getItem('auth_token');
-        const teacherId = 'current-teacher-id'; // TODO: Get from auth context
 
         const response = await fetch(`${API_URL}/monitor/classroom/${classroomId}/intervention`, {
           method: 'POST',
@@ -379,7 +379,7 @@ export function useClassroomMonitor(
         throw err;
       }
     },
-    [classroomId]
+    [classroomId, teacherId]
   );
 
   /**

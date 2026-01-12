@@ -126,7 +126,7 @@ jobs:
             BUILD_TIME=${{ github.event.head_commit.timestamp }}
 
       - name: Run Trivy scan on image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.prepare.outputs.version }}'
           format: 'sarif'

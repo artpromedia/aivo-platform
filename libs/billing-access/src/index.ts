@@ -194,10 +194,12 @@ export class BillingAccessClient {
       const learnerSkus = accessInfo.learnerSkus[learnerId] ?? [];
       const hasAddon = learnerSkus.includes(sku) || accessInfo.activeSkus.includes(sku);
 
-      // TODO: Check trial status from billing-svc
+      // Check trial status from subscription status
+      const isTrialing = accessInfo.status === 'trialing';
+
       return {
         hasAddon,
-        isTrialing: false, // Would need additional API call
+        isTrialing,
       };
     } catch (error) {
       console.error('[BillingAccess] Error checking addon access:', error);
