@@ -358,5 +358,259 @@ class HomeworkService {
   }
 }
 
+/// Result from OCR scan.
+class OCRScanResult {
+  const OCRScanResult({
+    required this.success,
+    required this.text,
+    required this.confidence,
+    required this.provider,
+    required this.processingTimeMs,
+    this.containsMath = false,
+    this.mathExpressions,
+  });
+
+  final bool success;
+  final String text;
+  final double confidence;
+  final String provider;
+  final int processingTimeMs;
+  final bool containsMath;
+  final List<MathExpression>? mathExpressions;
+
+  factory OCRScanResult.fromJson(Map<String, dynamic> json) {
+    final extraction = json['extraction'] as Map<String, dynamic>? ?? {};
+    final mathExprs = extraction['mathExpressions'] as List<dynamic>?;
+
+    return OCRScanResult(
+      success: json['success'] == true,
+      text: extraction['text']?.toString() ?? '',
+      confidence: (extraction['confidence'] as num?)?.toDouble() ?? 0.0,
+      provider: extraction['provider']?.toString() ?? 'unknown',
+      processingTimeMs: (extraction['processingTimeMs'] as num?)?.toInt() ?? 0,
+      containsMath: extraction['containsMath'] == true,
+      mathExpressions: mathExprs?.map((e) => MathExpression.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+}
+
+/// A detected math expression from OCR.
+class MathExpression {
+  const MathExpression({
+    required this.raw,
+    this.latex,
+  });
+
+  final String raw;
+  final String? latex;
+
+  factory MathExpression.fromJson(Map<String, dynamic> json) {
+    return MathExpression(
+      raw: json['raw']?.toString() ?? '',
+      latex: json['latex']?.toString(),
+    );
+  }
+}
+
+/// Result from scan-and-start (OCR + homework session creation).
+class ScanAndStartResult {
+  const ScanAndStartResult({
+    required this.ocrComplete,
+    required this.homeworkStarted,
+    required this.extraction,
+    this.session,
+    this.error,
+  });
+
+  final bool ocrComplete;
+  final bool homeworkStarted;
+  final OCRScanResult extraction;
+  final HomeworkSession? session;
+  final String? error;
+
+  factory ScanAndStartResult.fromJson(Map<String, dynamic> json) {
+    final submissionData = json['submission'] as Map<String, dynamic>?;
+    final stepsData = json['steps'] as List<dynamic>?;
+
+    HomeworkSession? session;
+    if (submissionData != null && stepsData != null) {
+      session = HomeworkSession(
+        id: submissionData['id']?.toString() ?? '',
+        sessionId: submissionData['sessionId']?.toString() ?? '',
+        problem: json['extraction']?['text']?.toString() ?? '',
+        steps: stepsData.map((s) => HomeworkStep.fromJson(_mapStepResponse(s as Map<String, dynamic>))).toList(),
+        currentStepIndex: 0,
+        isComplete: false,
+      );
+    }
+
+    return ScanAndStartResult(
+      ocrComplete: json['ocrComplete'] == true,
+      homeworkStarted: json['homeworkStarted'] == true,
+      extraction: OCRScanResult.fromJson(json),
+      session: session,
+      error: json['error']?.toString(),
+    );
+  }
+
+  static Map<String, dynamic> _mapStepResponse(Map<String, dynamic> step) {
+    return {
+      'id': step['id'],
+      'stepNumber': step['stepOrder'],
+      'prompt': step['promptText'],
+      'isCompleted': step['isCompleted'] ?? false,
+    };
+  }
+}
+
+/// Extension to HomeworkService for OCR capabilities.
+extension HomeworkOCRService on HomeworkService {
+  /// Scan an image and extract text using OCR.
+  /// POST /upload/base64
+  Future<OCRScanResult> scanImage({
+    required String base64ImageData,
+    required HomeworkSubject subject,
+    required String gradeBand,
+    bool detectMath = true,
+  }) async {
+    if (_useHomeworkMock) {
+      _logMockWarning();
+      await Future.delayed(const Duration(milliseconds: 1200));
+      return _mockOCRResult(subject);
+    }
+
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/upload/base64',
+        data: {
+          'imageData': base64ImageData,
+          'subject': subject.code,
+          'gradeBand': gradeBand,
+          'detectMath': detectMath,
+        },
+      );
+
+      if (response.data == null) {
+        throw const HomeworkException('No OCR result returned');
+      }
+
+      return OCRScanResult.fromJson(response.data!);
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
+  /// Scan an image and automatically start a homework session.
+  /// POST /upload/scan-and-start (multipart)
+  Future<ScanAndStartResult> scanAndStartHomework({
+    required Uint8List imageBytes,
+    required String filename,
+    required HomeworkSubject subject,
+    required String gradeBand,
+    bool detectMath = true,
+    int maxSteps = 5,
+    bool autoStart = true,
+  }) async {
+    if (_useHomeworkMock) {
+      _logMockWarning();
+      await Future.delayed(const Duration(milliseconds: 1500));
+      return _mockScanAndStartResult(subject, gradeBand);
+    }
+
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          imageBytes,
+          filename: filename,
+          contentType: DioMediaType.parse(_getMimeType(filename)),
+        ),
+        'subject': subject.code,
+        'gradeBand': gradeBand,
+        'detectMath': detectMath.toString(),
+        'maxSteps': maxSteps.toString(),
+        'autoStart': autoStart.toString(),
+      });
+
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/upload/scan-and-start',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+
+      if (response.data == null) {
+        throw const HomeworkException('No result returned');
+      }
+
+      return ScanAndStartResult.fromJson(response.data!);
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
+  /// Get available OCR providers.
+  /// GET /upload/providers
+  Future<Map<String, dynamic>> getOCRProviders() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/upload/providers');
+      return response.data ?? {};
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
+  String _getMimeType(String filename) {
+    final ext = filename.toLowerCase().split('.').last;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'heic':
+        return 'image/heic';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'image/jpeg';
+    }
+  }
+
+  OCRScanResult _mockOCRResult(HomeworkSubject subject) {
+    final mockText = subject == HomeworkSubject.math
+        ? 'Solve for x: 2x + 5 = 13'
+        : 'Read the following passage and answer the questions below.';
+
+    return OCRScanResult(
+      success: true,
+      text: mockText,
+      confidence: 0.95,
+      provider: 'mock',
+      processingTimeMs: 850,
+      containsMath: subject == HomeworkSubject.math,
+      mathExpressions: subject == HomeworkSubject.math
+          ? [const MathExpression(raw: '2x + 5 = 13', latex: r'2x + 5 = 13')]
+          : null,
+    );
+  }
+
+  ScanAndStartResult _mockScanAndStartResult(HomeworkSubject subject, String gradeBand) {
+    final ocrResult = _mockOCRResult(subject);
+    final session = _mockHomeworkSession(ocrResult.text, subject);
+
+    return ScanAndStartResult(
+      ocrComplete: true,
+      homeworkStarted: true,
+      extraction: ocrResult,
+      session: session,
+    );
+  }
+}
+
 /// Provider for the homework service.
 final homeworkServiceProvider = Provider<HomeworkService>((ref) => HomeworkService());
