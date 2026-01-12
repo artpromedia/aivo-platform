@@ -20,6 +20,7 @@ import gameGenerationRoutes from './routes/game-generation.js';
 import generationRoutes from './routes/generation.js';
 import { registerPromptDebuggingRoutes } from './routes/prompt-debugging.js';
 import { registerFineTuningRoutes } from './routes/fine-tuning.js';
+import { registerFederatedLearningRoutes } from './routes/federated-learning.js';
 import { LLMOrchestrator } from './providers/llm-orchestrator.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
@@ -100,6 +101,9 @@ export function createApp(options: AppOptions = {}) {
 
   // RLHF Fine-Tuning API routes
   app.register(registerFineTuningRoutes, { pool: policyPool, redis });
+
+  // Federated Prompt Learning API routes
+  app.register(registerFederatedLearningRoutes, { pool: policyPool, redis });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
