@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+
 import { cn } from '../../utils/cn';
 import { Button } from '../button';
 
@@ -25,7 +26,12 @@ export type GameType =
   | 'sequence'
   | 'focus-spot'
   | 'counting'
-  | 'shape-tracing';
+  | 'shape-tracing'
+  | 'word-scramble'
+  | 'reaction-time'
+  | 'math-quick'
+  | 'spot-the-odd'
+  | 'bubble-pop';
 
 export interface GameConfig {
   type: GameType;
@@ -57,17 +63,22 @@ export function FocusGamePlayer({
   onExit,
   className,
 }: FocusGamePlayerProps) {
-  const [gameState, setGameState] = useState<'instructions' | 'playing' | 'completed'>('instructions');
+  const [gameState, setGameState] = useState<'instructions' | 'playing' | 'completed'>(
+    'instructions'
+  );
   const [timeRemaining, setTimeRemaining] = useState(durationSeconds);
 
   const handleStart = useCallback(() => {
     setGameState('playing');
   }, []);
 
-  const handleGameComplete = useCallback((completed: boolean, score?: number, maxScore?: number) => {
-    setGameState('completed');
-    onComplete?.(completed, score, maxScore);
-  }, [onComplete]);
+  const handleGameComplete = useCallback(
+    (completed: boolean, score?: number, maxScore?: number) => {
+      setGameState('completed');
+      onComplete?.(completed, score, maxScore);
+    },
+    [onComplete]
+  );
 
   // Timer
   useEffect(() => {
@@ -83,7 +94,9 @@ export function FocusGamePlayer({
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [gameState, handleGameComplete]);
 
   return (
@@ -94,7 +107,8 @@ export function FocusGamePlayer({
         {gameState === 'playing' && (
           <div className="flex items-center gap-4">
             <span className="text-sm text-text-muted">
-              Time: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+              Time: {Math.floor(timeRemaining / 60)}:
+              {(timeRemaining % 60).toString().padStart(2, '0')}
             </span>
             <Button variant="ghost" size="sm" onClick={onExit}>
               Exit
@@ -111,26 +125,14 @@ export function FocusGamePlayer({
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {gameState === 'instructions' && (
-          <InstructionsView
-            instructions={instructions}
-            onStart={handleStart}
-          />
+          <InstructionsView instructions={instructions} onStart={handleStart} />
         )}
 
         {gameState === 'playing' && (
-          <GameRenderer
-            gameId={gameId}
-            config={config}
-            onComplete={handleGameComplete}
-          />
+          <GameRenderer gameId={gameId} config={config} onComplete={handleGameComplete} />
         )}
 
-        {gameState === 'completed' && (
-          <CompletionView
-            title={title}
-            onClose={onExit}
-          />
-        )}
+        {gameState === 'completed' && <CompletionView title={title} onClose={onExit} />}
       </div>
     </div>
   );
@@ -167,13 +169,7 @@ function InstructionsView({
   );
 }
 
-function CompletionView({
-  title,
-  onClose,
-}: {
-  title: string;
-  onClose?: () => void;
-}) {
+function CompletionView({ title, onClose }: { title: string; onClose?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
       <div className="text-center space-y-4">
@@ -224,6 +220,16 @@ function GameRenderer({
       return <ColorMatchGame config={config} onComplete={onComplete} />;
     case 'sequence':
       return <SequenceGame config={config} onComplete={onComplete} />;
+    case 'word-scramble':
+      return <WordScrambleGame config={config} onComplete={onComplete} />;
+    case 'reaction-time':
+      return <ReactionTimeGame config={config} onComplete={onComplete} />;
+    case 'math-quick':
+      return <MathQuickGame config={config} onComplete={onComplete} />;
+    case 'spot-the-odd':
+      return <SpotTheOddGame config={config} onComplete={onComplete} />;
+    case 'bubble-pop':
+      return <BubblePopGame config={config} onComplete={onComplete} />;
     default:
       return (
         <div className="flex items-center justify-center p-8 min-h-[400px]">
@@ -329,7 +335,9 @@ function MemoryGame({
         {cards.map((card, index) => (
           <button
             key={card.id}
-            onClick={() => handleCardClick(index)}
+            onClick={() => {
+              handleCardClick(index);
+            }}
             className={cn(
               'w-20 h-20 rounded-lg font-bold text-2xl transition-all duration-300',
               'border-2 border-border shadow-soft',
@@ -355,6 +363,7 @@ function generateCardValues(pairs: number, theme: string): string[] {
     nature: ['🌸', '🌻', '🌿', '🍀', '🌺', '🌼'],
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const values = themes[theme] || themes.shapes;
   return values.slice(0, pairs);
 }
@@ -419,7 +428,9 @@ function BreathingVisualizer({
       }
     }, 50);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [inhale, holdIn, exhale, holdOut, totalCycles, onComplete]);
 
   // Draw visualization
@@ -439,9 +450,9 @@ function BreathingVisualizer({
     // Calculate radius based on phase
     let radius: number;
     if (phase === 'inhale') {
-      radius = (size / 4) + (size / 4) * progress;
+      radius = size / 4 + (size / 4) * progress;
     } else if (phase === 'exhale') {
-      radius = (size / 2) - (size / 4) * progress;
+      radius = size / 2 - (size / 4) * progress;
     } else {
       radius = phase === 'hold-in' ? size / 2 : size / 4;
     }
@@ -458,9 +469,9 @@ function BreathingVisualizer({
   }, [phase, progress]);
 
   const phaseLabels = {
-    'inhale': 'Breathe In',
+    inhale: 'Breathe In',
     'hold-in': 'Hold',
-    'exhale': 'Breathe Out',
+    exhale: 'Breathe Out',
     'hold-out': 'Hold',
   };
 
@@ -469,15 +480,8 @@ function BreathingVisualizer({
       <div className="text-sm text-text-muted">
         Cycle {currentCycle} of {totalCycles}
       </div>
-      <canvas
-        ref={canvasRef}
-        width={400}
-        height={400}
-        className="max-w-full h-auto"
-      />
-      <div className="text-2xl font-semibold text-text">
-        {phaseLabels[phase]}
-      </div>
+      <canvas ref={canvasRef} width={400} height={400} className="max-w-full h-auto" />
+      <div className="text-2xl font-semibold text-text">{phaseLabels[phase]}</div>
     </div>
   );
 }
@@ -493,8 +497,10 @@ function TapRhythmGame({
   config: GameConfig;
   onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
 }) {
-  const pattern = (config.pattern as number[]) || [1000, 1000, 1000];
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, react-hooks/exhaustive-deps
+  const pattern = React.useMemo(() => (config.pattern as number[]) || [1000, 1000, 1000], []);
   const repetitions = (config.repetitions as number) || 3;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const showVisualCues = (config.showVisualCues as boolean) ?? true;
 
   const [currentRep, setCurrentRep] = useState(0);
@@ -510,8 +516,12 @@ function TapRhythmGame({
     }
 
     if (!isActive) {
-      const timeout = setTimeout(() => setIsActive(true), 1000);
-      return () => clearTimeout(timeout);
+      const timeout = setTimeout(() => {
+        setIsActive(true);
+      }, 1000);
+      return () => {
+        clearTimeout(timeout);
+      };
     }
 
     const timeout = setTimeout(() => {
@@ -526,7 +536,9 @@ function TapRhythmGame({
       });
     }, pattern[currentBeat]);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [currentRep, currentBeat, isActive, repetitions, pattern, userTaps, onComplete]);
 
   const handleTap = () => {
@@ -582,7 +594,13 @@ function calculateRhythmScore(taps: number[], _pattern: number[], _reps: number)
 // SIMPLE GAME IMPLEMENTATIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+function PatternGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
   const gridSize = (config.gridSize as number) || 4;
   const startingLength = (config.startingLength as number) || 3;
   const maxLength = (config.maxLength as number) || 7;
@@ -623,14 +641,18 @@ function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (
     };
 
     const timer = setTimeout(showNext, 500);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [pattern, isShowingPattern]);
 
   const handleCellClick = (cellIndex: number) => {
     if (isShowingPattern || gameOver) return;
 
     setActiveCell(cellIndex);
-    setTimeout(() => setActiveCell(null), 200);
+    setTimeout(() => {
+      setActiveCell(null);
+    }, 200);
 
     const newInput = [...playerInput, cellIndex];
     setPlayerInput(newInput);
@@ -639,22 +661,26 @@ function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (
     if (pattern[newInput.length - 1] !== cellIndex) {
       // Wrong! Game over
       setGameOver(true);
-      setTimeout(() => onComplete(true, score, maxLength - startingLength + 1), 1000);
+      setTimeout(() => {
+        onComplete(true, score, maxLength - startingLength + 1);
+      }, 1000);
       return;
     }
 
     // Check if completed current pattern
     if (newInput.length === pattern.length) {
-      setScore(s => s + 1);
+      setScore((s) => s + 1);
 
       if (pattern.length >= maxLength) {
         // Won the game!
-        setTimeout(() => onComplete(true, score + 1, maxLength - startingLength + 1), 500);
+        setTimeout(() => {
+          onComplete(true, score + 1, maxLength - startingLength + 1);
+        }, 500);
         return;
       }
 
       // Next round - add one more to pattern
-      setRound(r => r + 1);
+      setRound((r) => r + 1);
       setPlayerInput([]);
       setIsShowingPattern(true);
       const newPattern = [...pattern, Math.floor(Math.random() * gridSize)];
@@ -680,7 +706,9 @@ function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (
         {Array.from({ length: gridSize }).map((_, i) => (
           <button
             key={i}
-            onClick={() => handleCellClick(i)}
+            onClick={() => {
+              handleCellClick(i);
+            }}
             disabled={isShowingPattern || gameOver}
             className={cn(
               'w-24 h-24 rounded-xl transition-all duration-200 border-4',
@@ -700,9 +728,7 @@ function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (
             key={i}
             className={cn(
               'w-3 h-3 rounded-full',
-              i < playerInput.length
-                ? 'bg-primary'
-                : 'bg-border'
+              i < playerInput.length ? 'bg-primary' : 'bg-border'
             )}
           />
         ))}
@@ -711,7 +737,13 @@ function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (
   );
 }
 
-function DrawingGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean) => void }) {
+function DrawingGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -750,7 +782,9 @@ function DrawingGame({ config, onComplete }: { config: GameConfig; onComplete: (
 
   return (
     <div className="flex flex-col items-center justify-center p-8 gap-4 min-h-[400px]">
-      <p className="text-text-muted mb-2">{(config.prompt as string) || 'Draw something calming'}</p>
+      <p className="text-text-muted mb-2">
+        {(config.prompt as string) || 'Draw something calming'}
+      </p>
       <canvas
         ref={canvasRef}
         width={400}
@@ -766,10 +800,23 @@ function DrawingGame({ config, onComplete }: { config: GameConfig; onComplete: (
   );
 }
 
-function FocusSpotGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean) => void }) {
+function FocusSpotGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean) => void;
+}) {
   useEffect(() => {
-    const timer = setTimeout(() => onComplete(true), ((config.duration as number) || 30) * 1000);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(
+      () => {
+        onComplete(true);
+      },
+      ((config.duration as number) || 30) * 1000
+    );
+    return () => {
+      clearTimeout(timer);
+    };
   }, [config, onComplete]);
 
   return (
@@ -779,7 +826,13 @@ function FocusSpotGame({ config, onComplete }: { config: GameConfig; onComplete:
   );
 }
 
-function CountingGame({ config: _config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+function CountingGame({
+  config: _config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
   const [count] = useState(() => Math.floor(Math.random() * 5) + 3);
   const [userAnswer, setUserAnswer] = useState('');
 
@@ -793,13 +846,17 @@ function CountingGame({ config: _config, onComplete }: { config: GameConfig; onC
       <p className="text-text mb-4">How many stars do you see?</p>
       <div className="flex flex-wrap gap-4 justify-center max-w-md">
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="text-4xl">⭐</div>
+          <div key={i} className="text-4xl">
+            ⭐
+          </div>
         ))}
       </div>
       <input
         type="number"
         value={userAnswer}
-        onChange={(e) => setUserAnswer(e.target.value)}
+        onChange={(e) => {
+          setUserAnswer(e.target.value);
+        }}
         className="px-4 py-2 border-2 border-border rounded-lg text-center text-xl w-24"
         placeholder="?"
       />
@@ -810,7 +867,14 @@ function CountingGame({ config: _config, onComplete }: { config: GameConfig; onC
   );
 }
 
-function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+function ShapeTracingGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const shapes = (config.shapes as string[]) || ['circle', 'square', 'triangle', 'star'];
   const [currentShapeIndex, setCurrentShapeIndex] = useState(0);
   const [tracingProgress, setTracingProgress] = useState(0);
@@ -856,8 +920,8 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
         break;
       case 'star':
         for (let i = 0; i < 5; i++) {
-          const outerAngle = (i * 72 - 90) * Math.PI / 180;
-          const innerAngle = ((i * 72) + 36 - 90) * Math.PI / 180;
+          const outerAngle = ((i * 72 - 90) * Math.PI) / 180;
+          const innerAngle = ((i * 72 + 36 - 90) * Math.PI) / 180;
           const outerX = centerX + Math.cos(outerAngle) * size;
           const outerY = centerY + Math.sin(outerAngle) * size;
           const innerX = centerX + Math.cos(innerAngle) * (size * 0.4);
@@ -870,15 +934,31 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
         break;
       case 'heart':
         ctx.moveTo(centerX, centerY + size * 0.7);
-        ctx.bezierCurveTo(centerX - size, centerY, centerX - size, centerY - size * 0.7, centerX, centerY - size * 0.3);
-        ctx.bezierCurveTo(centerX + size, centerY - size * 0.7, centerX + size, centerY, centerX, centerY + size * 0.7);
+        ctx.bezierCurveTo(
+          centerX - size,
+          centerY,
+          centerX - size,
+          centerY - size * 0.7,
+          centerX,
+          centerY - size * 0.3
+        );
+        ctx.bezierCurveTo(
+          centerX + size,
+          centerY - size * 0.7,
+          centerX + size,
+          centerY,
+          centerX,
+          centerY + size * 0.7
+        );
         break;
     }
     ctx.stroke();
     ctx.setLineDash([]);
   }, [currentShape]);
 
-  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const getCanvasPoint = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
@@ -890,7 +970,9 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
     };
   };
 
-  const startTracing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const startTracing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     setIsTracing(true);
     const point = getCanvasPoint(e);
     if (point) lastPointRef.current = point;
@@ -917,7 +999,7 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
     ctx.stroke();
 
     lastPointRef.current = point;
-    setTracingProgress(p => Math.min(p + 0.5, 100));
+    setTracingProgress((p) => Math.min(p + 0.5, 100));
   };
 
   const stopTracing = () => {
@@ -930,7 +1012,7 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
       setCompletedShapes(newCompleted);
 
       if (currentShapeIndex < shapes.length - 1) {
-        setCurrentShapeIndex(i => i + 1);
+        setCurrentShapeIndex((i) => i + 1);
         setTracingProgress(0);
       } else {
         onComplete(true, newCompleted, shapes.length);
@@ -944,9 +1026,7 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
         Shape {currentShapeIndex + 1} of {shapes.length}
       </div>
 
-      <p className="text-lg font-medium text-text capitalize">
-        Trace the {currentShape}
-      </p>
+      <p className="text-lg font-medium text-text capitalize">Trace the {currentShape}</p>
 
       <canvas
         ref={canvasRef}
@@ -969,9 +1049,7 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
         />
       </div>
 
-      <p className="text-xs text-text-muted">
-        Trace at least 60% of the shape to continue
-      </p>
+      <p className="text-xs text-text-muted">Trace at least 60% of the shape to continue</p>
     </div>
   );
 }
@@ -980,80 +1058,100 @@ function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComple
 // COLOR MATCH GAME
 // ══════════════════════════════════════════════════════════════════════════════
 
-function ColorMatchGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+const COLOR_MATCH_COLORS = [
+  { name: 'Red', hex: '#ef4444' },
+  { name: 'Blue', hex: '#3b82f6' },
+  { name: 'Green', hex: '#22c55e' },
+  { name: 'Yellow', hex: '#eab308' },
+  { name: 'Purple', hex: '#a855f7' },
+  { name: 'Orange', hex: '#f97316' },
+];
+
+function ColorMatchGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
   const rounds = (config.rounds as number) || 10;
   const timePerRound = (config.timePerRound as number) || 3000;
 
-  const colors = [
-    { name: 'Red', hex: '#ef4444' },
-    { name: 'Blue', hex: '#3b82f6' },
-    { name: 'Green', hex: '#22c55e' },
-    { name: 'Yellow', hex: '#eab308' },
-    { name: 'Purple', hex: '#a855f7' },
-    { name: 'Orange', hex: '#f97316' },
-  ];
-
   const [currentRound, setCurrentRound] = useState(1);
   const [score, setScore] = useState(0);
-  const [displayText, setDisplayText] = useState(colors[0].name);
-  const [textColor, setTextColor] = useState(colors[0].hex);
+  const [displayText, setDisplayText] = useState(COLOR_MATCH_COLORS[0].name);
+  const [textColor, setTextColor] = useState(COLOR_MATCH_COLORS[0].hex);
   const [isMatching, setIsMatching] = useState(true);
   const [showFeedback, setShowFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [timeLeft, setTimeLeft] = useState(100);
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const handleAnswerRef = useRef<(answer: boolean | null) => void>(() => {});
 
   // Generate new challenge
   const generateChallenge = useCallback(() => {
-    const textColorObj = colors[Math.floor(Math.random() * colors.length)];
-    const displayTextColor = colors[Math.floor(Math.random() * colors.length)];
+    const textColorObj = COLOR_MATCH_COLORS[Math.floor(Math.random() * COLOR_MATCH_COLORS.length)];
+    const displayTextColor =
+      COLOR_MATCH_COLORS[Math.floor(Math.random() * COLOR_MATCH_COLORS.length)];
     const matching = Math.random() > 0.5;
 
     setDisplayText(textColorObj.name);
     setTextColor(matching ? textColorObj.hex : displayTextColor.hex);
-    setIsMatching(textColorObj.name === colors.find(c => c.hex === (matching ? textColorObj.hex : displayTextColor.hex))?.name);
+    const matchColor = matching ? textColorObj.hex : displayTextColor.hex;
+    setIsMatching(textColorObj.name === COLOR_MATCH_COLORS.find((c) => c.hex === matchColor)?.name);
     setTimeLeft(100);
   }, []);
 
   useEffect(() => {
     generateChallenge();
-  }, []);
+  }, [generateChallenge]);
+
+  // Update the ref whenever dependencies change
+  useEffect(() => {
+    handleAnswerRef.current = (answer: boolean | null) => {
+      const correct = answer === isMatching;
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (correct && answer !== null) {
+        setScore((s) => s + 1);
+        setShowFeedback('correct');
+      } else {
+        setShowFeedback('wrong');
+      }
+
+      setTimeout(() => {
+        setShowFeedback(null);
+
+        if (currentRound >= rounds) {
+          onComplete(true, score + (correct ? 1 : 0), rounds);
+        } else {
+          setCurrentRound((r) => r + 1);
+          generateChallenge();
+        }
+      }, 500);
+    };
+  }, [isMatching, currentRound, rounds, score, onComplete, generateChallenge]);
 
   // Timer countdown
   useEffect(() => {
     if (showFeedback) return;
 
     const interval = setInterval(() => {
-      setTimeLeft(t => {
+      setTimeLeft((t) => {
         if (t <= 0) {
-          handleAnswer(null);
+          handleAnswerRef.current(null);
           return 0;
         }
-        return t - (100 / (timePerRound / 100));
+        return t - 100 / (timePerRound / 100);
       });
     }, 100);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [currentRound, showFeedback, timePerRound]);
 
   const handleAnswer = (answer: boolean | null) => {
-    const correct = answer === isMatching;
-
-    if (correct && answer !== null) {
-      setScore(s => s + 1);
-      setShowFeedback('correct');
-    } else {
-      setShowFeedback('wrong');
-    }
-
-    setTimeout(() => {
-      setShowFeedback(null);
-
-      if (currentRound >= rounds) {
-        onComplete(true, score + (correct ? 1 : 0), rounds);
-      } else {
-        setCurrentRound(r => r + 1);
-        generateChallenge();
-      }
-    }, 500);
+    handleAnswerRef.current(answer);
   };
 
   return (
@@ -1086,7 +1184,9 @@ function ColorMatchGame({ config, onComplete }: { config: GameConfig; onComplete
         <Button
           size="lg"
           variant="secondary"
-          onClick={() => handleAnswer(true)}
+          onClick={() => {
+            handleAnswer(true);
+          }}
           disabled={!!showFeedback}
           className="w-32"
         >
@@ -1095,7 +1195,9 @@ function ColorMatchGame({ config, onComplete }: { config: GameConfig; onComplete
         <Button
           size="lg"
           variant="secondary"
-          onClick={() => handleAnswer(false)}
+          onClick={() => {
+            handleAnswer(false);
+          }}
           disabled={!!showFeedback}
           className="w-32"
         >
@@ -1110,7 +1212,13 @@ function ColorMatchGame({ config, onComplete }: { config: GameConfig; onComplete
 // SEQUENCE GAME
 // ══════════════════════════════════════════════════════════════════════════════
 
-function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+function SequenceGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
   const startLength = (config.startLength as number) || 4;
   const maxLength = (config.maxLength as number) || 8;
   const displayTime = (config.displayTime as number) || 2000;
@@ -1137,7 +1245,9 @@ function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: 
       setPhase('input');
     }, displayTime);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [currentLevel, startLength, maxLength, displayTime]);
 
   const handleNumberClick = (num: number) => {
@@ -1154,7 +1264,7 @@ function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: 
       setFeedback(isCorrect ? 'correct' : 'wrong');
 
       if (isCorrect) {
-        setScore(s => s + 1);
+        setScore((s) => s + 1);
       }
 
       setTimeout(() => {
@@ -1163,7 +1273,7 @@ function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: 
         if (!isCorrect || currentLevel >= maxLength - startLength + 1) {
           onComplete(true, score + (isCorrect ? 1 : 0), maxLength - startLength + 1);
         } else {
-          setCurrentLevel(l => l + 1);
+          setCurrentLevel((l) => l + 1);
         }
       }, 1000);
     }
@@ -1186,21 +1296,25 @@ function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: 
       </p>
 
       {/* Sequence display */}
-      <div className={cn(
-        'flex gap-3 p-4 rounded-xl min-h-[80px] items-center justify-center',
-        phase === 'showing' && 'bg-primary/10',
-        feedback === 'correct' && 'bg-green-100',
-        feedback === 'wrong' && 'bg-red-100'
-      )}>
-        {phase === 'showing' ? (
-          sequence.map((num, i) => (
-            <span key={i} className="text-4xl font-bold text-primary">{num}</span>
-          ))
-        ) : (
-          userInput.map((num, i) => (
-            <span key={i} className="text-4xl font-bold text-text">{num}</span>
-          ))
+      <div
+        className={cn(
+          'flex gap-3 p-4 rounded-xl min-h-[80px] items-center justify-center',
+          phase === 'showing' && 'bg-primary/10',
+          feedback === 'correct' && 'bg-green-100',
+          feedback === 'wrong' && 'bg-red-100'
         )}
+      >
+        {phase === 'showing'
+          ? sequence.map((num, i) => (
+              <span key={i} className="text-4xl font-bold text-primary">
+                {num}
+              </span>
+            ))
+          : userInput.map((num, i) => (
+              <span key={i} className="text-4xl font-bold text-text">
+                {num}
+              </span>
+            ))}
         {phase === 'input' && userInput.length === 0 && (
           <span className="text-2xl text-text-muted">...</span>
         )}
@@ -1211,7 +1325,9 @@ function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: 
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
           <button
             key={num}
-            onClick={() => handleNumberClick(num)}
+            onClick={() => {
+              handleNumberClick(num);
+            }}
             disabled={phase !== 'input'}
             className={cn(
               'w-14 h-14 rounded-lg text-xl font-bold transition-all',
@@ -1226,9 +1342,656 @@ function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: 
         ))}
       </div>
 
-      <p className="text-xs text-text-muted">
-        Sequence length: {sequence.length} numbers
+      <p className="text-xs text-text-muted">Sequence length: {sequence.length} numbers</p>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WORD SCRAMBLE GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+const SCRAMBLE_WORDS = [
+  { word: 'FOCUS', hint: 'Pay attention' },
+  { word: 'BRAIN', hint: 'Think with this' },
+  { word: 'CALM', hint: 'Peaceful feeling' },
+  { word: 'HAPPY', hint: 'Positive emotion' },
+  { word: 'LEARN', hint: 'Gain knowledge' },
+  { word: 'SMART', hint: 'Intelligent' },
+  { word: 'THINK', hint: 'Use your mind' },
+  { word: 'PEACE', hint: 'No conflict' },
+  { word: 'QUIET', hint: 'No noise' },
+  { word: 'STUDY', hint: 'Learn intently' },
+];
+
+function WordScrambleGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
+  const rounds = (config.rounds as number) || 5;
+
+  const [currentRound, setCurrentRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [currentWord, setCurrentWord] = useState(SCRAMBLE_WORDS[0]);
+  const [scrambled, setScrambled] = useState('');
+  const [userGuess, setUserGuess] = useState('');
+  const [showHint, setShowHint] = useState(false);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  const scrambleWord = useCallback((word: string) => {
+    const arr = word.split('');
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    // Make sure it's not the same as original
+    if (arr.join('') === word) {
+      [arr[0], arr[1]] = [arr[1], arr[0]];
+    }
+    return arr.join('');
+  }, []);
+
+  useEffect(() => {
+    const word = SCRAMBLE_WORDS[Math.floor(Math.random() * SCRAMBLE_WORDS.length)];
+    setCurrentWord(word);
+    setScrambled(scrambleWord(word.word));
+    setUserGuess('');
+    setShowHint(false);
+  }, [currentRound, scrambleWord]);
+
+  const handleSubmit = () => {
+    const isCorrect = userGuess.toUpperCase() === currentWord.word;
+
+    setFeedback(isCorrect ? 'correct' : 'wrong');
+    if (isCorrect) {
+      setScore((s) => s + (showHint ? 1 : 2)); // Less points if hint used
+    }
+
+    setTimeout(() => {
+      setFeedback(null);
+      if (currentRound >= rounds) {
+        onComplete(true, score + (isCorrect ? (showHint ? 1 : 2) : 0), rounds * 2);
+      } else {
+        setCurrentRound((r) => r + 1);
+      }
+    }, 1000);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Round {currentRound} of {rounds} | Score: {score}
+      </div>
+
+      <p className="text-lg text-text">Unscramble this word:</p>
+
+      <div
+        className={cn(
+          'text-5xl font-bold tracking-widest py-6 px-8 rounded-xl transition-all',
+          feedback === 'correct' && 'bg-green-100 text-green-700',
+          feedback === 'wrong' && 'bg-red-100 text-red-700',
+          !feedback && 'bg-primary/10 text-primary'
+        )}
+      >
+        {scrambled}
+      </div>
+
+      {showHint && <p className="text-sm text-text-muted italic">Hint: {currentWord.hint}</p>}
+
+      <input
+        type="text"
+        value={userGuess}
+        onChange={(e) => {
+          setUserGuess(e.target.value.toUpperCase());
+        }}
+        placeholder="Your answer..."
+        className="px-4 py-3 border-2 border-border rounded-lg text-center text-xl uppercase tracking-widest w-64"
+        maxLength={currentWord.word.length}
+        disabled={!!feedback}
+      />
+
+      <div className="flex gap-4">
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setShowHint(true);
+          }}
+          disabled={showHint || !!feedback}
+        >
+          Show Hint
+        </Button>
+        <Button onClick={handleSubmit} disabled={!userGuess || !!feedback}>
+          Submit
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REACTION TIME GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+function ReactionTimeGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
+  const rounds = (config.rounds as number) || 5;
+
+  const [currentRound, setCurrentRound] = useState(1);
+  const [phase, setPhase] = useState<'waiting' | 'ready' | 'go' | 'result' | 'early'>('waiting');
+  const [startTime, setStartTime] = useState(0);
+  const [reactionTimes, setReactionTimes] = useState<number[]>([]);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (phase === 'waiting') {
+      setPhase('ready');
+      const delay = 1000 + Math.random() * 3000; // 1-4 second random delay
+      timeoutRef.current = setTimeout(() => {
+        setPhase('go');
+        setStartTime(Date.now());
+      }, delay);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [phase]);
+
+  const handleClick = () => {
+    if (phase === 'ready') {
+      // Clicked too early!
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      setPhase('early');
+      setTimeout(() => {
+        setPhase('waiting');
+      }, 1500);
+    } else if (phase === 'go') {
+      const reactionTime = Date.now() - startTime;
+      setReactionTimes((prev) => [...prev, reactionTime]);
+      setPhase('result');
+
+      setTimeout(() => {
+        if (currentRound >= rounds) {
+          const avgTime =
+            [...reactionTimes, reactionTime].reduce((a, b) => a + b, 0) /
+            (reactionTimes.length + 1);
+          // Score based on average reaction time (lower is better)
+          const score = Math.max(0, Math.round((500 - avgTime) / 50) * 10);
+          onComplete(true, Math.max(0, score), 100);
+        } else {
+          setCurrentRound((r) => r + 1);
+          setPhase('waiting');
+        }
+      }, 1500);
+    }
+  };
+
+  const getBackgroundColor = () => {
+    switch (phase) {
+      case 'ready':
+        return 'bg-red-500';
+      case 'go':
+        return 'bg-green-500';
+      case 'early':
+        return 'bg-yellow-500';
+      case 'result':
+        return 'bg-blue-500';
+      default:
+        return 'bg-gray-200';
+    }
+  };
+
+  const getMessage = () => {
+    switch (phase) {
+      case 'waiting':
+        return 'Get ready...';
+      case 'ready':
+        return 'Wait for green...';
+      case 'go':
+        return 'CLICK NOW!';
+      case 'early':
+        return 'Too early! Wait for green.';
+      case 'result': {
+        const lastTime = reactionTimes[reactionTimes.length - 1] || Date.now() - startTime;
+        return `${lastTime}ms`;
+      }
+      default:
+        return '';
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Round {currentRound} of {rounds}
+        {reactionTimes.length > 0 &&
+          ` | Avg: ${Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)}ms`}
+      </div>
+
+      <button
+        onClick={handleClick}
+        disabled={phase === 'waiting' || phase === 'result'}
+        className={cn(
+          'w-64 h-64 rounded-full transition-all duration-200 flex items-center justify-center',
+          getBackgroundColor(),
+          (phase === 'ready' || phase === 'go') && 'cursor-pointer hover:scale-105 active:scale-95'
+        )}
+      >
+        <span className="text-2xl font-bold text-white text-center px-4">{getMessage()}</span>
+      </button>
+
+      <p className="text-sm text-text-muted">
+        Click as fast as you can when the circle turns green!
       </p>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MATH QUICK GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+function MathQuickGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
+  const rounds = (config.rounds as number) || 10;
+  const difficulty = (config.difficulty as string) || 'easy';
+  const timePerProblem = (config.timePerProblem as number) || 10000;
+
+  const [currentRound, setCurrentRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [problem, setProblem] = useState({ question: '1 + 1', answer: 2 });
+  const [userAnswer, setUserAnswer] = useState('');
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [timeLeft, setTimeLeft] = useState(100);
+
+  const generateProblem = useCallback(() => {
+    let a: number, b: number, op: string, answer: number;
+
+    switch (difficulty) {
+      case 'hard':
+        a = Math.floor(Math.random() * 50) + 10;
+        b = Math.floor(Math.random() * 50) + 10;
+        op = ['+', '-', '×'][Math.floor(Math.random() * 3)];
+        break;
+      case 'medium':
+        a = Math.floor(Math.random() * 20) + 5;
+        b = Math.floor(Math.random() * 20) + 5;
+        op = ['+', '-', '×'][Math.floor(Math.random() * 3)];
+        break;
+      default: // easy
+        a = Math.floor(Math.random() * 10) + 1;
+        b = Math.floor(Math.random() * 10) + 1;
+        op = ['+', '-'][Math.floor(Math.random() * 2)];
+    }
+
+    switch (op) {
+      case '-':
+        if (a < b) [a, b] = [b, a]; // Ensure positive result
+        answer = a - b;
+        break;
+      case '×':
+        answer = a * b;
+        break;
+      default:
+        answer = a + b;
+    }
+
+    return { question: `${a} ${op} ${b}`, answer };
+  }, [difficulty]);
+
+  useEffect(() => {
+    setProblem(generateProblem());
+    setUserAnswer('');
+    setTimeLeft(100);
+  }, [currentRound, generateProblem]);
+
+  useEffect(() => {
+    if (feedback) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 0) {
+          handleSubmit(true);
+          return 0;
+        }
+        return t - 100 / (timePerProblem / 100);
+      });
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRound, feedback, timePerProblem]);
+
+  const handleSubmit = (timedOut = false) => {
+    const isCorrect = !timedOut && parseInt(userAnswer) === problem.answer;
+
+    setFeedback(isCorrect ? 'correct' : 'wrong');
+    if (isCorrect) {
+      setScore((s) => s + 1);
+    }
+
+    setTimeout(() => {
+      setFeedback(null);
+      if (currentRound >= rounds) {
+        onComplete(true, score + (isCorrect ? 1 : 0), rounds);
+      } else {
+        setCurrentRound((r) => r + 1);
+      }
+    }, 800);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Round {currentRound} of {rounds} | Score: {score}
+      </div>
+
+      <div className="w-64 h-2 bg-border rounded-full overflow-hidden">
+        <div
+          className={cn(
+            'h-full transition-all duration-100',
+            timeLeft > 30 ? 'bg-primary' : 'bg-red-500'
+          )}
+          style={{ width: `${timeLeft}%` }}
+        />
+      </div>
+
+      <div
+        className={cn(
+          'text-5xl font-bold py-8 px-12 rounded-xl transition-all',
+          feedback === 'correct' && 'bg-green-100 text-green-700',
+          feedback === 'wrong' && 'bg-red-100 text-red-700',
+          !feedback && 'bg-surface-muted text-text'
+        )}
+      >
+        {problem.question} = ?
+      </div>
+
+      {feedback === 'wrong' && <p className="text-red-500">Answer: {problem.answer}</p>}
+
+      <input
+        type="number"
+        value={userAnswer}
+        onChange={(e) => {
+          setUserAnswer(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && userAnswer) {
+            handleSubmit();
+          }
+        }}
+        placeholder="?"
+        className="px-4 py-3 border-2 border-border rounded-lg text-center text-3xl w-32"
+        disabled={!!feedback}
+        autoFocus
+      />
+
+      <Button
+        onClick={() => {
+          handleSubmit();
+        }}
+        disabled={!userAnswer || !!feedback}
+      >
+        Submit
+      </Button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SPOT THE ODD GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+const ODD_GAME_SETS = [
+  { items: ['🍎', '🍎', '🍎', '🍊', '🍎', '🍎'], odd: 3 },
+  { items: ['🔵', '🔵', '🔴', '🔵', '🔵', '🔵'], odd: 2 },
+  { items: ['⭐', '⭐', '⭐', '⭐', '⭐', '🌟'], odd: 5 },
+  { items: ['🐱', '🐱', '🐱', '🐶', '🐱', '🐱'], odd: 3 },
+  { items: ['🌸', '🌸', '🌺', '🌸', '🌸', '🌸'], odd: 2 },
+  { items: ['🎈', '🎈', '🎈', '🎈', '🎁', '🎈'], odd: 4 },
+  { items: ['🚗', '🚗', '🚙', '🚗', '🚗', '🚗'], odd: 2 },
+  { items: ['📚', '📚', '📚', '📖', '📚', '📚'], odd: 3 },
+];
+
+function SpotTheOddGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
+  const rounds = (config.rounds as number) || 5;
+
+  const [currentRound, setCurrentRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [currentSet, setCurrentSet] = useState(ODD_GAME_SETS[0]);
+  const [feedback, setFeedback] = useState<number | null>(null);
+  const [isCorrect, setIsCorrect] = useState(false);
+
+  useEffect(() => {
+    const randomSet = ODD_GAME_SETS[Math.floor(Math.random() * ODD_GAME_SETS.length)];
+    // Shuffle the items but track the odd one's new position
+    const shuffled = [...randomSet.items.map((item, i) => ({ item, isOdd: i === randomSet.odd }))];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const newOddIndex = shuffled.findIndex((s) => s.isOdd);
+    setCurrentSet({ items: shuffled.map((s) => s.item), odd: newOddIndex });
+    setFeedback(null);
+    setIsCorrect(false);
+  }, [currentRound]);
+
+  const handleSelect = (index: number) => {
+    if (feedback !== null) return;
+
+    const correct = index === currentSet.odd;
+    setFeedback(index);
+    setIsCorrect(correct);
+
+    if (correct) {
+      setScore((s) => s + 1);
+    }
+
+    setTimeout(() => {
+      if (currentRound >= rounds) {
+        onComplete(true, score + (correct ? 1 : 0), rounds);
+      } else {
+        setCurrentRound((r) => r + 1);
+      }
+    }, 1000);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Round {currentRound} of {rounds} | Score: {score}
+      </div>
+
+      <p className="text-lg text-text">Find the odd one out!</p>
+
+      <div className="grid grid-cols-3 gap-4">
+        {currentSet.items.map((item, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              handleSelect(i);
+            }}
+            disabled={feedback !== null}
+            className={cn(
+              'w-20 h-20 text-4xl rounded-xl border-4 transition-all flex items-center justify-center',
+              feedback === null &&
+                'hover:scale-110 hover:border-primary cursor-pointer border-border',
+              feedback === i && isCorrect && 'border-green-500 bg-green-100 scale-110',
+              feedback === i && !isCorrect && 'border-red-500 bg-red-100',
+              feedback !== null &&
+                i === currentSet.odd &&
+                feedback !== i &&
+                'border-green-500 bg-green-50'
+            )}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      {feedback !== null && (
+        <p className={cn('text-lg font-medium', isCorrect ? 'text-green-600' : 'text-red-600')}>
+          {isCorrect ? 'Correct!' : 'Try to spot the difference!'}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BUBBLE POP GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface Bubble {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  number: number;
+  popped: boolean;
+}
+
+function BubblePopGame({
+  config,
+  onComplete,
+}: {
+  config: GameConfig;
+  onComplete: (completed: boolean, score?: number, maxScore?: number) => void;
+}) {
+  const bubbleCount = (config.bubbleCount as number) || 8;
+
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [nextNumber, setNextNumber] = useState(1);
+  const [score, setScore] = useState(0);
+  const [wrongPop, setWrongPop] = useState(false);
+  const [gameComplete, setGameComplete] = useState(false);
+
+  const colors = [
+    '#ef4444',
+    '#3b82f6',
+    '#22c55e',
+    '#eab308',
+    '#a855f7',
+    '#ec4899',
+    '#f97316',
+    '#14b8a6',
+  ];
+
+  useEffect(() => {
+    // Generate bubbles with random positions
+    const newBubbles: Bubble[] = [];
+    for (let i = 0; i < bubbleCount; i++) {
+      newBubbles.push({
+        id: i,
+        x: 15 + Math.random() * 70, // Keep away from edges
+        y: 15 + Math.random() * 70,
+        size: 50 + Math.random() * 20,
+        color: colors[i % colors.length],
+        number: i + 1,
+        popped: false,
+      });
+    }
+    setBubbles(newBubbles);
+    setNextNumber(1);
+    setScore(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bubbleCount]);
+
+  const handleBubbleClick = (bubble: Bubble) => {
+    if (bubble.popped || gameComplete) return;
+
+    if (bubble.number === nextNumber) {
+      // Correct bubble!
+      setBubbles((prev) => prev.map((b) => (b.id === bubble.id ? { ...b, popped: true } : b)));
+      setScore((s) => s + 1);
+      setNextNumber((n) => n + 1);
+
+      if (nextNumber === bubbleCount) {
+        setGameComplete(true);
+        setTimeout(() => {
+          onComplete(true, bubbleCount, bubbleCount);
+        }, 500);
+      }
+    } else {
+      // Wrong bubble!
+      setWrongPop(true);
+      setTimeout(() => {
+        setWrongPop(false);
+      }, 500);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-4 gap-4 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Pop bubbles in order: 1 → {bubbleCount} | Score: {score}/{bubbleCount}
+      </div>
+
+      <p
+        className={cn(
+          'text-lg font-medium transition-all',
+          wrongPop ? 'text-red-500' : 'text-text'
+        )}
+      >
+        {wrongPop ? `Wrong order! Find number ${nextNumber}` : `Pop number ${nextNumber}!`}
+      </p>
+
+      <div className="relative w-full h-80 bg-gradient-to-b from-blue-50 to-blue-100 rounded-xl overflow-hidden">
+        {bubbles.map((bubble) => (
+          <button
+            key={bubble.id}
+            onClick={() => {
+              handleBubbleClick(bubble);
+            }}
+            disabled={bubble.popped}
+            className={cn(
+              'absolute rounded-full transition-all duration-200 flex items-center justify-center font-bold text-white shadow-lg',
+              !bubble.popped && 'hover:scale-110 cursor-pointer animate-bounce',
+              bubble.popped && 'opacity-0 scale-0'
+            )}
+            style={{
+              left: `${bubble.x}%`,
+              top: `${bubble.y}%`,
+              width: bubble.size,
+              height: bubble.size,
+              backgroundColor: bubble.color,
+              transform: 'translate(-50%, -50%)',
+              animationDuration: `${2 + Math.random()}s`,
+              animationDelay: `${Math.random()}s`,
+            }}
+          >
+            {bubble.number}
+          </button>
+        ))}
+      </div>
+
+      {gameComplete && <p className="text-xl font-bold text-green-600">All bubbles popped!</p>}
     </div>
   );
 }
