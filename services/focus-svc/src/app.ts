@@ -6,6 +6,7 @@ import { registerFocusRoutes } from './routes/focus.js';
 import { registerGamesRoutes } from './routes/games.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { learningBreakRoutes } from './routes/learningBreaks.js';
+import { gamificationRoutes } from './routes/gamification.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -27,7 +28,8 @@ export async function buildApp() {
   await app.register(registerHealthRoutes);
 
   // Auth middleware for protected routes
-  await app.register(authMiddleware);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(authMiddleware as any);
 
   // Focus routes
   await app.register(registerFocusRoutes, { prefix: '/focus' });
@@ -37,6 +39,9 @@ export async function buildApp() {
 
   // Learning break routes (personalized educational brain breaks)
   await app.register(learningBreakRoutes, { prefix: '/focus' });
+
+  // Gamification routes (XP, coins, achievements, streaks, leaderboards)
+  await app.register(gamificationRoutes, { prefix: '/focus/gamification' });
 
   return app;
 }

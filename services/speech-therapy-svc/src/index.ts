@@ -15,6 +15,7 @@ import { sessionsRoutes } from './routes/sessions.js';
 import { recordingsRoutes } from './routes/recordings.js';
 import { homePracticeRoutes } from './routes/home-practice.js';
 import { reportsRoutes } from './routes/reports.js';
+import { gamificationRoutes } from './routes/gamification.js';
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
@@ -49,6 +50,7 @@ async function main() {
   await app.register(recordingsRoutes, { prefix: '/recordings' });
   await app.register(homePracticeRoutes, { prefix: '/home-practice' });
   await app.register(reportsRoutes, { prefix: '/reports' });
+  await app.register(gamificationRoutes, { prefix: '/gamification' });
 
   // Graceful shutdown
   const signals = ['SIGINT', 'SIGTERM'];

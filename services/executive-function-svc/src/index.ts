@@ -26,7 +26,8 @@ async function main() {
     logger: { level: config.logLevel },
   });
 
-  await app.register(cors, { origin: true, credentials: true });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(cors as any, { origin: true, credentials: true });
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'executive-function-svc' }));

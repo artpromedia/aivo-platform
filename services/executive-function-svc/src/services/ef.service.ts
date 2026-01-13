@@ -5,6 +5,7 @@
  */
 
 import { PrismaClient } from '../generated/prisma-client/index.js';
+import { getAITaskBreakdown, getAIStrategyRecommendations, type LearnerEFProfile } from './ai-planning-coach.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -17,7 +18,7 @@ export type BlockType = 'LEARNING' | 'BREAK' | 'TRANSITION' | 'ROUTINE' | 'FLEXI
 
 export interface CreateProfileRequest {
   learnerId: string;
-  skillLevels?: Record<EFSkill, number>;
+  skillLevels?: Partial<Record<EFSkill, number>>;
   preferredChunkMin?: number;
   preferredBreakMin?: number;
   needsVisualSchedule?: boolean;
@@ -402,44 +403,67 @@ export class ExecutiveFunctionService {
 
   /**
    * Break down a complex task into smaller subtasks
-   * Uses pattern matching and heuristics (would integrate AI in production)
+   * Uses AI Planning Coach for intelligent, personalized task breakdown
    */
   async breakdownTask(
     tenantId: string,
     learnerId: string,
     taskDescription: string,
-    options?: { maxSubtasks?: number; preferredChunkMin?: number }
+    options?: { maxSubtasks?: number; preferredChunkMin?: number; context?: { subject?: string; gradeBand?: string } }
   ): Promise<TaskBreakdownResult> {
     const profile = await this.getProfile(learnerId);
     const chunkMin = options?.preferredChunkMin ?? profile?.preferredChunkMin ?? 15;
     const maxSubtasks = options?.maxSubtasks ?? 5;
 
-    // In production, this would call an AI service
-    // For now, use heuristic breakdown
-    const subtasks = this.heuristicBreakdown(taskDescription, chunkMin, maxSubtasks);
-    const totalEstimatedMin = subtasks.reduce((sum, s) => sum + s.estimatedMin, 0);
+    // Build learner EF profile for AI coach
+    const efProfile: LearnerEFProfile = {
+      skillLevels: (profile?.skillLevels as Record<EFSkill, number>) ?? this.getDefaultSkillLevels(),
+      preferredChunkMin: chunkMin,
+      needsVisualSchedule: profile?.needsVisualSchedule ?? false,
+      needsCountdown: profile?.needsCountdown ?? false,
+      bestFocusTime: profile?.bestFocusTime ?? undefined,
+    };
 
-    // Get relevant strategies
-    const strategies = await this.getRecommendedStrategies(learnerId, ['PLANNING', 'TASK_INITIATION']);
+    // Use AI Planning Coach for intelligent breakdown
+    const aiResponse = await getAITaskBreakdown({
+      taskDescription,
+      profile: efProfile,
+      maxSubtasks,
+      context: options?.context,
+    });
 
-    // Create planning session record
+    // Create planning session record with AI-generated breakdown
     await this.prisma.planningSession.create({
       data: {
         tenantId,
         learnerId,
         planningGoal: 'Break down task into manageable steps',
         originalTask: taskDescription,
-        breakdown: subtasks as any,
-        totalEstimatedMin,
+        breakdown: aiResponse.subtasks as any,
+        totalEstimatedMin: aiResponse.totalEstimatedMin,
         createdTaskIds: [],
       },
     });
 
     return {
       originalTask: taskDescription,
-      subtasks,
-      totalEstimatedMin,
-      strategyRecommendations: strategies.map(s => s.title),
+      subtasks: aiResponse.subtasks,
+      totalEstimatedMin: aiResponse.totalEstimatedMin,
+      strategyRecommendations: aiResponse.strategies,
+    };
+  }
+
+  private getDefaultSkillLevels(): Record<EFSkill, number> {
+    return {
+      WORKING_MEMORY: 50,
+      COGNITIVE_FLEXIBILITY: 50,
+      INHIBITORY_CONTROL: 50,
+      PLANNING: 50,
+      ORGANIZATION: 50,
+      TIME_MANAGEMENT: 50,
+      TASK_INITIATION: 50,
+      EMOTIONAL_REGULATION: 50,
+      METACOGNITION: 50,
     };
   }
 

@@ -146,6 +146,7 @@ export class DsrWorker {
       tenantId: request.tenant_id,
       parentId: request.requested_by_user_id,
       learnerId: request.learner_id,
+      requestId: request.id,
     });
 
     await updateJobProgress(this.pool, job.id, 60, 'Serializing export data');

@@ -16,7 +16,7 @@ import type {
   LeaderboardPeriod,
   ShopItem,
   XPTransaction,
-} from '@aivo/ts-types/gamification.types';
+} from '@aivo/ts-types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const API_BASE = '/api/gamification';

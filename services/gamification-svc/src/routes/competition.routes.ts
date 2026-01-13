@@ -98,9 +98,21 @@ router.post(
     const data = createCompetitionSchema.parse(req.body);
 
     const competition = await competitionService.createCompetition({
-      ...data,
+      name: data.name,
+      description: data.description,
+      type: data.type,
+      duration: data.duration,
+      category: data.category,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
+      minParticipants: data.minParticipants,
+      maxParticipants: data.maxParticipants,
+      minLevel: data.minLevel,
+      maxLevel: data.maxLevel,
+      schoolId: data.schoolId,
+      prizes: data.prizes,
+      isPublic: data.isPublic,
+      autoJoin: data.autoJoin,
       createdBy,
     });
 

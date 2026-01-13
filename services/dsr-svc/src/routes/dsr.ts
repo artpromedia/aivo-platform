@@ -27,7 +27,7 @@ const createBodySchema = z.object({
 });
 
 const patchBodySchema = z.object({
-  status: z.enum(['DECLINED']),
+  status: z.enum(['REJECTED']),
   reason: z.string().min(1).max(2000),
 });
 
@@ -59,6 +59,7 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
         tenantId: auth.tenantId,
         parentId: auth.userId,
         learnerId: requestRecord.learner_id,
+        requestId: requestRecord.id,
       });
       const serialized = JSON.stringify(bundle);
       const completed = await updateRequestStatus(
@@ -67,7 +68,7 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
         auth.tenantId,
         'COMPLETED',
         {
-          exportLocation: serialized,
+          resultUri: serialized,
           completed: true,
         }
       );

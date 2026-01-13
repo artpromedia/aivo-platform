@@ -1,26 +1,18 @@
+/**
+ * Writing Pad Service - Fastify Application
+ */
+
 import Fastify from 'fastify';
-import multipart from '@fastify/multipart';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerHealthRoutes } from './routes/health.js';
-import { registerHomeworkRoutes } from './routes/homework.js';
-import { registerParentRoutes } from './routes/parent.js';
-import { registerUploadRoutes } from './routes/upload.js';
+import { registerWritingRoutes } from './routes/writing.js';
 
 export async function buildApp() {
   const app = Fastify({
     logger: {
       level: config.logLevel,
-    },
-  });
-
-  // Register multipart support for file uploads
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await app.register(multipart as any, {
-    limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB max file size
-      files: 1, // Only allow 1 file per request
     },
   });
 
@@ -40,14 +32,8 @@ export async function buildApp() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await app.register(authMiddleware as any);
 
-  // Homework routes
-  await app.register(registerHomeworkRoutes, { prefix: '/homework' });
-
-  // Parent monitoring routes
-  await app.register(registerParentRoutes, { prefix: '/parent' });
-
-  // Upload routes (OCR)
-  await app.register(registerUploadRoutes, { prefix: '/upload' });
+  // Writing routes
+  await app.register(registerWritingRoutes, { prefix: '/writing' });
 
   return app;
 }

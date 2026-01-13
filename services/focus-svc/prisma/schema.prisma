@@ -277,3 +277,145 @@ model LearnerGamePreferences {
   @@index([tenantId, learnerId])
   @@map("learner_game_preferences")
 }
+
+/// XP and Coin rewards ledger for gamification
+model RewardLedger {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String   @map("learner_id") @db.Uuid
+
+  // Current balances
+  totalXp           Int      @default(0) @map("total_xp")
+  totalCoins        Int      @default(0) @map("total_coins")
+  currentLevel      Int      @default(1) @map("current_level")
+  xpToNextLevel     Int      @default(100) @map("xp_to_next_level")
+
+  // Statistics
+  weeklyXp          Int      @default(0) @map("weekly_xp")
+  monthlyXp         Int      @default(0) @map("monthly_xp")
+
+  // Timestamps
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@map("reward_ledgers")
+}
+
+/// Transaction log for XP and Coins
+model RewardTransaction {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String   @map("learner_id") @db.Uuid
+
+  // Transaction details
+  transactionType   String   @map("transaction_type") // 'GAME_COMPLETE', 'BREAK_COMPLETE', 'ACHIEVEMENT', 'STREAK_BONUS', 'DAILY_BONUS'
+  xpAmount          Int      @default(0) @map("xp_amount")
+  coinAmount        Int      @default(0) @map("coin_amount")
+
+  // Source reference
+  sourceId          String?  @map("source_id") // game_session_id, break_session_id, or achievement_id
+  sourceType        String?  @map("source_type") // 'GAME', 'BREAK', 'ACHIEVEMENT', 'STREAK'
+
+  description       String?
+
+  // Timestamp
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, createdAt])
+  @@index([sourceId])
+  @@map("reward_transactions")
+}
+
+/// Achievement definitions
+model AchievementDefinition {
+  id                String   @id @default(uuid()) @db.Uuid
+
+  // Achievement details
+  code              String   @unique // 'FIRST_GAME', 'MEMORY_MASTER', 'WEEK_STREAK_7', etc.
+  title             String
+  description       String
+  icon              String?
+  category          String   // 'GAMES', 'BREAKS', 'STREAKS', 'FOCUS', 'SPECIAL'
+
+  // Requirements
+  requirement       Json     @default("{}") // { "type": "count", "target": 5, "gameCategory": "cognitive" }
+  xpReward          Int      @default(0) @map("xp_reward")
+  coinReward        Int      @default(0) @map("coin_reward")
+
+  // Display
+  tier              String   @default("BRONZE") // 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM'
+  sortOrder         Int      @default(0) @map("sort_order")
+  isHidden          Boolean  @default(false) @map("is_hidden") // Secret achievements
+
+  // Metadata
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([category])
+  @@index([isActive])
+  @@map("achievement_definitions")
+}
+
+/// Learner's earned achievements
+model LearnerAchievement {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String   @map("learner_id") @db.Uuid
+
+  // Achievement reference
+  achievementCode   String   @map("achievement_code")
+
+  // Progress tracking (for progressive achievements)
+  currentProgress   Int      @default(0) @map("current_progress")
+  targetProgress    Int      @map("target_progress")
+  progressPercentage Float   @default(0) @map("progress_percentage")
+
+  // Completion
+  isCompleted       Boolean  @default(false) @map("is_completed")
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz
+
+  // Timestamps
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, achievementCode])
+  @@index([tenantId, learnerId])
+  @@index([achievementCode])
+  @@index([isCompleted])
+  @@map("learner_achievements")
+}
+
+/// Streak tracking for focus and game sessions
+model LearnerStreak {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String   @map("learner_id") @db.Uuid
+
+  // Current streaks
+  currentDailyStreak Int     @default(0) @map("current_daily_streak")
+  longestDailyStreak Int     @default(0) @map("longest_daily_streak")
+  lastActivityDate   DateTime? @map("last_activity_date") @db.Date
+
+  // Game-specific streaks
+  gamesPlayedToday   Int     @default(0) @map("games_played_today")
+  gamesCompletedToday Int    @default(0) @map("games_completed_today")
+  perfectGamesToday  Int     @default(0) @map("perfect_games_today")
+
+  // Weekly stats
+  weekStartDate      DateTime? @map("week_start_date") @db.Date
+  gamesThisWeek      Int      @default(0) @map("games_this_week")
+  breaksThisWeek     Int      @default(0) @map("breaks_this_week")
+
+  // Focus streaks
+  consecutiveFocusDays Int   @default(0) @map("consecutive_focus_days")
+
+  // Timestamps
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@map("learner_streaks")
+}

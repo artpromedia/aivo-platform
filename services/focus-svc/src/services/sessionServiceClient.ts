@@ -15,18 +15,37 @@ export class SessionServiceClient {
 
   /**
    * Emit a focus-related event to a session.
+   * Supports two calling conventions:
+   * 1. emitEvent(sessionId, eventType, metadata)
+   * 2. emitEvent({ sessionId, eventType, payload })
    */
   async emitEvent(
-    sessionId: string,
-    eventType: FocusEventType,
+    sessionIdOrParams: string | { sessionId: string; eventType: FocusEventType; payload?: Record<string, unknown> },
+    eventType?: FocusEventType,
     metadata?: Record<string, unknown>
   ): Promise<EmitEventResponse> {
+    let sid: string;
+    let evtType: FocusEventType;
+    let evtMetadata: Record<string, unknown> | undefined;
+
+    if (typeof sessionIdOrParams === 'object') {
+      // Object-based calling convention
+      sid = sessionIdOrParams.sessionId;
+      evtType = sessionIdOrParams.eventType;
+      evtMetadata = sessionIdOrParams.payload;
+    } else {
+      // Traditional calling convention
+      sid = sessionIdOrParams;
+      evtType = eventType!;
+      evtMetadata = metadata;
+    }
+
     const payload: EmitEventRequest = {
-      eventType,
-      metadata,
+      eventType: evtType,
+      metadata: evtMetadata,
     };
 
-    const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/events`, {
+    const response = await fetch(`${this.baseUrl}/sessions/${sid}/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

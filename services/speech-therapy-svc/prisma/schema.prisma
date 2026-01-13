@@ -327,3 +327,103 @@ model HomePractice {
   @@index([dueDate])
   @@map("home_practice")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Speech therapy rewards and progress
+model SpeechRewards {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  learnerId       String   @map("learner_id") @db.Uuid
+
+  /// Current level and XP
+  totalXp         Int      @default(0) @map("total_xp")
+  currentLevel    Int      @default(1) @map("current_level")
+
+  /// Stars earned (used for visual progress)
+  totalStars      Int      @default(0) @map("total_stars")
+
+  /// Streaks
+  currentPracticeStreak Int @default(0) @map("current_practice_streak")
+  longestPracticeStreak Int @default(0) @map("longest_practice_streak")
+  lastPracticeDate DateTime? @map("last_practice_date") @db.Date
+
+  /// Session stats
+  sessionsCompleted Int     @default(0) @map("sessions_completed")
+  perfectSessions   Int     @default(0) @map("perfect_sessions")
+
+  /// Practice stats
+  totalPracticeMinutes Int  @default(0) @map("total_practice_minutes")
+  homePracticeCompleted Int @default(0) @map("home_practice_completed")
+
+  /// Mastery tracking
+  goalsMastered     Int     @default(0) @map("goals_mastered")
+  soundsMastered    String[] @map("sounds_mastered")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@map("speech_rewards")
+}
+
+/// Speech therapy achievements
+model SpeechAchievement {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  learnerId       String   @map("learner_id") @db.Uuid
+
+  /// Achievement code
+  achievementCode String   @map("achievement_code")
+
+  /// Progress tracking
+  currentProgress Int      @default(0) @map("current_progress")
+  targetProgress  Int      @map("target_progress")
+
+  /// Completion
+  isCompleted     Boolean  @default(false) @map("is_completed")
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+
+  /// Reward given
+  xpAwarded       Int      @default(0) @map("xp_awarded")
+  starsAwarded    Int      @default(0) @map("stars_awarded")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, learnerId, achievementCode])
+  @@index([tenantId, learnerId])
+  @@index([achievementCode])
+  @@map("speech_achievements")
+}
+
+/// Speech practice milestones
+model PracticeMilestone {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  learnerId       String   @map("learner_id") @db.Uuid
+
+  /// Milestone type
+  milestoneType   String   @map("milestone_type") // 'FIRST_SESSION', 'SOUND_MASTERED', 'STREAK_BONUS', etc.
+
+  /// Associated data
+  soundId         String?  @map("sound_id")
+  goalId          String?  @map("goal_id") @db.Uuid
+  streakDays      Int?     @map("streak_days")
+
+  /// Rewards given
+  xpAwarded       Int      @default(0) @map("xp_awarded")
+  starsAwarded    Int      @default(0) @map("stars_awarded")
+
+  /// Message shown to learner
+  celebrationMessage String? @map("celebration_message")
+
+  achievedAt      DateTime @default(now()) @map("achieved_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([milestoneType])
+  @@map("practice_milestones")
+}

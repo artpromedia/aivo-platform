@@ -61,12 +61,18 @@ export const schedulesRoutes: FastifyPluginAsync = async (app) => {
     const body = createScheduleSchema.parse(request.body);
 
     const schedule = await service.createSchedule(user.tenantId, {
-      ...body,
+      learnerId: body.learnerId,
       scheduleDate: new Date(body.scheduleDate),
+      templateId: body.templateId,
+      notes: body.notes,
       blocks: body.blocks.map(b => ({
-        ...b,
+        blockType: b.blockType,
+        title: b.title,
         startTime: new Date(b.startTime),
         endTime: new Date(b.endTime),
+        icon: b.icon,
+        color: b.color,
+        taskIds: b.taskIds,
       })),
     });
 
@@ -192,7 +198,20 @@ export const schedulesRoutes: FastifyPluginAsync = async (app) => {
       const user = getUser(request);
       const body = createTemplateSchema.parse(request.body);
 
-      const template = await service.createTemplate(user.tenantId, body);
+      const template = await service.createTemplate(user.tenantId, {
+        learnerId: body.learnerId,
+        name: body.name,
+        dayType: body.dayType,
+        blocks: body.blocks.map(b => ({
+          blockType: b.blockType,
+          title: b.title,
+          startTimeOffset: b.startTimeOffset,
+          durationMin: b.durationMin,
+          icon: b.icon,
+          color: b.color,
+        })),
+        isDefault: body.isDefault,
+      });
       return reply.code(201).send(template);
     }
   );

@@ -65,7 +65,14 @@ router.post(
     const data = createTeamSchema.parse(req.body);
 
     const team = await teamService.createTeam({
-      ...data,
+      name: data.name,
+      description: data.description,
+      type: data.type,
+      schoolId: data.schoolId,
+      classId: data.classId,
+      avatarUrl: data.avatarUrl,
+      maxMembers: data.maxMembers,
+      isPublic: data.isPublic,
       createdBy: studentId,
     });
 

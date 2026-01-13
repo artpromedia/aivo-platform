@@ -12,7 +12,7 @@ import {
 } from '../repository.js';
 import type { ConsentStatus, ConsentType } from '../types.js';
 
-const consentTypeSchema = z.enum(['BASELINE_ASSESSMENT', 'AI_TUTOR', 'RESEARCH_ANALYTICS']);
+const consentTypeSchema = z.enum(['BASELINE_ASSESSMENT', 'AI_TUTOR', 'RESEARCH']);
 
 const createConsentBody = z.object({
   learnerId: z.string(),

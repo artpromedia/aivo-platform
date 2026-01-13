@@ -54,8 +54,17 @@ export const tasksRoutes: FastifyPluginAsync = async (app) => {
     const body = createTaskSchema.parse(request.body);
 
     const task = await service.createTask(user.tenantId, {
-      ...body,
+      learnerId: body.learnerId,
+      title: body.title,
+      description: body.description,
+      priority: body.priority,
+      parentTaskId: body.parentTaskId,
+      estimatedMin: body.estimatedMin,
       dueAt: body.dueAt ? new Date(body.dueAt) : undefined,
+      category: body.category,
+      icon: body.icon,
+      color: body.color,
+      rewardXp: body.rewardXp,
     });
 
     return reply.code(201).send(task);
@@ -99,9 +108,19 @@ export const tasksRoutes: FastifyPluginAsync = async (app) => {
     '/:taskId',
     async (request, reply) => {
       const { taskId } = request.params;
+      const body = request.body;
 
       try {
-        const task = await service.updateTask(taskId, request.body);
+        const task = await service.updateTask(taskId, {
+          title: body.title,
+          description: body.description,
+          priority: body.priority,
+          estimatedMin: body.estimatedMin,
+          dueAt: body.dueAt ? new Date(body.dueAt) : undefined,
+          category: body.category,
+          icon: body.icon,
+          color: body.color,
+        });
         return reply.send(task);
       } catch (error) {
         return reply.code(404).send({ error: 'Task not found' });
@@ -183,7 +202,13 @@ export const tasksRoutes: FastifyPluginAsync = async (app) => {
       const body = checkInSchema.parse(request.body);
 
       try {
-        const checkIn = await service.addCheckIn(taskId, body);
+        const checkIn = await service.addCheckIn(taskId, {
+          update: body.update,
+          feelingRating: body.feelingRating,
+          minutesWorked: body.minutesWorked,
+          blockers: body.blockers,
+          nextStep: body.nextStep,
+        });
         return reply.code(201).send(checkIn);
       } catch (error) {
         return reply.code(404).send({ error: 'Task not found' });

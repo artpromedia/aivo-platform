@@ -25,6 +25,11 @@ import {
   getActiveGameSession,
 } from '../games/game-session.js';
 import type { GradeBand } from '../types/telemetry.js';
+import {
+  awardGameReward,
+  trackSpecialEvent,
+  type RewardResult,
+} from '../services/gamification.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -247,7 +252,7 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: 'Invalid request', details: parsed.error.issues });
     }
 
-    const _user = getUser(request);
+    const user = getUser(request);
     const { gameSessionId, completed, score, maxScore, helpfulnessRating } = parsed.data;
 
     // End the session
@@ -263,10 +268,49 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(404).send({ error: 'Game session not found' });
     }
 
+    // Award gamification rewards
+    const scorePercent = maxScore ? Math.round((score || 0) / maxScore * 100) : 0;
+    const isPerfectScore = maxScore ? score === maxScore : false;
+
+    let rewards: RewardResult | undefined;
+    try {
+      rewards = await awardGameReward(
+        user.tenantId,
+        gameSession.learnerId,
+        gameSessionId,
+        gameSession.gameCategory,
+        completed,
+        isPerfectScore,
+        scorePercent
+      );
+
+      // Check for special time-based achievements
+      const hour = new Date().getHours();
+      if (hour < 8) {
+        trackSpecialEvent(user.tenantId, gameSession.learnerId, 'early_game');
+      } else if (hour >= 20) {
+        trackSpecialEvent(user.tenantId, gameSession.learnerId, 'late_game');
+      }
+
+      const dayOfWeek = new Date().getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        trackSpecialEvent(user.tenantId, gameSession.learnerId, 'weekend_games');
+      }
+    } catch (err) {
+      // Log but don't fail the request if gamification fails
+      request.log.error({ err }, 'Failed to award game rewards');
+    }
+
     // Generate encouraging message
     let message: string;
     if (completed) {
-      message = 'Great job! Ready to get back to learning?';
+      if (rewards?.leveledUp) {
+        message = `Amazing! You reached Level ${rewards.newLevel}! Ready to get back to learning?`;
+      } else if (rewards?.achievementsUnlocked.length) {
+        message = `You unlocked: ${rewards.achievementsUnlocked[0].title}! Ready to get back to learning?`;
+      } else {
+        message = 'Great job! Ready to get back to learning?';
+      }
     } else {
       message = "That's okay! Even a short break can help. Ready when you are!";
     }
@@ -276,6 +320,14 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
       gameSession,
       message,
       encouragement: generateEncouragement(completed, score, maxScore),
+      rewards: rewards ? {
+        xpEarned: rewards.xpEarned,
+        coinsEarned: rewards.coinsEarned,
+        newTotal: rewards.newTotal,
+        leveledUp: rewards.leveledUp,
+        newLevel: rewards.newLevel,
+        achievementsUnlocked: rewards.achievementsUnlocked,
+      } : undefined,
     });
   });
 
