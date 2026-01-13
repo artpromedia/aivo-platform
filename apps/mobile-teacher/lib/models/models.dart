@@ -14,3 +14,4 @@ export 'analytics.dart';
 export 'assignment.dart';
 export 'grade.dart';
 export 'integration.dart';
+export 'ai_transparency.dart';

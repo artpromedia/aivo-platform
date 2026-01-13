@@ -32,6 +32,8 @@ import 'screens/accessibility_settings_screen.dart';
 import 'screens/gradebook/gradebook_screen.dart';
 import 'screens/sessions/live_session_screen.dart';
 import 'screens/monitoring/class_monitoring_screen.dart';
+import 'screens/monitoring/ai_transparency_dashboard_screen.dart';
+import 'screens/monitoring/student_ai_conversations_screen.dart';
 import 'theme/teacher_theme.dart';
 
 /// Secure storage instance for tokens.
@@ -329,6 +331,26 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final classId = state.pathParameters['classId']!;
           return ClassMonitoringScreen(classId: classId);
+        },
+      ),
+      // AI Transparency Dashboard route
+      GoRoute(
+        path: '/class/:classId/ai-transparency',
+        builder: (context, state) {
+          final classId = state.pathParameters['classId']!;
+          return AITransparencyDashboardScreen(classId: classId);
+        },
+      ),
+      // Student AI Conversations route
+      GoRoute(
+        path: '/students/:studentId/ai-conversations',
+        builder: (context, state) {
+          final studentId = state.pathParameters['studentId']!;
+          final studentName = state.uri.queryParameters['name'];
+          return StudentAIConversationsScreen(
+            studentId: studentId,
+            studentName: studentName,
+          );
         },
       ),
     ],

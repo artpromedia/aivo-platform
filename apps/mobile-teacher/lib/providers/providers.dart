@@ -12,3 +12,4 @@ export 'classes_provider.dart';
 export 'sync_provider.dart';
 export 'assignments_provider.dart';
 export 'grades_provider.dart';
+export 'ai_transparency_provider.dart';
