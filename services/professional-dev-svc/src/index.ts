@@ -15,6 +15,7 @@ import { requirementsRoutes } from './routes/requirements.js';
 import { complianceRoutes } from './routes/compliance.js';
 import { certificationsRoutes } from './routes/certifications.js';
 import { reportsRoutes } from './routes/reports.js';
+import { activitiesRoutes } from './routes/activities.js';
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
@@ -47,6 +48,7 @@ async function main() {
   await app.register(complianceRoutes, { prefix: '/compliance' });
   await app.register(certificationsRoutes, { prefix: '/certifications' });
   await app.register(reportsRoutes, { prefix: '/reports' });
+  await app.register(activitiesRoutes, { prefix: '/activities' });
 
   // Graceful shutdown
   const signals = ['SIGINT', 'SIGTERM'];

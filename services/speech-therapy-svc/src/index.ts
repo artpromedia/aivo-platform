@@ -9,13 +9,14 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import 'dotenv/config';
 
-import { connectDatabase, disconnectDatabase } from './db.js';
+import { connectDatabase, disconnectDatabase, prisma } from './db.js';
 import { goalsRoutes } from './routes/goals.js';
 import { sessionsRoutes } from './routes/sessions.js';
 import { recordingsRoutes } from './routes/recordings.js';
 import { homePracticeRoutes } from './routes/home-practice.js';
 import { reportsRoutes } from './routes/reports.js';
 import { gamificationRoutes } from './routes/gamification.js';
+import { initializeGamificationService } from './services/speech-gamification.service.js';
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
@@ -65,6 +66,7 @@ async function main() {
 
   try {
     await connectDatabase();
+    initializeGamificationService(prisma);
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`Speech Therapy Service listening on ${config.host}:${config.port}`);
   } catch (err) {

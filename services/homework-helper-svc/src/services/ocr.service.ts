@@ -374,20 +374,75 @@ export class OCRService {
     imageData: Buffer,
     options: OCROptions
   ): Promise<OCRResult> {
-    // Tesseract.js fallback - runs locally
-    // In production, this would use the tesseract.js library
-    // For now, we'll throw an error indicating fallback is needed
+    const startTime = Date.now();
+    const tesseractEnabled = process.env.TESSERACT_ENABLED === 'true';
 
-    // Simulated Tesseract response for development
-    console.warn('Tesseract fallback not fully implemented - returning placeholder');
+    // Check if Tesseract is enabled via environment
+    if (!tesseractEnabled) {
+      throw new Error(
+        'No OCR provider configured. Please set up at least one OCR provider: ' +
+        'GOOGLE_VISION_API_KEY, AWS_TEXTRACT_ACCESS_KEY_ID, MATHPIX_APP_ID, or TESSERACT_ENABLED=true'
+      );
+    }
 
-    return {
-      text: '[OCR extraction requires cloud provider configuration]',
-      confidence: 0,
-      provider: 'tesseract',
-      containsMath: false,
-      processingTimeMs: 0,
-    };
+    try {
+      // Dynamic import of tesseract.js (optional dependency)
+      const Tesseract = await import('tesseract.js').catch(() => null);
+
+      if (!Tesseract) {
+        throw new Error(
+          'Tesseract.js is not installed. Run: npm install tesseract.js ' +
+          'or configure a cloud OCR provider (Google Vision, AWS Textract, or Mathpix)'
+        );
+      }
+
+      const { data } = await Tesseract.recognize(imageData, options.language || 'eng', {
+        logger: (m: { status: string; progress: number }) => {
+          if (m.status === 'recognizing text') {
+            // Progress logging for long-running OCR
+          }
+        },
+      });
+
+      const processingTimeMs = Date.now() - startTime;
+
+      // Build text regions from Tesseract words
+      const regions: TextRegion[] = (data.words || []).map((word: {
+        text: string;
+        confidence: number;
+        bbox: { x0: number; y0: number; x1: number; y1: number };
+      }) => ({
+        text: word.text,
+        confidence: word.confidence / 100,
+        position: {
+          x: word.bbox.x0,
+          y: word.bbox.y0,
+          width: word.bbox.x1 - word.bbox.x0,
+          height: word.bbox.y1 - word.bbox.y0,
+        },
+        isHandwritten: false, // Tesseract doesn't distinguish handwriting
+      }));
+
+      // Detect potential math expressions using regex
+      const mathRegex = /[\d+\-*/=()^√∫∑∏≤≥≠±×÷]+|\\frac|\\sqrt|\\int/g;
+      const containsMath = mathRegex.test(data.text);
+
+      return {
+        text: data.text,
+        confidence: data.confidence / 100,
+        provider: 'tesseract',
+        containsMath,
+        regions,
+        processingTimeMs,
+      };
+    } catch (err) {
+      const error = err as Error;
+      // Re-throw with helpful message
+      if (error.message.includes('not installed')) {
+        throw error;
+      }
+      throw new Error(`Tesseract OCR failed: ${error.message}. Consider using a cloud provider for better accuracy.`);
+    }
   }
 
   private async extractPDFWithAWSTextract(

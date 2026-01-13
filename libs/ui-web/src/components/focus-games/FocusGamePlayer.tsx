@@ -7,8 +7,7 @@
  * Supports memory games, breathing visualizers, tap rhythm games, and more.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import type { ReactNode } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '../../utils/cn';
 import { Button } from '../button';
 
@@ -196,7 +195,7 @@ function CompletionView({
 // ══════════════════════════════════════════════════════════════════════════════
 
 function GameRenderer({
-  gameId,
+  gameId: _gameId,
   config,
   onComplete,
 }: {
@@ -221,6 +220,10 @@ function GameRenderer({
       return <CountingGame config={config} onComplete={onComplete} />;
     case 'shape-tracing':
       return <ShapeTracingGame config={config} onComplete={onComplete} />;
+    case 'color-match':
+      return <ColorMatchGame config={config} onComplete={onComplete} />;
+    case 'sequence':
+      return <SequenceGame config={config} onComplete={onComplete} />;
     default:
       return (
         <div className="flex items-center justify-center p-8 min-h-[400px]">
@@ -579,15 +582,131 @@ function calculateRhythmScore(taps: number[], _pattern: number[], _reps: number)
 // SIMPLE GAME IMPLEMENTATIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean) => void }) {
+function PatternGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+  const gridSize = (config.gridSize as number) || 4;
+  const startingLength = (config.startingLength as number) || 3;
+  const maxLength = (config.maxLength as number) || 7;
+
+  const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899'];
+  const [pattern, setPattern] = useState<number[]>([]);
+  const [playerInput, setPlayerInput] = useState<number[]>([]);
+  const [isShowingPattern, setIsShowingPattern] = useState(true);
+  const [activeCell, setActiveCell] = useState<number | null>(null);
+  const [round, setRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+
+  // Generate initial pattern
   useEffect(() => {
-    const timer = setTimeout(() => onComplete(true), 5000);
+    const newPattern = Array.from({ length: startingLength }, () =>
+      Math.floor(Math.random() * gridSize)
+    );
+    setPattern(newPattern);
+  }, [gridSize, startingLength]);
+
+  // Show pattern sequence
+  useEffect(() => {
+    if (!isShowingPattern || pattern.length === 0) return;
+
+    let index = 0;
+    const showNext = () => {
+      if (index < pattern.length) {
+        setActiveCell(pattern[index]);
+        setTimeout(() => {
+          setActiveCell(null);
+          index++;
+          setTimeout(showNext, 300);
+        }, 600);
+      } else {
+        setIsShowingPattern(false);
+      }
+    };
+
+    const timer = setTimeout(showNext, 500);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [pattern, isShowingPattern]);
+
+  const handleCellClick = (cellIndex: number) => {
+    if (isShowingPattern || gameOver) return;
+
+    setActiveCell(cellIndex);
+    setTimeout(() => setActiveCell(null), 200);
+
+    const newInput = [...playerInput, cellIndex];
+    setPlayerInput(newInput);
+
+    // Check if correct so far
+    if (pattern[newInput.length - 1] !== cellIndex) {
+      // Wrong! Game over
+      setGameOver(true);
+      setTimeout(() => onComplete(true, score, maxLength - startingLength + 1), 1000);
+      return;
+    }
+
+    // Check if completed current pattern
+    if (newInput.length === pattern.length) {
+      setScore(s => s + 1);
+
+      if (pattern.length >= maxLength) {
+        // Won the game!
+        setTimeout(() => onComplete(true, score + 1, maxLength - startingLength + 1), 500);
+        return;
+      }
+
+      // Next round - add one more to pattern
+      setRound(r => r + 1);
+      setPlayerInput([]);
+      setIsShowingPattern(true);
+      const newPattern = [...pattern, Math.floor(Math.random() * gridSize)];
+      setPattern(newPattern);
+    }
+  };
 
   return (
-    <div className="flex items-center justify-center p-8 min-h-[400px]">
-      <p className="text-text">Pattern game coming soon!</p>
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Round {round} | Pattern Length: {pattern.length}
+      </div>
+
+      <p className="text-lg font-medium text-text">
+        {gameOver
+          ? 'Game Over!'
+          : isShowingPattern
+            ? 'Watch the pattern...'
+            : 'Repeat the pattern!'}
+      </p>
+
+      <div className="grid grid-cols-2 gap-4 max-w-xs">
+        {Array.from({ length: gridSize }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => handleCellClick(i)}
+            disabled={isShowingPattern || gameOver}
+            className={cn(
+              'w-24 h-24 rounded-xl transition-all duration-200 border-4',
+              activeCell === i
+                ? 'scale-110 brightness-125 border-white shadow-lg'
+                : 'border-transparent hover:scale-105',
+              !isShowingPattern && !gameOver && 'cursor-pointer'
+            )}
+            style={{ backgroundColor: colors[i % colors.length] }}
+          />
+        ))}
+      </div>
+
+      <div className="flex gap-1 mt-4">
+        {pattern.map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'w-3 h-3 rounded-full',
+              i < playerInput.length
+                ? 'bg-primary'
+                : 'bg-border'
+            )}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -660,7 +779,7 @@ function FocusSpotGame({ config, onComplete }: { config: GameConfig; onComplete:
   );
 }
 
-function CountingGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+function CountingGame({ config: _config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
   const [count] = useState(() => Math.floor(Math.random() * 5) + 3);
   const [userAnswer, setUserAnswer] = useState('');
 
@@ -691,15 +810,425 @@ function CountingGame({ config, onComplete }: { config: GameConfig; onComplete: 
   );
 }
 
-function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean) => void }) {
+function ShapeTracingGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+  const shapes = (config.shapes as string[]) || ['circle', 'square', 'triangle', 'star'];
+  const [currentShapeIndex, setCurrentShapeIndex] = useState(0);
+  const [tracingProgress, setTracingProgress] = useState(0);
+  const [completedShapes, setCompletedShapes] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isTracing, setIsTracing] = useState(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+
+  const currentShape = shapes[currentShapeIndex];
+
+  // Draw the shape outline to trace
   useEffect(() => {
-    const timer = setTimeout(() => onComplete(true), 5000);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const size = Math.min(canvas.width, canvas.height) * 0.35;
+
+    // Draw dashed outline
+    ctx.setLineDash([10, 5]);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 20;
+
+    ctx.beginPath();
+    switch (currentShape) {
+      case 'circle':
+        ctx.arc(centerX, centerY, size, 0, Math.PI * 2);
+        break;
+      case 'square':
+        ctx.rect(centerX - size, centerY - size, size * 2, size * 2);
+        break;
+      case 'triangle':
+        ctx.moveTo(centerX, centerY - size);
+        ctx.lineTo(centerX + size, centerY + size);
+        ctx.lineTo(centerX - size, centerY + size);
+        ctx.closePath();
+        break;
+      case 'star':
+        for (let i = 0; i < 5; i++) {
+          const outerAngle = (i * 72 - 90) * Math.PI / 180;
+          const innerAngle = ((i * 72) + 36 - 90) * Math.PI / 180;
+          const outerX = centerX + Math.cos(outerAngle) * size;
+          const outerY = centerY + Math.sin(outerAngle) * size;
+          const innerX = centerX + Math.cos(innerAngle) * (size * 0.4);
+          const innerY = centerY + Math.sin(innerAngle) * (size * 0.4);
+          if (i === 0) ctx.moveTo(outerX, outerY);
+          else ctx.lineTo(outerX, outerY);
+          ctx.lineTo(innerX, innerY);
+        }
+        ctx.closePath();
+        break;
+      case 'heart':
+        ctx.moveTo(centerX, centerY + size * 0.7);
+        ctx.bezierCurveTo(centerX - size, centerY, centerX - size, centerY - size * 0.7, centerX, centerY - size * 0.3);
+        ctx.bezierCurveTo(centerX + size, centerY - size * 0.7, centerX + size, centerY, centerX, centerY + size * 0.7);
+        break;
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }, [currentShape]);
+
+  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const startTracing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    setIsTracing(true);
+    const point = getCanvasPoint(e);
+    if (point) lastPointRef.current = point;
+  };
+
+  const trace = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isTracing) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const point = getCanvasPoint(e);
+    if (!point || !lastPointRef.current) return;
+
+    // Draw tracing line
+    ctx.beginPath();
+    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+    ctx.lineTo(point.x, point.y);
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    lastPointRef.current = point;
+    setTracingProgress(p => Math.min(p + 0.5, 100));
+  };
+
+  const stopTracing = () => {
+    setIsTracing(false);
+    lastPointRef.current = null;
+
+    if (tracingProgress >= 60) {
+      // Shape completed
+      const newCompleted = completedShapes + 1;
+      setCompletedShapes(newCompleted);
+
+      if (currentShapeIndex < shapes.length - 1) {
+        setCurrentShapeIndex(i => i + 1);
+        setTracingProgress(0);
+      } else {
+        onComplete(true, newCompleted, shapes.length);
+      }
+    }
+  };
 
   return (
-    <div className="flex items-center justify-center p-8 min-h-[400px]">
-      <p className="text-text">Shape tracing game coming soon!</p>
+    <div className="flex flex-col items-center justify-center p-8 gap-4 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Shape {currentShapeIndex + 1} of {shapes.length}
+      </div>
+
+      <p className="text-lg font-medium text-text capitalize">
+        Trace the {currentShape}
+      </p>
+
+      <canvas
+        ref={canvasRef}
+        width={400}
+        height={400}
+        onMouseDown={startTracing}
+        onMouseMove={trace}
+        onMouseUp={stopTracing}
+        onMouseLeave={stopTracing}
+        onTouchStart={startTracing}
+        onTouchMove={trace}
+        onTouchEnd={stopTracing}
+        className="border-2 border-border rounded-lg bg-white cursor-crosshair touch-none"
+      />
+
+      <div className="w-64 h-2 bg-border rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary transition-all duration-100"
+          style={{ width: `${tracingProgress}%` }}
+        />
+      </div>
+
+      <p className="text-xs text-text-muted">
+        Trace at least 60% of the shape to continue
+      </p>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COLOR MATCH GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+function ColorMatchGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+  const rounds = (config.rounds as number) || 10;
+  const timePerRound = (config.timePerRound as number) || 3000;
+
+  const colors = [
+    { name: 'Red', hex: '#ef4444' },
+    { name: 'Blue', hex: '#3b82f6' },
+    { name: 'Green', hex: '#22c55e' },
+    { name: 'Yellow', hex: '#eab308' },
+    { name: 'Purple', hex: '#a855f7' },
+    { name: 'Orange', hex: '#f97316' },
+  ];
+
+  const [currentRound, setCurrentRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [displayText, setDisplayText] = useState(colors[0].name);
+  const [textColor, setTextColor] = useState(colors[0].hex);
+  const [isMatching, setIsMatching] = useState(true);
+  const [showFeedback, setShowFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [timeLeft, setTimeLeft] = useState(100);
+
+  // Generate new challenge
+  const generateChallenge = useCallback(() => {
+    const textColorObj = colors[Math.floor(Math.random() * colors.length)];
+    const displayTextColor = colors[Math.floor(Math.random() * colors.length)];
+    const matching = Math.random() > 0.5;
+
+    setDisplayText(textColorObj.name);
+    setTextColor(matching ? textColorObj.hex : displayTextColor.hex);
+    setIsMatching(textColorObj.name === colors.find(c => c.hex === (matching ? textColorObj.hex : displayTextColor.hex))?.name);
+    setTimeLeft(100);
+  }, []);
+
+  useEffect(() => {
+    generateChallenge();
+  }, []);
+
+  // Timer countdown
+  useEffect(() => {
+    if (showFeedback) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 0) {
+          handleAnswer(null);
+          return 0;
+        }
+        return t - (100 / (timePerRound / 100));
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [currentRound, showFeedback, timePerRound]);
+
+  const handleAnswer = (answer: boolean | null) => {
+    const correct = answer === isMatching;
+
+    if (correct && answer !== null) {
+      setScore(s => s + 1);
+      setShowFeedback('correct');
+    } else {
+      setShowFeedback('wrong');
+    }
+
+    setTimeout(() => {
+      setShowFeedback(null);
+
+      if (currentRound >= rounds) {
+        onComplete(true, score + (correct ? 1 : 0), rounds);
+      } else {
+        setCurrentRound(r => r + 1);
+        generateChallenge();
+      }
+    }, 500);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Round {currentRound} of {rounds} | Score: {score}
+      </div>
+
+      <div className="w-64 h-2 bg-border rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary transition-all duration-100"
+          style={{ width: `${timeLeft}%` }}
+        />
+      </div>
+
+      <p className="text-text-muted">Does the text color match the word?</p>
+
+      <div
+        className={cn(
+          'text-6xl font-bold py-8 px-12 rounded-2xl transition-all',
+          showFeedback === 'correct' && 'bg-green-100',
+          showFeedback === 'wrong' && 'bg-red-100'
+        )}
+        style={{ color: textColor }}
+      >
+        {displayText}
+      </div>
+
+      <div className="flex gap-4">
+        <Button
+          size="lg"
+          variant="secondary"
+          onClick={() => handleAnswer(true)}
+          disabled={!!showFeedback}
+          className="w-32"
+        >
+          Match
+        </Button>
+        <Button
+          size="lg"
+          variant="secondary"
+          onClick={() => handleAnswer(false)}
+          disabled={!!showFeedback}
+          className="w-32"
+        >
+          No Match
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SEQUENCE GAME
+// ══════════════════════════════════════════════════════════════════════════════
+
+function SequenceGame({ config, onComplete }: { config: GameConfig; onComplete: (completed: boolean, score?: number, maxScore?: number) => void }) {
+  const startLength = (config.startLength as number) || 4;
+  const maxLength = (config.maxLength as number) || 8;
+  const displayTime = (config.displayTime as number) || 2000;
+
+  const [sequence, setSequence] = useState<number[]>([]);
+  const [userInput, setUserInput] = useState<number[]>([]);
+  const [phase, setPhase] = useState<'showing' | 'input' | 'feedback'>('showing');
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [score, setScore] = useState(0);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  // Generate sequence
+  useEffect(() => {
+    const length = startLength + currentLevel - 1;
+    const newSequence = Array.from({ length: Math.min(length, maxLength) }, () =>
+      Math.floor(Math.random() * 10)
+    );
+    setSequence(newSequence);
+    setUserInput([]);
+    setPhase('showing');
+
+    // Show for displayTime then switch to input
+    const timer = setTimeout(() => {
+      setPhase('input');
+    }, displayTime);
+
+    return () => clearTimeout(timer);
+  }, [currentLevel, startLength, maxLength, displayTime]);
+
+  const handleNumberClick = (num: number) => {
+    if (phase !== 'input') return;
+
+    const newInput = [...userInput, num];
+    setUserInput(newInput);
+
+    // Check if sequence is complete
+    if (newInput.length === sequence.length) {
+      const isCorrect = newInput.every((n, i) => n === sequence[i]);
+
+      setPhase('feedback');
+      setFeedback(isCorrect ? 'correct' : 'wrong');
+
+      if (isCorrect) {
+        setScore(s => s + 1);
+      }
+
+      setTimeout(() => {
+        setFeedback(null);
+
+        if (!isCorrect || currentLevel >= maxLength - startLength + 1) {
+          onComplete(true, score + (isCorrect ? 1 : 0), maxLength - startLength + 1);
+        } else {
+          setCurrentLevel(l => l + 1);
+        }
+      }, 1000);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 gap-6 min-h-[400px]">
+      <div className="text-sm text-text-muted">
+        Level {currentLevel} | Score: {score}
+      </div>
+
+      <p className="text-lg font-medium text-text">
+        {phase === 'showing'
+          ? 'Remember this sequence!'
+          : phase === 'input'
+            ? 'Enter the sequence'
+            : feedback === 'correct'
+              ? 'Correct!'
+              : 'Try again!'}
+      </p>
+
+      {/* Sequence display */}
+      <div className={cn(
+        'flex gap-3 p-4 rounded-xl min-h-[80px] items-center justify-center',
+        phase === 'showing' && 'bg-primary/10',
+        feedback === 'correct' && 'bg-green-100',
+        feedback === 'wrong' && 'bg-red-100'
+      )}>
+        {phase === 'showing' ? (
+          sequence.map((num, i) => (
+            <span key={i} className="text-4xl font-bold text-primary">{num}</span>
+          ))
+        ) : (
+          userInput.map((num, i) => (
+            <span key={i} className="text-4xl font-bold text-text">{num}</span>
+          ))
+        )}
+        {phase === 'input' && userInput.length === 0 && (
+          <span className="text-2xl text-text-muted">...</span>
+        )}
+      </div>
+
+      {/* Number pad */}
+      <div className="grid grid-cols-5 gap-2 max-w-sm">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+          <button
+            key={num}
+            onClick={() => handleNumberClick(num)}
+            disabled={phase !== 'input'}
+            className={cn(
+              'w-14 h-14 rounded-lg text-xl font-bold transition-all',
+              'bg-surface-muted border-2 border-border',
+              phase === 'input'
+                ? 'hover:bg-primary hover:text-white hover:border-primary cursor-pointer'
+                : 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            {num}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs text-text-muted">
+        Sequence length: {sequence.length} numbers
+      </p>
     </div>
   );
 }

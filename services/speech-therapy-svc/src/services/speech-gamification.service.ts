@@ -3,7 +3,11 @@
  *
  * Handles rewards, achievements, streaks, and milestones
  * for speech therapy activities to encourage learner engagement.
+ *
+ * Uses database persistence via Prisma.
  */
+
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -321,568 +325,784 @@ function calculateLevel(totalXp: number): { level: number; xpToNextLevel: number
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// IN-MEMORY STORAGE (Would be Prisma in production)
+// SERVICE CLASS
 // ══════════════════════════════════════════════════════════════════════════════
 
-interface RewardData {
-  totalXp: number;
-  currentLevel: number;
-  totalStars: number;
-  currentPracticeStreak: number;
-  longestPracticeStreak: number;
-  lastPracticeDate?: Date;
-  sessionsCompleted: number;
-  perfectSessions: number;
-  totalPracticeMinutes: number;
-  homePracticeCompleted: number;
-  goalsMastered: number;
-  soundsMastered: string[];
-}
+export class SpeechGamificationService {
+  constructor(private prisma: PrismaClient) {}
 
-interface AchievementData {
-  currentProgress: number;
-  targetProgress: number;
-  isCompleted: boolean;
-  completedAt?: Date;
-}
-
-const learnerRewards = new Map<string, RewardData>();
-const learnerAchievements = new Map<string, Map<string, AchievementData>>();
-const milestoneHistory: Array<{
-  tenantId: string;
-  learnerId: string;
-  milestone: Milestone;
-  achievedAt: Date;
-}> = [];
-
-// ══════════════════════════════════════════════════════════════════════════════
-// SERVICE FUNCTIONS
-// ══════════════════════════════════════════════════════════════════════════════
-
-function getKey(tenantId: string, learnerId: string): string {
-  return `${tenantId}:${learnerId}`;
-}
-
-function getRewards(tenantId: string, learnerId: string): RewardData {
-  const key = getKey(tenantId, learnerId);
-  if (!learnerRewards.has(key)) {
-    learnerRewards.set(key, {
-      totalXp: 0,
-      currentLevel: 1,
-      totalStars: 0,
-      currentPracticeStreak: 0,
-      longestPracticeStreak: 0,
-      sessionsCompleted: 0,
-      perfectSessions: 0,
-      totalPracticeMinutes: 0,
-      homePracticeCompleted: 0,
-      goalsMastered: 0,
-      soundsMastered: [],
-    });
+  private isToday(date: Date): boolean {
+    const today = new Date();
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    );
   }
-  return learnerRewards.get(key)!;
-}
 
-function getAchievements(tenantId: string, learnerId: string): Map<string, AchievementData> {
-  const key = getKey(tenantId, learnerId);
-  if (!learnerAchievements.has(key)) {
-    const achievements = new Map<string, AchievementData>();
-    for (const def of SPEECH_ACHIEVEMENTS) {
-      achievements.set(def.code, {
-        currentProgress: 0,
-        targetProgress: def.requirement.target,
-        isCompleted: false,
+  private isYesterday(date: Date): boolean {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return (
+      date.getFullYear() === yesterday.getFullYear() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getDate() === yesterday.getDate()
+    );
+  }
+
+  /**
+   * Get or create rewards record for a learner
+   */
+  private async getOrCreateRewards(tenantId: string, learnerId: string) {
+    let rewards = await this.prisma.speechRewards.findUnique({
+      where: {
+        tenantId_learnerId: { tenantId, learnerId },
+      },
+    });
+
+    if (!rewards) {
+      rewards = await this.prisma.speechRewards.create({
+        data: {
+          tenantId,
+          learnerId,
+          totalXp: 0,
+          currentLevel: 1,
+          totalStars: 0,
+          currentPracticeStreak: 0,
+          longestPracticeStreak: 0,
+          sessionsCompleted: 0,
+          perfectSessions: 0,
+          totalPracticeMinutes: 0,
+          homePracticeCompleted: 0,
+          goalsMastered: 0,
+          soundsMastered: [],
+        },
       });
     }
-    learnerAchievements.set(key, achievements);
+
+    return rewards;
   }
-  return learnerAchievements.get(key)!;
+
+  /**
+   * Get or create achievement record for a learner
+   */
+  private async getOrCreateAchievement(
+    tenantId: string,
+    learnerId: string,
+    achievementCode: string,
+    targetProgress: number
+  ) {
+    let achievement = await this.prisma.speechAchievement.findUnique({
+      where: {
+        tenantId_learnerId_achievementCode: { tenantId, learnerId, achievementCode },
+      },
+    });
+
+    if (!achievement) {
+      achievement = await this.prisma.speechAchievement.create({
+        data: {
+          tenantId,
+          learnerId,
+          achievementCode,
+          currentProgress: 0,
+          targetProgress,
+          isCompleted: false,
+        },
+      });
+    }
+
+    return achievement;
+  }
+
+  /**
+   * Check and unlock achievements
+   */
+  private async checkAndUnlockAchievements(
+    tenantId: string,
+    learnerId: string,
+    rewards: {
+      sessionsCompleted: number;
+      perfectSessions: number;
+      goalsMastered: number;
+      homePracticeCompleted: number;
+      totalPracticeMinutes: number;
+      currentPracticeStreak: number;
+      soundsMastered: string[];
+    }
+  ): Promise<UnlockedAchievement[]> {
+    const unlocked: UnlockedAchievement[] = [];
+
+    for (const def of SPEECH_ACHIEVEMENTS) {
+      let achievement = await this.prisma.speechAchievement.findUnique({
+        where: {
+          tenantId_learnerId_achievementCode: { tenantId, learnerId, achievementCode: def.code },
+        },
+      });
+
+      if (!achievement) {
+        achievement = await this.prisma.speechAchievement.create({
+          data: {
+            tenantId,
+            learnerId,
+            achievementCode: def.code,
+            currentProgress: 0,
+            targetProgress: def.requirement.target,
+            isCompleted: false,
+          },
+        });
+      }
+
+      if (achievement.isCompleted) continue;
+
+      let progress = 0;
+      switch (def.requirement.type) {
+        case 'sessions_completed':
+          progress = rewards.sessionsCompleted;
+          break;
+        case 'perfect_sessions':
+          progress = rewards.perfectSessions;
+          break;
+        case 'goals_mastered':
+          progress = rewards.goalsMastered;
+          break;
+        case 'home_practice_completed':
+          progress = rewards.homePracticeCompleted;
+          break;
+        case 'total_practice_minutes':
+          progress = rewards.totalPracticeMinutes;
+          break;
+        case 'practice_streak':
+          progress = rewards.currentPracticeStreak;
+          break;
+        case 'sounds_mastered':
+          progress = rewards.soundsMastered.length;
+          break;
+      }
+
+      // Update progress in database
+      if (progress >= def.requirement.target && !achievement.isCompleted) {
+        await this.prisma.speechAchievement.update({
+          where: { id: achievement.id },
+          data: {
+            currentProgress: progress,
+            isCompleted: true,
+            completedAt: new Date(),
+            xpAwarded: def.xpReward,
+            starsAwarded: def.starsReward,
+          },
+        });
+
+        unlocked.push({
+          code: def.code,
+          title: def.title,
+          description: def.description,
+          category: def.category,
+          xpReward: def.xpReward,
+          starsReward: def.starsReward,
+          icon: def.icon,
+        });
+      } else if (progress !== achievement.currentProgress) {
+        // Just update progress without completing
+        await this.prisma.speechAchievement.update({
+          where: { id: achievement.id },
+          data: { currentProgress: progress },
+        });
+      }
+    }
+
+    return unlocked;
+  }
+
+  /**
+   * Record a milestone
+   */
+  private async recordMilestone(
+    tenantId: string,
+    learnerId: string,
+    milestone: Milestone,
+    soundId?: string,
+    goalId?: string,
+    streakDays?: number
+  ): Promise<void> {
+    await this.prisma.practiceMilestone.create({
+      data: {
+        tenantId,
+        learnerId,
+        milestoneType: milestone.type,
+        soundId,
+        goalId,
+        streakDays,
+        xpAwarded: milestone.xpReward,
+        starsAwarded: milestone.starsReward,
+        celebrationMessage: milestone.message,
+      },
+    });
+  }
+
+  /**
+   * Award rewards for completing a therapy session
+   */
+  async awardSessionReward(
+    tenantId: string,
+    learnerId: string,
+    sessionAccuracy: number,
+    durationMin: number
+  ): Promise<SpeechRewardResult> {
+    const rewards = await this.getOrCreateRewards(tenantId, learnerId);
+    const today = new Date();
+
+    let xpEarned = 0;
+    let starsEarned = 0;
+    const achievementsUnlocked: UnlockedAchievement[] = [];
+    const milestones: Milestone[] = [];
+
+    // Base session reward
+    xpEarned += 30;
+    starsEarned += 1;
+    let sessionsCompleted = rewards.sessionsCompleted + 1;
+    let perfectSessions = rewards.perfectSessions;
+
+    // Accuracy bonus
+    if (sessionAccuracy >= 0.9) {
+      xpEarned += 30;
+      starsEarned += 2;
+    } else if (sessionAccuracy >= 0.8) {
+      xpEarned += 20;
+      starsEarned += 1;
+    } else if (sessionAccuracy >= 0.7) {
+      xpEarned += 10;
+    }
+
+    // Perfect session tracking
+    const isPerfect = sessionAccuracy >= 0.98;
+    if (isPerfect) {
+      perfectSessions++;
+      xpEarned += 25;
+      starsEarned += 3;
+      milestones.push({
+        type: 'PERFECT_SESSION',
+        title: 'Perfect Session!',
+        message: "Amazing! You nailed every word perfectly!",
+        xpReward: 25,
+        starsReward: 3,
+      });
+    }
+
+    // Duration bonus
+    if (durationMin >= 30) {
+      xpEarned += 20;
+      starsEarned += 1;
+    } else if (durationMin >= 15) {
+      xpEarned += 10;
+    }
+
+    // Update streak
+    let streakBonus = 0;
+    let isNewStreak = false;
+    let currentPracticeStreak = rewards.currentPracticeStreak;
+    let longestPracticeStreak = rewards.longestPracticeStreak;
+
+    const lastPracticeDate = rewards.lastPracticeDate;
+    if (!lastPracticeDate || !this.isToday(lastPracticeDate)) {
+      if (lastPracticeDate && this.isYesterday(lastPracticeDate)) {
+        currentPracticeStreak++;
+        isNewStreak = true;
+      } else if (!lastPracticeDate || !this.isYesterday(lastPracticeDate)) {
+        // Streak broken or new start
+        currentPracticeStreak = 1;
+        isNewStreak = true;
+      }
+    }
+
+    // Update longest streak
+    if (currentPracticeStreak > longestPracticeStreak) {
+      longestPracticeStreak = currentPracticeStreak;
+    }
+
+    // Streak bonus (every 3 days)
+    if (currentPracticeStreak >= 3 && currentPracticeStreak % 3 === 0) {
+      streakBonus = Math.min(50, currentPracticeStreak * 3);
+      xpEarned += streakBonus;
+      starsEarned += Math.floor(streakBonus / 15);
+      const streakMilestone: Milestone = {
+        type: 'STREAK_BONUS',
+        title: `${currentPracticeStreak} Day Streak!`,
+        message: `Keep it up! You've practiced ${currentPracticeStreak} days in a row!`,
+        xpReward: streakBonus,
+        starsReward: Math.floor(streakBonus / 15),
+      };
+      milestones.push(streakMilestone);
+      await this.recordMilestone(tenantId, learnerId, streakMilestone, undefined, undefined, currentPracticeStreak);
+    }
+
+    // Check achievements
+    const unlocked = await this.checkAndUnlockAchievements(tenantId, learnerId, {
+      sessionsCompleted,
+      perfectSessions,
+      goalsMastered: rewards.goalsMastered,
+      homePracticeCompleted: rewards.homePracticeCompleted,
+      totalPracticeMinutes: rewards.totalPracticeMinutes,
+      currentPracticeStreak,
+      soundsMastered: rewards.soundsMastered,
+    });
+    achievementsUnlocked.push(...unlocked);
+
+    // Add achievement rewards
+    for (const achievement of unlocked) {
+      xpEarned += achievement.xpReward;
+      starsEarned += achievement.starsReward;
+    }
+
+    // Calculate new totals
+    const totalXp = rewards.totalXp + xpEarned;
+    const totalStars = rewards.totalStars + starsEarned;
+
+    // Check for level up
+    const levelInfo = calculateLevel(totalXp);
+    const leveledUp = levelInfo.level > rewards.currentLevel;
+    if (leveledUp) {
+      const levelUpMilestone: Milestone = {
+        type: 'LEVEL_UP',
+        title: `Level ${levelInfo.level}!`,
+        message: `Congratulations! You reached Level ${levelInfo.level}!`,
+        xpReward: 0,
+        starsReward: 5,
+      };
+      milestones.push(levelUpMilestone);
+      await this.recordMilestone(tenantId, learnerId, levelUpMilestone);
+    }
+
+    // Update database
+    await this.prisma.speechRewards.update({
+      where: { id: rewards.id },
+      data: {
+        totalXp,
+        totalStars: totalStars + (leveledUp ? 5 : 0),
+        currentLevel: levelInfo.level,
+        sessionsCompleted,
+        perfectSessions,
+        currentPracticeStreak,
+        longestPracticeStreak,
+        lastPracticeDate: today,
+      },
+    });
+
+    return {
+      xpEarned,
+      starsEarned: starsEarned + (leveledUp ? 5 : 0),
+      newTotal: {
+        xp: totalXp,
+        stars: totalStars + (leveledUp ? 5 : 0),
+        level: levelInfo.level,
+      },
+      leveledUp,
+      newLevel: leveledUp ? levelInfo.level : undefined,
+      achievementsUnlocked,
+      milestones,
+      streakInfo: {
+        currentStreak: currentPracticeStreak,
+        isNewStreak,
+        streakBonus,
+      },
+    };
+  }
+
+  /**
+   * Award rewards for completing home practice
+   */
+  async awardHomePracticeReward(
+    tenantId: string,
+    learnerId: string,
+    practiceMinutes: number
+  ): Promise<SpeechRewardResult> {
+    const rewards = await this.getOrCreateRewards(tenantId, learnerId);
+
+    let xpEarned = 15;
+    let starsEarned = 1;
+    const achievementsUnlocked: UnlockedAchievement[] = [];
+    const milestones: Milestone[] = [];
+
+    const homePracticeCompleted = rewards.homePracticeCompleted + 1;
+    const totalPracticeMinutes = rewards.totalPracticeMinutes + practiceMinutes;
+
+    // Time-based bonus
+    if (practiceMinutes >= 15) {
+      xpEarned += 15;
+      starsEarned += 1;
+    } else if (practiceMinutes >= 10) {
+      xpEarned += 10;
+    }
+
+    // Update streak
+    const today = new Date();
+    let streakBonus = 0;
+    let isNewStreak = false;
+    let currentPracticeStreak = rewards.currentPracticeStreak;
+    let longestPracticeStreak = rewards.longestPracticeStreak;
+
+    const lastPracticeDate = rewards.lastPracticeDate;
+    if (!lastPracticeDate || !this.isToday(lastPracticeDate)) {
+      if (lastPracticeDate && this.isYesterday(lastPracticeDate)) {
+        currentPracticeStreak++;
+        isNewStreak = true;
+      } else {
+        currentPracticeStreak = 1;
+        isNewStreak = true;
+      }
+    }
+
+    if (currentPracticeStreak > longestPracticeStreak) {
+      longestPracticeStreak = currentPracticeStreak;
+    }
+
+    // Check achievements
+    const unlocked = await this.checkAndUnlockAchievements(tenantId, learnerId, {
+      sessionsCompleted: rewards.sessionsCompleted,
+      perfectSessions: rewards.perfectSessions,
+      goalsMastered: rewards.goalsMastered,
+      homePracticeCompleted,
+      totalPracticeMinutes,
+      currentPracticeStreak,
+      soundsMastered: rewards.soundsMastered,
+    });
+    achievementsUnlocked.push(...unlocked);
+
+    for (const achievement of unlocked) {
+      xpEarned += achievement.xpReward;
+      starsEarned += achievement.starsReward;
+    }
+
+    const totalXp = rewards.totalXp + xpEarned;
+    const totalStars = rewards.totalStars + starsEarned;
+
+    const levelInfo = calculateLevel(totalXp);
+    const leveledUp = levelInfo.level > rewards.currentLevel;
+
+    // Update database
+    await this.prisma.speechRewards.update({
+      where: { id: rewards.id },
+      data: {
+        totalXp,
+        totalStars,
+        currentLevel: levelInfo.level,
+        homePracticeCompleted,
+        totalPracticeMinutes,
+        currentPracticeStreak,
+        longestPracticeStreak,
+        lastPracticeDate: today,
+      },
+    });
+
+    return {
+      xpEarned,
+      starsEarned,
+      newTotal: {
+        xp: totalXp,
+        stars: totalStars,
+        level: levelInfo.level,
+      },
+      leveledUp,
+      newLevel: leveledUp ? levelInfo.level : undefined,
+      achievementsUnlocked,
+      milestones,
+      streakInfo: {
+        currentStreak: currentPracticeStreak,
+        isNewStreak,
+        streakBonus,
+      },
+    };
+  }
+
+  /**
+   * Award rewards for mastering a goal
+   */
+  async awardGoalMastered(
+    tenantId: string,
+    learnerId: string,
+    goalDescription: string,
+    targetSounds: string[]
+  ): Promise<SpeechRewardResult> {
+    const rewards = await this.getOrCreateRewards(tenantId, learnerId);
+
+    let xpEarned = 200;
+    let starsEarned = 15;
+    const achievementsUnlocked: UnlockedAchievement[] = [];
+    const milestones: Milestone[] = [];
+
+    const goalsMastered = rewards.goalsMastered + 1;
+    const soundsMastered = [...rewards.soundsMastered];
+
+    // Add newly mastered sounds
+    for (const sound of targetSounds) {
+      if (!soundsMastered.includes(sound)) {
+        soundsMastered.push(sound);
+        const soundMilestone: Milestone = {
+          type: 'SOUND_MASTERED',
+          title: `Sound Mastered: "${sound}"`,
+          message: `You've mastered the "${sound}" sound!`,
+          xpReward: 50,
+          starsReward: 3,
+        };
+        milestones.push(soundMilestone);
+        await this.recordMilestone(tenantId, learnerId, soundMilestone, sound);
+        xpEarned += 50;
+        starsEarned += 3;
+      }
+    }
+
+    const goalMilestone: Milestone = {
+      type: 'GOAL_MASTERED',
+      title: 'Goal Achieved!',
+      message: goalDescription.substring(0, 100),
+      xpReward: 200,
+      starsReward: 15,
+    };
+    milestones.push(goalMilestone);
+    await this.recordMilestone(tenantId, learnerId, goalMilestone);
+
+    // Check achievements
+    const unlocked = await this.checkAndUnlockAchievements(tenantId, learnerId, {
+      sessionsCompleted: rewards.sessionsCompleted,
+      perfectSessions: rewards.perfectSessions,
+      goalsMastered,
+      homePracticeCompleted: rewards.homePracticeCompleted,
+      totalPracticeMinutes: rewards.totalPracticeMinutes,
+      currentPracticeStreak: rewards.currentPracticeStreak,
+      soundsMastered,
+    });
+    achievementsUnlocked.push(...unlocked);
+
+    for (const achievement of unlocked) {
+      xpEarned += achievement.xpReward;
+      starsEarned += achievement.starsReward;
+    }
+
+    const totalXp = rewards.totalXp + xpEarned;
+    const totalStars = rewards.totalStars + starsEarned;
+
+    const levelInfo = calculateLevel(totalXp);
+    const leveledUp = levelInfo.level > rewards.currentLevel;
+
+    // Update database
+    await this.prisma.speechRewards.update({
+      where: { id: rewards.id },
+      data: {
+        totalXp,
+        totalStars,
+        currentLevel: levelInfo.level,
+        goalsMastered,
+        soundsMastered,
+      },
+    });
+
+    return {
+      xpEarned,
+      starsEarned,
+      newTotal: {
+        xp: totalXp,
+        stars: totalStars,
+        level: levelInfo.level,
+      },
+      leveledUp,
+      newLevel: leveledUp ? levelInfo.level : undefined,
+      achievementsUnlocked,
+      milestones,
+      streakInfo: {
+        currentStreak: rewards.currentPracticeStreak,
+        isNewStreak: false,
+        streakBonus: 0,
+      },
+    };
+  }
+
+  /**
+   * Get learner's progress summary
+   */
+  async getProgressSummary(tenantId: string, learnerId: string): Promise<SpeechProgressSummary> {
+    const rewards = await this.getOrCreateRewards(tenantId, learnerId);
+
+    // Check if streak is still valid
+    let currentStreak = rewards.currentPracticeStreak;
+    if (
+      rewards.lastPracticeDate &&
+      !this.isToday(rewards.lastPracticeDate) &&
+      !this.isYesterday(rewards.lastPracticeDate)
+    ) {
+      currentStreak = 0;
+      // Update in database
+      await this.prisma.speechRewards.update({
+        where: { id: rewards.id },
+        data: { currentPracticeStreak: 0 },
+      });
+    }
+
+    return {
+      totalXp: rewards.totalXp,
+      currentLevel: rewards.currentLevel,
+      totalStars: rewards.totalStars,
+      currentStreak,
+      longestStreak: rewards.longestPracticeStreak,
+      sessionsCompleted: rewards.sessionsCompleted,
+      perfectSessions: rewards.perfectSessions,
+      goalsMastered: rewards.goalsMastered,
+      soundsMastered: rewards.soundsMastered,
+      totalPracticeMinutes: rewards.totalPracticeMinutes,
+    };
+  }
+
+  /**
+   * Get achievement progress
+   */
+  async getAchievementProgress(
+    tenantId: string,
+    learnerId: string
+  ): Promise<AchievementProgress[]> {
+    const rewards = await this.getOrCreateRewards(tenantId, learnerId);
+
+    // Update progress first
+    await this.checkAndUnlockAchievements(tenantId, learnerId, {
+      sessionsCompleted: rewards.sessionsCompleted,
+      perfectSessions: rewards.perfectSessions,
+      goalsMastered: rewards.goalsMastered,
+      homePracticeCompleted: rewards.homePracticeCompleted,
+      totalPracticeMinutes: rewards.totalPracticeMinutes,
+      currentPracticeStreak: rewards.currentPracticeStreak,
+      soundsMastered: rewards.soundsMastered,
+    });
+
+    const result: AchievementProgress[] = [];
+
+    for (const def of SPEECH_ACHIEVEMENTS) {
+      const achievement = await this.getOrCreateAchievement(
+        tenantId,
+        learnerId,
+        def.code,
+        def.requirement.target
+      );
+
+      result.push({
+        code: def.code,
+        title: def.title,
+        description: def.description,
+        category: def.category,
+        icon: def.icon,
+        currentProgress: achievement.currentProgress,
+        targetProgress: achievement.targetProgress,
+        progressPercentage: Math.min(
+          100,
+          Math.round((achievement.currentProgress / achievement.targetProgress) * 100)
+        ),
+        isCompleted: achievement.isCompleted,
+        completedAt: achievement.completedAt || undefined,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Get celebration message based on achievement
+   */
+  getCelebrationMessage(achievement: UnlockedAchievement): string {
+    const messages: Record<string, string[]> = {
+      SESSIONS: [
+        "You're building great habits!",
+        'Practice makes progress!',
+        'Every session makes you stronger!',
+      ],
+      ACCURACY: [
+        "Your pronunciation is getting clearer!",
+        "Amazing accuracy! You're doing great!",
+        'Your hard work is paying off!',
+      ],
+      GOALS: [
+        "You did it! Goal achieved!",
+        'Another goal mastered! Keep going!',
+        "You're making incredible progress!",
+      ],
+      STREAKS: [
+        "You're on fire! Keep the streak going!",
+        'Consistency is key, and you have it!',
+        "Day after day, you're getting better!",
+      ],
+      SOUNDS: [
+        'That sound is yours now!',
+        "You've conquered another sound!",
+        'Your speech is clearer than ever!',
+      ],
+      HOME_PRACTICE: [
+        'Practice at home makes perfect!',
+        "You're a home practice champion!",
+        'Every minute of practice counts!',
+      ],
+    };
+
+    const categoryMessages = messages[achievement.category] || [
+      'Great job!',
+      'Well done!',
+      'Keep it up!',
+    ];
+    return categoryMessages[Math.floor(Math.random() * categoryMessages.length)];
+  }
 }
 
-function isToday(date: Date): boolean {
-  const today = new Date();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
+// ══════════════════════════════════════════════════════════════════════════════
+// STANDALONE FUNCTIONS FOR BACKWARD COMPATIBILITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+// These functions maintain backward compatibility with the old API
+// They use a shared instance that must be initialized
+
+let sharedService: SpeechGamificationService | null = null;
+
+export function initializeGamificationService(prisma: PrismaClient): void {
+  sharedService = new SpeechGamificationService(prisma);
 }
 
-function isYesterday(date: Date): boolean {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return (
-    date.getFullYear() === yesterday.getFullYear() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getDate() === yesterday.getDate()
-  );
+function getService(): SpeechGamificationService {
+  if (!sharedService) {
+    throw new Error('SpeechGamificationService not initialized. Call initializeGamificationService(prisma) first.');
+  }
+  return sharedService;
 }
 
-/**
- * Award rewards for completing a therapy session
- */
 export async function awardSessionReward(
   tenantId: string,
   learnerId: string,
   sessionAccuracy: number,
   durationMin: number
 ): Promise<SpeechRewardResult> {
-  const rewards = getRewards(tenantId, learnerId);
-  const today = new Date();
-
-  let xpEarned = 0;
-  let starsEarned = 0;
-  const achievementsUnlocked: UnlockedAchievement[] = [];
-  const milestones: Milestone[] = [];
-
-  // Base session reward
-  xpEarned += 30;
-  starsEarned += 1;
-  rewards.sessionsCompleted++;
-
-  // Accuracy bonus
-  if (sessionAccuracy >= 0.9) {
-    xpEarned += 30;
-    starsEarned += 2;
-  } else if (sessionAccuracy >= 0.8) {
-    xpEarned += 20;
-    starsEarned += 1;
-  } else if (sessionAccuracy >= 0.7) {
-    xpEarned += 10;
-  }
-
-  // Perfect session tracking
-  const isPerfect = sessionAccuracy >= 0.98;
-  if (isPerfect) {
-    rewards.perfectSessions++;
-    xpEarned += 25;
-    starsEarned += 3;
-    milestones.push({
-      type: 'PERFECT_SESSION',
-      title: 'Perfect Session!',
-      message: "Amazing! You nailed every word perfectly!",
-      xpReward: 25,
-      starsReward: 3,
-    });
-  }
-
-  // Duration bonus
-  if (durationMin >= 30) {
-    xpEarned += 20;
-    starsEarned += 1;
-  } else if (durationMin >= 15) {
-    xpEarned += 10;
-  }
-
-  // Update streak
-  let streakBonus = 0;
-  let isNewStreak = false;
-
-  if (!rewards.lastPracticeDate || !isToday(rewards.lastPracticeDate)) {
-    if (rewards.lastPracticeDate && isYesterday(rewards.lastPracticeDate)) {
-      rewards.currentPracticeStreak++;
-      isNewStreak = true;
-    } else if (!rewards.lastPracticeDate || !isYesterday(rewards.lastPracticeDate)) {
-      // Streak broken or new start
-      rewards.currentPracticeStreak = 1;
-      isNewStreak = true;
-    }
-    rewards.lastPracticeDate = today;
-  }
-
-  // Update longest streak
-  if (rewards.currentPracticeStreak > rewards.longestPracticeStreak) {
-    rewards.longestPracticeStreak = rewards.currentPracticeStreak;
-  }
-
-  // Streak bonus (every 3 days)
-  if (rewards.currentPracticeStreak >= 3 && rewards.currentPracticeStreak % 3 === 0) {
-    streakBonus = Math.min(50, rewards.currentPracticeStreak * 3);
-    xpEarned += streakBonus;
-    starsEarned += Math.floor(streakBonus / 15);
-    milestones.push({
-      type: 'STREAK_BONUS',
-      title: `${rewards.currentPracticeStreak} Day Streak!`,
-      message: `Keep it up! You've practiced ${rewards.currentPracticeStreak} days in a row!`,
-      xpReward: streakBonus,
-      starsReward: Math.floor(streakBonus / 15),
-    });
-  }
-
-  // Check achievements
-  const unlocked = checkAndUnlockAchievements(tenantId, learnerId, rewards);
-  achievementsUnlocked.push(...unlocked);
-
-  // Add achievement rewards
-  for (const achievement of unlocked) {
-    xpEarned += achievement.xpReward;
-    starsEarned += achievement.starsReward;
-  }
-
-  // Update totals
-  rewards.totalXp += xpEarned;
-  rewards.totalStars += starsEarned;
-
-  // Check for level up
-  const levelInfo = calculateLevel(rewards.totalXp);
-  const leveledUp = levelInfo.level > rewards.currentLevel;
-  if (leveledUp) {
-    milestones.push({
-      type: 'LEVEL_UP',
-      title: `Level ${levelInfo.level}!`,
-      message: `Congratulations! You reached Level ${levelInfo.level}!`,
-      xpReward: 0,
-      starsReward: 5,
-    });
-    starsEarned += 5;
-    rewards.totalStars += 5;
-  }
-  rewards.currentLevel = levelInfo.level;
-
-  return {
-    xpEarned,
-    starsEarned,
-    newTotal: {
-      xp: rewards.totalXp,
-      stars: rewards.totalStars,
-      level: rewards.currentLevel,
-    },
-    leveledUp,
-    newLevel: leveledUp ? levelInfo.level : undefined,
-    achievementsUnlocked,
-    milestones,
-    streakInfo: {
-      currentStreak: rewards.currentPracticeStreak,
-      isNewStreak,
-      streakBonus,
-    },
-  };
+  return getService().awardSessionReward(tenantId, learnerId, sessionAccuracy, durationMin);
 }
 
-/**
- * Award rewards for completing home practice
- */
 export async function awardHomePracticeReward(
   tenantId: string,
   learnerId: string,
   practiceMinutes: number
 ): Promise<SpeechRewardResult> {
-  const rewards = getRewards(tenantId, learnerId);
-
-  let xpEarned = 15;
-  let starsEarned = 1;
-  const achievementsUnlocked: UnlockedAchievement[] = [];
-  const milestones: Milestone[] = [];
-
-  rewards.homePracticeCompleted++;
-  rewards.totalPracticeMinutes += practiceMinutes;
-
-  // Time-based bonus
-  if (practiceMinutes >= 15) {
-    xpEarned += 15;
-    starsEarned += 1;
-  } else if (practiceMinutes >= 10) {
-    xpEarned += 10;
-  }
-
-  // Update streak
-  const today = new Date();
-  let streakBonus = 0;
-  let isNewStreak = false;
-
-  if (!rewards.lastPracticeDate || !isToday(rewards.lastPracticeDate)) {
-    if (rewards.lastPracticeDate && isYesterday(rewards.lastPracticeDate)) {
-      rewards.currentPracticeStreak++;
-      isNewStreak = true;
-    } else {
-      rewards.currentPracticeStreak = 1;
-      isNewStreak = true;
-    }
-    rewards.lastPracticeDate = today;
-  }
-
-  if (rewards.currentPracticeStreak > rewards.longestPracticeStreak) {
-    rewards.longestPracticeStreak = rewards.currentPracticeStreak;
-  }
-
-  // Check achievements
-  const unlocked = checkAndUnlockAchievements(tenantId, learnerId, rewards);
-  achievementsUnlocked.push(...unlocked);
-
-  for (const achievement of unlocked) {
-    xpEarned += achievement.xpReward;
-    starsEarned += achievement.starsReward;
-  }
-
-  rewards.totalXp += xpEarned;
-  rewards.totalStars += starsEarned;
-
-  const levelInfo = calculateLevel(rewards.totalXp);
-  const leveledUp = levelInfo.level > rewards.currentLevel;
-  rewards.currentLevel = levelInfo.level;
-
-  return {
-    xpEarned,
-    starsEarned,
-    newTotal: {
-      xp: rewards.totalXp,
-      stars: rewards.totalStars,
-      level: rewards.currentLevel,
-    },
-    leveledUp,
-    newLevel: leveledUp ? levelInfo.level : undefined,
-    achievementsUnlocked,
-    milestones,
-    streakInfo: {
-      currentStreak: rewards.currentPracticeStreak,
-      isNewStreak,
-      streakBonus,
-    },
-  };
+  return getService().awardHomePracticeReward(tenantId, learnerId, practiceMinutes);
 }
 
-/**
- * Award rewards for mastering a goal
- */
 export async function awardGoalMastered(
   tenantId: string,
   learnerId: string,
   goalDescription: string,
   targetSounds: string[]
 ): Promise<SpeechRewardResult> {
-  const rewards = getRewards(tenantId, learnerId);
-
-  let xpEarned = 200;
-  let starsEarned = 15;
-  const achievementsUnlocked: UnlockedAchievement[] = [];
-  const milestones: Milestone[] = [];
-
-  rewards.goalsMastered++;
-
-  // Add newly mastered sounds
-  for (const sound of targetSounds) {
-    if (!rewards.soundsMastered.includes(sound)) {
-      rewards.soundsMastered.push(sound);
-      milestones.push({
-        type: 'SOUND_MASTERED',
-        title: `Sound Mastered: "${sound}"`,
-        message: `You've mastered the "${sound}" sound!`,
-        xpReward: 50,
-        starsReward: 3,
-      });
-      xpEarned += 50;
-      starsEarned += 3;
-    }
-  }
-
-  milestones.push({
-    type: 'GOAL_MASTERED',
-    title: 'Goal Achieved!',
-    message: goalDescription.substring(0, 100),
-    xpReward: 200,
-    starsReward: 15,
-  });
-
-  // Check achievements
-  const unlocked = checkAndUnlockAchievements(tenantId, learnerId, rewards);
-  achievementsUnlocked.push(...unlocked);
-
-  for (const achievement of unlocked) {
-    xpEarned += achievement.xpReward;
-    starsEarned += achievement.starsReward;
-  }
-
-  rewards.totalXp += xpEarned;
-  rewards.totalStars += starsEarned;
-
-  const levelInfo = calculateLevel(rewards.totalXp);
-  const leveledUp = levelInfo.level > rewards.currentLevel;
-  rewards.currentLevel = levelInfo.level;
-
-  return {
-    xpEarned,
-    starsEarned,
-    newTotal: {
-      xp: rewards.totalXp,
-      stars: rewards.totalStars,
-      level: rewards.currentLevel,
-    },
-    leveledUp,
-    newLevel: leveledUp ? levelInfo.level : undefined,
-    achievementsUnlocked,
-    milestones,
-    streakInfo: {
-      currentStreak: rewards.currentPracticeStreak,
-      isNewStreak: false,
-      streakBonus: 0,
-    },
-  };
+  return getService().awardGoalMastered(tenantId, learnerId, goalDescription, targetSounds);
 }
 
-/**
- * Check and unlock achievements
- */
-function checkAndUnlockAchievements(
-  tenantId: string,
-  learnerId: string,
-  rewards: RewardData
-): UnlockedAchievement[] {
-  const achievements = getAchievements(tenantId, learnerId);
-  const unlocked: UnlockedAchievement[] = [];
-
-  for (const def of SPEECH_ACHIEVEMENTS) {
-    const achievement = achievements.get(def.code)!;
-    if (achievement.isCompleted) continue;
-
-    let progress = 0;
-    switch (def.requirement.type) {
-      case 'sessions_completed':
-        progress = rewards.sessionsCompleted;
-        break;
-      case 'perfect_sessions':
-        progress = rewards.perfectSessions;
-        break;
-      case 'goals_mastered':
-        progress = rewards.goalsMastered;
-        break;
-      case 'home_practice_completed':
-        progress = rewards.homePracticeCompleted;
-        break;
-      case 'total_practice_minutes':
-        progress = rewards.totalPracticeMinutes;
-        break;
-      case 'practice_streak':
-        progress = rewards.currentPracticeStreak;
-        break;
-      case 'sounds_mastered':
-        progress = rewards.soundsMastered.length;
-        break;
-    }
-
-    achievement.currentProgress = progress;
-
-    if (progress >= def.requirement.target && !achievement.isCompleted) {
-      achievement.isCompleted = true;
-      achievement.completedAt = new Date();
-
-      unlocked.push({
-        code: def.code,
-        title: def.title,
-        description: def.description,
-        category: def.category,
-        xpReward: def.xpReward,
-        starsReward: def.starsReward,
-        icon: def.icon,
-      });
-    }
-  }
-
-  return unlocked;
+export function getProgressSummary(tenantId: string, learnerId: string): Promise<SpeechProgressSummary> {
+  return getService().getProgressSummary(tenantId, learnerId);
 }
 
-/**
- * Get learner's progress summary
- */
-export function getProgressSummary(tenantId: string, learnerId: string): SpeechProgressSummary {
-  const rewards = getRewards(tenantId, learnerId);
-
-  // Check if streak is still valid
-  if (rewards.lastPracticeDate && !isToday(rewards.lastPracticeDate) && !isYesterday(rewards.lastPracticeDate)) {
-    rewards.currentPracticeStreak = 0;
-  }
-
-  return {
-    totalXp: rewards.totalXp,
-    currentLevel: rewards.currentLevel,
-    totalStars: rewards.totalStars,
-    currentStreak: rewards.currentPracticeStreak,
-    longestStreak: rewards.longestPracticeStreak,
-    sessionsCompleted: rewards.sessionsCompleted,
-    perfectSessions: rewards.perfectSessions,
-    goalsMastered: rewards.goalsMastered,
-    soundsMastered: rewards.soundsMastered,
-    totalPracticeMinutes: rewards.totalPracticeMinutes,
-  };
-}
-
-/**
- * Get achievement progress
- */
 export function getAchievementProgress(
   tenantId: string,
   learnerId: string
-): AchievementProgress[] {
-  const achievements = getAchievements(tenantId, learnerId);
-  const rewards = getRewards(tenantId, learnerId);
-
-  // Update progress
-  checkAndUnlockAchievements(tenantId, learnerId, rewards);
-
-  const result: AchievementProgress[] = [];
-
-  for (const def of SPEECH_ACHIEVEMENTS) {
-    const achievement = achievements.get(def.code)!;
-    result.push({
-      code: def.code,
-      title: def.title,
-      description: def.description,
-      category: def.category,
-      icon: def.icon,
-      currentProgress: achievement.currentProgress,
-      targetProgress: achievement.targetProgress,
-      progressPercentage: Math.min(
-        100,
-        Math.round((achievement.currentProgress / achievement.targetProgress) * 100)
-      ),
-      isCompleted: achievement.isCompleted,
-      completedAt: achievement.completedAt,
-    });
-  }
-
-  return result;
+): Promise<AchievementProgress[]> {
+  return getService().getAchievementProgress(tenantId, learnerId);
 }
 
-/**
- * Get celebration message based on achievement
- */
 export function getCelebrationMessage(achievement: UnlockedAchievement): string {
-  const messages: Record<string, string[]> = {
-    SESSIONS: [
-      "You're building great habits!",
-      'Practice makes progress!',
-      'Every session makes you stronger!',
-    ],
-    ACCURACY: [
-      "Your pronunciation is getting clearer!",
-      "Amazing accuracy! You're doing great!",
-      'Your hard work is paying off!',
-    ],
-    GOALS: [
-      "You did it! Goal achieved!",
-      'Another goal mastered! Keep going!',
-      "You're making incredible progress!",
-    ],
-    STREAKS: [
-      "You're on fire! Keep the streak going!",
-      'Consistency is key, and you have it!',
-      "Day after day, you're getting better!",
-    ],
-    SOUNDS: [
-      'That sound is yours now!',
-      "You've conquered another sound!",
-      'Your speech is clearer than ever!',
-    ],
-    HOME_PRACTICE: [
-      'Practice at home makes perfect!',
-      "You're a home practice champion!",
-      'Every minute of practice counts!',
-    ],
-  };
-
-  const categoryMessages = messages[achievement.category] || [
-    'Great job!',
-    'Well done!',
-    'Keep it up!',
-  ];
-  return categoryMessages[Math.floor(Math.random() * categoryMessages.length)];
+  return getService().getCelebrationMessage(achievement);
 }
