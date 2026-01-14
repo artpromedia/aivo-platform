@@ -128,11 +128,7 @@ CREATE TABLE IF NOT EXISTS ai_generated_lessons (
     published_at TIMESTAMPTZ NULL
 );
 
-COMMENT ON TABLE ai_generated_lessons IS 
-'AI-generated lesson content with versioning support.
-
-Content stored as JSONB blocks for flexible rendering.
-Supports iteration through parent_version_id.';
+COMMENT ON TABLE ai_generated_lessons IS 'AI-generated lesson content with versioning support. Content stored as JSONB blocks for flexible rendering. Supports iteration through parent_version_id.';
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_lessons_tenant_user 
@@ -205,8 +201,7 @@ CREATE TABLE IF NOT EXISTS ai_generated_questions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE ai_generated_questions IS 
-'AI-generated assessment questions with classification and usage tracking.';
+COMMENT ON TABLE ai_generated_questions IS 'AI-generated assessment questions with classification and usage tracking.';
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_questions_tenant_user 
@@ -280,14 +275,7 @@ CREATE TABLE IF NOT EXISTS ai_feedback (
     reviewed_at TIMESTAMPTZ NULL
 );
 
-COMMENT ON TABLE ai_feedback IS 
-'AI-generated feedback and grading for student submissions.
-
-Supports:
-- Essay grading
-- Short answer evaluation
-- Code review
-- Human review workflow';
+COMMENT ON TABLE ai_feedback IS 'AI-generated feedback and grading for student submissions. Supports: Essay grading, Short answer evaluation, Code review, Human review workflow';
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_feedback_tenant_student 
@@ -357,10 +345,7 @@ CREATE TABLE IF NOT EXISTS ai_learning_paths (
     completed_at TIMESTAMPTZ NULL
 );
 
-COMMENT ON TABLE ai_learning_paths IS 
-'AI-generated personalized learning paths for students.
-
-Tracks progress through learning nodes and adapts based on performance.';
+COMMENT ON TABLE ai_learning_paths IS 'AI-generated personalized learning paths for students. Tracks progress through learning nodes and adapts based on performance.';
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_paths_tenant_learner 
@@ -414,11 +399,7 @@ CREATE TABLE IF NOT EXISTS ai_translations (
     expires_at TIMESTAMPTZ NULL -- For cache invalidation
 );
 
-COMMENT ON TABLE ai_translations IS 
-'Cache for AI-generated translations.
-
-Uses content_hash for efficient cache lookup.
-Supports human review workflow.';
+COMMENT ON TABLE ai_translations IS 'Cache for AI-generated translations. Uses content_hash for efficient cache lookup. Supports human review workflow.';
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_translations_lookup 
@@ -484,10 +465,7 @@ CREATE TABLE IF NOT EXISTS ai_generated_images (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE ai_generated_images IS 
-'AI-generated educational images with metadata.
-
-Stores DALL-E and other AI-generated images for reuse.';
+COMMENT ON TABLE ai_generated_images IS 'AI-generated educational images with metadata. Stores DALL-E and other AI-generated images for reuse.';
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_images_tenant_user 
@@ -528,8 +506,7 @@ CREATE TABLE IF NOT EXISTS ai_budget_configs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE ai_budget_configs IS 
-'Per-tenant AI budget configuration and tracking.';
+COMMENT ON TABLE ai_budget_configs IS 'Per-tenant AI budget configuration and tracking.';
 
 -- ----------------------------------------------------------------------------
 -- FUNCTION: Reset monthly AI budget tracking
@@ -547,8 +524,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION reset_monthly_ai_budgets IS 
-'Resets monthly AI spend tracking. Run on first day of each month.';
+COMMENT ON FUNCTION reset_monthly_ai_budgets IS 'Resets monthly AI spend tracking. Run on first day of each month.';
 
 -- ----------------------------------------------------------------------------
 -- TRIGGER: Update timestamps
