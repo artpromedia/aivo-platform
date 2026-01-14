@@ -61,13 +61,7 @@ CREATE TABLE IF NOT EXISTS ai_generation_log (
     completed_at TIMESTAMPTZ NULL
 );
 
-COMMENT ON TABLE ai_generation_log IS 
-'Detailed log of all AI content generation requests.
-
-Used for:
-- Debugging and troubleshooting
-- Cost tracking and analytics
-- Performance monitoring
+COMMENT ON TABLE ai_generation_log IS 'Detailed log of all AI content generation requests. Used for: - Debugging and troubleshooting - Cost tracking and analytics - Performance monitoring';
 - Audit trail';
 
 -- Indexes for common queries

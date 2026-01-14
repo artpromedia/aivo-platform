@@ -9,7 +9,7 @@ import React, { createContext, useContext, useMemo, useEffect } from 'react';
 
 import { isRTLLocale, type SupportedLocale } from '../types';
 
-import { rtlStyle, rtlClass, rtlValue, rtlIcon } from './rtl-utils';
+import { rtlStyle, rtlClass, rtlIcon, getLTRValue, getRTLValue } from './rtl-utils';
 
 /**
  * RTL context value
@@ -87,7 +87,7 @@ export function RTLProvider({
       isRTL,
       rtlStyle: (ltrStyles, rtlStyles) => rtlStyle(ltrStyles, rtlStyles, isRTL),
       rtlClass: (className) => rtlClass(className, isRTL),
-      rtlValue: <T,>(ltr: T, rtl: T) => rtlValue(ltr, rtl, isRTL),
+      rtlValue: <T,>(ltr: T, rtl: T) => (isRTL ? getRTLValue(ltr, rtl) : getLTRValue(ltr, rtl)),
       rtlIcon: (iconName) => rtlIcon(iconName, isRTL),
     }),
     [direction, isRTL]
@@ -164,7 +164,9 @@ export function RTLOnly({ children }: { children: ReactNode }): React.ReactEleme
 /**
  * Component that renders children only in LTR mode
  */
-export function LTROnly({ children }: Readonly<{ children: ReactNode }>): React.ReactElement | null {
+export function LTROnly({
+  children,
+}: Readonly<{ children: ReactNode }>): React.ReactElement | null {
   const { isRTL } = useRTLContext();
   return isRTL ? null : <>{children}</>;
 }
