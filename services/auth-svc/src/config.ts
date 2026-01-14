@@ -14,7 +14,10 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
   throw new Error('JWT key not provided');
 }
 
-function readOptionalKey(keyEnv: string | undefined, fileEnv: string | undefined): string | undefined {
+function readOptionalKey(
+  keyEnv: string | undefined,
+  fileEnv: string | undefined
+): string | undefined {
   if (keyEnv) return keyEnv;
   if (fileEnv) {
     const abs = path.resolve(fileEnv);
@@ -47,7 +50,7 @@ export const config = {
   // SSO Configuration
   baseUrl: process.env.AUTH_SERVICE_BASE_URL || 'http://localhost:4001',
   webAppUrl: process.env.WEB_APP_URL || 'http://localhost:3000',
-  
+
   // SAML SP Configuration
   samlSpEntityId: process.env.SAML_SP_ENTITY_ID || 'https://aivo.education/sp',
   samlSpPrivateKey: readOptionalKey(
@@ -66,6 +69,15 @@ export const config = {
       throw new Error('SSO_STATE_ENCRYPTION_KEY is required in production');
     }
     return key || 'dev-only-key-not-for-production';
+  })(),
+
+  // MFA TOTP Secret Encryption (required in production)
+  mfaEncryptionKey: (() => {
+    const key = process.env.MFA_ENCRYPTION_KEY;
+    if (!key && process.env.NODE_ENV === 'production') {
+      throw new Error('MFA_ENCRYPTION_KEY is required in production');
+    }
+    return key || 'dev-only-mfa-key-not-for-production';
   })(),
 
   // Service URLs

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Shield, Check, X, AlertTriangle, Info, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { api } from '@/lib/api';
 
 interface ConsentType {
@@ -27,7 +28,8 @@ export function ConsentManager({ studentId, studentName, studentAge }: ConsentMa
   const queryClient = useQueryClient();
   const [expandedType, setExpandedType] = useState<string | null>(null);
 
-  const isCoppaApplicable = studentAge !== undefined && studentAge < 13;
+  // COPPA applies to children 13 and under (Enterprise QA Audit fix)
+  const isCoppaApplicable = studentAge !== undefined && studentAge <= 13;
 
   const { data: consents, isLoading } = useQuery({
     queryKey: ['consent', studentId],
@@ -137,15 +139,17 @@ export function ConsentManager({ studentId, studentName, studentAge }: ConsentMa
                 status === 'granted'
                   ? 'border-green-200 bg-green-50/50'
                   : status === 'denied'
-                  ? 'border-red-200 bg-red-50/50'
-                  : 'border-gray-200'
+                    ? 'border-red-200 bg-red-50/50'
+                    : 'border-gray-200'
               }`}
             >
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => setExpandedType(isExpanded ? null : item.type)}
+                      onClick={() => {
+                        setExpandedType(isExpanded ? null : item.type);
+                      }}
                       className="flex items-center gap-2 text-left"
                       aria-expanded={isExpanded}
                     >
@@ -169,8 +173,8 @@ export function ConsentManager({ studentId, studentName, studentAge }: ConsentMa
                         status === 'granted'
                           ? 'text-green-600'
                           : status === 'denied'
-                          ? 'text-red-600'
-                          : 'text-yellow-600'
+                            ? 'text-red-600'
+                            : 'text-yellow-600'
                       }`}
                     >
                       {t(`consent.${status}`)}
@@ -178,7 +182,9 @@ export function ConsentManager({ studentId, studentName, studentAge }: ConsentMa
 
                     {!item.required && (
                       <button
-                        onClick={() => handleToggle(item.type, status)}
+                        onClick={() => {
+                          handleToggle(item.type, status);
+                        }}
                         disabled={updateConsent.isPending}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
                           status === 'granted' ? 'bg-green-500' : 'bg-gray-300'

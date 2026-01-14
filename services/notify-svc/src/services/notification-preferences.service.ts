@@ -55,19 +55,16 @@ export interface DeliveryDecision {
 // CONSTANTS
 // ══════════════════════════════════════════════════════════════════════════════
 
+// COPPA applies to children 13 and under
+// Updated: January 2026 - Enterprise QA Audit bug fix
 const COPPA_AGE_THRESHOLD = 13;
 const DEFAULT_TIMEZONE = 'America/New_York';
 
 // Notification types that should always go to parents for young learners
-const PARENT_ONLY_NOTIFICATION_TYPES: NotificationType[] = [
-  'CONSENT_REQUEST',
-  'ALERT',
-];
+const PARENT_ONLY_NOTIFICATION_TYPES: NotificationType[] = ['CONSENT_REQUEST', 'ALERT'];
 
 // Notification types that can be sent during quiet hours
-const URGENT_NOTIFICATION_TYPES: NotificationType[] = [
-  'ALERT',
-];
+const URGENT_NOTIFICATION_TYPES: NotificationType[] = ['ALERT'];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PREFERENCES CRUD
@@ -144,7 +141,9 @@ export async function updatePreferences(
       typePreferences,
       ...(input.quietHoursStart !== undefined && { quietHoursStart: input.quietHoursStart }),
       ...(input.quietHoursEnd !== undefined && { quietHoursEnd: input.quietHoursEnd }),
-      ...(input.quietHoursTimezone !== undefined && { quietHoursTimezone: input.quietHoursTimezone }),
+      ...(input.quietHoursTimezone !== undefined && {
+        quietHoursTimezone: input.quietHoursTimezone,
+      }),
       ...(input.digestEnabled !== undefined && { digestEnabled: input.digestEnabled }),
       ...(input.digestFrequency !== undefined && { digestFrequency: input.digestFrequency }),
       ...(input.digestTime !== undefined && { digestTime: input.digestTime }),
@@ -200,11 +199,11 @@ export async function makeDeliveryDecision(
     };
   }
 
-  // COPPA routing - route to parent for children under 13
+  // COPPA routing - route to parent for children 13 and under
   let recipientUserId = userId;
   let recipientPreferences = preferences;
 
-  if (coppaConfig && coppaConfig.learnerAge < COPPA_AGE_THRESHOLD) {
+  if (coppaConfig && coppaConfig.learnerAge <= COPPA_AGE_THRESHOLD) {
     if (!coppaConfig.parentUserId) {
       // No parent configured, cannot deliver to child
       return {
@@ -231,10 +230,7 @@ export async function makeDeliveryDecision(
   }
 
   // Filter channels based on preferences
-  const enabledChannels = filterChannelsByPreferences(
-    requestedChannels,
-    recipientPreferences
-  );
+  const enabledChannels = filterChannelsByPreferences(requestedChannels, recipientPreferences);
 
   if (enabledChannels.length === 0) {
     return {
@@ -265,9 +261,7 @@ export async function makeDeliveryDecision(
     }
 
     // Filter out push during quiet hours
-    const quietHoursChannels = enabledChannels.filter(
-      (c) => c !== 'PUSH'
-    ) as DeliveryChannel[];
+    const quietHoursChannels = enabledChannels.filter((c) => c !== 'PUSH') as DeliveryChannel[];
 
     if (quietHoursChannels.length === 0) {
       return {
@@ -308,7 +302,7 @@ export function checkQuietHours(preferences: UserPreferences): boolean {
 
   const timezone = preferences.quietHoursTimezone || DEFAULT_TIMEZONE;
   const now = DateTime.now().setZone(timezone);
-  
+
   const [startHour, startMinute] = preferences.quietHoursStart.split(':').map(Number);
   const [endHour, endMinute] = preferences.quietHoursEnd.split(':').map(Number);
 
@@ -336,11 +330,11 @@ export function getNextDeliveryTime(preferences: UserPreferences): Date | null {
 
   const timezone = preferences.quietHoursTimezone || DEFAULT_TIMEZONE;
   const now = DateTime.now().setZone(timezone);
-  
+
   const [endHour, endMinute] = preferences.quietHoursEnd.split(':').map(Number);
-  
+
   let deliveryTime = now.set({ hour: endHour, minute: endMinute, second: 0, millisecond: 0 });
-  
+
   // If end time has passed today, schedule for tomorrow
   if (deliveryTime <= now) {
     deliveryTime = deliveryTime.plus({ days: 1 });
@@ -360,8 +354,8 @@ export function shouldRouteToParent(
   notificationType: NotificationType,
   learnerAge: number
 ): boolean {
-  // Always route to parent for children under 13
-  if (learnerAge < COPPA_AGE_THRESHOLD) {
+  // Always route to parent for children 13 and under
+  if (learnerAge <= COPPA_AGE_THRESHOLD) {
     return true;
   }
 
@@ -445,7 +439,7 @@ function isNotificationTypeEnabled(
   notificationType: NotificationType
 ): boolean {
   const typePrefs = preferences.typePreferences || {};
-  
+
   // Default to enabled if not explicitly set
   if (!(notificationType in typePrefs)) {
     return true;
