@@ -1,9 +1,9 @@
 -- ND-1.3: Visual Schedules System
 -- Creates tables for visual schedules, templates, and preferences
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Schedule type enum
 CREATE TYPE "schedule_type" AS ENUM (
@@ -22,9 +22,9 @@ CREATE TYPE "schedule_display_style" AS ENUM (
   'NOW_NEXT_LATER'
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- VISUAL SCHEDULES TABLE
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE "visual_schedules" (
   "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -74,9 +74,9 @@ CREATE INDEX "idx_visual_schedules_tenant"
 CREATE INDEX "idx_visual_schedules_learner_date" 
   ON "visual_schedules" ("learner_id", "date");
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SCHEDULE TEMPLATES TABLE
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE "schedule_templates" (
   "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -116,9 +116,9 @@ CREATE INDEX "idx_schedule_templates_default"
   ON "schedule_templates" ("tenant_id", "is_default") 
   WHERE "is_default" = true;
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SCHEDULE PREFERENCES TABLE
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE "schedule_preferences" (
   "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -164,9 +164,9 @@ CREATE UNIQUE INDEX "schedule_preferences_learner_id_key"
 CREATE INDEX "idx_schedule_preferences_tenant" 
   ON "schedule_preferences" ("tenant_id");
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGER FOR UPDATED_AT
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Function to auto-update updated_at (if not already exists)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -190,9 +190,9 @@ CREATE TRIGGER update_schedule_preferences_updated_at
   BEFORE UPDATE ON "schedule_preferences"
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- COMMENTS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 COMMENT ON TABLE "visual_schedules" IS 'Visual schedules for neurodiverse learners - ND-1.3';
 COMMENT ON TABLE "schedule_templates" IS 'Reusable schedule templates for teachers/parents';

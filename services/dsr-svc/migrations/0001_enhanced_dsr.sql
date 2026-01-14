@@ -1,9 +1,9 @@
 -- Migration: 0001_enhanced_dsr
 -- Description: Enhanced DSR functionality with grace period and rate limiting
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- ADD GRACE PERIOD AND SCHEDULING FIELDS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 ALTER TABLE dsr_requests 
     ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMPTZ NULL,
@@ -12,9 +12,9 @@ ALTER TABLE dsr_requests
     ADD COLUMN IF NOT EXISTS cancelled_by_user_id TEXT NULL,
     ADD COLUMN IF NOT EXISTS cancellation_reason TEXT NULL;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- RATE LIMITING TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS dsr_rate_limits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS dsr_rate_limits (
 CREATE INDEX IF NOT EXISTS idx_dsr_rate_limits_lookup 
     ON dsr_rate_limits(tenant_id, user_id, request_type, request_date);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DSR AUDIT LOG
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS dsr_audit_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,9 +60,9 @@ CREATE INDEX IF NOT EXISTS idx_dsr_audit_request
 CREATE INDEX IF NOT EXISTS idx_dsr_audit_action 
     ON dsr_audit_log(action);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- NOTIFICATION PREFERENCES FOR DSR
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS dsr_notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS dsr_notifications (
 CREATE INDEX IF NOT EXISTS idx_dsr_notifications_request 
     ON dsr_notifications(dsr_request_id);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- FUNCTIONS FOR GRACE PERIOD
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE OR REPLACE FUNCTION calculate_deletion_dates(grace_days INTEGER DEFAULT 30)
 RETURNS TABLE (grace_period_ends_at TIMESTAMPTZ, scheduled_deletion_at TIMESTAMPTZ) AS $$
@@ -95,9 +95,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON COLUMN dsr_requests.grace_period_ends_at IS 
 'End of grace period during which deletion can be cancelled. Typically 30 days from request.';

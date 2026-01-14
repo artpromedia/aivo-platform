@@ -1,9 +1,9 @@
 -- Migration: 0002_dsr_enhancements
 -- Description: Enhanced DSR requests with admin review workflow and better status tracking
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- ENHANCE dsr_requests TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Update status enum to include PENDING, REJECTED, FAILED
 ALTER TABLE dsr_requests DROP CONSTRAINT IF EXISTS dsr_requests_status_check;
@@ -39,9 +39,9 @@ CREATE INDEX IF NOT EXISTS idx_dsr_requests_status
 CREATE INDEX IF NOT EXISTS idx_dsr_requests_pending 
     ON dsr_requests(tenant_id, status) WHERE status = 'PENDING';
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DSR PROCESSING JOBS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS dsr_jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,9 +81,9 @@ CREATE INDEX IF NOT EXISTS idx_dsr_jobs_status
 CREATE INDEX IF NOT EXISTS idx_dsr_jobs_queued 
     ON dsr_jobs(status, created_at) WHERE status = 'QUEUED';
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DSR EXPORT ARTIFACTS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS dsr_export_artifacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,9 +118,9 @@ CREATE INDEX IF NOT EXISTS idx_dsr_artifacts_request
 CREATE INDEX IF NOT EXISTS idx_dsr_artifacts_expires 
     ON dsr_export_artifacts(expires_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE dsr_jobs IS 
 'Background job tracking for DSR processing. Supports async execution with progress tracking and retries.';

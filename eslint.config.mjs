@@ -117,7 +117,8 @@ export default [
       "@typescript-eslint/no-unnecessary-condition": "warn",
       "@typescript-eslint/no-non-null-assertion": "warn",
       "@typescript-eslint/restrict-plus-operands": "warn",
-      "next/no-html-link-for-pages": "off"
+      "next/no-html-link-for-pages": "off",
+      "react/no-array-index-key": "warn"
     }
   },
   {

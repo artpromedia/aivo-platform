@@ -2,9 +2,9 @@
 -- ND-1.2: Social Stories Library & Content Service
 -- Evidence-based visual narratives for neurodiverse learners
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Social story category enum
 CREATE TYPE "social_story_category" AS ENUM (
@@ -58,9 +58,9 @@ CREATE TYPE "social_story_visual_style" AS ENUM (
   'ABSTRACT'
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Main social stories table
 CREATE TABLE "social_stories" (
@@ -166,18 +166,18 @@ CREATE TABLE "social_story_assignments" (
   CONSTRAINT "social_story_assignments_pkey" PRIMARY KEY ("id")
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- UNIQUE CONSTRAINTS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE UNIQUE INDEX "social_stories_slug_key" ON "social_stories"("slug");
 CREATE UNIQUE INDEX "social_stories_tenant_id_slug_key" ON "social_stories"("tenant_id", "slug");
 CREATE UNIQUE INDEX "learner_story_preferences_learner_id_key" ON "learner_story_preferences"("learner_id");
 CREATE UNIQUE INDEX "social_story_assignments_story_id_learner_id_key" ON "social_story_assignments"("story_id", "learner_id");
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- INDEXES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Social stories indexes
 CREATE INDEX "social_stories_tenant_category_active_idx" ON "social_stories"("tenant_id", "category", "is_active");
@@ -193,9 +193,9 @@ CREATE INDEX "social_story_views_learner_story_idx" ON "social_story_views"("lea
 CREATE INDEX "social_story_assignments_learner_active_idx" ON "social_story_assignments"("learner_id", "is_active");
 CREATE INDEX "social_story_assignments_learner_active_priority_idx" ON "social_story_assignments"("learner_id", "is_active", "priority" DESC);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- FOREIGN KEYS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 ALTER TABLE "social_story_views" 
   ADD CONSTRAINT "social_story_views_story_id_fkey" 
@@ -205,9 +205,9 @@ ALTER TABLE "social_story_assignments"
   ADD CONSTRAINT "social_story_assignments_story_id_fkey" 
   FOREIGN KEY ("story_id") REFERENCES "social_stories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGERS FOR updated_at
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Function to update timestamp (if not exists)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -231,9 +231,9 @@ CREATE TRIGGER update_social_story_assignments_updated_at
   BEFORE UPDATE ON "social_story_assignments"
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- COMMENTS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 COMMENT ON TABLE "social_stories" IS 'Evidence-based visual narratives for neurodiverse learners following Carol Gray''s Social Stories framework';
 COMMENT ON TABLE "learner_story_preferences" IS 'Individual learner preferences for social story presentation and accessibility';

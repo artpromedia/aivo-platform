@@ -1,28 +1,28 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SUBDOMAIN-TO-TENANT RESOLUTION MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- 
 -- This migration adds:
 -- 1. Domain configuration fields to Tenant table
 -- 2. TenantDomainVerification table for custom domain verification
 --
 -- Supports multi-tenant access patterns:
--- - Consumer: app.aivo.ai → tenant from JWT
--- - District: springfield-schools.aivo.ai → tenant from subdomain
--- - Custom Domain: learning.springfield.edu → tenant from domain mapping
+-- - Consumer: app.aivo.ai -> tenant from JWT
+-- - District: springfield-schools.aivo.ai -> tenant from subdomain
+-- - Custom Domain: learning.springfield.edu -> tenant from domain mapping
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- ENUMS
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TYPE domain_verification_type AS ENUM ('TXT', 'CNAME');
 CREATE TYPE domain_verification_status AS ENUM ('PENDING', 'VERIFIED', 'FAILED', 'EXPIRED');
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- ALTER: tenants - Add domain configuration
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 ALTER TABLE "Tenant"
   ADD COLUMN IF NOT EXISTS "subdomain" TEXT UNIQUE,
@@ -48,9 +48,9 @@ COMMENT ON COLUMN "Tenant"."is_active" IS 'Whether the tenant is active (for sof
 COMMENT ON COLUMN "Tenant"."logo_url" IS 'URL to tenant logo for branding';
 COMMENT ON COLUMN "Tenant"."primary_color" IS 'Primary brand color hex code (e.g., #1a73e8)';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- TABLE: tenant_domain_verifications
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE tenant_domain_verifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

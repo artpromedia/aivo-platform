@@ -2,37 +2,55 @@
 -- Description: Enhanced consent logging with full audit trail for COPPA/FERPA compliance
 -- Adds consent_logs table for immutable consent event records
 
--- ════════════════════════════════════════════════════════════════════════════════
--- CONSENT LOGS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
+-- TYPES
+-- ================================================================================
 
-CREATE TABLE IF NOT EXISTS consent_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id TEXT NOT NULL,
-    learner_id TEXT NOT NULL,
-    parent_user_id TEXT NOT NULL,
-    
-    -- Type of consent action
-    consent_type TEXT NOT NULL CHECK (consent_type IN (
+-- Define consent type enum to avoid duplication
+DO $$ BEGIN
+    CREATE TYPE consent_type_enum AS ENUM (
         'BASELINE_ASSESSMENT',
         'DATA_PROCESSING',
         'RESEARCH',
         'AI_TUTOR',
         'MARKETING',
         'THIRD_PARTY_SHARING'
-    )),
-    
-    -- Status of consent action (immutable record per action)
-    status TEXT NOT NULL CHECK (status IN ('GRANTED', 'REVOKED')),
-    
-    -- Where the consent was provided
-    source TEXT NOT NULL CHECK (source IN (
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Define consent source enum to avoid duplication
+DO $$ BEGIN
+    CREATE TYPE consent_source AS ENUM (
         'MOBILE_PARENT',
         'WEB_PARENT',
         'DISTRICT_PORTAL',
         'API',
         'SYSTEM'
-    )),
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- ================================================================================
+-- CONSENT LOGS TABLE
+-- ================================================================================
+
+CREATE TABLE IF NOT EXISTS consent_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id TEXT NOT NULL,
+    learner_id TEXT NOT NULL,
+    parent_user_id TEXT NOT NULL,
+
+    -- Type of consent action
+    consent_type consent_type_enum NOT NULL,
+
+    -- Status of consent action (immutable record per action)
+    status TEXT NOT NULL CHECK (status IN ('GRANTED', 'REVOKED')),
+
+    -- Where the consent was provided
+    source consent_source NOT NULL,
     
     -- Version of the consent text shown to user
     consent_text_version TEXT NOT NULL,
@@ -61,38 +79,24 @@ CREATE INDEX IF NOT EXISTS idx_consent_logs_type_status
 CREATE INDEX IF NOT EXISTS idx_consent_logs_created 
     ON consent_logs(created_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- UPDATE consents TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
--- Add new consent types to existing table
+-- Add new consent types to existing table (using enum defined above)
 ALTER TABLE consents DROP CONSTRAINT IF EXISTS consents_consent_type_check;
-ALTER TABLE consents ADD CONSTRAINT consents_consent_type_check 
-    CHECK (consent_type IN (
-        'BASELINE_ASSESSMENT',
-        'DATA_PROCESSING',
-        'RESEARCH',
-        'AI_TUTOR',
-        'MARKETING',
-        'THIRD_PARTY_SHARING'
-    ));
+-- Note: This alter changes type to use the enum - requires migration strategy in production
+ALTER TABLE consents ALTER COLUMN consent_type TYPE consent_type_enum USING consent_type::consent_type_enum;
 
 -- Add consent text version tracking
 ALTER TABLE consents ADD COLUMN IF NOT EXISTS consent_text_version TEXT NULL;
 
--- Add source tracking
-ALTER TABLE consents ADD COLUMN IF NOT EXISTS source TEXT NULL 
-    CHECK (source IS NULL OR source IN (
-        'MOBILE_PARENT',
-        'WEB_PARENT',
-        'DISTRICT_PORTAL',
-        'API',
-        'SYSTEM'
-    ));
+-- Add source tracking (using enum defined above)
+ALTER TABLE consents ADD COLUMN IF NOT EXISTS source consent_source NULL;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS FOR DOCUMENTATION
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE consent_logs IS 
 'Immutable audit log of all consent actions (grants and revocations). Each row represents a single consent event for COPPA/FERPA compliance.';

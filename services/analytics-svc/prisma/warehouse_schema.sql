@@ -1,6 +1,6 @@
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- ANALYTICS WAREHOUSE SCHEMA
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- 
 -- Star schema for the Aivo analytics warehouse.
 -- Separate from OLTP - optimized for analytical queries.
@@ -12,9 +12,9 @@
 --   v_*        = Views for common queries
 --
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DIMENSION: TIME
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- Pre-populated date dimension for efficient time-based joins and grouping.
 -- date_key format: YYYYMMDD (e.g., 20250615)
@@ -78,9 +78,9 @@ CREATE INDEX IF NOT EXISTS idx_dim_time_year_month ON dim_time(year, month_of_ye
 CREATE INDEX IF NOT EXISTS idx_dim_time_academic ON dim_time(academic_year, academic_semester);
 CREATE INDEX IF NOT EXISTS idx_dim_time_week ON dim_time(year, week_of_year);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DIMENSION: CONTENT
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- SCD Type 2 for learning content (activities, modules, assessments).
 -- Tracks content versioning and changes over time.
@@ -126,9 +126,9 @@ CREATE INDEX IF NOT EXISTS idx_dim_content_type ON dim_content(content_type);
 CREATE INDEX IF NOT EXISTS idx_dim_content_subject ON dim_content(subject);
 CREATE INDEX IF NOT EXISTS idx_dim_content_skill ON dim_content(skill_id);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- FACT: ACTIVITY EVENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- Granular learner activity events (responses, completions, hints).
 -- One row per learner action within a session.
@@ -177,9 +177,9 @@ CREATE INDEX IF NOT EXISTS idx_fact_activity_content ON fact_activity_event(cont
 CREATE INDEX IF NOT EXISTS idx_fact_activity_type ON fact_activity_event(event_type);
 CREATE INDEX IF NOT EXISTS idx_fact_activity_occurred ON fact_activity_event(occurred_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- FACT: AI USAGE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- Tracks AI model invocations, tokens, costs, and latency.
 -- Used for cost allocation, performance monitoring, and optimization.
@@ -234,9 +234,9 @@ CREATE INDEX IF NOT EXISTS idx_fact_ai_model ON fact_ai_usage(model_name);
 CREATE INDEX IF NOT EXISTS idx_fact_ai_agent ON fact_ai_usage(agent_type);
 CREATE INDEX IF NOT EXISTS idx_fact_ai_called ON fact_ai_usage(called_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- FACT: BILLING
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- Billing and revenue tracking by tenant.
 -- Used for financial reporting and subscription analytics.
@@ -289,9 +289,9 @@ CREATE INDEX IF NOT EXISTS idx_fact_billing_tenant ON fact_billing(tenant_key, d
 CREATE INDEX IF NOT EXISTS idx_fact_billing_status ON fact_billing(payment_status);
 CREATE INDEX IF NOT EXISTS idx_fact_billing_tier ON fact_billing(subscription_tier);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- AGGREGATED: DAILY PLATFORM METRICS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- Pre-computed daily platform-wide metrics for executive dashboards.
 --
@@ -327,9 +327,9 @@ CREATE TABLE IF NOT EXISTS agg_platform_metrics_daily (
   computed_at TIMESTAMPTZ NOT NULL
 );
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- ETL JOB TRACKING
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS etl_job_runs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -362,9 +362,9 @@ CREATE TABLE IF NOT EXISTS etl_job_runs (
 CREATE INDEX IF NOT EXISTS idx_etl_job_runs_status ON etl_job_runs(job_name, status);
 CREATE INDEX IF NOT EXISTS idx_etl_job_runs_date ON etl_job_runs(run_date DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- RESEARCH EXPORT AUDIT
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- 
 -- Audit log for all research data exports (FERPA/COPPA compliance).
 -- Records who exported what data, when, and for what purpose.
@@ -402,9 +402,9 @@ CREATE INDEX IF NOT EXISTS idx_research_audit_user ON research_export_audit(user
 CREATE INDEX IF NOT EXISTS idx_research_audit_date ON research_export_audit(requested_at DESC);
 CREATE INDEX IF NOT EXISTS idx_research_audit_passed ON research_export_audit(k_anonymity_passed);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- VIEWS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Daily learner engagement view
 CREATE OR REPLACE VIEW v_daily_learner_engagement AS

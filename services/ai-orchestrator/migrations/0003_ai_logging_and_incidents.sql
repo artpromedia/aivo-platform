@@ -15,9 +15,9 @@
 --   All tables are scoped by tenant_id for data isolation
 -- ============================================================================
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- ENUMS
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 -- Agent types in the AI orchestrator (must match existing constraint)
 DO $$ BEGIN
@@ -85,7 +85,7 @@ EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- TABLE: ai_call_logs (Enhanced)
 -- 
 -- Records every AI/LLM invocation across all agents.
@@ -93,7 +93,7 @@ END $$;
 --
 -- IMPORTANT: prompt_summary and response_summary must be redacted.
 --            Do NOT store raw user input or model output with PII.
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 -- First, add new columns to existing ai_call_logs table
 ALTER TABLE ai_call_logs
@@ -136,12 +136,12 @@ COMMENT ON COLUMN ai_call_logs.safety_label IS 'SafetyAgent classification: SAFE
 COMMENT ON COLUMN ai_call_logs.safety_metadata_json IS 'Detailed safety analysis: categories triggered, confidence scores, etc.';
 COMMENT ON COLUMN ai_call_logs.cost_cents_estimate IS 'Estimated cost in cents (USD) based on token pricing';
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- TABLE: ai_incidents
 --
 -- Represents safety, compliance, or operational incidents that require review.
 -- Created automatically by rules or manually by platform admins.
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS ai_incidents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -193,7 +193,7 @@ RETENTION: Indefinite (audit trail).
 CREATION: Automatic via rules (SafetyAgent HIGH, cost anomalies) or manual by admins.
 
 Multi-tenant: All queries must filter by tenant_id.
-Workflow: OPEN → INVESTIGATING → RESOLVED/DISMISSED';
+Workflow: OPEN -> INVESTIGATING -> RESOLVED/DISMISSED';
 
 COMMENT ON COLUMN ai_incidents.severity IS 'Severity level: INFO (FYI), LOW, MEDIUM, HIGH, CRITICAL (immediate action)';
 COMMENT ON COLUMN ai_incidents.category IS 'Incident category: SAFETY, PRIVACY, COMPLIANCE, PERFORMANCE, COST';
@@ -203,13 +203,13 @@ COMMENT ON COLUMN ai_incidents.occurrence_count IS 'Number of related events (fo
 COMMENT ON COLUMN ai_incidents.created_by_system IS 'TRUE if auto-created by rules, FALSE if manually opened';
 COMMENT ON COLUMN ai_incidents.metadata_json IS 'Flexible context: model versions, thresholds, rule IDs, etc.';
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- TABLE: ai_incident_ai_calls
 --
 -- Links incidents to the specific AI calls that contributed to them.
 -- An incident may have multiple related calls (e.g., repeated violations).
 -- A call may be linked to multiple incidents (different categories).
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS ai_incident_ai_calls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -244,9 +244,9 @@ Used to trace which AI calls contributed to an incident.';
 
 COMMENT ON COLUMN ai_incident_ai_calls.link_reason IS 'Why this call was linked: TRIGGER (caused incident), RELATED (same pattern), CONTEXT (background)';
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- INDEXES
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 -- ai_call_logs indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_ai_call_logs_tenant_created 
@@ -292,9 +292,9 @@ CREATE INDEX IF NOT EXISTS idx_ai_incident_ai_calls_incident
 CREATE INDEX IF NOT EXISTS idx_ai_incident_ai_calls_call_log 
     ON ai_incident_ai_calls(ai_call_log_id);
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- TRIGGER: auto-update updated_at on ai_incidents
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_ai_incidents_updated_at()
 RETURNS TRIGGER AS $$
@@ -310,9 +310,9 @@ CREATE TRIGGER trg_ai_incidents_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_ai_incidents_updated_at();
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- VIEWS: Useful aggregations for dashboards
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 -- View: Open incidents by severity for dashboard widgets
 CREATE OR REPLACE VIEW v_open_incidents_summary AS

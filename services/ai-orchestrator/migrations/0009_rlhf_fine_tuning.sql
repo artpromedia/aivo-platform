@@ -2,6 +2,17 @@
 -- Provides tables for fine-tuning job management and model versioning
 
 -- ============================================================================
+-- Types
+-- ============================================================================
+
+-- Define ML provider enum to avoid duplication
+DO $$ BEGIN
+    CREATE TYPE ml_provider AS ENUM ('openai', 'anthropic');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- ============================================================================
 -- Fine-Tuning Jobs
 -- ============================================================================
 
@@ -10,7 +21,7 @@ CREATE TABLE IF NOT EXISTS fine_tuning_jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Provider info
-    provider VARCHAR(20) NOT NULL CHECK (provider IN ('openai', 'anthropic')),
+    provider ml_provider NOT NULL,
     provider_job_id VARCHAR(200),
     base_model VARCHAR(100) NOT NULL,
     fine_tuned_model VARCHAR(200),
@@ -57,7 +68,7 @@ CREATE TABLE IF NOT EXISTS fine_tuned_models (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Provider info
-    provider VARCHAR(20) NOT NULL CHECK (provider IN ('openai', 'anthropic')),
+    provider ml_provider NOT NULL,
     provider_model_id VARCHAR(200) NOT NULL,
     base_model VARCHAR(100) NOT NULL,
 

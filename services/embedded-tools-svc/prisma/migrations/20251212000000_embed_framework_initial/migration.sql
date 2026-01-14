@@ -1,15 +1,15 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- EMBEDDED TOOLS SERVICE - INITIAL MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- 
 -- Creates the embed framework schema for safe third-party tool integration.
 -- Implements COPPA/FERPA-aware data minimization with scoped access.
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TYPE tool_session_status AS ENUM (
   'ACTIVE',
@@ -60,9 +60,9 @@ CREATE TYPE actor_type AS ENUM (
   'SYSTEM'
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TOOL SESSIONS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE tool_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -103,9 +103,9 @@ CREATE INDEX idx_tool_sessions_created_by ON tool_sessions(created_by_user_id);
 CREATE INDEX idx_tool_sessions_status_expires ON tool_sessions(status, expires_at);
 CREATE INDEX idx_tool_sessions_token_jti ON tool_sessions(token_jti);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SESSION EVENTS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE session_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -130,9 +130,9 @@ CREATE INDEX idx_session_events_session_time ON session_events(tool_session_id, 
 CREATE INDEX idx_session_events_type_received ON session_events(event_type, received_at);
 CREATE INDEX idx_session_events_processing ON session_events(is_processed, is_forwarded);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TOKEN AUDIT LOGS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE token_audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -152,9 +152,9 @@ COMMENT ON TABLE token_audit_logs IS 'Audit trail for token operations';
 CREATE INDEX idx_token_audit_session_time ON token_audit_logs(tool_session_id, created_at DESC);
 CREATE INDEX idx_token_audit_jti ON token_audit_logs(token_jti);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TENANT TOOL POLICIES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE tenant_tool_policies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -178,9 +178,9 @@ COMMENT ON TABLE tenant_tool_policies IS 'Per-tenant configuration for tool embe
 COMMENT ON COLUMN tenant_tool_policies.allowed_scopes IS 'Maximum scopes tools can request';
 COMMENT ON COLUMN tenant_tool_policies.denied_scopes IS 'Explicitly denied scopes (override allowed)';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TENANT TOOL LIST ENTRIES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE tenant_tool_list_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -199,9 +199,9 @@ COMMENT ON TABLE tenant_tool_list_entries IS 'Per-tenant allow/block list for to
 
 CREATE INDEX idx_tenant_tool_list_tenant_allowed ON tenant_tool_list_entries(tenant_id, is_allowed);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGERS FOR UPDATED_AT
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -226,9 +226,9 @@ CREATE TRIGGER tr_tenant_tool_list_entries_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- FUNCTION: Expire stale sessions
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION expire_stale_tool_sessions()
 RETURNS INTEGER AS $$

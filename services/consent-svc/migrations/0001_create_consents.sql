@@ -1,11 +1,18 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Define consent status enum to avoid duplication
+DO $$ BEGIN
+    CREATE TYPE consent_status AS ENUM ('PENDING', 'GRANTED', 'REVOKED', 'EXPIRED');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE consents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id TEXT NOT NULL,
   learner_id TEXT NOT NULL,
   consent_type TEXT NOT NULL CHECK (consent_type IN ('BASELINE_ASSESSMENT', 'AI_TUTOR', 'RESEARCH_ANALYTICS')),
-  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'GRANTED', 'REVOKED', 'EXPIRED')),
+  status consent_status NOT NULL DEFAULT 'PENDING',
   granted_by_parent_id TEXT NULL,
   granted_at TIMESTAMPTZ NULL,
   revoked_at TIMESTAMPTZ NULL,
@@ -24,8 +31,8 @@ CREATE INDEX IF NOT EXISTS idx_consents_status ON consents(status);
 CREATE TABLE consent_audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   consent_id UUID NOT NULL REFERENCES consents(id) ON DELETE CASCADE,
-  previous_status TEXT NOT NULL CHECK (previous_status IN ('PENDING', 'GRANTED', 'REVOKED', 'EXPIRED')),
-  new_status TEXT NOT NULL CHECK (new_status IN ('PENDING', 'GRANTED', 'REVOKED', 'EXPIRED')),
+  previous_status consent_status NOT NULL,
+  new_status consent_status NOT NULL,
   changed_by_user_id TEXT NULL,
   change_reason TEXT NOT NULL,
   metadata_json JSONB NULL,

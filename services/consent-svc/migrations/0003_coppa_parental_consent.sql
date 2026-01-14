@@ -2,9 +2,9 @@
 -- Description: COPPA parental consent flow with verifiable consent methods
 -- Adds tables for consent links, verification methods, and enhanced audit trails
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- PARENTAL CONSENT LINKS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS parental_consent_links (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -41,9 +41,9 @@ CREATE INDEX IF NOT EXISTS idx_parental_consent_links_consent
 CREATE INDEX IF NOT EXISTS idx_parental_consent_links_expires 
     ON parental_consent_links(expires_at) WHERE used_at IS NULL;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- VERIFIABLE CONSENT METHODS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- Stores evidence of COPPA-compliant parental verification
 
 CREATE TABLE IF NOT EXISTS consent_verification_methods (
@@ -95,9 +95,9 @@ CREATE INDEX IF NOT EXISTS idx_consent_verification_tenant_parent
 CREATE INDEX IF NOT EXISTS idx_consent_verification_status 
     ON consent_verification_methods(status);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- ENHANCED CONSENT AUDIT LOG
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- Add network-level audit fields for compliance
 
 ALTER TABLE consent_audit_log 
@@ -106,9 +106,9 @@ ALTER TABLE consent_audit_log
     ADD COLUMN IF NOT EXISTS verification_method_id UUID NULL 
         REFERENCES consent_verification_methods(id) ON DELETE SET NULL;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- CONSENT GATING CACHE TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- Materialized view-like table for fast consent checks
 
 CREATE TABLE IF NOT EXISTS consent_status_cache (
@@ -126,9 +126,9 @@ CREATE TABLE IF NOT EXISTS consent_status_cache (
 CREATE INDEX IF NOT EXISTS idx_consent_cache_tenant_learner 
     ON consent_status_cache(tenant_id, learner_id);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COPPA AGE THRESHOLD SETTINGS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS tenant_coppa_settings (
     tenant_id TEXT PRIMARY KEY,
@@ -141,9 +141,9 @@ CREATE TABLE IF NOT EXISTS tenant_coppa_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- TRIGGER: Update consent_status_cache on consent changes
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE OR REPLACE FUNCTION sync_consent_status_cache()
 RETURNS TRIGGER AS $$
@@ -170,42 +170,22 @@ CREATE TRIGGER trg_sync_consent_cache
     FOR EACH ROW
     EXECUTE FUNCTION sync_consent_status_cache();
 
--- ════════════════════════════════════════════════════════════════════════════════
--- ADD NEW CONSENT TYPES
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
+-- ADD NEW CONSENT TYPES (extend the enum from 0002)
+-- ================================================================================
 
-ALTER TABLE consents DROP CONSTRAINT IF EXISTS consents_consent_type_check;
-ALTER TABLE consents ADD CONSTRAINT consents_consent_type_check 
-    CHECK (consent_type IN (
-        'BASELINE_ASSESSMENT',
-        'DATA_PROCESSING',
-        'RESEARCH',
-        'AI_TUTOR',
-        'AI_PERSONALIZATION',
-        'MARKETING',
-        'THIRD_PARTY_SHARING',
-        'BIOMETRIC_DATA',
-        'VOICE_RECORDING'
-    ));
+-- Add new values to consent_type_enum (safe to call multiple times)
+DO $$ BEGIN
+    ALTER TYPE consent_type_enum ADD VALUE IF NOT EXISTS 'AI_PERSONALIZATION';
+    ALTER TYPE consent_type_enum ADD VALUE IF NOT EXISTS 'BIOMETRIC_DATA';
+    ALTER TYPE consent_type_enum ADD VALUE IF NOT EXISTS 'VOICE_RECORDING';
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
--- Update consent_logs too
-ALTER TABLE consent_logs DROP CONSTRAINT IF EXISTS consent_logs_consent_type_check;
-ALTER TABLE consent_logs ADD CONSTRAINT consent_logs_consent_type_check 
-    CHECK (consent_type IN (
-        'BASELINE_ASSESSMENT',
-        'DATA_PROCESSING',
-        'RESEARCH',
-        'AI_TUTOR',
-        'AI_PERSONALIZATION',
-        'MARKETING',
-        'THIRD_PARTY_SHARING',
-        'BIOMETRIC_DATA',
-        'VOICE_RECORDING'
-    ));
-
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS FOR DOCUMENTATION
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE parental_consent_links IS 
 'Secure links sent to parents for COPPA consent. Links expire after configurable period (default 72 hours).';

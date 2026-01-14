@@ -1,9 +1,9 @@
 -- Migration: 0001_policy_documents
 -- Description: Policy engine tables for global and tenant-specific configuration
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- POLICY DOCUMENTS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS policy_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -66,9 +66,9 @@ CREATE INDEX IF NOT EXISTS idx_policy_documents_tenant
 CREATE INDEX IF NOT EXISTS idx_policy_documents_version_history 
     ON policy_documents(scope_type, tenant_id, version DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- POLICY AUDIT LOG
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS policy_audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,9 +101,9 @@ CREATE INDEX IF NOT EXISTS idx_policy_audit_logs_document
 CREATE INDEX IF NOT EXISTS idx_policy_audit_logs_user 
     ON policy_audit_logs(performed_by_user_id, created_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DEFAULT GLOBAL POLICY
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Insert default global policy if none exists
 INSERT INTO policy_documents (
@@ -166,9 +166,9 @@ WHERE NOT EXISTS (
     SELECT 1 FROM policy_documents WHERE scope_type = 'GLOBAL' AND is_active = true
 );
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE policy_documents IS 
 'Stores versioned policy configurations for global platform defaults and tenant-specific overrides. Only one active policy per scope/tenant.';

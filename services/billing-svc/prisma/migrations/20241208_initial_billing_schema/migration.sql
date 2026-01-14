@@ -1,6 +1,6 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- BILLING SERVICE - INITIAL MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Creates the billing & subscription data model for the Aivo platform.
 --
@@ -10,14 +10,14 @@
 --   - Payment provider abstraction (Stripe, manual invoice, etc.)
 --   - Trials, proration, and invoice management
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Type of billing account
 CREATE TYPE billing_account_type AS ENUM (
@@ -65,13 +65,13 @@ CREATE TYPE invoice_status AS ENUM (
   'UNCOLLECTIBLE'  -- Payment failed, written off
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- billing_accounts
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- A billing account represents a paying entity - either a parent or a district.
 
 CREATE TABLE billing_accounts (
@@ -98,9 +98,9 @@ COMMENT ON COLUMN billing_accounts.tenant_id IS 'FK to tenants table (enforced a
 COMMENT ON COLUMN billing_accounts.owner_user_id IS 'FK to users table for parent accounts';
 COMMENT ON COLUMN billing_accounts.provider_customer_id IS 'External customer ID in payment provider';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- plans
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Plans define available products and pricing.
 
 CREATE TABLE plans (
@@ -126,9 +126,9 @@ COMMENT ON COLUMN plans.sku IS 'Unique product identifier';
 COMMENT ON COLUMN plans.unit_price_cents IS 'Price per unit (learner/seat) per billing period';
 COMMENT ON COLUMN plans.metadata_json IS 'Features, limits, modules included';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- subscriptions
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Active or historical subscriptions linking accounts to plans.
 
 CREATE TABLE subscriptions (
@@ -161,9 +161,9 @@ COMMENT ON COLUMN subscriptions.trial_start_at IS 'Start of trial period (null i
 COMMENT ON COLUMN subscriptions.trial_end_at IS 'End of trial period - triggers conversion or expiration';
 COMMENT ON COLUMN subscriptions.cancel_at_period_end IS 'If true, subscription ends at current_period_end';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- subscription_items
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Line items within a subscription (e.g., base + multiple add-ons).
 
 CREATE TABLE subscription_items (
@@ -185,9 +185,9 @@ CREATE INDEX idx_subscription_items_learner ON subscription_items(learner_id) WH
 COMMENT ON TABLE subscription_items IS 'Individual items within a subscription';
 COMMENT ON COLUMN subscription_items.learner_id IS 'FK to learners table - tracks which child has which module';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- billing_instruments
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Payment methods (tokenized - no raw card data stored).
 
 CREATE TABLE billing_instruments (
@@ -211,9 +211,9 @@ CREATE INDEX idx_billing_instruments_provider ON billing_instruments(provider_pa
 COMMENT ON TABLE billing_instruments IS 'Stored payment methods (tokenized references only)';
 COMMENT ON COLUMN billing_instruments.provider_payment_method_id IS 'Payment method ID in payment provider';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- invoices
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Invoice records for charges and payments.
 
 CREATE TABLE invoices (
@@ -245,9 +245,9 @@ COMMENT ON TABLE invoices IS 'Billing invoices';
 COMMENT ON COLUMN invoices.amount_due_cents IS 'Total amount due in cents';
 COMMENT ON COLUMN invoices.metadata_json IS 'Proration details, adjustments, credits';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- invoice_line_items
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Individual line items on invoices.
 
 CREATE TABLE invoice_line_items (
@@ -271,9 +271,9 @@ COMMENT ON TABLE invoice_line_items IS 'Line items on invoices';
 COMMENT ON COLUMN invoice_line_items.line_item_type IS 'Type: subscription, proration, credit, one_time';
 COMMENT ON COLUMN invoice_line_items.metadata_json IS 'Proration details, period adjustments';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- usage_records
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Usage tracking for metered billing (future).
 
 CREATE TABLE usage_records (
@@ -293,9 +293,9 @@ CREATE INDEX idx_usage_records_invoiced ON usage_records(invoiced) WHERE invoice
 
 COMMENT ON TABLE usage_records IS 'Metered usage for future billing models';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGERS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -330,9 +330,9 @@ CREATE TRIGGER update_invoices_updated_at
   BEFORE UPDATE ON invoices
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEED DATA - Default Plans
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 INSERT INTO plans (sku, plan_type, name, description, unit_price_cents, billing_period, trial_days, metadata_json) VALUES
   -- Parent Plans

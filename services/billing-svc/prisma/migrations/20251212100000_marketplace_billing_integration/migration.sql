@@ -1,17 +1,17 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE BILLING INTEGRATION MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Adds marketplace billing support to the billing service:
 -- - Marketplace SKU products
 -- - Marketplace entitlements
 -- - Vendor revenue tracking view
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEED: Marketplace Product Category and Sample SKUs
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Add marketplace category to products if not exists
 -- (Products are managed by application code, this is just for reference)
@@ -22,9 +22,9 @@
 -- MPT_TOOL_MATH_GAME        - Embedded tool: Math game integration
 -- MPT_TOOL_READING_HELPER   - Embedded tool: Reading assistance tool
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLE: marketplace_entitlements
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Entitlements specific to marketplace items. Similar to contract_entitlements
 -- but tracks marketplace item installation entitlements.
@@ -75,9 +75,9 @@ COMMENT ON TABLE marketplace_entitlements IS 'Entitlements for marketplace items
 COMMENT ON COLUMN marketplace_entitlements.marketplace_item_id IS 'FK to marketplace-svc marketplace_items';
 COMMENT ON COLUMN marketplace_entitlements.marketplace_installation_id IS 'FK to marketplace-svc marketplace_installations';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- VIEW: vw_vendor_revenue
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Revenue reporting view for vendor payouts.
 -- Aggregates paid invoice line items by vendor SKU and period.
@@ -169,9 +169,9 @@ ORDER BY
 
 COMMENT ON VIEW vw_vendor_revenue IS 'Revenue report by vendor/SKU/period for vendor payouts';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLE: vendor_payouts
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Tracks vendor payout records for reconciliation and audit.
 --
@@ -214,9 +214,9 @@ CREATE INDEX IF NOT EXISTS idx_vendor_payouts_status ON vendor_payouts(status, c
 
 COMMENT ON TABLE vendor_payouts IS 'Vendor payout records for revenue sharing';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- Trigger: Update updated_at timestamp
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION update_marketplace_entitlements_updated_at()
 RETURNS TRIGGER AS $$

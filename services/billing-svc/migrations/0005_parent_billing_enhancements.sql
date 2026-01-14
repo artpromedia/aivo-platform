@@ -2,9 +2,9 @@
 -- Adds: limitedMode, Coupon, TrialRecord, SubscriptionAnalyticsDaily tables
 -- and enhances existing subscription/invoice models
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- SUBSCRIPTION ENHANCEMENTS
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 -- Add limitedMode flag to subscriptions for dunning enforcement
 ALTER TABLE subscriptions
@@ -23,9 +23,9 @@ CREATE INDEX IF NOT EXISTS idx_subscription_items_stripe
 CREATE INDEX IF NOT EXISTS idx_subscription_items_trial
     ON subscription_items(trial_ends_at) WHERE trial_ends_at IS NOT NULL;
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- TRIAL TRACKING TABLE
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- Tracks trial usage per tenant/learner/SKU to prevent multiple free trials
 
 CREATE TABLE IF NOT EXISTS trial_records (
@@ -60,9 +60,9 @@ CREATE INDEX IF NOT EXISTS idx_trial_records_ends_at
 COMMENT ON TABLE trial_records IS 
 'Tracks 30-day free trial usage per tenant/learner/SKU combination. Prevents multiple free trials for same SKU.';
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- COUPON TABLE
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 CREATE TABLE IF NOT EXISTS coupons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,9 +118,9 @@ CREATE INDEX IF NOT EXISTS idx_coupons_stripe ON coupons(stripe_coupon_id) WHERE
 COMMENT ON TABLE coupons IS 
 'Discount coupons for parent subscriptions. Can be global or tenant-specific. Synced with Stripe coupons.';
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- COUPON REDEMPTIONS TABLE
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 CREATE TABLE IF NOT EXISTS coupon_redemptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -147,18 +147,18 @@ CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_subscription ON coupon_redempt
 COMMENT ON TABLE coupon_redemptions IS 
 'Tracks each coupon redemption for audit and analytics purposes.';
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- INVOICE ENHANCEMENTS
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 -- Add hosted invoice URL and PDF URL for Stripe
 ALTER TABLE invoices
     ADD COLUMN IF NOT EXISTS hosted_invoice_url TEXT NULL,
     ADD COLUMN IF NOT EXISTS invoice_pdf_url TEXT NULL;
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- SUBSCRIPTION ANALYTICS TABLE
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 CREATE TABLE IF NOT EXISTS subscription_analytics_daily (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -195,9 +195,9 @@ CREATE INDEX IF NOT EXISTS idx_analytics_daily_tenant ON subscription_analytics_
 COMMENT ON TABLE subscription_analytics_daily IS 
 'Daily aggregated subscription analytics for MRR tracking, churn analysis, and reporting.';
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- DUNNING TRACKING TABLE
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 CREATE TABLE IF NOT EXISTS dunning_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -233,9 +233,9 @@ CREATE INDEX IF NOT EXISTS idx_dunning_unresolved ON dunning_records(resolved_at
 COMMENT ON TABLE dunning_records IS 
 'Tracks dunning progression for failed payments. Used for notification sequencing and limited mode enforcement.';
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- BILLING EVENT (IDEMPOTENCY) ENHANCEMENTS
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 -- Add more fields to payment_events for better tracking
 ALTER TABLE payment_events
@@ -246,9 +246,9 @@ ALTER TABLE payment_events
 CREATE INDEX IF NOT EXISTS idx_payment_events_tenant ON payment_events(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_payment_events_handled ON payment_events(handled_at);
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- TRIGGER: Auto-update timestamps
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -274,9 +274,9 @@ CREATE TRIGGER trg_dunning_records_updated_at
     BEFORE UPDATE ON dunning_records
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- TRIGGER: Increment coupon redemption count
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 
 CREATE OR REPLACE FUNCTION increment_coupon_redemption()
 RETURNS TRIGGER AS $$

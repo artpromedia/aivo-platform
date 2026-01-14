@@ -2,9 +2,9 @@
 -- Implements: GDPR Data Deletion, Per-Learner Consent, Real-time Dashboard,
 --             Screen Time Enforcement, BrainMemory, Tool Execution Audit
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- CONSENT TEMPLATES (Per-Learner Consent)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS consent_templates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -25,9 +25,9 @@ INSERT INTO consent_templates (name, description, consents, is_default) VALUES
 ('Standard', 'Standard learning experience with AI features', ARRAY['DATA_PROCESSING', 'BASELINE_ASSESSMENT', 'AI_TUTOR', 'AI_PERSONALIZATION'], FALSE),
 ('Full Experience', 'All features including research and data sharing', ARRAY['DATA_PROCESSING', 'BASELINE_ASSESSMENT', 'AI_TUTOR', 'AI_PERSONALIZATION', 'VOICE_RECORDING', 'RESEARCH', 'THIRD_PARTY_SHARING'], FALSE);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- SCREEN TIME POLICIES
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS screen_time_policies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,9 +53,9 @@ CREATE INDEX idx_screen_time_policies_tenant ON screen_time_policies(tenant_id);
 CREATE INDEX idx_screen_time_policies_scope ON screen_time_policies(scope, scope_id);
 CREATE INDEX idx_screen_time_policies_active ON screen_time_policies(tenant_id, is_active) WHERE is_active = TRUE;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- SCREEN TIME EVENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS screen_time_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -71,9 +71,9 @@ CREATE TABLE IF NOT EXISTS screen_time_events (
 CREATE INDEX idx_screen_time_events_learner ON screen_time_events(tenant_id, learner_id, created_at DESC);
 CREATE INDEX idx_screen_time_events_type ON screen_time_events(event_type, created_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- SCREEN TIME OVERRIDES (Parent Overrides)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS screen_time_overrides (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -91,9 +91,9 @@ CREATE TABLE IF NOT EXISTS screen_time_overrides (
 
 CREATE INDEX idx_screen_time_overrides_learner ON screen_time_overrides(tenant_id, learner_id, expires_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- EPISODIC MEMORIES (BrainMemory)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS episodic_memories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -120,9 +120,9 @@ CREATE INDEX idx_episodic_memories_importance ON episodic_memories(learner_id, i
 CREATE INDEX idx_episodic_memories_event_type ON episodic_memories(learner_id, event_type, timestamp DESC);
 CREATE INDEX idx_episodic_memories_context ON episodic_memories USING GIN (context);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- SEMANTIC FACTS (BrainMemory)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS semantic_facts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -148,9 +148,9 @@ CREATE INDEX idx_semantic_facts_subject ON semantic_facts(learner_id, subject, p
 CREATE INDEX idx_semantic_facts_category ON semantic_facts(learner_id, category);
 CREATE UNIQUE INDEX idx_semantic_facts_unique ON semantic_facts(tenant_id, learner_id, subject, predicate);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- TOOL EXECUTION AUDIT
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS tool_execution_audit (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -174,9 +174,9 @@ CREATE INDEX idx_tool_audit_user ON tool_execution_audit(user_id, created_at DES
 CREATE INDEX idx_tool_audit_tool ON tool_execution_audit(tool_id, created_at DESC);
 CREATE INDEX idx_tool_audit_action ON tool_execution_audit(action, created_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- LEARNER MONITORING SESSIONS (RealTimeProactiveAgent)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS learner_monitoring_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -196,9 +196,9 @@ CREATE TABLE IF NOT EXISTS learner_monitoring_sessions (
 CREATE INDEX idx_monitoring_sessions_learner ON learner_monitoring_sessions(tenant_id, learner_id, started_at DESC);
 CREATE INDEX idx_monitoring_sessions_session ON learner_monitoring_sessions(session_id);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- GOAL PLANS (GoalPlannerAgent)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS goal_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -220,9 +220,9 @@ CREATE TABLE IF NOT EXISTS goal_plans (
 CREATE INDEX idx_goal_plans_learner ON goal_plans(tenant_id, learner_id, created_at DESC);
 CREATE INDEX idx_goal_plans_status ON goal_plans(learner_id, status) WHERE status = 'ACTIVE';
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- DSR DELETION JOBS (GDPR Orchestrator)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS dsr_deletion_jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -243,9 +243,9 @@ CREATE TABLE IF NOT EXISTS dsr_deletion_jobs (
 CREATE INDEX idx_dsr_deletion_jobs_request ON dsr_deletion_jobs(dsr_request_id);
 CREATE INDEX idx_dsr_deletion_jobs_status ON dsr_deletion_jobs(status, created_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- ADD TRIGGER FOR UPDATED_AT
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -271,9 +271,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS FOR DOCUMENTATION
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE consent_templates IS 'Pre-defined consent bundles for quick parent setup';
 COMMENT ON TABLE screen_time_policies IS 'Configurable screen time limits at tenant/school/class/learner levels';

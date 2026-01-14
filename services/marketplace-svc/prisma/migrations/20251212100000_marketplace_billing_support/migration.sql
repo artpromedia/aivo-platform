@@ -1,14 +1,14 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE BILLING SUPPORT MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Extends marketplace items with billing metadata and revenue sharing.
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUM: Marketplace Billing Model
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TYPE marketplace_billing_model AS ENUM (
   'FREE',          -- No charge, included with core license
@@ -16,9 +16,9 @@ CREATE TYPE marketplace_billing_model AS ENUM (
   'PER_SEAT'       -- Per-seat/per-learner pricing
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ALTER: marketplace_items - Add billing metadata
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 ALTER TABLE marketplace_items
   ADD COLUMN IF NOT EXISTS is_free BOOLEAN NOT NULL DEFAULT true,
@@ -40,9 +40,9 @@ COMMENT ON COLUMN marketplace_items.billing_model IS 'Billing model: FREE, TENAN
 COMMENT ON COLUMN marketplace_items.sku IS 'Reference to billing SKU in billing-svc (e.g., MPK_FRACTIONS_G3_5)';
 COMMENT ON COLUMN marketplace_items.billing_metadata_json IS 'Additional billing config: { "trialDays": 30, "minSeats": 10 }';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLE: vendor_revenue_shares
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 --
 -- Revenue sharing configuration for third-party vendors.
 -- Tracks what percentage of revenue goes to the vendor for each SKU.
@@ -83,9 +83,9 @@ COMMENT ON COLUMN vendor_revenue_shares.share_percent IS 'Vendor share percentag
 COMMENT ON COLUMN vendor_revenue_shares.effective_start_date IS 'When this share agreement becomes effective';
 COMMENT ON COLUMN vendor_revenue_shares.effective_end_date IS 'When this share agreement ends (NULL = ongoing)';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ALTER: marketplace_installations - Add billing linkage
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 ALTER TABLE marketplace_installations
   ADD COLUMN IF NOT EXISTS contract_line_item_id UUID,
@@ -110,9 +110,9 @@ COMMENT ON COLUMN marketplace_installations.billing_ended_at IS 'When billing en
 COMMENT ON COLUMN marketplace_installations.seat_quantity IS 'Number of seats for PER_SEAT billing model';
 COMMENT ON COLUMN marketplace_installations.billing_metadata_json IS 'Additional billing info: { "priceAtInstall": 1000, "contractId": "..." }';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- Trigger: Update updated_at timestamp
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION update_vendor_revenue_shares_updated_at()
 RETURNS TRIGGER AS $$

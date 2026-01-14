@@ -15,9 +15,9 @@
 -- - Virtual Brain: Consumes SKILL_MASTERY_UPDATED events
 -- - Analytics: Aggregates all event types for dashboards
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Session type enum - represents the primary purpose of the activity block
 CREATE TYPE session_type AS ENUM (
@@ -85,9 +85,9 @@ CREATE TYPE session_event_type AS ENUM (
 
 COMMENT ON TYPE session_event_type IS 'Discrete event types within sessions. Organized by category for analytics.';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Sessions table - top-level container for learner activity
 CREATE TABLE sessions (
@@ -148,9 +148,9 @@ COMMENT ON COLUMN session_events.tenant_id IS 'Denormalized from session for eff
 COMMENT ON COLUMN session_events.learner_id IS 'Denormalized from session for efficient learner-centric queries.';
 COMMENT ON COLUMN session_events.event_time IS 'Actual occurrence time (may differ from created_at for batch inserts).';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- INDEXES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Sessions indexes
 CREATE INDEX idx_sessions_learner_recent ON sessions (tenant_id, learner_id, started_at DESC);
@@ -176,9 +176,9 @@ COMMENT ON INDEX idx_events_type_recent IS 'Filter events by type for specific a
 CREATE INDEX idx_sessions_metadata ON sessions USING GIN (metadata_json) WHERE metadata_json IS NOT NULL;
 CREATE INDEX idx_events_metadata ON session_events USING GIN (metadata_json) WHERE metadata_json IS NOT NULL;
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGERS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Auto-update updated_at on sessions
 CREATE OR REPLACE FUNCTION update_sessions_updated_at()

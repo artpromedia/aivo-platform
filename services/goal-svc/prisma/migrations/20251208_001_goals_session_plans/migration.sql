@@ -16,9 +16,9 @@
 -- - Sessions: Session plans can be linked to session records
 -- - Analytics: Progress notes feed into goal achievement dashboards
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Domain enum for goal categorization
 CREATE TYPE goal_domain AS ENUM (
@@ -76,9 +76,9 @@ CREATE TYPE session_plan_status AS ENUM (
 
 COMMENT ON TYPE session_plan_status IS 'Lifecycle status of a session plan.';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Goals table - high-level outcomes for learners
 CREATE TABLE goals (
@@ -237,9 +237,9 @@ COMMENT ON COLUMN progress_notes.session_id IS 'FK to sessions table (session-sv
 COMMENT ON COLUMN progress_notes.rating IS 'Performance rating: 0=Not Attempted, 1=Emerging, 2=Developing, 3=Proficient, 4=Advanced.';
 COMMENT ON COLUMN progress_notes.evidence_uri IS 'URL to work sample, recording, or other evidence.';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- INDEXES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Goals indexes
 CREATE INDEX idx_goals_tenant_learner_status ON goals(tenant_id, learner_id, status);
@@ -270,9 +270,9 @@ CREATE INDEX idx_progress_notes_goal ON progress_notes(goal_id) WHERE goal_id IS
 CREATE INDEX idx_progress_notes_session_plan ON progress_notes(session_plan_id) WHERE session_plan_id IS NOT NULL;
 CREATE INDEX idx_progress_notes_created_by ON progress_notes(created_by_user_id);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGERS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Function to auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -304,9 +304,9 @@ CREATE TRIGGER progress_notes_updated_at
   BEFORE UPDATE ON progress_notes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- COMMENTS ON RELATIONSHIPS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 COMMENT ON INDEX idx_goals_skill_id IS 'Enables efficient lookup of goals by skill for Virtual Brain integration.';
 COMMENT ON INDEX idx_session_plans_session_id IS 'Links session plans to executed sessions in session-svc.';

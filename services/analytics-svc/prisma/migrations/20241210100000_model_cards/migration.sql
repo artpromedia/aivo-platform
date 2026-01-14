@@ -2,9 +2,9 @@
 -- Created: 2024-12-10
 -- Description: Stores model cards with capabilities, limitations, and safety considerations
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUM: AI Model Provider
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TYPE model_provider AS ENUM (
   'OPENAI',
@@ -16,9 +16,9 @@ CREATE TYPE model_provider AS ENUM (
   'COHERE'
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLE: model_cards
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE model_cards (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,10 +58,10 @@ CREATE INDEX idx_model_cards_provider ON model_cards(provider);
 CREATE INDEX idx_model_cards_model_key ON model_cards(model_key);
 CREATE INDEX idx_model_cards_last_reviewed ON model_cards(last_reviewed_at DESC);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLE: tenant_model_assignments
 -- Maps which models are available to each tenant based on their features
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE tenant_model_assignments (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,9 +81,9 @@ CREATE INDEX idx_tenant_model_assignments_tenant ON tenant_model_assignments(ten
 CREATE INDEX idx_tenant_model_assignments_model ON tenant_model_assignments(model_card_id);
 CREATE INDEX idx_tenant_model_assignments_active ON tenant_model_assignments(tenant_id, is_active) WHERE is_active = true;
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEED DATA: Initial Model Cards
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 INSERT INTO model_cards (
   model_key,
@@ -106,26 +106,26 @@ INSERT INTO model_cards (
   'Aivo Tutor',
   'An AI-powered tutoring assistant designed to help K-12 learners understand concepts through guided questions and scaffolded explanations. The model adapts its responses to the learner''s grade level and provides encouragement while maintaining educational best practices.',
   'Best for:
-• Providing step-by-step explanations of concepts
-• Answering curriculum-aligned questions
-• Offering hints and guided practice
-• Explaining mistakes in a supportive way
-• Adapting language to different grade levels',
+- Providing step-by-step explanations of concepts
+- Answering curriculum-aligned questions
+- Offering hints and guided practice
+- Explaining mistakes in a supportive way
+- Adapting language to different grade levels',
   'Not appropriate for:
-• Medical, legal, or professional advice
-• Grading or formal assessment decisions
-• Replacing teacher judgment on student progress
-• Handling sensitive student disclosures
-• Making placement or intervention recommendations
+- Medical, legal, or professional advice
+- Grading or formal assessment decisions
+- Replacing teacher judgment on student progress
+- Handling sensitive student disclosures
+- Making placement or intervention recommendations
 
 Important: AI tutoring is a supplement to, not a replacement for, human instruction. Responses may occasionally contain errors or oversimplifications.',
   'Safety measures in place:
-• Content filtered for age-appropriateness
-• Guardrails prevent discussion of harmful topics
-• Responses audited for bias and accuracy
-• Human review of flagged interactions
-• Automatic escalation for concerning content
-• No personal data retained after session
+- Content filtered for age-appropriateness
+- Guardrails prevent discussion of harmful topics
+- Responses audited for bias and accuracy
+- Human review of flagged interactions
+- Automatic escalation for concerning content
+- No personal data retained after session
 
 Disclaimer: This is not a diagnostic tool and should not be used as a substitute for clinical evaluation or professional educational assessment.',
   'Text (student questions, responses, homework problems)',
@@ -142,25 +142,25 @@ Disclaimer: This is not a diagnostic tool and should not be used as a substitute
   'Aivo Baseline Assessment',
   'Analyzes learner responses during baseline assessments to determine starting skill levels. Uses natural language understanding to interpret free-form responses and compare them against grade-level expectations.',
   'Best for:
-• Analyzing written responses for skill demonstration
-• Identifying prerequisite knowledge gaps
-• Suggesting appropriate starting points
-• Processing diverse response formats
-• Supporting initial learner placement',
+- Analyzing written responses for skill demonstration
+- Identifying prerequisite knowledge gaps
+- Suggesting appropriate starting points
+- Processing diverse response formats
+- Supporting initial learner placement',
   'Not appropriate for:
-• Formal diagnostic assessment
-• Special education eligibility decisions
-• High-stakes placement decisions
-• Clinical learning disability identification
-• Summative grading
+- Formal diagnostic assessment
+- Special education eligibility decisions
+- High-stakes placement decisions
+- Clinical learning disability identification
+- Summative grading
 
 Important: Baseline results are preliminary indicators and should be validated by educators. Results may vary based on factors like test-taking conditions and language proficiency.',
   'Safety measures in place:
-• Results presented as suggestions, not determinations
-• Educator review required before finalizing placement
-• Confidence scores indicate reliability
-• Regular accuracy audits against human grading
-• Bias testing across demographic groups
+- Results presented as suggestions, not determinations
+- Educator review required before finalizing placement
+- Confidence scores indicate reliability
+- Regular accuracy audits against human grading
+- Bias testing across demographic groups
 
 Disclaimer: AI-generated baselines are not a substitute for professional educational assessment. Always consult with qualified educators for placement decisions.',
   'Text (student responses, answer selections)',
@@ -177,25 +177,25 @@ Disclaimer: AI-generated baselines are not a substitute for professional educati
   'Aivo Focus Assistant',
   'A rule-based system enhanced with machine learning that monitors learner engagement patterns and suggests appropriate breaks or interventions to maintain optimal focus during learning sessions.',
   'Best for:
-• Detecting signs of learner disengagement
-• Suggesting timely breaks
-• Adjusting session pacing
-• Providing focus-restoration activities
-• Tracking attention patterns over time',
+- Detecting signs of learner disengagement
+- Suggesting timely breaks
+- Adjusting session pacing
+- Providing focus-restoration activities
+- Tracking attention patterns over time',
   'Not appropriate for:
-• Diagnosing attention disorders
-• Clinical ADHD assessment
-• Medical recommendations
-• Behavioral intervention planning
-• Special education decisions
+- Diagnosing attention disorders
+- Clinical ADHD assessment
+- Medical recommendations
+- Behavioral intervention planning
+- Special education decisions
 
 Important: Focus patterns vary naturally among learners. Detected attention patterns should not be interpreted as indicators of learning disabilities or behavioral issues.',
   'Safety measures in place:
-• No diagnostic labels applied to learners
-• Break suggestions are optional, not mandatory
-• Parents can adjust sensitivity settings
-• Data used only for session optimization
-• No sharing of focus data with third parties
+- No diagnostic labels applied to learners
+- Break suggestions are optional, not mandatory
+- Parents can adjust sensitivity settings
+- Data used only for session optimization
+- No sharing of focus data with third parties
 
 Disclaimer: This system identifies engagement patterns, not attention disorders. It is not a diagnostic tool and should not be used as evidence for clinical evaluation.',
   'Behavioral signals (response times, interaction patterns, session duration)',
@@ -212,25 +212,25 @@ Disclaimer: This system identifies engagement patterns, not attention disorders.
   'Aivo Learning Path Recommender',
   'Uses collaborative filtering and curriculum mapping to suggest appropriate learning activities based on demonstrated skills, learning goals, and peer patterns while respecting configured difficulty bounds.',
   'Best for:
-• Selecting next activities in learning paths
-• Balancing challenge and success
-• Personalizing content sequence
-• Identifying skill-building opportunities
-• Adapting to learner preferences',
+- Selecting next activities in learning paths
+- Balancing challenge and success
+- Personalizing content sequence
+- Identifying skill-building opportunities
+- Adapting to learner preferences',
   'Not appropriate for:
-• Curriculum design decisions
-• Grade-level promotions
-• Special accommodations decisions
-• Comparing learners to peers
-• Modifying IEP goals
+- Curriculum design decisions
+- Grade-level promotions
+- Special accommodations decisions
+- Comparing learners to peers
+- Modifying IEP goals
 
 Important: Recommendations optimize for engagement and skill building, not standardized test preparation. Teacher judgment should guide major curriculum decisions.',
   'Safety measures in place:
-• Difficulty bounds respect educator settings
-• No competitive comparisons between learners
-• Recommendations explainable to parents
-• Regular equity audits on recommendation patterns
-• Teacher override always available
+- Difficulty bounds respect educator settings
+- No competitive comparisons between learners
+- Recommendations explainable to parents
+- Regular equity audits on recommendation patterns
+- Teacher override always available
 
 Disclaimer: Automated recommendations should be reviewed in context of each learner''s individual needs and circumstances.',
   'Skill profiles, learning history, content metadata',
@@ -247,25 +247,25 @@ Disclaimer: Automated recommendations should be reviewed in context of each lear
   'Aivo Homework Vision',
   'Uses optical character recognition and vision AI to extract text and mathematical notation from uploaded homework images, enabling the Homework Helper feature to assist with assigned problems.',
   'Best for:
-• Extracting text from handwritten homework
-• Recognizing mathematical notation
-• Parsing problem structures
-• Identifying question types
-• Processing diverse image formats',
+- Extracting text from handwritten homework
+- Recognizing mathematical notation
+- Parsing problem structures
+- Identifying question types
+- Processing diverse image formats',
   'Not appropriate for:
-• Grading homework quality
-• Assessing handwriting
-• Reading illegible content
-• Processing non-educational content
-• Bypassing academic integrity
+- Grading homework quality
+- Assessing handwriting
+- Reading illegible content
+- Processing non-educational content
+- Bypassing academic integrity
 
 Important: Parsing accuracy depends on image quality and handwriting clarity. Some content may require manual verification.',
   'Safety measures in place:
-• Images processed securely and not retained
-• No analysis of non-homework content
-• Parsing failures routed to safe fallback
-• Content filtered for appropriateness
-• Student identification information redacted
+- Images processed securely and not retained
+- No analysis of non-homework content
+- Parsing failures routed to safe fallback
+- Content filtered for appropriateness
+- Student identification information redacted
 
 Disclaimer: Parsed content should be verified for accuracy, especially for handwritten or complex mathematical notation.',
   'Images (photos of homework, worksheets, textbooks)',
@@ -282,26 +282,26 @@ Disclaimer: Parsed content should be verified for accuracy, especially for handw
   'Aivo SEL Companion',
   'Provides age-appropriate social-emotional learning activities and reflections. Uses carefully crafted prompts to guide learners through SEL competencies while maintaining appropriate boundaries.',
   'Best for:
-• Guided SEL activities and reflections
-• Age-appropriate emotional vocabulary
-• Positive coping strategy suggestions
-• Self-awareness exercises
-• Perspective-taking activities',
+- Guided SEL activities and reflections
+- Age-appropriate emotional vocabulary
+- Positive coping strategy suggestions
+- Self-awareness exercises
+- Perspective-taking activities',
   'Not appropriate for:
-• Mental health counseling
-• Crisis intervention
-• Trauma processing
-• Behavioral therapy
-• Replacing school counselors
+- Mental health counseling
+- Crisis intervention
+- Trauma processing
+- Behavioral therapy
+- Replacing school counselors
 
 Important: SEL activities complement, but do not replace, trained counselors and mental health professionals. Any concerning disclosures are flagged for human review.',
   'Safety measures in place:
-• Strict content boundaries enforced
-• Automatic escalation for concerning content
-• No therapeutic relationship implied
-• Activities vetted by SEL experts
-• Parent visibility into SEL topics
-• Crisis resources provided when appropriate
+- Strict content boundaries enforced
+- Automatic escalation for concerning content
+- No therapeutic relationship implied
+- Activities vetted by SEL experts
+- Parent visibility into SEL topics
+- Crisis resources provided when appropriate
 
 Disclaimer: This is an educational tool, not a mental health service. If a learner is in crisis, please contact a qualified professional or crisis hotline.',
   'Text (reflections, activity responses)',

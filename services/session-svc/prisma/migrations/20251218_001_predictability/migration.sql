@@ -1,9 +1,9 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ND-2.2: Predictability Enforcement in Sessions
 -- Migration: Add predictability preferences, routines, and session structure
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ─── ENUMS ────────────────────────────────────────────────────────────────────
+-- --- ENUMS --------------------------------------------------------------------
 
 -- Routine types for predictable session structure
 CREATE TYPE "routine_type" AS ENUM (
@@ -31,7 +31,7 @@ CREATE TYPE "predictability_event_type" AS ENUM (
   'PREDICTABILITY_RESTORED'
 );
 
--- ─── TABLES ───────────────────────────────────────────────────────────────────
+-- --- TABLES -------------------------------------------------------------------
 
 -- Predictability preferences per learner
 CREATE TABLE "predictability_preferences" (
@@ -197,7 +197,7 @@ CREATE TABLE "session_plans" (
 CREATE INDEX "idx_session_plans_learner" ON "session_plans"("learner_id");
 CREATE INDEX "idx_session_plans_tenant" ON "session_plans"("tenant_id");
 
--- ─── TRIGGER FOR updated_at ───────────────────────────────────────────────────
+-- --- TRIGGER FOR updated_at ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_predictability_updated_at()
 RETURNS TRIGGER AS $$
@@ -223,7 +223,7 @@ CREATE TRIGGER trg_session_plans_updated_at
   BEFORE UPDATE ON "session_plans"
   FOR EACH ROW EXECUTE FUNCTION update_predictability_updated_at();
 
--- ─── COMMENTS ─────────────────────────────────────────────────────────────────
+-- --- COMMENTS -----------------------------------------------------------------
 
 COMMENT ON TABLE "predictability_preferences" IS 'ND-2.2: Learner preferences for predictable session flow';
 COMMENT ON TABLE "session_routines" IS 'ND-2.2: Reusable session routines (welcome, goodbye, breaks, etc.)';

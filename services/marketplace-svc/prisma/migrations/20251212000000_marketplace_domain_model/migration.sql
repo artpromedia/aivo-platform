@@ -1,6 +1,6 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE SERVICE - INITIAL MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- Migration: 20251212000000_marketplace_domain_model
 -- 
 -- Creates the core marketplace domain model:
@@ -13,14 +13,14 @@
 --   - marketplace_reviews
 --   - marketplace_collections
 --   - Audit/transition tables
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TYPE vendor_type AS ENUM ('AIVO', 'THIRD_PARTY');
 
@@ -61,9 +61,9 @@ CREATE TYPE safety_certification AS ENUM (
     'AIVO_CERTIFIED', 'VENDOR_ATTESTED', 'PENDING_REVIEW', 'NOT_REVIEWED'
 );
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- VENDORS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE vendors (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -89,9 +89,9 @@ COMMENT ON COLUMN vendors.slug IS 'URL-friendly unique identifier';
 COMMENT ON COLUMN vendors.type IS 'AIVO for first-party, THIRD_PARTY for external';
 COMMENT ON COLUMN vendors.is_verified IS 'Whether vendor has been verified by Aivo';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE ITEMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE marketplace_items (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -136,9 +136,9 @@ COMMENT ON COLUMN marketplace_items.grade_bands IS 'Array of applicable grade ba
 COMMENT ON COLUMN marketplace_items.pricing_model IS 'How the item is priced';
 COMMENT ON COLUMN marketplace_items.safety_cert IS 'Safety review/certification status';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE ITEM VERSIONS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE marketplace_item_versions (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -167,9 +167,9 @@ COMMENT ON TABLE marketplace_item_versions IS 'Versioned releases with review wo
 COMMENT ON COLUMN marketplace_item_versions.version IS 'Semantic version string (e.g., 1.0.0)';
 COMMENT ON COLUMN marketplace_item_versions.status IS 'Review workflow status';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- VERSION STATUS TRANSITIONS (Audit Trail)
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE version_status_transitions (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -185,9 +185,9 @@ CREATE INDEX idx_version_transitions_version ON version_status_transitions(versi
 
 COMMENT ON TABLE version_status_transitions IS 'Audit trail for version review workflow';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- CONTENT PACK ITEMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE content_pack_items (
     id                              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -209,9 +209,9 @@ COMMENT ON TABLE content_pack_items IS 'Learning Objects included in a content p
 COMMENT ON COLUMN content_pack_items.lo_version_id IS 'Reference to LO version in content-svc';
 COMMENT ON COLUMN content_pack_items.position IS 'Display order within the pack';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- EMBEDDED TOOL CONFIGS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE embedded_tool_configs (
     id                              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -238,9 +238,9 @@ COMMENT ON COLUMN embedded_tool_configs.launch_type IS 'How the tool is launched
 COMMENT ON COLUMN embedded_tool_configs.required_scopes IS 'Data access scopes required by the tool';
 COMMENT ON COLUMN embedded_tool_configs.config_schema_json IS 'JSON Schema for tenant-customizable settings';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE INSTALLATIONS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE marketplace_installations (
     id                              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -274,11 +274,11 @@ COMMENT ON TABLE marketplace_installations IS 'Item installations at tenant/scho
 COMMENT ON COLUMN marketplace_installations.tenant_id IS 'Always required - the owning tenant';
 COMMENT ON COLUMN marketplace_installations.school_id IS 'If set, installation is school-scoped';
 COMMENT ON COLUMN marketplace_installations.classroom_id IS 'If set, installation is classroom-scoped';
-COMMENT ON COLUMN marketplace_installations.status IS 'PENDING_APPROVAL → ACTIVE → DISABLED/REVOKED';
+COMMENT ON COLUMN marketplace_installations.status IS 'PENDING_APPROVAL -> ACTIVE -> DISABLED/REVOKED';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- INSTALLATION STATUS TRANSITIONS (Audit Trail)
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE installation_status_transitions (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -294,9 +294,9 @@ CREATE INDEX idx_installation_transitions ON installation_status_transitions(ins
 
 COMMENT ON TABLE installation_status_transitions IS 'Audit trail for installation approvals/changes';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE REVIEWS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE marketplace_reviews (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -322,9 +322,9 @@ CREATE INDEX idx_reviews_tenant ON marketplace_reviews(reviewer_tenant_id);
 COMMENT ON TABLE marketplace_reviews IS 'User reviews and ratings';
 COMMENT ON COLUMN marketplace_reviews.is_verified_install IS 'Whether reviewer has actually installed the item';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- MARKETPLACE COLLECTIONS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE marketplace_collections (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -358,9 +358,9 @@ CREATE INDEX idx_collection_items ON marketplace_collection_items(collection_id,
 
 COMMENT ON TABLE marketplace_collection_items IS 'Items within a curated collection';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGERS FOR UPDATED_AT
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION trigger_set_updated_at()
 RETURNS TRIGGER AS $$
@@ -398,9 +398,9 @@ CREATE TRIGGER set_marketplace_collections_updated_at
     BEFORE UPDATE ON marketplace_collections
     FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGER TO UPDATE TOTAL INSTALLS COUNT
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION update_marketplace_item_install_count()
 RETURNS TRIGGER AS $$
@@ -435,9 +435,9 @@ CREATE TRIGGER update_install_count
     AFTER INSERT OR UPDATE OR DELETE ON marketplace_installations
     FOR EACH ROW EXECUTE FUNCTION update_marketplace_item_install_count();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TRIGGER TO UPDATE AVERAGE RATING
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION update_marketplace_item_avg_rating()
 RETURNS TRIGGER AS $$
@@ -462,9 +462,9 @@ CREATE TRIGGER update_avg_rating
     AFTER INSERT OR UPDATE OR DELETE ON marketplace_reviews
     FOR EACH ROW EXECUTE FUNCTION update_marketplace_item_avg_rating();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEED DATA: AIVO AS DEFAULT VENDOR
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 INSERT INTO vendors (slug, name, type, contact_email, description, is_verified, is_active)
 VALUES (

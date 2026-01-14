@@ -1,14 +1,14 @@
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- EXPERIMENTATION WAREHOUSE TABLES
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- 
 -- Fact tables for experiment exposures and outcomes in the analytics warehouse.
 -- These tables enable experiment analysis alongside session and learning data.
 --
 
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- DIMENSION: EXPERIMENTS
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- 
 -- SCD Type 1 (no history) dimension for experiment metadata.
 --
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS dim_experiment (
 CREATE INDEX IF NOT EXISTS idx_dim_experiment_name ON dim_experiment(experiment_name);
 CREATE INDEX IF NOT EXISTS idx_dim_experiment_status ON dim_experiment(status);
 
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- DIMENSION: EXPERIMENT VARIANTS
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS dim_experiment_variant (
   variant_key SERIAL PRIMARY KEY,
@@ -50,9 +50,9 @@ CREATE TABLE IF NOT EXISTS dim_experiment_variant (
 
 CREATE INDEX IF NOT EXISTS idx_dim_variant_experiment ON dim_experiment_variant(experiment_key);
 
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- FACT: EXPERIMENT EXPOSURES
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- 
 -- Tracks when subjects were exposed to experimental variants.
 -- One row per exposure event (can have multiple per subject for same experiment).
@@ -87,9 +87,9 @@ CREATE INDEX IF NOT EXISTS idx_fact_exposures_tenant_date ON fact_experiment_exp
 CREATE INDEX IF NOT EXISTS idx_fact_exposures_learner_date ON fact_experiment_exposures(learner_key, date_key);
 CREATE INDEX IF NOT EXISTS idx_fact_exposures_feature ON fact_experiment_exposures(feature_area);
 
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- FACT: EXPERIMENT ASSIGNMENTS (SNAPSHOT)
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- 
 -- Daily snapshot of experiment assignments for analysis.
 -- Useful for cohort analysis and tracking assignment stability.
@@ -116,9 +116,9 @@ CREATE TABLE IF NOT EXISTS fact_experiment_assignments (
 CREATE INDEX IF NOT EXISTS idx_fact_assignments_experiment ON fact_experiment_assignments(experiment_key);
 CREATE INDEX IF NOT EXISTS idx_fact_assignments_date ON fact_experiment_assignments(date_key);
 
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- AGGREGATED: EXPERIMENT METRICS
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- 
 -- Pre-aggregated metrics for experiment dashboards.
 -- Updated by ETL process.
@@ -154,9 +154,9 @@ CREATE TABLE IF NOT EXISTS agg_experiment_metrics_daily (
 CREATE INDEX IF NOT EXISTS idx_agg_metrics_experiment ON agg_experiment_metrics_daily(experiment_key);
 CREATE INDEX IF NOT EXISTS idx_agg_metrics_date ON agg_experiment_metrics_daily(date_key);
 
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 -- VIEWS FOR ANALYSIS
--- ────────────────────────────────────────────────────────────────────────────────
+-- --------------------------------------------------------------------------------
 
 -- Experiment overview
 CREATE OR REPLACE VIEW v_experiment_overview AS

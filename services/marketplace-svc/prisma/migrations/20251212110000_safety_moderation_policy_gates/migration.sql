@@ -1,6 +1,6 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SAFETY, MODERATION & POLICY GATES MIGRATION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- 
 -- This migration adds:
 -- 1. Safety rating and data access profile enums
@@ -10,11 +10,11 @@
 -- 5. Domain allowlist for embedded tools
 -- 6. Tool launch audit logging
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- ENUMS
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 -- Safety rating enum for marketplace items/versions
 CREATE TYPE safety_rating AS ENUM (
@@ -42,9 +42,9 @@ CREATE TYPE safety_review_action AS ENUM (
     'ESCALATED'         -- Escalated for further review
 );
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- SAFETY METADATA ON MARKETPLACE ITEM VERSIONS
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 -- Add safety fields to marketplace_item_versions
 ALTER TABLE marketplace_item_versions
@@ -66,9 +66,9 @@ ON marketplace_item_versions(safety_rating);
 CREATE INDEX idx_marketplace_item_versions_policy_tags 
 ON marketplace_item_versions USING GIN (policy_tags);
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- SAFETY REVIEW AUDIT LOG
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE safety_review_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -102,9 +102,9 @@ ON safety_review_logs(marketplace_item_version_id, performed_at DESC);
 CREATE INDEX idx_safety_review_logs_action 
 ON safety_review_logs(action, performed_at DESC);
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- TENANT MARKETPLACE POLICIES
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE tenant_marketplace_policies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -157,9 +157,9 @@ CREATE TABLE tenant_marketplace_policies (
 CREATE INDEX idx_tenant_marketplace_policies_tenant 
 ON tenant_marketplace_policies(tenant_id);
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- GLOBAL DOMAIN ALLOWLIST FOR EMBEDDED TOOLS
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE embedded_tool_domain_allowlist (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -187,9 +187,9 @@ CREATE TABLE embedded_tool_domain_allowlist (
 CREATE INDEX idx_embedded_tool_domain_allowlist_active 
 ON embedded_tool_domain_allowlist(is_active, domain_pattern);
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- ALLOWED/DISALLOWED SCOPES CONFIGURATION
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE embedded_tool_scope_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -243,9 +243,9 @@ INSERT INTO embedded_tool_scope_config (scope, display_name, description, data_a
 ('EXTERNAL_TRACKING', 'External Tracking', 'Third-party analytics and tracking', 'HIGH', false, true, true, 'analytics'),
 ('DIRECT_LEARNER_CONTACT', 'Direct Learner Contact', 'Direct messaging or chat with learners', 'HIGH', false, true, true, 'communication');
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- EMBEDDED TOOL LAUNCH AUDIT LOG
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE embedded_tool_launch_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -299,9 +299,9 @@ ON embedded_tool_launch_logs(tool_session_id);
 CREATE INDEX idx_embedded_tool_launch_logs_learner 
 ON embedded_tool_launch_logs(learner_id, launched_at DESC);
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- FUNCTIONS & TRIGGERS
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_marketplace_policy_updated_at()
@@ -327,9 +327,9 @@ CREATE TRIGGER trigger_embedded_tool_scope_config_updated_at
 BEFORE UPDATE ON embedded_tool_scope_config
 FOR EACH ROW EXECUTE FUNCTION update_marketplace_policy_updated_at();
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- COMMENTS
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 
 COMMENT ON TABLE tenant_marketplace_policies IS 
 'Per-tenant policies for marketplace item visibility and installation restrictions';

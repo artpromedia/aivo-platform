@@ -1,4 +1,4 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- Audit Events Schema
 -- Migration: 20241210200000_audit_events
 --
@@ -13,11 +13,11 @@
 --   - JSONB diff structure for flexible before/after tracking
 --   - Links to explanation_events for AI decision context
 --   - Multi-tenant isolation via tenant_id
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- ENUMS
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 -- Who/what performed the action
 CREATE TYPE audit_actor_type AS ENUM (
@@ -35,26 +35,26 @@ CREATE TYPE audit_action_type AS ENUM (
   'DEACTIVATED'
 );
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- TABLE: audit_events
 --
 -- Core table storing audit trail for all tracked changes.
 -- Each row represents one auditable change with before/after state.
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS audit_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   -- Tenant Context
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   
   -- Multi-tenant isolation (REQUIRED)
   tenant_id UUID NOT NULL,
   
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   -- Actor Information
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   
   -- Type of actor that made the change
   actor_type audit_actor_type NOT NULL,
@@ -68,9 +68,9 @@ CREATE TABLE IF NOT EXISTS audit_events (
   -- Human-readable actor display name for UI
   actor_display_name TEXT,
   
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   -- Entity Information
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   
   -- Type of entity being changed
   -- Examples: 'LEARNER_DIFFICULTY', 'TODAY_PLAN', 'POLICY_DOCUMENT'
@@ -86,9 +86,9 @@ CREATE TABLE IF NOT EXISTS audit_events (
   -- Human-readable entity label for UI
   entity_display_name TEXT,
   
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   -- Change Details
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   
   -- What action was performed
   action audit_action_type NOT NULL,
@@ -120,15 +120,15 @@ CREATE TABLE IF NOT EXISTS audit_events (
   change_json JSONB NOT NULL DEFAULT '{}',
   
   -- Human-readable summary of the change for timeline display
-  -- e.g., "Math difficulty adjusted from Level 2 → Level 3"
+  -- e.g., "Math difficulty adjusted from Level 2 -> Level 3"
   summary TEXT NOT NULL,
   
   -- Optional additional context/reason for the change
   reason TEXT,
   
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   -- Relationships
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   
   -- Link to explanation event (for AI-driven changes)
   related_explanation_id UUID,
@@ -139,16 +139,16 @@ CREATE TABLE IF NOT EXISTS audit_events (
   -- Link to learner (for learner-specific changes)
   learner_id UUID,
   
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   -- Timestamps
-  -- ═══════════════════════════════════════════════════════════════════════════
+  -- ===========================================================================
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- INDEXES
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 -- Primary query pattern: by tenant + entity + time
 CREATE INDEX idx_audit_events_tenant_entity 
@@ -181,9 +181,9 @@ CREATE INDEX idx_audit_events_explanation
 CREATE INDEX idx_audit_events_created_at 
   ON audit_events(created_at DESC);
 
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 -- COMMENTS
--- ────────────────────────────────────────────────────────────────────────────
+-- ----------------------------------------------------------------------------
 
 COMMENT ON TABLE audit_events IS 
 'Unified audit trail for tracking changes to learner difficulty, today plans, and policy documents. Supports both human and AI actors.';

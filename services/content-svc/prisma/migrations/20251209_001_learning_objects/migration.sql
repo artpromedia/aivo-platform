@@ -15,15 +15,15 @@
 -- - Sessions: Published versions used in learning sessions
 -- - Ingestion: metadata_json supports external content IDs
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- EXTENSIONS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- ENUMS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 -- Subject areas
 CREATE TYPE learning_object_subject AS ENUM (
@@ -56,15 +56,15 @@ CREATE TYPE learning_object_version_state AS ENUM (
   'RETIRED'     -- Archived, no longer in active use
 );
 
-COMMENT ON TYPE learning_object_version_state IS 'Workflow state for version lifecycle: DRAFT → IN_REVIEW → APPROVED → PUBLISHED → RETIRED';
+COMMENT ON TYPE learning_object_version_state IS 'Workflow state for version lifecycle: DRAFT -> IN_REVIEW -> APPROVED -> PUBLISHED -> RETIRED';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- TABLES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- learning_objects
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Logical identity of a learning content unit.
 -- Examples: "ELA G3 reading passage: Dogs in Winter"
 
@@ -106,9 +106,9 @@ COMMENT ON COLUMN learning_objects.tenant_id IS 'NULL = global/shared content av
 COMMENT ON COLUMN learning_objects.slug IS 'URL-safe identifier, unique per tenant scope.';
 COMMENT ON COLUMN learning_objects.primary_skill_id IS 'FK to skills table for primary skill alignment.';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- learning_object_versions
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Concrete version of content with workflow state.
 -- Only one PUBLISHED version per LO per tenant at a time.
 
@@ -133,22 +133,22 @@ CREATE TABLE learning_object_versions (
   change_summary        TEXT,
   review_notes          TEXT,
   
-  -- ── Content Payload ────────────────────────────────────────────────────────
+  -- -- Content Payload --------------------------------------------------------
   -- Structured content discriminated by "type" field
   -- Types: reading_passage, reading_passage_with_questions, math_problem,
   --        math_problem_set, sel_check_in, sel_scenario, video_lesson,
   --        interactive_game, speech_exercise, assessment_item
   content_json          JSONB NOT NULL,
   
-  -- ── Accessibility Metadata ─────────────────────────────────────────────────
+  -- -- Accessibility Metadata -------------------------------------------------
   -- Alt text, reading level, supports (dyslexia, ADHD, etc.)
   accessibility_json    JSONB NOT NULL DEFAULT '{}',
   
-  -- ── Standards Alignment ────────────────────────────────────────────────────
+  -- -- Standards Alignment ----------------------------------------------------
   -- CCSS, NGSS, state standards, etc.
   standards_json        JSONB NOT NULL DEFAULT '{}',
   
-  -- ── Additional Metadata ────────────────────────────────────────────────────
+  -- -- Additional Metadata ----------------------------------------------------
   -- Tags, duration, modality, external IDs, license, etc.
   metadata_json         JSONB NOT NULL DEFAULT '{}',
   
@@ -172,9 +172,9 @@ COMMENT ON COLUMN learning_object_versions.accessibility_json IS 'Accessibility:
 COMMENT ON COLUMN learning_object_versions.standards_json IS 'Standards alignment: CCSS, NGSS, state-specific standards.';
 COMMENT ON COLUMN learning_object_versions.metadata_json IS 'Additional: duration, modality, keywords, license, external IDs.';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- learning_object_tags
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Flexible tagging for discovery and filtering.
 
 CREATE TABLE learning_object_tags (
@@ -189,9 +189,9 @@ CREATE TABLE learning_object_tags (
 
 COMMENT ON TABLE learning_object_tags IS 'Flexible tags for content discovery and filtering.';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- learning_object_skills
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Version-specific skill alignments (beyond primary skill).
 
 CREATE TABLE learning_object_skills (
@@ -218,9 +218,9 @@ CREATE TABLE learning_object_skills (
 COMMENT ON TABLE learning_object_skills IS 'Version-specific skill alignments beyond the primary skill.';
 COMMENT ON COLUMN learning_object_skills.weight IS 'Relevance weight 0.0-1.0. Higher = more strongly aligned.';
 
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- learning_object_version_transitions
--- ──────────────────────────────────────────────────────────────────────────────
+-- ------------------------------------------------------------------------------
 -- Audit trail for workflow state transitions.
 
 CREATE TABLE learning_object_version_transitions (
@@ -235,11 +235,11 @@ CREATE TABLE learning_object_version_transitions (
 
 COMMENT ON TABLE learning_object_version_transitions IS 'Audit trail for all workflow state changes.';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- INDEXES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ── learning_objects indexes ─────────────────────────────────────────────────
+-- -- learning_objects indexes -------------------------------------------------
 
 -- Primary discovery: find LOs by tenant, subject, grade
 CREATE INDEX idx_lo_tenant_subject_grade 
@@ -256,7 +256,7 @@ CREATE INDEX idx_lo_global
   ON learning_objects(subject, grade_band)
   WHERE tenant_id IS NULL AND is_active = true;
 
--- ── learning_object_versions indexes ─────────────────────────────────────────
+-- -- learning_object_versions indexes -----------------------------------------
 
 -- Primary lookup: versions for an LO by state, ordered by version descending
 CREATE INDEX idx_lov_lo_state_version 
@@ -281,7 +281,7 @@ CREATE INDEX idx_lov_approved
 CREATE INDEX idx_lov_content_type 
   ON learning_object_versions((content_json->>'type'));
 
--- ── learning_object_tags indexes ─────────────────────────────────────────────
+-- -- learning_object_tags indexes ---------------------------------------------
 
 -- Find LOs by tag
 CREATE INDEX idx_lot_tag 
@@ -291,23 +291,23 @@ CREATE INDEX idx_lot_tag
 CREATE INDEX idx_lot_lo 
   ON learning_object_tags(learning_object_id);
 
--- ── learning_object_skills indexes ───────────────────────────────────────────
+-- -- learning_object_skills indexes -------------------------------------------
 
 -- Find versions targeting a skill
 CREATE INDEX idx_los_skill 
   ON learning_object_skills(skill_id);
 
--- ── learning_object_version_transitions indexes ──────────────────────────────
+-- -- learning_object_version_transitions indexes ------------------------------
 
 -- Audit history for a version
 CREATE INDEX idx_lovt_version 
   ON learning_object_version_transitions(version_id, transitioned_at DESC);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- FUNCTIONS & TRIGGERS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ── Auto-update updated_at ───────────────────────────────────────────────────
+-- -- Auto-update updated_at ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -327,7 +327,7 @@ CREATE TRIGGER trg_lov_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- ── Auto-set published_at when state changes to PUBLISHED ────────────────────
+-- -- Auto-set published_at when state changes to PUBLISHED --------------------
 
 CREATE OR REPLACE FUNCTION set_published_at()
 RETURNS TRIGGER AS $$
@@ -344,7 +344,7 @@ CREATE TRIGGER trg_lov_published_at
   FOR EACH ROW
   EXECUTE FUNCTION set_published_at();
 
--- ── Auto-increment version_number ────────────────────────────────────────────
+-- -- Auto-increment version_number --------------------------------------------
 
 CREATE OR REPLACE FUNCTION set_version_number()
 RETURNS TRIGGER AS $$
@@ -366,9 +366,9 @@ CREATE TRIGGER trg_lov_version_number
   WHEN (NEW.version_number IS NULL)
   EXECUTE FUNCTION set_version_number();
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- COMMENTS ON INDEXES
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 COMMENT ON INDEX idx_lo_tenant_subject_grade IS 'Primary discovery: find active LOs by tenant, subject, grade band.';
 COMMENT ON INDEX idx_lo_primary_skill IS 'Find LOs aligned to a specific skill for content selection.';

@@ -4,9 +4,9 @@
 -- Version: 0007
 -- Date: 2026-01-11
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- VECTOR MEMORY STORE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Enable pgvector extension for embedding storage
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -46,9 +46,9 @@ CREATE INDEX idx_learner_memories_embedding ON learner_memories USING ivfflat (e
 CREATE INDEX idx_learner_memories_metadata ON learner_memories USING GIN (metadata);
 CREATE INDEX idx_learner_memories_tags ON learner_memories USING GIN ((metadata->'tags'));
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- AUTONOMOUS DECISIONS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Learner autonomy settings
 CREATE TABLE IF NOT EXISTS learner_autonomy_settings (
@@ -123,9 +123,9 @@ CREATE TABLE IF NOT EXISTS autonomous_decision_audit (
 CREATE INDEX idx_decision_audit_decision_id ON autonomous_decision_audit(decision_id);
 CREATE INDEX idx_decision_audit_tenant_learner ON autonomous_decision_audit(tenant_id, learner_id);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- MULTI-AGENT COORDINATION
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Agent messages for inter-agent communication
 CREATE TABLE IF NOT EXISTS agent_messages (
@@ -168,9 +168,9 @@ CREATE INDEX idx_agent_orchestrations_session ON agent_orchestrations(session_id
 CREATE INDEX idx_agent_orchestrations_tenant_learner ON agent_orchestrations(tenant_id, learner_id);
 CREATE INDEX idx_agent_orchestrations_created_at ON agent_orchestrations(created_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- TOOL EXECUTION AUDIT (extends existing tool_execution_audit)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Tool execution audit table (if not exists from previous migration)
 CREATE TABLE IF NOT EXISTS tool_execution_audit (
@@ -195,9 +195,9 @@ CREATE INDEX IF NOT EXISTS idx_tool_audit_user ON tool_execution_audit(user_id);
 CREATE INDEX IF NOT EXISTS idx_tool_audit_tool ON tool_execution_audit(tool_id);
 CREATE INDEX IF NOT EXISTS idx_tool_audit_created ON tool_execution_audit(created_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- REACT LOOP TRACES
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Store ReAct loop execution traces for debugging and analysis
 CREATE TABLE IF NOT EXISTS react_traces (
@@ -226,9 +226,9 @@ CREATE INDEX idx_react_traces_tenant_learner ON react_traces(tenant_id, learner_
 CREATE INDEX idx_react_traces_agent ON react_traces(agent_type);
 CREATE INDEX idx_react_traces_created ON react_traces(created_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- ROW LEVEL SECURITY (RLS)
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Enable RLS on all new tables
 ALTER TABLE learner_memories ENABLE ROW LEVEL SECURITY;
@@ -261,9 +261,9 @@ CREATE POLICY agent_orchestrations_tenant_isolation ON agent_orchestrations
 CREATE POLICY react_traces_tenant_isolation ON react_traces
     FOR ALL USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- CLEANUP FUNCTIONS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Function to clean up expired memories
 CREATE OR REPLACE FUNCTION cleanup_expired_memories()
@@ -320,9 +320,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE learner_memories IS 'Long-term memory storage for learner interactions, supports RAG with vector embeddings';
 COMMENT ON TABLE learner_autonomy_settings IS 'Per-learner autonomy configuration with teacher/parent controls';

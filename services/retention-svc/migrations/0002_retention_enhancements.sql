@@ -1,9 +1,9 @@
 -- Migration: 0002_retention_enhancements
 -- Description: Enhanced retention policies with more data types and tenant configuration
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- UPDATE RESOURCE TYPES
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Drop and recreate check constraint with more resource types
 ALTER TABLE retention_policies DROP CONSTRAINT IF EXISTS retention_policies_resource_type_check;
@@ -34,9 +34,9 @@ ALTER TABLE retention_policies ADD COLUMN IF NOT EXISTS action_type TEXT NOT NUL
 CREATE UNIQUE INDEX IF NOT EXISTS idx_retention_policies_unique 
     ON retention_policies(COALESCE(tenant_id, ''), resource_type);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- RETENTION JOB RUNS TABLE
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 CREATE TABLE IF NOT EXISTS retention_job_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -69,9 +69,9 @@ CREATE INDEX IF NOT EXISTS idx_retention_job_runs_policy
 CREATE INDEX IF NOT EXISTS idx_retention_job_runs_started 
     ON retention_job_runs(started_at);
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- SEED UPDATED DEFAULT POLICIES
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 -- Update existing policies to new resource type names
 UPDATE retention_policies SET resource_type = 'SESSION_EVENTS' WHERE resource_type = 'EVENT';
@@ -89,9 +89,9 @@ VALUES
     (NULL, 'AUDIT_LOGS', 2555, 'ARCHIVE', 'Audit logs archived after 7 years', '{}'::jsonb)
 ON CONFLICT DO NOTHING;
 
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 -- COMMENTS
--- ════════════════════════════════════════════════════════════════════════════════
+-- ================================================================================
 
 COMMENT ON TABLE retention_policies IS 
 'Configurable data retention policies per tenant or globally. Tenant-specific policies override global defaults.';

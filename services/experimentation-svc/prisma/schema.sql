@@ -1,14 +1,14 @@
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- EXPERIMENTATION SERVICE SCHEMA
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- 
 -- Tables for managing A/B experiments, variant assignments, and exposure tracking.
 -- Supports tenant-level and learner-level experiments with deterministic hashing.
 --
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- ENUMS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 CREATE TYPE experiment_scope AS ENUM (
   'TENANT',   -- All learners in a tenant get same variant
@@ -30,9 +30,9 @@ CREATE TYPE assignment_reason AS ENUM (
   'FORCED_VARIANT'          -- Override for testing
 );
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- EXPERIMENTS TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Core table for experiment definitions.
 -- Each experiment has a unique key used in hash-based assignment.
@@ -75,9 +75,9 @@ CREATE INDEX idx_experiments_key ON experiments(key);
 CREATE INDEX idx_experiments_status ON experiments(status);
 CREATE INDEX idx_experiments_scope ON experiments(scope);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- EXPERIMENT_VARIANTS TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Variants for each experiment with allocation percentages.
 -- Allocations must sum to 1.0 across all variants in an experiment.
@@ -111,9 +111,9 @@ CREATE TABLE IF NOT EXISTS experiment_variants (
 -- Indexes
 CREATE INDEX idx_variants_experiment ON experiment_variants(experiment_id);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- EXPERIMENT_ASSIGNMENTS TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Cached assignments for audit and debugging.
 -- Assignment is deterministic via hashing, so this table is optional
@@ -158,9 +158,9 @@ CREATE INDEX idx_assignments_learner ON experiment_assignments(learner_id) WHERE
 CREATE INDEX idx_assignments_variant ON experiment_assignments(variant_key);
 CREATE INDEX idx_assignments_assigned_at ON experiment_assignments(assigned_at);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- EXPERIMENT_EXPOSURES TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Tracks when users actually SEE the experimental treatment.
 -- Important distinction from assignment:
@@ -207,9 +207,9 @@ CREATE INDEX idx_exposures_feature_area ON experiment_exposures(feature_area);
 CREATE INDEX idx_exposures_exposed_at ON experiment_exposures(exposed_at);
 CREATE INDEX idx_exposures_session ON experiment_exposures(session_id) WHERE session_id IS NOT NULL;
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- VIEWS FOR ANALYTICS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 -- Experiment summary with variant counts
 CREATE OR REPLACE VIEW experiment_summary AS
@@ -243,9 +243,9 @@ JOIN experiment_variants v ON e.id = v.experiment_id
 LEFT JOIN experiment_assignments a ON e.id = a.experiment_id AND v.key = a.variant_key
 GROUP BY e.id, e.key, v.key, v.allocation;
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- TRIGGERS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 -- Update timestamp on experiments
 CREATE OR REPLACE FUNCTION update_experiments_timestamp()
@@ -261,9 +261,9 @@ CREATE TRIGGER experiments_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_experiments_timestamp();
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- EXAMPLE DATA (for development/testing)
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 -- Uncomment to insert example experiments:
 /*

@@ -1,23 +1,23 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEAT USAGE ANALYTICS & ALERTS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- 
 -- This migration adds:
 --   1. vw_seat_usage - Materialized view for seat utilization metrics
 --   2. seat_usage_alerts - Table for threshold-based alerts
 --   3. Supporting indexes and triggers
 --
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEAT USAGE ALERT STATUS ENUM
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TYPE "SeatUsageAlertStatus" AS ENUM ('OPEN', 'ACKNOWLEDGED', 'RESOLVED');
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEAT USAGE ALERTS TABLE
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE "seat_usage_alerts" (
     "id"            UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -47,9 +47,9 @@ CREATE UNIQUE INDEX "seat_usage_alerts_unique_open_idx"
     ON "seat_usage_alerts"("tenant_id", "sku", "threshold") 
     WHERE "status" = 'OPEN';
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEAT USAGE VIEW (Materialized)
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- 
 -- Aggregates seat entitlements with license assignments for reporting.
 -- Uses COALESCE and NULLIF for safe division handling.
@@ -102,9 +102,9 @@ CREATE UNIQUE INDEX "vw_seat_usage_unique_idx"
 CREATE INDEX "vw_seat_usage_tenant_idx" ON "vw_seat_usage"("tenant_id");
 CREATE INDEX "vw_seat_usage_utilization_idx" ON "vw_seat_usage"("utilization_percent" DESC);
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- REFRESH FUNCTION
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE OR REPLACE FUNCTION refresh_seat_usage_view()
 RETURNS void AS $$
@@ -113,9 +113,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- SEAT USAGE ALERT NOTIFICATION TABLE (for in-app notifications)
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 CREATE TABLE "seat_usage_notifications" (
     "id"            UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -139,9 +139,9 @@ CREATE INDEX "seat_usage_notifications_tenant_user_idx"
 CREATE INDEX "seat_usage_notifications_alert_idx" 
     ON "seat_usage_notifications"("alert_id");
 
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- COMMENTS
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
 COMMENT ON MATERIALIZED VIEW "vw_seat_usage" IS 
     'Aggregated seat usage metrics per tenant, SKU, and grade band. Refresh with refresh_seat_usage_view().';

@@ -1,13 +1,13 @@
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 -- Analytics Warehouse Schema
 -- 
 -- Star schema for analytics with dimension and fact tables.
 -- This migration creates the warehouse tables used by ETL jobs.
--- ══════════════════════════════════════════════════════════════════════════════
+-- ==============================================================================
 
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 -- DIMENSION TABLES
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 
 -- Tenant dimension (SCD Type 2)
 CREATE TABLE IF NOT EXISTS dim_tenant (
@@ -107,9 +107,9 @@ CREATE TABLE IF NOT EXISTS dim_date (
 CREATE INDEX IF NOT EXISTS idx_dim_date_full ON dim_date(full_date);
 CREATE INDEX IF NOT EXISTS idx_dim_date_year_month ON dim_date(year, month);
 
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 -- FACT TABLES
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 
 -- Session facts
 CREATE TABLE IF NOT EXISTS fact_sessions (
@@ -224,9 +224,9 @@ CREATE TABLE IF NOT EXISTS fact_recommendation_events (
 CREATE INDEX IF NOT EXISTS idx_fact_recommendation_events_date ON fact_recommendation_events(date_key);
 CREATE INDEX IF NOT EXISTS idx_fact_recommendation_events_learner ON fact_recommendation_events(learner_key, date_key);
 
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 -- ETL JOB TRACKING
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 
 CREATE TABLE IF NOT EXISTS etl_job_runs (
   id UUID PRIMARY KEY,
@@ -247,9 +247,9 @@ CREATE TABLE IF NOT EXISTS etl_job_runs (
 CREATE INDEX IF NOT EXISTS idx_etl_job_runs_job_date ON etl_job_runs(job_name, target_date);
 CREATE INDEX IF NOT EXISTS idx_etl_job_runs_started ON etl_job_runs(started_at DESC);
 
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 -- DATE DIMENSION POPULATION
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 
 -- Generate dates from 2020-01-01 to 2030-12-31
 INSERT INTO dim_date (
@@ -274,9 +274,9 @@ SELECT
 FROM generate_series('2020-01-01'::date, '2030-12-31'::date, '1 day'::interval) d
 ON CONFLICT (date_key) DO NOTHING;
 
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 -- COMMENTS
--- ════════════════════════════════════════════════════════════════════════════
+-- ============================================================================
 
 COMMENT ON TABLE dim_tenant IS 'Tenant dimension with SCD Type 2 tracking';
 COMMENT ON TABLE dim_learner IS 'Learner dimension with SCD Type 2 tracking';

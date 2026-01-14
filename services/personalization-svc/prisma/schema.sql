@@ -1,15 +1,15 @@
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- PERSONALIZATION SERVICE SCHEMA
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- 
 -- Tables for storing personalization signals and decision logs.
 -- Signals are derived from analytics data and feed into Virtual Brain 
 -- and Lesson Planner agents.
 --
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- ENUMS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 CREATE TYPE signal_type AS ENUM (
   'ENGAGEMENT',
@@ -47,9 +47,9 @@ CREATE TYPE decision_outcome AS ENUM (
   'EXPIRED'
 );
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- PERSONALIZATION_SIGNALS TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Core table for storing computed signals. One row per learner/date/signal_key.
 -- Signals are upserted daily by the signal generation job.
@@ -113,9 +113,9 @@ ALTER TABLE personalization_signals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY signals_tenant_isolation ON personalization_signals
   USING (tenant_id = current_setting('app.tenant_id')::UUID);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- PERSONALIZATION_DECISION_LOGS TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Audit log for decisions made by agents based on signals.
 -- Used for transparency, debugging, and feedback loop analysis.
@@ -179,9 +179,9 @@ ALTER TABLE personalization_decision_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY decisions_tenant_isolation ON personalization_decision_logs
   USING (tenant_id = current_setting('app.tenant_id')::UUID);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- RECOMMENDATION_FEEDBACK TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Tracks acceptance/rejection of recommendations for feedback loop.
 -- Aggregated to compute acceptance rates by type, which become signals.
@@ -233,9 +233,9 @@ ALTER TABLE recommendation_feedback ENABLE ROW LEVEL SECURITY;
 CREATE POLICY rec_feedback_tenant_isolation ON recommendation_feedback
   USING (tenant_id = current_setting('app.tenant_id')::UUID);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- THRESHOLD_OVERRIDES TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- 
 -- Per-tenant or per-learner threshold customizations.
 -- Allows districts/schools/teachers to tune signal generation.
@@ -284,9 +284,9 @@ ALTER TABLE threshold_overrides ENABLE ROW LEVEL SECURITY;
 CREATE POLICY threshold_tenant_isolation ON threshold_overrides
   USING (tenant_id = current_setting('app.tenant_id')::UUID);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- VIEWS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 -- Active (non-expired) signals for a learner
 CREATE OR REPLACE VIEW v_active_signals AS
@@ -340,9 +340,9 @@ FROM personalization_decision_logs
 WHERE created_at >= NOW() - INTERVAL '30 days'
 GROUP BY tenant_id, agent_name, decision_type, DATE_TRUNC('day', created_at);
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- FUNCTIONS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 -- Function to get effective threshold (with override support)
 CREATE OR REPLACE FUNCTION get_effective_threshold(
@@ -404,9 +404,9 @@ CREATE TRIGGER trg_thresholds_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- COMMENTS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 COMMENT ON TABLE personalization_signals IS 'Derived signals about learner behavior patterns';
 COMMENT ON TABLE personalization_decision_logs IS 'Audit trail of agent decisions based on signals';
@@ -417,17 +417,17 @@ COMMENT ON COLUMN personalization_signals.signal_value IS 'Typed JSONB - schema 
 COMMENT ON COLUMN personalization_signals.confidence IS 'Score 0-1 based on sample size and data quality';
 COMMENT ON COLUMN personalization_decision_logs.reasoning IS 'Human-readable explanation of decision';
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- MOTOR ACCOMMODATION SCHEMA - ND-3.3
--- ═══════════════════════════════════════════════════════════════════════════════
+-- ===============================================================================
 -- 
 -- Tables for motor profile management and interaction logging.
 -- Supports learners with fine motor challenges, tremor, limited range of motion.
 --
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- MOTOR ENUMS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 CREATE TYPE motor_ability_level AS ENUM (
   'TYPICAL',
@@ -469,9 +469,9 @@ CREATE TYPE tremor_filter_algorithm AS ENUM (
   'exponential'
 );
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- MOTOR_PROFILES TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 --
 -- Stores motor accommodation settings for learners with motor challenges.
 -- One profile per learner, created on demand.
@@ -579,9 +579,9 @@ CREATE INDEX idx_motor_profiles_tenant ON motor_profiles(tenant_id);
 CREATE INDEX idx_motor_profiles_learner ON motor_profiles(learner_id);
 CREATE INDEX idx_motor_profiles_fine_motor ON motor_profiles(fine_motor_level) WHERE fine_motor_level != 'TYPICAL';
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- MOTOR_INTERACTION_LOGS TABLE
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 --
 -- Tracks motor interactions for analysis and accommodation optimization.
 -- Used to suggest accommodation adjustments based on real usage patterns.
@@ -634,9 +634,9 @@ CREATE TRIGGER trg_motor_profiles_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 -- MOTOR SCHEMA COMMENTS
--- ───────────────────────────────────────────────────────────────────────────────
+-- -------------------------------------------------------------------------------
 
 COMMENT ON TABLE motor_profiles IS 'Motor accommodation settings for learners with motor challenges - ND-3.3';
 COMMENT ON TABLE motor_interaction_logs IS 'Motor interaction tracking for accommodation optimization';
