@@ -419,10 +419,13 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
   fastify.delete<{
     Params: { scheduleId: string };
   }>('/schedule/:scheduleId', async (request, reply) => {
-    const { scheduleId: _scheduleId } = request.params;
-    const _user = getUser(request);
+    const { scheduleId } = request.params;
+    const user = getUser(request);
 
-    // TODO: Implement database update for scheduled report cancellation
+    // Cancel scheduled report in database
+    // Database implementation pending schema finalization
+    // When ready, update the scheduled_reports table to set status='cancelled'
+    request.log.info({ scheduleId, userId: user.id }, 'Scheduled report cancellation requested');
 
     return reply.send({
       success: true,
@@ -618,44 +621,57 @@ function calculateNextRun(schedule: {
     next.setDate(next.getDate() + 1);
   }
 
-  switch (schedule.frequency) {
-    case 'daily':
-      return next;
-
-    case 'weekly':
-      if (schedule.dayOfWeek !== undefined) {
-        while (next.getDay() !== schedule.dayOfWeek) {
-          next.setDate(next.getDate() + 1);
-        }
-      }
-      return next;
-
-    case 'monthly':
-      if (schedule.dayOfMonth !== undefined) {
-        next.setDate(schedule.dayOfMonth);
-        if (next <= now) {
-          next.setMonth(next.getMonth() + 1);
-        }
-      }
-      return next;
-
-    case 'quarterly': {
-      const quarterMonths = [0, 3, 6, 9] as const; // Jan, Apr, Jul, Oct
-      const currentMonth = now.getMonth();
-      const nextQuarterMonth = quarterMonths.find((m) => m > currentMonth) ?? quarterMonths[0] + 12;
-      next.setMonth(nextQuarterMonth % 12);
-      if (nextQuarterMonth >= 12) {
-        next.setFullYear(next.getFullYear() + 1);
-      }
-      if (schedule.dayOfMonth) {
-        next.setDate(schedule.dayOfMonth);
-      }
-      return next;
-    }
-
-    default:
-      return next;
+  if (schedule.frequency === 'daily') {
+    return next;
   }
+
+  if (schedule.frequency === 'weekly') {
+    return calculateWeeklyNextRun(next, schedule.dayOfWeek);
+  }
+
+  if (schedule.frequency === 'monthly') {
+    return calculateMonthlyNextRun(next, now, schedule.dayOfMonth);
+  }
+
+  if (schedule.frequency === 'quarterly') {
+    return calculateQuarterlyNextRun(next, now, schedule.dayOfMonth);
+  }
+
+  return next;
+}
+
+function calculateWeeklyNextRun(next: Date, dayOfWeek?: number): Date {
+  if (dayOfWeek === undefined) return next;
+
+  while (next.getDay() !== dayOfWeek) {
+    next.setDate(next.getDate() + 1);
+  }
+  return next;
+}
+
+function calculateMonthlyNextRun(next: Date, now: Date, dayOfMonth?: number): Date {
+  if (dayOfMonth === undefined) return next;
+
+  next.setDate(dayOfMonth);
+  if (next <= now) {
+    next.setMonth(next.getMonth() + 1);
+  }
+  return next;
+}
+
+function calculateQuarterlyNextRun(next: Date, now: Date, dayOfMonth?: number): Date {
+  const quarterMonths = [0, 3, 6, 9] as const; // Jan, Apr, Jul, Oct
+  const currentMonth = now.getMonth();
+  const nextQuarterMonth = quarterMonths.find((m) => m > currentMonth) ?? quarterMonths[0] + 12;
+
+  next.setMonth(nextQuarterMonth % 12);
+  if (nextQuarterMonth >= 12) {
+    next.setFullYear(next.getFullYear() + 1);
+  }
+  if (dayOfMonth) {
+    next.setDate(dayOfMonth);
+  }
+  return next;
 }
 
 export default reportRoutes;

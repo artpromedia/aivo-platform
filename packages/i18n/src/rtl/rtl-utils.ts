@@ -78,14 +78,11 @@ function swapLeftRight(value: string): string {
  * Transform translateX values
  */
 function transformTranslateX(value: string): string {
-  return value.replaceAll(
-    /translateX\(([-.\d]+)(.*?)\)/g,
-    (_match, numStr, unitStr) => {
-      const num = String(numStr);
-      const unit = String(unitStr);
-      return `translateX(${-Number.parseFloat(num)}${unit})`;
-    }
-  );
+  return value.replaceAll(/translateX\(([-.\d]+)(.*?)\)/g, (_match, numStr, unitStr) => {
+    const num = String(numStr);
+    const unit = String(unitStr);
+    return `translateX(${-Number.parseFloat(num)}${unit})`;
+  });
 }
 
 /**
@@ -127,10 +124,7 @@ const PROPERTY_SWAPS: Record<string, string> = {
 /**
  * Transform a single CSS property for RTL
  */
-function transformProperty(
-  property: string,
-  value: StyleValue
-): Record<string, StyleValue> {
+function transformProperty(property: string, value: StyleValue): Record<string, StyleValue> {
   if (value === undefined) return {};
 
   // Handle simple property swaps
@@ -167,6 +161,20 @@ function transformProperty(
  */
 export function rtlValue<T>(ltrValue: T, rtlValue: T, isRTL: boolean): T {
   return isRTL ? rtlValue : ltrValue;
+}
+
+/**
+ * Get LTR value
+ */
+export function getLTRValue<T>(value: T): T {
+  return value;
+}
+
+/**
+ * Get RTL value
+ */
+export function getRTLValue<T>(_ltrValue: T, rtlValue: T): T {
+  return rtlValue;
 }
 
 /**

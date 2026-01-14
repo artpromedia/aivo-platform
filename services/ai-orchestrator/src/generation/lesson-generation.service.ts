@@ -47,9 +47,9 @@ Create structured lesson outlines with:
 
 export class LessonGenerationService {
   constructor(
-    private llm: LLMOrchestrator,
-    private promptBuilder: PromptBuilder,
-    private contentValidator: ContentValidator
+    private readonly llm: LLMOrchestrator,
+    private readonly promptBuilder: PromptBuilder,
+    private readonly contentValidator: ContentValidator
   ) {}
 
   /**
@@ -345,39 +345,43 @@ Provide the enhanced version of the content, maintaining the core information wh
       parts.push(`- Target audience: ${request.targetAudience}`);
     }
 
-    parts.push('');
-    parts.push('REQUIREMENTS:');
-    parts.push('1. Create an engaging title that captures the lesson topic');
-    parts.push('2. Write a brief description (2-3 sentences) explaining what students will learn');
-    parts.push('3. Define 3-5 clear, measurable learning objectives using action verbs');
-    parts.push('4. Structure the lesson into logical sections:');
     parts.push(
-      '   - Introduction/Hook (engage students with a question, scenario, or interesting fact)'
+      '',
+      'REQUIREMENTS:',
+      '1. Create an engaging title that captures the lesson topic',
+      '2. Write a brief description (2-3 sentences) explaining what students will learn',
+      '3. Define 3-5 clear, measurable learning objectives using action verbs',
+      '4. Structure the lesson into logical sections:',
+      '   - Introduction/Hook (engage students with a question, scenario, or interesting fact)',
+      '   - Core Content (main instructional content, broken into digestible chunks)',
+      '   - Examples and Practice (worked examples, guided practice)'
     );
-    parts.push('   - Core Content (main instructional content, broken into digestible chunks)');
-    parts.push('   - Examples and Practice (worked examples, guided practice)');
 
     if (request.includeActivities) {
       parts.push('   - Interactive Activities (hands-on activities, discussions, group work)');
     }
 
-    parts.push('   - Summary/Conclusion (key takeaways, review)');
-    parts.push('5. Include relevant vocabulary terms with clear definitions');
-    parts.push('6. Provide teacher notes with suggestions for differentiation and extension');
+    parts.push(
+      '   - Summary/Conclusion (key takeaways, review)',
+      '5. Include relevant vocabulary terms with clear definitions',
+      '6. Provide teacher notes with suggestions for differentiation and extension'
+    );
 
     if (request.includeAssessment) {
       parts.push('7. Include 5 assessment questions that align with the objectives');
     }
 
-    parts.push('');
-    parts.push('CONTENT GUIDELINES:');
-    parts.push(`- Use clear, age-appropriate language for ${request.gradeLevel} students`);
-    parts.push('- Include real-world connections and examples');
-    parts.push('- Break complex concepts into smaller, manageable pieces');
-    parts.push('- Use analogies and visual descriptions where helpful');
-    parts.push('- Ensure content is accurate and up-to-date');
-    parts.push('- Make the content engaging and interactive');
-    parts.push('');
+    parts.push(
+      '',
+      'CONTENT GUIDELINES:',
+      `- Use clear, age-appropriate language for ${request.gradeLevel} students`,
+      '- Include real-world connections and examples',
+      '- Break complex concepts into smaller, manageable pieces',
+      '- Use analogies and visual descriptions where helpful',
+      '- Ensure content is accurate and up-to-date',
+      '- Make the content engaging and interactive',
+      ''
+    );
     parts.push(
       'Respond with valid JSON containing: title, description, objectives[], duration, sections[], vocabulary[], teacherNotes'
     );
