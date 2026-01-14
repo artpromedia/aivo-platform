@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerDemoRoutes } from './routes/demo.js';
+import { registerMfaRoutes } from './routes/mfa.js';
 import { registerSsoRoutes } from './routes/sso.js';
 
 export function createApp() {
@@ -27,14 +28,14 @@ export function createApp() {
     return reply.status(200).send({ status: 'ok', service: 'auth-svc' });
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   void app.register(authMiddleware as any);
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   void app.register(registerAuthRoutes as any, { prefix: '/auth' });
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+
   void app.register(registerSsoRoutes as any, { prefix: '/auth' });
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+
+  void app.register(registerMfaRoutes as any, { prefix: '/auth' });
+
   void app.register(registerDemoRoutes as any);
 
   return app;
