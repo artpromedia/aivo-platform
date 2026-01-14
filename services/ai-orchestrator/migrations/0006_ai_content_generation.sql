@@ -552,13 +552,7 @@ BEGIN
             'ai_budget_configs'
         ])
     LOOP
-        EXECUTE format('
-            DROP TRIGGER IF EXISTS update_%s_updated_at ON %s;
-            CREATE TRIGGER update_%s_updated_at
-            BEFORE UPDATE ON %s
-            FOR EACH ROW
-            EXECUTE FUNCTION update_updated_at_column();
-        ', t, t, t, t);
+        EXECUTE format('DROP TRIGGER IF EXISTS update_%s_updated_at ON %s; CREATE TRIGGER update_%s_updated_at BEFORE UPDATE ON %s FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();', t, t, t, t);
     END LOOP;
 END;
 $$;
