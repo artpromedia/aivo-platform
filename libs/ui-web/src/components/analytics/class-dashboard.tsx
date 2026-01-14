@@ -71,6 +71,7 @@ export interface EngagementDataPoint {
   activeStudents: number;
   avgTimeMinutes: number;
   lessonsCompleted: number;
+  [key: string]: string | number;
 }
 
 export interface ScoreDistributionData {
@@ -100,6 +101,7 @@ export interface RiskFactor {
 
 export interface PerformanceComparisonData {
   category: string;
+  student: number;
   classAvg: number;
   gradeAvg: number;
   districtAvg?: number;

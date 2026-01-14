@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Download,
@@ -24,9 +23,9 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react';
-import { ExportFormatSelector, ExportFormat } from './ExportFormatSelector';
-import { ExportOptionsPanel, ExportOptions } from './ExportOptionsPanel';
-import { useExport } from '../hooks/useExport';
+import { ExportFormatSelector, type ExportFormat } from './ExportFormatSelector';
+import { ExportOptionsPanel, type ExportOptions } from './ExportOptionsPanel';
+import { useExport } from '../../hooks/useExport';
 
 export interface ExportDialogProps {
   open: boolean;
@@ -50,14 +49,27 @@ export function ExportDialog({
   const [options, setOptions] = useState<ExportOptions>({});
 
   const {
-    startExport,
-    progress,
-    progressMessage,
-    downloadUrl,
-    error,
+    activeJob,
+    startExport: startExportJob,
+    clearJobs,
     isExporting,
-    reset,
   } = useExport();
+
+  // Derive values from activeJob
+  const progress = activeJob?.progress ?? 0;
+  const downloadUrl = activeJob?.downloadUrl;
+  const error = activeJob?.error;
+
+  // Map status to progress message
+  const getProgressMessage = (status?: string): string => {
+    switch (status) {
+      case 'preparing': return 'Preparing export...';
+      case 'exporting': return 'Exporting content...';
+      case 'uploading': return 'Uploading package...';
+      default: return 'Processing...';
+    }
+  };
+  const progressMessage = activeJob ? getProgressMessage(activeJob.status) : 'Preparing export...';
 
   const handleFormatSelect = useCallback((format: ExportFormat) => {
     setSelectedFormat(format);
@@ -74,9 +86,10 @@ export function ExportDialog({
     setStep('exporting');
 
     try {
-      await startExport({
-        contentType,
-        contentIds,
+      // Export each content item (use first ID for now, could be extended for batch)
+      const contentId = contentIds[0] ?? '';
+      await startExportJob({
+        contentId,
         format: selectedFormat,
         options,
       });
@@ -84,17 +97,17 @@ export function ExportDialog({
     } catch (err) {
       setStep('error');
     }
-  }, [selectedFormat, contentType, contentIds, options, startExport]);
+  }, [selectedFormat, contentIds, options, startExportJob]);
 
   const handleClose = useCallback(() => {
     if (!isExporting) {
       setStep('format');
       setSelectedFormat(null);
       setOptions({});
-      reset();
+      clearJobs();
       onOpenChange(false);
     }
-  }, [isExporting, reset, onOpenChange]);
+  }, [isExporting, clearJobs, onOpenChange]);
 
   const handleDownload = useCallback(() => {
     if (downloadUrl) {

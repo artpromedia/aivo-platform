@@ -123,9 +123,9 @@ export function ScratchPadModal({
       updateDimensions();
       window.addEventListener('resize', updateDimensions);
       return () => window.removeEventListener('resize', updateDimensions);
-    } else {
-      setDimensions(SIZE_PRESETS[size]);
     }
+    setDimensions(SIZE_PRESETS[size]);
+    return undefined;
   }, [size]);
 
   // Handle recognition result

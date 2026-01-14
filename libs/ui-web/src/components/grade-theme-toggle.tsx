@@ -6,20 +6,20 @@ import { useGradeTheme } from '../theme/grade-theme';
 import { cn } from '../utils/cn';
 
 export function GradeThemeToggle({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  const { grade, setGrade, availableGrades, labels } = useGradeTheme();
+  const { theme, setTheme, availableThemes, labels } = useGradeTheme();
 
   return (
     <div
       className={cn('inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-1 py-1', className)}
       {...props}
     >
-      {availableGrades.map((value) => {
-        const active = value === grade;
+      {availableThemes.map((value) => {
+        const active = value === theme;
         return (
           <button
             key={value}
             type="button"
-            onClick={() => setGrade(value)}
+            onClick={() => setTheme(value)}
             className={cn(
               'rounded-full px-3 py-1 text-xs font-semibold transition',
               active
