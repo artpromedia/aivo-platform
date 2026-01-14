@@ -22,7 +22,7 @@ export class EmailService {
    * Send an email
    */
   async send(options: SendEmailOptions): Promise<{ messageId: string }> {
-    const { to, subject, html, text, tags } = options;
+    const { to, subject, html: _html, text: _text, tags } = options;
 
     try {
       // In production, integrate with email provider (SendGrid, SES, etc.)

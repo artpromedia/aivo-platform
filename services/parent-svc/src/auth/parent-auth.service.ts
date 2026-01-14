@@ -5,7 +5,7 @@
  */
 
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { sign, verify } from 'jsonwebtoken';
+import { sign } from 'jsonwebtoken';
 import { logger, metrics } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CryptoService } from '../crypto/crypto.service.js';

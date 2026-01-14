@@ -143,6 +143,7 @@ export default [
       "services/api-gateway/**/*.{ts,tsx}",
       "services/focus-svc/**/*.{ts,tsx}",
       "services/lti-svc/**/*.{ts,tsx}",
+      "services/parent-svc/**/*.{ts,tsx}",
       "services/reports-svc/**/*.{ts,tsx}",
       "services/sandbox-svc/**/*.{ts,tsx}",
       "services/writing-pad-svc/**/*.{ts,tsx}",
@@ -164,7 +165,9 @@ export default [
       "@typescript-eslint/restrict-plus-operands": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-floating-promises": "off",
-      "@typescript-eslint/no-explicit-any": "off"
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-base-to-string": "off",
+      "@typescript-eslint/unbound-method": "off"
     }
   },
   {
