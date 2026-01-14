@@ -165,78 +165,11 @@ export class ContentValidator {
     const suggestions: string[] = [];
 
     // Validate stem
-    if (!input.stem || input.stem.length < 10) {
-      issues.push({
-        type: 'error',
-        code: 'INVALID_STEM',
-        message: 'Question stem is missing or too short',
-        severity: 'high',
-      });
-    }
-
-    // Validate question ends with appropriate punctuation
-    if (input.stem && !/[?.]$/.test(input.stem.trim())) {
-      warnings.push({
-        code: 'PUNCTUATION',
-        message: 'Question stem should end with a question mark or period',
-        suggestion: 'Add appropriate ending punctuation',
-      });
-    }
+    this.validateStem(input.stem, issues, warnings);
 
     // Validate options for multiple choice
     if (input.type === 'multiple_choice' || input.type === 'multi_select') {
-      if (input.options === undefined || input.options.length < 2) {
-        issues.push({
-          type: 'error',
-          code: 'INSUFFICIENT_OPTIONS',
-          message: 'Multiple choice questions need at least 2 options',
-          severity: 'high',
-        });
-      } else {
-        const correctCount = input.options.filter((o) => o.correct).length;
-
-        if (correctCount === 0) {
-          issues.push({
-            type: 'error',
-            code: 'NO_CORRECT_ANSWER',
-            message: 'Question must have at least one correct answer',
-            severity: 'critical',
-          });
-        }
-
-        if (input.type === 'multiple_choice' && correctCount > 1) {
-          issues.push({
-            type: 'error',
-            code: 'MULTIPLE_CORRECT',
-            message: 'Single-answer multiple choice should have exactly one correct answer',
-            severity: 'high',
-          });
-        }
-
-        // Check for "All of the above" or "None of the above"
-        const hasAllNone = input.options.some((o) =>
-          /all of the above|none of the above/i.test(o.text)
-        );
-        if (hasAllNone) {
-          warnings.push({
-            code: 'ALL_NONE_OPTION',
-            message: '"All/None of the above" options are generally discouraged',
-            suggestion: 'Consider using more specific distractors',
-          });
-        }
-
-        // Check for similar length options
-        const lengths = input.options.map((o) => o.text.length);
-        const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
-        const hasOutlier = lengths.some((l) => Math.abs(l - avgLength) > avgLength * 0.5);
-        if (hasOutlier) {
-          warnings.push({
-            code: 'OPTION_LENGTH_VARIANCE',
-            message: 'Options have significantly different lengths',
-            suggestion: 'Make options similar in length to avoid giving clues',
-          });
-        }
-      }
+      this.validateQuestionOptions(input, issues, warnings);
     }
 
     // Check grade-level appropriateness
@@ -247,6 +180,97 @@ export class ContentValidator {
     const contentCheck = this.checkInappropriateContent(input.stem);
     issues.push(...contentCheck.issues);
 
+    return this.calculateValidationResult(issues, warnings, suggestions);
+  }
+
+  private validateStem(stem: string | undefined, issues: ValidationIssue[], warnings: ValidationWarning[]): void {
+    if (!stem || stem.length < 10) {
+      issues.push({
+        type: 'error',
+        code: 'INVALID_STEM',
+        message: 'Question stem is missing or too short',
+        severity: 'high',
+      });
+    }
+
+    // Validate question ends with appropriate punctuation
+    if (stem && !/[?.]$/.test(stem.trim())) {
+      warnings.push({
+        code: 'PUNCTUATION',
+        message: 'Question stem should end with a question mark or period',
+        suggestion: 'Add appropriate ending punctuation',
+      });
+    }
+  }
+
+  private validateQuestionOptions(input: QuestionValidationInput, issues: ValidationIssue[], warnings: ValidationWarning[]): void {
+    if (input.options === undefined || input.options.length < 2) {
+      issues.push({
+        type: 'error',
+        code: 'INSUFFICIENT_OPTIONS',
+        message: 'Multiple choice questions need at least 2 options',
+        severity: 'high',
+      });
+      return;
+    }
+
+    this.validateCorrectAnswers(input, issues);
+    this.checkAllNoneOptions(input.options, warnings);
+    this.checkOptionLengthVariance(input.options, warnings);
+  }
+
+  private validateCorrectAnswers(input: QuestionValidationInput, issues: ValidationIssue[]): void {
+    if (!input.options) return;
+    
+    const correctCount = input.options.filter((o) => o.correct).length;
+
+    if (correctCount === 0) {
+      issues.push({
+        type: 'error',
+        code: 'NO_CORRECT_ANSWER',
+        message: 'Question must have at least one correct answer',
+        severity: 'critical',
+      });
+    }
+
+    if (input.type === 'multiple_choice' && correctCount > 1) {
+      issues.push({
+        type: 'error',
+        code: 'MULTIPLE_CORRECT',
+        message: 'Single-answer multiple choice should have exactly one correct answer',
+        severity: 'high',
+      });
+    }
+  }
+
+  private checkAllNoneOptions(options: { text: string; correct: boolean }[], warnings: ValidationWarning[]): void {
+    const hasAllNone = options.some((o) =>
+      /all of the above|none of the above/i.test(o.text)
+    );
+    if (hasAllNone) {
+      warnings.push({
+        code: 'ALL_NONE_OPTION',
+        message: '"All/None of the above" options are generally discouraged',
+        suggestion: 'Consider using more specific distractors',
+      });
+    }
+  }
+
+  private checkOptionLengthVariance(options: { text: string }[], warnings: ValidationWarning[]): void {
+    const lengths = options.map((o) => o.text.length);
+    const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const hasOutlier = lengths.some((l) => Math.abs(l - avgLength) > avgLength * 0.5);
+    
+    if (hasOutlier) {
+      warnings.push({
+        code: 'OPTION_LENGTH_VARIANCE',
+        message: 'Options have significantly different lengths',
+        suggestion: 'Make options similar in length to avoid giving clues',
+      });
+    }
+  }
+
+  private calculateValidationResult(issues: ValidationIssue[], warnings: ValidationWarning[], suggestions: string[]): ValidationResult {
     const criticalIssues = issues.filter((i) => i.severity === 'critical').length;
     const highIssues = issues.filter((i) => i.severity === 'high').length;
     const valid = criticalIssues === 0 && highIssues === 0;
@@ -424,7 +448,7 @@ export class ContentValidator {
     // Check text blocks for readability
     const textBlocks = blocks.filter((b) => b.type === 'text' || b.type === 'paragraph');
     for (const block of textBlocks) {
-      const content = (block.data.content || block.data.text || '') as string;
+      const content = block.data.content || block.data.text || '';
       if (content) {
         const readability = this.checkReadability(content, gradeLevel);
         warnings.push(...readability.warnings);
@@ -490,10 +514,10 @@ export class ContentValidator {
     const texts: string[] = [input.title, ...input.objectives];
 
     for (const block of input.blocks) {
-      if (block.data.content) texts.push(block.data.content as string);
-      if (block.data.text) texts.push(block.data.text as string);
-      if (block.data.title) texts.push(block.data.title as string);
-      if (block.data.instructions) texts.push(block.data.instructions as string);
+      if (block.data.content) texts.push(block.data.content);
+      if (block.data.text) texts.push(block.data.text);
+      if (block.data.title) texts.push(block.data.title);
+      if (block.data.instructions) texts.push(block.data.instructions);
     }
 
     return texts.join(' ');

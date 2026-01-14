@@ -62,7 +62,7 @@ export function RTLProvider({
   direction: directionOverride,
   updateDocumentDirection,
   updateDocumentLang,
-}: RTLProviderProps): React.ReactElement {
+}: Readonly<RTLProviderProps>): React.ReactElement {
   const direction = directionOverride ?? (isRTLLocale(locale) ? 'rtl' : 'ltr');
   const isRTL = direction === 'rtl';
 
@@ -72,7 +72,7 @@ export function RTLProvider({
 
     if (updateDocumentDirection) {
       document.documentElement.dir = direction;
-      document.documentElement.setAttribute('data-direction', direction);
+      document.documentElement.dataset.direction = direction;
     }
 
     if (updateDocumentLang) {
@@ -164,9 +164,9 @@ export function RTLOnly({ children }: { children: ReactNode }): React.ReactEleme
 /**
  * Component that renders children only in LTR mode
  */
-export function LTROnly({ children }: { children: ReactNode }): React.ReactElement | null {
+export function LTROnly({ children }: Readonly<{ children: ReactNode }>): React.ReactElement | null {
   const { isRTL } = useRTLContext();
-  return !isRTL ? <>{children}</> : null;
+  return isRTL ? null : <>{children}</>;
 }
 
 /**
@@ -175,10 +175,10 @@ export function LTROnly({ children }: { children: ReactNode }): React.ReactEleme
 export function Bidirectional({
   ltr,
   rtl,
-}: {
+}: Readonly<{
   ltr: ReactNode;
   rtl: ReactNode;
-}): React.ReactElement {
+}>): React.ReactElement {
   const { isRTL } = useRTLContext();
   return <>{isRTL ? rtl : ltr}</>;
 }

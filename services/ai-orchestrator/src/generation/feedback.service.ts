@@ -44,7 +44,7 @@ When creating rubrics:
 - Include actionable feedback indicators`;
 
 export class FeedbackService {
-  constructor(private llm: LLMOrchestrator) {}
+  constructor(private readonly llm: LLMOrchestrator) {}
 
   /**
    * Generate feedback for student submission
@@ -473,45 +473,54 @@ Respond with JSON: {"feedback": "string", "encouragement": "string", "nextStep":
     ];
 
     if (request.rubric?.length) {
-      parts.push('');
-      parts.push('GRADING RUBRIC:');
+      parts.push(
+        '',
+        'GRADING RUBRIC:'
+      );
       for (const r of request.rubric) {
-        parts.push(`${r.name} (${r.maxPoints} points):`);
-        parts.push(r.description);
-        parts.push(`Levels: ${r.levels.map((l) => `${l.score}pts - ${l.description}`).join('; ')}`);
-        parts.push('');
+        const levelsSummary = r.levels.map((l) => l.score + 'pts - ' + l.description).join('; ');
+        parts.push(
+          `${r.name} (${r.maxPoints} points):`,
+          r.description,
+          `Levels: ${levelsSummary}`,
+          ''
+        );
       }
     }
 
     if (request.sampleAnswer) {
-      parts.push('SAMPLE/MODEL ANSWER:');
-      parts.push(request.sampleAnswer);
-      parts.push('');
+      parts.push(
+        'SAMPLE/MODEL ANSWER:',
+        request.sampleAnswer,
+        ''
+      );
     }
 
     if (request.teacherGuidelines) {
-      parts.push('TEACHER GUIDELINES:');
-      parts.push(request.teacherGuidelines);
-      parts.push('');
+      parts.push(
+        'TEACHER GUIDELINES:',
+        request.teacherGuidelines,
+        ''
+      );
     }
 
-    parts.push('PROVIDE:');
-    parts.push(`1. An overall score (out of ${request.maxPoints})`);
-    parts.push('2. Rubric-based scores if rubric provided');
-    parts.push("3. 2-3 specific strengths with examples from the student's work");
-    parts.push('4. 2-3 areas for improvement with specific suggestions');
-    parts.push('5. Detailed, constructive feedback');
-    parts.push('6. Actionable suggestions for improvement');
-    parts.push('7. An encouraging message');
-    parts.push('8. Your confidence level (0-1) in this assessment');
-    parts.push('');
-    parts.push('Remember:');
-    parts.push('- Be encouraging and constructive');
-    parts.push("- Quote specific examples from the student's work");
-    parts.push('- Provide actionable feedback');
-    parts.push(`- Be age-appropriate for ${request.gradeLevel}`);
-    parts.push('');
     parts.push(
+      'PROVIDE:',
+      `1. An overall score (out of ${request.maxPoints})`,
+      '2. Rubric-based scores if rubric provided',
+      "3. 2-3 specific strengths with examples from the student's work",
+      '4. 2-3 areas for improvement with specific suggestions',
+      '5. Detailed, constructive feedback',
+      '6. Actionable suggestions for improvement',
+      '7. An encouraging message',
+      '8. Your confidence level (0-1) in this assessment',
+      '',
+      'Remember:',
+      '- Be encouraging and constructive',
+      "- Quote specific examples from the student's work",
+      '- Provide actionable feedback',
+      `- Be age-appropriate for ${request.gradeLevel}`,
+      '',
       'Respond with JSON: {"overallScore": number, "maxScore": number, "percentage": number, "rubricScores": [...], "strengths": [...], "areasForImprovement": [...], "specificFeedback": "string", "suggestions": [...], "encouragement": "string", "nextSteps": [...], "confidence": number}'
     );
 

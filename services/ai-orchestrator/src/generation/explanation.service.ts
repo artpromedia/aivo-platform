@@ -59,7 +59,7 @@ const STYLE_INSTRUCTIONS: Record<string, string> = {
 };
 
 export class ExplanationService {
-  constructor(private llm: LLMOrchestrator) {}
+  constructor(private readonly llm: LLMOrchestrator) {}
 
   /**
    * Generate an adaptive explanation
@@ -453,42 +453,48 @@ Respond with JSON: {"misconceptions": ["string"]}`;
       parts.push(`CONTEXT: ${request.context}`);
     }
 
-    parts.push('');
-    parts.push('STUDENT PROFILE:');
-    parts.push(`- Grade Level: ${profile.gradeLevel}`);
-    parts.push(`- Explanation Level: ${level} - ${LEVEL_DESCRIPTIONS[level]}`);
-    parts.push(`- Average Performance: ${Math.round(profile.averagePerformance)}%`);
+    parts.push(
+      '',
+      'STUDENT PROFILE:',
+      `- Grade Level: ${profile.gradeLevel}`,
+      `- Explanation Level: ${level} - ${LEVEL_DESCRIPTIONS[level]}`,
+      `- Average Performance: ${Math.round(profile.averagePerformance)}%`
+    );
 
     if (request.preferredStyle) {
       parts.push(`- Preferred Learning Style: ${STYLE_INSTRUCTIONS[request.preferredStyle]}`);
     }
 
     if (request.previousAttempt) {
-      parts.push('');
-      parts.push('PREVIOUS ATTEMPT:');
-      parts.push(`- Question: ${request.previousAttempt.question}`);
-      parts.push(`- Student's Answer: ${request.previousAttempt.studentAnswer}`);
-      parts.push(`- Correct Answer: ${request.previousAttempt.correctAnswer}`);
+      parts.push(
+        '',
+        'PREVIOUS ATTEMPT:',
+        `- Question: ${request.previousAttempt.question}`,
+        `- Student's Answer: ${request.previousAttempt.studentAnswer}`,
+        `- Correct Answer: ${request.previousAttempt.correctAnswer}`
+      );
     }
 
     if (misconceptions.length > 0) {
-      parts.push('');
-      parts.push('IDENTIFIED MISCONCEPTIONS TO ADDRESS:');
-      misconceptions.forEach((m, i) => parts.push(`${i + 1}. ${m}`));
+      parts.push(
+        '',
+        'IDENTIFIED MISCONCEPTIONS TO ADDRESS:',
+        ...misconceptions.map((m, i) => `${i + 1}. ${m}`)
+      );
     }
 
-    parts.push('');
-    parts.push('PROVIDE:');
-    parts.push(`1. A clear, ${level} explanation of the concept`);
-    parts.push('2. 2-3 relevant examples that apply the concept');
-    parts.push('3. A visual description (describe what a helpful diagram would show)');
-    parts.push('4. 1-2 analogies to make the concept relatable');
-    parts.push('5. 2-3 quick check questions to verify understanding');
-    parts.push('6. Related concepts the student might want to explore');
-    parts.push('');
-    parts.push("Make the explanation engaging, accurate, and appropriate for the student's level.");
-    parts.push('');
     parts.push(
+      '',
+      'PROVIDE:',
+      `1. A clear, ${level} explanation of the concept`,
+      '2. 2-3 relevant examples that apply the concept',
+      '3. A visual description (describe what a helpful diagram would show)',
+      '4. 1-2 analogies to make the concept relatable',
+      '5. 2-3 quick check questions to verify understanding',
+      '6. Related concepts the student might want to explore',
+      '',
+      "Make the explanation engaging, accurate, and appropriate for the student's level.",
+      '',
       'Respond with JSON: {"explanation": "string", "examples": [{"scenario": "string", "application": "string"}], "visualDescription": "string", "analogies": ["string"], "checkQuestions": [{"question": "string", "answer": "string"}], "relatedConcepts": ["string"]}'
     );
 

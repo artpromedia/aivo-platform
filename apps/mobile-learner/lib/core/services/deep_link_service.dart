@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:uni_links/uni_links.dart';
 
 /// Deep Link Service
@@ -14,7 +13,6 @@ import 'package:uni_links/uni_links.dart';
 /// - Route mapping for various content types
 /// - Analytics tracking for link attribution
 class DeepLinkService {
-  final Ref _ref;
   StreamSubscription<String?>? _linkSubscription;
   bool _initialized = false;
 
@@ -29,7 +27,7 @@ class DeepLinkService {
     'aivolearning.com',
   ];
 
-  DeepLinkService(this._ref);
+  DeepLinkService();
 
   /// Initialize deep link handling
   Future<void> initialize() async {
@@ -96,9 +94,7 @@ class DeepLinkService {
 
   /// Map custom scheme URI to route
   String? _mapAppSchemeUri(Uri uri) {
-    final path = uri.path;
     final segments = uri.pathSegments;
-    final query = uri.queryParameters;
 
     switch (uri.host) {
       case 'lesson':
@@ -301,7 +297,7 @@ class DeepLinkService {
 
 /// Deep link service provider
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
-  final service = DeepLinkService(ref);
+  final service = DeepLinkService();
   ref.onDispose(() => service.dispose());
   return service;
 });

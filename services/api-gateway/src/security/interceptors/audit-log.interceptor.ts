@@ -209,7 +209,7 @@ export class AuditLogInterceptor implements NestInterceptor {
    */
   private inferResourceType(path: string): string {
     // Extract first path segment after /api/v1/
-    const match = path.match(/^\/api\/v\d+\/([^\/]+)/);
+    const match = path.match(/^\/api\/v\d+\/([^/]+)/);
     return match ? match[1] : 'unknown';
   }
   
@@ -224,7 +224,7 @@ export class AuditLogInterceptor implements NestInterceptor {
     if (params.resourceId) return params.resourceId;
     
     // Try to extract from path
-    const pathMatch = request.path.match(/\/([0-9a-f-]{36}|[0-9]+)(?:\/|$)/);
+    const pathMatch = request.path.match(/\/([\da-f-]{36}|\d+)(?:\/|$)/);
     return pathMatch ? pathMatch[1] : undefined;
   }
   

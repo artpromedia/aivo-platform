@@ -84,11 +84,11 @@ export interface BudgetConfig {
 
 export class CostTrackingService {
   // In-memory store (replace with database in production)
-  private usageRecords: UsageRecord[] = [];
-  private budgetConfigs = new Map<string, BudgetConfig>();
-  private alertsSent = new Map<string, Set<number>>(); // tenantId -> thresholds alerted
+  private readonly usageRecords: UsageRecord[] = [];
+  private readonly budgetConfigs = new Map<string, BudgetConfig>();
+  private readonly alertsSent = new Map<string, Set<number>>(); // tenantId -> thresholds alerted
 
-  constructor(private llm?: LLMOrchestrator) {}
+  constructor(private readonly llm?: LLMOrchestrator) {}
 
   /**
    * Record a usage event

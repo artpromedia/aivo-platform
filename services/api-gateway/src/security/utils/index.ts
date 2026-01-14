@@ -3,7 +3,7 @@
  * Helper functions for security operations
  */
 
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import { Request } from 'express';
 import { PII_PATTERNS } from '../constants';
 
@@ -162,7 +162,7 @@ export function sanitizeHtml(input: string): string {
     '`': '&#x60;',
     '=': '&#x3D;',
   };
-  return input.replace(/[&<>"'`=/]/g, char => htmlEntities[char]);
+  return input.replaceAll(/[&<>"'`=/]/g, char => htmlEntities[char]);
 }
 
 /**
@@ -170,16 +170,16 @@ export function sanitizeHtml(input: string): string {
  */
 export function sanitizeSql(input: string): string {
   return input
-    .replace(/['";\\]/g, '')
-    .replace(/--/g, '')
-    .replace(/\/\*/g, '')
-    .replace(/\*\//g, '')
-    .replace(/\bUNION\b/gi, '')
-    .replace(/\bSELECT\b/gi, '')
-    .replace(/\bDROP\b/gi, '')
-    .replace(/\bDELETE\b/gi, '')
-    .replace(/\bINSERT\b/gi, '')
-    .replace(/\bUPDATE\b/gi, '');
+    .replaceAll(/['";\\]/g, '')
+    .replaceAll('--', '')
+    .replaceAll('/*', '')
+    .replaceAll('*/', '')
+    .replaceAll(/\bUNION\b/gi, '')
+    .replaceAll(/\bSELECT\b/gi, '')
+    .replaceAll(/\bDROP\b/gi, '')
+    .replaceAll(/\bDELETE\b/gi, '')
+    .replaceAll(/\bINSERT\b/gi, '')
+    .replaceAll(/\bUPDATE\b/gi, '');
 }
 
 /**
@@ -187,10 +187,10 @@ export function sanitizeSql(input: string): string {
  */
 export function sanitizePath(input: string): string {
   return input
-    .replace(/\.\./g, '')
-    .replace(/\\/g, '/')
-    .replace(/\/+/g, '/')
-    .replace(/^\//, '');
+    .replaceAll('..', '')
+    .replaceAll('\\', '/')
+    .replaceAll(/\/+/g, '/')
+    .replaceAll(/^\//,'');
 }
 
 /**
@@ -322,28 +322,28 @@ export function validatePasswordStrength(password: string): {
     score += 25;
   }
 
-  if (!/[A-Z]/.test(password)) {
+  if (/[A-Z]/.test(password)) {
+    score += 25;
+  } else {
     errors.push('Password must contain an uppercase letter');
-  } else {
-    score += 25;
   }
 
-  if (!/[a-z]/.test(password)) {
+  if (/[a-z]/.test(password)) {
+    score += 25;
+  } else {
     errors.push('Password must contain a lowercase letter');
-  } else {
-    score += 25;
   }
 
-  if (!/[0-9]/.test(password)) {
-    errors.push('Password must contain a number');
-  } else {
+  if (/\d/.test(password)) {
     score += 15;
+  } else {
+    errors.push('Password must contain a number');
   }
 
-  if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
-    errors.push('Password must contain a special character');
-  } else {
+  if (/[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(password)) {
     score += 10;
+  } else {
+    errors.push('Password must contain a special character');
   }
 
   return {

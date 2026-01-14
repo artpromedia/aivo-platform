@@ -578,7 +578,7 @@ export class MessagingService {
 
   private sanitizeHtml(content: string): string {
     // Basic HTML sanitization - in production, use a library like DOMPurify
-    return content.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    return content.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('\n', '<br>');
   }
 
   private toConversation(conversation: {

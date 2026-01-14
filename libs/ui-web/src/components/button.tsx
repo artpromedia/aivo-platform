@@ -23,7 +23,7 @@ export function Button({
   rightIcon,
   type = 'button',
   ...props
-}: ButtonProps) {
+}: Readonly<ButtonProps>) {
   const variantClass: Record<ButtonVariant, string> = {
     primary: 'bg-primary text-on-accent shadow-soft hover:bg-primary/90 active:translate-y-[0.5px]',
     secondary:

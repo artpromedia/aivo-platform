@@ -68,10 +68,10 @@ export class EmailService {
    */
   private htmlToText(html: string): string {
     return html
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\s+/g, ' ')
+      .replaceAll(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replaceAll(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replaceAll(/<[^>]+>/g, '')
+      .replaceAll(/\s+/g, ' ')
       .trim();
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
@@ -13,25 +13,25 @@ import { Card } from '../card';
 
 export interface AIFeedbackProps {
   /** The student's submission to get feedback on */
-  submission: string;
+  readonly submission: string;
   /** Type of submission */
-  submissionType: 'essay' | 'shortAnswer' | 'code' | 'other';
+  readonly submissionType: 'essay' | 'shortAnswer' | 'code' | 'other';
   /** Assignment context */
-  assignmentContext?: string;
+  readonly assignmentContext?: string;
   /** Grading rubric */
-  rubric?: RubricCriteria[];
+  readonly rubric?: RubricCriteria[];
   /** Student grade level */
-  gradeLevel: string;
+  readonly gradeLevel: string;
   /** Subject area */
-  subject: string;
+  readonly subject: string;
   /** API endpoint */
-  apiEndpoint?: string;
+  readonly apiEndpoint?: string;
   /** Callback when feedback is received */
-  onFeedbackReceived?: (feedback: GeneratedFeedback) => void;
+  readonly onFeedbackReceived?: (feedback: GeneratedFeedback) => void;
   /** Additional class names */
-  className?: string;
+  readonly className?: string;
   /** Whether to auto-fetch on mount */
-  autoFetch?: boolean;
+  readonly autoFetch?: boolean;
 }
 
 interface RubricCriteria {
@@ -131,11 +131,11 @@ export function AIFeedback({
   ]);
 
   // Auto-fetch on mount if enabled
-  useState(() => {
+  useEffect(() => {
     if (autoFetch) {
       void fetchFeedback();
     }
-  });
+  }, [autoFetch, fetchFeedback]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -180,7 +180,7 @@ export function AIFeedback({
         <div className="space-y-4">
           {/* Submission Preview */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-text">Your Submission</label>
+            <div className="mb-2 block text-sm font-medium text-text">Your Submission</div>
             <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-surface-muted p-3 text-sm text-muted">
               {submission.length > 500 ? `${submission.slice(0, 500)}...` : submission}
             </div>
@@ -189,11 +189,11 @@ export function AIFeedback({
           {/* Rubric Preview */}
           {rubric && rubric.length > 0 && (
             <div>
-              <label className="mb-2 block text-sm font-medium text-text">Grading Rubric</label>
+              <div className="mb-2 block text-sm font-medium text-text">Grading Rubric</div>
               <div className="space-y-2">
-                {rubric.map((criteria, i) => (
+                {rubric.map((criteria) => (
                   <div
-                    key={i}
+                    key={criteria.criterion}
                     className="flex items-center justify-between rounded-lg border border-border p-2 text-sm"
                   >
                     <span className="text-text">{criteria.criterion}</span>
@@ -273,8 +273,8 @@ export function AIFeedback({
                     Strengths
                   </h4>
                   <ul className="space-y-1 pl-6 text-sm text-muted">
-                    {feedback.strengths.map((strength, i) => (
-                      <li key={i} className="list-disc">
+                    {feedback.strengths.map((strength) => (
+                      <li key={strength} className="list-disc">
                         {strength}
                       </li>
                     ))}
@@ -290,8 +290,8 @@ export function AIFeedback({
                     Areas for Improvement
                   </h4>
                   <ul className="space-y-1 pl-6 text-sm text-muted">
-                    {feedback.areasForImprovement.map((area, i) => (
-                      <li key={i} className="list-disc">
+                    {feedback.areasForImprovement.map((area) => (
+                      <li key={area} className="list-disc">
                         {area}
                       </li>
                     ))}
@@ -350,7 +350,7 @@ export function AIFeedback({
                 <div className="space-y-3">
                   {feedback.suggestions.map((suggestion, i) => (
                     <div
-                      key={i}
+                      key={suggestion}
                       className="flex items-start gap-3 rounded-lg border border-border p-3"
                     >
                       <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
@@ -395,9 +395,9 @@ function TabButton({
   onClick,
   children,
 }: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
+  readonly active: boolean;
+  readonly onClick: () => void;
+  readonly children: ReactNode;
 }) {
   return (
     <button
@@ -413,7 +413,7 @@ function TabButton({
   );
 }
 
-function ScoreRing({ score, maxScore }: { score: number; maxScore: number }) {
+function ScoreRing({ score, maxScore }: { readonly score: number; readonly maxScore: number }) {
   const percentage = (score / maxScore) * 100;
   const strokeDasharray = `${percentage} ${100 - percentage}`;
 
@@ -455,10 +455,10 @@ function RubricScoreCard({
   maxScore,
   feedback,
 }: {
-  criterion: string;
-  score: number;
-  maxScore: number;
-  feedback: string;
+  readonly criterion: string;
+  readonly score: number;
+  readonly maxScore: number;
+  readonly feedback: string;
 }) {
   const percentage = (score / maxScore) * 100;
 
@@ -481,7 +481,7 @@ function RubricScoreCard({
   );
 }
 
-function QualityMetric({ label, score }: { label: string; score: number }) {
+function QualityMetric({ label, score }: { readonly label: string; readonly score: number }) {
   const getColor = (s: number) => {
     if (s >= 80) return 'text-green-600';
     if (s >= 60) return 'text-yellow-600';
@@ -500,7 +500,7 @@ function QualityMetric({ label, score }: { label: string; score: number }) {
 // ICONS
 // ────────────────────────────────────────────────────────────────────────────
 
-function FeedbackIcon({ className }: { className?: string }) {
+function FeedbackIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -513,7 +513,7 @@ function FeedbackIcon({ className }: { className?: string }) {
   );
 }
 
-function SparklesIcon({ className }: { className?: string }) {
+function SparklesIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
       <path d="M7 3a1 1 0 00-.707.293l-4 4a1 1 0 00.708 1.414l.999-.999V17a1 1 0 001 1h10a1 1 0 001-1V7.707l.999.999a1 1 0 001.414-1.414l-4-4A1 1 0 0013 3H7zM6 9h8v7H6V9z" />
@@ -521,7 +521,7 @@ function SparklesIcon({ className }: { className?: string }) {
   );
 }
 
-function ErrorIcon({ className }: { className?: string }) {
+function ErrorIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
       <path
@@ -533,7 +533,7 @@ function ErrorIcon({ className }: { className?: string }) {
   );
 }
 
-function WarningIcon({ className }: { className?: string }) {
+function WarningIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
       <path
@@ -545,7 +545,7 @@ function WarningIcon({ className }: { className?: string }) {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function CheckIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -553,7 +553,7 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-function ArrowUpIcon({ className }: { className?: string }) {
+function ArrowUpIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />

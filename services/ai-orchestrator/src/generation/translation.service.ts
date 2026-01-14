@@ -59,7 +59,7 @@ const CONTENT_TYPE_GUIDANCE: Record<string, string> = {
 };
 
 export class TranslationService {
-  constructor(private llm: LLMOrchestrator) {}
+  constructor(private readonly llm: LLMOrchestrator) {}
 
   /**
    * Translate educational content
@@ -362,31 +362,35 @@ Respond with JSON: {"language": "ISO 639-1 code", "languageName": "full name", "
     ];
 
     if (request.contentType) {
-      parts.push(`CONTENT TYPE: ${request.contentType}`);
-      parts.push(CONTENT_TYPE_GUIDANCE[request.contentType] ?? '');
-      parts.push('');
+      parts.push(
+        `CONTENT TYPE: ${request.contentType}`,
+        CONTENT_TYPE_GUIDANCE[request.contentType] ?? '',
+        ''
+      );
     }
 
     if (request.educationalContext) {
       parts.push(
-        'IMPORTANT: This is educational content. Maintain pedagogical quality and clarity.'
+        'IMPORTANT: This is educational content. Maintain pedagogical quality and clarity.',
+        ''
       );
-      parts.push('');
     }
 
     if (request.preserveFormatting) {
-      parts.push('FORMATTING: Preserve all markdown, HTML, and special formatting.');
-      parts.push('');
+      parts.push(
+        'FORMATTING: Preserve all markdown, HTML, and special formatting.',
+        ''
+      );
     }
 
-    parts.push('CONTENT TO TRANSLATE:');
-    parts.push('---');
-    parts.push(request.content);
-    parts.push('---');
-    parts.push('');
-    parts.push('Provide the translation and a glossary of key educational terms translated.');
-    parts.push('');
     parts.push(
+      'CONTENT TO TRANSLATE:',
+      '---',
+      request.content,
+      '---',
+      '',
+      'Provide the translation and a glossary of key educational terms translated.',
+      '',
       'Respond with JSON: {"translation": "translated text", "glossary": [{"source": "term", "translation": "translated term", "context": "usage"}]}'
     );
 

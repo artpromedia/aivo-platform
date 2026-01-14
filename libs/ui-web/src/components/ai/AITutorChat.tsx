@@ -13,19 +13,19 @@ import { Card } from '../card';
 
 export interface AITutorChatProps {
   /** API endpoint for chat */
-  apiEndpoint?: string;
+  readonly apiEndpoint?: string;
   /** Student information for personalization */
-  studentProfile?: StudentProfile;
+  readonly studentProfile?: StudentProfile;
   /** Initial subject/topic context */
-  context?: ChatContext;
+  readonly context?: ChatContext;
   /** Callback when help is needed */
-  onEscalate?: (message: string) => void;
+  readonly onEscalate?: (message: string) => void;
   /** Additional class names */
-  className?: string;
+  readonly className?: string;
   /** Placeholder text */
-  placeholder?: string;
+  readonly placeholder?: string;
   /** Welcome message */
-  welcomeMessage?: string;
+  readonly welcomeMessage?: string;
 }
 
 interface StudentProfile {
@@ -127,9 +127,11 @@ export function AITutorChat({
   // Add welcome message
   useEffect(() => {
     if (messages.length === 0) {
+      const nameGreeting = studentProfile?.name ? ` ${studentProfile.name}` : '';
+      const topicContext = context?.topic ?? 'your lesson';
       const welcome =
         welcomeMessage ??
-        `Hi${studentProfile?.name ? ` ${studentProfile.name}` : ''}! 👋 I'm your AI tutor. I'm here to help you understand ${context?.topic ?? 'your lesson'}. Feel free to ask me any questions!`;
+        `Hi${nameGreeting}! 👋 I'm your AI tutor. I'm here to help you understand ${topicContext}. Feel free to ask me any questions!`;
 
       setMessages([
         {
@@ -238,7 +240,7 @@ export function AITutorChat({
   );
 
   const handleEscalate = useCallback(() => {
-    const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
+    const lastUserMessage = messages.findLast((m) => m.role === 'user');
     onEscalate?.(lastUserMessage?.content ?? 'Student needs help');
   }, [messages, onEscalate]);
 
@@ -373,8 +375,8 @@ function MessageBubble({
   message,
   onSuggestionClick,
 }: {
-  message: ChatMessage;
-  onSuggestionClick: (suggestion: string) => void;
+  readonly message: ChatMessage;
+  readonly onSuggestionClick: (suggestion: string) => void;
 }) {
   const isUser = message.role === 'user';
 
@@ -402,9 +404,9 @@ function MessageBubble({
         {/* Suggestions */}
         {message.metadata?.suggestions && message.metadata.suggestions.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {message.metadata.suggestions.map((suggestion, i) => (
+            {message.metadata.suggestions.map((suggestion) => (
               <button
-                key={i}
+                key={suggestion}
                 onClick={() => onSuggestionClick(suggestion)}
                 className="rounded-full border border-border px-2 py-0.5 text-xs text-muted transition-colors hover:border-primary hover:text-primary"
               >
@@ -418,7 +420,7 @@ function MessageBubble({
   );
 }
 
-function TutorAvatar({ small }: { small?: boolean }) {
+function TutorAvatar({ small }: { readonly small?: boolean }) {
   return (
     <div
       className={cn(
@@ -445,7 +447,7 @@ function TypingIndicator() {
 // ICONS
 // ────────────────────────────────────────────────────────────────────────────
 
-function ChatIcon({ className }: { className?: string }) {
+function ChatIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -458,7 +460,7 @@ function ChatIcon({ className }: { className?: string }) {
   );
 }
 
-function BotIcon({ className }: { className?: string }) {
+function BotIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
       <path
@@ -470,7 +472,7 @@ function BotIcon({ className }: { className?: string }) {
   );
 }
 
-function SendIcon({ className }: { className?: string }) {
+function SendIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -483,7 +485,7 @@ function SendIcon({ className }: { className?: string }) {
   );
 }
 
-function MinimizeIcon({ className }: { className?: string }) {
+function MinimizeIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -491,7 +493,7 @@ function MinimizeIcon({ className }: { className?: string }) {
   );
 }
 
-function HandIcon({ className }: { className?: string }) {
+function HandIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -504,7 +506,7 @@ function HandIcon({ className }: { className?: string }) {
   );
 }
 
-function LightbulbIcon({ className }: { className?: string }) {
+function LightbulbIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -517,7 +519,7 @@ function LightbulbIcon({ className }: { className?: string }) {
   );
 }
 
-function ExampleIcon({ className }: { className?: string }) {
+function ExampleIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -530,7 +532,7 @@ function ExampleIcon({ className }: { className?: string }) {
   );
 }
 
-function StepsIcon({ className }: { className?: string }) {
+function StepsIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -543,7 +545,7 @@ function StepsIcon({ className }: { className?: string }) {
   );
 }
 
-function QuizIcon({ className }: { className?: string }) {
+function QuizIcon({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path

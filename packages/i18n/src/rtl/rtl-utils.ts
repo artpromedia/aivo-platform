@@ -9,6 +9,11 @@ import type { CSSProperties } from 'react';
 import { LOGICAL_PROPERTIES, RTL_TRANSFORM_MAP, TAILWIND_RTL_CLASSES } from './rtl-constants';
 
 /**
+ * Type alias for CSS property values
+ */
+type StyleValue = string | number | undefined;
+
+/**
  * Style object that maps LTR to RTL values
  */
 export interface RTLStyleMap {
@@ -52,7 +57,7 @@ function transformStylesForRTL(styles: CSSProperties): CSSProperties {
 
   for (const key of Object.keys(styles)) {
     const value = styles[key as keyof CSSProperties];
-    const transformedEntry = transformProperty(key, value as string | number | undefined);
+    const transformedEntry = transformProperty(key, value as StyleValue);
     Object.assign(transformed, transformedEntry);
   }
 
@@ -60,112 +65,101 @@ function transformStylesForRTL(styles: CSSProperties): CSSProperties {
 }
 
 /**
+ * Swap left/right in string values
+ */
+function swapLeftRight(value: string): string {
+  return value
+    .replaceAll(/\bleft\b/g, '__RIGHT__')
+    .replaceAll(/\bright\b/g, 'left')
+    .replaceAll('__RIGHT__', 'right');
+}
+
+/**
+ * Transform translateX values
+ */
+function transformTranslateX(value: string): string {
+  return value.replaceAll(
+    /translateX\(([-.\d]+)(.*?)\)/g,
+    (_match, numStr, unitStr) => {
+      const num = String(numStr);
+      const unit = String(unitStr);
+      return `translateX(${-Number.parseFloat(num)}${unit})`;
+    }
+  );
+}
+
+/**
+ * Handle directional value transformation (left/right swap)
+ */
+function transformDirectionalValue(
+  property: string,
+  value: StyleValue
+): Record<string, StyleValue> {
+  if (value === 'left') return { [property]: 'right' };
+  if (value === 'right') return { [property]: 'left' };
+  return { [property]: value };
+}
+
+/**
+ * Property swap mappings for RTL
+ */
+const PROPERTY_SWAPS: Record<string, string> = {
+  left: 'right',
+  right: 'left',
+  marginLeft: 'marginRight',
+  marginRight: 'marginLeft',
+  paddingLeft: 'paddingRight',
+  paddingRight: 'paddingLeft',
+  borderLeft: 'borderRight',
+  borderRight: 'borderLeft',
+  borderLeftWidth: 'borderRightWidth',
+  borderRightWidth: 'borderLeftWidth',
+  borderLeftStyle: 'borderRightStyle',
+  borderRightStyle: 'borderLeftStyle',
+  borderLeftColor: 'borderRightColor',
+  borderRightColor: 'borderLeftColor',
+  borderTopLeftRadius: 'borderTopRightRadius',
+  borderTopRightRadius: 'borderTopLeftRadius',
+  borderBottomLeftRadius: 'borderBottomRightRadius',
+  borderBottomRightRadius: 'borderBottomLeftRadius',
+};
+
+/**
  * Transform a single CSS property for RTL
  */
 function transformProperty(
   property: string,
-  value: string | number | undefined
-): Record<string, string | number | undefined> {
+  value: StyleValue
+): Record<string, StyleValue> {
   if (value === undefined) return {};
 
-  // Handle directional properties
-  switch (property) {
-    // Swap left/right
-    case 'left':
-      return { right: value };
-    case 'right':
-      return { left: value };
-    case 'marginLeft':
-      return { marginRight: value };
-    case 'marginRight':
-      return { marginLeft: value };
-    case 'paddingLeft':
-      return { paddingRight: value };
-    case 'paddingRight':
-      return { paddingLeft: value };
-    case 'borderLeft':
-      return { borderRight: value };
-    case 'borderRight':
-      return { borderLeft: value };
-    case 'borderLeftWidth':
-      return { borderRightWidth: value };
-    case 'borderRightWidth':
-      return { borderLeftWidth: value };
-    case 'borderLeftStyle':
-      return { borderRightStyle: value };
-    case 'borderRightStyle':
-      return { borderLeftStyle: value };
-    case 'borderLeftColor':
-      return { borderRightColor: value };
-    case 'borderRightColor':
-      return { borderLeftColor: value };
-    case 'borderTopLeftRadius':
-      return { borderTopRightRadius: value };
-    case 'borderTopRightRadius':
-      return { borderTopLeftRadius: value };
-    case 'borderBottomLeftRadius':
-      return { borderBottomRightRadius: value };
-    case 'borderBottomRightRadius':
-      return { borderBottomLeftRadius: value };
-
-    // Transform text alignment
-    case 'textAlign':
-      if (value === 'left') return { textAlign: 'right' };
-      if (value === 'right') return { textAlign: 'left' };
-      return { textAlign: value };
-
-    // Transform float
-    case 'float':
-      if (value === 'left') return { float: 'right' };
-      if (value === 'right') return { float: 'left' };
-      return { float: value };
-
-    // Transform clear
-    case 'clear':
-      if (value === 'left') return { clear: 'right' };
-      if (value === 'right') return { clear: 'left' };
-      return { clear: value };
-
-    // Transform background position
-    case 'backgroundPosition':
-      if (typeof value === 'string') {
-        const flipped = value
-          .replace(/\bleft\b/g, '__RIGHT__')
-          .replace(/\bright\b/g, 'left')
-          .replace(/__RIGHT__/g, 'right');
-        return { backgroundPosition: flipped };
-      }
-      return { backgroundPosition: value };
-
-    // Transform transform origin
-    case 'transformOrigin':
-      if (typeof value === 'string') {
-        const flipped = value
-          .replace(/\bleft\b/g, '__RIGHT__')
-          .replace(/\bright\b/g, 'left')
-          .replace(/__RIGHT__/g, 'right');
-        return { transformOrigin: flipped };
-      }
-      return { transformOrigin: value };
-
-    // Transform translate
-    case 'transform':
-      if (typeof value === 'string' && value.includes('translateX')) {
-        const flipped = value.replace(
-          /translateX\(([-\d.]+)(.*?)\)/g,
-          (match, numStr, unitStr) => {
-            const num = String(numStr);
-            const unit = String(unitStr);
-            return `translateX(${-parseFloat(num)}${unit})`;
-          }
-        );
-        return { transform: flipped };
-      }
-      return { transform: value };
-
-    default:
-      return { [property]: value };
+  // Handle simple property swaps
+  if (property in PROPERTY_SWAPS) {
+    return { [PROPERTY_SWAPS[property]]: value };
   }
+
+  // Handle properties with directional values
+  if (property === 'textAlign' || property === 'float' || property === 'clear') {
+    return transformDirectionalValue(property, value);
+  }
+
+  // Transform background position
+  if (property === 'backgroundPosition' && typeof value === 'string') {
+    return { backgroundPosition: swapLeftRight(value) };
+  }
+
+  // Transform transform origin
+  if (property === 'transformOrigin' && typeof value === 'string') {
+    return { transformOrigin: swapLeftRight(value) };
+  }
+
+  // Transform translateX
+  if (property === 'transform' && typeof value === 'string' && value.includes('translateX')) {
+    return { transform: transformTranslateX(value) };
+  }
+
+  // Default: return unchanged
+  return { [property]: value };
 }
 
 /**
@@ -248,7 +242,7 @@ export function rtlPosition(
   left: number | string | undefined,
   right: number | string | undefined,
   isRTL: boolean
-): { left?: number | string | undefined; right?: number | string | undefined } {
+): { left?: number | string; right?: number | string } {
   if (isRTL) {
     return { left: right, right: left };
   }
@@ -260,15 +254,15 @@ export function rtlPosition(
  * This approach is recommended for new CSS as it automatically handles RTL
  */
 export function toLogicalProperties(styles: CSSProperties): CSSProperties {
-  const logical: Record<string, string | number | undefined> = {};
+  const logical: Record<string, StyleValue> = {};
 
   for (const key of Object.keys(styles)) {
     const value = styles[key as keyof CSSProperties];
     const logicalKey = LOGICAL_PROPERTIES[key];
     if (logicalKey) {
-      logical[logicalKey] = value as string | number | undefined;
+      logical[logicalKey] = value as StyleValue;
     } else {
-      logical[key] = value as string | number | undefined;
+      logical[key] = value as StyleValue;
     }
   }
 

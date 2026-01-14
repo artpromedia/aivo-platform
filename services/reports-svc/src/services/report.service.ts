@@ -103,12 +103,12 @@ export interface ReportParameters {
 
 export interface ReportData {
   title: string;
-  subtitle?: string | undefined;
+  subtitle?: string;
   generatedAt: Date;
   generatedBy: string;
   period: { start: Date; end: Date };
   sections: ReportSection[];
-  summary?: ReportSummary | undefined;
+  summary?: ReportSummary;
   metadata: ReportMetadata;
 }
 
@@ -201,7 +201,7 @@ export interface ReportServiceConfig {
   enableEmailDelivery: boolean;
   fromEmail: string;
   companyName: string;
-  logoUrl?: string | undefined;
+  logoUrl?: string;
 }
 
 const DEFAULT_CONFIG: ReportServiceConfig = {

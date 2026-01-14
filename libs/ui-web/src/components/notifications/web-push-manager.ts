@@ -33,13 +33,13 @@ export interface WebPushManagerOptions {
  */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const base64 = (base64String + padding).replaceAll('-', '+').replaceAll('_', '/');
 
-  const rawData = window.atob(base64);
+  const rawData = globalThis.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
 
   for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+    outputArray[i] = rawData.codePointAt(i) ?? 0;
   }
 
   return outputArray;
@@ -52,9 +52,9 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCodePoint(bytes[i]);
   }
-  return window.btoa(binary);
+  return globalThis.btoa(binary);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -70,12 +70,13 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * - Push subscription management
  */
 export class WebPushManager {
-  private vapidPublicKey: Uint8Array;
-  private serviceWorkerPath: string;
+  private readonly vapidPublicKey: Uint8Array;
+  private readonly serviceWorkerPath: string;
   private registration: ServiceWorkerRegistration | null = null;
   private subscription: PushSubscription | null = null;
-  private onPermissionChange?: (permission: NotificationPermission) => void;
-  private onSubscriptionChange?: (subscription: PushSubscription | null) => void;
+  private readonly debug = false;
+  private readonly onPermissionChange?: (permission: NotificationPermission) => void;
+  private readonly onSubscriptionChange?: (subscription: PushSubscription | null) => void;
 
   constructor(options: WebPushManagerOptions) {
     this.vapidPublicKey = urlBase64ToUint8Array(options.vapidPublicKey);
@@ -88,14 +89,14 @@ export class WebPushManager {
    * Check if push notifications are supported
    */
   isSupported(): boolean {
-    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    return 'serviceWorker' in navigator && 'PushManager' in globalThis && 'Notification' in globalThis;
   }
 
   /**
    * Get current permission status
    */
   getPermission(): NotificationPermission {
-    if (!('Notification' in window)) {
+    if (!('Notification' in globalThis)) {
       return 'denied';
     }
     return Notification.permission;
@@ -105,7 +106,7 @@ export class WebPushManager {
    * Request notification permission
    */
   async requestPermission(): Promise<NotificationPermission> {
-    if (!('Notification' in window)) {
+    if (!('Notification' in globalThis)) {
       return 'denied';
     }
 

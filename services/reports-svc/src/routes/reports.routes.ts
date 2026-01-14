@@ -422,11 +422,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
     const { scheduleId: _scheduleId } = request.params;
     const _user = getUser(request);
 
-    // Update in database (pseudo-code)
-    // await prisma.scheduledReport.update({
-    //   where: { id: scheduleId, createdBy: user.id },
-    //   data: { status: 'cancelled' },
-    // });
+    // TODO: Implement database update for scheduled report cancellation
 
     return reply.send({
       success: true,
@@ -606,8 +602,8 @@ async function validateReportAccess(
 
 function calculateNextRun(schedule: {
   frequency: string;
-  dayOfWeek?: number | undefined;
-  dayOfMonth?: number | undefined;
+  dayOfWeek?: number;
+  dayOfMonth?: number;
   time: string;
   timezone: string;
 }): Date {

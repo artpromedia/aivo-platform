@@ -73,8 +73,8 @@ export interface NotificationFilters {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class NotificationApiClient {
-  private baseUrl: string;
-  private getAuthToken: () => Promise<string>;
+  private readonly baseUrl: string;
+  private readonly getAuthToken: () => Promise<string>;
 
   constructor(baseUrl: string, getAuthToken: () => Promise<string>) {
     this.baseUrl = baseUrl;

@@ -13,15 +13,15 @@ import { Card } from '../card';
 
 export interface LessonGeneratorProps {
   /** API endpoint for lesson generation */
-  apiEndpoint?: string;
+  readonly apiEndpoint?: string;
   /** Callback when lesson is generated */
-  onGenerate?: (lesson: GeneratedLesson) => void;
+  readonly onGenerate?: (lesson: GeneratedLesson) => void;
   /** Callback on error */
-  onError?: (error: Error) => void;
+  readonly onError?: (error: Error) => void;
   /** Additional class names */
-  className?: string;
+  readonly className?: string;
   /** Default form values */
-  defaults?: Partial<LessonFormData>;
+  readonly defaults?: Partial<LessonFormData>;
 }
 
 interface LessonFormData {
@@ -358,7 +358,7 @@ export function LessonGenerator({
                   max="90"
                   step="5"
                   value={formData.duration}
-                  onChange={(e) => handleInputChange('duration', parseInt(e.target.value, 10))}
+                  onChange={(e) => handleInputChange('duration', Number.parseInt(e.target.value, 10))}
                   className="flex-1"
                 />
                 <span className="w-16 text-center font-medium">{formData.duration} min</span>
@@ -372,7 +372,7 @@ export function LessonGenerator({
                   min="1"
                   max="5"
                   value={formData.difficulty}
-                  onChange={(e) => handleInputChange('difficulty', parseInt(e.target.value, 10))}
+                  onChange={(e) => handleInputChange('difficulty', Number.parseInt(e.target.value, 10))}
                   className="flex-1"
                 />
                 <span className="w-16 text-center font-medium">
