@@ -419,8 +419,8 @@ Respond with JSON: {"stem": "string", "options": [{"text": "string", "correct": 
       parts.push('8. Include 2-3 progressive hints for each question');
     }
 
-    parts.push('');
     parts.push(
+      '',
       'Respond with JSON: {"questions": [{"type": "string", "stem": "string", "options": [{"text": "string", "correct": boolean}], "correctAnswer": "string", "explanation": "string", "hints": ["string"], "difficulty": "string", "bloomsLevel": "string", "tags": ["string"]}]}'
     );
 
@@ -503,10 +503,10 @@ Respond with JSON: {"stem": "string", "options": [{"text": "string", "correct": 
    */
   private formatToHtml(text: string): string {
     return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br/>');
+      .replaceAll(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replaceAll(/\*(.*?)\*/g, '<em>$1</em>')
+      .replaceAll(/`(.*?)`/g, '<code>$1</code>')
+      .replaceAll('\n', '<br/>');
   }
 
   /**
