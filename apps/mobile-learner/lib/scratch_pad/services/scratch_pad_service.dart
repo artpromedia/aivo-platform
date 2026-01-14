@@ -224,7 +224,7 @@ class ScratchPadService {
     return canvasState.strokes.map((stroke) {
       return {
         'id': stroke.id,
-        'points': stroke.points.map((p) => {
+        'points': stroke.points.map((p) {
           return {
             'x': p.x,
             'y': p.y,

@@ -10,3 +10,7 @@ export 'social_story_service.dart';
 export 'social_story_viewer.dart';
 export 'story_page_widget.dart';
 export 'story_recommendation_widget.dart';
+
+// Type alias for backwards compatibility
+import 'social_story_models.dart';
+typedef StoryCategory = SocialStoryCategory;

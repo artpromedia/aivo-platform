@@ -138,7 +138,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
     });
 
     // Announce to screen readers
-    AccessibilityAnnouncements.announce(
+    A11yAnnouncer.announce(
       'Signing in with ${provider.displayName}...',
     );
 
@@ -167,7 +167,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
           await loadAndApplyLearnerTheme(ref, result.user.id);
 
           if (mounted) {
-            AccessibilityAnnouncements.announce('Successfully signed in');
+            A11yAnnouncer.announce('Successfully signed in');
             context.go('/plan');
           }
 

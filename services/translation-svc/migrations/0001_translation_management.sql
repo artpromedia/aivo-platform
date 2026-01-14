@@ -354,6 +354,6 @@ BEGIN
             ELSE 0
         END as completion_percentage
     FROM locale_stats ls
-    ORDER BY ls.locale;
+    ORDER BY ls.locale ASC;
 END;
 $$ LANGUAGE plpgsql;

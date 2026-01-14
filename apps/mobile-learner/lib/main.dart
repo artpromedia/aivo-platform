@@ -153,7 +153,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
           final learnerId = extra?['learnerId'] as String? ?? pinState.learnerId ?? '';
           final emotionalState = extra?['emotionalState'] as String?;
           final activityType = extra?['activityType'] as String?;
-          final category = extra?['category'] as StoryCategory?;
+          final category = extra?['category'] as SocialStoryCategory?;
           return SocialStoriesScreen(
             learnerId: learnerId,
             initialCategory: category,

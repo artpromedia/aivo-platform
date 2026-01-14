@@ -570,7 +570,7 @@ class _MentalMathGameState extends State<_MentalMathGame> {
       }
     });
 
-    Future.delayed(const Duration(milliseconds: isCorrect ? 800 : 1500), () {
+    Future.delayed(Duration(milliseconds: isCorrect ? 800 : 1500), () {
       if (_currentIndex < _problems.length - 1) {
         setState(() {
           _currentIndex++;

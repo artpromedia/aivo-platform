@@ -37,6 +37,9 @@ class EnvConfig {
   /// CDN URL for static assets
   static late String cdnUrl;
 
+  /// Auth service URL for SSO and authentication
+  static late String authServiceUrl;
+
   /// Sentry DSN (if using Sentry instead of/alongside Crashlytics)
   static String? sentryDsn;
 
@@ -98,6 +101,10 @@ class EnvConfig {
       'CDN_URL',
       defaultValue: 'http://localhost:3000/static',
     );
+    authServiceUrl = const String.fromEnvironment(
+      'AUTH_URL',
+      defaultValue: 'http://localhost:3000',
+    );
     sentryDsn = null; // No Sentry in dev
     showDebugBanner = true;
     enablePerformanceOverlay = false;
@@ -118,6 +125,10 @@ class EnvConfig {
       'CDN_URL',
       defaultValue: 'https://staging-cdn.aivolearning.com',
     );
+    authServiceUrl = const String.fromEnvironment(
+      'AUTH_URL',
+      defaultValue: 'https://staging-api.aivolearning.com',
+    );
     sentryDsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
     showDebugBanner = true;
     enablePerformanceOverlay = false;
@@ -137,6 +148,10 @@ class EnvConfig {
     cdnUrl = const String.fromEnvironment(
       'CDN_URL',
       defaultValue: 'https://cdn.aivolearning.com',
+    );
+    authServiceUrl = const String.fromEnvironment(
+      'AUTH_URL',
+      defaultValue: 'https://api.aivolearning.com',
     );
     sentryDsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
     showDebugBanner = false;
