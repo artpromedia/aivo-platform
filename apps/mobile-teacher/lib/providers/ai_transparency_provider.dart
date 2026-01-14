@@ -62,11 +62,9 @@ enum AITransparencyFilter {
 
 /// Notifier for AI transparency state.
 class AITransparencyNotifier extends StateNotifier<AITransparencyState> {
-  AITransparencyNotifier(this._classId) : super(const AITransparencyState()) {
+  AITransparencyNotifier(String classId) : super(const AITransparencyState()) {
     loadData();
   }
-
-  final String _classId;
 
   Future<void> loadData() async {
     state = state.copyWith(isLoading: true, error: null);

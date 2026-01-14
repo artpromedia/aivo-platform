@@ -256,12 +256,6 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
     HapticFeedback.selectionClick();
   }
 
-  void _selectStrokeWidth(double width) {
-    setState(() {
-      _strokeWidth = width;
-    });
-  }
-
   void _submitAnswer() {
     if (_recognitionResult != null) {
       widget.onAnswerSubmit?.call(_recognitionResult!.recognizedText);

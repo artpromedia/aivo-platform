@@ -66,7 +66,6 @@ class _WordSearchWidgetState extends State<WordSearchWidget> {
     final localPosition = details.localPosition;
     final col = (localPosition.dx / cellWidth).floor().clamp(0, widget.puzzle.cols - 1);
     final row = (localPosition.dy / cellHeight).floor().clamp(0, widget.puzzle.rows - 1);
-    final currentCell = Offset(col.toDouble(), row.toDouble());
 
     // Calculate direction from start
     final dx = col - _dragStart!.dx.toInt();

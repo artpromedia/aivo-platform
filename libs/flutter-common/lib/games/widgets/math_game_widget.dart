@@ -167,14 +167,6 @@ class _MathGameWidgetState extends State<MathGameWidget>
     });
   }
 
-  void _onClear() {
-    if (_showResult) return;
-
-    setState(() {
-      _userAnswer = '';
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(

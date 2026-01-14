@@ -84,7 +84,6 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
   @override
   Widget build(BuildContext context) {
     final recommended = _activities.where((a) => a['isRecommended'] == true).toList();
-    final others = _activities.where((a) => a['isRecommended'] != true).toList();
 
     return Scaffold(
       appBar: AppBar(

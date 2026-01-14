@@ -77,12 +77,9 @@ class ScratchPadSheet extends StatefulWidget {
 
 class _ScratchPadSheetState extends State<ScratchPadSheet> {
   final GlobalKey<ScratchPadCanvasState> _canvasKey = GlobalKey();
-  MathRecognitionResult? _result;
 
   void _onRecognized(MathRecognitionResult result) {
-    setState(() {
-      _result = result;
-    });
+    // Result is handled by canvas widget
   }
 
   void _onSubmit(String answer) {
@@ -201,12 +198,9 @@ class ScratchPadDialog extends StatefulWidget {
 
 class _ScratchPadDialogState extends State<ScratchPadDialog> {
   final GlobalKey<ScratchPadCanvasState> _canvasKey = GlobalKey();
-  MathRecognitionResult? _result;
 
   void _onRecognized(MathRecognitionResult result) {
-    setState(() {
-      _result = result;
-    });
+    // Result is handled by canvas widget
   }
 
   void _onSubmit(String answer) {
@@ -336,7 +330,6 @@ class _InlineScratchPadState extends State<InlineScratchPad>
   late AnimationController _controller;
   late Animation<double> _heightAnimation;
   bool _isExpanded = false;
-  MathRecognitionResult? _result;
 
   @override
   void initState() {
@@ -376,9 +369,7 @@ class _InlineScratchPadState extends State<InlineScratchPad>
   }
 
   void _onRecognized(MathRecognitionResult result) {
-    setState(() {
-      _result = result;
-    });
+    // Result is tracked by canvas widget
   }
 
   void _onSubmit(String answer) {

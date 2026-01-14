@@ -236,21 +236,6 @@ class _CrashlyticsErrorBoundaryState extends State<CrashlyticsErrorBoundary> {
     super.initState();
   }
 
-  void _handleError(FlutterErrorDetails details) {
-    // Report to Crashlytics
-    if (!kDebugMode) {
-      FirebaseCrashlytics.instance.recordFlutterError(details);
-    }
-
-    // Call custom handler
-    widget.onError?.call(details);
-
-    // Update state to show error UI
-    setState(() {
-      _error = details;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_error != null && widget.errorBuilder != null) {

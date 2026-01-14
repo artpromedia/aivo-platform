@@ -172,26 +172,6 @@ class _LiveClassroomScreenState extends State<LiveClassroomScreen> {
     await _notificationsPlugin.initialize(settings);
   }
 
-  /// Show notification for urgent alert
-  Future<void> _showNotification(ClassroomAlert alert) async {
-    const androidDetails = AndroidNotificationDetails(
-      'classroom_alerts',
-      'Classroom Alerts',
-      channelDescription: 'Urgent alerts from your classroom',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-    const iosDetails = DarwinNotificationDetails();
-    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
-
-    await _notificationsPlugin.show(
-      alert.id.hashCode,
-      'Alert: ${alert.studentName}',
-      alert.message,
-      details,
-    );
-  }
-
   /// Load classroom data
   Future<void> _loadClassroomData() async {
     setState(() {

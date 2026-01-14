@@ -480,9 +480,6 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen>
             },
           ),
         );
-
-      default:
-        return const SizedBox.shrink();
     }
   }
 
