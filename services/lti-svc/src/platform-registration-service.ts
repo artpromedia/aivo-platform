@@ -372,7 +372,7 @@ export class PlatformRegistrationService {
    * Get LTI configuration JSON for platform setup
    * This generates the JSON that admins paste into their LMS
    */
-  getToolConfiguration(tenantId: string): {
+  getToolConfiguration(_tenantId: string): {
     title: string;
     description: string;
     oidc_initiation_url: string;

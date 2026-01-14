@@ -293,7 +293,6 @@ Respond with JSON only:
     }
 
     // Calculate confidence based on consistency
-    const avgScore = passages.reduce((sum, p) => sum + p.comprehensionScore, 0) / passages.length;
     const confidence = Math.min(0.9, 0.5 + passages.length * 0.1);
 
     return {

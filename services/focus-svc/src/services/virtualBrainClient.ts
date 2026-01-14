@@ -195,7 +195,7 @@ export const virtualBrainClient = new VirtualBrainClient();
  * Generate default skills when Virtual Brain is not available.
  * Used as fallback to still provide learning breaks.
  */
-export function getDefaultSkills(gradeBand: GradeBand): LearnerSkillSnapshot[] {
+export function getDefaultSkills(_gradeBand: GradeBand): LearnerSkillSnapshot[] {
   const domains: SkillDomain[] = ['ELA', 'MATH', 'SCIENCE', 'SPEECH', 'SEL'];
 
   return domains.map((domain) => ({

@@ -14,12 +14,7 @@ import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
 
-import type {
-  TranslationRequest,
-  TranslatedContent,
-  TranslationGlossaryItem,
-  GenerationMetadata,
-} from './types.js';
+import type { TranslationRequest, TranslatedContent, TranslationGlossaryItem } from './types.js';
 
 const TRANSLATION_SYSTEM_PROMPT = `You are an expert educational content translator.
 When translating:

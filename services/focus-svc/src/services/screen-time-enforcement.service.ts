@@ -17,7 +17,6 @@ import { EventEmitter } from 'events';
 
 import type Redis from 'ioredis';
 import type { Pool } from 'pg';
-import { PoolClient } from 'pg';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -334,7 +333,10 @@ export class ScreenTimeEnforcementService extends EventEmitter {
 
     // Calculate remaining time
     const dailyRemainingMinutes = Math.max(0, policy.dailyLimitMinutes - dailyUsedMinutes);
-    const sessionRemainingMinutes = Math.max(0, policy.sessionLimitMinutes - currentSessionMinutes);
+    const _sessionRemainingMinutes = Math.max(
+      0,
+      policy.sessionLimitMinutes - currentSessionMinutes
+    );
 
     // Check break status
     const minutesSinceLastBreak = lastBreakAt
@@ -822,7 +824,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     );
   }
 
-  private async invalidatePolicyCache(tenantId: string, scopeId: string): Promise<void> {
+  private async invalidatePolicyCache(tenantId: string, _scopeId: string): Promise<void> {
     const pattern = `${this.cachePrefix}:policy:${tenantId}:*`;
     const keys = await this.redis.keys(pattern);
     if (keys.length > 0) {

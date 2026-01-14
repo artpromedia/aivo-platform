@@ -23,7 +23,6 @@ import type {
   GeneratedBlock,
   GeneratedAssessment,
   LessonOutline,
-  BlockType,
   GenerationMetadata,
   GradeLevel,
 } from './types.js';

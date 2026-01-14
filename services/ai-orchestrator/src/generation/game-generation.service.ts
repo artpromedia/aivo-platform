@@ -21,7 +21,6 @@ import {
   getTemplateByType,
   getParametersForDifficulty,
   getTemplatesForGrade,
-  GAME_TEMPLATES,
 } from './game-templates.js';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -339,7 +338,7 @@ IMPORTANT: Return ONLY valid JSON matching the exact structure specified above. 
    */
   private determineDifficulty(
     request: GameGenerationRequest,
-    template: GameTemplate
+    _template: GameTemplate
   ): DifficultyLevel {
     // Use explicit difficulty if provided
     if (request.difficulty) {

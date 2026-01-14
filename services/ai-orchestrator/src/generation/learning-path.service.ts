@@ -19,7 +19,6 @@ import type {
   GeneratedLearningPath,
   LearningPathNode,
   PathMilestone,
-  StudentPathProfile,
   DifficultyLevel,
 } from './types.js';
 

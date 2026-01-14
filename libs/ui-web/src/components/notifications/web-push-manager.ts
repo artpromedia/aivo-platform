@@ -48,7 +48,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 /**
  * Convert ArrayBuffer to base64 string
  */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {

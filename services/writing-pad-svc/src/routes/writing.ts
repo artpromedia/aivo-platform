@@ -14,14 +14,7 @@ import {
   calculateMetrics,
   getWritingPrompts,
 } from '../services/ai-writing.service.js';
-import type {
-  WritingDocument,
-  WritingType,
-  WritingStatus,
-  GradeBand,
-  Subject,
-  FeedbackType,
-} from '../types/index.js';
+import type { WritingDocument, WritingType, GradeBand, FeedbackType } from '../types/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS

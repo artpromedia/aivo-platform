@@ -11,11 +11,7 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import {
-  learningBreakGenerator,
-  type LearningBreakGame,
-  type SkillDomain,
-} from '../services/learning-break-generator.js';
+import { learningBreakGenerator, type SkillDomain } from '../services/learning-break-generator.js';
 import { sessionServiceClient } from '../services/sessionServiceClient.js';
 import { virtualBrainClient, getDefaultSkills } from '../services/virtualBrainClient.js';
 import type { GradeBand } from '../types/telemetry.js';
@@ -368,9 +364,9 @@ export const learningBreakRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/learning-breaks/history/:learnerId', async (request: FastifyRequest, reply) => {
     const params = request.params as { learnerId: string };
     const query = request.query as { limit?: string };
-    const limit = parseInt(query.limit || '10', 10);
+    const _limit = parseInt(query.limit || '10', 10);
 
-    // In production, this would query the database
+    // In production, this would query the database using _limit
     // For now, return placeholder data
     return reply.status(200).send({
       learnerId: params.learnerId,

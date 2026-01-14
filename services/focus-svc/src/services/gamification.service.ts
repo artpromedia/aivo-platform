@@ -341,12 +341,10 @@ function getXpForLevel(level: number): number {
 
 function calculateLevel(totalXp: number): { level: number; xpToNextLevel: number } {
   let level = 1;
-  let xpForCurrentLevel = 0;
   let xpForNextLevel = getXpForLevel(2);
 
   while (totalXp >= xpForNextLevel) {
     level++;
-    xpForCurrentLevel = xpForNextLevel;
     xpForNextLevel = getXpForLevel(level + 1);
   }
 
