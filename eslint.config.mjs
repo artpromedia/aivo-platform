@@ -177,5 +177,12 @@ export default [
       ...nextPlugin.configs["core-web-vitals"].rules,
       "@next/next/no-html-link-for-pages": "off"
     }
+  },
+  {
+    // Allow array index as key in controlled form inputs
+    files: ["**/LessonGenerator.tsx"],
+    rules: {
+      "react/no-array-index-key": "off"
+    }
   }
 ];
