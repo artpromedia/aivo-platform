@@ -30,7 +30,6 @@ class SocialStoriesScreen extends ConsumerStatefulWidget {
 class _SocialStoriesScreenState extends ConsumerState<SocialStoriesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  StoryCategory? _selectedCategory;
 
   static const _tabs = [
     _TabInfo('For You', Icons.star_outline),
@@ -44,7 +43,6 @@ class _SocialStoriesScreenState extends ConsumerState<SocialStoriesScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    _selectedCategory = widget.initialCategory;
   }
 
   @override
@@ -86,11 +84,8 @@ class _SocialStoriesScreenState extends ConsumerState<SocialStoriesScreen>
               StoryCategory.feelingFrustrated,
               StoryCategory.feelingOverwhelmed,
               StoryCategory.feelingAnxious,
-              StoryCategory.feelingAngry,
-              StoryCategory.feelingSad,
-              StoryCategory.feelingHappy,
-              StoryCategory.emotionalRegulation,
               StoryCategory.calmingDown,
+              StoryCategory.celebratingSuccess,
             ],
           ),
           // School - academic and classroom stories
@@ -98,12 +93,12 @@ class _SocialStoriesScreenState extends ConsumerState<SocialStoriesScreen>
             learnerId: widget.learnerId,
             categories: const [
               StoryCategory.startingLesson,
+              StoryCategory.endingLesson,
               StoryCategory.takingQuiz,
-              StoryCategory.classroomRoutine,
-              StoryCategory.workingInGroup,
-              StoryCategory.homeworkTime,
-              StoryCategory.transitionTime,
-              StoryCategory.endOfDay,
+              StoryCategory.testTaking,
+              StoryCategory.changingActivity,
+              StoryCategory.unexpectedChange,
+              StoryCategory.stayingOnTask,
             ],
           ),
           // Social - social skills stories
@@ -111,12 +106,12 @@ class _SocialStoriesScreenState extends ConsumerState<SocialStoriesScreen>
             learnerId: widget.learnerId,
             categories: const [
               StoryCategory.askingForHelp,
-              StoryCategory.makingFriends,
-              StoryCategory.sharingTurns,
-              StoryCategory.personalSpace,
+              StoryCategory.askingForBreak,
+              StoryCategory.talkingToTeacher,
               StoryCategory.waitingTurn,
-              StoryCategory.listeningToOthers,
-              StoryCategory.playgroundRules,
+              StoryCategory.workingWithPeers,
+              StoryCategory.sharingMaterials,
+              StoryCategory.respectfulDisagreement,
             ],
           ),
           // All - browse all stories
@@ -151,8 +146,8 @@ class _RecommendationsTab extends ConsumerWidget {
       storyRecommendationsProvider(
         StoryRecommendationQuery(
           learnerId: learnerId,
-          emotionalState: emotionalState,
-          activityTypes: activityType != null ? [activityType!] : null,
+          detectedEmotionalState: emotionalState,
+          currentActivityType: activityType,
           maxResults: 10,
         ),
       ),
@@ -171,8 +166,8 @@ class _RecommendationsTab extends ConsumerWidget {
               onPressed: () => ref.invalidate(storyRecommendationsProvider(
                 StoryRecommendationQuery(
                   learnerId: learnerId,
-                  emotionalState: emotionalState,
-                  activityTypes: activityType != null ? [activityType!] : null,
+                  detectedEmotionalState: emotionalState,
+                  currentActivityType: activityType,
                   maxResults: 10,
                 ),
               )),
@@ -236,11 +231,12 @@ class _CategoryTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    // Note: StoryRecommendationQuery doesn't support category filtering
+    // This would need backend support for category-based queries
     final storiesAsync = ref.watch(
       storyRecommendationsProvider(
         StoryRecommendationQuery(
           learnerId: learnerId,
-          categories: categories,
           maxResults: 20,
         ),
       ),
