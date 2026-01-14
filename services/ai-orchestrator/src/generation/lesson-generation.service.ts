@@ -380,9 +380,7 @@ Provide the enhanced version of the content, maintaining the core information wh
       '- Use analogies and visual descriptions where helpful',
       '- Ensure content is accurate and up-to-date',
       '- Make the content engaging and interactive',
-      ''
-    );
-    parts.push(
+      '',
       'Respond with valid JSON containing: title, description, objectives[], duration, sections[], vocabulary[], teacherNotes'
     );
 

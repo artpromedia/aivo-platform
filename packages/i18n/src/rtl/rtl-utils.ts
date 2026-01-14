@@ -158,6 +158,7 @@ function transformProperty(property: string, value: StyleValue): Record<string, 
 
 /**
  * Get a value based on RTL direction
+ * @deprecated Use getLTRValue() or getRTLValue() instead to avoid boolean parameters
  */
 export function rtlValue<T>(ltrValue: T, rtlValue: T, isRTL: boolean): T {
   return isRTL ? rtlValue : ltrValue;

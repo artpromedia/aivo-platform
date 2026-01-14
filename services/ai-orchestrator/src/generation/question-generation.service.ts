@@ -77,7 +77,7 @@ const DIFFICULTY_MULTIPLIER: Record<DifficultyLevel, number> = {
 };
 
 export class QuestionGenerationService {
-  constructor(private llm: LLMOrchestrator) {}
+  constructor(private readonly llm: LLMOrchestrator) {}
 
   /**
    * Generate questions from content
@@ -385,30 +385,26 @@ Respond with JSON: {"stem": "string", "options": [{"text": "string", "correct": 
       parts.push(`- Standards: ${request.standards.join(', ')}`);
     }
 
-    parts.push('');
-    parts.push('QUESTION TYPES TO INCLUDE:');
+    parts.push('', 'QUESTION TYPES TO INCLUDE:');
     for (const type of request.questionTypes) {
       parts.push(`- ${type}: ${QUESTION_TYPE_DESCRIPTIONS[type]}`);
     }
 
     if (request.bloomsLevels?.length) {
-      parts.push('');
-      parts.push("BLOOM'S TAXONOMY LEVELS:");
+      parts.push('', "BLOOM'S TAXONOMY LEVELS:");
       for (const level of request.bloomsLevels) {
         parts.push(`- ${level}: ${BLOOMS_DESCRIPTIONS[level]}`);
       }
     }
 
-    parts.push('');
-    parts.push('REQUIREMENTS:');
-    parts.push(`1. Generate exactly ${request.count} questions`);
-    parts.push('2. Distribute across the specified question types');
-    parts.push('3. Questions should directly assess understanding of the content');
-    parts.push(`4. Use clear, unambiguous language appropriate for ${request.gradeLevel}`);
     parts.push(
-      '5. For multiple choice: include plausible distractors based on common misconceptions'
-    );
-    parts.push(
+      '',
+      'REQUIREMENTS:',
+      `1. Generate exactly ${request.count} questions`,
+      '2. Distribute across the specified question types',
+      '3. Questions should directly assess understanding of the content',
+      `4. Use clear, unambiguous language appropriate for ${request.gradeLevel}`,
+      '5. For multiple choice: include plausible distractors based on common misconceptions',
       `6. Vary the difficulty: ${
         request.difficulty === 'mixed'
           ? 'include easy, medium, and hard questions'
