@@ -352,6 +352,7 @@ class _ActivityPicker extends StatelessWidget {
               BreakActivityType.grounding => Icons.spa,
               BreakActivityType.mindfulPause => Icons.psychology,
               BreakActivityType.simpleGame => Icons.sports_esports,
+              BreakActivityType.learningGame => Icons.videogame_asset,
             };
 
             return Padding(

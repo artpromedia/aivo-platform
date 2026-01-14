@@ -15,9 +15,9 @@ import '../main.dart';
 final teacherSsoServiceProvider = Provider<SsoService>((ref) {
   return SsoService(
     config: SsoConfig(
-      apiBaseUrl: EnvConfig.apiBaseUrl,
-      callbackScheme: 'aivo-teacher',
-      callbackHost: 'sso-callback',
+      authServiceUrl: EnvConfig.apiBaseUrl,
+      deepLinkScheme: 'aivo-teacher',
+      deepLinkHost: 'sso-callback',
     ),
   );
 });
@@ -141,7 +141,7 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
 
     try {
       final result = await ssoService.authenticate(
-        tenantId: _tenantSsoInfo!.tenantId,
+        tenantId: _tenantSsoInfo!.tenantId ?? '',
         providerId: provider.id,
         providerType: provider.type,
       );
@@ -151,9 +151,9 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
       if (result != null) {
         final success = await ref.read(teacherAuthProvider.notifier).loginWithSso(
               accessToken: result.accessToken,
-              refreshToken: result.refreshToken ?? '',
-              userId: result.userId,
-              displayName: result.displayName ?? result.email ?? 'Teacher',
+              refreshToken: result.refreshToken,
+              userId: result.user.id,
+              displayName: result.user.email,
               provider: provider.type,
             );
 

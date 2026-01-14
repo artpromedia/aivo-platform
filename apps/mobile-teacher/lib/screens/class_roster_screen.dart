@@ -284,8 +284,8 @@ class ClassRosterScreen extends ConsumerWidget {
   }
 
   void _exportRoster(BuildContext context, WidgetRef ref) {
-    final roster = ref.read(classRosterProvider(classId)).roster;
-    if (roster == null || roster.isEmpty) {
+    final roster = ref.read(rosterProvider(classId)).students;
+    if (roster.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No students to export')),
       );

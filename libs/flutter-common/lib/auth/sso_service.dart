@@ -190,6 +190,30 @@ class SsoService {
     }
   }
 
+  /// Authenticate with a specific SSO provider for a tenant.
+  ///
+  /// This is a simplified wrapper around signInWithSso for provider-specific authentication.
+  Future<SsoSuccess?> authenticate({
+    required String tenantId,
+    required String providerId,
+    required String providerType,
+  }) async {
+    // The tenantId is typically used to look up the tenant slug
+    // For now, we'll use the providerId which should contain tenant information
+    // This method would need to be adapted based on the actual API structure
+    
+    final result = await signInWithSso(
+      tenantSlug: tenantId,
+      protocol: providerType.contains('SAML') ? 'SAML' : 'OIDC',
+    );
+
+    if (result is SsoSuccess) {
+      return result;
+    }
+    
+    return null;
+  }
+
   /// Handle deep link callback from SSO.
   ///
   /// Call this method when the app receives a deep link matching the SSO callback.
@@ -404,12 +428,18 @@ class TenantSsoInfo {
   final bool ssoRequired;
   final List<String> availableProtocols;
   final String? idpName;
+  final String? tenantName;
+  final String? tenantId;
+  final List<SsoProviderInfo> providers;
 
   TenantSsoInfo({
     required this.ssoEnabled,
     required this.ssoRequired,
     required this.availableProtocols,
     this.idpName,
+    this.tenantName,
+    this.tenantId,
+    this.providers = const [],
   });
 
   factory TenantSsoInfo.fromJson(Map<String, dynamic> json) {
@@ -418,6 +448,36 @@ class TenantSsoInfo {
       ssoRequired: json['ssoRequired'] as bool,
       availableProtocols: (json['protocols'] as List).cast<String>(),
       idpName: json['idpName'] as String?,
+      tenantName: json['tenantName'] as String?,
+      tenantId: json['tenantId'] as String?,
+      providers: (json['providers'] as List?)
+              ?.map((p) => SsoProviderInfo.fromJson(p as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+/// Information about an SSO provider for a tenant.
+class SsoProviderInfo {
+  final String id;
+  final String name;
+  final String type;
+  final bool enabled;
+
+  SsoProviderInfo({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.enabled,
+  });
+
+  factory SsoProviderInfo.fromJson(Map<String, dynamic> json) {
+    return SsoProviderInfo(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: json['type'] as String,
+      enabled: json['enabled'] as bool? ?? true,
     );
   }
 }

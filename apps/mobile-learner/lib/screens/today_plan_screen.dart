@@ -370,7 +370,8 @@ class _StoryRecommendationsSectionState
       storyRecommendationsProvider(
         StoryRecommendationQuery(
           learnerId: widget.learnerId,
-          activityTypes: ['learning', 'transition'],
+          currentActivityType: 'learning',
+          nextActivityType: 'transition',
           maxResults: 3,
         ),
       ),

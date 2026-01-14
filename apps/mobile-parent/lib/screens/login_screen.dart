@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_common/flutter_common.dart' hide AuthStatus;
+import 'package:flutter_common/flutter_common.dart' hide AuthStatus, AuthState;
 
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
@@ -14,9 +14,9 @@ import '../auth/auth_state.dart';
 final parentSsoServiceProvider = Provider<SsoService>((ref) {
   return SsoService(
     config: SsoConfig(
-      apiBaseUrl: EnvConfig.apiBaseUrl,
-      callbackScheme: 'aivo-parent',
-      callbackHost: 'sso-callback',
+      authServiceUrl: EnvConfig.apiBaseUrl,
+      deepLinkScheme: 'aivo-parent',
+      deepLinkHost: 'sso-callback',
     ),
   );
 });
@@ -129,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       final result = await ssoService.authenticate(
-        tenantId: _tenantSsoInfo!.tenantId,
+        tenantId: _tenantSsoInfo!.tenantId ?? '',
         providerId: provider.id,
         providerType: provider.type,
       );
@@ -139,7 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result != null) {
         final success = await ref.read(authControllerProvider.notifier).loginWithSso(
               accessToken: result.accessToken,
-              refreshToken: result.refreshToken ?? '',
+              refreshToken: result.refreshToken,
               provider: provider.type,
             );
 
