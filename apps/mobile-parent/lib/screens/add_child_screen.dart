@@ -94,60 +94,63 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
         // Show success dialog with download instructions
         await showDialog<void>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green),
-                const SizedBox(width: 12),
-                Expanded(child: Text('$name Added!')),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Great! We\'ve set up $name\'s learning profile.',
-                  style: theme.textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8),
+          builder: (context) {
+            final theme = Theme.of(context);
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('$name Added!')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Great! We\'ve set up $name\'s learning profile.',
+                    style: theme.textTheme.bodyLarge,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.email_outlined, color: theme.colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'We sent you an email with instructions to download the AIVO Learner app on $name\'s device.',
-                          style: theme.textTheme.bodyMedium,
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.email_outlined, color: theme.colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'We sent you an email with instructions to download the AIVO Learner app on $name\'s device.',
+                            style: theme.textTheme.bodyMedium,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Next steps:',
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Next steps:',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 const SizedBox(height: 8),
                 _buildStep('1', 'Check your email for download instructions'),
                 _buildStep('2', 'Download AIVO Learner on $name\'s device'),
                 _buildStep('3', '$name completes the baseline assessment'),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Got it!'),
-              ),
-            ],
-          ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Got it!'),
+                ),
+              ],
+            );
+          },
         );
         if (mounted) {
           context.pop();
@@ -171,7 +174,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(

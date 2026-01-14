@@ -34,9 +34,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(l10n.reportDownloadStarted),
+                  content: Text('${l10n.downloadReport} started'),
                   action: SnackBarAction(
-                    label: l10n.viewDownloads,
+                    label: l10n.viewAll,
                     onPressed: () {
                       // Navigate to downloads when implemented
                     },
