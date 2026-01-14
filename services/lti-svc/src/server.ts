@@ -2,8 +2,9 @@
  * LTI Service Server
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
 import Fastify from 'fastify';
+
+import { PrismaClient } from '../generated/prisma-client/index.js';
 
 import { registerLtiRoutes } from './routes.js';
 

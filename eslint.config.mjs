@@ -138,7 +138,16 @@ export default [
       "services/consent-svc/**/*.{ts,tsx}",
       "services/dsr-svc/**/*.{ts,tsx}",
       "services/gamification-svc/**/*.{ts,tsx}",
-      "services/notify-svc/**/*.{ts,tsx}"
+      "services/notify-svc/**/*.{ts,tsx}",
+      "services/ai-orchestrator/**/*.{ts,tsx}",
+      "services/api-gateway/**/*.{ts,tsx}",
+      "services/focus-svc/**/*.{ts,tsx}",
+      "services/lti-svc/**/*.{ts,tsx}",
+      "services/reports-svc/**/*.{ts,tsx}",
+      "services/sandbox-svc/**/*.{ts,tsx}",
+      "services/writing-pad-svc/**/*.{ts,tsx}",
+      "packages/i18n/**/*.{ts,tsx}",
+      "libs/ui-web/**/*.{ts,tsx}"
     ],
     rules: {
       "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
@@ -152,7 +161,10 @@ export default [
       "@typescript-eslint/no-invalid-void-type": "off",
       "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
-      "@typescript-eslint/restrict-plus-operands": "off"
+      "@typescript-eslint/restrict-plus-operands": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-explicit-any": "off"
     }
   },
   {

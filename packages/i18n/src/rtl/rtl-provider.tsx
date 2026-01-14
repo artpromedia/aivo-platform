@@ -60,8 +60,8 @@ export function RTLProvider({
   children,
   locale,
   direction: directionOverride,
-  updateDocumentDirection = true,
-  updateDocumentLang = true,
+  updateDocumentDirection,
+  updateDocumentLang,
 }: RTLProviderProps): React.ReactElement {
   const direction = directionOverride ?? (isRTLLocale(locale) ? 'rtl' : 'ltr');
   const isRTL = direction === 'rtl';

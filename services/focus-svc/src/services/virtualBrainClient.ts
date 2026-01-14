@@ -10,6 +10,7 @@
 
 import { config } from '../config.js';
 import type { GradeBand } from '../types/telemetry.js';
+
 import type { LearnerSkillSnapshot, SkillDomain } from './learning-break-generator.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -75,16 +76,13 @@ class VirtualBrainClient {
       if (this.apiKey) {
         headers['x-internal-api-key'] = this.apiKey;
       } else if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
+        headers.Authorization = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(
-        `${this.baseUrl}/virtual-brains/learner/${learnerId}/skills`,
-        {
-          method: 'GET',
-          headers,
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/virtual-brains/learner/${learnerId}/skills`, {
+        method: 'GET',
+        headers,
+      });
 
       if (!response.ok) {
         if (response.status === 404) {

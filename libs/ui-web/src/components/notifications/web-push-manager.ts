@@ -88,11 +88,7 @@ export class WebPushManager {
    * Check if push notifications are supported
    */
   isSupported(): boolean {
-    return (
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window
-    );
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   }
 
   /**
@@ -130,10 +126,9 @@ export class WebPushManager {
 
     try {
       // Register service worker
-      this.registration = await navigator.serviceWorker.register(
-        this.serviceWorkerPath,
-        { scope: '/' }
-      );
+      this.registration = await navigator.serviceWorker.register(this.serviceWorkerPath, {
+        scope: '/',
+      });
 
       console.log('[WebPushManager] Service worker registered');
 
@@ -225,7 +220,7 @@ export class WebPushManager {
     }
 
     const json = this.subscription.toJSON();
-    const keys = json.keys as Record<string, string> | undefined;
+    const keys = json.keys;
 
     return {
       endpoint: this.subscription.endpoint,
@@ -266,10 +261,7 @@ export class WebPushManager {
   /**
    * Show a local notification (not a push notification)
    */
-  async showNotification(
-    title: string,
-    options?: NotificationOptions
-  ): Promise<void> {
+  async showNotification(title: string, options?: NotificationOptions): Promise<void> {
     if (!this.registration) {
       throw new Error('Service worker not registered');
     }
@@ -290,7 +282,9 @@ export class WebPushManager {
     }
 
     const notifications = await this.registration.getNotifications({ tag });
-    notifications.forEach((notification) => notification.close());
+    notifications.forEach((notification) => {
+      notification.close();
+    });
   }
 
   /**

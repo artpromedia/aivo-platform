@@ -13,9 +13,11 @@
  * @module focus-svc/services/screen-time-enforcement
  */
 
-import { Pool, PoolClient } from 'pg';
 import { EventEmitter } from 'events';
-import Redis from 'ioredis';
+
+import type Redis from 'ioredis';
+import type { Pool } from 'pg';
+import { PoolClient } from 'pg';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -155,7 +157,10 @@ export type OverrideType = 'ADD_TIME' | 'EXTEND_SESSION' | 'BYPASS_LIMIT' | 'SKI
 // DEFAULT POLICIES
 // ════════════════════════════════════════════════════════════════════════════════
 
-const DEFAULT_POLICY: Omit<ScreenTimePolicy, 'id' | 'tenantId' | 'scopeId' | 'createdAt' | 'updatedAt' | 'createdBy'> = {
+const DEFAULT_POLICY: Omit<
+  ScreenTimePolicy,
+  'id' | 'tenantId' | 'scopeId' | 'createdAt' | 'updatedAt' | 'createdBy'
+> = {
   scope: 'tenant',
   name: 'Default Screen Time Policy',
   dailyLimitMinutes: 120, // 2 hours
@@ -267,10 +272,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
   /**
    * Get effective policy for a learner (respects hierarchy)
    */
-  async getEffectivePolicy(
-    tenantId: string,
-    learnerId: string
-  ): Promise<ScreenTimePolicy> {
+  async getEffectivePolicy(tenantId: string, learnerId: string): Promise<ScreenTimePolicy> {
     // Check cache first
     const cacheKey = `${this.cachePrefix}:policy:${tenantId}:${learnerId}`;
     const cached = await this.redis.get(cacheKey);
@@ -318,10 +320,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
   /**
    * Get current screen time status for a learner
    */
-  async getLearnerStatus(
-    tenantId: string,
-    learnerId: string
-  ): Promise<LearnerScreenTimeStatus> {
+  async getLearnerStatus(tenantId: string, learnerId: string): Promise<LearnerScreenTimeStatus> {
     const today = new Date().toISOString().split('T')[0];
     const policy = await this.getEffectivePolicy(tenantId, learnerId);
 
@@ -349,12 +348,12 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     // Get active warnings
     const warningsKey = `${this.cachePrefix}:warnings:${tenantId}:${learnerId}`;
     const warningsData = await this.redis.lrange(warningsKey, 0, -1);
-    const warnings = warningsData.map(w => JSON.parse(w) as ScreenTimeWarning);
+    const warnings = warningsData.map((w) => JSON.parse(w) as ScreenTimeWarning);
 
     // Get current enforcement if any
     const enforcementKey = `${this.cachePrefix}:enforcement:${tenantId}:${learnerId}`;
     const enforcementData = await this.redis.get(enforcementKey);
-    const enforcement = enforcementData ? JSON.parse(enforcementData) as EnforcementAction : null;
+    const enforcement = enforcementData ? (JSON.parse(enforcementData) as EnforcementAction) : null;
 
     return {
       learnerId,
@@ -447,10 +446,19 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     await this.redis.expire(usageKey, 86400); // 24 hour TTL
 
     // Check warning thresholds
-    const usagePercentage = ((status.dailyUsedMinutes + params.durationMinutes) / policy.dailyLimitMinutes) * 100;
+    const usagePercentage =
+      ((status.dailyUsedMinutes + params.durationMinutes) / policy.dailyLimitMinutes) * 100;
     for (const threshold of policy.warningThresholds) {
-      if (usagePercentage >= threshold && (status.dailyUsedMinutes / policy.dailyLimitMinutes) * 100 < threshold) {
-        await this.triggerWarning(params.tenantId, params.learnerId, 'DAILY_LIMIT_APPROACHING', threshold);
+      if (
+        usagePercentage >= threshold &&
+        (status.dailyUsedMinutes / policy.dailyLimitMinutes) * 100 < threshold
+      ) {
+        await this.triggerWarning(
+          params.tenantId,
+          params.learnerId,
+          'DAILY_LIMIT_APPROACHING',
+          threshold
+        );
       }
     }
 
@@ -538,7 +546,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     expiresAt: Date;
   }): Promise<ParentOverride> {
     const override: ParentOverride = {
-      id: `override_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `override_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       learnerId: params.learnerId,
       tenantId: params.tenantId,
       parentId: params.parentId,
@@ -599,10 +607,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
   /**
    * Get active override for a learner
    */
-  async getActiveOverride(
-    tenantId: string,
-    learnerId: string
-  ): Promise<ParentOverride | null> {
+  async getActiveOverride(tenantId: string, learnerId: string): Promise<ParentOverride | null> {
     const overrideKey = `${this.cachePrefix}:override:${tenantId}:${learnerId}`;
     const cached = await this.redis.get(overrideKey);
 
@@ -642,7 +647,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     const currentTime = now.toTimeString().substring(0, 5);
 
     // Find current window
-    const todayWindow = schedule.windows.find(w => w.dayOfWeek === dayOfWeek && w.enabled);
+    const todayWindow = schedule.windows.find((w) => w.dayOfWeek === dayOfWeek && w.enabled);
 
     if (todayWindow) {
       if (currentTime >= todayWindow.startTime && currentTime <= todayWindow.endTime) {
@@ -661,7 +666,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     // Find next available window
     for (let i = 1; i <= 7; i++) {
       const checkDay = (dayOfWeek + i) % 7;
-      const window = schedule.windows.find(w => w.dayOfWeek === checkDay && w.enabled);
+      const window = schedule.windows.find((w) => w.dayOfWeek === checkDay && w.enabled);
 
       if (window) {
         const [hours, minutes] = window.startTime.split(':').map(Number);
@@ -691,8 +696,10 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     // Check if there's an active override
     const override = await this.getActiveOverride(params.tenantId, params.learnerId);
     if (override) {
-      if (override.overrideType === 'BYPASS_LIMIT' ||
-          (override.overrideType === 'SKIP_BREAK' && params.type === 'BREAK_REQUIRED')) {
+      if (
+        override.overrideType === 'BYPASS_LIMIT' ||
+        (override.overrideType === 'SKIP_BREAK' && params.type === 'BREAK_REQUIRED')
+      ) {
         return { ...action, type: 'WARNING_DISPLAYED' };
       }
     }
@@ -794,7 +801,7 @@ export class ScreenTimeEnforcementService extends EventEmitter {
   private async logEvent(event: Omit<ScreenTimeEvent, 'id' | 'timestamp'>): Promise<void> {
     const fullEvent: ScreenTimeEvent = {
       ...event,
-      id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date(),
     };
 

@@ -11,11 +11,11 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
+import type { PromptBuilder } from '../prompts/prompt-builder.js';
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
-import type { PromptBuilder } from '../prompts/prompt-builder.js';
-import type { ContentValidator } from '../validators/content-validator.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
+import type { ContentValidator } from '../validators/content-validator.js';
 
 import type {
   LessonGenerationRequest,
@@ -213,7 +213,13 @@ Respond with valid JSON:
    */
   async generateFromStandards(
     standardIds: string[],
-    standards: Array<{ id: string; code: string; description: string; subject: string; gradeLevel: string }>,
+    standards: {
+      id: string;
+      code: string;
+      description: string;
+      subject: string;
+      gradeLevel: string;
+    }[],
     options: Partial<LessonGenerationRequest>
   ): Promise<GeneratedLesson> {
     if (standards.length === 0) {
@@ -230,8 +236,8 @@ Respond with valid JSON:
       gradeLevel,
       standards: standards.map((s) => s.code),
       learningObjectives: standards.map((s) => s.description),
-      tenantId: options.tenantId!,
-      userId: options.userId!,
+      tenantId: options.tenantId,
+      userId: options.userId,
       ...options,
     });
   }
@@ -256,16 +262,22 @@ Respond with valid JSON:
       instructions.push('Add relevant real-world examples to illustrate key concepts');
     }
     if (enhancements.simplifyLanguage) {
-      instructions.push('Simplify the language to make it more accessible while maintaining accuracy');
+      instructions.push(
+        'Simplify the language to make it more accessible while maintaining accuracy'
+      );
     }
     if (enhancements.addInteractiveElements) {
       instructions.push('Add suggestions for interactive elements like questions or activities');
     }
     if (enhancements.addVisualDescriptions) {
-      instructions.push('Add descriptions of visuals or diagrams that would help explain the concepts');
+      instructions.push(
+        'Add descriptions of visuals or diagrams that would help explain the concepts'
+      );
     }
     if (enhancements.improveEngagement) {
-      instructions.push('Make the content more engaging with hooks, questions, and relatable scenarios');
+      instructions.push(
+        'Make the content more engaging with hooks, questions, and relatable scenarios'
+      );
     }
 
     if (instructions.length === 0) {
@@ -285,7 +297,8 @@ Provide the enhanced version of the content, maintaining the core information wh
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: 'You are an expert educational content enhancer. Improve content while preserving accuracy.',
+        content:
+          'You are an expert educational content enhancer. Improve content while preserving accuracy.',
       },
       { role: 'user', content: prompt },
     ];
@@ -339,7 +352,9 @@ Provide the enhanced version of the content, maintaining the core information wh
     parts.push('2. Write a brief description (2-3 sentences) explaining what students will learn');
     parts.push('3. Define 3-5 clear, measurable learning objectives using action verbs');
     parts.push('4. Structure the lesson into logical sections:');
-    parts.push('   - Introduction/Hook (engage students with a question, scenario, or interesting fact)');
+    parts.push(
+      '   - Introduction/Hook (engage students with a question, scenario, or interesting fact)'
+    );
     parts.push('   - Core Content (main instructional content, broken into digestible chunks)');
     parts.push('   - Examples and Practice (worked examples, guided practice)');
 
@@ -434,12 +449,12 @@ Respond with JSON: {"questions": [{"type": "string", "stem": "string", "options"
    * Convert sections to blocks
    */
   private convertToBlocks(
-    sections: Array<{
+    sections: {
       title: string;
       type?: string;
       content?: string;
-      activities?: Array<{ title: string; instructions: string; duration?: number; type?: string }>;
-    }>
+      activities?: { title: string; instructions: string; duration?: number; type?: string }[];
+    }[]
   ): GeneratedBlock[] {
     const blocks: GeneratedBlock[] = [];
     let order = 0;
@@ -491,14 +506,17 @@ Respond with JSON: {"questions": [{"type": "string", "stem": "string", "options"
    */
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         console.warn('No JSON found in response, returning empty object');
         return {};
       }
       return JSON.parse(jsonMatch[0]) as Record<string, unknown>;
     } catch (error) {
-      console.error('Failed to parse structured response', { error, content: content.slice(0, 500) });
+      console.error('Failed to parse structured response', {
+        error,
+        content: content.slice(0, 500),
+      });
       return {};
     }
   }

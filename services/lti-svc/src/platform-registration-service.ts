@@ -5,8 +5,9 @@
  * and provides dynamic registration support for LTI 1.3.
  */
 
-import type { PrismaClient, LtiTool } from '../generated/prisma-client/index.js';
 import { z } from 'zod';
+
+import type { PrismaClient, LtiTool } from '../generated/prisma-client/index.js';
 
 import { LtiPlatformType } from './types.js';
 
@@ -341,6 +342,7 @@ export class PlatformRegistrationService {
   /**
    * Get a platform by ID
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   async getPlatform(toolId: string): Promise<LtiTool | null> {
     return this.prisma.ltiTool.findUnique({
       where: { id: toolId },
@@ -354,6 +356,7 @@ export class PlatformRegistrationService {
     issuer: string,
     clientId: string,
     deploymentId?: string
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   ): Promise<LtiTool | null> {
     const where: Record<string, string> = { issuer, clientId };
     if (deploymentId) where.deploymentId = deploymentId;

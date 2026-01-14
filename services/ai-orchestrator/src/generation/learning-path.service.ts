@@ -76,7 +76,8 @@ export class LearningPathService {
         id: pathId,
         title: (parsed.title as string) ?? `Learning Path: ${request.goal}`,
         description: (parsed.description as string) ?? '',
-        estimatedDuration: (parsed.estimatedDuration as string) ?? this.calculateDuration(parsed.nodes as unknown[]),
+        estimatedDuration:
+          (parsed.estimatedDuration as string) ?? this.calculateDuration(parsed.nodes as unknown[]),
         nodes: this.parseNodes(parsed.nodes as unknown[]),
         milestones: this.parseMilestones(parsed.milestones as unknown[]),
         metadata: {
@@ -193,7 +194,7 @@ Respond with JSON: {"title": "string", "description": "string", "estimatedDurati
   ): Promise<{
     nextNodes: LearningPathNode[];
     recommendations: string[];
-    adjustments?: Array<{ nodeId: string; reason: string; suggestion: string }>;
+    adjustments?: { nodeId: string; reason: string; suggestion: string }[];
   }> {
     const completedNodes = currentPath.nodes.filter((n) => completedNodeIds.includes(n.id));
     const remainingNodes = currentPath.nodes.filter((n) => !completedNodeIds.includes(n.id));
@@ -214,7 +215,10 @@ AVERAGE SCORE: ${Math.round(avgScore)}%
 ${strugglingNodes.length > 0 ? `STRUGGLING AREAS: ${strugglingNodes.length} nodes below 70%` : ''}
 
 REMAINING NODES:
-${remainingNodes.slice(0, 5).map((n) => `- ${n.title} (${n.type})`).join('\n')}
+${remainingNodes
+  .slice(0, 5)
+  .map((n) => `- ${n.title} (${n.type})`)
+  .join('\n')}
 
 Provide:
 1. Recommended next 3 nodes to tackle
@@ -226,7 +230,8 @@ Respond with JSON: {"nextNodes": [...], "recommendations": [...], "adjustments":
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: 'You are a supportive learning coach helping students progress through their learning path.',
+        content:
+          'You are a supportive learning coach helping students progress through their learning path.',
       },
       { role: 'user', content: prompt },
     ];
@@ -253,7 +258,7 @@ Respond with JSON: {"nextNodes": [...], "recommendations": [...], "adjustments":
       nextNodes: nextNodes.slice(0, 3),
       recommendations: (parsed.recommendations as string[]) ?? ['Keep up the great work!'],
       adjustments: parsed.adjustments as
-        | Array<{ nodeId: string; reason: string; suggestion: string }>
+        | { nodeId: string; reason: string; suggestion: string }[]
         | undefined,
     };
   }
@@ -262,7 +267,7 @@ Respond with JSON: {"nextNodes": [...], "recommendations": [...], "adjustments":
    * Generate prerequisite map for skills
    */
   async generatePrerequisiteMap(
-    skills: Array<{ id: string; name: string; description?: string }>,
+    skills: { id: string; name: string; description?: string }[],
     subject: string,
     context: { tenantId: string; userId: string }
   ): Promise<
@@ -409,9 +414,7 @@ Respond with JSON: {"skills": [{"id": "string", "prerequisites": ["skillId"], "o
     });
   }
 
-  private validateNodeType(
-    type: string
-  ): 'lesson' | 'quiz' | 'project' | 'review' | 'checkpoint' {
+  private validateNodeType(type: string): 'lesson' | 'quiz' | 'project' | 'review' | 'checkpoint' {
     const validTypes = ['lesson', 'quiz', 'project', 'review', 'checkpoint'];
     return validTypes.includes(type)
       ? (type as 'lesson' | 'quiz' | 'project' | 'review' | 'checkpoint')
@@ -453,7 +456,7 @@ Respond with JSON: {"skills": [{"id": "string", "prerequisites": ["skillId"], "o
 
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         console.warn('No JSON found in learning path response');
         return {};

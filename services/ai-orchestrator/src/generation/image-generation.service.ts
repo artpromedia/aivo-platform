@@ -8,8 +8,8 @@
  * - Age-appropriate visuals
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
+import { v4 as uuidv4 } from 'uuid';
 
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
 
@@ -33,12 +33,9 @@ const IMAGE_TYPE_PROMPTS: Record<ImageType, string> = {
   map: 'Create an accurate, clearly labeled map suitable for educational purposes.',
   concept_map:
     'Create a concept map showing relationships between ideas with clear connections and labels.',
-  timeline:
-    'Create a visual timeline showing chronological progression of events or concepts.',
-  character:
-    'Create a friendly, age-appropriate character illustration for educational content.',
-  scene:
-    'Create an educational scene illustration that depicts the described scenario clearly.',
+  timeline: 'Create a visual timeline showing chronological progression of events or concepts.',
+  character: 'Create a friendly, age-appropriate character illustration for educational content.',
+  scene: 'Create an educational scene illustration that depicts the described scenario clearly.',
 };
 
 const STYLE_MODIFIERS: Record<ImageStyle, string> = {
@@ -68,6 +65,7 @@ const GRADE_LEVEL_GUIDANCE: Record<string, string> = {
 };
 
 export class ImageGenerationService {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   private readonly openai: OpenAI | null = null;
 
   constructor(config?: { apiKey?: string }) {
@@ -157,17 +155,15 @@ export class ImageGenerationService {
     }
   ): Promise<{
     description: string;
-    elements: Array<{ name: string; description: string; position?: string }>;
-    connections?: Array<{ from: string; to: string; label?: string }>;
+    elements: { name: string; description: string; position?: string }[];
+    connections?: { from: string; to: string; label?: string }[];
     suggestedColors?: Record<string, string>;
   }> {
     // This would use the LLM to generate a detailed description
     // that could be rendered as an SVG or used for accessibility
     return {
       description: `A ${type} illustrating ${concept} for ${options?.gradeLevel ?? 'general'} level ${options?.subject ?? 'education'}`,
-      elements: [
-        { name: 'Main Concept', description: concept, position: 'center' },
-      ],
+      elements: [{ name: 'Main Concept', description: concept, position: 'center' }],
       connections: [],
       suggestedColors: {
         primary: '#4F46E5',
@@ -198,10 +194,21 @@ export class ImageGenerationService {
 
     // Check for inappropriate content
     const inappropriateTerms = [
-      'violence', 'violent', 'gore', 'blood',
-      'nude', 'naked', 'sexual', 'explicit',
-      'weapon', 'gun', 'knife', 'bomb',
-      'drug', 'alcohol', 'smoking',
+      'violence',
+      'violent',
+      'gore',
+      'blood',
+      'nude',
+      'naked',
+      'sexual',
+      'explicit',
+      'weapon',
+      'gun',
+      'knife',
+      'bomb',
+      'drug',
+      'alcohol',
+      'smoking',
     ];
 
     const lowerPrompt = request.prompt.toLowerCase();
@@ -278,7 +285,9 @@ export class ImageGenerationService {
     }
 
     // Add safety guidelines
-    parts.push('\n\nIMPORTANT: Create age-appropriate, educational content only. No violence, inappropriate content, or real people.');
+    parts.push(
+      '\n\nIMPORTANT: Create age-appropriate, educational content only. No violence, inappropriate content, or real people.'
+    );
 
     return parts.join('');
   }

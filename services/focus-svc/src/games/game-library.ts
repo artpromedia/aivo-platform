@@ -492,7 +492,7 @@ export function getRecommendedGame(context: {
 
   // Filter out previously played games to avoid repetition
   if (context.previousGameIds && context.previousGameIds.length > 0) {
-    eligible = eligible.filter((game) => !context.previousGameIds!.includes(game.id));
+    eligible = eligible.filter((game) => !context.previousGameIds.includes(game.id));
   }
 
   // Score games based on context
@@ -556,11 +556,11 @@ function scoreGame(
 /**
  * Get game categories with counts
  */
-export function getGameCategories(gradeBand?: GradeBand): Array<{
+export function getGameCategories(gradeBand?: GradeBand): {
   category: GameCategory;
   count: number;
   games: MiniGame[];
-}> {
+}[] {
   const categories: GameCategory[] = ['cognitive', 'relaxation', 'physical', 'creative'];
 
   return categories.map((category) => {

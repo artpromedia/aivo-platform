@@ -62,9 +62,12 @@ class StripeWebhookController {
 
   // Clean up processed events periodically
   constructor() {
-    setInterval(() => {
-      this.cleanupProcessedEvents();
-    }, 60 * 60 * 1000); // Every hour
+    setInterval(
+      () => {
+        this.cleanupProcessedEvents();
+      },
+      60 * 60 * 1000
+    ); // Every hour
   }
 
   /**
@@ -101,7 +104,8 @@ class StripeWebhookController {
     const payload = rawBody?.toString() ?? request.body;
     const signature = request.headers['stripe-signature'] as string;
     const headerCorrelationId = request.headers['x-correlation-id'];
-    const correlationId = typeof headerCorrelationId === 'string' ? headerCorrelationId : crypto.randomUUID();
+    const correlationId =
+      typeof headerCorrelationId === 'string' ? headerCorrelationId : crypto.randomUUID();
 
     // Verify signature
     let event: Stripe.Event;
@@ -159,55 +163,34 @@ class StripeWebhookController {
   private async processEvent(
     event: Stripe.Event,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
-    // eslint-disable-next-line sonarjs/max-switch-cases -- Stripe webhook events naturally exceed 30 cases
     switch (event.type) {
       // ════════════════════════════════════════════════════════════════════════
       // CHECKOUT EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'checkout.session.completed':
-        await this.handleCheckoutCompleted(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleCheckoutCompleted(event.data.object, correlationId, logger);
         break;
 
       case 'checkout.session.async_payment_succeeded':
-        await this.handleCheckoutPaymentSucceeded(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleCheckoutPaymentSucceeded(event.data.object, correlationId, logger);
         break;
 
       case 'checkout.session.async_payment_failed':
-        await this.handleCheckoutPaymentFailed(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleCheckoutPaymentFailed(event.data.object, correlationId, logger);
         break;
 
       case 'checkout.session.expired':
-        await this.handleCheckoutExpired(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleCheckoutExpired(event.data.object, correlationId, logger);
         break;
 
       // ════════════════════════════════════════════════════════════════════════
       // SUBSCRIPTION EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'customer.subscription.created':
-        await this.handleSubscriptionCreated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleSubscriptionCreated(event.data.object, correlationId, logger);
         break;
 
       case 'customer.subscription.updated':
@@ -220,186 +203,102 @@ class StripeWebhookController {
         break;
 
       case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleSubscriptionDeleted(event.data.object, correlationId, logger);
         break;
 
       case 'customer.subscription.paused':
-        await this.handleSubscriptionPaused(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleSubscriptionPaused(event.data.object, correlationId, logger);
         break;
 
       case 'customer.subscription.resumed':
-        await this.handleSubscriptionResumed(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleSubscriptionResumed(event.data.object, correlationId, logger);
         break;
 
       case 'customer.subscription.trial_will_end':
-        await this.handleTrialWillEnd(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleTrialWillEnd(event.data.object, correlationId, logger);
         break;
 
       // ════════════════════════════════════════════════════════════════════════
       // INVOICE EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'invoice.created':
-        await this.handleInvoiceCreated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoiceCreated(event.data.object, correlationId, logger);
         break;
 
       case 'invoice.finalized':
-        await this.handleInvoiceFinalized(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoiceFinalized(event.data.object, correlationId, logger);
         break;
 
       case 'invoice.paid':
-        await this.handleInvoicePaid(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoicePaid(event.data.object, correlationId, logger);
         break;
 
       case 'invoice.payment_failed':
-        await this.handleInvoicePaymentFailed(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoicePaymentFailed(event.data.object, correlationId, logger);
         break;
 
       case 'invoice.payment_action_required':
-        await this.handleInvoicePaymentActionRequired(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoicePaymentActionRequired(event.data.object, correlationId, logger);
         break;
 
       case 'invoice.upcoming':
-        await this.handleInvoiceUpcoming(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoiceUpcoming(event.data.object, correlationId, logger);
         break;
 
       case 'invoice.voided':
-        await this.handleInvoiceVoided(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleInvoiceVoided(event.data.object, correlationId, logger);
         break;
 
       // ════════════════════════════════════════════════════════════════════════
       // PAYMENT INTENT EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'payment_intent.succeeded':
-        await this.handlePaymentIntentSucceeded(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handlePaymentIntentSucceeded(event.data.object, correlationId, logger);
         break;
 
       case 'payment_intent.payment_failed':
-        await this.handlePaymentIntentFailed(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handlePaymentIntentFailed(event.data.object, correlationId, logger);
         break;
 
       case 'payment_intent.requires_action':
-        await this.handlePaymentIntentRequiresAction(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handlePaymentIntentRequiresAction(event.data.object, correlationId, logger);
         break;
 
       // ════════════════════════════════════════════════════════════════════════
       // DISPUTE EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'charge.dispute.created':
-        await this.handleDisputeCreated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleDisputeCreated(event.data.object, correlationId, logger);
         break;
 
       case 'charge.dispute.updated':
-        await this.handleDisputeUpdated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleDisputeUpdated(event.data.object, correlationId, logger);
         break;
 
       case 'charge.dispute.closed':
-        await this.handleDisputeClosed(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleDisputeClosed(event.data.object, correlationId, logger);
         break;
 
       // ════════════════════════════════════════════════════════════════════════
       // REFUND EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'charge.refunded':
-        await this.handleChargeRefunded(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleChargeRefunded(event.data.object, correlationId, logger);
         break;
 
       case 'charge.refund.updated':
-        await this.handleRefundUpdated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleRefundUpdated(event.data.object, correlationId, logger);
         break;
 
       // ════════════════════════════════════════════════════════════════════════
       // CUSTOMER EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'customer.created':
-        await this.handleCustomerCreated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleCustomerCreated(event.data.object, correlationId, logger);
         break;
 
       case 'customer.updated':
-        await this.handleCustomerUpdated(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handleCustomerUpdated(event.data.object, correlationId, logger);
         break;
 
       case 'customer.deleted':
@@ -414,27 +313,15 @@ class StripeWebhookController {
       // PAYMENT METHOD EVENTS
       // ════════════════════════════════════════════════════════════════════════
       case 'payment_method.attached':
-        await this.handlePaymentMethodAttached(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handlePaymentMethodAttached(event.data.object, correlationId, logger);
         break;
 
       case 'payment_method.detached':
-        await this.handlePaymentMethodDetached(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handlePaymentMethodDetached(event.data.object, correlationId, logger);
         break;
 
       case 'customer.source.expiring':
-        await this.handlePaymentSourceExpiring(
-          event.data.object,
-          correlationId,
-          logger
-        );
+        await this.handlePaymentSourceExpiring(event.data.object, correlationId, logger);
         break;
 
       default:
@@ -449,7 +336,7 @@ class StripeWebhookController {
   private async handleCheckoutCompleted(
     session: Stripe.Checkout.Session,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const customerId = session.customer as string;
@@ -498,13 +385,10 @@ class StripeWebhookController {
   private async handleCheckoutPaymentSucceeded(
     session: Stripe.Checkout.Session,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
-    logger.info(
-      { sessionId: session.id, correlationId },
-      'Checkout async payment succeeded'
-    );
+    logger.info({ sessionId: session.id, correlationId }, 'Checkout async payment succeeded');
 
     // Handle async payment methods (bank transfers, etc.)
     await billingEventPublisher.publish({
@@ -521,13 +405,10 @@ class StripeWebhookController {
   private async handleCheckoutPaymentFailed(
     session: Stripe.Checkout.Session,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
-    logger.warn(
-      { sessionId: session.id, correlationId },
-      'Checkout async payment failed'
-    );
+    logger.warn({ sessionId: session.id, correlationId }, 'Checkout async payment failed');
 
     await billingEventPublisher.publish({
       type: BillingEventType.PAYMENT_FAILED,
@@ -543,7 +424,7 @@ class StripeWebhookController {
   private async handleCheckoutExpired(
     session: Stripe.Checkout.Session,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info({ sessionId: session.id, correlationId }, 'Checkout session expired');
@@ -564,7 +445,7 @@ class StripeWebhookController {
   private async handleSubscriptionCreated(
     subscription: Stripe.Subscription,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const customerId = subscription.customer as string;
@@ -572,7 +453,13 @@ class StripeWebhookController {
     const plan = getPlanFromPriceId(subscription.items.data[0]?.price.id ?? '');
 
     logger.info(
-      { subscriptionId: subscription.id, customerId, plan, status: subscription.status, correlationId },
+      {
+        subscriptionId: subscription.id,
+        customerId,
+        plan,
+        status: subscription.status,
+        correlationId,
+      },
       'Subscription created'
     );
 
@@ -594,7 +481,7 @@ class StripeWebhookController {
     subscription: Stripe.Subscription,
     previousAttributes: Partial<Stripe.Subscription>,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const customerId = subscription.customer as string;
@@ -662,7 +549,7 @@ class StripeWebhookController {
     previousStatus: Stripe.Subscription.Status,
     tenantId: string,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const customerId = subscription.customer as string;
@@ -717,7 +604,7 @@ class StripeWebhookController {
   private async handleSubscriptionDeleted(
     subscription: Stripe.Subscription,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const customerId = subscription.customer as string;
@@ -751,7 +638,7 @@ class StripeWebhookController {
   private async handleSubscriptionPaused(
     subscription: Stripe.Subscription,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const tenantId = subscription.metadata?.tenantId ?? '';
@@ -770,7 +657,7 @@ class StripeWebhookController {
   private async handleSubscriptionResumed(
     subscription: Stripe.Subscription,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const tenantId = subscription.metadata?.tenantId ?? '';
@@ -789,7 +676,7 @@ class StripeWebhookController {
   private async handleTrialWillEnd(
     subscription: Stripe.Subscription,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const tenantId = subscription.metadata?.tenantId ?? '';
@@ -817,7 +704,7 @@ class StripeWebhookController {
   private async handleInvoiceCreated(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -827,7 +714,8 @@ class StripeWebhookController {
 
     await billingEventPublisher.publish({
       type: BillingEventType.INVOICE_CREATED,
-      tenantId: (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
+      tenantId:
+        (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
       customerId: invoice.customer as string,
       invoiceId: invoice.id ?? '',
       amount: invoice.amount_due,
@@ -840,7 +728,7 @@ class StripeWebhookController {
   private async handleInvoiceFinalized(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -850,7 +738,8 @@ class StripeWebhookController {
 
     await billingEventPublisher.publish({
       type: BillingEventType.INVOICE_FINALIZED,
-      tenantId: (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
+      tenantId:
+        (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
       customerId: invoice.customer as string,
       invoiceId: invoice.id ?? '',
       amount: invoice.amount_due,
@@ -864,10 +753,11 @@ class StripeWebhookController {
   private async handleInvoicePaid(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
-    const tenantId = (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '';
+    const tenantId =
+      (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '';
 
     logger.info(
       {
@@ -906,10 +796,11 @@ class StripeWebhookController {
   private async handleInvoicePaymentFailed(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
-    const tenantId = (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '';
+    const tenantId =
+      (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '';
     const attemptCount = invoice.attempt_count ?? 0;
 
     logger.warn(
@@ -953,7 +844,7 @@ class StripeWebhookController {
   private async handleInvoicePaymentActionRequired(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -963,7 +854,8 @@ class StripeWebhookController {
 
     await billingEventPublisher.publish({
       type: BillingEventType.PAYMENT_ACTION_REQUIRED,
-      tenantId: (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
+      tenantId:
+        (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
       customerId: invoice.customer as string,
       invoiceId: invoice.id ?? '',
       paymentIntentId: invoice.payment_intent as string,
@@ -975,7 +867,7 @@ class StripeWebhookController {
   private async handleInvoiceUpcoming(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -991,7 +883,8 @@ class StripeWebhookController {
 
     await billingEventPublisher.publish({
       type: BillingEventType.INVOICE_UPCOMING,
-      tenantId: (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
+      tenantId:
+        (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
       customerId: invoice.customer as string,
       amount: invoice.amount_due,
       currency: invoice.currency,
@@ -1004,14 +897,15 @@ class StripeWebhookController {
   private async handleInvoiceVoided(
     invoice: Stripe.Invoice,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info({ invoiceId: invoice.id, correlationId }, 'Invoice voided');
 
     await billingEventPublisher.publish({
       type: BillingEventType.INVOICE_VOIDED,
-      tenantId: (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
+      tenantId:
+        (invoice.metadata?.tenantId || invoice.subscription_details?.metadata?.tenantId) ?? '',
       customerId: invoice.customer as string,
       invoiceId: invoice.id ?? '',
       correlationId,
@@ -1025,7 +919,7 @@ class StripeWebhookController {
   private async handlePaymentIntentSucceeded(
     paymentIntent: Stripe.PaymentIntent,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -1051,7 +945,7 @@ class StripeWebhookController {
   private async handlePaymentIntentFailed(
     paymentIntent: Stripe.PaymentIntent,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const error = paymentIntent.last_payment_error;
@@ -1083,7 +977,7 @@ class StripeWebhookController {
   private async handlePaymentIntentRequiresAction(
     paymentIntent: Stripe.PaymentIntent,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -1108,7 +1002,7 @@ class StripeWebhookController {
   private async handleDisputeCreated(
     dispute: Stripe.Dispute,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.error(
@@ -1141,7 +1035,7 @@ class StripeWebhookController {
   private async handleDisputeUpdated(
     dispute: Stripe.Dispute,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.warn(
@@ -1166,7 +1060,7 @@ class StripeWebhookController {
   private async handleDisputeClosed(
     dispute: Stripe.Dispute,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     const won = dispute.status === 'won';
@@ -1201,7 +1095,7 @@ class StripeWebhookController {
   private async handleChargeRefunded(
     charge: Stripe.Charge,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -1227,7 +1121,7 @@ class StripeWebhookController {
   private async handleRefundUpdated(
     refund: Stripe.Refund,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -1258,7 +1152,7 @@ class StripeWebhookController {
   private async handleCustomerCreated(
     customer: Stripe.Customer,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -1278,7 +1172,7 @@ class StripeWebhookController {
   private async handleCustomerUpdated(
     customer: Stripe.Customer,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info({ customerId: customer.id, correlationId }, 'Customer updated');
@@ -1295,7 +1189,7 @@ class StripeWebhookController {
   private async handleCustomerDeleted(
     customer: Stripe.DeletedCustomer,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info({ customerId: customer.id, correlationId }, 'Customer deleted');
@@ -1315,7 +1209,7 @@ class StripeWebhookController {
   private async handlePaymentMethodAttached(
     paymentMethod: Stripe.PaymentMethod,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.info(
@@ -1341,13 +1235,10 @@ class StripeWebhookController {
   private async handlePaymentMethodDetached(
     paymentMethod: Stripe.PaymentMethod,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
-    logger.info(
-      { paymentMethodId: paymentMethod.id, correlationId },
-      'Payment method detached'
-    );
+    logger.info({ paymentMethodId: paymentMethod.id, correlationId }, 'Payment method detached');
 
     await billingEventPublisher.publish({
       type: BillingEventType.PAYMENT_METHOD_DETACHED,
@@ -1360,7 +1251,7 @@ class StripeWebhookController {
   private async handlePaymentSourceExpiring(
     card: Stripe.Card,
     correlationId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logger: any
   ): Promise<void> {
     logger.warn(

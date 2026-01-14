@@ -65,7 +65,10 @@ async function callAIOrchestrator(request: AIRequest): Promise<AIResponse> {
  * Calculate writing metrics from content
  */
 export function calculateMetrics(content: string): WritingMetrics {
-  const words = content.trim().split(/\s+/).filter((w) => w.length > 0);
+  const words = content
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
   const sentences = content.split(/[.!?]+/).filter((s) => s.trim().length > 0);
   const paragraphs = content.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
 
@@ -108,22 +111,22 @@ const ENCOURAGEMENT_BY_GRADE: Record<GradeBand, string[]> = {
     "Great job writing! You're becoming a wonderful writer!",
     "I love how you're using your words! Keep going!",
     "You're doing amazing! Every word you write makes you better!",
-    "What a creative writer you are! Your ideas are fantastic!",
+    'What a creative writer you are! Your ideas are fantastic!',
     "You're working so hard on your writing. That's awesome!",
   ],
   G6_8: [
-    "Your writing is developing nicely. Keep building on these ideas!",
-    "Great progress! Your voice as a writer is getting stronger.",
+    'Your writing is developing nicely. Keep building on these ideas!',
+    'Great progress! Your voice as a writer is getting stronger.',
     "Nice work! You're making thoughtful choices in your writing.",
-    "Your ideas are interesting. Keep exploring them!",
+    'Your ideas are interesting. Keep exploring them!',
     "You're growing as a writer. Each draft makes you better!",
   ],
   G9_12: [
-    "Strong work. Your argument/narrative is developing well.",
-    "Good analytical thinking in your writing.",
-    "Your writing shows depth. Continue refining your ideas.",
-    "Nice work on structure and flow. Keep polishing!",
-    "Your voice and style are emerging. Keep writing!",
+    'Strong work. Your argument/narrative is developing well.',
+    'Good analytical thinking in your writing.',
+    'Your writing shows depth. Continue refining your ideas.',
+    'Nice work on structure and flow. Keep polishing!',
+    'Your voice and style are emerging. Keep writing!',
   ],
 };
 
@@ -209,9 +212,7 @@ async function generateFeedback(request: AIAssistanceRequest): Promise<WritingFe
 /**
  * Generate writing suggestions
  */
-async function generateSuggestions(
-  request: AIAssistanceRequest
-): Promise<WritingSuggestionItem[]> {
+async function generateSuggestions(request: AIAssistanceRequest): Promise<WritingSuggestionItem[]> {
   const suggestions: WritingSuggestionItem[] = [];
 
   try {
@@ -342,21 +343,18 @@ function getGradeContext(gradeBand: GradeBand): string {
 // RESPONSE PARSERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function parseFeedbackResponse(
-  response: string,
-  _gradeBand: GradeBand
-): WritingFeedbackItem[] {
+function parseFeedbackResponse(response: string, _gradeBand: GradeBand): WritingFeedbackItem[] {
   try {
     // Try to extract JSON from response
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
+    const jsonMatch = /\[[\s\S]*\]/.exec(response);
     if (jsonMatch) {
-      const items = JSON.parse(jsonMatch[0]) as Array<{
+      const items = JSON.parse(jsonMatch[0]) as {
         type?: string;
         text?: string;
         severity?: string;
         originalText?: string;
         suggestedText?: string;
-      }>;
+      }[];
 
       return items.map((item) => ({
         type: (item.type as FeedbackType) || 'CONTENT',
@@ -378,14 +376,14 @@ function parseSuggestionsResponse(
   _writingType: WritingType
 ): WritingSuggestionItem[] {
   try {
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
+    const jsonMatch = /\[[\s\S]*\]/.exec(response);
     if (jsonMatch) {
-      const items = JSON.parse(jsonMatch[0]) as Array<{
+      const items = JSON.parse(jsonMatch[0]) as {
         type?: string;
         text?: string;
         position?: string;
         context?: string;
-      }>;
+      }[];
 
       return items.map((item) => ({
         type: (item.type as SuggestionType) || 'ELABORATION',
@@ -488,7 +486,7 @@ function getTransitionSuggestion(writingType: WritingType): string {
     NARRATIVE: "What happened next? Try using words like 'Then,' 'After that,' or 'Suddenly.'",
     PERSUASIVE: "Add another reason to support your argument. Try 'Furthermore,' or 'In addition.'",
     EXPOSITORY: "Connect your ideas with transitions like 'For example,' or 'Additionally.'",
-    DESCRIPTIVE: "Add more details! What did it look, sound, or feel like?",
+    DESCRIPTIVE: 'Add more details! What did it look, sound, or feel like?',
     POETRY: 'Consider how you want to move between your images or ideas.',
     JOURNAL: 'What else do you want to reflect on?',
     NOTE: 'Add any additional points you want to remember.',
@@ -518,7 +516,7 @@ function getElaborationSuggestion(writingType: WritingType): string {
 export function getWritingPrompts(
   gradeBand: GradeBand,
   writingType?: WritingType
-): Array<{ title: string; prompt: string; type: WritingType }> {
+): { title: string; prompt: string; type: WritingType }[] {
   const prompts = WRITING_PROMPTS[gradeBand] || WRITING_PROMPTS.G6_8;
 
   if (writingType) {
@@ -528,10 +526,7 @@ export function getWritingPrompts(
   return prompts;
 }
 
-const WRITING_PROMPTS: Record<
-  GradeBand,
-  Array<{ title: string; prompt: string; type: WritingType }>
-> = {
+const WRITING_PROMPTS: Record<GradeBand, { title: string; prompt: string; type: WritingType }[]> = {
   K5: [
     {
       title: 'My Favorite Day',

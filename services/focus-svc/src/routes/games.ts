@@ -24,12 +24,12 @@ import {
   getGameStats,
   getActiveGameSession,
 } from '../games/game-session.js';
-import type { GradeBand } from '../types/telemetry.js';
 import {
   awardGameReward,
   trackSpecialEvent,
   type RewardResult,
 } from '../services/gamification.service.js';
+import type { GradeBand } from '../types/telemetry.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -74,7 +74,7 @@ interface AuthenticatedUser {
 }
 
 function getUser(request: FastifyRequest): AuthenticatedUser {
-  const user = (request as FastifyRequest & { user?: AuthenticatedUser }).user;
+  const user = (request as unknown as { user?: AuthenticatedUser }).user;
   if (!user) {
     throw new Error('User not authenticated');
   }
@@ -181,8 +181,7 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
       gradeBand,
       mood,
       previousGameIds: recentGameIds,
-      preferredCategory:
-        preferredCategory ?? preferences?.favoriteCategories[0] ?? undefined,
+      preferredCategory: preferredCategory ?? preferences?.favoriteCategories[0] ?? undefined,
     });
 
     if (!game) {
@@ -269,7 +268,7 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
     }
 
     // Award gamification rewards
-    const scorePercent = maxScore ? Math.round((score || 0) / maxScore * 100) : 0;
+    const scorePercent = maxScore ? Math.round(((score || 0) / maxScore) * 100) : 0;
     const isPerfectScore = maxScore ? score === maxScore : false;
 
     let rewards: RewardResult | undefined;
@@ -320,14 +319,16 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
       gameSession,
       message,
       encouragement: generateEncouragement(completed, score, maxScore),
-      rewards: rewards ? {
-        xpEarned: rewards.xpEarned,
-        coinsEarned: rewards.coinsEarned,
-        newTotal: rewards.newTotal,
-        leveledUp: rewards.leveledUp,
-        newLevel: rewards.newLevel,
-        achievementsUnlocked: rewards.achievementsUnlocked,
-      } : undefined,
+      rewards: rewards
+        ? {
+            xpEarned: rewards.xpEarned,
+            coinsEarned: rewards.coinsEarned,
+            newTotal: rewards.newTotal,
+            leveledUp: rewards.leveledUp,
+            newLevel: rewards.newLevel,
+            achievementsUnlocked: rewards.achievementsUnlocked,
+          }
+        : undefined,
     });
   });
 
@@ -409,9 +410,7 @@ export const registerGamesRoutes: FastifyPluginAsync = async (app) => {
           feedbackCount: gamesWithFeedback.length,
           highlyRatedCount: highlyRatedGames.length,
           satisfactionRate:
-            gamesWithFeedback.length > 0
-              ? highlyRatedGames.length / gamesWithFeedback.length
-              : 0,
+            gamesWithFeedback.length > 0 ? highlyRatedGames.length / gamesWithFeedback.length : 0,
         },
       },
     });
@@ -457,7 +456,7 @@ function generateRecommendationReason(
   const reasons: string[] = [];
 
   // Category-based reasons
-  if (favoriteCategories && favoriteCategories.includes(game.category)) {
+  if (favoriteCategories?.includes(game.category)) {
     reasons.push(`You enjoy ${game.category} games`);
   }
 
@@ -480,11 +479,7 @@ function generateRecommendationReason(
   return reasons.join('. ') + '.';
 }
 
-function generateEncouragement(
-  completed: boolean,
-  score?: number,
-  maxScore?: number
-): string {
+function generateEncouragement(completed: boolean, score?: number, maxScore?: number): string {
   if (!completed) {
     return 'Every bit of break time helps! You did great.';
   }

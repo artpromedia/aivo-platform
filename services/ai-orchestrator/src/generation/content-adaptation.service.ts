@@ -12,11 +12,8 @@
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
-import {
-  ReadabilityAnalysisService,
-  LEXILE_GRADE_RANGES,
-  type ReadabilityAnalysis,
-} from './readability-analysis.service.js';
+
+import { ReadabilityAnalysisService } from './readability-analysis.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -65,29 +62,29 @@ export interface AdaptedContent {
   /** Grade equivalent of adapted content */
   gradeEquivalent: number;
   /** List of terms that were simplified with their replacements */
-  simplifications: Array<{
+  simplifications: {
     original: string;
     simplified: string;
     reason?: string;
-  }>;
+  }[];
   /** Terms preserved from original (technical vocabulary) */
   preservedTerms: string[];
   /** Vocabulary support - definitions for key terms */
-  vocabularySupport?: Array<{
+  vocabularySupport?: {
     term: string;
     definition: string;
     exampleSentence?: string;
-  }>;
+  }[];
   /** Confidence in adaptation quality */
   confidence: number;
 }
 
 export interface BatchAdaptationRequest {
-  items: Array<{
+  items: {
     id: string;
     content: string;
     contentType?: ContentAdaptationRequest['contentType'];
-  }>;
+  }[];
   targetLexile: number;
   subject?: string;
   preserveTerms?: string[];
@@ -96,12 +93,12 @@ export interface BatchAdaptationRequest {
 
 export interface ScaffoldedContent {
   /** Multiple versions at different reading levels */
-  versions: Array<{
+  versions: {
     lexileLevel: number;
     gradeEquivalent: number;
     content: string;
     vocabularySupport?: AdaptedContent['vocabularySupport'];
-  }>;
+  }[];
   /** Recommended version based on learner's level */
   recommendedVersion: number;
 }
@@ -184,8 +181,8 @@ export class ContentAdaptationService {
         subject,
         topic,
         conceptGradeLevel,
-        contentType = 'explanation',
-        preserveTerms = [],
+        contentType,
+        preserveTerms,
         context,
         tenantId,
         learnerId,
@@ -213,7 +210,7 @@ export class ContentAdaptationService {
           targetLexile,
           gradeEquivalent: this.readabilityService.lexileToGradeEquivalent(sourceLexile),
           simplifications: [],
-          preservedTerms,
+          preservedTerms: preserveTerms ?? [],
           confidence: 0.95,
         };
       }
@@ -576,7 +573,7 @@ Respond with JSON:
 
   private parseJsonResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         return { adaptedContent: content };
       }

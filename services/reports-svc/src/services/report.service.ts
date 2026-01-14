@@ -5,15 +5,15 @@
 // FERPA/GDPR compliant data handling
 // ══════════════════════════════════════════════════════════════════════════════
 
+import { randomUUID } from 'node:crypto';
+
+import { logger, metrics } from '@aivo/ts-observability';
 import { S3, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { SES, SendEmailCommand } from '@aws-sdk/client-ses';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import ExcelJS from 'exceljs';
+import type { Redis } from 'ioredis';
 import PDFDocument from 'pdfkit';
-import { Redis } from 'ioredis';
-import { randomUUID } from 'node:crypto';
-
-import { logger, metrics } from '@aivo/ts-observability';
 
 // Type alias for PDFKit document
 type PDFDoc = InstanceType<typeof PDFDocument>;
@@ -33,12 +33,7 @@ export type ReportType =
   | 'at_risk_students'
   | 'custom';
 
-export type ReportStatus =
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'expired';
+export type ReportStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'expired';
 
 export interface ReportRequest {
   id: string;
@@ -139,12 +134,12 @@ export interface ChartConfig {
   type: 'bar' | 'line' | 'pie' | 'scatter' | 'heatmap' | 'area';
   xAxis?: { key: string; label: string };
   yAxis?: { key: string; label: string };
-  series?: Array<{ key: string; label: string; color?: string }>;
+  series?: { key: string; label: string; color?: string }[];
   options?: Record<string, unknown>;
 }
 
 export interface ReportSummary {
-  keyMetrics: Array<{ label: string; value: string | number; change?: number }>;
+  keyMetrics: { label: string; value: string | number; change?: number }[];
   highlights: string[];
   recommendations?: string[];
 }
@@ -210,13 +205,13 @@ export interface ReportServiceConfig {
 }
 
 const DEFAULT_CONFIG: ReportServiceConfig = {
-  s3Bucket: process.env['REPORTS_S3_BUCKET'] ?? 'aivo-reports',
+  s3Bucket: process.env.REPORTS_S3_BUCKET ?? 'aivo-reports',
   s3Prefix: 'reports/',
-  awsRegion: process.env['AWS_REGION'] ?? 'us-east-1',
+  awsRegion: process.env.AWS_REGION ?? 'us-east-1',
   reportTtlDays: 30,
   maxReportSize: 50 * 1024 * 1024, // 50MB
   enableEmailDelivery: true,
-  fromEmail: process.env['REPORTS_FROM_EMAIL'] ?? 'reports@aivolearning.com',
+  fromEmail: process.env.REPORTS_FROM_EMAIL ?? 'reports@aivolearning.com',
   companyName: 'AIVO',
   logoUrl: undefined,
 };
@@ -250,9 +245,7 @@ export class ReportService {
   /**
    * Generate report from a request object (used by routes)
    */
-  async generateReportFromRequest(
-    request: GenerateReportRequest
-  ): Promise<GenerateReportResult> {
+  async generateReportFromRequest(request: GenerateReportRequest): Promise<GenerateReportResult> {
     const data = await this.buildReportData(request);
     const result = await this.generateReport(
       request.type,
@@ -271,9 +264,7 @@ export class ReportService {
   /**
    * Generate report buffer directly (for streaming without S3 upload)
    */
-  async generateReportBuffer(
-    request: GenerateReportRequest
-  ): Promise<Buffer> {
+  async generateReportBuffer(request: GenerateReportRequest): Promise<Buffer> {
     const data = await this.buildReportData(request);
     const format = request.format ?? 'pdf';
 
@@ -298,7 +289,8 @@ export class ReportService {
    */
   private async buildReportData(request: GenerateReportRequest): Promise<ReportData> {
     // Extract date range from request
-    const startDate = request.dateRange?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const startDate =
+      request.dateRange?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = request.dateRange?.endDate ?? new Date();
     const format = request.format ?? 'pdf';
 
@@ -328,7 +320,7 @@ export class ReportService {
    */
   async sendBatchReportEmail(
     recipients: ReportRecipient[],
-    reports: Array<{ reportId: string; downloadUrl: string; type: string; format: string }>
+    reports: { reportId: string; downloadUrl: string; type: string; format: string }[]
   ): Promise<void> {
     for (const report of reports) {
       await this.sendReportEmail(
@@ -485,8 +477,12 @@ export class ReportService {
 
         const chunks: Buffer[] = [];
         doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-        doc.on('end', () => resolve(Buffer.concat(chunks)));
-        doc.on('error', (err: Error) => reject(err));
+        doc.on('end', () => {
+          resolve(Buffer.concat(chunks));
+        });
+        doc.on('error', (err: Error) => {
+          reject(err);
+        });
 
         // Header
         this.renderPDFHeader(doc, data);
@@ -551,11 +547,7 @@ export class ReportService {
     const pageWidth = doc.page.width - 100;
     const kpiWidth = pageWidth / Math.min(summary.keyMetrics.length, 4);
 
-    doc
-      .fontSize(16)
-      .font('Helvetica-Bold')
-      .fillColor('#1a1a2e')
-      .text('Summary', 50, doc.y);
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#1a1a2e').text('Summary', 50, doc.y);
 
     doc.moveDown(0.5);
 
@@ -611,20 +603,12 @@ export class ReportService {
 
     // Highlights
     if (summary.highlights.length > 0) {
-      doc
-        .fontSize(12)
-        .font('Helvetica-Bold')
-        .fillColor('#1a1a2e')
-        .text('Highlights', 50, doc.y);
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#1a1a2e').text('Highlights', 50, doc.y);
 
       doc.moveDown(0.3);
 
       for (const highlight of summary.highlights) {
-        doc
-          .fontSize(10)
-          .font('Helvetica')
-          .fillColor('#333333')
-          .text(`• ${highlight}`, 60, doc.y);
+        doc.fontSize(10).font('Helvetica').fillColor('#333333').text(`• ${highlight}`, 60, doc.y);
         doc.moveDown(0.3);
       }
     }
@@ -638,11 +622,7 @@ export class ReportService {
       doc.addPage();
     }
 
-    doc
-      .fontSize(14)
-      .font('Helvetica-Bold')
-      .fillColor('#1a1a2e')
-      .text(section.title, 50, doc.y);
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a1a2e').text(section.title, 50, doc.y);
 
     doc.moveDown(0.5);
 
@@ -682,10 +662,7 @@ export class ReportService {
     let x = 50;
     const headerY = doc.y;
 
-    doc
-      .rect(50, headerY, pageWidth, 20)
-      .fillColor('#1a1a2e')
-      .fill();
+    doc.rect(50, headerY, pageWidth, 20).fillColor('#1a1a2e').fill();
 
     for (const col of columns) {
       doc
@@ -713,10 +690,7 @@ export class ReportService {
       const rowY = doc.y;
       const bgColor = rowIndex % 2 === 0 ? '#ffffff' : '#f9f9f9';
 
-      doc
-        .rect(50, rowY, pageWidth, 18)
-        .fillColor(bgColor)
-        .fill();
+      doc.rect(50, rowY, pageWidth, 18).fillColor(bgColor).fill();
 
       x = 50;
       for (const col of columns) {
@@ -745,7 +719,7 @@ export class ReportService {
   }
 
   private renderPDFKPIs(doc: PDFDoc, section: ReportSection): void {
-    const kpis = section.data as Array<{ label: string; value: string | number }>;
+    const kpis = section.data as { label: string; value: string | number }[];
 
     for (const kpi of kpis) {
       doc
@@ -772,11 +746,7 @@ export class ReportService {
     const items = section.data as string[];
 
     for (const item of items) {
-      doc
-        .fontSize(10)
-        .font('Helvetica')
-        .fillColor('#333333')
-        .text(`• ${item}`, 60, doc.y);
+      doc.fontSize(10).font('Helvetica').fillColor('#333333').text(`• ${item}`, 60, doc.y);
       doc.moveDown(0.3);
     }
   }
@@ -799,27 +769,16 @@ export class ReportService {
         .fontSize(8)
         .font('Helvetica')
         .fillColor('#888888')
-        .text(
-          `Generated: ${this.formatDateTime(data.generatedAt)}`,
-          50,
-          doc.page.height - 30
-        );
+        .text(`Generated: ${this.formatDateTime(data.generatedAt)}`, 50, doc.page.height - 30);
 
       // Page number
-      doc.text(
-        `Page ${i + 1} of ${pageCount}`,
-        doc.page.width - 100,
-        doc.page.height - 30,
-        { align: 'right' }
-      );
+      doc.text(`Page ${i + 1} of ${pageCount}`, doc.page.width - 100, doc.page.height - 30, {
+        align: 'right',
+      });
 
       // Compliance notice
       if (data.metadata.complianceFlags.ferpaCompliant) {
-        doc.text(
-          'FERPA Compliant',
-          doc.page.width / 2 - 30,
-          doc.page.height - 30
-        );
+        doc.text('FERPA Compliant', doc.page.width / 2 - 30, doc.page.height - 30);
       }
     }
   }
@@ -1171,21 +1130,26 @@ export class ReportService {
   }
 
   private renderHTMLSummary(summary: ReportSummary): string {
-    const kpiCards = summary.keyMetrics.map((metric) => {
-      const changeHtml = this.renderKPIChange(metric.change);
-      return `
+    const kpiCards = summary.keyMetrics
+      .map((metric) => {
+        const changeHtml = this.renderKPIChange(metric.change);
+        return `
         <div class="kpi-card">
           <div class="kpi-value">${metric.value}</div>
           <div class="kpi-label">${this.escapeHTML(metric.label)}</div>
           ${changeHtml}
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
-    const highlightsItems = summary.highlights.map((h) => '<li>' + this.escapeHTML(h) + '</li>').join('');
-    const highlightsHtml = summary.highlights.length > 0
-      ? '<h3>Highlights</h3><ul class="highlights">' + highlightsItems + '</ul>'
-      : '';
+    const highlightsItems = summary.highlights
+      .map((h) => '<li>' + this.escapeHTML(h) + '</li>')
+      .join('');
+    const highlightsHtml =
+      summary.highlights.length > 0
+        ? '<h3>Highlights</h3><ul class="highlights">' + highlightsItems + '</ul>'
+        : '';
 
     return `
     <div class="summary">
@@ -1268,7 +1232,7 @@ export class ReportService {
   }
 
   private renderHTMLKPIs(section: ReportSection): string {
-    const kpis = section.data as Array<{ label: string; value: string | number }>;
+    const kpis = section.data as { label: string; value: string | number }[];
 
     return `
     <div class="kpi-grid">
@@ -1292,10 +1256,7 @@ export class ReportService {
   /**
    * Send report via email
    */
-  async sendReportEmail(
-    report: ReportRequest,
-    recipients: ReportRecipient[]
-  ): Promise<void> {
+  async sendReportEmail(report: ReportRequest, recipients: ReportRecipient[]): Promise<void> {
     if (!this.config.enableEmailDelivery) {
       logger.warn('Email delivery is disabled');
       return;
@@ -1368,12 +1329,12 @@ export class ReportService {
       <p>Your requested report is ready for download.</p>
       <p><strong>Report Type:</strong> ${report.type.replaceAll('_', ' ')}</p>
       <p><strong>Format:</strong> ${report.format.toUpperCase()}</p>
-      <p><strong>Generated:</strong> ${this.formatDateTime(report.completedAt!)}</p>
+      <p><strong>Generated:</strong> ${this.formatDateTime(report.completedAt)}</p>
       <p style="text-align: center;">
         <a href="${report.downloadUrl}" class="button">Download Report</a>
       </p>
       <p style="font-size: 12px; color: #888;">
-        This download link will expire on ${this.formatDate(report.expiresAt!)}.
+        This download link will expire on ${this.formatDate(report.expiresAt)}.
       </p>
     </div>
     <div class="footer">
@@ -1392,11 +1353,7 @@ export class ReportService {
   /**
    * Upload report to S3
    */
-  private async uploadToS3(
-    key: string,
-    content: Buffer,
-    contentType: string
-  ): Promise<void> {
+  private async uploadToS3(key: string, content: Buffer, contentType: string): Promise<void> {
     const command = new PutObjectCommand({
       Bucket: this.config.s3Bucket,
       Key: key,
@@ -1434,11 +1391,7 @@ export class ReportService {
    */
   private async saveReportRequest(request: ReportRequest): Promise<void> {
     const key = `report:${request.id}`;
-    await this.redis.setex(
-      key,
-      this.config.reportTtlDays * 24 * 60 * 60,
-      JSON.stringify(request)
-    );
+    await this.redis.setex(key, this.config.reportTtlDays * 24 * 60 * 60, JSON.stringify(request));
 
     // Add to user's report list
     await this.redis.lpush(`reports:user:${request.requestedBy}`, request.id);
@@ -1510,6 +1463,7 @@ export class ReportService {
       case 'boolean':
         return value ? 'Yes' : 'No';
       default:
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return typeof value === 'object' ? JSON.stringify(value) : String(value);
     }
   }
@@ -1518,23 +1472,36 @@ export class ReportService {
     if (typeof value === 'number') return value.toLocaleString();
     if (typeof value === 'string') return value;
     if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return String(value ?? '');
   }
 
   private formatPercentageValue(value: unknown): string {
-    const stringValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '0');
+    const stringValue =
+      typeof value === 'object' && value !== null
+        ? JSON.stringify(value)
+        : // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          String(value ?? '0');
     const num = typeof value === 'number' ? value : Number.parseFloat(stringValue);
     return `${(num * 100).toFixed(1)}%`;
   }
 
   private formatDateValue(value: unknown): string {
     if (value instanceof Date) return this.formatDate(value);
-    const stringValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '');
+    const stringValue =
+      typeof value === 'object' && value !== null
+        ? JSON.stringify(value)
+        : // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          String(value ?? '');
     return this.formatDate(new Date(stringValue));
   }
 
   private formatDurationValue(value: unknown): string {
-    const stringValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '0');
+    const stringValue =
+      typeof value === 'object' && value !== null
+        ? JSON.stringify(value)
+        : // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          String(value ?? '0');
     const minutes = typeof value === 'number' ? value : Number.parseFloat(stringValue);
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
@@ -1552,8 +1519,6 @@ export class ReportService {
 
   private sanitizeSheetName(name: string): string {
     // Excel sheet name restrictions
-    return name
-      .replaceAll(/[\\/*?[\]:]/g, '')
-      .substring(0, 31);
+    return name.replaceAll(/[\\/*?[\]:]/g, '').substring(0, 31);
   }
 }

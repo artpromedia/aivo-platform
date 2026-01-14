@@ -64,10 +64,7 @@ export interface GeneratedGame {
   metadata: GameMetadata;
 }
 
-export interface GameData {
-  // Specific to game type - flexible structure
-  [key: string]: unknown;
-}
+export type GameData = Record<string, unknown>;
 
 export interface ScoringConfig {
   maxPoints: number;
@@ -214,7 +211,7 @@ export class GameGenerationService {
    * Get available game types for a learner
    */
   async getAvailableGames(gradeLevel: number, subject?: string): Promise<GameTemplate[]> {
-    let templates = getTemplatesForGrade(gradeLevel);
+    const templates = getTemplatesForGrade(gradeLevel);
 
     // Filter by subject if provided
     if (subject) {
@@ -272,6 +269,7 @@ export class GameGenerationService {
 
     // Replace parameter placeholders
     for (const [key, value] of Object.entries(parameters)) {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
     }
 
@@ -290,7 +288,9 @@ export class GameGenerationService {
     }
 
     if (request.learnerProfile?.vocabulary && request.learnerProfile.vocabulary.length > 0) {
-      contextParts.push(`Learner's vocabulary: ${request.learnerProfile.vocabulary.slice(0, 10).join(', ')}`);
+      contextParts.push(
+        `Learner's vocabulary: ${request.learnerProfile.vocabulary.slice(0, 10).join(', ')}`
+      );
     }
 
     if (request.learnerProfile?.interests && request.learnerProfile.interests.length > 0) {
@@ -298,7 +298,9 @@ export class GameGenerationService {
     }
 
     if (request.learnerProfile?.currentTopics && request.learnerProfile.currentTopics.length > 0) {
-      contextParts.push(`Current learning topics: ${request.learnerProfile.currentTopics.join(', ')}`);
+      contextParts.push(
+        `Current learning topics: ${request.learnerProfile.currentTopics.join(', ')}`
+      );
     }
 
     // Replace context placeholders
@@ -335,7 +337,10 @@ IMPORTANT: Return ONLY valid JSON matching the exact structure specified above. 
   /**
    * Determine appropriate difficulty level
    */
-  private determineDifficulty(request: GameGenerationRequest, template: GameTemplate): DifficultyLevel {
+  private determineDifficulty(
+    request: GameGenerationRequest,
+    template: GameTemplate
+  ): DifficultyLevel {
     // Use explicit difficulty if provided
     if (request.difficulty) {
       return request.difficulty;
@@ -364,7 +369,7 @@ IMPORTANT: Return ONLY valid JSON matching the exact structure specified above. 
   private parseGameResponse(content: string, template: GameTemplate): GameData {
     try {
       // Extract JSON from response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         console.warn('No JSON found in game generation response');
         return this.getDefaultGameData(template);
@@ -430,7 +435,10 @@ Create 3-5 step-by-step instructions that are:
 Return JSON: {"instructions": ["Step 1 text", "Step 2 text", ...]}`;
 
     const messages: LLMMessage[] = [
-      { role: 'system', content: 'You are an expert at writing clear instructions for educational games.' },
+      {
+        role: 'system',
+        content: 'You are an expert at writing clear instructions for educational games.',
+      },
       { role: 'user', content: prompt },
     ];
 
@@ -525,26 +533,31 @@ Return JSON: {"instructions": ["Step 1 text", "Step 2 text", ...]}`;
 
     // Calculate based on game type
     switch (template.id) {
-      case 'word_search':
+      case 'word_search': {
         const words = (gameData.words as string[]) ?? [];
         return words.length * basePoints;
+      }
 
-      case 'crossword':
+      case 'crossword': {
         const across = (gameData.across as unknown[]) ?? [];
         const down = (gameData.down as unknown[]) ?? [];
         return (across.length + down.length) * basePoints;
+      }
 
-      case 'anagram':
+      case 'anagram': {
         const anagrams = (gameData.anagrams as unknown[]) ?? [];
         return anagrams.length * basePoints;
+      }
 
-      case 'mental_math':
+      case 'mental_math': {
         const problems = (gameData.problems as unknown[]) ?? [];
         return problems.length * basePoints;
+      }
 
-      case 'memory_match':
+      case 'memory_match': {
         const pairs = (gameData.pairs as unknown[]) ?? [];
         return pairs.length * basePoints;
+      }
 
       default:
         return basePoints * 10; // Default estimate
@@ -556,7 +569,7 @@ Return JSON: {"instructions": ["Step 1 text", "Step 2 text", ...]}`;
    */
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         return {};
       }

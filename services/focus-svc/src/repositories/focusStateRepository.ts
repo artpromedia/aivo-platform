@@ -4,7 +4,8 @@
  * Persistent storage for learner focus states, pings, and interventions.
  */
 
-import { prisma, FocusState, InterventionType, FocusLossReason } from '../prisma.js';
+import type { FocusState, InterventionType, FocusLossReason } from '../prisma.js';
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LEARNER FOCUS STATE
@@ -50,10 +51,7 @@ export async function getOrCreateFocusState(tenantId: string, learnerId: string)
 /**
  * Update learner focus state
  */
-export async function updateFocusState(
-  learnerId: string,
-  update: FocusStateUpdate
-) {
+export async function updateFocusState(learnerId: string, update: FocusStateUpdate) {
   const state = await prisma.learnerFocusState.update({
     where: { learnerId },
     data: {
@@ -69,7 +67,9 @@ export async function updateFocusState(
       ...(update.lastBreakAt !== undefined && { lastBreakAt: update.lastBreakAt }),
       ...(update.breaksTakenToday !== undefined && { breaksTakenToday: update.breaksTakenToday }),
       ...(update.lastPingAt !== undefined && { lastPingAt: update.lastPingAt }),
-      ...(update.lastInteractionAt !== undefined && { lastInteractionAt: update.lastInteractionAt }),
+      ...(update.lastInteractionAt !== undefined && {
+        lastInteractionAt: update.lastInteractionAt,
+      }),
     },
   });
 
@@ -128,7 +128,7 @@ export async function logFocusPing(data: FocusPingData) {
 /**
  * Get recent pings for a session
  */
-export async function getRecentPings(sessionId: string, limit: number = 10) {
+export async function getRecentPings(sessionId: string, limit = 10) {
   return prisma.focusPingLog.findMany({
     where: { sessionId },
     orderBy: { recordedAt: 'desc' },

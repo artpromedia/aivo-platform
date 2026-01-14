@@ -199,7 +199,7 @@ export class QuestionGenerationService {
   async generateDistractors(
     stem: string,
     correctAnswer: string,
-    count: number = 3,
+    count = 3,
     options?: { subject?: string; gradeLevel?: string; tenantId: string; userId: string }
   ): Promise<string[]> {
     const prompt = `Generate ${count} plausible but incorrect answer choices (distractors) for this question:
@@ -219,7 +219,10 @@ Requirements:
 Respond with JSON: {"distractors": ["string", "string", "string"]}`;
 
     const messages: LLMMessage[] = [
-      { role: 'system', content: 'You are an expert at creating educational assessment distractors.' },
+      {
+        role: 'system',
+        content: 'You are an expert at creating educational assessment distractors.',
+      },
       { role: 'user', content: prompt },
     ];
 
@@ -245,7 +248,7 @@ Respond with JSON: {"distractors": ["string", "string", "string"]}`;
   async generateHints(
     stem: string,
     correctAnswer: string,
-    count: number = 3,
+    count = 3,
     context?: { tenantId: string; userId: string }
   ): Promise<string[]> {
     const prompt = `Generate ${count} progressive hints for this question, from subtle to more direct:
@@ -263,7 +266,10 @@ Requirements:
 Respond with JSON: {"hints": ["string", "string", "string"]}`;
 
     const messages: LLMMessage[] = [
-      { role: 'system', content: 'You are an expert at creating educational hints that guide learning.' },
+      {
+        role: 'system',
+        content: 'You are an expert at creating educational hints that guide learning.',
+      },
       { role: 'user', content: prompt },
     ];
 
@@ -289,7 +295,7 @@ Respond with JSON: {"hints": ["string", "string", "string"]}`;
   async improveQuestion(
     question: {
       stem: string;
-      options?: Array<{ text: string; correct: boolean }>;
+      options?: { text: string; correct: boolean }[];
       correctAnswer?: string;
     },
     improvements: {
@@ -333,7 +339,10 @@ Provide:
 Respond with JSON: {"stem": "string", "options": [{"text": "string", "correct": boolean}], "suggestions": ["string"]}`;
 
     const messages: LLMMessage[] = [
-      { role: 'system', content: 'You are an expert at improving educational assessment questions.' },
+      {
+        role: 'system',
+        content: 'You are an expert at improving educational assessment questions.',
+      },
       { role: 'user', content: prompt },
     ];
 
@@ -396,7 +405,9 @@ Respond with JSON: {"stem": "string", "options": [{"text": "string", "correct": 
     parts.push('2. Distribute across the specified question types');
     parts.push('3. Questions should directly assess understanding of the content');
     parts.push(`4. Use clear, unambiguous language appropriate for ${request.gradeLevel}`);
-    parts.push('5. For multiple choice: include plausible distractors based on common misconceptions');
+    parts.push(
+      '5. For multiple choice: include plausible distractors based on common misconceptions'
+    );
     parts.push(
       `6. Vary the difficulty: ${
         request.difficulty === 'mixed'
@@ -507,7 +518,7 @@ Respond with JSON: {"stem": "string", "options": [{"text": "string", "correct": 
    */
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         console.warn('No JSON found in question generation response');
         return {};

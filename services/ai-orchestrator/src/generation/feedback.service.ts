@@ -23,7 +23,6 @@ import type {
   GrammarIssue,
   StructureAnalysis,
   PeerReviewGuide,
-  GenerationMetadata,
 } from './types.js';
 
 const FEEDBACK_SYSTEM_PROMPT = `You are an expert educational assessor for the AIVO learning platform.
@@ -183,9 +182,7 @@ Respond with JSON: {"overallScore": number, "maxScore": number, "percentage": nu
     const essayFeedback: EssayFeedback = {
       overallScore: this.clamp((parsed.overallScore as number) ?? 0, 0, options.maxPoints),
       maxScore: options.maxPoints,
-      percentage: Math.round(
-        ((parsed.overallScore as number) ?? 0 / options.maxPoints) * 100
-      ),
+      percentage: Math.round(((parsed.overallScore as number) ?? 0 / options.maxPoints) * 100),
       rubricScores: parsed.rubricScores as RubricScore[] | undefined,
       strengths: (parsed.strengths as string[]) ?? [],
       areasForImprovement: (parsed.areasForImprovement as string[]) ?? [],
@@ -397,7 +394,7 @@ Respond with JSON: {"instructions": "string", "questions": [{"criterion": "strin
     return {
       instructions:
         (parsed.instructions as string) ??
-        'Review your peer\'s work carefully and provide constructive feedback.',
+        "Review your peer's work carefully and provide constructive feedback.",
       questions: (parsed.questions as PeerReviewGuide['questions']) ?? [],
       feedbackTemplates: (parsed.feedbackTemplates as string[]) ?? [],
     };
@@ -448,7 +445,7 @@ Respond with JSON: {"feedback": "string", "encouragement": "string", "nextStep":
     return {
       feedback:
         (parsed.feedback as string) ??
-        (isCorrect ? 'Great job!' : 'Let\'s try to understand this better.'),
+        (isCorrect ? 'Great job!' : "Let's try to understand this better."),
       encouragement: (parsed.encouragement as string) ?? 'Keep going!',
       nextStep: parsed.nextStep as string | undefined,
     };
@@ -551,8 +548,8 @@ Respond with JSON: {"feedback": "string", "encouragement": "string", "nextStep":
     if (feedback.rubricScores && request.rubric) {
       feedback.rubricScores = feedback.rubricScores.map((rs, i) => ({
         ...rs,
-        maxScore: request.rubric![i]?.maxPoints ?? rs.maxScore,
-        score: this.clamp(rs.score, 0, request.rubric![i]?.maxPoints ?? rs.maxScore),
+        maxScore: request.rubric[i]?.maxPoints ?? rs.maxScore,
+        score: this.clamp(rs.score, 0, request.rubric[i]?.maxPoints ?? rs.maxScore),
       }));
     }
 
@@ -567,7 +564,7 @@ Respond with JSON: {"feedback": "string", "encouragement": "string", "nextStep":
 
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         console.warn('No JSON found in feedback response');
         return {};

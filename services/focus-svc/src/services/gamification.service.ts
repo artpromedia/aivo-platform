@@ -75,7 +75,7 @@ export interface LeaderboardEntry {
 // ══════════════════════════════════════════════════════════════════════════════
 
 // Define achievements in code (would be seeded to database)
-export const ACHIEVEMENT_DEFINITIONS: Array<{
+export const ACHIEVEMENT_DEFINITIONS: {
   code: string;
   title: string;
   description: string;
@@ -85,7 +85,7 @@ export const ACHIEVEMENT_DEFINITIONS: Array<{
   xpReward: number;
   coinReward: number;
   isHidden?: boolean;
-}> = [
+}[] = [
   // Game achievements
   {
     code: 'FIRST_GAME',
@@ -401,7 +401,7 @@ const rewardLedgers = new Map<string, RewardLedgerData>();
 const learnerStats = new Map<string, LearnerStats>();
 const learnerAchievements = new Map<string, Map<string, AchievementData>>();
 const learnerStreaks = new Map<string, StreakData>();
-const rewardTransactions: Array<{
+const rewardTransactions: {
   tenantId: string;
   learnerId: string;
   transactionType: TransactionType;
@@ -411,7 +411,7 @@ const rewardTransactions: Array<{
   sourceType?: string;
   description?: string;
   createdAt: Date;
-}> = [];
+}[] = [];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SERVICE FUNCTIONS
@@ -433,7 +433,7 @@ function getLedger(tenantId: string, learnerId: string): RewardLedgerData {
       monthlyXp: 0,
     });
   }
-  return rewardLedgers.get(key)!;
+  return rewardLedgers.get(key);
 }
 
 function getStats(tenantId: string, learnerId: string): LearnerStats {
@@ -446,13 +446,10 @@ function getStats(tenantId: string, learnerId: string): LearnerStats {
       categoryGames: {},
     });
   }
-  return learnerStats.get(key)!;
+  return learnerStats.get(key);
 }
 
-function getAchievements(
-  tenantId: string,
-  learnerId: string
-): Map<string, AchievementData> {
+function getAchievements(tenantId: string, learnerId: string): Map<string, AchievementData> {
   const key = getKey(tenantId, learnerId);
   if (!learnerAchievements.has(key)) {
     // Initialize all achievements with progress tracking
@@ -466,7 +463,7 @@ function getAchievements(
     }
     learnerAchievements.set(key, achievements);
   }
-  return learnerAchievements.get(key)!;
+  return learnerAchievements.get(key);
 }
 
 function getStreak(tenantId: string, learnerId: string): StreakData {
@@ -483,7 +480,7 @@ function getStreak(tenantId: string, learnerId: string): StreakData {
       consecutiveFocusDays: 0,
     });
   }
-  return learnerStreaks.get(key)!;
+  return learnerStreaks.get(key);
 }
 
 function isToday(date: Date): boolean {
@@ -715,7 +712,7 @@ function checkAndUnlockAchievements(
   const unlocked: UnlockedAchievement[] = [];
 
   for (const def of ACHIEVEMENT_DEFINITIONS) {
-    const achievement = achievements.get(def.code)!;
+    const achievement = achievements.get(def.code);
     if (achievement.isCompleted) continue;
 
     // Calculate current progress based on requirement type
@@ -725,7 +722,7 @@ function checkAndUnlockAchievements(
         progress = stats.gamesCompleted;
         break;
       case 'category_games':
-        progress = stats.categoryGames[def.requirement.gameCategory!] || 0;
+        progress = stats.categoryGames[def.requirement.gameCategory] || 0;
         break;
       case 'perfect_scores':
         progress = stats.perfectScores;
@@ -812,11 +809,11 @@ export function getAchievementProgress(
   for (const def of ACHIEVEMENT_DEFINITIONS) {
     // Skip hidden achievements unless they're completed or we're including hidden
     if (def.isHidden && !includeHidden) {
-      const achievement = achievements.get(def.code)!;
+      const achievement = achievements.get(def.code);
       if (!achievement.isCompleted) continue;
     }
 
-    const achievement = achievements.get(def.code)!;
+    const achievement = achievements.get(def.code);
     result.push({
       code: def.code,
       title: def.title,
@@ -873,13 +870,13 @@ export function getRewardHistory(
   tenantId: string,
   learnerId: string,
   limit = 20
-): Array<{
+): {
   transactionType: TransactionType;
   xpAmount: number;
   coinAmount: number;
   description?: string;
   createdAt: Date;
-}> {
+}[] {
   return rewardTransactions
     .filter((t) => t.tenantId === tenantId && t.learnerId === learnerId)
     .slice(-limit)
@@ -889,10 +886,7 @@ export function getRewardHistory(
 /**
  * Get leaderboard for a tenant
  */
-export function getLeaderboard(
-  tenantId: string,
-  limit = 10
-): LeaderboardEntry[] {
+export function getLeaderboard(tenantId: string, limit = 10): LeaderboardEntry[] {
   const entries: LeaderboardEntry[] = [];
 
   for (const [key, ledger] of rewardLedgers) {
@@ -931,7 +925,7 @@ export function trackSpecialEvent(
   // Find matching achievement
   for (const def of ACHIEVEMENT_DEFINITIONS) {
     if (def.requirement.type === eventType) {
-      const achievement = achievements.get(def.code)!;
+      const achievement = achievements.get(def.code);
       if (!achievement.isCompleted) {
         achievement.currentProgress++;
 

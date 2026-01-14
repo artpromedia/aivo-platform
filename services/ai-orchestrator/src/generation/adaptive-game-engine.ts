@@ -124,7 +124,7 @@ export interface GeneratedCelebration {
 // ────────────────────────────────────────────────────────────────────────────
 
 export class AdaptiveGameEngine {
-  private sessions: Map<string, GameSession> = new Map();
+  private sessions = new Map<string, GameSession>();
 
   constructor(private llm: LLMOrchestrator) {}
 
@@ -410,7 +410,11 @@ Return JSON:
   /**
    * Generate contextual hint for stuck player
    */
-  async generateHint(request: HintRequest, tenantId: string, userId: string): Promise<GeneratedHint> {
+  async generateHint(
+    request: HintRequest,
+    tenantId: string,
+    userId: string
+  ): Promise<GeneratedHint> {
     incrementCounter('game_hint.requested');
     incrementCounter(`game_hint.level_${request.hintLevel}`);
 
@@ -491,7 +495,11 @@ Return JSON:
   /**
    * Generate feedback for an attempt
    */
-  async generateFeedback(request: FeedbackRequest, tenantId: string, userId: string): Promise<GeneratedFeedback> {
+  async generateFeedback(
+    request: FeedbackRequest,
+    tenantId: string,
+    userId: string
+  ): Promise<GeneratedFeedback> {
     const tone = this.determineFeedbackTone(request);
 
     const prompt = `Generate ${tone} feedback for this game attempt:
@@ -522,7 +530,8 @@ Return JSON:
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: 'You are a supportive educational tutor who provides encouraging, constructive feedback.',
+        content:
+          'You are a supportive educational tutor who provides encouraging, constructive feedback.',
       },
       { role: 'user', content: prompt },
     ];
@@ -612,7 +621,8 @@ Return JSON:
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: 'You are an enthusiastic coach who creates memorable celebrations for learner achievements.',
+        content:
+          'You are an enthusiastic coach who creates memorable celebrations for learner achievements.',
       },
       { role: 'user', content: prompt },
     ];
@@ -633,7 +643,7 @@ Return JSON:
       return {
         message: (parsed.message as string) ?? 'Amazing work!',
         emoji: (parsed.emoji as string) ?? '🎉',
-        encouragement: (parsed.encouragement as string) ?? "Keep up the great work!",
+        encouragement: (parsed.encouragement as string) ?? 'Keep up the great work!',
         shareableText: parsed.shareableText as string | undefined,
       };
     } catch (error) {
@@ -693,7 +703,7 @@ Return JSON:
    */
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         return {};
       }
@@ -707,7 +717,7 @@ Return JSON:
   /**
    * Clean up old sessions
    */
-  cleanupSessions(maxAgeHours: number = 24): void {
+  cleanupSessions(maxAgeHours = 24): void {
     const now = new Date();
     const maxAge = maxAgeHours * 60 * 60 * 1000;
 

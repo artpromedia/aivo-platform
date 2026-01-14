@@ -28,7 +28,12 @@ export type GameType =
   | 'memory_match'
   | 'vocabulary_builder';
 
-export type GameCategory = 'word_puzzles' | 'math_challenges' | 'pattern_games' | 'logic_puzzles' | 'memory_games';
+export type GameCategory =
+  | 'word_puzzles'
+  | 'math_challenges'
+  | 'pattern_games'
+  | 'logic_puzzles'
+  | 'memory_games';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
@@ -128,7 +133,11 @@ export const GAME_TEMPLATES: Record<GameType, GameTemplate> = {
         default: 'horizontal_vertical',
         options: ['horizontal_vertical', 'all_directions', 'diagonal_only'],
         description: 'Allowed word directions',
-        difficultyMap: { easy: 'horizontal_vertical', medium: 'all_directions', hard: 'all_directions' },
+        difficultyMap: {
+          easy: 'horizontal_vertical',
+          medium: 'all_directions',
+          hard: 'all_directions',
+        },
       },
       {
         name: 'theme',
@@ -977,11 +986,14 @@ export function getAllGameTypes(): GameType[] {
   return Object.keys(GAME_TEMPLATES) as GameType[];
 }
 
-export function getParametersForDifficulty(template: GameTemplate, difficulty: DifficultyLevel): Record<string, unknown> {
+export function getParametersForDifficulty(
+  template: GameTemplate,
+  difficulty: DifficultyLevel
+): Record<string, unknown> {
   const params: Record<string, unknown> = {};
 
   for (const param of template.parameters) {
-    if (param.difficultyMap && param.difficultyMap[difficulty] !== undefined) {
+    if (param.difficultyMap?.[difficulty] !== undefined) {
       params[param.name] = param.difficultyMap[difficulty];
     } else {
       params[param.name] = param.default;

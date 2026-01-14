@@ -6,7 +6,7 @@
  */
 
 /// <reference lib="webworker" />
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, no-undef */
+/* eslint-disable no-undef */
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -190,9 +190,7 @@ self.addEventListener('notificationclose', (event) => {
 
   const data = event.notification.data as PushNotificationPayload['data'];
 
-  event.waitUntil(
-    trackNotificationDismissed(data?.notificationId)
-  );
+  event.waitUntil(trackNotificationDismissed(data?.notificationId));
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -218,10 +216,10 @@ async function focusOrOpenWindow(url: string): Promise<Client | null> {
     if (clientUrl.origin === urlToOpen.origin) {
       // Navigate to the new URL and focus
       if ('focus' in client) {
-        await (client as WindowClient).focus();
+        await client.focus();
       }
       if ('navigate' in client) {
-        return (client as WindowClient).navigate(urlToOpen.href);
+        return client.navigate(urlToOpen.href);
       }
       return client;
     }
@@ -330,7 +328,9 @@ self.addEventListener('message', (event) => {
     case 'CLEAR_NOTIFICATIONS':
       // Clear all notifications with a specific tag
       self.registration.getNotifications({ tag: payload?.tag }).then((notifications) => {
-        notifications.forEach((notification) => notification.close());
+        notifications.forEach((notification) => {
+          notification.close();
+        });
       });
       break;
 

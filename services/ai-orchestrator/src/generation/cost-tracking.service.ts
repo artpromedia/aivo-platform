@@ -16,10 +16,7 @@ import { incrementCounter, recordHistogram } from '../providers/metrics-helper.j
 import type { CostTrackingData, GenerationMetadata } from './types.js';
 
 // Cost per 1K tokens in USD (as of late 2024)
-const MODEL_COSTS: Record<
-  string,
-  { input: number; output: number; provider: string }
-> = {
+const MODEL_COSTS: Record<string, { input: number; output: number; provider: string }> = {
   // OpenAI
   'gpt-4o': { input: 0.005, output: 0.015, provider: 'openai' },
   'gpt-4o-mini': { input: 0.00015, output: 0.0006, provider: 'openai' },
@@ -88,8 +85,8 @@ export interface BudgetConfig {
 export class CostTrackingService {
   // In-memory store (replace with database in production)
   private usageRecords: UsageRecord[] = [];
-  private budgetConfigs: Map<string, BudgetConfig> = new Map();
-  private alertsSent: Map<string, Set<number>> = new Map(); // tenantId -> thresholds alerted
+  private budgetConfigs = new Map<string, BudgetConfig>();
+  private alertsSent = new Map<string, Set<number>>(); // tenantId -> thresholds alerted
 
   constructor(private llm?: LLMOrchestrator) {}
 
@@ -109,11 +106,7 @@ export class CostTrackingService {
     metadata?: Record<string, unknown>;
   }): UsageRecord {
     const id = uuidv4();
-    const costUsd = this.calculateCost(
-      data.model,
-      data.inputTokens,
-      data.outputTokens
-    );
+    const costUsd = this.calculateCost(data.model, data.inputTokens, data.outputTokens);
 
     const record: UsageRecord = {
       id,
@@ -189,7 +182,7 @@ export class CostTrackingService {
    * Calculate cost for a request
    */
   calculateCost(model: string, inputTokens: number, outputTokens: number): number {
-    const modelCost = MODEL_COSTS[model] ?? MODEL_COSTS['default'];
+    const modelCost = MODEL_COSTS[model] ?? MODEL_COSTS.default;
     const inputCost = (inputTokens / 1000) * modelCost.input;
     const outputCost = (outputTokens / 1000) * modelCost.output;
     return inputCost + outputCost;
@@ -236,10 +229,7 @@ export class CostTrackingService {
     const endDate = options?.endDate ?? now;
 
     const records = this.usageRecords.filter(
-      (r) =>
-        r.tenantId === tenantId &&
-        r.timestamp >= startDate &&
-        r.timestamp <= endDate
+      (r) => r.tenantId === tenantId && r.timestamp >= startDate && r.timestamp <= endDate
     );
 
     const summary: UsageSummary = {
@@ -362,7 +352,7 @@ export class CostTrackingService {
     onTrack: boolean;
   } | null> {
     const config = this.budgetConfigs.get(tenantId);
-    if (!config || !config.enabled) {
+    if (!config?.enabled) {
       return null;
     }
 
@@ -390,25 +380,22 @@ export class CostTrackingService {
    */
   async getTopUsers(
     tenantId: string,
-    limit: number = 10,
+    limit = 10,
     options?: { startDate?: Date; endDate?: Date }
   ): Promise<
-    Array<{
+    {
       userId: string;
       totalCostUsd: number;
       totalTokens: number;
       requestCount: number;
-    }>
+    }[]
   > {
     const now = new Date();
     const startDate = options?.startDate ?? new Date(now.getFullYear(), now.getMonth(), 1);
     const endDate = options?.endDate ?? now;
 
     const records = this.usageRecords.filter(
-      (r) =>
-        r.tenantId === tenantId &&
-        r.timestamp >= startDate &&
-        r.timestamp <= endDate
+      (r) => r.tenantId === tenantId && r.timestamp >= startDate && r.timestamp <= endDate
     );
 
     const userMap = new Map<
@@ -451,12 +438,12 @@ export class CostTrackingService {
   /**
    * Get available models and their costs
    */
-  getModelCosts(): Array<{
+  getModelCosts(): {
     model: string;
     provider: string;
     inputCostPer1k: number;
     outputCostPer1k: number;
-  }> {
+  }[] {
     return Object.entries(MODEL_COSTS)
       .filter(([model]) => model !== 'default')
       .map(([model, costs]) => ({
@@ -473,7 +460,7 @@ export class CostTrackingService {
 
   private async checkBudget(tenantId: string): Promise<void> {
     const config = this.budgetConfigs.get(tenantId);
-    if (!config || !config.enabled) {
+    if (!config?.enabled) {
       return;
     }
 
@@ -517,10 +504,7 @@ export class CostTrackingService {
     const endDate = options?.endDate ?? now;
 
     const records = this.usageRecords.filter(
-      (r) =>
-        r.tenantId === tenantId &&
-        r.timestamp >= startDate &&
-        r.timestamp <= endDate
+      (r) => r.tenantId === tenantId && r.timestamp >= startDate && r.timestamp <= endDate
     );
 
     if (options?.format === 'csv') {

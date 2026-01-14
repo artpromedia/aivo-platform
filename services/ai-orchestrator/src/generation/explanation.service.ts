@@ -17,7 +17,6 @@ import type {
   AdaptiveExplanation,
   StepByStepSolution,
   WrongAnswerExplanation,
-  SolutionStep,
 } from './types.js';
 
 interface StudentProfile {
@@ -47,8 +46,7 @@ When explaining concepts:
 const LEVEL_DESCRIPTIONS: Record<ExplanationLevel, string> = {
   simplified:
     'Use simple language, many examples, and break down concepts into small steps. Assume limited prior knowledge.',
-  standard:
-    'Use clear explanations with good examples. Assume basic familiarity with the subject.',
+  standard: 'Use clear explanations with good examples. Assume basic familiarity with the subject.',
   advanced:
     'Provide deeper insights and connections. Can use more technical language and complex examples.',
 };
@@ -313,13 +311,13 @@ Respond with JSON: {"steps": [{"number": 1, "action": "string", "explanation": "
     subject: string,
     context: { studentId: string; tenantId: string }
   ): Promise<
-    Array<{
+    {
       name: string;
       description: string;
       steps: string[];
       pros: string[];
       cons: string[];
-    }>
+    }[]
   > {
     const prompt = `Show different approaches to solve this ${subject} problem:
 
@@ -352,23 +350,25 @@ Respond with JSON: {"approaches": [{"name": "string", "description": "string", "
     });
 
     const parsed = this.parseStructuredResponse(result.content);
-    return (parsed.approaches as unknown[])?.map((a) => {
-      const approach = a as Record<string, unknown>;
-      return {
-        name: (approach.name as string) ?? 'Approach',
-        description: (approach.description as string) ?? '',
-        steps: (approach.steps as string[]) ?? [],
-        pros: (approach.pros as string[]) ?? [],
-        cons: (approach.cons as string[]) ?? [],
-      };
-    }) ?? [];
+    return (
+      (parsed.approaches as unknown[])?.map((a) => {
+        const approach = a as Record<string, unknown>;
+        return {
+          name: (approach.name as string) ?? 'Approach',
+          description: (approach.description as string) ?? '',
+          steps: (approach.steps as string[]) ?? [],
+          pros: (approach.pros as string[]) ?? [],
+          cons: (approach.cons as string[]) ?? [],
+        };
+      }) ?? []
+    );
   }
 
   // ────────────────────────────────────────────────────────────────────────────
   // PRIVATE METHODS
   // ────────────────────────────────────────────────────────────────────────────
 
-  private async getStudentProfile(studentId: string): Promise<StudentProfile> {
+  private async getStudentProfile(_studentId: string): Promise<StudentProfile> {
     // In production, fetch from database
     return {
       gradeLevel: 'middle',
@@ -378,10 +378,7 @@ Respond with JSON: {"approaches": [{"name": "string", "description": "string", "
     };
   }
 
-  private async getSkillMastery(
-    studentId: string,
-    skillId: string
-  ): Promise<SkillMastery | null> {
+  private async getSkillMastery(studentId: string, skillId: string): Promise<SkillMastery | null> {
     // In production, fetch from database
     return {
       skillId,
@@ -489,7 +486,7 @@ Respond with JSON: {"misconceptions": ["string"]}`;
     parts.push('5. 2-3 quick check questions to verify understanding');
     parts.push('6. Related concepts the student might want to explore');
     parts.push('');
-    parts.push('Make the explanation engaging, accurate, and appropriate for the student\'s level.');
+    parts.push("Make the explanation engaging, accurate, and appropriate for the student's level.");
     parts.push('');
     parts.push(
       'Respond with JSON: {"explanation": "string", "examples": [{"scenario": "string", "application": "string"}], "visualDescription": "string", "analogies": ["string"], "checkQuestions": [{"question": "string", "answer": "string"}], "relatedConcepts": ["string"]}'
@@ -500,7 +497,7 @@ Respond with JSON: {"misconceptions": ["string"]}`;
 
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         return { explanation: content };
       }

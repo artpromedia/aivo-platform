@@ -59,8 +59,7 @@ const CONTENT_TYPE_GUIDANCE: Record<string, string> = {
     'This is educational lesson content. Maintain instructional clarity and engagement. Keep learning objectives clear.',
   question:
     'This is an assessment question. Maintain precision and avoid ambiguity. Preserve correct answer logic.',
-  feedback:
-    'This is student feedback. Maintain encouraging tone and constructive guidance.',
+  feedback: 'This is student feedback. Maintain encouraging tone and constructive guidance.',
   general: 'General educational content. Maintain clarity and educational value.',
 };
 
@@ -144,17 +143,17 @@ export class TranslationService {
    * Translate multiple content items in batch
    */
   async translateBatch(
-    items: Array<{ id: string; content: string; contentType?: string }>,
+    items: { id: string; content: string; contentType?: string }[],
     sourceLanguage: string,
     targetLanguage: string,
     context: { tenantId: string; userId: string }
-  ): Promise<Array<{ id: string; translatedContent: string; success: boolean; error?: string }>> {
-    const results: Array<{
+  ): Promise<{ id: string; translatedContent: string; success: boolean; error?: string }[]> {
+    const results: {
       id: string;
       translatedContent: string;
       success: boolean;
       error?: string;
-    }> = [];
+    }[] = [];
 
     // Process in smaller batches to avoid timeout
     const batchSize = 5;
@@ -256,7 +255,7 @@ Respond with JSON: {"glossary": [{"source": "original term", "translation": "tra
     }
   ): Promise<{
     localizedContent: string;
-    adaptations: Array<{ original: string; localized: string; reason: string }>;
+    adaptations: { original: string; localized: string; reason: string }[];
   }> {
     const adaptations: string[] = [];
     if (options?.adaptExamples) adaptations.push('Adapt examples to be culturally relevant');
@@ -300,8 +299,7 @@ Respond with JSON: {"localizedContent": "string", "adaptations": [{"original": "
     return {
       localizedContent: (parsed.localizedContent as string) ?? content,
       adaptations:
-        (parsed.adaptations as Array<{ original: string; localized: string; reason: string }>) ??
-        [],
+        (parsed.adaptations as { original: string; localized: string; reason: string }[]) ?? [],
     };
   }
 
@@ -350,7 +348,7 @@ Respond with JSON: {"language": "ISO 639-1 code", "languageName": "full name", "
   /**
    * Get supported languages
    */
-  getSupportedLanguages(): Array<{ code: string; name: string }> {
+  getSupportedLanguages(): { code: string; name: string }[] {
     return Object.entries(LANGUAGE_NAMES).map(([code, name]) => ({ code, name }));
   }
 
@@ -375,7 +373,9 @@ Respond with JSON: {"language": "ISO 639-1 code", "languageName": "full name", "
     }
 
     if (request.educationalContext) {
-      parts.push('IMPORTANT: This is educational content. Maintain pedagogical quality and clarity.');
+      parts.push(
+        'IMPORTANT: This is educational content. Maintain pedagogical quality and clarity.'
+      );
       parts.push('');
     }
 
@@ -389,9 +389,7 @@ Respond with JSON: {"language": "ISO 639-1 code", "languageName": "full name", "
     parts.push(request.content);
     parts.push('---');
     parts.push('');
-    parts.push(
-      'Provide the translation and a glossary of key educational terms translated.'
-    );
+    parts.push('Provide the translation and a glossary of key educational terms translated.');
     parts.push('');
     parts.push(
       'Respond with JSON: {"translation": "translated text", "glossary": [{"source": "term", "translation": "translated term", "context": "usage"}]}'
@@ -405,7 +403,7 @@ Respond with JSON: {"language": "ISO 639-1 code", "languageName": "full name", "
     glossary?: TranslationGlossaryItem[];
   } {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         // If no JSON, assume the entire response is the translation
         return { translation: content };
@@ -422,7 +420,7 @@ Respond with JSON: {"language": "ISO 639-1 code", "languageName": "full name", "
 
   private parseStructuredResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         return {};
       }

@@ -6,8 +6,9 @@
  * return to focus after a break.
  */
 
-import type { MiniGame, GameCategory } from './game-library.js';
 import { sessionServiceClient } from '../services/sessionServiceClient.js';
+
+import type { MiniGame, GameCategory } from './game-library.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -282,7 +283,7 @@ function updateFavoriteCategories(prefs: GamePreferences): void {
   }
 
   // Sort categories by score
-  const sortedCategories = (Object.entries(categoryScores) as Array<[GameCategory, number]>)
+  const sortedCategories = (Object.entries(categoryScores) as [GameCategory, number][])
     .sort(([, a], [, b]) => b - a)
     .map(([cat]) => cat);
 
@@ -346,9 +347,7 @@ export function getGameStats(learnerId: string): {
     completionRate: sessions.length > 0 ? completed.length / sessions.length : 0,
     averageHelpfulness,
     favoriteCategory,
-    mostPlayedGame: mostPlayed
-      ? { gameId: mostPlayed[0], playCount: mostPlayed[1] }
-      : null,
+    mostPlayedGame: mostPlayed ? { gameId: mostPlayed[0], playCount: mostPlayed[1] } : null,
   };
 }
 

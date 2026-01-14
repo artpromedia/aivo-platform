@@ -8,6 +8,7 @@ import { Role, requireRole, type AuthContext } from '@aivo/ts-rbac';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { config } from '../config.js';
 import {
   getWritingAssistance,
   calculateMetrics,
@@ -21,7 +22,6 @@ import type {
   Subject,
   FeedbackType,
 } from '../types/index.js';
-import { config } from '../config.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
@@ -42,13 +42,7 @@ const gradeBandSchema = z.enum(['K5', 'G6_8', 'G9_12']);
 
 const subjectSchema = z.enum(['ELA', 'SCIENCE', 'SOCIAL_STUDIES', 'OTHER']);
 
-const statusSchema = z.enum([
-  'DRAFT',
-  'IN_PROGRESS',
-  'REVIEWING',
-  'COMPLETED',
-  'ARCHIVED',
-]);
+const statusSchema = z.enum(['DRAFT', 'IN_PROGRESS', 'REVIEWING', 'COMPLETED', 'ARCHIVED']);
 
 const createDocumentSchema = z.object({
   title: z.string().min(1).max(200),

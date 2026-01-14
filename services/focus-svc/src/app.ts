@@ -4,9 +4,9 @@ import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerFocusRoutes } from './routes/focus.js';
 import { registerGamesRoutes } from './routes/games.js';
+import { gamificationRoutes } from './routes/gamification.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { learningBreakRoutes } from './routes/learningBreaks.js';
-import { gamificationRoutes } from './routes/gamification.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -28,7 +28,7 @@ export async function buildApp() {
   await app.register(registerHealthRoutes);
 
   // Auth middleware for protected routes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   await app.register(authMiddleware as any);
 
   // Focus routes

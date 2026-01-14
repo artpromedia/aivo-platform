@@ -2,12 +2,10 @@
  * Extended Prisma Client Types for Sandbox Service
  * These types extend the base PrismaClient with sandbox-specific models
  * that are used for synthetic data generation and partner management.
- * 
+ *
  * NOTE: This is a build-compatibility layer. The actual Prisma models
  * should be defined in the schema.prisma file and generated via prisma generate.
  */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { PrismaClient as BasePrismaClient } from '@prisma/client';
 
@@ -48,7 +46,10 @@ export interface ExtendedPrismaClient extends Omit<BasePrismaClient, '$transacti
   adminLoginAttempt: ModelDelegate;
   adminPasswordHistory: ModelDelegate;
   // Override $transaction to support array pattern
-  $transaction: <T>(arg: Promise<T>[] | ((prisma: any) => Promise<T>), options?: any) => Promise<T[]>;
+  $transaction: <T>(
+    arg: Promise<T>[] | ((prisma: any) => Promise<T>),
+    options?: any
+  ) => Promise<T[]>;
 }
 
 // Export extended prisma client

@@ -41,14 +41,17 @@ export interface NotificationPreferences {
     frequency: 'realtime' | 'hourly' | 'daily' | 'weekly';
     time: string;
   };
-  types: Record<string, {
-    enabled: boolean;
-    channels?: {
-      inApp?: boolean;
-      push?: boolean;
-      email?: boolean;
-    };
-  }>;
+  types: Record<
+    string,
+    {
+      enabled: boolean;
+      channels?: {
+        inApp?: boolean;
+        push?: boolean;
+        email?: boolean;
+      };
+    }
+  >;
 }
 
 export interface PaginatedResponse<T> {
@@ -78,10 +81,7 @@ export class NotificationApiClient {
     this.getAuthToken = getAuthToken;
   }
 
-  private async request<T>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const token = await this.getAuthToken();
 
     const response = await fetch(`${this.baseUrl}${path}`, {
@@ -89,7 +89,7 @@ export class NotificationApiClient {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
-        ...options.headers,
+        ...(options.headers as Record<string, string> | undefined),
       },
     });
 
@@ -109,8 +109,8 @@ export class NotificationApiClient {
    * Get paginated list of notifications
    */
   async getNotifications(
-    page: number = 1,
-    pageSize: number = 20,
+    page = 1,
+    pageSize = 20,
     filters?: NotificationFilters
   ): Promise<PaginatedResponse<Notification>> {
     const params = new URLSearchParams({
@@ -151,19 +151,16 @@ export class NotificationApiClient {
    * Get grouped notifications
    */
   async getGroupedNotifications(): Promise<Record<string, Notification[]>> {
-    return this.request<Record<string, Notification[]>>(
-      '/notifications/in-app/grouped'
-    );
+    return this.request<Record<string, Notification[]>>('/notifications/in-app/grouped');
   }
 
   /**
    * Mark notification as read
    */
   async markAsRead(notificationId: string): Promise<Notification> {
-    return this.request<Notification>(
-      `/notifications/in-app/${notificationId}/read`,
-      { method: 'POST' }
-    );
+    return this.request<Notification>(`/notifications/in-app/${notificationId}/read`, {
+      method: 'POST',
+    });
   }
 
   /**
@@ -189,10 +186,9 @@ export class NotificationApiClient {
    * Dismiss notification
    */
   async dismiss(notificationId: string): Promise<Notification> {
-    return this.request<Notification>(
-      `/notifications/in-app/${notificationId}/dismiss`,
-      { method: 'POST' }
-    );
+    return this.request<Notification>(`/notifications/in-app/${notificationId}/dismiss`, {
+      method: 'POST',
+    });
   }
 
   /**
@@ -317,31 +313,34 @@ export function useNotifications({
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
 
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
-  const fetchNotifications = useCallback(async (pageNum: number = 1, append: boolean = false) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const fetchNotifications = useCallback(
+    async (pageNum = 1, append = false) => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      const [notificationsResponse, unreadResponse] = await Promise.all([
-        client.getNotifications(pageNum, pageSize, filters),
-        client.getUnreadCount(),
-      ]);
+        const [notificationsResponse, unreadResponse] = await Promise.all([
+          client.getNotifications(pageNum, pageSize, filters),
+          client.getUnreadCount(),
+        ]);
 
-      setNotifications((prev) =>
-        append ? [...prev, ...notificationsResponse.data] : notificationsResponse.data
-      );
-      setTotalCount(notificationsResponse.total);
-      setHasMore(notificationsResponse.hasMore);
-      setUnreadCount(unreadResponse.count);
-      setPage(pageNum);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch notifications'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client, filters, pageSize]);
+        setNotifications((prev) =>
+          append ? [...prev, ...notificationsResponse.data] : notificationsResponse.data
+        );
+        setTotalCount(notificationsResponse.total);
+        setHasMore(notificationsResponse.hasMore);
+        setUnreadCount(unreadResponse.count);
+        setPage(pageNum);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch notifications'));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [client, filters, pageSize]
+  );
 
   // Initial fetch and polling
   useEffect(() => {
@@ -366,37 +365,44 @@ export function useNotifications({
     }
   }, [fetchNotifications, hasMore, isLoading, page]);
 
-  const markAsRead = useCallback(async (id: string) => {
-    await client.markAsRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true, readAt: new Date() } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-  }, [client]);
+  const markAsRead = useCallback(
+    async (id: string) => {
+      await client.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true, readAt: new Date() } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    },
+    [client]
+  );
 
   const markAllAsRead = useCallback(async () => {
     await client.markAllAsRead();
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, isRead: true, readAt: new Date() }))
-    );
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, readAt: new Date() })));
     setUnreadCount(0);
   }, [client]);
 
-  const dismiss = useCallback(async (id: string) => {
-    await client.dismiss(id);
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    setTotalCount((prev) => prev - 1);
-  }, [client]);
+  const dismiss = useCallback(
+    async (id: string) => {
+      await client.dismiss(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setTotalCount((prev) => prev - 1);
+    },
+    [client]
+  );
 
-  const deleteNotification = useCallback(async (id: string) => {
-    await client.delete(id);
-    const notification = notifications.find((n) => n.id === id);
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    setTotalCount((prev) => prev - 1);
-    if (notification && !notification.isRead) {
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    }
-  }, [client, notifications]);
+  const deleteNotification = useCallback(
+    async (id: string) => {
+      await client.delete(id);
+      const notification = notifications.find((n) => n.id === id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setTotalCount((prev) => prev - 1);
+      if (notification && !notification.isRead) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    },
+    [client, notifications]
+  );
 
   const refresh = useCallback(async () => {
     await fetchNotifications();

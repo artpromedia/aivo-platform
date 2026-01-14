@@ -50,7 +50,10 @@ export interface BaselineQuestionResult {
 // SKILL DESCRIPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
-const SKILL_DESCRIPTIONS: Record<string, { name: string; description: string; sampleTopics: string[] }> = {
+const SKILL_DESCRIPTIONS: Record<
+  string,
+  { name: string; description: string; sampleTopics: string[] }
+> = {
   // ELA Skills
   ELA_PHONEMIC_AWARENESS: {
     name: 'Phonemic Awareness',
@@ -65,7 +68,13 @@ const SKILL_DESCRIPTIONS: Record<string, { name: string; description: string; sa
   ELA_VOCABULARY: {
     name: 'Vocabulary',
     description: 'Knowledge of word meanings and ability to use context clues',
-    sampleTopics: ['word definitions', 'synonyms', 'antonyms', 'context clues', 'word relationships'],
+    sampleTopics: [
+      'word definitions',
+      'synonyms',
+      'antonyms',
+      'context clues',
+      'word relationships',
+    ],
   },
   ELA_COMPREHENSION: {
     name: 'Reading Comprehension',
@@ -163,7 +172,12 @@ const SKILL_DESCRIPTIONS: Record<string, { name: string; description: string; sa
   SEL_SELF_AWARENESS: {
     name: 'Self-Awareness',
     description: 'Ability to recognize own emotions, thoughts, and values',
-    sampleTopics: ['identifying emotions', 'self-reflection', 'strengths and weaknesses', 'confidence'],
+    sampleTopics: [
+      'identifying emotions',
+      'self-reflection',
+      'strengths and weaknesses',
+      'confidence',
+    ],
   },
   SEL_SELF_MANAGEMENT: {
     name: 'Self-Management',
@@ -173,7 +187,12 @@ const SKILL_DESCRIPTIONS: Record<string, { name: string; description: string; sa
   SEL_SOCIAL_AWARENESS: {
     name: 'Social Awareness',
     description: 'Ability to understand perspectives of others',
-    sampleTopics: ['empathy', 'respect for others', 'diversity appreciation', 'community awareness'],
+    sampleTopics: [
+      'empathy',
+      'respect for others',
+      'diversity appreciation',
+      'community awareness',
+    ],
   },
   SEL_RELATIONSHIPS: {
     name: 'Relationship Skills',
@@ -183,11 +202,19 @@ const SKILL_DESCRIPTIONS: Record<string, { name: string; description: string; sa
   SEL_DECISIONS: {
     name: 'Responsible Decision-Making',
     description: 'Ability to make constructive choices',
-    sampleTopics: ['identifying problems', 'evaluating consequences', 'ethical responsibility', 'seeking help'],
+    sampleTopics: [
+      'identifying problems',
+      'evaluating consequences',
+      'ethical responsibility',
+      'seeking help',
+    ],
   },
 };
 
-const GRADE_BAND_DESCRIPTIONS: Record<GradeBand, { grades: string; ageRange: string; complexity: string }> = {
+const GRADE_BAND_DESCRIPTIONS: Record<
+  GradeBand,
+  { grades: string; ageRange: string; complexity: string }
+> = {
   K5: {
     grades: 'Kindergarten through 5th grade',
     ageRange: '5-11 years old',
@@ -324,7 +351,9 @@ export class BaselineQuestionGenerationService {
     parts.push('');
     parts.push('═══ REQUIREMENTS ═══');
     parts.push('1. Generate exactly ONE question per skill code');
-    parts.push('2. Each question must be unique (do not reuse questions from previous assessments)');
+    parts.push(
+      '2. Each question must be unique (do not reuse questions from previous assessments)'
+    );
     parts.push('3. Most questions should be MULTIPLE_CHOICE with 4 options (A, B, C, D)');
     parts.push('4. Include 1-2 OPEN_ENDED questions for writing/verbal skills if appropriate');
     parts.push('5. For MULTIPLE_CHOICE: correctAnswer is the index (0-3) of the correct option');
@@ -363,7 +392,7 @@ export class BaselineQuestionGenerationService {
   private parseResponse(content: string, expectedSkillCodes: string[]): BaselineQuestion[] {
     try {
       // Extract JSON from response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         console.warn('No JSON found in baseline question response');
         return [];
@@ -374,21 +403,19 @@ export class BaselineQuestionGenerationService {
 
       return rawQuestions.map((q) => {
         const question = q as Record<string, unknown>;
-        const questionType = (question.questionType as string) === 'OPEN_ENDED'
-          ? 'OPEN_ENDED'
-          : 'MULTIPLE_CHOICE';
+        const questionType =
+          (question.questionType as string) === 'OPEN_ENDED' ? 'OPEN_ENDED' : 'MULTIPLE_CHOICE';
 
         return {
           skillCode: (question.skillCode as string) ?? expectedSkillCodes[0],
           questionType,
           questionText: (question.questionText as string) ?? '',
-          options: questionType === 'MULTIPLE_CHOICE'
-            ? (question.options as string[]) ?? ['A', 'B', 'C', 'D']
-            : undefined,
-          correctAnswer: question.correctAnswer as number | string ?? 0,
-          rubric: questionType === 'OPEN_ENDED'
-            ? (question.rubric as string)
-            : undefined,
+          options:
+            questionType === 'MULTIPLE_CHOICE'
+              ? ((question.options as string[]) ?? ['A', 'B', 'C', 'D'])
+              : undefined,
+          correctAnswer: (question.correctAnswer as number | string) ?? 0,
+          rubric: questionType === 'OPEN_ENDED' ? (question.rubric as string) : undefined,
         };
       });
     } catch (error) {
@@ -413,7 +440,11 @@ export class BaselineQuestionGenerationService {
 
       if (q.questionType === 'MULTIPLE_CHOICE') {
         if (!q.options || q.options.length < 2) continue;
-        if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+        if (
+          typeof q.correctAnswer !== 'number' ||
+          q.correctAnswer < 0 ||
+          q.correctAnswer >= q.options.length
+        ) {
           q.correctAnswer = 0; // Default to first option if invalid
         }
       }
@@ -458,9 +489,7 @@ export class BaselineQuestionGenerationService {
       }
 
       // Create a seeded random for reproducibility in tests
-      const seedValue = seed
-        ? this.hashString(`${seed}-${qIndex}`)
-        : Date.now() + qIndex;
+      const seedValue = seed ? this.hashString(`${seed}-${qIndex}`) : Date.now() + qIndex;
 
       const correctIndex = typeof q.correctAnswer === 'number' ? q.correctAnswer : 0;
       const correctOption = q.options[correctIndex];
@@ -490,7 +519,7 @@ export class BaselineQuestionGenerationService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash);

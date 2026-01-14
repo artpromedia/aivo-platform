@@ -71,7 +71,7 @@ export interface ReadingLevelEstimate {
 
 /** Lexile ranges by grade level (approximate) */
 export const LEXILE_GRADE_RANGES: Record<string, { min: number; max: number; typical: number }> = {
-  'K': { min: -100, max: 100, typical: 0 },
+  K: { min: -100, max: 100, typical: 0 },
   '1': { min: 0, max: 300, typical: 150 },
   '2': { min: 200, max: 500, typical: 350 },
   '3': { min: 400, max: 700, typical: 550 },
@@ -88,10 +88,29 @@ export const LEXILE_GRADE_RANGES: Record<string, { min: number; max: number; typ
 
 /** Common academic vocabulary (Dale-Chall like list - simplified) */
 const ACADEMIC_WORDS = new Set([
-  'analyze', 'evaluate', 'synthesize', 'hypothesis', 'conclusion', 'evidence',
-  'interpret', 'significant', 'context', 'perspective', 'theory', 'principle',
-  'demonstrate', 'illustrate', 'contrast', 'compare', 'furthermore', 'however',
-  'therefore', 'consequently', 'moreover', 'nevertheless', 'specifically',
+  'analyze',
+  'evaluate',
+  'synthesize',
+  'hypothesis',
+  'conclusion',
+  'evidence',
+  'interpret',
+  'significant',
+  'context',
+  'perspective',
+  'theory',
+  'principle',
+  'demonstrate',
+  'illustrate',
+  'contrast',
+  'compare',
+  'furthermore',
+  'however',
+  'therefore',
+  'consequently',
+  'moreover',
+  'nevertheless',
+  'specifically',
 ]);
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -104,7 +123,10 @@ export class ReadabilityAnalysisService {
   /**
    * Analyze text readability with comprehensive metrics
    */
-  async analyzeReadability(text: string, context?: LexileEstimateRequest['context']): Promise<ReadabilityAnalysis> {
+  async analyzeReadability(
+    text: string,
+    context?: LexileEstimateRequest['context']
+  ): Promise<ReadabilityAnalysis> {
     const startTime = Date.now();
     incrementCounter('readability.analysis.started');
 
@@ -204,7 +226,8 @@ Respond with JSON only:
     const messages: LLMMessage[] = [
       {
         role: 'system',
-        content: 'You are an expert reading specialist skilled at assessing text complexity and Lexile levels. Provide accurate, research-based estimates.',
+        content:
+          'You are an expert reading specialist skilled at assessing text complexity and Lexile levels. Provide accurate, research-based estimates.',
       },
       { role: 'user', content: prompt },
     ];
@@ -224,8 +247,8 @@ Respond with JSON only:
 
       return {
         lexileLevel: parsed.lexileLevel ?? 800,
-        lexileLevelLow: parsed.lexileLevelLow ?? (parsed.lexileLevel - 100),
-        lexileLevelHigh: parsed.lexileLevelHigh ?? (parsed.lexileLevel + 100),
+        lexileLevelLow: parsed.lexileLevelLow ?? parsed.lexileLevel - 100,
+        lexileLevelHigh: parsed.lexileLevelHigh ?? parsed.lexileLevel + 100,
         gradeEquivalent: parsed.gradeEquivalent ?? 5.0,
         confidence: parsed.confidence ?? 0.7,
         assessmentBasis: 'ai_analysis',
@@ -240,11 +263,11 @@ Respond with JSON only:
    * Estimate reading level from comprehension performance
    */
   async estimateFromComprehension(
-    passages: Array<{
+    passages: {
       text: string;
       lexileLevel: number;
       comprehensionScore: number; // 0-1
-    }>
+    }[]
   ): Promise<ReadingLevelEstimate> {
     if (passages.length === 0) {
       throw new Error('At least one passage is required for estimation');
@@ -271,7 +294,7 @@ Respond with JSON only:
 
     // Calculate confidence based on consistency
     const avgScore = passages.reduce((sum, p) => sum + p.comprehensionScore, 0) / passages.length;
-    const confidence = Math.min(0.9, 0.5 + (passages.length * 0.1));
+    const confidence = Math.min(0.9, 0.5 + passages.length * 0.1);
 
     return {
       lexileLevel: estimatedLexile,
@@ -292,13 +315,13 @@ Respond with JSON only:
         // Calculate position within the grade range
         const position = (lexile - range.min) / (range.max - range.min);
         const gradeNum = parseInt(grade, 10) || 0;
-        return gradeNum + (position * 0.9); // 0.0 to 0.9 within the grade
+        return gradeNum + position * 0.9; // 0.0 to 0.9 within the grade
       }
     }
 
     // Above 12th grade
     if (lexile > 1400) {
-      return 12 + ((lexile - 1400) / 200);
+      return 12 + (lexile - 1400) / 200;
     }
 
     // Below kindergarten
@@ -313,7 +336,7 @@ Respond with JSON only:
     const range = LEXILE_GRADE_RANGES[gradeKey] ?? LEXILE_GRADE_RANGES['5'];
 
     const fraction = gradeLevel - Math.floor(gradeLevel);
-    return Math.round(range.min + (fraction * (range.max - range.min)));
+    return Math.round(range.min + fraction * (range.max - range.min));
   }
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -329,7 +352,7 @@ Respond with JSON only:
     complexWordCount: number;
   } {
     const words = text.match(/\b[a-zA-Z]+\b/g) ?? [];
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0);
 
     let syllableCount = 0;
     let complexWordCount = 0;
@@ -409,7 +432,7 @@ Respond with JSON only:
     }
 
     // Rough estimate of rare words (words > 8 chars that aren't common)
-    const rareWordCount = words.filter(w => w.length > 8).length;
+    const rareWordCount = words.filter((w) => w.length > 8).length;
 
     return {
       academicWordCount,
@@ -427,7 +450,7 @@ Respond with JSON only:
     const range = LEXILE_GRADE_RANGES[gradeKey] ?? LEXILE_GRADE_RANGES['5'];
 
     const fraction = fkGrade - Math.floor(fkGrade);
-    const lexile = Math.round(range.min + (fraction * (range.max - range.min)));
+    const lexile = Math.round(range.min + fraction * (range.max - range.min));
 
     return {
       lexileLevel: lexile,
@@ -441,7 +464,7 @@ Respond with JSON only:
 
   private parseJsonResponse(content: string): Record<string, unknown> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = /\{[\s\S]*\}/.exec(content);
       if (!jsonMatch) {
         return {};
       }

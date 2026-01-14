@@ -18,12 +18,7 @@ export type WritingType =
   | 'NOTE'
   | 'DRAFT';
 
-export type WritingStatus =
-  | 'DRAFT'
-  | 'IN_PROGRESS'
-  | 'REVIEWING'
-  | 'COMPLETED'
-  | 'ARCHIVED';
+export type WritingStatus = 'DRAFT' | 'IN_PROGRESS' | 'REVIEWING' | 'COMPLETED' | 'ARCHIVED';
 
 export type GradeBand = 'K5' | 'G6_8' | 'G9_12';
 
@@ -114,7 +109,7 @@ export interface AIAssistanceRequest {
   writingType: WritingType;
   gradeBand: GradeBand;
   subject?: Subject;
-  requestTypes: Array<'FEEDBACK' | 'SUGGESTIONS' | 'CONTINUATION'>;
+  requestTypes: ('FEEDBACK' | 'SUGGESTIONS' | 'CONTINUATION')[];
   focusAreas?: FeedbackType[];
 }
 

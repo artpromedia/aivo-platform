@@ -486,10 +486,17 @@ function generateQuizQuestions(
   skillCode: string
 ): GameQuestion[] {
   // Question banks by domain
-  const questionBanks: Record<SkillDomain, Record<GradeBand, { q: string; options: string[]; correct: number }[]>> = {
+  const questionBanks: Record<
+    SkillDomain,
+    Record<GradeBand, { q: string; options: string[]; correct: number }[]>
+  > = {
     MATH: {
       K5: [
-        { q: 'What shape has 4 equal sides?', options: ['Circle', 'Square', 'Triangle', 'Rectangle'], correct: 1 },
+        {
+          q: 'What shape has 4 equal sides?',
+          options: ['Circle', 'Square', 'Triangle', 'Rectangle'],
+          correct: 1,
+        },
         { q: 'What is half of 10?', options: ['2', '4', '5', '8'], correct: 2 },
         { q: 'How many sides does a triangle have?', options: ['2', '3', '4', '5'], correct: 1 },
       ],
@@ -511,65 +518,203 @@ function generateQuizQuestions(
         { q: 'Which is a noun?', options: ['Run', 'Happy', 'Apple', 'Quickly'], correct: 2 },
       ],
       G6_8: [
-        { q: 'What is a metaphor?', options: ['A comparison using like/as', 'A direct comparison', 'An exaggeration', 'A sound word'], correct: 1 },
-        { q: 'Which is the subject in "The dog ran fast"?', options: ['dog', 'ran', 'fast', 'The'], correct: 0 },
-        { q: '"Their" vs "There" - which shows possession?', options: ['There', 'Their', 'They\'re', 'None'], correct: 1 },
+        {
+          q: 'What is a metaphor?',
+          options: [
+            'A comparison using like/as',
+            'A direct comparison',
+            'An exaggeration',
+            'A sound word',
+          ],
+          correct: 1,
+        },
+        {
+          q: 'Which is the subject in "The dog ran fast"?',
+          options: ['dog', 'ran', 'fast', 'The'],
+          correct: 0,
+        },
+        {
+          q: '"Their" vs "There" - which shows possession?',
+          options: ['There', 'Their', "They're", 'None'],
+          correct: 1,
+        },
       ],
       G9_12: [
-        { q: 'What literary device is "the wind whispered"?', options: ['Simile', 'Metaphor', 'Personification', 'Alliteration'], correct: 2 },
-        { q: 'What is the climax of a story?', options: ['The beginning', 'Rising action', 'Turning point', 'Resolution'], correct: 2 },
-        { q: 'Which is an example of irony?', options: ['Exaggeration', 'Fire station burns down', 'Comparison', 'Repetition'], correct: 1 },
+        {
+          q: 'What literary device is "the wind whispered"?',
+          options: ['Simile', 'Metaphor', 'Personification', 'Alliteration'],
+          correct: 2,
+        },
+        {
+          q: 'What is the climax of a story?',
+          options: ['The beginning', 'Rising action', 'Turning point', 'Resolution'],
+          correct: 2,
+        },
+        {
+          q: 'Which is an example of irony?',
+          options: ['Exaggeration', 'Fire station burns down', 'Comparison', 'Repetition'],
+          correct: 1,
+        },
       ],
     },
     SCIENCE: {
       K5: [
-        { q: 'What do plants need to grow?', options: ['Darkness', 'Sunlight', 'Ice', 'Rocks'], correct: 1 },
+        {
+          q: 'What do plants need to grow?',
+          options: ['Darkness', 'Sunlight', 'Ice', 'Rocks'],
+          correct: 1,
+        },
         { q: 'What is H2O?', options: ['Air', 'Water', 'Fire', 'Soil'], correct: 1 },
-        { q: 'Which planet is closest to the Sun?', options: ['Earth', 'Mars', 'Mercury', 'Venus'], correct: 2 },
+        {
+          q: 'Which planet is closest to the Sun?',
+          options: ['Earth', 'Mars', 'Mercury', 'Venus'],
+          correct: 2,
+        },
       ],
       G6_8: [
-        { q: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Membrane'], correct: 1 },
-        { q: 'What gas do plants release?', options: ['Carbon dioxide', 'Nitrogen', 'Oxygen', 'Hydrogen'], correct: 2 },
-        { q: 'What causes tides?', options: ['Wind', 'Sun only', 'Moon\'s gravity', 'Earth\'s rotation'], correct: 2 },
+        {
+          q: 'What is the powerhouse of the cell?',
+          options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Membrane'],
+          correct: 1,
+        },
+        {
+          q: 'What gas do plants release?',
+          options: ['Carbon dioxide', 'Nitrogen', 'Oxygen', 'Hydrogen'],
+          correct: 2,
+        },
+        {
+          q: 'What causes tides?',
+          options: ['Wind', 'Sun only', "Moon's gravity", "Earth's rotation"],
+          correct: 2,
+        },
       ],
       G9_12: [
-        { q: 'What is Newton\'s 2nd law?', options: ['F=ma', 'E=mc²', 'PV=nRT', 'V=IR'], correct: 0 },
-        { q: 'What bond shares electrons?', options: ['Ionic', 'Covalent', 'Metallic', 'Hydrogen'], correct: 1 },
-        { q: 'What organelle makes proteins?', options: ['Golgi', 'Lysosome', 'Ribosome', 'Vacuole'], correct: 2 },
+        {
+          q: "What is Newton's 2nd law?",
+          options: ['F=ma', 'E=mc²', 'PV=nRT', 'V=IR'],
+          correct: 0,
+        },
+        {
+          q: 'What bond shares electrons?',
+          options: ['Ionic', 'Covalent', 'Metallic', 'Hydrogen'],
+          correct: 1,
+        },
+        {
+          q: 'What organelle makes proteins?',
+          options: ['Golgi', 'Lysosome', 'Ribosome', 'Vacuole'],
+          correct: 2,
+        },
       ],
     },
     SPEECH: {
       K5: [
-        { q: 'How should you start a presentation?', options: ['Yelling', 'Greeting', 'Whispering', 'Running'], correct: 1 },
-        { q: 'What helps others understand you?', options: ['Speaking fast', 'Speaking clearly', 'Looking down', 'Mumbling'], correct: 1 },
-        { q: 'Good eye contact means?', options: ['Staring at floor', 'Looking at people', 'Closing eyes', 'Looking away'], correct: 1 },
+        {
+          q: 'How should you start a presentation?',
+          options: ['Yelling', 'Greeting', 'Whispering', 'Running'],
+          correct: 1,
+        },
+        {
+          q: 'What helps others understand you?',
+          options: ['Speaking fast', 'Speaking clearly', 'Looking down', 'Mumbling'],
+          correct: 1,
+        },
+        {
+          q: 'Good eye contact means?',
+          options: ['Staring at floor', 'Looking at people', 'Closing eyes', 'Looking away'],
+          correct: 1,
+        },
       ],
       G6_8: [
-        { q: 'What is pace in speech?', options: ['Volume', 'Speed of speaking', 'Pitch', 'Accent'], correct: 1 },
-        { q: 'How do you show you\'re listening?', options: ['Interrupt', 'Look at phone', 'Nod and respond', 'Walk away'], correct: 2 },
-        { q: 'What is a thesis statement?', options: ['A question', 'Main argument', 'Conclusion', 'Introduction'], correct: 1 },
+        {
+          q: 'What is pace in speech?',
+          options: ['Volume', 'Speed of speaking', 'Pitch', 'Accent'],
+          correct: 1,
+        },
+        {
+          q: "How do you show you're listening?",
+          options: ['Interrupt', 'Look at phone', 'Nod and respond', 'Walk away'],
+          correct: 2,
+        },
+        {
+          q: 'What is a thesis statement?',
+          options: ['A question', 'Main argument', 'Conclusion', 'Introduction'],
+          correct: 1,
+        },
       ],
       G9_12: [
-        { q: 'What is ethos in persuasion?', options: ['Emotion', 'Logic', 'Credibility', 'Style'], correct: 2 },
-        { q: 'What is a rhetorical question?', options: ['Needs an answer', 'For effect only', 'Is rude', 'Is informal'], correct: 1 },
-        { q: 'What is active listening?', options: ['Hearing only', 'Full engagement', 'Multitasking', 'Selective hearing'], correct: 1 },
+        {
+          q: 'What is ethos in persuasion?',
+          options: ['Emotion', 'Logic', 'Credibility', 'Style'],
+          correct: 2,
+        },
+        {
+          q: 'What is a rhetorical question?',
+          options: ['Needs an answer', 'For effect only', 'Is rude', 'Is informal'],
+          correct: 1,
+        },
+        {
+          q: 'What is active listening?',
+          options: ['Hearing only', 'Full engagement', 'Multitasking', 'Selective hearing'],
+          correct: 1,
+        },
       ],
     },
     SEL: {
       K5: [
-        { q: 'What can you do when feeling angry?', options: ['Hit something', 'Take deep breaths', 'Yell', 'Ignore it'], correct: 1 },
-        { q: 'How do you show kindness?', options: ['Sharing', 'Taking', 'Ignoring', 'Pushing'], correct: 0 },
-        { q: 'What is empathy?', options: ['Being happy', 'Understanding feelings', 'Being angry', 'Being alone'], correct: 1 },
+        {
+          q: 'What can you do when feeling angry?',
+          options: ['Hit something', 'Take deep breaths', 'Yell', 'Ignore it'],
+          correct: 1,
+        },
+        {
+          q: 'How do you show kindness?',
+          options: ['Sharing', 'Taking', 'Ignoring', 'Pushing'],
+          correct: 0,
+        },
+        {
+          q: 'What is empathy?',
+          options: ['Being happy', 'Understanding feelings', 'Being angry', 'Being alone'],
+          correct: 1,
+        },
       ],
       G6_8: [
-        { q: 'What is a healthy way to handle stress?', options: ['Avoid sleep', 'Exercise', 'Isolate', 'Overeat'], correct: 1 },
-        { q: 'What is self-awareness?', options: ['Ignoring feelings', 'Knowing yourself', 'Being selfish', 'Avoiding others'], correct: 1 },
-        { q: 'How can you resolve conflicts?', options: ['Fighting', 'Ignoring', 'Talking it out', 'Gossiping'], correct: 2 },
+        {
+          q: 'What is a healthy way to handle stress?',
+          options: ['Avoid sleep', 'Exercise', 'Isolate', 'Overeat'],
+          correct: 1,
+        },
+        {
+          q: 'What is self-awareness?',
+          options: ['Ignoring feelings', 'Knowing yourself', 'Being selfish', 'Avoiding others'],
+          correct: 1,
+        },
+        {
+          q: 'How can you resolve conflicts?',
+          options: ['Fighting', 'Ignoring', 'Talking it out', 'Gossiping'],
+          correct: 2,
+        },
       ],
       G9_12: [
-        { q: 'What is emotional regulation?', options: ['Suppressing emotions', 'Managing reactions', 'Avoiding feelings', 'Expressing anger'], correct: 1 },
-        { q: 'What supports mental health?', options: ['Isolation', 'Social connection', 'Overworking', 'Perfectionism'], correct: 1 },
-        { q: 'What is growth mindset?', options: ['Fixed abilities', 'Can improve', 'Natural talent only', 'Avoiding challenges'], correct: 1 },
+        {
+          q: 'What is emotional regulation?',
+          options: [
+            'Suppressing emotions',
+            'Managing reactions',
+            'Avoiding feelings',
+            'Expressing anger',
+          ],
+          correct: 1,
+        },
+        {
+          q: 'What supports mental health?',
+          options: ['Isolation', 'Social connection', 'Overworking', 'Perfectionism'],
+          correct: 1,
+        },
+        {
+          q: 'What is growth mindset?',
+          options: ['Fixed abilities', 'Can improve', 'Natural talent only', 'Avoiding challenges'],
+          correct: 1,
+        },
       ],
     },
   };
@@ -804,7 +949,7 @@ export class LearningBreakGenerator {
 
     if (eligible.length === 0) {
       // Fallback to Quick Quiz which works for all domains
-      return GAME_TEMPLATES.find((t) => t.gameType === 'QUICK_QUIZ')!;
+      return GAME_TEMPLATES.find((t) => t.gameType === 'QUICK_QUIZ');
     }
 
     // Random selection from eligible templates
@@ -814,10 +959,7 @@ export class LearningBreakGenerator {
   /**
    * Select skill codes to target
    */
-  private selectTargetSkills(
-    skills: LearnerSkillSnapshot[],
-    targetDomain: SkillDomain
-  ): string[] {
+  private selectTargetSkills(skills: LearnerSkillSnapshot[], targetDomain: SkillDomain): string[] {
     const domainSkills = skills
       .filter((s) => s.domain === targetDomain)
       .sort((a, b) => a.masteryLevel - b.masteryLevel); // Lower mastery first
