@@ -260,7 +260,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
 
                   // Error message
                   if (_error != null) ...[
-                    AccessibleLabel(
+                    Semantics(
                       label: 'Error: $_error',
                       child: Container(
                         padding: const EdgeInsets.all(12),
@@ -309,8 +309,9 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
     return Column(
       children: [
         // Logo
-        AccessibleLabel(
+        Semantics(
           label: 'Aivo Learning logo',
+          image: true,
           child: Container(
             width: 80,
             height: 80,
@@ -430,7 +431,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
         const SizedBox(height: 16),
 
         // District input
-        AccessibleLabel(
+        Semantics(
           label: 'District ID input',
           hint: 'Ask your teacher for your district ID',
           child: TextField(
@@ -494,7 +495,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
         const SizedBox(height: 16),
 
         // PIN input
-        AccessibleLabel(
+        Semantics(
           label: 'PIN input',
           hint: 'Enter your 4 to 6 digit PIN',
           child: TextField(
