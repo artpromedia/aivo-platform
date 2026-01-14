@@ -33,7 +33,7 @@ When creating learning paths:
 - Ensure comprehensive coverage of target skills`;
 
 export class LearningPathService {
-  constructor(private llm: LLMOrchestrator) {}
+  constructor(private readonly llm: LLMOrchestrator) {}
 
   /**
    * Generate a personalized learning path
@@ -248,9 +248,9 @@ Respond with JSON: {"nextNodes": [...], "recommendations": [...], "adjustments":
     const parsed = this.parseStructuredResponse(result.content);
 
     // Return next nodes from remaining
-    const nextNodeIds = ((parsed.nextNodes as string[]) ?? []).slice(0, 3);
+    const nextNodeIds = new Set(((parsed.nextNodes as string[]) ?? []).slice(0, 3));
     const nextNodes = remainingNodes.filter(
-      (n) => nextNodeIds.includes(n.id) || remainingNodes.indexOf(n) < 3
+      (n) => nextNodeIds.has(n.id) || remainingNodes.indexOf(n) < 3
     );
 
     return {
@@ -284,7 +284,12 @@ Respond with JSON: {"nextNodes": [...], "recommendations": [...], "adjustments":
 SUBJECT: ${subject}
 
 SKILLS:
-${skills.map((s) => `- ${s.id}: ${s.name}${s.description ? ` - ${s.description}` : ''}`).join('\n')}
+${skills
+  .map((s) => {
+    const desc = s.description ? ` - ${s.description}` : '';
+    return `- ${s.id}: ${s.name}${desc}`;
+  })
+  .join('\n')}
 
 For each skill, determine:
 1. Which other skills are prerequisites
@@ -356,37 +361,40 @@ Respond with JSON: {"skills": [{"id": "string", "prerequisites": ["skillId"], "o
     }
 
     if (request.studentProfile) {
-      parts.push('');
-      parts.push('STUDENT PROFILE:');
-      parts.push(`- Grade Level: ${request.studentProfile.gradeLevel}`);
+      const profileParts = [
+        '',
+        'STUDENT PROFILE:',
+        `- Grade Level: ${request.studentProfile.gradeLevel}`,
+      ];
       if (request.studentProfile.strengths?.length) {
-        parts.push(`- Strengths: ${request.studentProfile.strengths.join(', ')}`);
+        profileParts.push(`- Strengths: ${request.studentProfile.strengths.join(', ')}`);
       }
       if (request.studentProfile.weaknesses?.length) {
-        parts.push(`- Areas for growth: ${request.studentProfile.weaknesses.join(', ')}`);
+        profileParts.push(`- Areas for growth: ${request.studentProfile.weaknesses.join(', ')}`);
       }
       if (request.studentProfile.learningStyle) {
-        parts.push(`- Learning style: ${request.studentProfile.learningStyle}`);
+        profileParts.push(`- Learning style: ${request.studentProfile.learningStyle}`);
       }
       if (request.studentProfile.pacePreference) {
-        parts.push(`- Pace preference: ${request.studentProfile.pacePreference}`);
+        profileParts.push(`- Pace preference: ${request.studentProfile.pacePreference}`);
       }
+      parts.push(...profileParts);
     }
 
-    parts.push('');
-    parts.push('CREATE A LEARNING PATH WITH:');
-    parts.push('1. A clear, motivating title');
-    parts.push('2. Brief description of what will be learned');
-    parts.push('3. Estimated total duration');
-    parts.push('4. 10-15 learning nodes with:');
-    parts.push('   - Type (lesson, quiz, project, review, checkpoint)');
-    parts.push('   - Clear title and description');
-    parts.push('   - Duration in minutes');
-    parts.push('   - Skills addressed');
-    parts.push('   - Prerequisites (if any)');
-    parts.push('5. 3-4 milestones to celebrate progress');
-    parts.push('');
     parts.push(
+      '',
+      'CREATE A LEARNING PATH WITH:',
+      '1. A clear, motivating title',
+      '2. Brief description of what will be learned',
+      '3. Estimated total duration',
+      '4. 10-15 learning nodes with:',
+      '   - Type (lesson, quiz, project, review, checkpoint)',
+      '   - Clear title and description',
+      '   - Duration in minutes',
+      '   - Skills addressed',
+      '   - Prerequisites (if any)',
+      '5. 3-4 milestones to celebrate progress',
+      '',
       'Respond with JSON: {"title": "string", "description": "string", "estimatedDuration": "string", "nodes": [{"id": "string", "type": "lesson|quiz|project|review|checkpoint", "title": "string", "description": "string", "duration": number, "prerequisites": ["string"], "skills": ["string"], "order": number}], "milestones": [{"title": "string", "description": "string", "targetNode": "string", "badge": "string"}]}'
     );
 

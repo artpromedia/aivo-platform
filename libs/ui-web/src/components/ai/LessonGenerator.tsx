@@ -149,12 +149,9 @@ export function LessonGenerator({
   // HANDLERS
   // ──────────────────────────────────────────────────────────────────────────
 
-  const handleInputChange = useCallback(
-    (field: keyof LessonFormData, value: unknown) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    []
-  );
+  const handleInputChange = useCallback((field: keyof LessonFormData, value: unknown) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
   const handleObjectiveChange = useCallback((index: number, value: string) => {
     setFormData((prev) => {
@@ -249,12 +246,19 @@ export function LessonGenerator({
     >
       {/* Tabs */}
       <div className="mb-6 flex border-b border-border">
-        <TabButton active={activeTab === 'form'} onClick={() => setActiveTab('form')}>
+        <TabButton
+          active={activeTab === 'form'}
+          onClick={() => {
+            setActiveTab('form');
+          }}
+        >
           Configuration
         </TabButton>
         <TabButton
           active={activeTab === 'preview'}
-          onClick={() => setActiveTab('preview')}
+          onClick={() => {
+            setActiveTab('preview');
+          }}
           disabled={!generatedLesson}
         >
           Preview
@@ -279,7 +283,9 @@ export function LessonGenerator({
             <FormField label="Subject" required>
               <select
                 value={formData.subject}
-                onChange={(e) => handleInputChange('subject', e.target.value)}
+                onChange={(e) => {
+                  handleInputChange('subject', e.target.value);
+                }}
                 className="form-select"
               >
                 <option value="">Select subject...</option>
@@ -295,7 +301,9 @@ export function LessonGenerator({
               <input
                 type="text"
                 value={formData.topic}
-                onChange={(e) => handleInputChange('topic', e.target.value)}
+                onChange={(e) => {
+                  handleInputChange('topic', e.target.value);
+                }}
                 placeholder="e.g., Photosynthesis, Fractions, The Civil War"
                 className="form-input"
               />
@@ -306,7 +314,9 @@ export function LessonGenerator({
           <FormField label="Grade Level" required>
             <select
               value={formData.gradeLevel}
-              onChange={(e) => handleInputChange('gradeLevel', e.target.value)}
+              onChange={(e) => {
+                handleInputChange('gradeLevel', e.target.value);
+              }}
               className="form-select"
             >
               <option value="">Select grade level...</option>
@@ -326,7 +336,9 @@ export function LessonGenerator({
                   <input
                     type="text"
                     value={objective}
-                    onChange={(e) => handleObjectiveChange(index, e.target.value)}
+                    onChange={(e) => {
+                      handleObjectiveChange(index, e.target.value);
+                    }}
                     placeholder={`Objective ${index + 1}`}
                     className="form-input flex-1"
                   />
@@ -334,7 +346,9 @@ export function LessonGenerator({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleRemoveObjective(index)}
+                      onClick={() => {
+                        handleRemoveObjective(index);
+                      }}
                       aria-label="Remove objective"
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -358,7 +372,9 @@ export function LessonGenerator({
                   max="90"
                   step="5"
                   value={formData.duration}
-                  onChange={(e) => handleInputChange('duration', Number.parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    handleInputChange('duration', Number.parseInt(e.target.value, 10));
+                  }}
                   className="flex-1"
                 />
                 <span className="w-16 text-center font-medium">{formData.duration} min</span>
@@ -372,7 +388,9 @@ export function LessonGenerator({
                   min="1"
                   max="5"
                   value={formData.difficulty}
-                  onChange={(e) => handleInputChange('difficulty', Number.parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    handleInputChange('difficulty', Number.parseInt(e.target.value, 10));
+                  }}
                   className="flex-1"
                 />
                 <span className="w-16 text-center font-medium">
@@ -389,12 +407,12 @@ export function LessonGenerator({
                 <button
                   key={value}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     handleInputChange(
                       'learningStyle',
                       formData.learningStyle === value ? undefined : value
-                    )
-                  }
+                    );
+                  }}
                   className={cn(
                     'rounded-lg border px-3 py-2 text-sm transition-colors',
                     formData.learningStyle === value
@@ -414,7 +432,9 @@ export function LessonGenerator({
               <input
                 type="checkbox"
                 checked={formData.includeAssessment}
-                onChange={(e) => handleInputChange('includeAssessment', e.target.checked)}
+                onChange={(e) => {
+                  handleInputChange('includeAssessment', e.target.checked);
+                }}
                 className="form-checkbox"
               />
               <span>Include assessment questions</span>
@@ -462,12 +482,12 @@ function FormField({
   required,
   hint,
   children,
-}: {
+}: Readonly<{
   label?: string;
   required?: boolean;
   hint?: string;
   children: ReactNode;
-}) {
+}>) {
   return (
     <div className="space-y-2">
       {label && (
@@ -487,12 +507,12 @@ function TabButton({
   disabled,
   onClick,
   children,
-}: {
+}: Readonly<{
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
   children: ReactNode;
-}) {
+}>) {
   return (
     <button
       type="button"
@@ -500,9 +520,7 @@ function TabButton({
       disabled={disabled}
       className={cn(
         'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
-        active
-          ? 'border-primary text-primary'
-          : 'border-transparent text-muted hover:text-text',
+        active ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-text',
         disabled && 'cursor-not-allowed opacity-50'
       )}
     >
@@ -514,10 +532,10 @@ function TabButton({
 function LessonPreview({
   lesson,
   onReset,
-}: {
+}: Readonly<{
   lesson: GeneratedLesson;
   onReset: () => void;
-}) {
+}>) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -535,8 +553,8 @@ function LessonPreview({
         <div>
           <h3 className="mb-2 font-semibold text-text">Learning Objectives</h3>
           <ul className="list-inside list-disc space-y-1 text-sm text-muted">
-            {lesson.objectives.map((obj, i) => (
-              <li key={i}>{obj}</li>
+            {lesson.objectives.map((obj) => (
+              <li key={obj}>{obj}</li>
             ))}
           </ul>
         </div>
@@ -557,8 +575,8 @@ function LessonPreview({
         <div>
           <h3 className="mb-2 font-semibold text-text">Vocabulary</h3>
           <div className="grid gap-2 sm:grid-cols-2">
-            {lesson.vocabulary.map((item, i) => (
-              <div key={i} className="rounded-lg bg-surface-muted p-3">
+            {lesson.vocabulary.map((item) => (
+              <div key={item.term} className="rounded-lg bg-surface-muted p-3">
                 <div className="font-medium text-text">{item.term}</div>
                 <div className="text-sm text-muted">{item.definition}</div>
               </div>
@@ -580,8 +598,8 @@ function LessonPreview({
                 {q.options && (
                   <ul className="mt-2 space-y-1 pl-4 text-sm text-muted">
                     {q.options.map((opt, j) => (
-                      <li key={j} className={opt === q.correctAnswer ? 'text-green-600' : ''}>
-                        {String.fromCharCode(65 + j)}. {opt}
+                      <li key={opt} className={opt === q.correctAnswer ? 'text-green-600' : ''}>
+                        {String.fromCodePoint(65 + j)}. {opt}
                       </li>
                     ))}
                   </ul>
@@ -620,7 +638,7 @@ function LessonPreview({
   );
 }
 
-function LessonBlockCard({ block }: { block: LessonBlock }) {
+function LessonBlockCard({ block }: Readonly<{ block: LessonBlock }>) {
   const typeConfig: Record<string, { label: string; color: string; icon: string }> = {
     text: { label: 'Content', color: 'bg-blue-100 text-blue-700', icon: '📝' },
     activity: { label: 'Activity', color: 'bg-green-100 text-green-700', icon: '🎯' },
@@ -649,7 +667,7 @@ function LessonBlockCard({ block }: { block: LessonBlock }) {
 // ICONS
 // ────────────────────────────────────────────────────────────────────────────
 
-function SparklesIcon({ className }: { className?: string }) {
+function SparklesIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
       <path d="M7 3a1 1 0 00-.707.293l-4 4a1 1 0 00.708 1.414l.999-.999V17a1 1 0 001 1h10a1 1 0 001-1V7.707l.999.999a1 1 0 001.414-1.414l-4-4A1 1 0 0013 3H7zM6 9h8v7H6V9z" />
@@ -657,7 +675,7 @@ function SparklesIcon({ className }: { className?: string }) {
   );
 }
 
-function ErrorIcon({ className }: { className?: string }) {
+function ErrorIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
       <path
@@ -669,7 +687,7 @@ function ErrorIcon({ className }: { className?: string }) {
   );
 }
 
-function TrashIcon({ className }: { className?: string }) {
+function TrashIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -682,7 +700,7 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
-function DownloadIcon({ className }: { className?: string }) {
+function DownloadIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -695,7 +713,7 @@ function DownloadIcon({ className }: { className?: string }) {
   );
 }
 
-function SaveIcon({ className }: { className?: string }) {
+function SaveIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
@@ -711,14 +729,7 @@ function SaveIcon({ className }: { className?: string }) {
 function LoadingSpinner() {
   return (
     <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

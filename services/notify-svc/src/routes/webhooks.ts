@@ -8,14 +8,14 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { webhookService } from '../channels/webhook/webhook.service.js';
-import { DeliveryChannel } from '../prisma.js';
-import { deliveryTracker } from '../services/delivery-tracker.service.js';
+import { emailTrackingRateLimiter } from '../lib/rate-limit.js';
 import {
   verifySendGridSignature,
   verifyTwilioSignature,
   verifySnsSignature,
 } from '../lib/webhook-verification.js';
-import { emailTrackingRateLimiter } from '../lib/rate-limit.js';
+import { DeliveryChannel } from '../prisma.js';
+import { deliveryTracker } from '../services/delivery-tracker.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -158,7 +158,10 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
         if (rawBody) {
           const verification = verifySendGridSignature(request, rawBody);
           if (!verification.valid) {
-            fastify.log.warn({ error: verification.error }, 'SendGrid webhook signature verification failed');
+            fastify.log.warn(
+              { error: verification.error },
+              'SendGrid webhook signature verification failed'
+            );
             return reply.status(401).send({ error: 'Unauthorized', message: verification.error });
           }
         } else if (process.env.NODE_ENV === 'production') {
@@ -246,7 +249,10 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
         if (rawBody) {
           const verification = verifyTwilioSignature(request, rawBody);
           if (!verification.valid) {
-            fastify.log.warn({ error: verification.error }, 'Twilio webhook signature verification failed');
+            fastify.log.warn(
+              { error: verification.error },
+              'Twilio webhook signature verification failed'
+            );
             return reply.status(401).send({ error: 'Unauthorized', message: verification.error });
           }
         } else if (process.env.NODE_ENV === 'production') {
@@ -259,7 +265,9 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
 
         // Return TwiML response (empty for status callbacks)
         reply.header('Content-Type', 'text/xml');
-        return reply.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+        return reply
+          .status(200)
+          .send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
       } catch (error) {
         fastify.log.error({ error }, 'Twilio webhook processing failed');
         return reply.status(500).send({ error: 'Processing failed' });
@@ -271,13 +279,10 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
    * GET /webhooks/email/track/open/:trackingId
    * Track email opens (tracking pixel)
    */
-  fastify.get(
+  fastify.get<{ Params: { trackingId: string } }>(
     '/webhooks/email/track/open/:trackingId',
-    { preHandler: emailTrackingRateLimiter },
-    async (
-      request: FastifyRequest<{ Params: { trackingId: string } }>,
-      reply: FastifyReply
-    ) => {
+    { preHandler: [emailTrackingRateLimiter] },
+    async (request, reply) => {
       const { trackingId } = request.params;
 
       try {
@@ -307,16 +312,13 @@ export async function registerWebhookRoutes(fastify: FastifyInstance): Promise<v
    * GET /webhooks/email/track/click/:trackingId
    * Track email link clicks
    */
-  fastify.get(
+  fastify.get<{
+    Params: { trackingId: string };
+    Querystring: { url: string };
+  }>(
     '/webhooks/email/track/click/:trackingId',
-    { preHandler: emailTrackingRateLimiter },
-    async (
-      request: FastifyRequest<{
-        Params: { trackingId: string };
-        Querystring: { url: string };
-      }>,
-      reply: FastifyReply
-    ) => {
+    { preHandler: [emailTrackingRateLimiter] },
+    async (request, reply) => {
       const { trackingId } = request.params;
       const { url } = request.query;
 
