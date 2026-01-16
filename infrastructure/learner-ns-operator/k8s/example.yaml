@@ -1,0 +1,75 @@
+# Example LearnerNamespace resources
+
+# Standard learner namespace with default quota
+apiVersion: aivo.io/v1alpha1
+kind: LearnerNamespace
+metadata:
+  name: learner-tenant1-user123
+spec:
+  tenantId: tenant1
+  learnerId: user123
+  displayName: "John Doe's Workspace"
+  tier: standard
+  resourceQuota:
+    cpu: "2"
+    memory: "4Gi"
+    storage: "10Gi"
+    pods: 10
+    services: 5
+    secrets: 10
+    configMaps: 10
+  networkPolicies: true
+  labels:
+    environment: learning
+    course: python-101
+  annotations:
+    description: "Learning workspace for Python course"
+---
+# Premium tier with extended resources
+apiVersion: aivo.io/v1alpha1
+kind: LearnerNamespace
+metadata:
+  name: learner-tenant1-user456
+spec:
+  tenantId: tenant1
+  learnerId: user456
+  displayName: "Jane Smith's Lab"
+  tier: premium
+  resourceQuota:
+    cpu: "8"
+    memory: "16Gi"
+    storage: "50Gi"
+    pods: 50
+    services: 20
+    secrets: 50
+    configMaps: 50
+    persistentVolumeClaims: 10
+  networkPolicies: true
+  allowedImages:
+    - "docker.io/library/*"
+    - "gcr.io/aivo/*"
+    - "quay.io/aivo/*"
+  labels:
+    environment: lab
+    course: ml-advanced
+---
+# Temporary namespace with TTL
+apiVersion: aivo.io/v1alpha1
+kind: LearnerNamespace
+metadata:
+  name: learner-tenant2-exam-session-789
+spec:
+  tenantId: tenant2
+  learnerId: user789
+  displayName: "Exam Session"
+  tier: free
+  resourceQuota:
+    cpu: "1"
+    memory: "1Gi"
+    pods: 5
+  networkPolicies: true
+  ttl: "4h"
+  autoCleanup: true
+  labels:
+    type: exam
+    course: final-exam

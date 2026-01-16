@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: learner-ns-operator-system
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: learner-ns-operator
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: learner-ns-operator-controller-manager
+  namespace: learner-ns-operator-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: learner-ns-operator-manager-role
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [""]
+    resources: [resourcequotas, limitranges]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [roles, rolebindings]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [aivo.io]
+    resources: [learnernamespaces]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [aivo.io]
+    resources: [learnernamespaces/status]
+    verbs: [get, update, patch]
+  - apiGroups: [aivo.io]
+    resources: [learnernamespaces/finalizers]
+    verbs: [update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: learner-ns-operator-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: learner-ns-operator-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: learner-ns-operator-controller-manager
+    namespace: learner-ns-operator-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learner-ns-operator-controller-manager
+  namespace: learner-ns-operator-system
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: learner-ns-operator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      serviceAccountName: learner-ns-operator-controller-manager
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: manager
+          image: aivo/learner-ns-operator:latest
+          args:
+            - --leader-elect
+            - --health-probe-bind-address=:8081
+            - --metrics-bind-address=:8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            readOnlyRootFilesystem: true
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: learner-ns-operator-metrics
+  namespace: learner-ns-operator-system
+  labels:
+    control-plane: controller-manager
+spec:
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    control-plane: controller-manager

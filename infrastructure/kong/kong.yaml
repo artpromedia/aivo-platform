@@ -1,0 +1,364 @@
+_format_version: "3.0"
+_transform: true
+
+# Kong Declarative Configuration for AIVO Platform
+
+# Consumers
+consumers:
+  - username: internal-services
+    custom_id: internal-svc
+    keyauth_credentials:
+      - key: ${INTERNAL_API_KEY}
+
+# Global Plugins
+plugins:
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 50
+      size_unit: megabytes
+
+  - name: rate-limiting
+    config:
+      minute: 1000
+      hour: 10000
+      policy: local
+
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+
+# Upstreams with Health Checks
+upstreams:
+  - name: auth-svc-upstream
+    targets:
+      - target: auth-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+
+  - name: user-svc-upstream
+    targets:
+      - target: user-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+
+  - name: course-svc-upstream
+    targets:
+      - target: course-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: content-svc-upstream
+    targets:
+      - target: content-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: assessment-svc-upstream
+    targets:
+      - target: assessment-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: analytics-svc-upstream
+    targets:
+      - target: analytics-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: notification-svc-upstream
+    targets:
+      - target: notification-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: approval-svc-upstream
+    targets:
+      - target: approval-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: game-gen-svc-upstream
+    targets:
+      - target: game-gen-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: coursework-ingest-svc-upstream
+    targets:
+      - target: coursework-ingest-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: search-svc-upstream
+    targets:
+      - target: search-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: orchestrator-svc-upstream
+    targets:
+      - target: orchestrator-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: iep-svc-upstream
+    targets:
+      - target: iep-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: sel-svc-upstream
+    targets:
+      - target: sel-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+  - name: residency-svc-upstream
+    targets:
+      - target: residency-svc:80
+        weight: 100
+    healthchecks:
+      active:
+        http_path: /health
+
+# Services and Routes
+services:
+  # Auth Service - Public endpoints
+  - name: auth-service
+    url: http://auth-svc-upstream
+    protocol: http
+    routes:
+      - name: auth-routes
+        paths:
+          - /api/v1/auth
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+
+  # User Service
+  - name: user-service
+    url: http://user-svc-upstream
+    routes:
+      - name: user-routes
+        paths:
+          - /api/v1/users
+        strip_path: false
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: kid
+          claims_to_verify:
+            - exp
+
+  # Course Service
+  - name: course-service
+    url: http://course-svc-upstream
+    routes:
+      - name: course-routes
+        paths:
+          - /api/v1/courses
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Content Service
+  - name: content-service
+    url: http://content-svc-upstream
+    routes:
+      - name: content-routes
+        paths:
+          - /api/v1/content
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Assessment Service
+  - name: assessment-service
+    url: http://assessment-svc-upstream
+    routes:
+      - name: assessment-routes
+        paths:
+          - /api/v1/assessments
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Analytics Service
+  - name: analytics-service
+    url: http://analytics-svc-upstream
+    routes:
+      - name: analytics-routes
+        paths:
+          - /api/v1/analytics
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Notification Service
+  - name: notification-service
+    url: http://notification-svc-upstream
+    routes:
+      - name: notification-routes
+        paths:
+          - /api/v1/notifications
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Approval Service
+  - name: approval-service
+    url: http://approval-svc-upstream
+    routes:
+      - name: approval-routes
+        paths:
+          - /api/v1/approvals
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Game Generation Service
+  - name: game-gen-service
+    url: http://game-gen-svc-upstream
+    routes:
+      - name: game-gen-routes
+        paths:
+          - /api/v1/games
+        strip_path: false
+    plugins:
+      - name: jwt
+      - name: request-size-limiting
+        config:
+          allowed_payload_size: 100
+          size_unit: megabytes
+
+  # Coursework Ingest Service
+  - name: coursework-ingest-service
+    url: http://coursework-ingest-svc-upstream
+    routes:
+      - name: coursework-ingest-routes
+        paths:
+          - /api/v1/ingest
+        strip_path: false
+    plugins:
+      - name: jwt
+      - name: request-size-limiting
+        config:
+          allowed_payload_size: 200
+          size_unit: megabytes
+
+  # Search Service
+  - name: search-service
+    url: http://search-svc-upstream
+    routes:
+      - name: search-routes
+        paths:
+          - /api/v1/search
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Orchestrator Service
+  - name: orchestrator-service
+    url: http://orchestrator-svc-upstream
+    routes:
+      - name: orchestrator-routes
+        paths:
+          - /api/v1/workflows
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # IEP Service
+  - name: iep-service
+    url: http://iep-svc-upstream
+    routes:
+      - name: iep-routes
+        paths:
+          - /api/v1/iep
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # SEL Service
+  - name: sel-service
+    url: http://sel-svc-upstream
+    routes:
+      - name: sel-routes
+        paths:
+          - /api/v1/sel
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Residency Service
+  - name: residency-service
+    url: http://residency-svc-upstream
+    routes:
+      - name: residency-routes
+        paths:
+          - /api/v1/residency
+        strip_path: false
+    plugins:
+      - name: jwt
+
+  # Health Check Endpoint
+  - name: health-service
+    url: http://localhost:8001/status
+    routes:
+      - name: health-routes
+        paths:
+          - /health
+        strip_path: true

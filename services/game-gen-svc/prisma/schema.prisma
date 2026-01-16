@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GameType {
+  QUIZ
+  MATCHING
+  FLASHCARDS
+  WORD_SEARCH
+  CROSSWORD
+  FILL_BLANK
+  DRAG_DROP
+  SORTING
+  MEMORY
+  PUZZLE
+  SIMULATION
+  ADVENTURE
+}
+
+enum GenerationStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+enum ContentSource {
+  CURRICULUM
+  LESSON
+  DOCUMENT
+  TEXT_INPUT
+  URL
+  AI_GENERATED
+}
+
+model GameTemplate {
+  id              String       @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  gameType        GameType
+  category        String?
+  tags            String[]     @default([])
+  configSchema    Json         // JSON Schema for game configuration
+  defaultConfig   Json?        // Default configuration values
+  previewImage    String?
+  isPublic        Boolean      @default(false)
+  createdBy       String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  generations     GameGeneration[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([gameType])
+  @@index([isPublic])
+}
+
+model GameGeneration {
+  id              String           @id @default(cuid())
+  tenantId        String
+  templateId      String?
+  template        GameTemplate?    @relation(fields: [templateId], references: [id])
+  gameType        GameType
+  title           String
+  description     String?
+  status          GenerationStatus @default(PENDING)
+  sourceType      ContentSource
+  sourceId        String?          // Reference to source content
+  sourceContent   String?          // Raw source content
+  learningObjectives String[]      @default([])
+  targetAudience  String?
+  difficulty      DifficultyLevel  @default(MEDIUM)
+  config          Json?            // Game-specific configuration
+  aiPrompt        String?          // Prompt used for generation
+  aiModel         String?          // AI model used
+  generatedContent Json?           // Generated game content
+  metadata        Json?
+  error           String?
+  generatedBy     String
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  game            Game?
+
+  @@index([tenantId])
+  @@index([templateId])
+  @@index([gameType])
+  @@index([status])
+  @@index([sourceType])
+}
+
+model Game {
+  id              String          @id @default(cuid())
+  tenantId        String
+  generationId    String          @unique
+  generation      GameGeneration  @relation(fields: [generationId], references: [id])
+  title           String
+  description     String?
+  gameType        GameType
+  content         Json            // Full game content and structure
+  assets          Json?           // Asset references
+  settings        Json?           // Runtime settings
+  difficulty      DifficultyLevel
+  estimatedTime   Int?            // Estimated play time in minutes
+  maxScore        Int?
+  passingScore    Int?
+  version         Int             @default(1)
+  isPublished     Boolean         @default(false)
+  publishedAt     DateTime?
+  tags            String[]        @default([])
+  createdBy       String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  sessions        GameSession[]
+  analytics       GameAnalytics[]
+  feedback        GameFeedback[]
+
+  @@index([tenantId])
+  @@index([gameType])
+  @@index([isPublished])
+  @@index([tags])
+}
+
+model GameSession {
+  id            String    @id @default(cuid())
+  tenantId      String
+  gameId        String
+  game          Game      @relation(fields: [gameId], references: [id])
+  learnerId     String
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  score         Int?
+  maxScore      Int?
+  passed        Boolean?
+  timeSpent     Int?      // Seconds
+  attempts      Int       @default(1)
+  progress      Json?     // Progress state
+  responses     Json?     // User responses/interactions
+  hintsUsed     Int       @default(0)
+  metadata      Json?
+
+  @@index([tenantId])
+  @@index([gameId])
+  @@index([learnerId])
+  @@index([startedAt])
+}
+
+model GameAnalytics {
+  id              String   @id @default(cuid())
+  tenantId        String
+  gameId          String
+  game            Game     @relation(fields: [gameId], references: [id])
+  date            DateTime @db.Date
+  totalSessions   Int      @default(0)
+  completions     Int      @default(0)
+  avgScore        Float?
+  avgTimeSpent    Float?
+  passRate        Float?
+  dropOffPoints   Json?    // Where learners abandon
+  commonErrors    Json?    // Common mistakes
+  updatedAt       DateTime @updatedAt
+
+  @@unique([gameId, date])
+  @@index([tenantId])
+  @@index([gameId])
+  @@index([date])
+}
+
+model GameFeedback {
+  id          String   @id @default(cuid())
+  tenantId    String
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id])
+  learnerId   String
+  rating      Int      // 1-5
+  comment     String?
+  tags        String[] @default([])
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([gameId])
+  @@index([learnerId])
+}
+
+model GameAsset {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  type        String   // image, audio, video, sprite, animation
+  category    String?
+  url         String
+  thumbnailUrl String?
+  metadata    Json?
+  tags        String[] @default([])
+  isPublic    Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([category])
+  @@index([isPublic])
+}
+
+model QuestionBank {
+  id              String   @id @default(cuid())
+  tenantId        String
+  subject         String
+  topic           String
+  difficulty      DifficultyLevel
+  questionType    String   // multiple_choice, true_false, fill_blank, etc.
+  question        String
+  options         Json?    // Answer options
+  correctAnswer   Json     // Correct answer(s)
+  explanation     String?
+  hints           String[] @default([])
+  tags            String[] @default([])
+  sourceId        String?  // Original content source
+  aiGenerated     Boolean  @default(false)
+  usageCount      Int      @default(0)
+  successRate     Float?
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([subject])
+  @@index([topic])
+  @@index([difficulty])
+  @@index([questionType])
+}
+
+model GenerationJob {
+  id          String   @id @default(cuid())
+  tenantId    String
+  generationId String
+  status      String   @default("pending")
+  priority    Int      @default(0)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  scheduledFor DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([priority])
+}
+
+model GameGenAuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([timestamp])
+  @@index([action])
+}

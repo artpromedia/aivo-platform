@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  ESCALATED
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum StepType {
+  SINGLE_APPROVER
+  ANY_OF
+  ALL_OF
+  SEQUENTIAL
+  QUORUM
+}
+
+enum EscalationType {
+  AUTO_APPROVE
+  AUTO_REJECT
+  NOTIFY_ONLY
+  ESCALATE_UP
+}
+
+model ApprovalWorkflow {
+  id              String         @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  entityType      String         // Type of entity this workflow applies to
+  triggerCondition Json?         // Conditions that trigger this workflow
+  status          WorkflowStatus @default(DRAFT)
+  version         Int            @default(1)
+  createdBy       String
+  updatedBy       String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  steps           ApprovalStep[]
+  requests        ApprovalRequest[]
+
+  @@unique([tenantId, name, version])
+  @@index([tenantId])
+  @@index([entityType])
+  @@index([status])
+}
+
+model ApprovalStep {
+  id                String           @id @default(cuid())
+  tenantId          String
+  workflowId        String
+  workflow          ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name              String
+  order             Int
+  type              StepType         @default(SINGLE_APPROVER)
+  approverType      String           // role, user, group, dynamic
+  approverIds       String[]         // User/role/group IDs
+  approverExpression String?         // Dynamic approver expression
+  quorumCount       Int?             // Required approvals for QUORUM type
+  timeoutHours      Int?             // Hours before escalation
+  escalationType    EscalationType   @default(NOTIFY_ONLY)
+  escalateTo        String[]         // Who to escalate to
+  conditions        Json?            // Step-specific conditions
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  stepInstances     StepInstance[]
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([order])
+}
+
+model ApprovalRequest {
+  id              String           @id @default(cuid())
+  tenantId        String
+  workflowId      String
+  workflow        ApprovalWorkflow @relation(fields: [workflowId], references: [id])
+  entityType      String
+  entityId        String
+  entityData      Json?            // Snapshot of entity at request time
+  title           String
+  description     String?
+  priority        Int              @default(0)
+  status          ApprovalStatus   @default(PENDING)
+  currentStepOrder Int             @default(1)
+  requestedBy     String
+  requestedAt     DateTime         @default(now())
+  completedAt     DateTime?
+  expiresAt       DateTime?
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  stepInstances   StepInstance[]
+  decisions       ApprovalDecision[]
+  comments        ApprovalComment[]
+  history         ApprovalHistory[]
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([requestedBy])
+  @@index([expiresAt])
+}
+
+model StepInstance {
+  id            String          @id @default(cuid())
+  tenantId      String
+  requestId     String
+  request       ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepId        String
+  step          ApprovalStep    @relation(fields: [stepId], references: [id])
+  status        ApprovalStatus  @default(PENDING)
+  assignedTo    String[]
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  dueAt         DateTime?
+  escalatedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  decisions     ApprovalDecision[]
+
+  @@index([tenantId])
+  @@index([requestId])
+  @@index([stepId])
+  @@index([status])
+  @@index([dueAt])
+}
+
+model ApprovalDecision {
+  id              String          @id @default(cuid())
+  tenantId        String
+  requestId       String
+  request         ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepInstanceId  String
+  stepInstance    StepInstance    @relation(fields: [stepInstanceId], references: [id], onDelete: Cascade)
+  decidedBy       String
+  decision        ApprovalStatus
+  comment         String?
+  attachments     String[]
+  delegatedFrom   String?         // If decision was delegated
+  decidedAt       DateTime        @default(now())
+
+  @@index([tenantId])
+  @@index([requestId])
+  @@index([stepInstanceId])
+  @@index([decidedBy])
+}
+
+model ApprovalComment {
+  id          String          @id @default(cuid())
+  tenantId    String
+  requestId   String
+  request     ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  userId      String
+  content     String
+  attachments String[]
+  isInternal  Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([tenantId])
+  @@index([requestId])
+  @@index([userId])
+}
+
+model ApprovalHistory {
+  id          String          @id @default(cuid())
+  tenantId    String
+  requestId   String
+  request     ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  action      String
+  actor       String
+  details     Json?
+  timestamp   DateTime        @default(now())
+
+  @@index([tenantId])
+  @@index([requestId])
+  @@index([timestamp])
+}
+
+model ApprovalDelegation {
+  id            String    @id @default(cuid())
+  tenantId      String
+  fromUserId    String
+  toUserId      String
+  workflowIds   String[]  // Empty means all workflows
+  startDate     DateTime
+  endDate       DateTime?
+  reason        String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([isActive])
+}
+
+model ApprovalNotification {
+  id          String    @id @default(cuid())
+  tenantId    String
+  requestId   String
+  userId      String
+  type        String    // pending, reminder, escalation, completed
+  channel     String    // email, push, in_app
+  status      String    @default("pending") // pending, sent, failed
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([requestId])
+  @@index([userId])
+  @@index([status])
+}
+
+model ApprovalAuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([timestamp])
+  @@index([action])
+}

@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IngestStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  EXTRACTING
+  ANALYZING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ContentType {
+  DOCUMENT
+  VIDEO
+  AUDIO
+  IMAGE
+  PRESENTATION
+  SPREADSHEET
+  SCORM
+  LTI
+  URL
+  ARCHIVE
+}
+
+enum SourceType {
+  UPLOAD
+  URL
+  LMS_IMPORT
+  API
+  GOOGLE_DRIVE
+  ONEDRIVE
+  DROPBOX
+  S3
+}
+
+model IngestJob {
+  id              String       @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  status          IngestStatus @default(PENDING)
+  sourceType      SourceType
+  sourceUrl       String?
+  sourceConfig    Json?        // Source-specific configuration
+  targetCourseId  String?
+  targetModuleId  String?
+  options         Json?        // Processing options
+  progress        Int          @default(0)
+  totalItems      Int          @default(0)
+  processedItems  Int          @default(0)
+  failedItems     Int          @default(0)
+  error           String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdBy       String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  items           IngestItem[]
+  logs            IngestLog[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdBy])
+  @@index([createdAt])
+}
+
+model IngestItem {
+  id              String       @id @default(cuid())
+  tenantId        String
+  jobId           String
+  job             IngestJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  originalName    String
+  contentType     ContentType
+  mimeType        String?
+  fileSize        Int?
+  status          IngestStatus @default(PENDING)
+  sourceUrl       String?
+  storagePath     String?
+  extractedText   String?
+  metadata        Json?        // Extracted metadata
+  structure       Json?        // Document structure
+  topics          String[]     @default([])
+  keywords        String[]     @default([])
+  difficulty      String?
+  estimatedTime   Int?         // Estimated reading/viewing time
+  contentId       String?      // Created content ID
+  error           String?
+  processingTime  Int?         // Processing time in ms
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  chunks          ContentChunk[]
+
+  @@index([tenantId])
+  @@index([jobId])
+  @@index([status])
+  @@index([contentType])
+}
+
+model ContentChunk {
+  id            String     @id @default(cuid())
+  tenantId      String
+  itemId        String
+  item          IngestItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  chunkIndex    Int
+  chunkType     String     // heading, paragraph, list, table, image, etc.
+  content       String
+  metadata      Json?
+  embedding     Bytes?     // Vector embedding for semantic search
+  createdAt     DateTime   @default(now())
+
+  @@index([tenantId])
+  @@index([itemId])
+  @@index([chunkIndex])
+}
+
+model IngestLog {
+  id        String    @id @default(cuid())
+  tenantId  String
+  jobId     String
+  job       IngestJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  itemId    String?
+  level     String    @default("info")
+  message   String
+  details   Json?
+  timestamp DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([jobId])
+  @@index([itemId])
+  @@index([timestamp])
+}
+
+model ContentTemplate {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  description   String?
+  contentType   ContentType
+  mappingRules  Json     // Rules for mapping extracted content
+  transformers  Json?    // Content transformations
+  validators    Json?    // Validation rules
+  isDefault     Boolean  @default(false)
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([contentType])
+}
+
+model ExtractionRule {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  description   String?
+  contentType   ContentType
+  pattern       String?  // Regex or selector pattern
+  selector      Json?    // Complex selector rules
+  fieldMapping  Json     // How to map extracted data
+  priority      Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([contentType])
+  @@index([isActive])
+}
+
+model ImportMapping {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  sourceSystem  String   // canvas, moodle, blackboard, etc.
+  contentType   ContentType
+  fieldMappings Json     // Source to target field mappings
+  transformers  Json?    // Data transformations
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, name, sourceSystem])
+  @@index([tenantId])
+  @@index([sourceSystem])
+}
+
+model WebhookEndpoint {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  url           String
+  events        String[] // Events to notify
+  secret        String
+  isActive      Boolean  @default(true)
+  lastCalledAt  DateTime?
+  failureCount  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model IngestQuota {
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  dailyLimit      Int      @default(100)
+  monthlyLimit    Int      @default(1000)
+  maxFileSize     Int      @default(104857600) // 100MB
+  allowedTypes    String[] @default([])
+  usedToday       Int      @default(0)
+  usedThisMonth   Int      @default(0)
+  lastResetDaily  DateTime @default(now())
+  lastResetMonthly DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model IngestAuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([timestamp])
+  @@index([action])
+}

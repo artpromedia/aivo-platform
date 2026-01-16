@@ -1,0 +1,57 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: rate-limiting-default
+  namespace: kong
+config:
+  minute: 1000
+  hour: 10000
+  policy: redis
+  redis_host: redis
+  redis_port: 6379
+  redis_database: 0
+  hide_client_headers: false
+  fault_tolerant: true
+plugin: rate-limiting
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: rate-limiting-auth
+  namespace: kong
+config:
+  minute: 100
+  hour: 1000
+  policy: redis
+  redis_host: redis
+  redis_port: 6379
+  redis_database: 0
+plugin: rate-limiting
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: rate-limiting-api
+  namespace: kong
+config:
+  minute: 500
+  hour: 5000
+  policy: redis
+  redis_host: redis
+  redis_port: 6379
+  redis_database: 0
+plugin: rate-limiting
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: response-ratelimiting
+  namespace: kong
+config:
+  limits:
+    limit_name:
+      minute: 100
+  policy: redis
+  redis_host: redis
+  redis_port: 6379
+plugin: response-ratelimiting
