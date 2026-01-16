@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sel-svc
+  labels:
+    app: sel-svc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sel-svc
+  template:
+    metadata:
+      labels:
+        app: sel-svc
+    spec:
+      containers:
+        - name: sel-svc
+          image: aivo/sel-svc:latest
+          ports:
+            - containerPort: 4071
+          envFrom:
+            - configMapRef:
+                name: sel-svc-config
+            - secretRef:
+                name: sel-svc-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4071
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4071
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sel-svc
+spec:
+  selector:
+    app: sel-svc
+  ports:
+    - port: 80
+      targetPort: 4071

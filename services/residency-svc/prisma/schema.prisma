@@ -1,0 +1,498 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Residency Service - Prisma Schema
+// Data Residency and Sovereignty Compliance
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REGIONS & JURISDICTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Region {
+  id                String    @id @default(uuid())
+  code              String    @unique // us-east, eu-west, ap-south, etc.
+  name              String
+  displayName       String
+
+  // Geographic
+  country           String?
+  countryCode       String?   // ISO 3166-1 alpha-2
+  continent         String?
+
+  // Legal jurisdiction
+  jurisdiction      String    // US, EU, UK, etc.
+  dataProtectionLaw String?   // GDPR, CCPA, PIPEDA, etc.
+
+  // Capabilities
+  isActive          Boolean   @default(true)
+  isPrimary         Boolean   @default(false)
+  supportsEncryption Boolean  @default(true)
+  encryptionStandard String?  // AES-256, etc.
+
+  // Cloud provider info
+  cloudProvider     String?   // AWS, GCP, Azure
+  cloudRegion       String?   // us-east-1, europe-west1, etc.
+
+  metadata          Json?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  policies          DataResidencyPolicy[]
+  storageEndpoints  StorageEndpoint[]
+  dataLocations     DataLocation[]
+  outboundTransfers CrossBorderTransfer[] @relation("SourceRegion")
+  inboundTransfers  CrossBorderTransfer[] @relation("DestRegion")
+
+  @@index([jurisdiction])
+  @@index([isActive])
+}
+
+model Jurisdiction {
+  id                String    @id @default(uuid())
+  code              String    @unique // EU, US, UK, CA, etc.
+  name              String
+  description       String?   @db.Text
+
+  // Regulations
+  regulations       String[]  // GDPR, CCPA, PIPEDA, etc.
+  dataProtectionLevel String  // ADEQUATE, STANDARD, RESTRICTED
+
+  // Transfer requirements
+  requiresConsent   Boolean   @default(false)
+  requiresSCC       Boolean   @default(false) // Standard Contractual Clauses
+  requiresDPIA      Boolean   @default(false) // Data Protection Impact Assessment
+  requiresLocalRep  Boolean   @default(false) // Local representative
+
+  // Allowed transfers
+  allowedDestinations String[] // Jurisdictions data can transfer to
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([code])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA CLASSIFICATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+model DataClassification {
+  id                String    @id @default(uuid())
+  tenantId          String?   // null = global classification
+
+  code              String
+  name              String
+  description       String?   @db.Text
+
+  // Sensitivity
+  sensitivityLevel  SensitivityLevel
+  isPII             Boolean   @default(false)
+  isSensitivePII    Boolean   @default(false) // Health, financial, etc.
+  isEducationRecord Boolean   @default(false) // FERPA
+  isChildData       Boolean   @default(false) // COPPA
+
+  // Handling requirements
+  requiresEncryption Boolean  @default(true)
+  requiresAudit     Boolean   @default(true)
+  retentionDays     Int?
+  allowsCrossBorder Boolean   @default(true)
+
+  // Examples
+  examples          String[]
+
+  isActive          Boolean   @default(true)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  routingRules      RoutingRule[]
+  dataLocations     DataLocation[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([sensitivityLevel])
+}
+
+enum SensitivityLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+  HIGHLY_RESTRICTED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RESIDENCY POLICIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+model DataResidencyPolicy {
+  id                  String    @id @default(uuid())
+  tenantId            String
+  name                String
+  description         String?   @db.Text
+
+  // Primary region
+  primaryRegionId     String
+  primaryRegion       Region    @relation(fields: [primaryRegionId], references: [id])
+
+  // Policy rules
+  allowedRegions      String[]  // Region codes
+  blockedRegions      String[]
+  requiresEncryption  Boolean   @default(true)
+  requiresLocalStorage Boolean  @default(false)
+
+  // Transfer rules
+  allowCrossBorder    Boolean   @default(true)
+  crossBorderApproval Boolean   @default(false) // Requires approval
+  crossBorderConsent  Boolean   @default(false) // Requires user consent
+
+  // Enforcement
+  enforcementLevel    EnforcementLevel @default(WARN)
+  isActive            Boolean   @default(true)
+
+  // Effective dates
+  effectiveFrom       DateTime  @default(now())
+  effectiveTo         DateTime?
+
+  createdBy           String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  routingRules        RoutingRule[]
+
+  @@index([tenantId, isActive])
+}
+
+enum EnforcementLevel {
+  NONE
+  WARN
+  SOFT_BLOCK  // Block but allow override
+  HARD_BLOCK  // No exceptions
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ROUTING RULES
+// ══════════════════════════════════════════════════════════════════════════════
+
+model RoutingRule {
+  id                  String              @id @default(uuid())
+  tenantId            String
+  policyId            String
+  policy              DataResidencyPolicy @relation(fields: [policyId], references: [id])
+
+  name                String
+  description         String?
+
+  // Matching criteria
+  dataClassificationId String?
+  dataClassification  DataClassification? @relation(fields: [dataClassificationId], references: [id])
+  dataTypes           String[]            // User data, content, analytics, etc.
+  servicePatterns     String[]            // Service name patterns
+
+  // Routing decision
+  targetRegions       String[]            // Preferred regions in order
+  fallbackRegions     String[]
+  blockUnmatched      Boolean             @default(false)
+
+  // Conditions
+  conditions          Json?               // Additional conditions
+
+  priority            Int                 @default(0)
+  isActive            Boolean             @default(true)
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([tenantId, isActive])
+  @@index([policyId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STORAGE ENDPOINTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model StorageEndpoint {
+  id                String    @id @default(uuid())
+  regionId          String
+  region            Region    @relation(fields: [regionId], references: [id])
+
+  name              String
+  endpointType      EndpointType
+
+  // Connection info (encrypted)
+  endpoint          String
+  connectionConfig  Json?     // Encrypted connection details
+
+  // Capabilities
+  supportsVersioning Boolean  @default(true)
+  supportsEncryption Boolean  @default(true)
+  maxObjectSize     BigInt?   // Bytes
+
+  // Status
+  status            EndpointStatus @default(ACTIVE)
+  healthCheckUrl    String?
+  lastHealthCheck   DateTime?
+  healthStatus      String?
+
+  // Capacity
+  capacityBytes     BigInt?
+  usedBytes         BigInt?
+
+  isDefault         Boolean   @default(false)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  dataLocations     DataLocation[]
+
+  @@unique([regionId, name])
+  @@index([regionId, status])
+}
+
+enum EndpointType {
+  OBJECT_STORAGE    // S3, GCS, Blob
+  DATABASE
+  FILE_SYSTEM
+  CACHE
+}
+
+enum EndpointStatus {
+  ACTIVE
+  DEGRADED
+  MAINTENANCE
+  OFFLINE
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA LOCATION TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model DataLocation {
+  id                  String             @id @default(uuid())
+  tenantId            String
+
+  // Data reference
+  dataId              String             // ID of the data object
+  dataType            String             // User, content, document, etc.
+  dataClassificationId String?
+  dataClassification  DataClassification? @relation(fields: [dataClassificationId], references: [id])
+
+  // Location
+  regionId            String
+  region              Region             @relation(fields: [regionId], references: [id])
+  endpointId          String?
+  endpoint            StorageEndpoint?   @relation(fields: [endpointId], references: [id])
+
+  // Storage details
+  storagePath         String?
+  isEncrypted         Boolean            @default(true)
+  encryptionKeyId     String?
+
+  // Replication
+  isPrimary           Boolean            @default(true)
+  replicatedFrom      String?            // DataLocation ID if replica
+  replicaCount        Int                @default(0)
+
+  // Lifecycle
+  status              LocationStatus     @default(ACTIVE)
+  createdAt           DateTime           @default(now())
+  lastAccessedAt      DateTime?
+  expiresAt           DateTime?
+  deletedAt           DateTime?
+
+  @@unique([tenantId, dataId, regionId])
+  @@index([tenantId, dataType])
+  @@index([tenantId, regionId])
+  @@index([status])
+}
+
+enum LocationStatus {
+  ACTIVE
+  ARCHIVED
+  PENDING_DELETE
+  DELETED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CROSS-BORDER TRANSFERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model CrossBorderTransfer {
+  id                  String          @id @default(uuid())
+  tenantId            String
+
+  // Data reference
+  dataId              String?
+  dataType            String
+  dataCount           Int             @default(1) // Number of records
+  dataSizeBytes       BigInt?
+
+  // Transfer details
+  sourceRegionId      String
+  sourceRegion        Region          @relation("SourceRegion", fields: [sourceRegionId], references: [id])
+  destRegionId        String
+  destRegion          Region          @relation("DestRegion", fields: [destRegionId], references: [id])
+
+  // Reason and authorization
+  purpose             String
+  legalBasis          LegalBasis
+  transferMechanism   TransferMechanism?
+
+  // Consent
+  consentObtained     Boolean         @default(false)
+  consentRecordId     String?
+  consentDate         DateTime?
+
+  // Approval
+  approvalRequired    Boolean         @default(false)
+  approvalStatus      ApprovalStatus?
+  approvedBy          String?
+  approvedAt          DateTime?
+  approvalNotes       String?
+
+  // Status
+  status              TransferStatus  @default(PENDING)
+  initiatedAt         DateTime        @default(now())
+  completedAt         DateTime?
+  failedAt            DateTime?
+  failureReason       String?
+
+  // Audit
+  requestedBy         String
+  requestedAt         DateTime        @default(now())
+
+  @@index([tenantId, status])
+  @@index([sourceRegionId])
+  @@index([destRegionId])
+}
+
+enum LegalBasis {
+  CONSENT
+  CONTRACT
+  LEGAL_OBLIGATION
+  VITAL_INTERESTS
+  PUBLIC_TASK
+  LEGITIMATE_INTERESTS
+  ADEQUACY_DECISION
+  SCC                   // Standard Contractual Clauses
+  BCR                   // Binding Corporate Rules
+}
+
+enum TransferMechanism {
+  ADEQUACY
+  SCC
+  BCR
+  DEROGATION
+  CERTIFICATION
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COMPLIANCE CHECKS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ComplianceCheck {
+  id                String          @id @default(uuid())
+  tenantId          String
+
+  checkType         ComplianceCheckType
+  scope             String?         // Specific data type, region, etc.
+
+  // Result
+  status            CheckStatus
+  isCompliant       Boolean
+  score             Float?          // Compliance score 0-100
+
+  // Findings
+  findings          Json[]          // Array of findings
+  violations        Json[]          // Array of violations
+  recommendations   String[]
+
+  // Context
+  checkedAt         DateTime        @default(now())
+  checkedBy         String          // User or system
+
+  // Follow-up
+  requiresAction    Boolean         @default(false)
+  actionDueDate     DateTime?
+  actionTakenAt     DateTime?
+  actionNotes       String?
+
+  @@index([tenantId, checkType])
+  @@index([tenantId, status])
+}
+
+enum ComplianceCheckType {
+  DATA_LOCATION
+  CROSS_BORDER
+  ENCRYPTION
+  RETENTION
+  ACCESS_CONTROL
+  CONSENT
+  FULL_AUDIT
+}
+
+enum CheckStatus {
+  PASSED
+  PASSED_WITH_WARNINGS
+  FAILED
+  ERROR
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ResidencyAuditLog {
+  id                String    @id @default(uuid())
+  tenantId          String
+
+  action            String    // DATA_STORED, DATA_TRANSFERRED, POLICY_CHANGED, etc.
+  resourceType      String    // Data, Policy, Region, etc.
+  resourceId        String?
+
+  // Details
+  description       String
+  details           Json?
+
+  // Location context
+  sourceRegion      String?
+  destRegion        String?
+
+  // Actor
+  performedBy       String
+  performedAt       DateTime  @default(now())
+  ipAddress         String?
+  userAgent         String?
+
+  @@index([tenantId, action])
+  @@index([tenantId, performedAt])
+  @@index([resourceType, resourceId])
+}

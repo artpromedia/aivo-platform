@@ -1,0 +1,676 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO SEL Service - Prisma Schema
+// Social-Emotional Learning Management
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SEL FRAMEWORK & COMPETENCIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+model SELFramework {
+  id            String    @id @default(uuid())
+  tenantId      String
+
+  name          String    // CASEL, state-specific, etc.
+  description   String?   @db.Text
+  version       String?
+
+  isDefault     Boolean   @default(false)
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  competencies  Competency[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Competency {
+  id            String       @id @default(uuid())
+  frameworkId   String
+  framework     SELFramework @relation(fields: [frameworkId], references: [id])
+
+  code          String       // SA, SM, SOC, REL, RDM
+  name          String       // Self-Awareness, Self-Management, etc.
+  description   String?      @db.Text
+  color         String?      // UI color coding
+
+  sortOrder     Int          @default(0)
+
+  createdAt     DateTime     @default(now())
+
+  // Relations
+  skills        SELSkill[]
+  assessmentItems AssessmentItem[]
+  activities    Activity[]
+  progressRecords ProgressRecord[]
+
+  @@unique([frameworkId, code])
+  @@index([frameworkId])
+}
+
+model SELSkill {
+  id            String     @id @default(uuid())
+  competencyId  String
+  competency    Competency @relation(fields: [competencyId], references: [id])
+
+  name          String
+  description   String?    @db.Text
+  indicators    String[]   // Observable behaviors
+
+  gradeRangeStart Int?     // Grade level appropriateness
+  gradeRangeEnd   Int?
+
+  sortOrder     Int        @default(0)
+
+  @@index([competencyId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STUDENT SEL PROFILE
+// ══════════════════════════════════════════════════════════════════════════════
+
+model StudentSELProfile {
+  id              String    @id @default(uuid())
+  tenantId        String
+  studentId       String    // External student ID
+
+  // Baseline scores (1-5 scale or percentile)
+  selfAwarenessScore     Float?
+  selfManagementScore    Float?
+  socialAwarenessScore   Float?
+  relationshipScore      Float?
+  decisionMakingScore    Float?
+
+  // Risk indicators
+  riskLevel             RiskLevel @default(LOW)
+  riskFactors           String[]
+  protectiveFactors     String[]
+
+  // Preferences
+  preferredCheckInTime  String?
+  preferredActivities   String[]
+  communicationStyle    String?
+
+  // Notes
+  strengths             String?   @db.Text
+  growthAreas           String?   @db.Text
+  supportStrategies     String?   @db.Text
+
+  lastAssessmentAt      DateTime?
+  lastCheckInAt         DateTime?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  assessments           Assessment[]
+  checkIns              CheckIn[]
+  interventions         Intervention[]
+  progressRecords       ProgressRecord[]
+  activityCompletions   ActivityCompletion[]
+  goals                 SELGoal[]
+
+  @@unique([tenantId, studentId])
+  @@index([tenantId, riskLevel])
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSESSMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AssessmentTemplate {
+  id              String    @id @default(uuid())
+  tenantId        String
+
+  name            String
+  description     String?   @db.Text
+  assessmentType  AssessmentType
+
+  // Target
+  gradeRangeStart Int?
+  gradeRangeEnd   Int?
+
+  // Timing
+  estimatedMinutes Int?
+  isAnonymous     Boolean   @default(false)
+
+  isActive        Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  items           AssessmentItem[]
+  assessments     Assessment[]
+
+  @@index([tenantId, assessmentType])
+}
+
+enum AssessmentType {
+  SCREENER
+  COMPREHENSIVE
+  PROGRESS_MONITOR
+  SELF_REPORT
+  TEACHER_REPORT
+  PEER_REPORT
+  CLIMATE_SURVEY
+}
+
+model AssessmentItem {
+  id              String             @id @default(uuid())
+  templateId      String
+  template        AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  competencyId    String?
+  competency      Competency?        @relation(fields: [competencyId], references: [id])
+
+  itemNumber      Int
+  questionText    String             @db.Text
+  questionType    QuestionType
+
+  // Response options for scale/choice questions
+  options         Json?
+
+  // Scoring
+  maxScore        Int                @default(5)
+  reverseScored   Boolean            @default(false)
+
+  @@unique([templateId, itemNumber])
+  @@index([templateId])
+}
+
+enum QuestionType {
+  LIKERT_5
+  LIKERT_7
+  YES_NO
+  MULTIPLE_CHOICE
+  OPEN_ENDED
+  EMOJI_SCALE
+}
+
+model Assessment {
+  id              String             @id @default(uuid())
+  tenantId        String
+  studentProfileId String
+  studentProfile  StudentSELProfile  @relation(fields: [studentProfileId], references: [id])
+  templateId      String
+  template        AssessmentTemplate @relation(fields: [templateId], references: [id])
+
+  // Administration
+  administeredBy  String?
+  administeredAt  DateTime           @default(now())
+  completedAt     DateTime?
+
+  // Context
+  administrationContext String?      // Classroom, counselor office, etc.
+
+  // Status
+  status          AssessmentStatus   @default(IN_PROGRESS)
+
+  // Scores (computed)
+  totalScore      Float?
+  percentileRank  Int?
+  competencyScores Json?             // { competencyId: score }
+
+  // Interpretation
+  interpretation  String?            @db.Text
+  recommendations String?            @db.Text
+
+  createdAt       DateTime           @default(now())
+
+  // Relations
+  responses       AssessmentResponse[]
+
+  @@index([tenantId, studentProfileId])
+  @@index([tenantId, status])
+}
+
+enum AssessmentStatus {
+  IN_PROGRESS
+  COMPLETED
+  SCORED
+  REVIEWED
+  INVALIDATED
+}
+
+model AssessmentResponse {
+  id              String      @id @default(uuid())
+  assessmentId    String
+  assessment      Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  itemNumber      Int
+  response        String      // Could be numeric or text
+  score           Float?
+
+  responseTime    Int?        // Seconds to respond
+
+  @@unique([assessmentId, itemNumber])
+  @@index([assessmentId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CHECK-INS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model CheckIn {
+  id              String            @id @default(uuid())
+  tenantId        String
+  studentProfileId String
+  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+
+  checkInType     CheckInType       @default(MOOD)
+  checkInTime     DateTime          @default(now())
+
+  // Mood/Emotion
+  moodRating      Int?              // 1-5 scale
+  moodEmoji       String?           // Emoji representation
+  emotions        String[]          // Selected emotions
+  energyLevel     Int?              // 1-5 scale
+
+  // Context
+  context         String?           // Before class, lunch, etc.
+  location        String?
+  trigger         String?           // What influenced mood
+
+  // Reflection
+  reflection      String?           @db.Text
+  gratitude       String?
+  goal            String?
+
+  // Flags
+  needsSupport    Boolean           @default(false)
+  followUpNeeded  Boolean           @default(false)
+  followUpBy      String?
+  followedUpAt    DateTime?
+  followUpNotes   String?           @db.Text
+
+  isPrivate       Boolean           @default(false)
+
+  createdAt       DateTime          @default(now())
+
+  @@index([tenantId, studentProfileId])
+  @@index([tenantId, checkInTime])
+  @@index([tenantId, needsSupport])
+}
+
+enum CheckInType {
+  MOOD
+  DAILY
+  WEEKLY
+  CLASS_START
+  CLASS_END
+  PROMPTED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACTIVITIES & CURRICULUM
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Activity {
+  id              String     @id @default(uuid())
+  tenantId        String
+
+  competencyId    String?
+  competency      Competency? @relation(fields: [competencyId], references: [id])
+
+  name            String
+  description     String     @db.Text
+  activityType    ActivityType
+
+  // Content
+  instructions    String?    @db.Text
+  materials       String[]
+  duration        Int?       // Minutes
+
+  // Target audience
+  gradeRangeStart Int?
+  gradeRangeEnd   Int?
+  groupSize       String?    // Individual, small group, whole class
+
+  // Media
+  mediaUrl        String?
+  thumbnailUrl    String?
+
+  // Categorization
+  tags            String[]
+  difficulty      Difficulty @default(MEDIUM)
+
+  isActive        Boolean    @default(true)
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  completions     ActivityCompletion[]
+
+  @@index([tenantId, activityType])
+  @@index([tenantId, competencyId])
+}
+
+enum ActivityType {
+  LESSON
+  GAME
+  DISCUSSION
+  JOURNALING
+  MINDFULNESS
+  ROLE_PLAY
+  VIDEO
+  READING
+  GROUP_ACTIVITY
+  SELF_REFLECTION
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  CHALLENGING
+}
+
+model ActivityCompletion {
+  id              String            @id @default(uuid())
+  activityId      String
+  activity        Activity          @relation(fields: [activityId], references: [id])
+  studentProfileId String
+  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+
+  completedAt     DateTime          @default(now())
+  duration        Int?              // Actual minutes spent
+
+  // Feedback
+  rating          Int?              // 1-5 stars
+  reflection      String?           @db.Text
+  helpfulness     Int?              // 1-5
+
+  // Context
+  assignedBy      String?
+  context         String?           // Class, independent, counselor
+
+  @@index([activityId])
+  @@index([studentProfileId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INTERVENTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Intervention {
+  id                String            @id @default(uuid())
+  tenantId          String
+  studentProfileId  String
+  studentProfile    StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+
+  name              String
+  description       String?           @db.Text
+  interventionType  InterventionType
+
+  // Target competencies
+  targetCompetencies String[]
+
+  // Plan
+  strategies        String[]
+  frequency         String?           // Daily, weekly, etc.
+  duration          String?           // 6 weeks, semester, etc.
+  startDate         DateTime
+  endDate           DateTime?
+
+  // Team
+  interventionist   String            // Primary person responsible
+  supportTeam       String[]
+
+  // Status
+  status            InterventionStatus @default(PLANNED)
+
+  // Outcomes
+  baselineData      Json?
+  goalData          Json?
+  outcomeData       Json?
+  effectiveness     Int?              // 1-5 rating
+
+  notes             String?           @db.Text
+
+  createdBy         String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  logs              InterventionLog[]
+
+  @@index([tenantId, studentProfileId])
+  @@index([tenantId, status])
+}
+
+enum InterventionType {
+  TIER_1_UNIVERSAL
+  TIER_2_TARGETED
+  TIER_3_INTENSIVE
+  CRISIS
+  BEHAVIORAL
+  COUNSELING
+  MENTORING
+  SOCIAL_SKILLS_GROUP
+}
+
+enum InterventionStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  DISCONTINUED
+}
+
+model InterventionLog {
+  id              String       @id @default(uuid())
+  interventionId  String
+  intervention    Intervention @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+
+  logDate         DateTime     @default(now())
+  duration        Int?         // Minutes
+
+  activitiesCompleted String[]
+  studentResponse     String?  @db.Text
+  progressNotes       String?  @db.Text
+
+  dataPoints          Json?    // Quantitative progress data
+
+  loggedBy        String
+  createdAt       DateTime     @default(now())
+
+  @@index([interventionId, logDate])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROGRESS TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ProgressRecord {
+  id              String            @id @default(uuid())
+  tenantId        String
+  studentProfileId String
+  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+
+  competencyId    String
+  competency      Competency        @relation(fields: [competencyId], references: [id])
+
+  recordDate      DateTime          @default(now())
+  recordPeriod    String            // Week 1, Month 1, Q1, etc.
+
+  // Scores
+  score           Float             // Current score
+  previousScore   Float?            // Previous period score
+  targetScore     Float?
+
+  // Qualitative
+  progressLevel   ProgressLevel
+  observations    String?           @db.Text
+  evidence        String[]
+
+  recordedBy      String
+
+  @@index([tenantId, studentProfileId])
+  @@index([competencyId])
+}
+
+enum ProgressLevel {
+  SIGNIFICANT_REGRESSION
+  SOME_REGRESSION
+  NO_CHANGE
+  SOME_PROGRESS
+  SIGNIFICANT_PROGRESS
+  GOAL_MET
+}
+
+model SELGoal {
+  id              String            @id @default(uuid())
+  studentProfileId String
+  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+
+  title           String
+  description     String            @db.Text
+  competencyArea  String
+
+  targetDate      DateTime?
+  status          GoalStatus        @default(ACTIVE)
+
+  milestones      Json?             // Array of milestones with completion status
+
+  completedAt     DateTime?
+  completionNotes String?           @db.Text
+
+  createdBy       String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([studentProfileId])
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  DISCONTINUED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLASS/SCHOOL CLIMATE
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ClassClimate {
+  id              String    @id @default(uuid())
+  tenantId        String
+
+  classId         String    // External class identifier
+  className       String
+  teacherId       String?
+  teacherName     String?
+
+  recordDate      DateTime
+  recordPeriod    String    // Week, month, etc.
+
+  // Climate scores (1-5)
+  safetyScore         Float?
+  belongingScore      Float?
+  engagementScore     Float?
+  respectScore        Float?
+  collaborationScore  Float?
+
+  // Overall
+  overallClimateScore Float?
+
+  // Context
+  studentCount        Int?
+  responseCount       Int?
+  responseRate        Float?
+
+  // Observations
+  strengths           String[]
+  concerns            String[]
+  recommendations     String?   @db.Text
+
+  recordedBy          String
+  createdAt           DateTime  @default(now())
+
+  @@index([tenantId, classId])
+  @@index([tenantId, recordDate])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ALERTS & NOTIFICATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model SELAlert {
+  id              String      @id @default(uuid())
+  tenantId        String
+
+  studentProfileId String?
+  studentId       String?
+
+  alertType       SELAlertType
+  severity        AlertSeverity
+
+  title           String
+  description     String      @db.Text
+
+  // Trigger data
+  triggerData     Json?
+
+  status          AlertStatus @default(NEW)
+  assignedTo      String?
+
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?
+
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolution      String?     @db.Text
+
+  createdAt       DateTime    @default(now())
+
+  @@index([tenantId, status])
+  @@index([tenantId, alertType])
+  @@index([tenantId, severity])
+}
+
+enum SELAlertType {
+  LOW_MOOD_PATTERN
+  CRISIS_INDICATOR
+  DECLINING_SCORES
+  MISSED_CHECKINS
+  INTERVENTION_NEEDED
+  FOLLOW_UP_REQUIRED
+  ASSESSMENT_DUE
+  GOAL_AT_RISK
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AlertStatus {
+  NEW
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}

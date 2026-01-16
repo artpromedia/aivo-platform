@@ -1,0 +1,34 @@
+{
+  "name": "@aivo/residency-svc",
+  "version": "1.0.0",
+  "description": "Data residency and sovereignty compliance service for AIVO platform",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "fastify": "^4.28.1",
+    "@fastify/cors": "^9.0.1",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/sensible": "^5.6.0",
+    "zod": "^3.23.8",
+    "fast-jwt": "^4.0.5",
+    "uuid": "^10.0.0",
+    "pino": "^9.4.0",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.1",
+    "vitest": "^2.1.2",
+    "prisma": "^5.22.0"
+  }
+}

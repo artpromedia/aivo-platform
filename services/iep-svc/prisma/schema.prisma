@@ -1,0 +1,758 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO IEP Service - Prisma Schema
+// Individual Education Plan Management
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STUDENT PROFILE
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Student {
+  id                String        @id @default(uuid())
+  tenantId          String
+
+  // Identifiers
+  studentId         String        // School student ID
+  stateId           String?       // State student identifier
+
+  // Personal info
+  firstName         String
+  lastName          String
+  middleName        String?
+  dateOfBirth       DateTime
+  gender            String?
+
+  // School info
+  grade             String
+  school            String
+  district          String?
+  enrollmentDate    DateTime?
+
+  // Contact
+  primaryLanguage   String        @default("English")
+  homeLanguage      String?
+
+  // Eligibility
+  eligibilityDate   DateTime?
+  primaryDisability String?
+  secondaryDisabilities String[]
+
+  // Status
+  status            StudentStatus @default(ACTIVE)
+  exitDate          DateTime?
+  exitReason        String?
+
+  metadata          Json?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  ieps              IEP[]
+  evaluations       Evaluation[]
+  teamMembers       TeamMember[]
+
+  @@unique([tenantId, studentId])
+  @@index([tenantId, status])
+  @@index([tenantId, school])
+  @@index([tenantId, grade])
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  TRANSFERRED
+  EXITED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IEP DOCUMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+model IEP {
+  id                    String      @id @default(uuid())
+  tenantId              String
+  studentId             String
+  student               Student     @relation(fields: [studentId], references: [id])
+
+  // IEP identification
+  iepNumber             String      // Sequential IEP number for student
+  version               Int         @default(1)
+
+  // Type and status
+  iepType               IEPType
+  status                IEPStatus   @default(DRAFT)
+
+  // Dates
+  meetingDate           DateTime?
+  effectiveDate         DateTime?
+  annualReviewDate      DateTime?
+  reevaluationDate      DateTime?
+
+  // Present levels
+  academicLevel         String?     @db.Text
+  functionalLevel       String?     @db.Text
+  parentConcerns        String?     @db.Text
+  studentStrengths      String?     @db.Text
+
+  // Participation
+  stateTestingAccommodations    String[]
+  districtTestingAccommodations String[]
+  participatesInGenEd   Boolean     @default(true)
+  genEdPercentage       Int?        // Percentage in general education
+
+  // Placement
+  placementType         String?
+  placementJustification String?    @db.Text
+  leastRestrictiveEnv   String?     @db.Text
+
+  // ESY (Extended School Year)
+  esyEligible           Boolean     @default(false)
+  esyJustification      String?     @db.Text
+  esyServices           String[]
+
+  // Signatures
+  parentConsent         Boolean     @default(false)
+  parentConsentDate     DateTime?
+
+  // Workflow
+  createdBy             String
+  lastModifiedBy        String?
+  submittedAt           DateTime?
+  approvedAt            DateTime?
+  approvedBy            String?
+
+  metadata              Json?
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  // Relations
+  goals                 IEPGoal[]
+  accommodations        Accommodation[]
+  modifications         Modification[]
+  services              Service[]
+  meetings              Meeting[]
+  progressReports       ProgressReport[]
+  transitionPlan        TransitionPlan?
+  amendments            IEPAmendment[]
+
+  @@unique([tenantId, studentId, iepNumber, version])
+  @@index([tenantId, status])
+  @@index([tenantId, effectiveDate])
+  @@index([studentId])
+}
+
+enum IEPType {
+  INITIAL
+  ANNUAL
+  TRIENNIAL
+  AMENDMENT
+  TRANSFER
+}
+
+enum IEPStatus {
+  DRAFT
+  PENDING_REVIEW
+  PENDING_MEETING
+  PENDING_CONSENT
+  ACTIVE
+  AMENDED
+  EXPIRED
+  ARCHIVED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GOALS AND OBJECTIVES
+// ══════════════════════════════════════════════════════════════════════════════
+
+model IEPGoal {
+  id                String       @id @default(uuid())
+  iepId             String
+  iep               IEP          @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  goalNumber        Int
+  domain            GoalDomain
+
+  // Goal definition
+  description       String       @db.Text
+  baseline          String       @db.Text
+  targetCriteria    String       // e.g., "80% accuracy"
+  measurementMethod String       // How progress will be measured
+
+  // Timeline
+  targetDate        DateTime?
+
+  // Standards alignment
+  standardsAligned  String[]     // State/common core standards
+
+  // Status
+  status            GoalStatus   @default(NOT_STARTED)
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Relations
+  objectives        Objective[]
+  progressData      ProgressData[]
+
+  @@unique([iepId, goalNumber])
+  @@index([iepId])
+}
+
+enum GoalDomain {
+  READING
+  WRITING
+  MATH
+  COMMUNICATION
+  SOCIAL_EMOTIONAL
+  ADAPTIVE_BEHAVIOR
+  MOTOR
+  VOCATIONAL
+  TRANSITION
+  OTHER
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  MASTERED
+  DISCONTINUED
+  MODIFIED
+}
+
+model Objective {
+  id              String    @id @default(uuid())
+  goalId          String
+  goal            IEPGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  objectiveNumber Int
+  description     String    @db.Text
+  criteria        String    // Success criteria
+
+  status          GoalStatus @default(NOT_STARTED)
+  masteredDate    DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([goalId, objectiveNumber])
+  @@index([goalId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCOMMODATIONS AND MODIFICATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Accommodation {
+  id              String              @id @default(uuid())
+  iepId           String
+  iep             IEP                 @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  category        AccommodationCategory
+  name            String
+  description     String              @db.Text
+
+  // Where it applies
+  settings        String[]            // Classroom, testing, etc.
+  subjects        String[]            // Specific subjects if applicable
+
+  // Frequency
+  frequency       String?             // Daily, as needed, etc.
+
+  isActive        Boolean             @default(true)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([iepId])
+}
+
+enum AccommodationCategory {
+  PRESENTATION
+  RESPONSE
+  SETTING
+  TIMING
+  SCHEDULING
+  ASSISTIVE_TECHNOLOGY
+  OTHER
+}
+
+model Modification {
+  id              String    @id @default(uuid())
+  iepId           String
+  iep             IEP       @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  subject         String
+  description     String    @db.Text
+  rationale       String?   @db.Text
+
+  // Grade level modifications
+  gradeLevel      String?   // If working at different grade level
+
+  isActive        Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([iepId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RELATED SERVICES
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Service {
+  id                String        @id @default(uuid())
+  iepId             String
+  iep               IEP           @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  serviceType       ServiceType
+  description       String?
+
+  // Frequency and duration
+  frequency         String        // e.g., "2x weekly"
+  duration          Int           // Minutes per session
+  startDate         DateTime?
+  endDate           DateTime?
+
+  // Location
+  location          String?       // Where service is provided
+  groupSize         String?       // Individual, small group, etc.
+
+  // Provider
+  providerType      String?       // Role/certification
+  providerName      String?
+
+  isActive          Boolean       @default(true)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  serviceLogs       ServiceLog[]
+
+  @@index([iepId])
+}
+
+enum ServiceType {
+  SPEECH_LANGUAGE
+  OCCUPATIONAL_THERAPY
+  PHYSICAL_THERAPY
+  COUNSELING
+  SOCIAL_WORK
+  PSYCHOLOGY
+  VISION
+  HEARING
+  ORIENTATION_MOBILITY
+  NURSING
+  TRANSPORTATION
+  PARAPROFESSIONAL
+  BEHAVIOR_SUPPORT
+  ASSISTIVE_TECHNOLOGY
+  TRANSITION
+  OTHER
+}
+
+model ServiceLog {
+  id              String    @id @default(uuid())
+  serviceId       String
+  service         Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  sessionDate     DateTime
+  duration        Int       // Actual minutes
+  attended        Boolean   @default(true)
+
+  notes           String?   @db.Text
+  activities      String[]
+
+  providerId      String
+  providerName    String
+
+  createdAt       DateTime  @default(now())
+
+  @@index([serviceId, sessionDate])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEAM MEMBERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TeamMember {
+  id              String          @id @default(uuid())
+  tenantId        String
+  studentId       String
+  student         Student         @relation(fields: [studentId], references: [id])
+
+  // Member info
+  userId          String?         // If linked to system user
+  name            String
+  email           String?
+  phone           String?
+
+  role            TeamRole
+  title           String?
+  organization    String?         // School, agency, etc.
+
+  // Relationship
+  relationToStudent String?       // For parents/guardians
+  isPrimaryContact Boolean        @default(false)
+
+  isActive        Boolean         @default(true)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  meetingAttendances MeetingAttendance[]
+
+  @@index([tenantId, studentId])
+}
+
+enum TeamRole {
+  PARENT_GUARDIAN
+  STUDENT
+  GENERAL_EDUCATION_TEACHER
+  SPECIAL_EDUCATION_TEACHER
+  ADMINISTRATOR
+  SCHOOL_PSYCHOLOGIST
+  SPEECH_LANGUAGE_PATHOLOGIST
+  OCCUPATIONAL_THERAPIST
+  PHYSICAL_THERAPIST
+  COUNSELOR
+  SOCIAL_WORKER
+  BEHAVIOR_SPECIALIST
+  TRANSITION_COORDINATOR
+  ADVOCATE
+  ATTORNEY
+  INTERPRETER
+  OTHER
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MEETINGS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Meeting {
+  id              String        @id @default(uuid())
+  iepId           String
+  iep             IEP           @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  meetingType     MeetingType
+
+  // Scheduling
+  scheduledDate   DateTime
+  scheduledTime   String?
+  duration        Int?          // Minutes
+  location        String?
+  virtualLink     String?
+
+  // Status
+  status          MeetingStatus @default(SCHEDULED)
+  actualDate      DateTime?
+
+  // Notes
+  purpose         String?
+  agenda          String?       @db.Text
+  notes           String?       @db.Text
+  decisions       String?       @db.Text
+
+  // Notification
+  notificationSent Boolean      @default(false)
+  notificationDate DateTime?
+
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  attendances     MeetingAttendance[]
+
+  @@index([iepId, scheduledDate])
+}
+
+enum MeetingType {
+  INITIAL
+  ANNUAL_REVIEW
+  REEVALUATION
+  AMENDMENT
+  MANIFESTATION
+  TRANSITION
+  PROGRESS_REVIEW
+  PARENT_CONFERENCE
+  OTHER
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+model MeetingAttendance {
+  id              String      @id @default(uuid())
+  meetingId       String
+  meeting         Meeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  teamMemberId    String
+  teamMember      TeamMember  @relation(fields: [teamMemberId], references: [id])
+
+  status          AttendanceStatus @default(INVITED)
+  responseDate    DateTime?
+  attendedAt      DateTime?
+
+  excusalReason   String?
+  excusalApproved Boolean?
+
+  @@unique([meetingId, teamMemberId])
+  @@index([meetingId])
+}
+
+enum AttendanceStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  ATTENDED
+  ABSENT
+  EXCUSED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROGRESS MONITORING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ProgressReport {
+  id                String    @id @default(uuid())
+  iepId             String
+  iep               IEP       @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  reportingPeriod   String    // Q1, Q2, Semester 1, etc.
+  reportDate        DateTime
+
+  overallProgress   String?   @db.Text
+  parentComments    String?   @db.Text
+
+  sentToParent      Boolean   @default(false)
+  sentDate          DateTime?
+
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([iepId, reportDate])
+}
+
+model ProgressData {
+  id              String          @id @default(uuid())
+  goalId          String
+  goal            IEPGoal         @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  recordDate      DateTime
+  progressLevel   ProgressLevel
+
+  // Measurement
+  measurementType String?         // Percentage, frequency, etc.
+  measurementValue Float?
+
+  notes           String?         @db.Text
+
+  recordedBy      String
+  createdAt       DateTime        @default(now())
+
+  @@index([goalId, recordDate])
+}
+
+enum ProgressLevel {
+  NO_PROGRESS
+  MINIMAL_PROGRESS
+  SOME_PROGRESS
+  ADEQUATE_PROGRESS
+  SIGNIFICANT_PROGRESS
+  MASTERED
+  REGRESSION
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRANSITION PLANNING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TransitionPlan {
+  id                    String    @id @default(uuid())
+  iepId                 String    @unique
+  iep                   IEP       @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  // Post-secondary goals
+  educationGoal         String?   @db.Text  // College, vocational, etc.
+  employmentGoal        String?   @db.Text
+  independentLivingGoal String?   @db.Text
+
+  // Assessments
+  transitionAssessments String[]
+  assessmentResults     String?   @db.Text
+
+  // Student participation
+  studentInterests      String?   @db.Text
+  studentPreferences    String?   @db.Text
+
+  // Courses of study
+  coursesOfStudy        String?   @db.Text
+
+  // Agency involvement
+  agencyInvolvement     Json?     // External agencies
+
+  // Age of majority
+  ageOfMajorityDiscussed Boolean  @default(false)
+  transferOfRightsDate  DateTime?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EVALUATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Evaluation {
+  id                String          @id @default(uuid())
+  tenantId          String
+  studentId         String
+  student           Student         @relation(fields: [studentId], references: [id])
+
+  evaluationType    EvaluationType
+
+  // Dates
+  referralDate      DateTime?
+  consentDate       DateTime?
+  evaluationDate    DateTime?
+  reportDate        DateTime?
+
+  // Status
+  status            EvalStatus      @default(PENDING)
+
+  // Areas evaluated
+  areasEvaluated    String[]
+
+  // Results
+  eligibilityDetermined Boolean?
+  eligibilityCategory   String?
+  findings              String?     @db.Text
+  recommendations       String?     @db.Text
+
+  // Evaluators
+  evaluators        Json?           // List of evaluators and roles
+
+  // Documents
+  reportPath        String?
+
+  createdBy         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([tenantId, studentId])
+  @@index([tenantId, status])
+}
+
+enum EvaluationType {
+  INITIAL
+  REEVALUATION
+  INDEPENDENT
+  FUNCTIONAL_BEHAVIOR
+  ASSISTIVE_TECHNOLOGY
+  TRANSITION
+  OTHER
+}
+
+enum EvalStatus {
+  PENDING
+  CONSENT_REQUESTED
+  CONSENT_RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AMENDMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model IEPAmendment {
+  id              String    @id @default(uuid())
+  iepId           String
+  iep             IEP       @relation(fields: [iepId], references: [id], onDelete: Cascade)
+
+  amendmentDate   DateTime
+  reason          String    @db.Text
+  changesDescription String @db.Text
+
+  // What was changed
+  sectionsAmended String[]
+
+  // Approval
+  parentConsent   Boolean   @default(false)
+  consentDate     DateTime?
+
+  createdBy       String
+  createdAt       DateTime  @default(now())
+
+  @@index([iepId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COMPLIANCE TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ComplianceAlert {
+  id              String          @id @default(uuid())
+  tenantId        String
+
+  alertType       ComplianceAlertType
+  severity        String          // Low, Medium, High, Critical
+
+  studentId       String?
+  iepId           String?
+
+  description     String
+  dueDate         DateTime?
+
+  status          AlertStatus     @default(OPEN)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolution      String?
+
+  createdAt       DateTime        @default(now())
+
+  @@index([tenantId, status])
+  @@index([tenantId, alertType])
+  @@index([tenantId, dueDate])
+}
+
+enum ComplianceAlertType {
+  ANNUAL_REVIEW_DUE
+  REEVALUATION_DUE
+  INITIAL_EVALUATION_TIMELINE
+  CONSENT_PENDING
+  MEETING_NOT_SCHEDULED
+  PROGRESS_REPORT_DUE
+  TRANSITION_PLAN_REQUIRED
+  SERVICE_NOT_PROVIDED
+  PARENT_NOTIFICATION_REQUIRED
+}
+
+enum AlertStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
