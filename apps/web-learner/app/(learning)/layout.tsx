@@ -37,10 +37,16 @@ export default async function LearningLayout({ children }: { children: ReactNode
               📚 My Courses
             </Link>
             <Link
-              href="/progress"
+              href="/goals"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
             >
-              📊 Progress
+              🎯 Goals
+            </Link>
+            <Link
+              href="/assessments"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              📝 Assessments
             </Link>
             <Link
               href="/games"
@@ -81,9 +87,13 @@ export default async function LearningLayout({ children }: { children: ReactNode
             <span className="text-xl">📚</span>
             Courses
           </Link>
-          <Link href="/progress" className="flex flex-col items-center gap-1 text-xs text-slate-600">
-            <span className="text-xl">📊</span>
-            Progress
+          <Link href="/goals" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">🎯</span>
+            Goals
+          </Link>
+          <Link href="/assessments" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">📝</span>
+            Tests
           </Link>
           <Link href="/games" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🎮</span>

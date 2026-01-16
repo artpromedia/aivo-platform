@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 const navItems = [
   { href: '/', label: 'Home' },
   { href: '/classrooms', label: 'Classrooms' },
+  { href: '/gradebook', label: 'Gradebook' },
+  { href: '/iep', label: 'IEP Manager' },
   { href: '/library', label: 'Library' },
   { href: '/planning', label: 'Planning' },
 ];
