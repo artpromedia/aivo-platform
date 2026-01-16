@@ -1,0 +1,214 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# AIVO Model Registry Service - Kubernetes Manifests
+# ══════════════════════════════════════════════════════════════════════════════
+# AI/ML model versioning and lifecycle management
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: model-registry-svc
+  namespace: aivo
+  labels:
+    app: model-registry-svc
+    app.kubernetes.io/name: model-registry-svc
+    app.kubernetes.io/component: ml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-registry-svc
+  namespace: aivo
+  labels:
+    app: model-registry-svc
+    app.kubernetes.io/name: model-registry-svc
+    app.kubernetes.io/component: ml
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: model-registry-svc
+  template:
+    metadata:
+      labels:
+        app: model-registry-svc
+        app.kubernetes.io/name: model-registry-svc
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4051"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: model-registry-svc
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1000
+      containers:
+        - name: model-registry-svc
+          image: aivo/model-registry-svc:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 4051
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "4051"
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: model-registry-svc-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: model-registry-svc-secrets
+                  key: redis-url
+            - name: NATS_URL
+              value: "nats://nats:4222"
+            - name: NATS_ENABLED
+              value: "true"
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: model-registry-svc-config
+                  key: s3-bucket
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: model-registry-svc-config
+                  key: aws-region
+            - name: JWT_PUBLIC_KEY_PATH
+              value: "/etc/secrets/jwt/public.pem"
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: internal-api-keys
+                  key: model-registry-svc
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /etc/secrets/jwt
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4051
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4051
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: jwt-keys
+          secret:
+            secretName: jwt-keys
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: model-registry-svc
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-registry-svc
+  namespace: aivo
+  labels:
+    app: model-registry-svc
+    app.kubernetes.io/name: model-registry-svc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 4051
+      targetPort: 4051
+      protocol: TCP
+  selector:
+    app: model-registry-svc
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: model-registry-svc
+  namespace: aivo
+  labels:
+    app: model-registry-svc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: model-registry-svc
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: model-registry-svc-config
+  namespace: aivo
+  labels:
+    app: model-registry-svc
+data:
+  s3-bucket: "aivo-model-registry"
+  aws-region: "us-east-1"
+  max-artifact-size-bytes: "10737418240"
+  presigned-url-expires-sec: "3600"
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: model-registry-svc
+  namespace: aivo
+  labels:
+    app: model-registry-svc
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: model-registry-svc

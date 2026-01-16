@@ -1,0 +1,41 @@
+{
+  "name": "@aivo/model-registry-svc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI/ML model versioning and lifecycle management service",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@aivo/events": "workspace:*",
+    "@aivo/ts-rbac": "workspace:*",
+    "@aivo/ts-shared": "workspace:*",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+    "@prisma/client": "^5.22.0",
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^5.0.1",
+    "ioredis": "^5.4.1",
+    "jose": "^5.9.6",
+    "semver": "^7.6.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/semver": "^7.5.8",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}

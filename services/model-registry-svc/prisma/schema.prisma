@@ -1,0 +1,410 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Model Registry Service - Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+// AI/ML model versioning and lifecycle management
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Model lifecycle stages
+enum ModelStage {
+  DRAFT           // Initial development
+  VALIDATION      // Under validation/testing
+  STAGING         // Ready for staging deployment
+  PRODUCTION      // Approved for production
+  ARCHIVED        // No longer active but preserved
+  DEPRECATED      // Marked for removal
+}
+
+/// Model framework types
+enum ModelFramework {
+  PYTORCH
+  TENSORFLOW
+  ONNX
+  SKLEARN
+  XGBOOST
+  LIGHTGBM
+  HUGGINGFACE
+  OPENAI
+  ANTHROPIC
+  CUSTOM
+}
+
+/// Model task types
+enum ModelTask {
+  TEXT_CLASSIFICATION
+  TEXT_GENERATION
+  TEXT_EMBEDDING
+  QUESTION_ANSWERING
+  SUMMARIZATION
+  TRANSLATION
+  SENTIMENT_ANALYSIS
+  NER
+  IMAGE_CLASSIFICATION
+  OBJECT_DETECTION
+  SPEECH_TO_TEXT
+  TEXT_TO_SPEECH
+  RECOMMENDATION
+  REGRESSION
+  CLUSTERING
+  CUSTOM
+}
+
+/// Artifact types
+enum ArtifactType {
+  MODEL_WEIGHTS      // Model weights/parameters
+  CONFIG             // Model configuration
+  TOKENIZER          // Tokenizer files
+  VOCABULARY         // Vocabulary files
+  METADATA           // Additional metadata
+  ONNX_EXPORT        // ONNX exported model
+  TENSORRT           // TensorRT optimized
+  CHECKPOINT         // Training checkpoint
+  EVALUATION         // Evaluation results
+  SAMPLE_DATA        // Sample input/output data
+}
+
+/// Deployment status
+enum DeploymentStatus {
+  PENDING
+  DEPLOYING
+  RUNNING
+  FAILED
+  STOPPED
+  SCALING
+}
+
+/// Deployment environment
+enum DeploymentEnv {
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CORE MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Registered ML model
+model Model {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+
+  // Basic info
+  name            String         // Unique name within tenant
+  displayName     String         // Human-readable name
+  description     String?        // Model description
+
+  // Classification
+  framework       ModelFramework
+  task            ModelTask
+  tags            String[]       @default([])
+
+  // Ownership
+  ownerId         String         @db.Uuid  // User who created/owns the model
+  ownerEmail      String?
+  teamId          String?        @db.Uuid  // Optional team ownership
+
+  // Settings
+  isPublic        Boolean        @default(false) // Visible to other tenants?
+  allowFineTune   Boolean        @default(false) // Can be fine-tuned?
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  versions        ModelVersion[]
+  deployments     Deployment[]
+  accessGrants    ModelAccess[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([tenantId, framework])
+  @@index([tenantId, task])
+  @@index([tenantId, ownerId])
+  @@index([tags])
+}
+
+/// Version of a model with specific weights/config
+model ModelVersion {
+  id              String         @id @default(uuid()) @db.Uuid
+  modelId         String         @db.Uuid
+
+  // Version info
+  version         String         // Semantic version (e.g., "1.2.3")
+  versionNumber   Int            // Auto-incrementing version number
+  description     String?        // Version-specific notes
+  changelog       String?        // What changed in this version
+
+  // Lifecycle
+  stage           ModelStage     @default(DRAFT)
+  stageChangedAt  DateTime?      // When stage last changed
+  stageChangedBy  String?        @db.Uuid
+
+  // Source/lineage
+  parentVersionId String?        @db.Uuid  // If fine-tuned from another version
+  sourceType      String?        // "training", "fine-tune", "import", etc.
+  trainingJobId   String?        // Reference to training job if applicable
+
+  // Technical details
+  inputSchema     Json?          // Expected input format
+  outputSchema    Json?          // Expected output format
+  hyperparameters Json?          // Training hyperparameters
+  modelConfig     Json?          // Model configuration
+
+  // Performance baseline
+  baselineMetrics Json?          // Metrics at registration time
+
+  // Approval workflow
+  approvedAt      DateTime?
+  approvedBy      String?        @db.Uuid
+  approvalNotes   String?
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  createdBy       String         @db.Uuid
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  model           Model          @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  parentVersion   ModelVersion?  @relation("VersionLineage", fields: [parentVersionId], references: [id])
+  childVersions   ModelVersion[] @relation("VersionLineage")
+  artifacts       Artifact[]
+  metrics         ModelMetric[]
+  deployments     Deployment[]
+
+  @@unique([modelId, version])
+  @@unique([modelId, versionNumber])
+  @@index([modelId])
+  @@index([stage])
+  @@index([createdAt])
+}
+
+/// Model artifact (files, weights, etc.)
+model Artifact {
+  id              String         @id @default(uuid()) @db.Uuid
+  versionId       String         @db.Uuid
+
+  // Artifact info
+  type            ArtifactType
+  name            String         // Filename or identifier
+  description     String?
+
+  // Storage
+  storageUri      String         // S3 URI or storage path
+  storageBucket   String?        // S3 bucket name
+  storageKey      String?        // S3 object key
+  sizeBytes       BigInt         // File size
+  checksum        String         // SHA-256 hash
+  checksumAlgo    String         @default("sha256")
+
+  // Metadata
+  mimeType        String?        // Content type
+  metadata        Json?          // Additional metadata
+
+  // Timestamps
+  uploadedAt      DateTime       @default(now())
+  uploadedBy      String         @db.Uuid
+
+  // Relations
+  version         ModelVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, type, name])
+  @@index([versionId])
+  @@index([type])
+}
+
+/// Model metrics (performance, evaluation results)
+model ModelMetric {
+  id              String         @id @default(uuid()) @db.Uuid
+  versionId       String         @db.Uuid
+
+  // Metric identification
+  name            String         // e.g., "accuracy", "f1_score", "latency_p99"
+  category        String         // e.g., "accuracy", "performance", "fairness"
+
+  // Value
+  value           Float
+  unit            String?        // e.g., "percent", "ms", "tokens/sec"
+
+  // Context
+  datasetId       String?        // Which dataset was used
+  datasetName     String?
+  splitName       String?        // "train", "validation", "test"
+  evaluationConfig Json?         // Evaluation parameters
+
+  // Timestamps
+  recordedAt      DateTime       @default(now())
+  recordedBy      String?        @db.Uuid
+
+  // Relations
+  version         ModelVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@index([versionId, name])
+  @@index([versionId, category])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEPLOYMENT TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Model deployment instance
+model Deployment {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @db.Uuid
+
+  modelId         String           @db.Uuid
+  versionId       String           @db.Uuid
+
+  // Deployment info
+  name            String           // Deployment name/identifier
+  environment     DeploymentEnv
+  status          DeploymentStatus @default(PENDING)
+
+  // Endpoint
+  endpointUrl     String?          // Inference endpoint URL
+  endpointType    String?          // "rest", "grpc", "batch"
+
+  // Infrastructure
+  instanceType    String?          // e.g., "gpu.t4.medium"
+  replicas        Int              @default(1)
+  minReplicas     Int              @default(1)
+  maxReplicas     Int              @default(10)
+
+  // Configuration
+  config          Json?            // Deployment configuration
+  envVars         Json?            // Environment variables (encrypted)
+
+  // Resource tracking
+  resourceId      String?          // Cloud resource ID
+  region          String?          // Deployment region
+
+  // Lifecycle
+  deployedAt      DateTime?
+  deployedBy      String?          @db.Uuid
+  stoppedAt       DateTime?
+  stoppedBy       String?          @db.Uuid
+  lastHealthCheck DateTime?
+  healthStatus    String?          // "healthy", "unhealthy", "unknown"
+
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  model           Model            @relation(fields: [modelId], references: [id])
+  version         ModelVersion     @relation(fields: [versionId], references: [id])
+  usageRecords    DeploymentUsage[]
+
+  @@unique([tenantId, name, environment])
+  @@index([tenantId])
+  @@index([modelId])
+  @@index([versionId])
+  @@index([status])
+  @@index([environment])
+}
+
+/// Deployment usage metrics
+model DeploymentUsage {
+  id              String         @id @default(uuid()) @db.Uuid
+  deploymentId    String         @db.Uuid
+
+  // Time bucket
+  periodStart     DateTime
+  periodEnd       DateTime
+
+  // Usage metrics
+  requestCount    Int            @default(0)
+  successCount    Int            @default(0)
+  errorCount      Int            @default(0)
+
+  // Latency (in milliseconds)
+  latencyP50      Float?
+  latencyP90      Float?
+  latencyP99      Float?
+  latencyAvg      Float?
+
+  // Throughput
+  tokensIn        BigInt?        // Total input tokens
+  tokensOut       BigInt?        // Total output tokens
+
+  // Relations
+  deployment      Deployment     @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+
+  @@unique([deploymentId, periodStart])
+  @@index([deploymentId, periodStart])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCESS CONTROL
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Model access grants (beyond tenant-level access)
+model ModelAccess {
+  id              String         @id @default(uuid()) @db.Uuid
+  modelId         String         @db.Uuid
+
+  // Grantee
+  granteeType     String         // "user", "team", "tenant"
+  granteeId       String         @db.Uuid
+
+  // Permissions
+  canRead         Boolean        @default(true)
+  canDeploy       Boolean        @default(false)
+  canFineTune     Boolean        @default(false)
+  canManage       Boolean        @default(false)
+
+  // Lifecycle
+  grantedAt       DateTime       @default(now())
+  grantedBy       String         @db.Uuid
+  expiresAt       DateTime?
+
+  // Relations
+  model           Model          @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, granteeType, granteeId])
+  @@index([modelId])
+  @@index([granteeType, granteeId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODEL REGISTRY CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tenant-level registry settings
+model RegistrySettings {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @unique @db.Uuid
+
+  // Approval settings
+  requireApprovalForProduction Boolean @default(true)
+  requireApprovalForStaging    Boolean @default(false)
+  approverRoles                String[] @default(["ml_admin", "ml_lead"])
+
+  // Storage settings
+  storageBucket                String?
+  storagePrefix                String?
+  maxArtifactSizeBytes         BigInt   @default(10737418240) // 10GB
+
+  // Retention
+  archiveAfterDays             Int?     // Auto-archive after N days of inactivity
+  deleteArchivedAfterDays      Int?     // Delete archived models after N days
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
