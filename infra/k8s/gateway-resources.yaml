@@ -219,6 +219,7 @@ spec:
             matchLabels:
               name: aivo
       ports:
+        # Core services (3000-3199)
         - protocol: TCP
           port: 3000
         - protocol: TCP
@@ -235,6 +236,37 @@ spec:
           port: 3060
         - protocol: TCP
           port: 3100
+        - protocol: TCP
+          port: 3110
+        - protocol: TCP
+          port: 3120
+        - protocol: TCP
+          port: 3130
+        - protocol: TCP
+          port: 3140
+        # Extended services (4060-4100)
+        - protocol: TCP
+          port: 4060  # event-collector-svc
+        - protocol: TCP
+          port: 4061  # legal-hold-svc
+        - protocol: TCP
+          port: 4070  # iep-svc
+        - protocol: TCP
+          port: 4071  # sel-svc
+        - protocol: TCP
+          port: 4072  # residency-svc
+        - protocol: TCP
+          port: 4073  # model-trainer-svc
+        - protocol: TCP
+          port: 4074  # search-svc
+        - protocol: TCP
+          port: 4075  # orchestrator-svc
+        - protocol: TCP
+          port: 4076  # approval-svc
+        - protocol: TCP
+          port: 4077  # game-gen-svc
+        - protocol: TCP
+          port: 4078  # coursework-ingest-svc
     # Allow to Redis
     - to:
         - podSelector:
@@ -282,6 +314,7 @@ spec:
             matchLabels:
               name: aivo
       ports:
+        # Core services (3000-3199)
         - protocol: TCP
           port: 3000
         - protocol: TCP
@@ -298,6 +331,37 @@ spec:
           port: 3060
         - protocol: TCP
           port: 3100
+        - protocol: TCP
+          port: 3110
+        - protocol: TCP
+          port: 3120
+        - protocol: TCP
+          port: 3130
+        - protocol: TCP
+          port: 3140
+        # Extended services (4060-4100)
+        - protocol: TCP
+          port: 4060  # event-collector-svc
+        - protocol: TCP
+          port: 4061  # legal-hold-svc
+        - protocol: TCP
+          port: 4070  # iep-svc
+        - protocol: TCP
+          port: 4071  # sel-svc
+        - protocol: TCP
+          port: 4072  # residency-svc
+        - protocol: TCP
+          port: 4073  # model-trainer-svc
+        - protocol: TCP
+          port: 4074  # search-svc
+        - protocol: TCP
+          port: 4075  # orchestrator-svc
+        - protocol: TCP
+          port: 4076  # approval-svc
+        - protocol: TCP
+          port: 4077  # game-gen-svc
+        - protocol: TCP
+          port: 4078  # coursework-ingest-svc
     # Allow DNS
     - to:
         - namespaceSelector: {}

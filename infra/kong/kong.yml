@@ -156,6 +156,146 @@ services:
       - assessment
 
   # ---------------------------------------------------------------------------
+  # Event Collector Service (High-throughput telemetry)
+  # ---------------------------------------------------------------------------
+  - name: event-collector-svc
+    url: http://host.docker.internal:4060
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    retries: 2
+    tags:
+      - telemetry
+      - high-throughput
+
+  # ---------------------------------------------------------------------------
+  # Legal Hold Service (E-discovery and litigation)
+  # ---------------------------------------------------------------------------
+  - name: legal-hold-svc
+    url: http://host.docker.internal:4061
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - compliance
+      - legal
+
+  # ---------------------------------------------------------------------------
+  # IEP Service (Individualized Education Program - IDEA compliance)
+  # ---------------------------------------------------------------------------
+  - name: iep-svc
+    url: http://host.docker.internal:4070
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - education
+      - compliance
+
+  # ---------------------------------------------------------------------------
+  # SEL Service (Social-Emotional Learning - CASEL framework)
+  # ---------------------------------------------------------------------------
+  - name: sel-svc
+    url: http://host.docker.internal:4071
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - education
+      - wellness
+
+  # ---------------------------------------------------------------------------
+  # Data Residency Service (Geographic data sovereignty)
+  # ---------------------------------------------------------------------------
+  - name: residency-svc
+    url: http://host.docker.internal:4072
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    retries: 2
+    tags:
+      - compliance
+      - privacy
+
+  # ---------------------------------------------------------------------------
+  # Model Trainer Service (ML training)
+  # ---------------------------------------------------------------------------
+  - name: model-trainer-svc
+    url: http://host.docker.internal:4073
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 120000
+    retries: 1
+    tags:
+      - ml
+      - ai
+
+  # ---------------------------------------------------------------------------
+  # Search Service (Full-text and vector search)
+  # ---------------------------------------------------------------------------
+  - name: search-svc
+    url: http://host.docker.internal:4074
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    retries: 2
+    tags:
+      - search
+
+  # ---------------------------------------------------------------------------
+  # Orchestrator Service (Workflow coordination)
+  # ---------------------------------------------------------------------------
+  - name: orchestrator-svc
+    url: http://host.docker.internal:4075
+    connect_timeout: 5000
+    write_timeout: 30000
+    read_timeout: 60000
+    retries: 2
+    tags:
+      - workflow
+
+  # ---------------------------------------------------------------------------
+  # Approval Service (Workflow approvals)
+  # ---------------------------------------------------------------------------
+  - name: approval-svc
+    url: http://host.docker.internal:4076
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - workflow
+
+  # ---------------------------------------------------------------------------
+  # Game Generation Service (AI-powered educational games)
+  # ---------------------------------------------------------------------------
+  - name: game-gen-svc
+    url: http://host.docker.internal:4077
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 120000
+    retries: 1
+    tags:
+      - ai
+      - content
+
+  # ---------------------------------------------------------------------------
+  # Coursework Ingest Service (Content import/processing)
+  # ---------------------------------------------------------------------------
+  - name: coursework-ingest-svc
+    url: http://host.docker.internal:4078
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 120000
+    retries: 1
+    tags:
+      - content
+      - ingest
+
+  # ---------------------------------------------------------------------------
   # Apollo Router (GraphQL)
   # ---------------------------------------------------------------------------
   - name: apollo-router
@@ -558,6 +698,265 @@ routes:
           redis_host: redis
           redis_port: 6379
           limit_by: consumer
+
+  # ---------------------------------------------------------------------------
+  # Event Collector Routes (High-throughput, minimal auth overhead)
+  # ---------------------------------------------------------------------------
+  - name: event-collector-routes
+    paths:
+      - /api/v1/events
+    methods:
+      - POST
+    strip_path: false
+    service: event-collector-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 10000
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Legal Hold Routes (Admin only - compliance/legal)
+  # ---------------------------------------------------------------------------
+  - name: legal-hold-routes
+    paths:
+      - /api/v1/legal-holds
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: legal-hold-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # IEP Routes (IDEA compliance required)
+  # ---------------------------------------------------------------------------
+  - name: iep-routes
+    paths:
+      - /api/v1/ieps
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+    strip_path: false
+    service: iep-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: learner_scope
+        config:
+          auth_service_url: http://host.docker.internal:3010
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # SEL Routes (Social-Emotional Learning - requires consent)
+  # ---------------------------------------------------------------------------
+  - name: sel-routes
+    paths:
+      - /api/v1/sel
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+    strip_path: false
+    service: sel-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: consent_gate
+        config:
+          consent_service_url: http://host.docker.internal:3020
+          required_consent_type: SEL_TRACKING
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Data Residency Routes (Compliance/Admin)
+  # ---------------------------------------------------------------------------
+  - name: residency-routes
+    paths:
+      - /api/v1/residency
+    methods:
+      - GET
+      - POST
+      - PUT
+    strip_path: false
+    service: residency-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Model Trainer Routes (Internal/Admin - ML operations)
+  # ---------------------------------------------------------------------------
+  - name: model-trainer-routes
+    paths:
+      - /api/v1/ml/training
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: model-trainer-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 50
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Search Routes (Full-text and vector search)
+  # ---------------------------------------------------------------------------
+  - name: search-routes
+    paths:
+      - /api/v1/search
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: search-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 500
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Orchestrator Routes (Workflow management)
+  # ---------------------------------------------------------------------------
+  - name: orchestrator-routes
+    paths:
+      - /api/v1/workflows
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: orchestrator-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Approval Routes (Workflow approvals)
+  # ---------------------------------------------------------------------------
+  - name: approval-routes
+    paths:
+      - /api/v1/approvals
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: approval-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Game Generation Routes (AI-powered games - requires consent)
+  # ---------------------------------------------------------------------------
+  - name: game-gen-routes
+    paths:
+      - /api/v1/games/generate
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    service: game-gen-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: consent_gate
+        config:
+          consent_service_url: http://host.docker.internal:3020
+          required_consent_type: AI_CONTENT
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+          limit_by: consumer
+
+  # ---------------------------------------------------------------------------
+  # Coursework Ingest Routes (Content import)
+  # ---------------------------------------------------------------------------
+  - name: coursework-ingest-routes
+    paths:
+      - /api/v1/coursework/ingest
+    methods:
+      - POST
+      - PUT
+    strip_path: false
+    service: coursework-ingest-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
 
 # =============================================================================
 # CONSUMERS - API consumers (tenants/users with rate limit tiers)
