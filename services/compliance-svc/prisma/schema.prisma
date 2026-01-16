@@ -1,0 +1,643 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Compliance Service - Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+// Multi-framework compliance monitoring and dashboard
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Supported compliance frameworks
+enum Framework {
+  FERPA       // Family Educational Rights and Privacy Act
+  COPPA       // Children's Online Privacy Protection Act
+  GDPR        // General Data Protection Regulation
+  CCPA        // California Consumer Privacy Act
+  SOC2        // Service Organization Control 2
+  HIPAA       // Health Insurance Portability and Accountability Act
+  PCI_DSS     // Payment Card Industry Data Security Standard
+  ISO27001    // Information Security Management
+  NIST_CSF    // NIST Cybersecurity Framework
+  CIPA        // Children's Internet Protection Act
+  IDEA        // Individuals with Disabilities Education Act
+  CUSTOM      // Custom/internal framework
+}
+
+/// Control status
+enum ControlStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  IMPLEMENTED
+  NOT_APPLICABLE
+  PARTIALLY_IMPLEMENTED
+}
+
+/// Assessment status
+enum AssessmentStatus {
+  DRAFT
+  IN_PROGRESS
+  UNDER_REVIEW
+  COMPLETED
+  ARCHIVED
+}
+
+/// Finding severity
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}
+
+/// Finding status
+enum FindingStatus {
+  OPEN
+  IN_REMEDIATION
+  REMEDIATED
+  ACCEPTED_RISK
+  FALSE_POSITIVE
+  CLOSED
+}
+
+/// Evidence type
+enum EvidenceType {
+  DOCUMENT
+  SCREENSHOT
+  LOG_EXPORT
+  CONFIGURATION
+  POLICY
+  PROCEDURE
+  TRAINING_RECORD
+  AUDIT_REPORT
+  ATTESTATION
+  AUTOMATED_CHECK
+  OTHER
+}
+
+/// Evidence status
+enum EvidenceStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+  SUPERSEDED
+}
+
+/// Remediation priority
+enum RemediationPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/// Remediation status
+enum RemediationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FRAMEWORK & CONTROLS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Compliance framework configuration for a tenant
+model TenantFramework {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+
+  framework       Framework
+  displayName     String         // Custom name if desired
+  description     String?
+
+  // Configuration
+  isActive        Boolean        @default(true)
+  priority        Int            @default(0)  // For ordering
+
+  // Scope
+  applicableFrom  DateTime?      // When framework became applicable
+  applicableUntil DateTime?      // When it will cease to apply
+
+  // Metadata
+  regulatoryBody  String?        // e.g., "U.S. Department of Education"
+  jurisdiction    String?        // e.g., "United States", "European Union"
+  version         String?        // Framework version
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  enabledBy       String?        @db.Uuid
+
+  // Relations
+  controls        Control[]
+  assessments     Assessment[]
+
+  @@unique([tenantId, framework])
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
+/// Individual control/requirement within a framework
+model Control {
+  id                  String         @id @default(uuid()) @db.Uuid
+  tenantFrameworkId   String         @db.Uuid
+
+  // Control identification
+  controlId           String         // Framework-specific ID (e.g., "164.312(a)(1)")
+  title               String
+  description         String?
+  guidance            String?        // Implementation guidance
+
+  // Categorization
+  category            String?        // e.g., "Access Control", "Data Protection"
+  subcategory         String?
+  domain              String?        // High-level domain
+
+  // Requirements
+  requirement         String?        // Specific requirement text
+  implementationSpec  String?        // How to implement
+
+  // Classification
+  isMandatory         Boolean        @default(true)
+  isAutomatable       Boolean        @default(false)
+  frequency           String?        // How often to verify (e.g., "annual", "continuous")
+
+  // Current status
+  status              ControlStatus  @default(NOT_STARTED)
+  statusUpdatedAt     DateTime?
+  statusUpdatedBy     String?        @db.Uuid
+
+  // Implementation details
+  implementationNotes String?
+  implementedAt       DateTime?
+  implementedBy       String?        @db.Uuid
+
+  // Risk if not implemented
+  riskLevel           FindingSeverity?
+
+  // Ownership
+  ownerId             String?        @db.Uuid
+  ownerEmail          String?
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Relations
+  tenantFramework     TenantFramework @relation(fields: [tenantFrameworkId], references: [id], onDelete: Cascade)
+  evidence            ControlEvidence[]
+  findings            Finding[]
+  mappings            ControlMapping[] @relation("SourceControl")
+  mappedFrom          ControlMapping[] @relation("TargetControl")
+  assessmentControls  AssessmentControl[]
+
+  @@unique([tenantFrameworkId, controlId])
+  @@index([tenantFrameworkId])
+  @@index([status])
+  @@index([category])
+  @@index([ownerId])
+}
+
+/// Mapping between controls across frameworks
+model ControlMapping {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @db.Uuid
+
+  sourceControlId   String         @db.Uuid
+  targetControlId   String         @db.Uuid
+
+  // Mapping details
+  mappingType       String         // "equivalent", "partial", "related"
+  confidence        Float          @default(1.0)  // 0-1 confidence score
+  notes             String?
+
+  // Source
+  mappedBy          String?        @db.Uuid  // null if auto-mapped
+  isAutoMapped      Boolean        @default(false)
+
+  createdAt         DateTime       @default(now())
+
+  // Relations
+  sourceControl     Control        @relation("SourceControl", fields: [sourceControlId], references: [id], onDelete: Cascade)
+  targetControl     Control        @relation("TargetControl", fields: [targetControlId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceControlId, targetControlId])
+  @@index([tenantId])
+  @@index([sourceControlId])
+  @@index([targetControlId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSESSMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Compliance assessment/audit
+model Assessment {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @db.Uuid
+  tenantFrameworkId String            @db.Uuid
+
+  // Assessment info
+  name              String
+  description       String?
+  assessmentType    String            // "internal", "external", "self", "certification"
+
+  // Scope
+  scopeDescription  String?
+  inScopeServices   String[]          @default([])
+  excludedServices  String[]          @default([])
+
+  // Period
+  periodStart       DateTime
+  periodEnd         DateTime
+
+  // Status
+  status            AssessmentStatus  @default(DRAFT)
+  statusChangedAt   DateTime?
+  statusChangedBy   String?           @db.Uuid
+
+  // Ownership
+  leadAssessorId    String?           @db.Uuid
+  leadAssessorEmail String?
+  assessorTeam      String[]          @default([])
+
+  // Results summary
+  totalControls     Int               @default(0)
+  passedControls    Int               @default(0)
+  failedControls    Int               @default(0)
+  naControls        Int               @default(0)
+  complianceScore   Float?            // Percentage
+
+  // Completion
+  startedAt         DateTime?
+  completedAt       DateTime?
+  signedOffAt       DateTime?
+  signedOffBy       String?           @db.Uuid
+
+  // External audit details
+  auditorFirm       String?
+  auditorContact    String?
+  reportUrl         String?
+
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  createdBy         String            @db.Uuid
+
+  // Relations
+  tenantFramework   TenantFramework   @relation(fields: [tenantFrameworkId], references: [id])
+  controls          AssessmentControl[]
+  findings          Finding[]
+
+  @@index([tenantId])
+  @@index([tenantFrameworkId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+}
+
+/// Control evaluation within an assessment
+model AssessmentControl {
+  id              String            @id @default(uuid()) @db.Uuid
+  assessmentId    String            @db.Uuid
+  controlId       String            @db.Uuid
+
+  // Evaluation
+  status          ControlStatus     @default(NOT_STARTED)
+  evaluationNotes String?
+  testedAt        DateTime?
+  testedBy        String?           @db.Uuid
+
+  // Test results
+  testProcedure   String?           // What was tested
+  testResult      String?           // "pass", "fail", "partial", "not_tested"
+  testEvidence    String?           // Reference to evidence
+
+  // Timestamps
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  assessment      Assessment        @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  control         Control           @relation(fields: [controlId], references: [id])
+
+  @@unique([assessmentId, controlId])
+  @@index([assessmentId])
+  @@index([controlId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EVIDENCE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Evidence attached to a control
+model ControlEvidence {
+  id              String           @id @default(uuid()) @db.Uuid
+  controlId       String           @db.Uuid
+  evidenceId      String           @db.Uuid
+
+  // Mapping details
+  relevance       String?          // How this evidence relates to the control
+  isPrimary       Boolean          @default(false)
+
+  attachedAt      DateTime         @default(now())
+  attachedBy      String           @db.Uuid
+
+  // Relations
+  control         Control          @relation(fields: [controlId], references: [id], onDelete: Cascade)
+  evidence        Evidence         @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([controlId, evidenceId])
+  @@index([controlId])
+  @@index([evidenceId])
+}
+
+/// Evidence document/artifact
+model Evidence {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @db.Uuid
+
+  // Evidence info
+  title           String
+  description     String?
+  type            EvidenceType
+
+  // Status
+  status          EvidenceStatus   @default(PENDING_REVIEW)
+  reviewedAt      DateTime?
+  reviewedBy      String?          @db.Uuid
+  reviewNotes     String?
+
+  // Validity
+  validFrom       DateTime         @default(now())
+  validUntil      DateTime?        // When evidence expires
+  collectedAt     DateTime         @default(now())
+
+  // Storage
+  fileUrl         String?          // S3 URL
+  fileName        String?
+  fileSize        Int?
+  mimeType        String?
+  checksum        String?
+
+  // For automated evidence
+  sourceSystem    String?          // System that generated evidence
+  sourceQuery     String?          // Query/command used
+  automatedAt     DateTime?
+
+  // Metadata
+  tags            String[]         @default([])
+  metadata        Json?
+
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  uploadedBy      String           @db.Uuid
+
+  // Relations
+  controlMappings ControlEvidence[]
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([validUntil])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FINDINGS & REMEDIATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Compliance finding/gap
+model Finding {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @db.Uuid
+
+  // Context
+  assessmentId    String?          @db.Uuid
+  controlId       String?          @db.Uuid
+
+  // Finding details
+  title           String
+  description     String
+  severity        FindingSeverity
+  status          FindingStatus    @default(OPEN)
+
+  // Details
+  rootCause       String?
+  impact          String?          // Business impact
+  likelihood      String?          // Likelihood of occurrence
+  affectedSystems String[]         @default([])
+
+  // Risk scoring
+  riskScore       Float?           // Calculated risk score
+  inherentRisk    Float?           // Risk without controls
+  residualRisk    Float?           // Risk with current controls
+
+  // Timeline
+  identifiedAt    DateTime         @default(now())
+  identifiedBy    String           @db.Uuid
+  dueDate         DateTime?        // When finding should be resolved
+
+  // Resolution
+  resolvedAt      DateTime?
+  resolvedBy      String?          @db.Uuid
+  resolution      String?          // How it was resolved
+  verifiedAt      DateTime?
+  verifiedBy      String?          @db.Uuid
+
+  // If risk accepted
+  riskAcceptedAt  DateTime?
+  riskAcceptedBy  String?          @db.Uuid
+  riskAcceptReason String?
+
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  assessment      Assessment?      @relation(fields: [assessmentId], references: [id])
+  control         Control?         @relation(fields: [controlId], references: [id])
+  remediations    Remediation[]
+
+  @@index([tenantId])
+  @@index([assessmentId])
+  @@index([controlId])
+  @@index([severity])
+  @@index([status])
+  @@index([dueDate])
+}
+
+/// Remediation plan for a finding
+model Remediation {
+  id              String             @id @default(uuid()) @db.Uuid
+  findingId       String             @db.Uuid
+
+  // Plan details
+  title           String
+  description     String
+  priority        RemediationPriority
+  status          RemediationStatus  @default(NOT_STARTED)
+
+  // Actions
+  actionPlan      String?            // Step-by-step plan
+  mitigatingControl String?          // Temporary mitigation
+
+  // Resources
+  estimatedEffort String?            // e.g., "2 weeks", "40 hours"
+  estimatedCost   Float?
+  actualEffort    String?
+  actualCost      Float?
+
+  // Ownership
+  assigneeId      String?            @db.Uuid
+  assigneeEmail   String?
+  teamId          String?            @db.Uuid
+
+  // Timeline
+  plannedStartDate DateTime?
+  plannedEndDate   DateTime?
+  actualStartDate  DateTime?
+  actualEndDate    DateTime?
+
+  // Progress
+  progressPercent  Int               @default(0)
+  progressNotes    String?
+  blockerNotes     String?
+
+  // Verification
+  verificationPlan String?
+  verifiedAt       DateTime?
+  verifiedBy       String?           @db.Uuid
+
+  // Timestamps
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  createdBy       String             @db.Uuid
+
+  // Relations
+  finding         Finding            @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  tasks           RemediationTask[]
+
+  @@index([findingId])
+  @@index([status])
+  @@index([priority])
+  @@index([assigneeId])
+  @@index([plannedEndDate])
+}
+
+/// Individual task within a remediation plan
+model RemediationTask {
+  id              String             @id @default(uuid()) @db.Uuid
+  remediationId   String             @db.Uuid
+
+  // Task details
+  title           String
+  description     String?
+  orderIndex      Int                @default(0)
+
+  // Status
+  isCompleted     Boolean            @default(false)
+  completedAt     DateTime?
+  completedBy     String?            @db.Uuid
+
+  // Assignment
+  assigneeId      String?            @db.Uuid
+  dueDate         DateTime?
+
+  // Timestamps
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  remediation     Remediation        @relation(fields: [remediationId], references: [id], onDelete: Cascade)
+
+  @@index([remediationId])
+  @@index([assigneeId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COMPLIANCE DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Cached compliance score snapshot
+model ComplianceSnapshot {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  framework       Framework?     // null for overall score
+
+  // Scores
+  overallScore    Float          // 0-100 percentage
+  controlsTotal   Int
+  controlsPassed  Int
+  controlsFailed  Int
+  controlsNA      Int
+  controlsInProgress Int
+
+  // Findings summary
+  findingsOpen    Int            @default(0)
+  findingsCritical Int           @default(0)
+  findingsHigh    Int            @default(0)
+  findingsMedium  Int            @default(0)
+  findingsLow     Int            @default(0)
+
+  // Trend (vs previous snapshot)
+  scoreDelta      Float?         // Change from previous
+  trendDirection  String?        // "up", "down", "stable"
+
+  // Snapshot time
+  snapshotAt      DateTime       @default(now())
+
+  @@index([tenantId, snapshotAt])
+  @@index([tenantId, framework])
+}
+
+/// Compliance alerts/notifications
+model ComplianceAlert {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+
+  // Alert details
+  alertType       String         // "evidence_expiring", "assessment_due", "finding_overdue", etc.
+  title           String
+  message         String
+  severity        FindingSeverity
+
+  // Related entity
+  entityType      String?        // "control", "evidence", "finding", "assessment"
+  entityId        String?        @db.Uuid
+
+  // Status
+  isRead          Boolean        @default(false)
+  readAt          DateTime?
+  readBy          String?        @db.Uuid
+
+  isDismissed     Boolean        @default(false)
+  dismissedAt     DateTime?
+  dismissedBy     String?        @db.Uuid
+
+  // Action
+  actionUrl       String?
+  actionLabel     String?
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  expiresAt       DateTime?
+
+  @@index([tenantId, isRead])
+  @@index([tenantId, alertType])
+  @@index([tenantId, createdAt])
+}
