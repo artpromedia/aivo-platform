@@ -1,0 +1,335 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Audit Service - Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+// Immutable audit logging for compliance and security
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Categories of audit events
+enum AuditCategory {
+  AUTHENTICATION     // Login, logout, password changes, MFA
+  AUTHORIZATION      // Permission changes, role assignments
+  DATA_ACCESS        // Read/write operations on sensitive data
+  DATA_MODIFICATION  // Create, update, delete operations
+  CONFIGURATION      // System/tenant configuration changes
+  SECURITY           // Security events, violations, threats
+  COMPLIANCE         // Compliance-related actions
+  SYSTEM             // System events, maintenance
+  USER_ACTION        // User-initiated actions
+  API_ACCESS         // API calls, integrations
+}
+
+/// Severity levels for audit events
+enum AuditSeverity {
+  DEBUG      // Detailed debugging information
+  INFO       // Normal operational events
+  NOTICE     // Notable but normal events
+  WARNING    // Warning conditions
+  ERROR      // Error conditions
+  CRITICAL   // Critical conditions
+  ALERT      // Action must be taken immediately
+  EMERGENCY  // System is unusable
+}
+
+/// Outcome of the audited action
+enum AuditOutcome {
+  SUCCESS    // Action completed successfully
+  FAILURE    // Action failed
+  PARTIAL    // Action partially completed
+  DENIED     // Action denied (authorization)
+  ERROR      // System error occurred
+}
+
+/// Status of audit exports
+enum ExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+/// Format of audit exports
+enum ExportFormat {
+  JSON
+  CSV
+  PARQUET
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CORE AUDIT LOG
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Immutable audit log entry - APPEND ONLY
+/// No UPDATE or DELETE operations allowed on this table
+model AuditLog {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  // Event identification
+  eventId         String         @unique // Idempotency key for deduplication
+  eventType       String         // e.g., "user.login", "data.export", "role.assign"
+  eventVersion    String         @default("1.0") // Schema version for the event
+
+  // Tenant isolation
+  tenantId        String         @db.Uuid
+
+  // Classification
+  category        AuditCategory
+  severity        AuditSeverity  @default(INFO)
+  outcome         AuditOutcome
+
+  // Actor information (who performed the action)
+  actorId         String?        @db.Uuid  // User ID if authenticated
+  actorType       String         // "user", "service", "system", "anonymous"
+  actorEmail      String?        // Denormalized for quick reference
+  actorRoles      String[]       @default([]) // Roles at time of action
+  actorIpAddress  String?        // Client IP address
+  actorUserAgent  String?        // Client user agent
+  actorSessionId  String?        @db.Uuid  // Session ID if applicable
+
+  // Target information (what was affected)
+  targetType      String?        // Entity type: "user", "content", "tenant", etc.
+  targetId        String?        // Entity ID
+  targetName      String?        // Human-readable name for quick reference
+
+  // Action details
+  action          String         // The action performed: "create", "read", "update", "delete", etc.
+  description     String         // Human-readable description
+
+  // Request context
+  requestId       String?        // Correlation ID for request tracing
+  requestMethod   String?        // HTTP method if applicable
+  requestPath     String?        // Request path if applicable
+
+  // Source service
+  sourceService   String         // Service that generated the event
+  sourceVersion   String?        // Service version
+
+  // Payload
+  metadata        Json           @default("{}") // Additional structured metadata
+  previousState   Json?          // State before change (for modifications)
+  newState        Json?          // State after change (for modifications)
+
+  // Compliance fields
+  dataClassification String?     // "public", "internal", "confidential", "restricted"
+  complianceFlags    String[]    @default([]) // ["FERPA", "COPPA", "GDPR", etc.]
+  retentionPolicy    String?     // Which retention policy applies
+
+  // Integrity
+  checksum        String         // SHA-256 hash of the event data for tamper detection
+  previousHash    String?        // Hash of previous event (blockchain-style chaining)
+
+  // Timestamps (immutable)
+  occurredAt      DateTime       // When the event actually occurred
+  receivedAt      DateTime       @default(now()) // When the audit service received it
+
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, category])
+  @@index([tenantId, eventType])
+  @@index([tenantId, actorId])
+  @@index([tenantId, targetType, targetId])
+  @@index([tenantId, severity])
+  @@index([tenantId, outcome])
+  @@index([occurredAt])
+  @@index([requestId])
+  @@index([checksum])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIT ACCESS LOG (Meta-audit: who looked at the audit logs)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Log of who accessed the audit logs (audit the auditors)
+model AuditAccessLog {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  tenantId        String         @db.Uuid
+
+  // Who accessed
+  accessorId      String         @db.Uuid
+  accessorEmail   String?
+  accessorRoles   String[]       @default([])
+  accessorIp      String?
+
+  // What was accessed
+  accessType      String         // "query", "export", "view_detail"
+  queryFilters    Json?          // What filters were applied
+  recordCount     Int            // How many records were accessed
+
+  // Time range of accessed records
+  dataFromDate    DateTime?
+  dataToDate      DateTime?
+
+  // Request details
+  requestId       String?
+
+  // Timestamp
+  accessedAt      DateTime       @default(now())
+
+  @@index([tenantId, accessedAt])
+  @@index([tenantId, accessorId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIT EXPORT
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Audit export jobs for compliance and e-discovery
+model AuditExport {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  tenantId        String         @db.Uuid
+
+  // Who requested
+  requestedById   String         @db.Uuid
+  requestedByEmail String?
+
+  // Export parameters
+  filters         Json           // Query filters applied
+  fromDate        DateTime       // Start of date range
+  toDate          DateTime       // End of date range
+  format          ExportFormat   @default(JSON)
+
+  // Status
+  status          ExportStatus   @default(PENDING)
+
+  // Results
+  recordCount     Int?           // Total records exported
+  fileSizeBytes   BigInt?        // Size of export file
+  fileUrl         String?        // S3/storage URL for download
+  checksum        String?        // SHA-256 of export file
+
+  // Error handling
+  errorMessage    String?
+  retryCount      Int            @default(0)
+
+  // Lifecycle
+  requestedAt     DateTime       @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime?      // When download link expires
+
+  @@index([tenantId, status])
+  @@index([tenantId, requestedById])
+  @@index([tenantId, requestedAt])
+  @@index([expiresAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIT POLICY
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tenant-specific audit policies
+model AuditPolicy {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  tenantId        String         @db.Uuid
+
+  // Policy name and description
+  name            String
+  description     String?
+
+  // What to audit
+  eventTypes      String[]       // Event types to capture
+  categories      AuditCategory[]
+  minSeverity     AuditSeverity  @default(INFO)
+
+  // Retention
+  retentionDays   Int            @default(2555) // ~7 years default for education
+
+  // Alerting
+  alertOnSeverity AuditSeverity? // Alert when events of this severity or higher
+  alertWebhookUrl String?        // Webhook for alerts
+
+  // Status
+  isActive        Boolean        @default(true)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdById     String?        @db.Uuid
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INTEGRITY VERIFICATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Periodic integrity verification checkpoints
+model IntegrityCheckpoint {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  tenantId        String?        @db.Uuid  // null = global checkpoint
+
+  // Checkpoint details
+  fromEventId     String         @db.Uuid  // First event in range
+  toEventId       String         @db.Uuid  // Last event in range
+  eventCount      Int            // Number of events in range
+
+  // Merkle tree root for the range
+  merkleRoot      String
+
+  // Verification status
+  isVerified      Boolean        @default(false)
+  verifiedAt      DateTime?
+  verificationResult Json?       // Detailed verification results
+
+  createdAt       DateTime       @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([fromEventId])
+  @@index([toEventId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIT ALERTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Alerts generated from audit events
+model AuditAlert {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  tenantId        String         @db.Uuid
+
+  // Alert details
+  title           String
+  description     String
+  severity        AuditSeverity
+
+  // Source event(s)
+  sourceEventIds  String[]       @default([])
+  eventType       String
+  category        AuditCategory
+
+  // Resolution
+  isAcknowledged  Boolean        @default(false)
+  acknowledgedAt  DateTime?
+  acknowledgedById String?       @db.Uuid
+
+  isResolved      Boolean        @default(false)
+  resolvedAt      DateTime?
+  resolvedById    String?        @db.Uuid
+  resolution      String?        // Resolution notes
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+
+  @@index([tenantId, isAcknowledged, isResolved])
+  @@index([tenantId, severity])
+  @@index([tenantId, createdAt])
+}
