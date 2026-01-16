@@ -1,0 +1,396 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Event Collector Service - Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+// High-throughput batch event collection and processing
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Event processing status
+enum EventStatus {
+  PENDING       // Received, waiting for processing
+  PROCESSING    // Currently being processed
+  PROCESSED     // Successfully processed
+  FAILED        // Processing failed
+  DEAD_LETTER   // Moved to dead letter queue
+  SKIPPED       // Skipped (duplicate or filtered)
+}
+
+/// Batch status
+enum BatchStatus {
+  OPEN          // Accepting new events
+  SEALED        // No longer accepting, ready for processing
+  PROCESSING    // Currently being processed
+  COMPLETED     // All events processed
+  PARTIAL       // Some events failed
+  FAILED        // Batch processing failed
+}
+
+/// Event priority
+enum EventPriority {
+  CRITICAL      // Process immediately
+  HIGH          // High priority
+  NORMAL        // Normal priority
+  LOW           // Low priority, can be delayed
+  BULK          // Bulk processing, lowest priority
+}
+
+/// Destination type
+enum DestinationType {
+  NATS          // NATS JetStream
+  KINESIS       // AWS Kinesis
+  SQS           // AWS SQS
+  WEBHOOK       // HTTP webhook
+  INTERNAL      // Internal processing
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EVENT INGESTION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Individual event record
+model Event {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  // Event identification
+  eventId         String         @unique  // Client-provided idempotency key
+  eventType       String         // e.g., "learning.session.started"
+  eventVersion    String         @default("1.0")
+
+  // Source
+  tenantId        String         @db.Uuid
+  sourceService   String         // Service that sent the event
+  sourceInstance  String?        // Instance ID if applicable
+
+  // Payload
+  payload         Json           // Event data
+  payloadSize     Int            // Size in bytes
+
+  // Classification
+  priority        EventPriority  @default(NORMAL)
+  category        String?        // Event category for routing
+
+  // Processing
+  status          EventStatus    @default(PENDING)
+  batchId         String?        @db.Uuid
+  processedAt     DateTime?
+  processingTime  Int?           // Processing time in ms
+
+  // Routing
+  destinations    String[]       @default([])  // Where to send
+  deliveredTo     String[]       @default([])  // Successfully delivered
+
+  // Error handling
+  retryCount      Int            @default(0)
+  maxRetries      Int            @default(3)
+  lastError       String?
+  deadLetteredAt  DateTime?
+
+  // Timestamps
+  occurredAt      DateTime       // When event actually occurred
+  receivedAt      DateTime       @default(now())
+  expiresAt       DateTime?      // TTL for event
+
+  // Correlation
+  correlationId   String?        // For tracing related events
+  causationId     String?        // Event that caused this one
+  sessionId       String?        // Session context
+
+  // Metadata
+  metadata        Json?          // Additional metadata
+  tags            String[]       @default([])
+
+  // Relations
+  batch           EventBatch?    @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId, receivedAt])
+  @@index([tenantId, eventType])
+  @@index([status])
+  @@index([batchId])
+  @@index([priority, status])
+  @@index([correlationId])
+  @@index([receivedAt])
+  @@index([expiresAt])
+}
+
+/// Batch of events for efficient processing
+model EventBatch {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String?        @db.Uuid  // null for multi-tenant batches
+
+  // Batch info
+  batchNumber     BigInt         @default(autoincrement())
+  status          BatchStatus    @default(OPEN)
+
+  // Capacity
+  maxEvents       Int            @default(1000)
+  maxSizeBytes    Int            @default(5242880)  // 5MB
+  currentEvents   Int            @default(0)
+  currentSize     Int            @default(0)
+
+  // Processing
+  priority        EventPriority  @default(NORMAL)
+  processorId     String?        // Worker that's processing
+  startedAt       DateTime?
+  completedAt     DateTime?
+  processingTime  Int?           // Total processing time in ms
+
+  // Results
+  processedCount  Int            @default(0)
+  failedCount     Int            @default(0)
+  skippedCount    Int            @default(0)
+
+  // Lifecycle
+  sealedAt        DateTime?      // When batch was sealed
+  sealReason      String?        // "size", "count", "time", "manual"
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  expiresAt       DateTime?      // TTL for batch
+
+  // Relations
+  events          Event[]
+
+  @@index([tenantId, status])
+  @@index([status, priority])
+  @@index([createdAt])
+  @@index([processorId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEAD LETTER QUEUE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Dead letter queue for failed events
+model DeadLetterEvent {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  // Original event reference
+  originalEventId String         @db.Uuid
+  eventId         String         // Client-provided ID
+  eventType       String
+  tenantId        String         @db.Uuid
+
+  // Payload
+  payload         Json
+  metadata        Json?
+
+  // Failure info
+  failureReason   String
+  failureDetails  Json?          // Stack trace, error details
+  failedAt        DateTime
+  retryCount      Int
+
+  // Resolution
+  isResolved      Boolean        @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?        @db.Uuid
+  resolution      String?        // "reprocessed", "discarded", "manual"
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+
+  @@index([tenantId, isResolved])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([isResolved])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EVENT ROUTING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Event routing rules
+model EventRoute {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String?          @db.Uuid  // null for global routes
+
+  // Route name
+  name            String
+  description     String?
+  isActive        Boolean          @default(true)
+  priority        Int              @default(0)  // Higher = evaluated first
+
+  // Matching rules
+  eventTypePattern String          // Glob pattern: "learning.*", "*.created"
+  sourcePattern   String?          // Source service pattern
+  conditions      Json?            // Additional JSON conditions
+
+  // Destination
+  destinationType DestinationType
+  destinationConfig Json           // Type-specific config
+
+  // Processing options
+  transformTemplate String?        // Optional transformation
+  enrichmentRules Json?           // Data enrichment rules
+  filterRules     Json?           // Filtering rules
+
+  // Rate limiting
+  rateLimitPerSec Int?            // Max events per second
+  rateLimitBurst  Int?            // Burst allowance
+
+  // Retry policy
+  maxRetries      Int             @default(3)
+  retryDelayMs    Int             @default(1000)
+  retryBackoff    Float           @default(2.0)
+
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  createdBy       String?         @db.Uuid
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@index([eventTypePattern])
+}
+
+/// Delivery attempt record
+model DeliveryAttempt {
+  id              String           @id @default(uuid()) @db.Uuid
+  eventId         String           @db.Uuid
+  routeId         String           @db.Uuid
+
+  // Attempt info
+  attemptNumber   Int
+  destinationType DestinationType
+  destination     String           // Specific destination identifier
+
+  // Result
+  isSuccess       Boolean
+  statusCode      Int?             // HTTP status or equivalent
+  responseTime    Int?             // Response time in ms
+  errorMessage    String?
+  errorDetails    Json?
+
+  // Timestamps
+  attemptedAt     DateTime         @default(now())
+
+  @@index([eventId])
+  @@index([routeId])
+  @@index([attemptedAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// METRICS & MONITORING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Aggregated metrics by time bucket
+model EventMetrics {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String?        @db.Uuid  // null for system-wide
+
+  // Time bucket
+  bucketStart     DateTime
+  bucketEnd       DateTime
+  granularity     String         // "minute", "hour", "day"
+
+  // Event type (optional grouping)
+  eventType       String?
+
+  // Counts
+  receivedCount   BigInt         @default(0)
+  processedCount  BigInt         @default(0)
+  failedCount     BigInt         @default(0)
+  deadLetteredCount BigInt       @default(0)
+  skippedCount    BigInt         @default(0)
+
+  // Sizes
+  totalBytes      BigInt         @default(0)
+  avgEventSize    Float?
+
+  // Latency (in milliseconds)
+  avgLatency      Float?
+  p50Latency      Float?
+  p95Latency      Float?
+  p99Latency      Float?
+  maxLatency      Float?
+
+  // Throughput
+  eventsPerSecond Float?
+  bytesPerSecond  Float?
+
+  // Batch stats
+  batchesCreated  Int            @default(0)
+  batchesCompleted Int           @default(0)
+
+  createdAt       DateTime       @default(now())
+
+  @@unique([tenantId, bucketStart, granularity, eventType])
+  @@index([tenantId, bucketStart])
+  @@index([bucketStart, granularity])
+}
+
+/// Collector health status
+model CollectorHealth {
+  id              String         @id @default(uuid()) @db.Uuid
+
+  // Instance identification
+  instanceId      String         @unique
+  hostname        String?
+  ipAddress       String?
+
+  // Status
+  isHealthy       Boolean        @default(true)
+  lastHeartbeat   DateTime       @default(now())
+
+  // Capacity
+  currentLoad     Float?         // 0-1 load factor
+  queueDepth      Int?           // Events in local queue
+  memoryUsage     Float?         // Memory usage percentage
+  cpuUsage        Float?         // CPU usage percentage
+
+  // Processing stats
+  eventsProcessed BigInt         @default(0)
+  eventsReceived  BigInt         @default(0)
+  errorCount      Int            @default(0)
+
+  // Timestamps
+  startedAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([isHealthy])
+  @@index([lastHeartbeat])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tenant-specific collector settings
+model CollectorSettings {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @unique @db.Uuid
+
+  // Ingestion limits
+  maxEventsPerSecond Int         @default(10000)
+  maxEventSizeBytes  Int         @default(1048576)  // 1MB
+  maxBatchSize       Int         @default(1000)
+
+  // Processing
+  defaultPriority    EventPriority @default(NORMAL)
+  enableDeduplication Boolean     @default(true)
+  deduplicationWindowSec Int      @default(300)  // 5 minutes
+
+  // Retention
+  eventRetentionDays Int         @default(30)
+  deadLetterRetentionDays Int    @default(90)
+
+  // Features
+  enableMetrics      Boolean     @default(true)
+  enableTracing      Boolean     @default(false)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
