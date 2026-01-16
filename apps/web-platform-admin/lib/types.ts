@@ -274,3 +274,108 @@ export interface UpdatePolicyInput {
   policyJson?: Partial<Policy>;
   description?: string;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEGAL HOLD TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const LEGAL_HOLD_STATUSES = ['ACTIVE', 'RELEASED', 'EXPIRED'] as const;
+export type LegalHoldStatus = (typeof LEGAL_HOLD_STATUSES)[number];
+
+export const LEGAL_HOLD_TYPES = ['LITIGATION', 'REGULATORY', 'INTERNAL_INVESTIGATION', 'PRESERVATION'] as const;
+export type LegalHoldType = (typeof LEGAL_HOLD_TYPES)[number];
+
+export interface LegalHold {
+  id: string;
+  tenantId: string;
+  tenantName?: string;
+  name: string;
+  description: string | null;
+  holdType: LegalHoldType;
+  status: LegalHoldStatus;
+  matterNumber: string | null;
+  custodians: LegalHoldCustodian[];
+  dataScope: LegalHoldDataScope;
+  startDate: string;
+  endDate: string | null;
+  releaseDate: string | null;
+  releaseReason: string | null;
+  createdByUserId: string;
+  createdByUserName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LegalHoldListItem {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  name: string;
+  holdType: LegalHoldType;
+  status: LegalHoldStatus;
+  matterNumber: string | null;
+  custodianCount: number;
+  startDate: string;
+  endDate: string | null;
+  createdAt: string;
+}
+
+export interface LegalHoldCustodian {
+  id: string;
+  userId: string | null;
+  learnerId: string | null;
+  email: string;
+  name: string;
+  role: 'EDUCATOR' | 'LEARNER' | 'ADMIN' | 'STAFF';
+  notifiedAt: string | null;
+  acknowledgedAt: string | null;
+}
+
+export interface LegalHoldDataScope {
+  includeEmails: boolean;
+  includeDocuments: boolean;
+  includeAiLogs: boolean;
+  includeSessionData: boolean;
+  includeAssessments: boolean;
+  includeMessages: boolean;
+  dateRangeStart: string | null;
+  dateRangeEnd: string | null;
+  keywords: string[];
+}
+
+export interface CreateLegalHoldInput {
+  tenantId: string;
+  name: string;
+  description?: string;
+  holdType: LegalHoldType;
+  matterNumber?: string;
+  dataScope: LegalHoldDataScope;
+  startDate: string;
+  endDate?: string;
+  custodianEmails?: string[];
+}
+
+export interface UpdateLegalHoldInput {
+  name?: string;
+  description?: string;
+  endDate?: string;
+  status?: LegalHoldStatus;
+  releaseReason?: string;
+}
+
+export interface LegalHoldFilters {
+  status?: LegalHoldStatus;
+  holdType?: LegalHoldType;
+  tenantId?: string;
+  search?: string;
+}
+
+export interface LegalHoldStats {
+  totalHolds: number;
+  activeHolds: number;
+  releasedHolds: number;
+  expiredHolds: number;
+  totalCustodians: number;
+  holdsByType: Record<LegalHoldType, number>;
+  recentHolds: LegalHoldListItem[];
+}

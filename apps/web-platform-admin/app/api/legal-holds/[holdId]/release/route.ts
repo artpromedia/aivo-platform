@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const LEGAL_HOLD_SVC_URL = process.env.LEGAL_HOLD_SVC_URL ?? 'http://localhost:4061';
+
+interface RouteContext {
+  params: Promise<{ holdId: string }>;
+}
+
+export async function POST(request: NextRequest, context: RouteContext) {
+  const { holdId } = await context.params;
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+
+    const res = await fetch(`${LEGAL_HOLD_SVC_URL}/api/v1/legal-holds/${holdId}/release`, {
+      method: 'POST',
+      headers: {
+        Authorization: authHeader,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: 'Failed to release legal hold', details: errorData },
+        { status: res.status }
+      );
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error releasing legal hold:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
