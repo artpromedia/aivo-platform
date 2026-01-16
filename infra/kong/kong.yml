@@ -296,6 +296,58 @@ services:
       - ingest
 
   # ---------------------------------------------------------------------------
+  # Billing Service (Subscription and invoice management)
+  # ---------------------------------------------------------------------------
+  - name: billing-svc
+    url: http://host.docker.internal:3150
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - business
+      - billing
+
+  # ---------------------------------------------------------------------------
+  # Payments Service (Payment processing and transactions)
+  # ---------------------------------------------------------------------------
+  - name: payments-svc
+    url: http://host.docker.internal:3151
+    connect_timeout: 5000
+    write_timeout: 30000
+    read_timeout: 60000
+    retries: 2
+    tags:
+      - business
+      - payments
+
+  # ---------------------------------------------------------------------------
+  # Gradebook Service (Grade management and reporting)
+  # ---------------------------------------------------------------------------
+  - name: gradebook-svc
+    url: http://host.docker.internal:3160
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 30000
+    retries: 2
+    tags:
+      - education
+      - grading
+
+  # ---------------------------------------------------------------------------
+  # Writing Pad Service (Writing exercises and feedback)
+  # ---------------------------------------------------------------------------
+  - name: writing-pad-svc
+    url: http://host.docker.internal:3170
+    connect_timeout: 5000
+    write_timeout: 30000
+    read_timeout: 60000
+    retries: 2
+    tags:
+      - education
+      - writing
+
+  # ---------------------------------------------------------------------------
   # Apollo Router (GraphQL)
   # ---------------------------------------------------------------------------
   - name: apollo-router
@@ -954,6 +1006,121 @@ routes:
       - name: rate-limiting
         config:
           minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Billing Routes (Subscription management)
+  # ---------------------------------------------------------------------------
+  - name: billing-routes
+    paths:
+      - /api/v1/billing
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+    strip_path: false
+    service: billing-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Payments Routes (Payment processing)
+  # ---------------------------------------------------------------------------
+  - name: payments-routes
+    paths:
+      - /api/v1/payments
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    strip_path: false
+    service: payments-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # Stripe webhook - public endpoint (no JWT required)
+  - name: payments-webhook-routes
+    paths:
+      - /api/v1/payments/webhook
+    methods:
+      - POST
+    strip_path: false
+    service: payments-svc
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 500
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Gradebook Routes (Grade management)
+  # ---------------------------------------------------------------------------
+  - name: gradebook-routes
+    paths:
+      - /api/v1/gradebook
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+    strip_path: false
+    service: gradebook-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: learner_scope
+        config:
+          auth_service_url: http://host.docker.internal:3010
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 300
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Writing Pad Routes (Writing exercises)
+  # ---------------------------------------------------------------------------
+  - name: writing-pad-routes
+    paths:
+      - /api/v1/writing
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+    strip_path: false
+    service: writing-pad-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: rate-limiting
+        config:
+          minute: 300
           policy: redis
           redis_host: redis
           redis_port: 6379
