@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IndexStatus {
+  BUILDING
+  ACTIVE
+  STALE
+  FAILED
+  REBUILDING
+}
+
+enum DocumentStatus {
+  PENDING
+  INDEXED
+  FAILED
+  DELETED
+}
+
+enum SearchEngine {
+  POSTGRES_FTS
+  ELASTICSEARCH
+  OPENSEARCH
+  MEILISEARCH
+  TYPESENSE
+}
+
+model SearchIndex {
+  id              String       @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  engine          SearchEngine @default(POSTGRES_FTS)
+  sourceType      String       // Entity type being indexed
+  sourceTable     String       // Source table name
+  fields          Json         // Fields configuration for indexing
+  settings        Json?        // Engine-specific settings
+  mappings        Json?        // Field mappings
+  status          IndexStatus  @default(BUILDING)
+  documentCount   Int          @default(0)
+  lastBuiltAt     DateTime?
+  lastError       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  documents       SearchDocument[]
+  synonyms        SynonymRule[]
+  stopwords       StopwordList[]
+  boostRules      BoostRule[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([status])
+}
+
+model SearchDocument {
+  id            String         @id @default(cuid())
+  tenantId      String
+  indexId       String
+  index         SearchIndex    @relation(fields: [indexId], references: [id], onDelete: Cascade)
+  sourceId      String         // ID from source table
+  content       Json           // Indexed content
+  vector        Bytes?         // Embedding vector for semantic search
+  metadata      Json?          // Additional metadata
+  status        DocumentStatus @default(PENDING)
+  indexedAt     DateTime?
+  lastError     String?
+  searchVector  String?        // tsvector for PostgreSQL FTS
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([indexId, sourceId])
+  @@index([tenantId])
+  @@index([indexId])
+  @@index([status])
+  @@index([sourceId])
+}
+
+model SynonymRule {
+  id          String      @id @default(cuid())
+  tenantId    String
+  indexId     String
+  index       SearchIndex @relation(fields: [indexId], references: [id], onDelete: Cascade)
+  term        String
+  synonyms    String[]    // List of synonyms
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([indexId, term])
+  @@index([tenantId])
+  @@index([indexId])
+}
+
+model StopwordList {
+  id          String      @id @default(cuid())
+  tenantId    String
+  indexId     String
+  index       SearchIndex @relation(fields: [indexId], references: [id], onDelete: Cascade)
+  language    String      @default("english")
+  words       String[]
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([indexId, language])
+  @@index([tenantId])
+}
+
+model BoostRule {
+  id          String      @id @default(cuid())
+  tenantId    String
+  indexId     String
+  index       SearchIndex @relation(fields: [indexId], references: [id], onDelete: Cascade)
+  field       String
+  boostFactor Float       @default(1.0)
+  condition   Json?       // Optional condition for applying boost
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([tenantId])
+  @@index([indexId])
+}
+
+model SearchQuery {
+  id            String    @id @default(cuid())
+  tenantId      String
+  userId        String?
+  indexName     String
+  query         String
+  filters       Json?
+  resultCount   Int
+  latencyMs     Int
+  clickedIds    String[]  @default([])
+  timestamp     DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([indexName])
+  @@index([timestamp])
+  @@index([query])
+}
+
+model SearchSuggestion {
+  id            String    @id @default(cuid())
+  tenantId      String
+  indexName     String
+  phrase        String
+  frequency     Int       @default(1)
+  lastUsedAt    DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, indexName, phrase])
+  @@index([tenantId])
+  @@index([indexName])
+  @@index([frequency])
+}
+
+model FacetConfig {
+  id            String    @id @default(cuid())
+  tenantId      String
+  indexName     String
+  field         String
+  label         String
+  type          String    @default("terms") // terms, range, date_histogram
+  settings      Json?
+  sortOrder     Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, indexName, field])
+  @@index([tenantId])
+  @@index([indexName])
+}
+
+model ReindexJob {
+  id            String      @id @default(cuid())
+  tenantId      String
+  indexId       String
+  status        String      @default("pending") // pending, running, completed, failed
+  totalDocs     Int         @default(0)
+  processedDocs Int         @default(0)
+  errorCount    Int         @default(0)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  lastError     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([tenantId])
+  @@index([indexId])
+  @@index([status])
+}
+
+model SearchAuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([timestamp])
+  @@index([action])
+}

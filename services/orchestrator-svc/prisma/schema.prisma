@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  DEPRECATED
+  ARCHIVED
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+  TIMEOUT
+}
+
+enum StepType {
+  TASK
+  DECISION
+  PARALLEL
+  WAIT
+  SUBPROCESS
+  NOTIFICATION
+  HTTP_CALL
+  SCRIPT
+  APPROVAL
+  LOOP
+}
+
+enum TriggerType {
+  MANUAL
+  SCHEDULED
+  EVENT
+  WEBHOOK
+  API
+}
+
+model Workflow {
+  id              String          @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  version         Int             @default(1)
+  status          WorkflowStatus  @default(DRAFT)
+  category        String?
+  tags            String[]        @default([])
+  inputSchema     Json?           // JSON Schema for workflow inputs
+  outputSchema    Json?           // JSON Schema for workflow outputs
+  variables       Json?           // Default workflow variables
+  timeout         Int?            // Workflow timeout in seconds
+  retryPolicy     Json?           // Retry configuration
+  createdBy       String
+  updatedBy       String?
+  publishedAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  steps           WorkflowStep[]
+  triggers        WorkflowTrigger[]
+  executions      WorkflowExecution[]
+  versions        WorkflowVersion[]
+
+  @@unique([tenantId, name, version])
+  @@index([tenantId])
+  @@index([status])
+  @@index([category])
+}
+
+model WorkflowVersion {
+  id            String    @id @default(cuid())
+  tenantId      String
+  workflowId    String
+  workflow      Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  version       Int
+  definition    Json      // Full workflow definition snapshot
+  changeLog     String?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+
+  @@unique([workflowId, version])
+  @@index([tenantId])
+  @@index([workflowId])
+}
+
+model WorkflowStep {
+  id              String          @id @default(cuid())
+  tenantId        String
+  workflowId      String
+  workflow        Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name            String
+  type            StepType
+  order           Int
+  config          Json            // Step-specific configuration
+  inputMapping    Json?           // Input data mapping
+  outputMapping   Json?           // Output data mapping
+  condition       String?         // Condition expression for execution
+  onSuccess       String?         // Next step on success
+  onFailure       String?         // Next step on failure
+  timeout         Int?            // Step timeout in seconds
+  retryCount      Int             @default(0)
+  retryDelay      Int             @default(1000) // Delay in ms
+  isParallel      Boolean         @default(false)
+  parallelGroup   String?         // Group ID for parallel execution
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  stepExecutions  StepExecution[]
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([order])
+}
+
+model WorkflowTrigger {
+  id            String      @id @default(cuid())
+  tenantId      String
+  workflowId    String
+  workflow      Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  type          TriggerType
+  name          String
+  config        Json        // Trigger-specific configuration
+  isActive      Boolean     @default(true)
+  lastTriggered DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([type])
+}
+
+model WorkflowExecution {
+  id              String          @id @default(cuid())
+  tenantId        String
+  workflowId      String
+  workflow        Workflow        @relation(fields: [workflowId], references: [id])
+  workflowVersion Int
+  triggeredBy     String          // User ID or trigger name
+  triggerType     TriggerType
+  status          ExecutionStatus @default(PENDING)
+  input           Json?           // Execution input data
+  output          Json?           // Execution output data
+  variables       Json?           // Runtime variables
+  currentStep     String?         // Current step ID
+  error           String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  duration        Int?            // Duration in ms
+  parentId        String?         // Parent execution for subprocesses
+  correlationId   String?         // For tracking related executions
+  priority        Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  stepExecutions  StepExecution[]
+  logs            ExecutionLog[]
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([parentId])
+  @@index([correlationId])
+}
+
+model StepExecution {
+  id            String            @id @default(cuid())
+  tenantId      String
+  executionId   String
+  execution     WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  stepId        String
+  step          WorkflowStep      @relation(fields: [stepId], references: [id])
+  status        ExecutionStatus   @default(PENDING)
+  input         Json?
+  output        Json?
+  error         String?
+  attempt       Int               @default(1)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  duration      Int?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([tenantId])
+  @@index([executionId])
+  @@index([stepId])
+  @@index([status])
+}
+
+model ExecutionLog {
+  id          String            @id @default(cuid())
+  tenantId    String
+  executionId String
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  stepId      String?
+  level       String            @default("info") // debug, info, warn, error
+  message     String
+  data        Json?
+  timestamp   DateTime          @default(now())
+
+  @@index([tenantId])
+  @@index([executionId])
+  @@index([stepId])
+  @@index([timestamp])
+}
+
+model ScheduledJob {
+  id            String    @id @default(cuid())
+  tenantId      String
+  workflowId    String
+  triggerId     String
+  cronExpr      String
+  timezone      String    @default("UTC")
+  nextRunAt     DateTime
+  lastRunAt     DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([nextRunAt])
+  @@index([isActive])
+}
+
+model TaskQueue {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  executionId   String
+  stepId        String
+  payload       Json
+  priority      Int      @default(0)
+  status        String   @default("pending") // pending, processing, completed, failed
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  scheduledFor  DateTime @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([priority])
+}
+
+model ApprovalRequest {
+  id            String    @id @default(cuid())
+  tenantId      String
+  executionId   String
+  stepId        String
+  title         String
+  description   String?
+  requestedBy   String
+  assignedTo    String[]
+  status        String    @default("pending") // pending, approved, rejected, expired
+  decision      String?
+  decidedBy     String?
+  decidedAt     DateTime?
+  expiresAt     DateTime?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([executionId])
+  @@index([status])
+  @@index([assignedTo])
+}
+
+model WebhookRegistry {
+  id            String    @id @default(cuid())
+  tenantId      String
+  workflowId    String
+  triggerId     String
+  endpoint      String    @unique
+  secret        String
+  isActive      Boolean   @default(true)
+  lastCalledAt  DateTime?
+  callCount     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([endpoint])
+}
+
+model OrchestratorAuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([timestamp])
+  @@index([action])
+  @@index([resourceId])
+}

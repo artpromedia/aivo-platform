@@ -1,0 +1,493 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Model Trainer Service - Prisma Schema
+// ML Training Pipeline Management
+// ══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATASETS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TrainingDataset {
+  id              String        @id @default(uuid())
+  tenantId        String
+
+  name            String
+  description     String?       @db.Text
+  version         String        @default("1.0.0")
+
+  // Data source
+  sourceType      DataSourceType
+  sourcePath      String        // S3 path, database connection, etc.
+  sourceConfig    Json?
+
+  // Schema
+  schema          Json?         // Column definitions
+  features        String[]
+  targetColumn    String?
+
+  // Statistics
+  rowCount        BigInt?
+  columnCount     Int?
+  sizeBytes       BigInt?
+
+  // Splits
+  trainSplit      Float         @default(0.8)
+  validationSplit Float         @default(0.1)
+  testSplit       Float         @default(0.1)
+  splitSeed       Int?
+
+  // Quality
+  qualityScore    Float?
+  qualityReport   Json?
+
+  // Preprocessing
+  preprocessingPipeline Json?
+
+  status          DatasetStatus @default(PENDING)
+  validatedAt     DateTime?
+
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  jobs            TrainingJob[]
+
+  @@unique([tenantId, name, version])
+  @@index([tenantId, status])
+}
+
+enum DataSourceType {
+  S3
+  DATABASE
+  FILE_UPLOAD
+  STREAMING
+  FEATURE_STORE
+}
+
+enum DatasetStatus {
+  PENDING
+  VALIDATING
+  READY
+  ERROR
+  ARCHIVED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPERIMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Experiment {
+  id              String    @id @default(uuid())
+  tenantId        String
+
+  name            String
+  description     String?   @db.Text
+  hypothesis      String?   @db.Text
+
+  // Objective
+  objective       String    // Classification, regression, etc.
+  primaryMetric   String    // accuracy, mse, f1, etc.
+  optimizeDirection String  @default("maximize") // maximize, minimize
+
+  // Tags and organization
+  tags            String[]
+  projectId       String?
+
+  status          ExperimentStatus @default(ACTIVE)
+
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  jobs            TrainingJob[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+}
+
+enum ExperimentStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRAINING JOBS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TrainingJob {
+  id              String      @id @default(uuid())
+  tenantId        String
+
+  name            String
+  description     String?
+
+  // Experiment link
+  experimentId    String?
+  experiment      Experiment? @relation(fields: [experimentId], references: [id])
+
+  // Dataset
+  datasetId       String
+  dataset         TrainingDataset @relation(fields: [datasetId], references: [id])
+
+  // Model configuration
+  modelType       String      // transformer, cnn, lstm, etc.
+  modelArchitecture Json?     // Architecture details
+  baseModelId     String?     // For fine-tuning
+
+  // Framework
+  framework       MLFramework
+  frameworkVersion String?
+
+  // Training config
+  trainingConfig  Json        // epochs, batch_size, learning_rate, etc.
+
+  // Resource requirements
+  computeType     ComputeType @default(GPU_SINGLE)
+  instanceType    String?     // ml.p3.2xlarge, etc.
+  instanceCount   Int         @default(1)
+  maxRuntimeHours Int         @default(24)
+
+  // Scheduling
+  priority        Int         @default(0)
+  scheduledAt     DateTime?
+
+  status          JobStatus   @default(PENDING)
+
+  createdBy       String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  runs            TrainingRun[]
+  hyperparameterConfigs HyperparameterConfig[]
+
+  @@index([tenantId, status])
+  @@index([experimentId])
+}
+
+enum MLFramework {
+  PYTORCH
+  TENSORFLOW
+  JAX
+  SKLEARN
+  XGBOOST
+  HUGGINGFACE
+  CUSTOM
+}
+
+enum ComputeType {
+  CPU
+  GPU_SINGLE
+  GPU_MULTI
+  DISTRIBUTED
+  SPOT
+}
+
+enum JobStatus {
+  PENDING
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  TIMEOUT
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HYPERPARAMETERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model HyperparameterConfig {
+  id              String      @id @default(uuid())
+  jobId           String
+  job             TrainingJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  name            String
+
+  // Static hyperparameters
+  parameters      Json        // learning_rate, batch_size, etc.
+
+  // Search space (for tuning)
+  searchSpace     Json?       // Parameter ranges for HPO
+  searchStrategy  SearchStrategy?
+  maxTrials       Int?
+
+  isDefault       Boolean     @default(false)
+
+  createdAt       DateTime    @default(now())
+
+  // Relations
+  runs            TrainingRun[]
+
+  @@index([jobId])
+}
+
+enum SearchStrategy {
+  GRID
+  RANDOM
+  BAYESIAN
+  HYPERBAND
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRAINING RUNS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TrainingRun {
+  id              String      @id @default(uuid())
+  tenantId        String
+  jobId           String
+  job             TrainingJob @relation(fields: [jobId], references: [id])
+
+  runNumber       Int
+
+  // Hyperparameters used
+  hyperparamsId   String?
+  hyperparams     HyperparameterConfig? @relation(fields: [hyperparamsId], references: [id])
+  actualParams    Json?       // Resolved parameters
+
+  // Execution
+  status          RunStatus   @default(PENDING)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  durationSeconds Int?
+
+  // Resources
+  instanceId      String?     // Cloud instance ID
+  instanceType    String?
+  gpuCount        Int?
+  gpuMemoryMB     Int?
+
+  // Progress
+  currentEpoch    Int?
+  totalEpochs     Int?
+  currentStep     Int?
+  totalSteps      Int?
+
+  // Final metrics
+  finalMetrics    Json?
+  bestMetricValue Float?
+  bestMetricEpoch Int?
+
+  // Artifacts
+  modelArtifactPath String?
+  logsPath        String?
+
+  // Error handling
+  errorMessage    String?
+  errorStack      String?     @db.Text
+  retryCount      Int         @default(0)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  metrics         TrainingMetric[]
+  checkpoints     Checkpoint[]
+  logs            TrainingLog[]
+
+  @@unique([jobId, runNumber])
+  @@index([tenantId, status])
+  @@index([jobId])
+}
+
+enum RunStatus {
+  PENDING
+  INITIALIZING
+  DOWNLOADING_DATA
+  TRAINING
+  EVALUATING
+  SAVING_MODEL
+  COMPLETED
+  FAILED
+  CANCELLED
+  TIMEOUT
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// METRICS & CHECKPOINTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TrainingMetric {
+  id              String      @id @default(uuid())
+  runId           String
+  run             TrainingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  epoch           Int
+  step            Int?
+
+  metricName      String
+  metricValue     Float
+
+  phase           TrainingPhase @default(TRAIN)
+
+  recordedAt      DateTime    @default(now())
+
+  @@index([runId, epoch])
+  @@index([runId, metricName])
+}
+
+enum TrainingPhase {
+  TRAIN
+  VALIDATION
+  TEST
+}
+
+model Checkpoint {
+  id              String      @id @default(uuid())
+  runId           String
+  run             TrainingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  epoch           Int
+  step            Int?
+
+  // Storage
+  checkpointPath  String
+  sizeBytes       BigInt?
+
+  // Metrics at checkpoint
+  metrics         Json?
+
+  isBest          Boolean     @default(false)
+  isFinal         Boolean     @default(false)
+
+  createdAt       DateTime    @default(now())
+  expiresAt       DateTime?
+
+  @@index([runId, epoch])
+}
+
+model TrainingLog {
+  id              String      @id @default(uuid())
+  runId           String
+  run             TrainingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  level           LogLevel
+  message         String      @db.Text
+  context         Json?
+
+  timestamp       DateTime    @default(now())
+
+  @@index([runId, timestamp])
+  @@index([runId, level])
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARNING
+  ERROR
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RESOURCE MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ComputeResource {
+  id              String      @id @default(uuid())
+  tenantId        String
+
+  resourceType    String      // GPU, CPU cluster
+  provider        String      // AWS, GCP, on-prem
+  instanceType    String
+
+  // Capacity
+  gpuCount        Int?
+  gpuMemoryMB     Int?
+  cpuCount        Int?
+  memoryMB        Int?
+
+  // Availability
+  status          ResourceStatus @default(AVAILABLE)
+  currentRunId    String?
+
+  // Cost
+  costPerHour     Float?
+  currency        String      @default("USD")
+
+  // Scheduling
+  maxQueueSize    Int         @default(10)
+  currentQueueSize Int        @default(0)
+
+  lastHeartbeat   DateTime?
+
+  @@index([tenantId, status])
+  @@index([instanceType])
+}
+
+enum ResourceStatus {
+  AVAILABLE
+  ALLOCATED
+  BUSY
+  MAINTENANCE
+  OFFLINE
+}
+
+model ResourceQuota {
+  id              String    @id @default(uuid())
+  tenantId        String    @unique
+
+  // Limits
+  maxConcurrentJobs Int     @default(5)
+  maxGpuHoursPerMonth Int?
+  maxStorageBytes BigInt?
+
+  // Usage
+  currentJobs     Int       @default(0)
+  gpuHoursUsed    Float     @default(0)
+  storageUsed     BigInt    @default(0)
+
+  // Reset
+  quotaResetDay   Int       @default(1)
+  lastResetAt     DateTime?
+
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// JOB QUEUE
+// ══════════════════════════════════════════════════════════════════════════════
+
+model JobQueue {
+  id              String      @id @default(uuid())
+  tenantId        String
+
+  runId           String      @unique
+  jobId           String
+
+  priority        Int         @default(0)
+
+  status          QueueStatus @default(WAITING)
+
+  requestedResources Json     // GPU type, count, etc.
+
+  queuedAt        DateTime    @default(now())
+  startedAt       DateTime?
+  estimatedWaitMinutes Int?
+
+  @@index([tenantId, status])
+  @@index([priority, queuedAt])
+}
+
+enum QueueStatus {
+  WAITING
+  ALLOCATED
+  STARTED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
