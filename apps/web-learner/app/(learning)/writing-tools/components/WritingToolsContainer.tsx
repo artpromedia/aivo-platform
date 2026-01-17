@@ -16,7 +16,7 @@ type Tab = 'organizers' | 'starters' | 'grammar' | 'templates';
  * Container component for all writing tools
  * Manages tab navigation between different writing features
  */
-export function WritingToolsContainer({ learnerId }: WritingToolsContainerProps) {
+export function WritingToolsContainer({ learnerId }: Readonly<WritingToolsContainerProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('organizers');
 
   const tabs: Array<{ id: Tab; label: string; icon: string }> = [

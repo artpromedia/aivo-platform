@@ -18,7 +18,7 @@ interface VirtualManipulativesProps {
  * - Geometric shapes for spatial reasoning
  * - Counters for basic operations
  */
-export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
+export function VirtualManipulatives({ learnerId }: Readonly<VirtualManipulativesProps>) {
   const [manipulatives, setManipulatives] = useState<Manipulative[]>([]);
   const [selectedManipulative, setSelectedManipulative] = useState<Manipulative | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +134,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
 
       <div className="space-y-4">
         {fractionBars.map((bar, index) => (
-          <div key={index} className="bg-slate-50 rounded-lg p-4">
+          <div key={`bar-${bar.denominator}-${bar.shaded}-${index}`} className="bg-slate-50 rounded-lg p-4">
             <div className="flex justify-between items-center mb-3">
               <span className="font-medium text-slate-900">
                 {bar.shaded}/{bar.denominator}
@@ -154,7 +154,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
             <div className="flex gap-1 mb-3">
               {Array.from({ length: bar.denominator }).map((_, i) => (
                 <button
-                  key={i}
+                  key={`bar-${index}-segment-${i}`}
                   onClick={() => {
                     const newBars = [...fractionBars];
                     const newShaded = i < bar.shaded ? bar.shaded - 1 : i + 1;
@@ -173,6 +173,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
             <div className="flex gap-3">
               <label className="text-sm text-slate-700">
                 Denominator:
+                {' '}
                 <input
                   type="number"
                   min="2"
@@ -180,7 +181,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
                   value={bar.denominator}
                   onChange={(e) => {
                     const newBars = [...fractionBars];
-                    newBars[index].denominator = Math.max(2, parseInt(e.target.value) || 2);
+                    newBars[index].denominator = Math.max(2, Number.parseInt(e.target.value, 10) || 2);
                     newBars[index].shaded = Math.min(newBars[index].shaded, newBars[index].denominator);
                     setFractionBars(newBars);
                   }}
@@ -202,22 +203,24 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
         <div className="mb-6 flex gap-4">
           <label className="text-sm text-slate-700">
             Min:
+            {' '}
             <input
               type="number"
               value={numberLineRange.min}
               onChange={(e) =>
-                setNumberLineRange({ ...numberLineRange, min: parseInt(e.target.value) || 0 })
+                setNumberLineRange({ ...numberLineRange, min: Number.parseInt(e.target.value, 10) || 0 })
               }
               className="ml-2 w-20 px-2 py-1 border border-slate-300 rounded"
             />
           </label>
           <label className="text-sm text-slate-700">
             Max:
+            {' '}
             <input
               type="number"
               value={numberLineRange.max}
               onChange={(e) =>
-                setNumberLineRange({ ...numberLineRange, max: parseInt(e.target.value) || 10 })
+                setNumberLineRange({ ...numberLineRange, max: Number.parseInt(e.target.value, 10) || 10 })
               }
               className="ml-2 w-20 px-2 py-1 border border-slate-300 rounded"
             />
@@ -233,7 +236,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
             const position = (i / (numberLineRange.max - numberLineRange.min)) * 100;
             
             return (
-              <div key={i} className="absolute" style={{ left: `${position}%`, top: 0 }}>
+              <div key={`tick-${value}`} className="absolute" style={{ left: `${position}%`, top: 0 }}>
                 <div className="relative">
                   <div className="absolute -left-px w-0.5 h-6 bg-slate-800" style={{ top: '2rem' }} />
                   <div className="absolute -translate-x-1/2 text-sm text-slate-700" style={{ top: '3.5rem' }}>
@@ -258,12 +261,13 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
         <div className="mt-8">
           <label className="text-sm text-slate-700">
             Marker Value:
+            {' '}
             <input
               type="range"
               min={numberLineRange.min}
               max={numberLineRange.max}
               value={numberLineMarker}
-              onChange={(e) => setNumberLineMarker(parseInt(e.target.value))}
+              onChange={(e) => setNumberLineMarker(Number.parseInt(e.target.value, 10))}
               className="ml-2 w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-500"
             />
             <span className="ml-2 font-medium">{numberLineMarker}</span>
@@ -293,11 +297,11 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
             <div className="flex flex-wrap gap-2 min-h-[100px] justify-center">
               {Array.from({ length: baseTenBlocks.hundreds }).map((_, i) => (
                 <div
-                  key={i}
+                  key={`hundreds-${baseTenBlocks.hundreds}-${i}`}
                   className="w-16 h-16 bg-blue-500 border-2 border-blue-700 rounded grid grid-cols-10 grid-rows-10 gap-px p-px"
                 >
                   {Array.from({ length: 100 }).map((_, j) => (
-                    <div key={j} className="bg-blue-600" />
+                    <div key={`hundred-${i}-cell-${j}`} className="bg-blue-600" />
                   ))}
                 </div>
               ))}
@@ -326,9 +330,9 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
             </div>
             <div className="flex flex-wrap gap-2 min-h-[100px] justify-center">
               {Array.from({ length: baseTenBlocks.tens }).map((_, i) => (
-                <div key={i} className="w-12 h-16 bg-green-500 border-2 border-green-700 rounded grid grid-rows-10 gap-px p-px">
+                <div key={`tens-${baseTenBlocks.tens}-${i}`} className="w-12 h-16 bg-green-500 border-2 border-green-700 rounded grid grid-rows-10 gap-px p-px">
                   {Array.from({ length: 10 }).map((_, j) => (
-                    <div key={j} className="bg-green-600" />
+                    <div key={`ten-${i}-cell-${j}`} className="bg-green-600" />
                   ))}
                 </div>
               ))}
@@ -357,7 +361,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
             </div>
             <div className="flex flex-wrap gap-2 min-h-[100px] justify-center">
               {Array.from({ length: baseTenBlocks.ones }).map((_, i) => (
-                <div key={i} className="w-6 h-6 bg-yellow-500 border-2 border-yellow-700 rounded" />
+                <div key={`ones-${baseTenBlocks.ones}-${i}`} className="w-6 h-6 bg-yellow-500 border-2 border-yellow-700 rounded" />
               ))}
             </div>
             <div className="mt-3 flex gap-2 justify-center">
@@ -399,7 +403,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
           </div>
           <div className="flex flex-wrap gap-2 min-h-[100px] justify-center">
             {Array.from({ length: algebraTiles.xSquared }).map((_, i) => (
-              <div key={i} className="w-20 h-20 bg-red-400 border-2 border-red-600 rounded flex items-center justify-center text-white font-bold">
+              <div key={`xsquared-${algebraTiles.xSquared}-${i}`} className="w-20 h-20 bg-red-400 border-2 border-red-600 rounded flex items-center justify-center text-white font-bold">
                 x²
               </div>
             ))}
@@ -428,7 +432,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
           </div>
           <div className="flex flex-wrap gap-2 min-h-[100px] justify-center items-center">
             {Array.from({ length: algebraTiles.x }).map((_, i) => (
-              <div key={i} className="w-16 h-8 bg-blue-400 border-2 border-blue-600 rounded flex items-center justify-center text-white font-bold">
+              <div key={`x-${algebraTiles.x}-${i}`} className="w-16 h-8 bg-blue-400 border-2 border-blue-600 rounded flex items-center justify-center text-white font-bold">
                 x
               </div>
             ))}
@@ -457,7 +461,7 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
           </div>
           <div className="flex flex-wrap gap-2 min-h-[100px] justify-center">
             {Array.from({ length: algebraTiles.constant }).map((_, i) => (
-              <div key={i} className="w-8 h-8 bg-green-400 border-2 border-green-600 rounded flex items-center justify-center text-white font-bold">
+              <div key={`constant-${algebraTiles.constant}-${i}`} className="w-8 h-8 bg-green-400 border-2 border-green-600 rounded flex items-center justify-center text-white font-bold">
                 1
               </div>
             ))}
@@ -535,12 +539,13 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
         <div className="mb-4 flex gap-4 items-center">
           <label className="text-sm text-slate-700">
             Total:
+            {' '}
             <input
               type="number"
               min="0"
               max="50"
               value={counters.total}
-              onChange={(e) => setCounters({ ...counters, total: parseInt(e.target.value) || 0 })}
+              onChange={(e) => setCounters({ ...counters, total: Number.parseInt(e.target.value, 10) || 0 })}
               className="ml-2 w-20 px-2 py-1 border border-slate-300 rounded"
             />
           </label>
@@ -556,12 +561,13 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
           {counters.grouped && (
             <label className="text-sm text-slate-700">
               Group size:
+              {' '}
               <input
                 type="number"
                 min="2"
                 max="10"
                 value={counters.groupSize}
-                onChange={(e) => setCounters({ ...counters, groupSize: parseInt(e.target.value) || 3 })}
+                onChange={(e) => setCounters({ ...counters, groupSize: Number.parseInt(e.target.value, 10) || 3 })}
                 className="ml-2 w-16 px-2 py-1 border border-slate-300 rounded"
               />
             </label>
@@ -569,28 +575,28 @@ export function VirtualManipulatives({ learnerId }: VirtualManipulativesProps) {
         </div>
 
         <div className="min-h-[200px] p-4">
-          {!counters.grouped ? (
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: counters.total }).map((_, i) => (
-                <div key={i} className="w-8 h-8 bg-yellow-400 border-2 border-yellow-600 rounded-full" />
-              ))}
-            </div>
-          ) : (
+          {counters.grouped ? (
             <div className="flex flex-wrap gap-4">
               {Array.from({ length: Math.ceil(counters.total / counters.groupSize) }).map((_, groupIndex) => {
                 const groupStart = groupIndex * counters.groupSize;
                 const groupCount = Math.min(counters.groupSize, counters.total - groupStart);
                 
                 return (
-                  <div key={groupIndex} className="bg-white border-2 border-indigo-300 rounded-lg p-2">
+                  <div key={`group-${counters.total}-${counters.groupSize}-${groupIndex}`} className="bg-white border-2 border-indigo-300 rounded-lg p-2">
                     <div className="flex flex-wrap gap-1">
                       {Array.from({ length: groupCount }).map((_, i) => (
-                        <div key={i} className="w-6 h-6 bg-yellow-400 border-2 border-yellow-600 rounded-full" />
+                        <div key={`group-${groupIndex}-counter-${i}`} className="w-6 h-6 bg-yellow-400 border-2 border-yellow-600 rounded-full" />
                       ))}
                     </div>
                   </div>
                 );
               })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: counters.total }).map((_, i) => (
+                <div key={`counter-${counters.total}-${i}`} className="w-8 h-8 bg-yellow-400 border-2 border-yellow-600 rounded-full" />
+              ))}
             </div>
           )}
         </div>

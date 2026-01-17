@@ -16,7 +16,7 @@ interface SocialStoriesProps {
  * - Build social skills
  * - Manage transitions and changes
  */
-export function SocialStories({ learnerId }: SocialStoriesProps) {
+export function SocialStories({ learnerId }: Readonly<SocialStoriesProps>) {
   const [stories, setStories] = useState<SocialStory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStory, setSelectedStory] = useState<SocialStory | null>(null);
@@ -190,6 +190,7 @@ export function SocialStories({ learnerId }: SocialStoriesProps) {
                 {selectedStory.pages[currentPage].audioUrl && (
                   <audio controls className="w-full">
                     <source src={selectedStory.pages[currentPage].audioUrl} type="audio/mpeg" />
+                    <track kind="captions" src="" label="English" />
                     Your browser does not support the audio element.
                   </audio>
                 )}
@@ -203,9 +204,9 @@ export function SocialStories({ learnerId }: SocialStoriesProps) {
                         <p className="text-slate-800">{q.question}</p>
                         {q.type === 'multiple-choice' && q.options && (
                           <div className="space-y-2">
-                            {q.options.map((option, idx) => (
-                              <label key={idx} className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name={q.id} className="text-indigo-600" />
+                            {q.options.map((option) => (
+                              <label key={`${q.id}-${option}`} className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name={q.id} value={option} className="text-indigo-600" />
                                 <span className="text-sm text-slate-700">{option}</span>
                               </label>
                             ))}

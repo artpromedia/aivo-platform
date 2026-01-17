@@ -19,7 +19,6 @@ class LearningGamesScreen extends ConsumerStatefulWidget {
 class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
   GameCategory? _selectedCategory;
   DifficultyLevel? _selectedDifficulty;
-  LearningGame? _selectedGame;
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +30,12 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
         // Filters
         Container(
           padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<GameCategory>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),
@@ -57,7 +56,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<DifficultyLevel>(
-                  value: _selectedDifficulty,
+                  initialValue: _selectedDifficulty,
                   decoration: const InputDecoration(
                     labelText: 'Difficulty',
                     border: OutlineInputBorder(),
@@ -211,7 +210,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
             // Thumbnail
             Container(
               height: 120,
-              color: _getCategoryColor(game.category).withOpacity(0.2),
+              color: _getCategoryColor(game.category).withValues(alpha: 0.2),
               child: Center(
                 child: Icon(
                   _getCategoryIcon(game.category),
@@ -300,7 +299,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -328,6 +327,8 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
         return Colors.teal;
       case GameCategory.problem_solving:
         return Colors.deepOrange;
+      case GameCategory.educational:
+        return Colors.amber;
     }
   }
 
@@ -349,6 +350,8 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
         return Icons.memory;
       case GameCategory.problem_solving:
         return Icons.lightbulb;
+      case GameCategory.educational:
+        return Icons.school;
     }
   }
 

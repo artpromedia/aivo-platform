@@ -286,7 +286,7 @@ class _DragAssistTargetState<T extends Object>
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               transform: _isHovering
-                  ? (Matrix4.identity()..scaleByDouble(1.05))
+                  ? (Matrix4.identity()..scale(1.05))
                   : Matrix4.identity(),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular((12 * multiplier).toDouble()),

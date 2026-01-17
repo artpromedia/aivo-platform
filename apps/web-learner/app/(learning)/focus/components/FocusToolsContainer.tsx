@@ -19,7 +19,7 @@ type TabType = 'timer' | 'stats' | 'settings';
  * Main container component that manages state and data fetching
  * for all focus tools features
  */
-export function FocusToolsContainer({ learnerId }: FocusToolsContainerProps) {
+export function FocusToolsContainer({ learnerId }: Readonly<FocusToolsContainerProps>) {
   const [activeTab, setActiveTab] = useState<TabType>('timer');
   const [activeSession, setActiveSession] = useState<FocusSession | null>(null);
   const [stats, setStats] = useState<FocusStatsType | null>(null);

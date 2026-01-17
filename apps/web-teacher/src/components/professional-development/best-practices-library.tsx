@@ -2,12 +2,10 @@
 
 import { useState } from 'react';
 import { useBestPractices, useToggleLike, useToggleBookmark } from '@/hooks/use-pd-resources';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Dialog, DialogContent, DialogHeader, DialogTitle } from '@aivo/ui-web';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ThumbsUp, Eye, Bookmark, BookmarkCheck, Award } from 'lucide-react';
 import type { ResourceCategory, BestPractice } from '@/lib/api/professional-development-api';
 
@@ -51,7 +49,7 @@ export function BestPracticesLibrary() {
             />
             <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as ResourceCategory)}>
               <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
+                <SelectValue>All Categories</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Categories</SelectItem>
@@ -64,7 +62,7 @@ export function BestPracticesLibrary() {
             </Select>
             <Select value={evidenceLevelFilter} onValueChange={setEvidenceLevelFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="All Evidence Levels" />
+                <SelectValue>All Evidence Levels</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Levels</SelectItem>
@@ -84,7 +82,7 @@ export function BestPracticesLibrary() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {practices?.map((practice) => (
+          {practices?.map((practice: BestPractice) => (
             <Card key={practice.id} className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -173,8 +171,8 @@ export function BestPracticesLibrary() {
                 <div>
                   <h3 className="font-semibold mb-3">Examples</h3>
                   <div className="space-y-4">
-                    {selectedPractice.examples.map((example, index) => (
-                      <Card key={index}>
+                    {selectedPractice.examples.map((example) => (
+                      <Card key={`example-${example.scenario.slice(0, 30)}-${example.implementation.slice(0, 20)}`}>
                         <CardContent className="pt-6">
                           <h4 className="font-medium mb-2">Scenario</h4>
                           <p className="text-sm mb-3">{example.scenario}</p>
@@ -194,7 +192,7 @@ export function BestPracticesLibrary() {
                   <h3 className="font-semibold mb-2">Research Sources</h3>
                   <ul className="space-y-2">
                     {selectedPractice.sources.map((source, index) => (
-                      <li key={index}>
+                      <li key={source.url || `source-${index}`}>
                         <a
                           href={source.url}
                           target="_blank"

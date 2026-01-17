@@ -18,7 +18,7 @@ type Tab = 'tts' | 'prediction' | 'comprehension' | 'vocabulary';
  * 
  * Manages tab navigation between different reading support tools
  */
-export function ReadingToolsContainer({ learnerId }: ReadingToolsContainerProps) {
+export function ReadingToolsContainer({ learnerId }: Readonly<ReadingToolsContainerProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('tts');
 
   const tabs = [

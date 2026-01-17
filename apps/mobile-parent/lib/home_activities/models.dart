@@ -13,6 +13,7 @@ enum GameCategory {
   logic,
   memory,
   problem_solving,
+  educational,
 }
 
 enum DifficultyLevel {

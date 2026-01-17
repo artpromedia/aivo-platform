@@ -22,7 +22,7 @@ interface WritingTemplatesProps {
  * Writing Templates component
  * Provides structured templates for different types of writing
  */
-export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
+export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>) {
   const [templates, setTemplates] = useState<WritingTemplate[]>([]);
   const [projects, setProjects] = useState<WritingProject[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<WritingTemplate | null>(null);
@@ -34,8 +34,8 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
   const [filterType, setFilterType] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTemplates();
-    loadProjects();
+    void loadTemplates();
+    void loadProjects();
   }, [learnerId]);
 
   async function loadTemplates(type?: string) {
@@ -55,7 +55,7 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
     try {
       const data = await getWritingProjects(learnerId);
       setProjects(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load projects:', err);
     }
   }
@@ -81,8 +81,9 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
       
       setCurrentProject(newProject);
       setView('editor');
-    } catch (err) {
-      setError('Failed to load template details');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load template details';
+      setError(errorMsg);
       console.error(err);
     }
   }
@@ -93,8 +94,9 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
       setSelectedTemplate(template);
       setCurrentProject(project);
       setView('editor');
-    } catch (err) {
-      setError('Failed to load project');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load project';
+      setError(errorMsg);
       console.error(err);
     }
   }
@@ -124,8 +126,9 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
       }
 
       await loadProjects();
-    } catch (err) {
-      setError('Failed to save project');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save project';
+      setError(errorMsg);
       console.error(err);
     } finally {
       setSaving(false);
@@ -143,8 +146,9 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
         setSelectedTemplate(null);
         setView('projects');
       }
-    } catch (err) {
-      setError('Failed to delete project');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete project';
+      setError(errorMsg);
       console.error(err);
     }
   }
@@ -160,8 +164,9 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
       a.download = `${currentProject.title || 'document'}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(`Failed to export as ${format}`);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : `Failed to export as ${format}`;
+      setError(errorMsg);
       console.error(err);
     }
   }
@@ -231,7 +236,7 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
               onChange={(e) => {
                 const type = e.target.value || null;
                 setFilterType(type);
-                loadTemplates(type || undefined);
+                void loadTemplates(type || undefined);
               }}
               className="px-3 py-2 border border-slate-300 rounded-md"
             >
@@ -270,7 +275,7 @@ export function WritingTemplates({ learnerId }: WritingTemplatesProps) {
         <div>
           {projects.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-500 mb-4">You don't have any writing projects yet.</p>
+              <p className="text-slate-500 mb-4">You don&apos;t have any writing projects yet.</p>
               <button
                 onClick={() => setView('templates')}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"

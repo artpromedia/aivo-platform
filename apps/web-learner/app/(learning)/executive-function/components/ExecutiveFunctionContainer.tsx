@@ -24,7 +24,7 @@ type TabType = 'tasks' | 'study' | 'time' | 'organize';
  * 
  * Main container for executive function tools
  */
-export function ExecutiveFunctionContainer({ learnerId }: ExecutiveFunctionContainerProps) {
+export function ExecutiveFunctionContainer({ learnerId }: Readonly<ExecutiveFunctionContainerProps>) {
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([]);

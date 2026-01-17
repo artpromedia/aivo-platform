@@ -29,7 +29,7 @@ type Tab = 'lists' | 'search' | 'flashcards' | 'progress';
  * - Practice with flashcard mode
  * - Track vocabulary learning progress
  */
-export function VocabularyBuilder({ learnerId }: VocabularyBuilderProps) {
+export function VocabularyBuilder({ learnerId }: Readonly<VocabularyBuilderProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('lists');
   const [lists, setLists] = useState<VocabularyList[]>([]);
   const [selectedList, setSelectedList] = useState<VocabularyList | null>(null);
@@ -482,7 +482,7 @@ export function VocabularyBuilder({ learnerId }: VocabularyBuilderProps) {
                     <h3 className="text-sm font-semibold text-slate-900 mb-3">Recent Activity</h3>
                     <div className="space-y-2">
                       {progress.recentActivity.map((activity, index) => (
-                        <div key={index} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                        <div key={`${activity.listName}-${activity.date}-${index}`} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                           <div>
                             <div className="font-medium text-slate-900">{activity.listName}</div>
                             <div className="text-xs text-slate-600">{activity.date}</div>
@@ -524,18 +524,19 @@ export function VocabularyBuilder({ learnerId }: VocabularyBuilderProps) {
 
             {/* Flashcard */}
             <div
+              role="button"
+              tabIndex={0}
               className="min-h-[300px] bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer mb-6"
               onClick={() => setShowAnswer(!showAnswer)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowAnswer(!showAnswer);
+                }
+              }}
             >
               <div className="text-center">
-                {!showAnswer ? (
-                  <>
-                    <div className="text-3xl font-bold text-slate-900 mb-4">
-                      {selectedList.words[currentCardIndex].word}
-                    </div>
-                    <p className="text-slate-600">Click to reveal definition</p>
-                  </>
-                ) : (
+                {showAnswer ? (
                   <>
                     <div className="text-2xl font-bold text-slate-900 mb-4">
                       {selectedList.words[currentCardIndex].word}
@@ -548,6 +549,13 @@ export function VocabularyBuilder({ learnerId }: VocabularyBuilderProps) {
                         "{selectedList.words[currentCardIndex].example}"
                       </p>
                     )}
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-slate-900 mb-4">
+                      {selectedList.words[currentCardIndex].word}
+                    </div>
+                    <p className="text-slate-600">Click to reveal definition</p>
                   </>
                 )}
               </div>
@@ -574,18 +582,20 @@ export function VocabularyBuilder({ learnerId }: VocabularyBuilderProps) {
             {/* Progress */}
             <div className="mt-6">
               <div className="flex gap-1">
-                {selectedList.words.map((_, index) => (
+                {selectedList.words.map((word, index) => (
                   <div
-                    key={index}
-                    className={`h-2 flex-1 rounded ${
-                      index < currentCardIndex
-                        ? flashcardResults[index]?.correct
+                    key={`progress-${word.word}-${index}`}
+                    className={`h-2 flex-1 rounded ${(() => {
+                      if (index < currentCardIndex) {
+                        return flashcardResults[index]?.correct
                           ? 'bg-green-600'
-                          : 'bg-red-600'
-                        : index === currentCardIndex
-                        ? 'bg-indigo-600'
-                        : 'bg-slate-200'
-                    }`}
+                          : 'bg-red-600';
+                      }
+                      if (index === currentCardIndex) {
+                        return 'bg-indigo-600';
+                      }
+                      return 'bg-slate-200';
+                    })()}`}
                   />
                 ))}
               </div>

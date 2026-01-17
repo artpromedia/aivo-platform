@@ -4,6 +4,20 @@ import { useState } from 'react';
 import { createTask, updateTask, deleteTask, breakdownTask } from '../../../../lib/executive-function-api';
 import type { Task, Subtask } from '../../../../lib/executive-function-api';
 
+// Utility function moved to outer scope
+function getPriorityColor(priority: string): string {
+  switch (priority) {
+    case 'high':
+      return 'bg-red-100 text-red-700 border-red-200';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'low':
+      return 'bg-green-100 text-green-700 border-green-200';
+    default:
+      return 'bg-slate-100 text-slate-700 border-slate-200';
+  }
+}
+
 interface TaskManagerProps {
   learnerId: string;
   tasks: Task[];
@@ -15,7 +29,7 @@ interface TaskManagerProps {
  * 
  * Provides task breakdown and management features
  */
-export function TaskManager({ learnerId, tasks, onUpdate }: TaskManagerProps) {
+export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManagerProps>) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [breakdowningTask, setBreakdowningTask] = useState<Task | null>(null);
@@ -68,19 +82,6 @@ export function TaskManager({ learnerId, tasks, onUpdate }: TaskManagerProps) {
     } catch (error) {
       console.error('Failed to breakdown task:', error);
       alert('Failed to breakdown task. Please try again.');
-    }
-  }
-
-  function getPriorityColor(priority: string): string {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-700 border-green-200';
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   }
 
@@ -322,11 +323,11 @@ function TaskForm({
   task,
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   task?: Task;
   onSubmit: (data: Partial<Task>) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [formData, setFormData] = useState({
     title: task?.title || '',
     description: task?.description || '',
@@ -351,8 +352,9 @@ function TaskForm({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Title *</label>
+            <label htmlFor="task-title" className="block text-sm font-medium text-slate-700">Title *</label>
             <input
+              id="task-title"
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -362,8 +364,9 @@ function TaskForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Description</label>
+            <label htmlFor="task-description" className="block text-sm font-medium text-slate-700">Description</label>
             <textarea
+              id="task-description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -373,8 +376,9 @@ function TaskForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Priority</label>
+              <label htmlFor="task-priority" className="block text-sm font-medium text-slate-700">Priority</label>
               <select
+                id="task-priority"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                 className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -386,8 +390,9 @@ function TaskForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700">Due Date</label>
+              <label htmlFor="task-due-date" className="block text-sm font-medium text-slate-700">Due Date</label>
               <input
+                id="task-due-date"
                 type="date"
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
@@ -397,10 +402,11 @@ function TaskForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="task-tags" className="block text-sm font-medium text-slate-700">
               Tags (comma-separated)
             </label>
             <input
+              id="task-tags"
               type="text"
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
@@ -435,11 +441,11 @@ function BreakdownModal({
   task,
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   task: Task;
   onSubmit: (subtasks: Omit<Subtask, 'id'>[]) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [subtasks, setSubtasks] = useState<string[]>(['', '', '']);
 
   function handleSubmit(e: React.FormEvent) {
@@ -479,7 +485,7 @@ function BreakdownModal({
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-3">
             {subtasks.map((subtask, index) => (
-              <div key={index} className="flex gap-2">
+              <div key={`subtask-${index}-${subtask.slice(0, 10)}`} className="flex gap-2">
                 <input
                   type="text"
                   value={subtask}

@@ -15,7 +15,7 @@ interface StudyPlannerProps {
  * 
  * Helps learners create and manage study schedules
  */
-export function StudyPlanner({ learnerId, plans, onUpdate }: StudyPlannerProps) {
+export function StudyPlanner({ learnerId, plans, onUpdate }: Readonly<StudyPlannerProps>) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<StudyPlan | null>(null);
 
@@ -97,9 +97,10 @@ export function StudyPlanner({ learnerId, plans, onUpdate }: StudyPlannerProps) 
               const progress = getProgress(plan);
 
               return (
-                <div
+                <button
                   key={plan.id}
-                  className="cursor-pointer rounded-xl bg-white p-6 shadow transition hover:shadow-lg"
+                  type="button"
+                  className="cursor-pointer rounded-xl bg-white p-6 shadow transition hover:shadow-lg text-left w-full"
                   onClick={() => setSelectedPlan(plan)}
                 >
                   <h4 className="font-bold text-slate-900">{plan.title}</h4>
@@ -133,14 +134,14 @@ export function StudyPlanner({ learnerId, plans, onUpdate }: StudyPlannerProps) 
                   <div className="mt-4 flex flex-wrap gap-2">
                     {plan.goals.slice(0, 3).map((goal, index) => (
                       <span
-                        key={index}
+                        key={`${goal.slice(0, 10)}-${index}`}
                         className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700"
                       >
                         {goal}
                       </span>
                     ))}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -153,9 +154,10 @@ export function StudyPlanner({ learnerId, plans, onUpdate }: StudyPlannerProps) 
           <h3 className="mb-4 text-lg font-bold text-slate-900">Drafts</h3>
           <div className="space-y-3">
             {draftPlans.map((plan) => (
-              <div
+              <button
                 key={plan.id}
-                className="flex cursor-pointer items-center justify-between rounded-xl bg-white p-4 shadow transition hover:shadow-md"
+                type="button"
+                className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-white p-4 shadow transition hover:shadow-md text-left"
                 onClick={() => setSelectedPlan(plan)}
               >
                 <div>
@@ -171,7 +173,7 @@ export function StudyPlanner({ learnerId, plans, onUpdate }: StudyPlannerProps) 
                 >
                   Activate
                 </button>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -218,11 +220,11 @@ function StudyPlanForm({
   learnerId,
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   learnerId: string;
   onSubmit: (data: Partial<StudyPlan>) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -259,8 +261,9 @@ function StudyPlanForm({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Plan Title *</label>
+            <label htmlFor="plan-title" className="block text-sm font-medium text-slate-700">Plan Title *</label>
             <input
+              id="plan-title"
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -271,8 +274,9 @@ function StudyPlanForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Description</label>
+            <label htmlFor="plan-description" className="block text-sm font-medium text-slate-700">Description</label>
             <textarea
+              id="plan-description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={2}
@@ -283,8 +287,9 @@ function StudyPlanForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Start Date *</label>
+              <label htmlFor="plan-start-date" className="block text-sm font-medium text-slate-700">Start Date *</label>
               <input
+                id="plan-start-date"
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -293,8 +298,9 @@ function StudyPlanForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">End Date *</label>
+              <label htmlFor="plan-end-date" className="block text-sm font-medium text-slate-700">End Date *</label>
               <input
+                id="plan-end-date"
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
@@ -305,10 +311,11 @@ function StudyPlanForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="plan-goals" className="block text-sm font-medium text-slate-700">
               Goals (comma-separated)
             </label>
             <input
+              id="plan-goals"
               type="text"
               value={formData.goals}
               onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
@@ -319,7 +326,7 @@ function StudyPlanForm({
 
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <label className="block text-sm font-medium text-slate-700">Study Sessions</label>
+              <span className="block text-sm font-medium text-slate-700">Study Sessions</span>
               <button
                 type="button"
                 onClick={addSession}
@@ -330,7 +337,7 @@ function StudyPlanForm({
             </div>
             <div className="space-y-4">
               {sessions.map((session, index) => (
-                <div key={index} className="rounded-lg border-2 border-slate-200 p-4">
+                <div key={session.id || `session-${index}`} className="rounded-lg border-2 border-slate-200 p-4">
                   <div className="grid gap-3">
                     <input
                       type="text"
@@ -418,11 +425,11 @@ function PlanDetailsModal({
   plan,
   onUpdate,
   onClose,
-}: {
+}: Readonly<{
   plan: StudyPlan;
   onUpdate: (updates: Partial<StudyPlan>) => void;
   onClose: () => void;
-}) {
+}>) {
   function toggleSessionComplete(sessionId: string) {
     const updatedSessions = plan.sessions.map((s) =>
       s.id === sessionId ? { ...s, completed: !s.completed } : s
@@ -494,7 +501,7 @@ function PlanDetailsModal({
                       <div className="mt-2 flex flex-wrap gap-2">
                         {session.topics.map((topic, index) => (
                           <span
-                            key={index}
+                            key={`${topic.slice(0, 15)}-${index}`}
                             className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700"
                           >
                             {topic}
@@ -514,7 +521,7 @@ function PlanDetailsModal({
             <h3 className="font-bold text-slate-900">Goals</h3>
             <ul className="mt-2 space-y-2">
               {plan.goals.map((goal, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-slate-700">
+                <li key={`${goal.slice(0, 15)}-${index}`} className="flex items-start gap-2 text-sm text-slate-700">
                   <span className="text-green-500">✓</span>
                   <span>{goal}</span>
                 </li>

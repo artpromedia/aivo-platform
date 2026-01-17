@@ -49,7 +49,7 @@ const COPING_STRATEGIES = [
  * - Record coping strategies used
  * - View mood history and trends
  */
-export function MoodCheckIn({ learnerId }: MoodCheckInProps) {
+export function MoodCheckIn({ learnerId }: Readonly<MoodCheckInProps>) {
   const [selectedMood, setSelectedMood] = useState<string>('');
   const [intensity, setIntensity] = useState<number>(3);
   const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
@@ -142,10 +142,10 @@ export function MoodCheckIn({ learnerId }: MoodCheckInProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Mood Selection */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">
+              <label htmlFor="mood-selection" className="block text-sm font-medium text-slate-700 mb-3">
                 Select your mood
               </label>
-              <div className="grid grid-cols-4 gap-3">
+              <div id="mood-selection" className="grid grid-cols-4 gap-3">
                 {MOOD_OPTIONS.map((mood) => (
                   <button
                     key={mood.value}
@@ -191,10 +191,10 @@ export function MoodCheckIn({ learnerId }: MoodCheckInProps) {
 
             {/* Triggers */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">
+              <label htmlFor="triggers-selection" className="block text-sm font-medium text-slate-700 mb-3">
                 What might have triggered this feeling? (optional)
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div id="triggers-selection" className="flex flex-wrap gap-2">
                 {COMMON_TRIGGERS.map((trigger) => (
                   <button
                     key={trigger}
@@ -217,10 +217,10 @@ export function MoodCheckIn({ learnerId }: MoodCheckInProps) {
 
             {/* Coping Strategies */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">
+              <label htmlFor="coping-selection" className="block text-sm font-medium text-slate-700 mb-3">
                 What helped you cope? (optional)
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div id="coping-selection" className="flex flex-wrap gap-2">
                 {COPING_STRATEGIES.map((strategy) => (
                   <button
                     key={strategy}

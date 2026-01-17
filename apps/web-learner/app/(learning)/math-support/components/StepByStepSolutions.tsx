@@ -17,7 +17,7 @@ interface StepByStepSolutionsProps {
  * - Access hints when stuck
  * - See visual aids for complex concepts
  */
-export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
+export function StepByStepSolutions({ learnerId }: Readonly<StepByStepSolutionsProps>) {
   const [question, setQuestion] = useState('');
   const [topic, setTopic] = useState('algebra');
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -84,10 +84,11 @@ export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Enter Your Problem</h2>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="topic-select" className="block text-sm font-medium text-slate-700 mb-2">
               Topic
             </label>
             <select
+              id="topic-select"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -101,10 +102,11 @@ export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="problem-textarea" className="block text-sm font-medium text-slate-700 mb-2">
               Problem
             </label>
             <textarea
+              id="problem-textarea"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               rows={4}
@@ -136,7 +138,7 @@ export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
           <div className="space-y-2">
             {sampleProblems.map((sample, index) => (
               <button
-                key={index}
+                key={`${sample.question.slice(0, 20)}-${index}`}
                 onClick={() => handleLoadSample(sample)}
                 className="w-full text-left px-3 py-2 text-sm bg-slate-50 hover:bg-indigo-50 rounded-lg transition-colors"
               >
@@ -170,7 +172,7 @@ export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
               <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
                 {solution.steps.map((step, index) => (
                   <button
-                    key={index}
+                    key={`step-${step.stepNumber}`}
                     onClick={() => setCurrentStep(index)}
                     className={`px-4 py-2 rounded-lg border-2 whitespace-nowrap transition-all ${
                       currentStep === index
@@ -185,9 +187,9 @@ export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
 
               {/* Progress Bar */}
               <div className="flex gap-1">
-                {solution.steps.map((_, index) => (
+                {solution.steps.map((step, index) => (
                   <div
-                    key={index}
+                    key={`progress-${step.stepNumber}`}
                     className={`h-2 flex-1 rounded ${
                       index <= currentStep ? 'bg-indigo-600' : 'bg-slate-200'
                     }`}
@@ -235,7 +237,7 @@ export function StepByStepSolutions({ learnerId }: StepByStepSolutionsProps) {
                 <div className="text-sm font-medium text-yellow-900 mb-2">💡 Hints:</div>
                 <ul className="space-y-2">
                   {solution.hints.map((hint, index) => (
-                    <li key={index} className="text-sm text-yellow-800 flex gap-2">
+                    <li key={`${hint.slice(0, 15)}-${index}`} className="text-sm text-yellow-800 flex gap-2">
                       <span className="flex-shrink-0">•</span>
                       <span>{hint}</span>
                     </li>

@@ -5,9 +5,11 @@ export type { GradeBand } from './theme/tokens';
 
 export { Button } from './components/button';
 export { Card } from './components/card';
+export { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card';
 export { Badge } from './components/badge';
 export { Heading } from './components/heading';
 export { GradeThemeToggle } from './components/grade-theme-toggle';
+export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from './components/ui/dialog';
 
 // AI Components
 export { LessonGenerator, AITutorChat, AIFeedback } from './components/ai';

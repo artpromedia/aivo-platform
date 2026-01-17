@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../models.dart';
-import '../providers.dart';
+import '../main.dart';
+import 'models.dart';
+import 'providers.dart';
 
 class InterventionToolsScreen extends ConsumerStatefulWidget {
   const InterventionToolsScreen({
@@ -87,7 +88,7 @@ class _InterventionToolsScreenState
         ),
       ),
       child: DropdownButtonFormField<InterventionStatus?>(
-        value: _filterStatus,
+        initialValue: _filterStatus,
         decoration: const InputDecoration(
           labelText: 'Status',
           border: OutlineInputBorder(),
@@ -202,7 +203,7 @@ class _InterventionCard extends StatelessWidget {
     final color = _getStatusColor();
     return Chip(
       label: Text(_formatStatus(intervention.status)),
-      backgroundColor: color.withOpacity(0.2),
+      backgroundColor: color.withValues(alpha: 0.2),
       labelStyle: TextStyle(color: color, fontSize: 12),
       padding: EdgeInsets.zero,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -615,7 +616,7 @@ class _InterventionFormDialogState
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<InterventionStatus>(
-                value: _status,
+                initialValue: _status,
                 decoration: const InputDecoration(
                   labelText: 'Status',
                   border: OutlineInputBorder(),
@@ -648,9 +649,17 @@ class _InterventionFormDialogState
   Future<void> _saveIntervention() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final authState = ref.read(teacherAuthProvider);
+    if (authState.teacherId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Teacher ID not found. Please log in again.')),
+      );
+      return;
+    }
+
     final intervention = BehaviorIntervention(
       studentId: widget.studentId,
-      teacherId: 'teacher123', // TODO: Get from auth
+      teacherId: authState.teacherId!,
       targetBehavior: _targetBehaviorController.text,
       strategy: _strategyController.text,
       description: _descriptionController.text,

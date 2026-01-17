@@ -13,11 +13,11 @@ import { Download, Filter } from 'lucide-react';
 import { exportAnalytics } from '@/lib/api/analytics-api';
 
 interface AnalyticsDashboardProps {
-  classId: string;
-  className: string;
+  readonly classId: string;
+  readonly className: string;
 }
 
-export function AnalyticsDashboard({ classId, className }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ classId, className }: Readonly<AnalyticsDashboardProps>) {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [showFilters, setShowFilters] = useState(false);
 
@@ -41,7 +41,7 @@ export function AnalyticsDashboard({ classId, className }: AnalyticsDashboardPro
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Export failed:', error);
     }
   };

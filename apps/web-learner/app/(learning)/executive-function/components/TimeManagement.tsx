@@ -10,18 +10,33 @@ interface TimeManagementProps {
   onUpdate: () => void;
 }
 
+// Utility function moved to outer scope
+function getBlockColor(type: string): string {
+  switch (type) {
+    case 'study':
+      return 'bg-blue-500 border-blue-600 text-white';
+    case 'break':
+      return 'bg-green-500 border-green-600 text-white';
+    case 'activity':
+      return 'bg-purple-500 border-purple-600 text-white';
+    case 'other':
+      return 'bg-slate-500 border-slate-600 text-white';
+    default:
+      return 'bg-slate-500 border-slate-600 text-white';
+  }
+}
+
 /**
  * Time Management Component
  * 
  * Visual schedule and time blocking tool
  */
-export function TimeManagement({ learnerId, blocks, onUpdate }: TimeManagementProps) {
+export function TimeManagement({ learnerId, blocks, onUpdate }: Readonly<TimeManagementProps>) {
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null);
 
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const hours = Array.from({ length: 24 }, (_, i) => i);
 
   function getBlocksForDay(day: Date): TimeBlock[] {
     const dayOfWeek = day.getDay();
@@ -70,20 +85,6 @@ export function TimeManagement({ learnerId, blocks, onUpdate }: TimeManagementPr
     }
   }
 
-  function getBlockColor(type: string): string {
-    switch (type) {
-      case 'study':
-        return 'bg-blue-500 border-blue-600 text-white';
-      case 'break':
-        return 'bg-green-500 border-green-600 text-white';
-      case 'activity':
-        return 'bg-purple-500 border-purple-600 text-white';
-      case 'other':
-        return 'bg-slate-500 border-slate-600 text-white';
-      default:
-        return 'bg-slate-500 border-slate-600 text-white';
-    }
-  }
 
   function changeDay(offset: number) {
     const newDay = new Date(selectedDay);
@@ -165,7 +166,7 @@ export function TimeManagement({ learnerId, blocks, onUpdate }: TimeManagementPr
         ) : (
           <div className="space-y-2">
             {todayBlocks
-              .sort((a, b) => a.startTime.localeCompare(b.startTime))
+              .toSorted((a, b) => a.startTime.localeCompare(b.startTime))
               .map((block) => {
                 const startHour = new Date(block.startTime).getHours();
                 const startMin = new Date(block.startTime).getMinutes();
@@ -245,12 +246,12 @@ function TimeBlockForm({
   selectedDate,
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   block?: TimeBlock;
   selectedDate: Date;
   onSubmit: (data: Partial<TimeBlock>) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [formData, setFormData] = useState({
     title: block?.title || '',
     type: block?.type || 'study',
@@ -270,14 +271,14 @@ function TimeBlockForm({
 
     const data: Partial<TimeBlock> = {
       title: formData.title,
-      type: formData.type as TimeBlock['type'],
+      type: formData.type,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
     };
 
     if (formData.recurring === 'yes') {
       data.recurring = {
-        frequency: formData.frequency as 'daily' | 'weekly' | 'monthly',
+        frequency: formData.frequency,
         daysOfWeek: formData.daysOfWeek,
       };
     }
@@ -303,8 +304,9 @@ function TimeBlockForm({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Title *</label>
+            <label htmlFor="block-title" className="block text-sm font-medium text-slate-700">Title *</label>
             <input
+              id="block-title"
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -315,8 +317,9 @@ function TimeBlockForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Type</label>
+            <label htmlFor="block-type" className="block text-sm font-medium text-slate-700">Type</label>
             <select
+              id="block-type"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -330,8 +333,9 @@ function TimeBlockForm({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Date</label>
+              <label htmlFor="block-date" className="block text-sm font-medium text-slate-700">Date</label>
               <input
+                id="block-date"
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -340,8 +344,9 @@ function TimeBlockForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Start Time</label>
+              <label htmlFor="block-start-time" className="block text-sm font-medium text-slate-700">Start Time</label>
               <input
+                id="block-start-time"
                 type="time"
                 value={formData.startTime}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
@@ -350,8 +355,9 @@ function TimeBlockForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">End Time</label>
+              <label htmlFor="block-end-time" className="block text-sm font-medium text-slate-700">End Time</label>
               <input
+                id="block-end-time"
                 type="time"
                 value={formData.endTime}
                 onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
@@ -362,8 +368,9 @@ function TimeBlockForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Recurring</label>
+            <label htmlFor="block-recurring" className="block text-sm font-medium text-slate-700">Recurring</label>
             <select
+              id="block-recurring"
               value={formData.recurring}
               onChange={(e) => setFormData({ ...formData, recurring: e.target.value })}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -376,8 +383,9 @@ function TimeBlockForm({
           {formData.recurring === 'yes' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Frequency</label>
+                <label htmlFor="block-frequency" className="block text-sm font-medium text-slate-700">Frequency</label>
                 <select
+                  id="block-frequency"
                   value={formData.frequency}
                   onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
                   className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -389,12 +397,12 @@ function TimeBlockForm({
               </div>
 
               {formData.frequency === 'weekly' && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Days of Week</label>
+                <fieldset>
+                  <legend className="block text-sm font-medium text-slate-700">Days of Week</legend>
                   <div className="mt-2 flex gap-2">
                     {daysOfWeek.map((day, index) => (
                       <button
-                        key={index}
+                        key={day}
                         type="button"
                         onClick={() => toggleDay(index)}
                         className={`flex-1 rounded-lg border-2 py-2 text-sm font-medium transition ${
@@ -407,7 +415,7 @@ function TimeBlockForm({
                       </button>
                     ))}
                   </div>
-                </div>
+                </fieldset>
               )}
             </>
           )}

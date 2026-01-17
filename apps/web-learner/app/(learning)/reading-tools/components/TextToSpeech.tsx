@@ -19,7 +19,7 @@ const SAMPLE_TEXT = `Welcome to text-to-speech! This tool helps you listen to te
  * - Enable text highlighting as it's read
  * - Save reading sessions
  */
-export function TextToSpeech({ learnerId }: TextToSpeechProps) {
+export function TextToSpeech({ learnerId }: Readonly<TextToSpeechProps>) {
   const [text, setText] = useState(SAMPLE_TEXT);
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [settings, setSettings] = useState<TTSSettings | null>(null);
@@ -73,13 +73,13 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
     if (!settings || !text.trim()) return;
 
     // Stop any existing speech
-    window.speechSynthesis.cancel();
+    globalThis.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     const selectedVoice = voices.find((v) => v.id === settings.voiceId);
     
-    if (selectedVoice && window.speechSynthesis.getVoices().length > 0) {
-      const systemVoice = window.speechSynthesis.getVoices().find(
+    if (selectedVoice && globalThis.speechSynthesis.getVoices().length > 0) {
+      const systemVoice = globalThis.speechSynthesis.getVoices().find(
         (v) => v.name.includes(selectedVoice.name) || v.lang.includes(selectedVoice.language)
       );
       if (systemVoice) utterance.voice = systemVoice;
@@ -139,19 +139,19 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
     }
 
     utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    globalThis.speechSynthesis.speak(utterance);
   };
 
   const pause = () => {
-    window.speechSynthesis.pause();
+    globalThis.speechSynthesis.pause();
   };
 
   const resume = () => {
-    window.speechSynthesis.resume();
+    globalThis.speechSynthesis.resume();
   };
 
   const stop = () => {
-    window.speechSynthesis.cancel();
+    globalThis.speechSynthesis.cancel();
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentWordIndex(-1);
@@ -166,7 +166,7 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
       <span>
         {wordsRef.current.map((word, index) => (
           <span
-            key={index}
+            key={`word-${word}-${index}`}
             className={index === currentWordIndex ? 'bg-yellow-200' : ''}
           >
             {word}{index < wordsRef.current.length - 1 ? ' ' : ''}
@@ -212,29 +212,21 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
 
           {/* Playback Controls */}
           <div className="flex items-center gap-3">
-            {!isPlaying ? (
-              <button
-                onClick={speak}
-                disabled={!text.trim()}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ▶️ Start Reading
-              </button>
-            ) : (
+            {isPlaying ? (
               <>
-                {!isPaused ? (
-                  <button
-                    onClick={pause}
-                    className="px-6 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700"
-                  >
-                    ⏸️ Pause
-                  </button>
-                ) : (
+                {isPaused ? (
                   <button
                     onClick={resume}
                     className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
                   >
                     ▶️ Resume
+                  </button>
+                ) : (
+                  <button
+                    onClick={pause}
+                    className="px-6 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700"
+                  >
+                    ⏸️ Pause
                   </button>
                 )}
                 <button
@@ -244,6 +236,14 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
                   ⏹️ Stop
                 </button>
               </>
+            ) : (
+              <button
+                onClick={speak}
+                disabled={!text.trim()}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ▶️ Start Reading
+              </button>
             )}
             <button
               onClick={() => setText(SAMPLE_TEXT)}
@@ -263,10 +263,11 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
 
           {/* Voice Selection */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="voice-select" className="block text-sm font-medium text-slate-700 mb-2">
               Voice
             </label>
             <select
+              id="voice-select"
               value={settings.voiceId}
               onChange={(e) => updateSetting('voiceId', e.target.value)}
               disabled={isPlaying}
@@ -291,7 +292,7 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
               max="2"
               step="0.1"
               value={settings.rate}
-              onChange={(e) => updateSetting('rate', parseFloat(e.target.value))}
+              onChange={(e) => updateSetting('rate', Number.parseFloat(e.target.value))}
               disabled={isPlaying}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 disabled:opacity-50"
             />
@@ -313,7 +314,7 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
               max="2"
               step="0.1"
               value={settings.pitch}
-              onChange={(e) => updateSetting('pitch', parseFloat(e.target.value))}
+              onChange={(e) => updateSetting('pitch', Number.parseFloat(e.target.value))}
               disabled={isPlaying}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 disabled:opacity-50"
             />
@@ -335,7 +336,7 @@ export function TextToSpeech({ learnerId }: TextToSpeechProps) {
               max="1"
               step="0.1"
               value={settings.volume}
-              onChange={(e) => updateSetting('volume', parseFloat(e.target.value))}
+              onChange={(e) => updateSetting('volume', Number.parseFloat(e.target.value))}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
           </div>

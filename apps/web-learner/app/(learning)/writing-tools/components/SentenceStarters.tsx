@@ -18,7 +18,7 @@ interface SentenceStartersProps {
  * Sentence Starters component
  * Provides helpful sentence starters organized by category and purpose
  */
-export function SentenceStarters({ learnerId }: SentenceStartersProps) {
+export function SentenceStarters({ learnerId }: Readonly<SentenceStartersProps>) {
   const [categories, setCategories] = useState<StarterCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [starters, setStarters] = useState<SentenceStarter[]>([]);

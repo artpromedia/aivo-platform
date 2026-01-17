@@ -16,7 +16,7 @@ type Tab = 'manipulatives' | 'solutions' | 'formulas' | 'practice';
  * Container component for all math support tools
  * Manages tab navigation between different math features
  */
-export function MathSupportContainer({ learnerId }: MathSupportContainerProps) {
+export function MathSupportContainer({ learnerId }: Readonly<MathSupportContainerProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('manipulatives');
 
   const tabs: Array<{ id: Tab; label: string; icon: string }> = [

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../sensory/sensory_service.dart';
-import '../sensory/sensory_models.dart';
+import '../sensory/sensory_accommodations_service.dart';
+import '../sensory/models.dart';
 
 /// Main sensory accommodations screen
 /// Provides access to sensory breaks, environment customization, calming activities, and preferences
@@ -1296,5 +1296,7 @@ class _SensoryPreferencesTabState extends ConsumerState<SensoryPreferencesTab> {
 
 // Provider for sensory service (reusing existing provider structure)
 final sensoryServiceProvider = Provider<SensoryService>((ref) {
-  return SensoryService();
+  return SensoryService(
+    baseUrl: 'http://localhost:8087/api/sensory',
+  );
 });

@@ -62,7 +62,7 @@ const BREAK_ACTIVITIES: Activity[] = [
  * 
  * Displays activity options when a focus session completes
  */
-export function BreakActivities({ onSelect, onSkip }: BreakActivitiesProps) {
+export function BreakActivities({ onSelect, onSkip }: Readonly<BreakActivitiesProps>) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
@@ -92,7 +92,7 @@ export function BreakActivities({ onSelect, onSkip }: BreakActivitiesProps) {
               </div>
               <ul className="mt-3 space-y-1">
                 {activity.benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-2 text-xs text-slate-600">
+                  <li key={`${benefit.slice(0, 15)}-${index}`} className="flex items-start gap-2 text-xs text-slate-600">
                     <span className="text-green-500">✓</span>
                     <span>{benefit}</span>
                   </li>

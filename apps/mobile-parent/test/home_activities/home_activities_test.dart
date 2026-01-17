@@ -65,7 +65,7 @@ void main() {
         });
 
         final api = HomeActivitiesApi(client: client);
-        final session = await api.startGameSession('game-1', childId);
+        final session = await api.startGameSession(gameId: 'game-1', childId: childId);
 
         expect(session.id, 'session-1');
         expect(session.gameId, 'game-1');
@@ -126,7 +126,11 @@ void main() {
         });
 
         final api = HomeActivitiesApi(client: client);
-        final result = await api.submitAnswer('session-1', 'q1', 'Paris');
+        final result = await api.submitAnswer(
+          sessionId: 'session-1',
+          questionId: 'q1',
+          answer: 'Paris',
+        );
 
         expect(result.correct, true);
         expect(result.feedback, 'Correct!');
@@ -198,7 +202,7 @@ void main() {
 
         final api = HomeActivitiesApi(client: client);
         final session = await api.completeSkillBuilderActivity(
-          'session-1',
+          sessionId: 'session-1',
           completed: true,
           score: 90,
         );
@@ -270,7 +274,7 @@ void main() {
 
         final api = HomeActivitiesApi(client: client);
         final session = await api.completeFamilyActivity(
-          'session-1',
+          sessionId: 'session-1',
           rating: 5,
           feedback: 'Great activity!',
         );
@@ -290,7 +294,7 @@ void main() {
         category: GameCategory.math,
         skillArea: 'Arithmetic',
         difficulty: DifficultyLevel.beginner,
-        recommendedAge: '6-8',
+        recommendedAge: 7,
         estimatedTime: 15,
         thumbnailUrl: 'https://example.com/thumb.jpg',
         learningObjectives: ['Add', 'Subtract'],

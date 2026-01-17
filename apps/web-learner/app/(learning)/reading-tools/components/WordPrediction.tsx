@@ -16,7 +16,7 @@ interface WordPredictionProps {
  * - Keyboard shortcuts for accepting suggestions
  * - Tracks typing sessions and accepted suggestions
  */
-export function WordPrediction({ learnerId }: WordPredictionProps) {
+export function WordPrediction({ learnerId }: Readonly<WordPredictionProps>) {
   const [text, setText] = useState('');
   const [suggestions, setSuggestions] = useState<WordSuggestion[]>([]);
   const [settings, setSettings] = useState<PredictionSettings | null>(null);
@@ -65,7 +65,6 @@ export function WordPrediction({ learnerId }: WordPredictionProps) {
 
   const acceptSuggestion = (suggestion: WordSuggestion) => {
     const words = text.trim().split(/\s+/);
-    const lastWord = words[words.length - 1] || '';
     
     // Replace the last partial word with the suggestion
     const newText = words.slice(0, -1).concat(suggestion.word).join(' ') + ' ';
@@ -89,7 +88,7 @@ export function WordPrediction({ learnerId }: WordPredictionProps) {
 
     // Number keys 1-9 to accept specific suggestion
     if (e.key >= '1' && e.key <= '9') {
-      const index = parseInt(e.key) - 1;
+      const index = Number.parseInt(e.key, 10) - 1;
       if (index < suggestions.length && e.ctrlKey) {
         e.preventDefault();
         acceptSuggestion(suggestions[index]);
@@ -196,7 +195,7 @@ export function WordPrediction({ learnerId }: WordPredictionProps) {
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((suggestion, index) => (
                   <button
-                    key={index}
+                    key={`${suggestion.word}-${index}`}
                     onClick={() => acceptSuggestion(suggestion)}
                     className={`px-4 py-2 rounded-lg border-2 transition-all ${
                       index === selectedIndex
@@ -226,20 +225,20 @@ export function WordPrediction({ learnerId }: WordPredictionProps) {
           <h3 className="text-sm font-semibold text-blue-900 mb-2">⌨️ Keyboard Shortcuts</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-800">
             <div>
-              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">Tab</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">Tab</kbd>{' '}
               Accept first suggestion
             </div>
             <div>
-              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">Ctrl+1-9</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">Ctrl+1-9</kbd>{' '}
               Accept specific suggestion
             </div>
             <div>
               <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">↑</kbd>
-              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">↓</kbd>{' '}
               Navigate suggestions
             </div>
             <div>
-              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">Ctrl+Enter</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white rounded mr-2">Ctrl+Enter</kbd>{' '}
               Accept selected suggestion
             </div>
           </div>
@@ -261,7 +260,7 @@ export function WordPrediction({ learnerId }: WordPredictionProps) {
               min="3"
               max="10"
               value={settings.maxSuggestions}
-              onChange={(e) => updateSetting('maxSuggestions', parseInt(e.target.value))}
+              onChange={(e) => updateSetting('maxSuggestions', Number.parseInt(e.target.value, 10))}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
             <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -281,7 +280,7 @@ export function WordPrediction({ learnerId }: WordPredictionProps) {
               max="0.9"
               step="0.1"
               value={settings.minConfidence}
-              onChange={(e) => updateSetting('minConfidence', parseFloat(e.target.value))}
+              onChange={(e) => updateSetting('minConfidence', Number.parseFloat(e.target.value))}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
             <p className="text-xs text-slate-500 mt-1">

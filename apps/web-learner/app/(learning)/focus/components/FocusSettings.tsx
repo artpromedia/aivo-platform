@@ -15,7 +15,7 @@ interface FocusSettingsProps {
  * 
  * Allows users to customize their focus preferences
  */
-export function FocusSettings({ learnerId, preferences, onUpdate }: FocusSettingsProps) {
+export function FocusSettings({ learnerId, preferences, onUpdate }: Readonly<FocusSettingsProps>) {
   const [localPrefs, setLocalPrefs] = useState(preferences);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -93,44 +93,47 @@ export function FocusSettings({ learnerId, preferences, onUpdate }: FocusSetting
 
         <div className="mt-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="work-duration" className="block text-sm font-medium text-slate-700">
               Work Duration (minutes)
             </label>
             <input
+              id="work-duration"
               type="number"
               min="1"
               max="120"
               value={localPrefs.pomodoroWorkMinutes}
-              onChange={(e) => updatePref('pomodoroWorkMinutes', parseInt(e.target.value) || 25)}
+              onChange={(e) => updatePref('pomodoroWorkMinutes', Number.parseInt(e.target.value, 10) || 25)}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="short-break-duration" className="block text-sm font-medium text-slate-700">
               Short Break Duration (minutes)
             </label>
             <input
+              id="short-break-duration"
               type="number"
               min="1"
               max="60"
               value={localPrefs.pomodoroBreakMinutes}
-              onChange={(e) => updatePref('pomodoroBreakMinutes', parseInt(e.target.value) || 5)}
+              onChange={(e) => updatePref('pomodoroBreakMinutes', Number.parseInt(e.target.value, 10) || 5)}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="long-break-duration" className="block text-sm font-medium text-slate-700">
               Long Break Duration (minutes)
             </label>
             <input
+              id="long-break-duration"
               type="number"
               min="1"
               max="60"
               value={localPrefs.pomodoroLongBreakMinutes}
               onChange={(e) =>
-                updatePref('pomodoroLongBreakMinutes', parseInt(e.target.value) || 15)
+                updatePref('pomodoroLongBreakMinutes', Number.parseInt(e.target.value, 10) || 15)
               }
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
@@ -145,29 +148,31 @@ export function FocusSettings({ learnerId, preferences, onUpdate }: FocusSetting
 
         <div className="mt-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="custom-work-duration" className="block text-sm font-medium text-slate-700">
               Work Duration (minutes)
             </label>
             <input
+              id="custom-work-duration"
               type="number"
               min="1"
               max="180"
               value={localPrefs.customWorkMinutes}
-              onChange={(e) => updatePref('customWorkMinutes', parseInt(e.target.value) || 25)}
+              onChange={(e) => updatePref('customWorkMinutes', Number.parseInt(e.target.value, 10) || 25)}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="custom-break-duration" className="block text-sm font-medium text-slate-700">
               Break Duration (minutes)
             </label>
             <input
+              id="custom-break-duration"
               type="number"
               min="1"
               max="60"
               value={localPrefs.customBreakMinutes}
-              onChange={(e) => updatePref('customBreakMinutes', parseInt(e.target.value) || 5)}
+              onChange={(e) => updatePref('customBreakMinutes', Number.parseInt(e.target.value, 10) || 5)}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -227,7 +232,11 @@ export function FocusSettings({ learnerId, preferences, onUpdate }: FocusSetting
                 : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Settings'}
+          {(() => {
+            if (saved) return '✓ Saved!';
+            if (saving) return 'Saving...';
+            return 'Save Settings';
+          })()}
         </button>
       </div>
     </div>

@@ -19,7 +19,7 @@ interface GraphicOrganizersProps {
  * Graphic Organizers component
  * Provides interactive visual tools for organizing thoughts and ideas
  */
-export function GraphicOrganizers({ learnerId }: GraphicOrganizersProps) {
+export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps>) {
   const [organizers, setOrganizers] = useState<GraphicOrganizer[]>([]);
   const [savedOrganizers, setSavedOrganizers] = useState<SavedOrganizer[]>([]);
   const [selectedOrganizer, setSelectedOrganizer] = useState<GraphicOrganizer | null>(null);

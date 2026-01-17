@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../models.dart';
-import '../providers.dart';
+import '../main.dart';
+import 'models.dart';
+import 'providers.dart';
 
 class IncidentLoggerScreen extends ConsumerStatefulWidget {
   const IncidentLoggerScreen({
@@ -91,7 +92,7 @@ class _IncidentLoggerScreenState extends ConsumerState<IncidentLoggerScreen> {
         children: [
           Expanded(
             child: DropdownButtonFormField<BehaviorType?>(
-              value: _filterType,
+              initialValue: _filterType,
               decoration: const InputDecoration(
                 labelText: 'Type',
                 border: OutlineInputBorder(),
@@ -112,7 +113,7 @@ class _IncidentLoggerScreenState extends ConsumerState<IncidentLoggerScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonFormField<BehaviorSeverity?>(
-              value: _filterSeverity,
+              initialValue: _filterSeverity,
               decoration: const InputDecoration(
                 labelText: 'Severity',
                 border: OutlineInputBorder(),
@@ -285,7 +286,7 @@ class _IncidentCard extends StatelessWidget {
     final color = _getSeverityColor(colorScheme);
     return Chip(
       label: Text(_formatSeverity(incident.severity)),
-      backgroundColor: color.withOpacity(0.2),
+      backgroundColor: color.withValues(alpha: 0.2),
       labelStyle: TextStyle(color: color, fontSize: 12),
       padding: EdgeInsets.zero,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -536,7 +537,7 @@ class _IncidentFormDialogState extends ConsumerState<_IncidentFormDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<BehaviorType>(
-                value: _type,
+                initialValue: _type,
                 decoration: const InputDecoration(
                   labelText: 'Type',
                   border: OutlineInputBorder(),
@@ -551,7 +552,7 @@ class _IncidentFormDialogState extends ConsumerState<_IncidentFormDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<BehaviorSeverity>(
-                value: _severity,
+                initialValue: _severity,
                 decoration: const InputDecoration(
                   labelText: 'Severity',
                   border: OutlineInputBorder(),
@@ -670,9 +671,17 @@ class _IncidentFormDialogState extends ConsumerState<_IncidentFormDialog> {
   Future<void> _saveIncident() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final authState = ref.read(teacherAuthProvider);
+    if (authState.teacherId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Teacher ID not found. Please log in again.')),
+      );
+      return;
+    }
+
     final incident = BehaviorIncident(
       studentId: widget.studentId,
-      teacherId: 'teacher123', // TODO: Get from auth
+      teacherId: authState.teacherId!,
       date: _selectedDate,
       time: _selectedTime.format(context),
       type: _type,

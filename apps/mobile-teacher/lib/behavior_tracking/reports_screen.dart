@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../models.dart';
-import '../providers.dart';
+import 'models.dart';
+import 'providers.dart';
 
 class BehaviorReportsScreen extends ConsumerStatefulWidget {
   const BehaviorReportsScreen({
@@ -100,7 +100,7 @@ class _BehaviorReportsScreenState extends ConsumerState<BehaviorReportsScreen> {
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: _selectQuickRange,
-            icon: const Icon(Icons.quick_actions),
+            icon: const Icon(Icons.speed),
             label: const Text('Quick Range'),
           ),
         ],
@@ -242,7 +242,7 @@ class _BehaviorReportsScreenState extends ConsumerState<BehaviorReportsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

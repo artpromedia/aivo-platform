@@ -5,6 +5,12 @@ import { startFocusSession, endFocusSession, recordDistraction, startBreak, endB
 import type { FocusSession, FocusPreferences, FocusBreak } from '../../../../lib/focus-api';
 import { BreakActivities } from './BreakActivities';
 
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
 interface FocusTimerProps {
   learnerId: string;
   activeSession: FocusSession | null;
@@ -22,7 +28,7 @@ type TimerState = 'idle' | 'focusing' | 'break';
  * - Taking breaks
  * - Recording distractions
  */
-export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpdate }: FocusTimerProps) {
+export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpdate }: Readonly<FocusTimerProps>) {
   const [state, setState] = useState<TimerState>('idle');
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [selectedMode, setSelectedMode] = useState<'pomodoro' | 'custom' | 'deep-work'>(preferences.defaultMode);
@@ -34,7 +40,7 @@ export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpd
 
   // Initialize audio
   useEffect(() => {
-    if (typeof window !== 'undefined' && preferences.soundEnabled) {
+    if (globalThis.window !== undefined && preferences.soundEnabled) {
       audioRef.current = new Audio('/sounds/focus-complete.mp3');
     }
   }, [preferences.soundEnabled]);
@@ -62,11 +68,9 @@ export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpd
           return prev - 1;
         });
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     return () => {
@@ -90,7 +94,7 @@ export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpd
     }
 
     // Show notification
-    if (preferences.notificationsEnabled && 'Notification' in window) {
+    if (preferences.notificationsEnabled && 'Notification' in globalThis) {
       if (Notification.permission === 'granted') {
         new Notification('Focus Timer Complete!', {
           body: state === 'focusing' ? 'Great job! Time for a break.' : 'Break is over. Ready to focus?',
@@ -137,7 +141,7 @@ export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpd
     if (!activeSession) return;
 
     try {
-      const session = await endFocusSession(activeSession.id);
+      await endFocusSession(activeSession.id);
       onSessionUpdate(null);
       setState('idle');
       setTimeRemaining(0);
@@ -190,12 +194,6 @@ export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpd
       console.error('Failed to end break:', error);
       alert('Failed to end break. Please try again.');
     }
-  }
-
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
   function getSessionDuration(): number {
@@ -266,18 +264,16 @@ export function FocusTimer({ learnerId, activeSession, preferences, onSessionUpd
       {/* Timer Display */}
       <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
         <div
-          className={`p-8 text-center ${
-            state === 'focusing'
-              ? 'bg-gradient-to-br from-blue-500 to-purple-500'
-              : state === 'break'
-                ? 'bg-gradient-to-br from-green-500 to-teal-500'
-                : 'bg-gradient-to-br from-slate-100 to-slate-200'
-          }`}
+          className={`p-8 text-center ${(() => {
+            if (state === 'focusing') return 'bg-gradient-to-br from-blue-500 to-purple-500';
+            if (state === 'break') return 'bg-gradient-to-br from-green-500 to-teal-500';
+            return 'bg-gradient-to-br from-slate-100 to-slate-200';
+          })()}`}
         >
-          <div className={`text-7xl font-bold ${state !== 'idle' ? 'text-white' : 'text-slate-600'}`}>
+          <div className={`text-7xl font-bold ${state === 'idle' ? 'text-slate-600' : 'text-white'}`}>
             {formatTime(timeRemaining || getSessionDuration() * 60)}
           </div>
-          <p className={`mt-4 text-lg font-medium ${state !== 'idle' ? 'text-white/90' : 'text-slate-600'}`}>
+          <p className={`mt-4 text-lg font-medium ${state === 'idle' ? 'text-slate-600' : 'text-white/90'}`}>
             {state === 'idle' && 'Ready to focus?'}
             {state === 'focusing' && 'Stay focused! You\'re doing great.'}
             {state === 'break' && 'Enjoy your break!'}

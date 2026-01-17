@@ -16,7 +16,7 @@ interface EmotionRegulationProps {
  * - Practice with guided steps
  * - Track effectiveness
  */
-export function EmotionRegulation({ learnerId }: EmotionRegulationProps) {
+export function EmotionRegulation({ learnerId }: Readonly<EmotionRegulationProps>) {
   const [strategies, setStrategies] = useState<EmotionRegulationStrategy[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStrategy, setSelectedStrategy] = useState<EmotionRegulationStrategy | null>(null);

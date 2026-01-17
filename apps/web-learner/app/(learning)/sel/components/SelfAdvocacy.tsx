@@ -16,12 +16,11 @@ interface SelfAdvocacyProps {
  * - Tips for speaking up
  * - Templates for requests
  */
-export function SelfAdvocacy({ learnerId }: SelfAdvocacyProps) {
+export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
   const [tools, setTools] = useState<SelfAdvocacyTool[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTool, setSelectedTool] = useState<SelfAdvocacyTool | null>(null);
   const [isViewing, setIsViewing] = useState(false);
-  const [isPracticing, setIsPracticing] = useState(false);
   const [practiceResponse, setPracticeResponse] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -225,6 +224,7 @@ export function SelfAdvocacy({ learnerId }: SelfAdvocacyProps) {
                   <div className="bg-yellow-50 rounded-lg p-6">
                     <h4 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
                       <span>💡</span>
+                      {' '}
                       Helpful Tip:
                     </h4>
                     <div className="prose prose-sm max-w-none">

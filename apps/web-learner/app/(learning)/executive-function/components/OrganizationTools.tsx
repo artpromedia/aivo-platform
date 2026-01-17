@@ -15,7 +15,7 @@ interface OrganizationToolsProps {
  * 
  * Folder system for organizing notes, files, and resources
  */
-export function OrganizationTools({ learnerId, folders, onUpdate }: OrganizationToolsProps) {
+export function OrganizationTools({ learnerId, folders, onUpdate }: Readonly<OrganizationToolsProps>) {
   const [selectedFolder, setSelectedFolder] = useState<OrganizationFolder | null>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -92,10 +92,11 @@ export function OrganizationTools({ learnerId, folders, onUpdate }: Organization
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {folders.map((folder) => (
-            <div
+            <button
               key={folder.id}
+              type="button"
               onClick={() => setSelectedFolder(folder)}
-              className="cursor-pointer rounded-xl bg-white p-6 shadow transition hover:shadow-lg"
+              className="cursor-pointer rounded-xl bg-white p-6 shadow transition hover:shadow-lg text-left"
               style={{ borderLeft: `4px solid ${folder.color}` }}
             >
               <div className="flex items-start justify-between">
@@ -130,7 +131,7 @@ export function OrganizationTools({ learnerId, folders, onUpdate }: Organization
                   )}
                 </div>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -165,10 +166,10 @@ export function OrganizationTools({ learnerId, folders, onUpdate }: Organization
 function FolderForm({
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   onSubmit: (data: Partial<OrganizationFolder>) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [formData, setFormData] = useState({
     name: '',
     color: '#3B82F6',
@@ -199,8 +200,9 @@ function FolderForm({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Folder Name *</label>
+            <label htmlFor="folder-name" className="block text-sm font-medium text-slate-700">Folder Name *</label>
             <input
+              id="folder-name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -210,8 +212,8 @@ function FolderForm({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Icon</label>
+          <fieldset>
+            <legend className="block text-sm font-medium text-slate-700">Icon</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {iconOptions.map((icon) => (
                 <button
@@ -228,10 +230,10 @@ function FolderForm({
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Color</label>
+          <fieldset>
+            <legend className="block text-sm font-medium text-slate-700">Color</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {colorOptions.map((color) => (
                 <button
@@ -245,7 +247,7 @@ function FolderForm({
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <div className="flex gap-3 pt-4">
             <button
@@ -273,11 +275,11 @@ function FolderDetailsModal({
   folder,
   onAddItem,
   onClose,
-}: {
+}: Readonly<{
   folder: OrganizationFolder;
   onAddItem: () => void;
   onClose: () => void;
-}) {
+}>) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
@@ -370,11 +372,11 @@ function ItemForm({
   folderId,
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   folderId: string;
   onSubmit: (data: Partial<OrganizationItem>) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [formData, setFormData] = useState({
     type: 'note' as 'note' | 'file' | 'link' | 'task',
     title: '',
@@ -400,8 +402,9 @@ function ItemForm({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Type</label>
+            <label htmlFor="item-type" className="block text-sm font-medium text-slate-700">Type</label>
             <select
+              id="item-type"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -414,8 +417,9 @@ function ItemForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Title *</label>
+            <label htmlFor="item-title" className="block text-sm font-medium text-slate-700">Title *</label>
             <input
+              id="item-title"
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -427,8 +431,9 @@ function ItemForm({
 
           {(formData.type === 'note' || formData.type === 'file') && (
             <div>
-              <label className="block text-sm font-medium text-slate-700">Content</label>
+              <label htmlFor="item-content" className="block text-sm font-medium text-slate-700">Content</label>
               <textarea
+                id="item-content"
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={4}
@@ -440,8 +445,9 @@ function ItemForm({
 
           {formData.type === 'link' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700">URL *</label>
+              <label htmlFor="item-url" className="block text-sm font-medium text-slate-700">URL *</label>
               <input
+                id="item-url"
                 type="url"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -453,10 +459,11 @@ function ItemForm({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label htmlFor="item-tags" className="block text-sm font-medium text-slate-700">
               Tags (comma-separated)
             </label>
             <input
+              id="item-tags"
               type="text"
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}

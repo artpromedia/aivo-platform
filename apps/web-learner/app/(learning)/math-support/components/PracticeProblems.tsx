@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import {
-  getPracticeSets,
   generatePracticeSet,
   submitPracticeResults,
   getPracticeHistory,
   type PracticeSet,
-  type PracticeProblem,
   type PracticeScore,
 } from '../../../../lib/math-api';
+
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 interface PracticeProblemsProps {
   learnerId: string;
@@ -27,7 +27,7 @@ type View = 'select' | 'practice' | 'results' | 'history';
  * - View detailed results and recommendations
  * - Track practice history
  */
-export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
+export function PracticeProblems({ learnerId }: Readonly<PracticeProblemsProps>) {
   const [view, setView] = useState<View>('select');
   const [selectedSet, setSelectedSet] = useState<PracticeSet | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
@@ -47,7 +47,7 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
     'Percentages',
   ];
 
-  const difficulties: Array<{ value: 'easy' | 'medium' | 'hard'; label: string }> = [
+  const difficulties: Array<{ value: Difficulty; label: string }> = [
     { value: 'easy', label: 'Easy' },
     { value: 'medium', label: 'Medium' },
     { value: 'hard', label: 'Hard' },
@@ -125,10 +125,11 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="topic-select" className="block text-sm font-medium text-slate-700 mb-2">
                   Topic
                 </label>
                 <select
+                  id="topic-select"
                   value={selectedTopic}
                   onChange={(e) => setSelectedTopic(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -141,10 +142,10 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+              <fieldset>
+                <legend className="block text-sm font-medium text-slate-700 mb-2">
                   Difficulty
-                </label>
+                </legend>
                 <div className="flex gap-3">
                   {difficulties.map((diff) => (
                     <label
@@ -167,7 +168,7 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -178,7 +179,7 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
                   min="5"
                   max="20"
                   value={problemCount}
-                  onChange={(e) => setProblemCount(parseInt(e.target.value))}
+                  onChange={(e) => setProblemCount(Number.parseInt(e.target.value, 10))}
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
                 <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -234,7 +235,7 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
                 <div className="space-y-2">
                   {currentProblem.options.map((option, index) => (
                     <label
-                      key={index}
+                      key={`${option}-${index}`}
                       className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
                         answers[currentProblem.id] === option
                           ? 'border-indigo-600 bg-indigo-50'
@@ -313,13 +314,11 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
                 {selectedSet.problems.map((problem, index) => (
                   <div
                     key={problem.id}
-                    className={`h-2 flex-1 rounded ${
-                      answers[problem.id]
-                        ? 'bg-indigo-600'
-                        : index === currentProblemIndex
-                        ? 'bg-indigo-200'
-                        : 'bg-slate-200'
-                    }`}
+                    className={`h-2 flex-1 rounded ${(() => {
+                      if (answers[problem.id]) return 'bg-indigo-600';
+                      if (index === currentProblemIndex) return 'bg-indigo-200';
+                      return 'bg-slate-200';
+                    })()}`}
                   />
                 ))}
               </div>
@@ -338,7 +337,11 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
             <div className="text-center mb-6">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mb-4">
                 <span className="text-4xl">
-                  {results.score >= 80 ? '🎉' : results.score >= 60 ? '👍' : '💪'}
+                  {(() => {
+                    if (results.score >= 80) return '🎉';
+                    if (results.score >= 60) return '👍';
+                    return '💪';
+                  })()}
                 </span>
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Practice Complete!</h2>
@@ -367,7 +370,7 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
                 <div className="flex flex-wrap gap-2">
                   {results.recommendedTopics.map((topic, index) => (
                     <span
-                      key={index}
+                      key={`${topic}-${index}`}
                       className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full"
                     >
                       {topic}
@@ -461,7 +464,7 @@ export function PracticeProblems({ learnerId }: PracticeProblemsProps) {
             {history.length > 0 ? (
               <div className="space-y-3">
                 {history.map((session, index) => (
-                  <div key={index} className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                  <div key={`session-${session.totalProblems}-${session.correctAnswers}-${index}`} className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
                     <div>
                       <div className="font-medium text-slate-900">Practice Session</div>
                       <div className="text-sm text-slate-600">

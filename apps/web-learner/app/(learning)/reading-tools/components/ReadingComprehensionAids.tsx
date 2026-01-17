@@ -18,7 +18,7 @@ type Tab = 'strategies' | 'practice';
  * - Receive feedback and track progress
  * - Support different question types (multiple choice, short answer, true/false)
  */
-export function ReadingComprehensionAids({ learnerId }: ReadingComprehensionAidsProps) {
+export function ReadingComprehensionAids({ learnerId }: Readonly<ReadingComprehensionAidsProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('strategies');
   const [strategies, setStrategies] = useState<ComprehensionStrategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<ComprehensionStrategy | null>(null);
@@ -179,7 +179,7 @@ export function ReadingComprehensionAids({ learnerId }: ReadingComprehensionAids
                 </h3>
                 <ol className="space-y-2">
                   {selectedStrategy.steps.map((step, index) => (
-                    <li key={index} className="flex gap-3">
+                    <li key={`step-${step.slice(0, 20)}-${index}`} className="flex gap-3">
                       <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-sm font-medium">
                         {index + 1}
                       </span>
@@ -205,7 +205,42 @@ export function ReadingComprehensionAids({ learnerId }: ReadingComprehensionAids
       {/* Practice Tab */}
       {activeTab === 'practice' && (
         <div className="max-w-4xl mx-auto">
-          {!results ? (
+          {results ? (
+            // Results
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                  <span className="text-4xl">
+                    {(() => {
+                      if (results.score >= 80) return '🎉';
+                      if (results.score >= 60) return '👍';
+                      return '💪';
+                    })()}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Practice Complete!</h2>
+                <p className="text-lg text-slate-600">
+                  Score: {results.score}% ({results.correctAnswers}/{results.totalQuestions})
+                </p>
+              </div>
+
+              {/* Feedback */}
+              {results.feedback && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900 mb-1">Feedback:</p>
+                  <p className="text-sm text-blue-800">{results.feedback}</p>
+                </div>
+              )}
+
+              {/* Try Again */}
+              <button
+                onClick={resetPractice}
+                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : (
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">
@@ -238,7 +273,7 @@ export function ReadingComprehensionAids({ learnerId }: ReadingComprehensionAids
                       <div className="space-y-2">
                         {questions[currentQuestionIndex].options?.map((option, index) => (
                           <label
-                            key={index}
+                            key={`option-${option.slice(0, 15)}-${index}`}
                             className="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-slate-50"
                             style={{
                               borderColor:
@@ -349,13 +384,11 @@ export function ReadingComprehensionAids({ learnerId }: ReadingComprehensionAids
                       {questions.map((q, index) => (
                         <div
                           key={q.id}
-                          className={`h-2 flex-1 rounded ${
-                            answers[q.id]
-                              ? 'bg-indigo-600'
-                              : index === currentQuestionIndex
-                              ? 'bg-indigo-200'
-                              : 'bg-slate-200'
-                          }`}
+                          className={`h-2 flex-1 rounded ${(() => {
+                            if (answers[q.id]) return 'bg-indigo-600';
+                            if (index === currentQuestionIndex) return 'bg-indigo-200';
+                            return 'bg-slate-200';
+                          })()}`}
                         />
                       ))}
                     </div>
@@ -371,58 +404,6 @@ export function ReadingComprehensionAids({ learnerId }: ReadingComprehensionAids
                   No practice questions available at this time.
                 </p>
               )}
-            </div>
-          ) : (
-            // Results
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-                  <span className="text-4xl">
-                    {results.score >= 80 ? '🎉' : results.score >= 60 ? '👍' : '💪'}
-                  </span>
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Practice Complete!</h2>
-                <p className="text-lg text-slate-600">
-                  Score: {results.score}% ({results.correctAnswers}/{results.totalQuestions})
-                </p>
-              </div>
-
-              {/* Feedback */}
-              {results.feedback && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900 mb-1">Feedback:</p>
-                  <p className="text-sm text-blue-800">{results.feedback}</p>
-                </div>
-              )}
-
-              {/* Recommendations */}
-              {results.recommendedStrategies && results.recommendedStrategies.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-sm font-medium text-slate-900 mb-2">
-                    Recommended strategies to practice:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {results.recommendedStrategies.map((strategyId) => {
-                      const strategy = strategies.find((s) => s.id === strategyId);
-                      return strategy ? (
-                        <span
-                          key={strategyId}
-                          className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full"
-                        >
-                          {strategy.icon} {strategy.name}
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={resetPractice}
-                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
-              >
-                Try Another Practice Set
-              </button>
             </div>
           )}
         </div>

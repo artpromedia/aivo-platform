@@ -18,7 +18,7 @@ type Tab = 'mood' | 'regulation' | 'stories' | 'advocacy';
  * 
  * Manages tab navigation between different SEL tools
  */
-export function SELContainer({ learnerId }: SELContainerProps) {
+export function SELContainer({ learnerId }: Readonly<SELContainerProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('mood');
 
   const tabs = [

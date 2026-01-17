@@ -117,9 +117,9 @@ export interface WritingTemplate {
   name: string;
   type: 'essay' | 'report' | 'story' | 'letter' | 'email' | 'paragraph' | 'poem' | 'persuasive';
   description: string;
-  grade_level: string;
+  gradeLevel: string;
   sections: TemplateSection[];
-  icon: string;
+  icon?: string;
 }
 
 export interface TemplateSection {
@@ -129,6 +129,13 @@ export interface TemplateSection {
   prompts: string[];
   example?: string;
   required: boolean;
+  prompt?: string;
+  minWords?: number;
+  placeholder?: string;
+}
+
+export interface ProjectSection extends TemplateSection {
+  content: string;
 }
 
 export interface WritingProject {
@@ -136,10 +143,10 @@ export interface WritingProject {
   learnerId: string;
   templateId: string;
   title: string;
-  content: Record<string, string>; // sectionId -> content
+  sections: ProjectSection[];
   createdAt: string;
-  updatedAt: string;
-  status: 'draft' | 'in-progress' | 'completed';
+  lastModified: string;
+  status?: 'draft' | 'in-progress' | 'completed';
 }
 
 // ============================================================================
@@ -340,13 +347,16 @@ export async function getTemplate(templateId: string): Promise<WritingTemplate> 
  */
 export async function createWritingProject(
   learnerId: string,
-  templateId: string,
-  title: string
+  data: {
+    templateId: string;
+    title: string;
+    sections: ProjectSection[];
+  }
 ): Promise<WritingProject> {
   const response = await fetch(`${API_BASE_URL}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ learnerId, templateId, title }),
+    body: JSON.stringify({ learnerId, ...data }),
   });
   if (!response.ok) throw new Error('Failed to create project');
   return response.json();
@@ -356,14 +366,17 @@ export async function createWritingProject(
  * Update writing project
  */
 export async function updateWritingProject(
+  learnerId: string,
   projectId: string,
-  content: Record<string, string>,
-  status?: 'draft' | 'in-progress' | 'completed'
+  data: {
+    title: string;
+    sections: ProjectSection[];
+  }
 ): Promise<WritingProject> {
   const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, status }),
+    body: JSON.stringify(data),
   });
   if (!response.ok) throw new Error('Failed to update project');
   return response.json();
@@ -381,19 +394,24 @@ export async function getWritingProjects(learnerId: string): Promise<WritingProj
 /**
  * Delete a writing project
  */
-export async function deleteWritingProject(projectId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+export async function deleteWritingProject(learnerId: string, projectId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}?learnerId=${learnerId}`, {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error('Failed to delete project');
 }
 
 /**
- * Export project to formatted text
+ * Export project to PDF or DOCX
  */
-export async function exportProject(projectId: string): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}/export`);
+export async function exportProject(
+  learnerId: string,
+  projectId: string,
+  format: 'pdf' | 'docx'
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_BASE_URL}/projects/${projectId}/export?format=${format}&learnerId=${learnerId}`
+  );
   if (!response.ok) throw new Error('Failed to export project');
-  const data = await response.json();
-  return data.text;
+  return response.blob();
 }

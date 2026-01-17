@@ -6,7 +6,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../speech_therapy/models.dart';
 import '../speech_therapy/speech_therapy_service.dart';
 import '../speech_therapy/widgets/speech_exercises_tab.dart';
 import '../speech_therapy/widgets/articulation_practice_tab.dart';

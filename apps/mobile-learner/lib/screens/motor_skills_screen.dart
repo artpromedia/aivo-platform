@@ -1135,7 +1135,6 @@ class GrossMotorExerciseScreen extends StatefulWidget {
 class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
   GrossMotorSession? _session;
   int _currentMovement = 0;
-  bool _isResting = false;
 
   @override
   void initState() {

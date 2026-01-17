@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 import { getAuthSession } from '../../lib/auth';
 
-export default async function LearningLayout({ children }: { children: ReactNode }) {
+export default async function LearningLayout({ children }: { readonly children: ReactNode }) {
   const session = await getAuthSession();
 
   if (!session) {
@@ -129,38 +129,47 @@ export default async function LearningLayout({ children }: { children: ReactNode
         <nav className="flex justify-around border-t border-blue-100 py-2 md:hidden">
           <Link href="/dashboard" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🏠</span>
+            {' '}
             Home
           </Link>
           <Link href="/courses" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">📚</span>
+            {' '}
             Courses
           </Link>
           <Link href="/reading-tools" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">📖</span>
+            {' '}
             Reading
           </Link>
           <Link href="/math-support" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🧮</span>
+            {' '}
             Math
           </Link>
           <Link href="/writing-tools" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">✍️</span>
+            {' '}
             Writing
           </Link>
           <Link href="/visual-learning" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🎨</span>
+            {' '}
             Visual
           </Link>
           <Link href="/study-skills" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">📚</span>
+            {' '}
             Study
           </Link>
           <Link href="/goals" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🎯</span>
+            {' '}
             Goals
           </Link>
           <Link href="/games" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🎮</span>
+            {' '}
             Games
           </Link>
         </nav>

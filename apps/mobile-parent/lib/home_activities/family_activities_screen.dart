@@ -33,7 +33,7 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
         // Filters
         Container(
           padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Column(
             children: [
               SegmentedButton<bool>(
@@ -56,7 +56,7 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<ActivityType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Activity Type',
                   border: OutlineInputBorder(),
@@ -188,10 +188,11 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () async {
+        onTap: () {
           final detailsAsync = ref.read(familyActivityDetailProvider(activity.id));
-          final details = await detailsAsync.future;
-          setState(() => _selectedActivity = details);
+          detailsAsync.whenData((details) {
+            setState(() => _selectedActivity = details);
+          });
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,14 +244,14 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
                       ),
                     ],
                   ),
-                  if (activity.averageRating > 0) ...[
+                  if (activity.averageRating != null && activity.averageRating! > 0) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         const Icon(Icons.star, size: 14, color: Colors.amber),
                         const SizedBox(width: 4),
                         Text(
-                          activity.averageRating.toStringAsFixed(1),
+                          activity.averageRating!.toStringAsFixed(1),
                           style: const TextStyle(fontSize: 12),
                         ),
                       ],
@@ -320,8 +321,8 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
                     _buildInfoChip(Icons.people, '${activity.minAge}-${activity.maxAge} years'),
                     _buildInfoChip(Icons.group, '${activity.participantCount}+ people'),
                     _buildInfoChip(Icons.category, _formatActivityType(activity.type)),
-                    if (activity.averageRating > 0)
-                      _buildInfoChip(Icons.star, activity.averageRating.toStringAsFixed(1)),
+                    if (activity.averageRating != null && activity.averageRating! > 0)
+                      _buildInfoChip(Icons.star, activity.averageRating!.toStringAsFixed(1)),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -466,7 +467,7 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
 
   double _calculateAverageRating(List<FamilyActivitySession> sessions) {
     if (sessions.isEmpty) return 0;
-    final total = sessions.fold<double>(0, (sum, session) => sum + session.rating);
+    final total = sessions.fold<double>(0, (sum, session) => sum + (session.rating ?? 0));
     return total / sessions.length;
   }
 

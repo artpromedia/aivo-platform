@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models.dart';
-import '../speech_therapy_service.dart';
 import '../../screens/speech_therapy_screen.dart';
 
 final exercisesProvider = FutureProvider.autoDispose.family<List<SpeechExercise>, String?>((ref, targetSound) async {
@@ -92,7 +91,6 @@ class _SpeechExercisesTabState extends ConsumerState<SpeechExercisesTab> {
   void _startExercise(BuildContext context, SpeechExercise exercise) {
     showModalBottomSheet(
       context: context,
-      isScrollControllerEnabled: true,
       builder: (context) => _ExerciseDetailsSheet(
         exercise: exercise,
         learnerId: widget.learnerId,

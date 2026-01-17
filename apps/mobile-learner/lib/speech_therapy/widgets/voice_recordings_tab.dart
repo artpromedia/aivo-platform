@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models.dart';
-import '../speech_therapy_service.dart';
 import '../../screens/speech_therapy_screen.dart';
 
 final recordingsProvider =

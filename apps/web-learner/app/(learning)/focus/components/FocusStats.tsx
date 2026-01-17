@@ -6,19 +6,20 @@ interface FocusStatsProps {
   stats: FocusStatsType;
 }
 
+function formatMinutes(seconds: number): string {
+  return Math.round(seconds / 60).toString();
+}
+
+function formatHours(seconds: number): string {
+  return (seconds / 3600).toFixed(1);
+}
+
 /**
  * Focus Stats Component
  * 
  * Displays focus statistics and progress tracking
  */
-export function FocusStats({ stats }: FocusStatsProps) {
-  function formatMinutes(seconds: number): string {
-    return Math.round(seconds / 60).toString();
-  }
-
-  function formatHours(seconds: number): string {
-    return (seconds / 3600).toFixed(1);
-  }
+export function FocusStats({ stats }: Readonly<FocusStatsProps>) {
 
   return (
     <div className="space-y-6">
@@ -66,7 +67,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 const percentage = maxMinutes > 0 ? (day.totalMinutes / maxMinutes) * 100 : 0;
 
                 return (
-                  <div key={index}>
+                  <div key={`${day.week}-${day.totalMinutes}`}>
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium text-slate-700">{day.week}</span>
                       <span className="text-slate-600">
@@ -208,11 +209,11 @@ export function FocusStats({ stats }: FocusStatsProps) {
           <div className="mt-4 rounded-lg bg-blue-50 p-4">
             <p className="text-sm text-blue-900">
               <strong>💡 Tip:</strong>{' '}
-              {stats.distractionRate < 0.1
-                ? 'Excellent focus! You\'re maintaining great concentration.'
-                : stats.distractionRate < 0.3
-                  ? 'Good focus! Try eliminating common distractions to improve further.'
-                  : 'Room for improvement. Consider using the distraction blocker feature.'}
+              {(() => {
+                if (stats.distractionRate < 0.1) return 'Excellent focus! You\'re maintaining great concentration.';
+                if (stats.distractionRate < 0.3) return 'Good focus! Try eliminating common distractions to improve further.';
+                return 'Room for improvement. Consider using the distraction blocker feature.';
+              })()}
             </p>
           </div>
         </div>

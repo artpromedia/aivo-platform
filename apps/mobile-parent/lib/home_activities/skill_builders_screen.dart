@@ -30,9 +30,9 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
         // Category Filter
         Container(
           padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: DropdownButtonFormField<String>(
-            value: _selectedCategory,
+            initialValue: _selectedCategory,
             decoration: const InputDecoration(
               labelText: 'Skill Category',
               border: OutlineInputBorder(),
@@ -154,10 +154,11 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () async {
+        onTap: () {
           final detailsAsync = ref.read(skillBuilderDetailProvider(builder.id));
-          final details = await detailsAsync.future;
-          setState(() => _selectedBuilder = details);
+          detailsAsync.whenData((details) {
+            setState(() => _selectedBuilder = details);
+          });
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -273,7 +274,7 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
               const SizedBox(height: 12),
               LinearProgressIndicator(
                 value: builder.progressPercentage / 100,
-                backgroundColor: Colors.white.withOpacity(0.3),
+                backgroundColor: Colors.white.withValues(alpha: 0.3),
                 minHeight: 10,
               ),
               const SizedBox(height: 8),
