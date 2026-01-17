@@ -37,6 +37,7 @@ import type { FastifyBaseLogger } from 'fastify';
 
 import { config } from './config.js';
 import { getDbClient } from './db.js';
+import { publishEvent } from './event-bus.js';
 import * as metrics from './metrics.js';
 import { SubscriptionStatus, type Subscription } from './types.js';
 
@@ -434,8 +435,8 @@ interface DunningEventPayload {
 /**
  * Emit internal dunning event
  *
- * In a production system, this would publish to an event bus (Kafka, SQS, etc.)
- * For MVP, we log the event and store it for the notification system to pick up.
+ * Stores event for audit trail and publishes to Redis event bus
+ * for consumption by notify-svc and other interested services.
  */
 async function emitDunningEvent(event: DunningEventPayload): Promise<void> {
   // Store as payment event for audit trail
@@ -450,8 +451,16 @@ async function emitDunningEvent(event: DunningEventPayload): Promise<void> {
     },
   });
 
-  // TODO: In production, publish to event bus
-  // await eventBus.publish('billing.dunning', event);
+  // Publish to event bus for other services
+  await publishEvent({
+    eventType: `dunning.${event.eventType.toLowerCase()}`,
+    subscriptionId: event.subscriptionId,
+    billingAccountId: event.billingAccountId,
+    tenantId: event.tenantId,
+    correlationId: event.correlationId,
+    timestamp: new Date().toISOString(),
+    payload: event.payload,
+  });
 }
 
 /**

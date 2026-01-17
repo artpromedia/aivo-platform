@@ -48,6 +48,13 @@ export const config = {
     gracePeriodDays: parseInt(process.env.DUNNING_GRACE_PERIOD_DAYS ?? '7', 10),
     enableAutoDowngrade: process.env.DUNNING_AUTO_DOWNGRADE !== 'false',
   },
+
+  // Event bus configuration (Redis pub/sub)
+  eventBus: {
+    redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
+    channelPrefix: process.env.EVENT_BUS_CHANNEL_PREFIX ?? 'aivo:billing',
+    enabled: process.env.EVENT_BUS_ENABLED !== 'false',
+  },
 } as const;
 
 // Validate Stripe keys in production
