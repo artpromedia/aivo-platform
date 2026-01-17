@@ -196,7 +196,7 @@ class _RipplePainter extends CustomPainter {
 
     // Draw expanding circle
     final ripplePaint = Paint()
-      ..color = config.color.withOpacity(opacity)
+      ..color = config.color.withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
 
@@ -204,7 +204,7 @@ class _RipplePainter extends CustomPainter {
 
     // Draw fill with gradient opacity
     final fillPaint = Paint()
-      ..color = config.color.withOpacity(opacity * 0.3)
+      ..color = config.color.withValues(alpha: opacity * 0.3)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, currentRadius, fillPaint);
@@ -213,7 +213,7 @@ class _RipplePainter extends CustomPainter {
     if (config.showCenterDot && progress < 0.5) {
       final dotOpacity = (1 - progress * 2) * config.opacity;
       final dotPaint = Paint()
-        ..color = config.color.withOpacity(dotOpacity)
+        ..color = config.color.withValues(alpha: dotOpacity)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(center, 5, dotPaint);
@@ -372,7 +372,7 @@ class _ButtonRipplePainter extends CustomPainter {
     final opacity = isPressed ? 0.3 : 0.2 * (1 - progress);
 
     final paint = Paint()
-      ..color = color.withOpacity(opacity)
+      ..color = color.withValues(alpha: opacity)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(tapPosition, currentRadius, paint);
@@ -410,9 +410,9 @@ class EnhancedInkSplash extends StatelessWidget {
         final multiplier = motorProfile.touchTargetMultiplier;
 
         final splashColor = this.splashColor ?? 
-            Theme.of(context).primaryColor.withOpacity(0.3);
+            Theme.of(context).primaryColor.withValues(alpha: 0.3);
         final highlightColor = this.highlightColor ?? 
-            Theme.of(context).primaryColor.withOpacity(0.1);
+            Theme.of(context).primaryColor.withValues(alpha: 0.1);
 
         if (!showRipples) {
           return GestureDetector(
@@ -530,10 +530,10 @@ class _TouchConfirmationState extends State<TouchConfirmation>
                             width: size,
                             height: size,
                             decoration: BoxDecoration(
-                              color: color.withOpacity(opacity * 0.5),
+                              color: color.withValues(alpha: opacity * 0.5),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: color.withOpacity(opacity),
+                                color: color.withValues(alpha: opacity),
                                 width: 2,
                               ),
                             ),

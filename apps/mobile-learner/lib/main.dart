@@ -34,6 +34,10 @@ import 'screens/adaptive_games_screen.dart';
 import 'screens/focus_games_screen.dart';
 import 'screens/teams_screen.dart';
 import 'screens/social_stories_screen.dart';
+import 'screens/speech_therapy_screen.dart';
+import 'screens/sensory_accommodations_screen.dart';
+import 'screens/motor_skills_screen.dart';
+import 'screens/communication_screen.dart';
 import 'social_stories/social_stories.dart';
 import 'learner/theme_loader.dart';
 import 'services/learner_notification_service.dart';
@@ -160,6 +164,37 @@ final _routerProvider = Provider<GoRouter>((ref) {
             emotionalState: emotionalState,
             activityType: activityType,
           );
+        },
+      ),
+      // Speech Therapy route
+      GoRoute(
+        path: '/speech-therapy',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return SpeechTherapyScreen(learnerId: learnerId);
+        },
+      ),
+      // Sensory Accommodations route
+      GoRoute(
+        path: '/sensory',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return SensoryAccommodationsScreen(learnerId: learnerId);
+        },
+      ),
+      // Motor Skills route
+      GoRoute(
+        path: '/motor-skills',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return MotorSkillsScreen(learnerId: learnerId);
+        },
+      ),
+      // Communication route
+      GoRoute(
+        path: '/communication',
+        builder: (context, state) {
+          return const CommunicationScreen();
         },
       ),
       if (_enableDesignSystemGallery)

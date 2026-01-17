@@ -47,7 +47,7 @@ class AchievementCard extends StatelessWidget {
           color: isLocked ? Colors.grey.shade100 : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isLocked ? Colors.grey.shade300 : achievement.rarityColor.withOpacity(0.5),
+            color: isLocked ? Colors.grey.shade300 : achievement.rarityColor.withValues(alpha: 0.5),
             width: 2,
           ),
         ),
@@ -83,14 +83,14 @@ class AchievementCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: achievement.rarityColor.withOpacity(isLocked ? 0.3 : 0.7),
+            color: achievement.rarityColor.withValues(alpha: isLocked ? 0.3 : 0.7),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
               color: isLocked
-                  ? Colors.grey.withOpacity(0.1)
-                  : achievement.rarityColor.withOpacity(0.15),
+                  ? Colors.grey.withValues(alpha: 0.1)
+                  : achievement.rarityColor.withValues(alpha: 0.15),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -185,9 +185,9 @@ class AchievementCard extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isLocked ? Colors.grey.shade200 : achievement.rarityColor.withOpacity(0.15),
+        color: isLocked ? Colors.grey.shade200 : achievement.rarityColor.withValues(alpha: 0.15),
         border: Border.all(
-          color: isLocked ? Colors.grey.shade300 : achievement.rarityColor.withOpacity(0.5),
+          color: isLocked ? Colors.grey.shade300 : achievement.rarityColor.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
@@ -258,7 +258,7 @@ class _RarityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.15),
+        color: _color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

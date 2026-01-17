@@ -12,7 +12,7 @@ import '../services/sync/connectivity_monitor.dart';
 class RiskRepository {
   RiskRepository({
     required AivoApiClient api,
-    required LocalDatabase db,
+    required TeacherLocalDatabase db,
     required SyncService sync,
     required ConnectivityMonitor connectivity,
   })  : _api = api,
@@ -21,7 +21,7 @@ class RiskRepository {
         _connectivity = connectivity;
 
   final AivoApiClient _api;
-  final LocalDatabase _db;
+  final TeacherLocalDatabase _db;
   final SyncService _sync;
   final ConnectivityMonitor _connectivity;
 
@@ -206,12 +206,12 @@ class RiskRepository {
 
         return students;
       } catch (e) {
-        if (cached.isNotEmpty) return cached;
+        if (cached.isNotEmpty) return cached.cast<EarlyWarningStudent>();
         rethrow;
       }
     }
 
-    return cached;
+    return cached.cast<EarlyWarningStudent>();
   }
 
   /// Get student risk history over time
@@ -220,7 +220,8 @@ class RiskRepository {
     String period = 'month',
   }) async {
     if (!await _connectivity.isOnline) {
-      return _db.getCachedRiskHistory(studentId);
+      final cached = await _db.getCachedRiskHistory(studentId);
+      return cached.cast<RiskHistoryEntry>();
     }
 
     try {
@@ -239,7 +240,7 @@ class RiskRepository {
       return history;
     } catch (e) {
       final cached = await _db.getCachedRiskHistory(studentId);
-      if (cached.isNotEmpty) return cached;
+      if (cached.isNotEmpty) return cached.cast<RiskHistoryEntry>();
       rethrow;
     }
   }
@@ -259,10 +260,9 @@ class RiskRepository {
       );
     } else {
       // Queue for sync when online
-      await _sync.queueOperation(
+      await _sync.queueUpdate(
         entityType: 'intervention_approval',
         entityId: '$studentId-$interventionId',
-        operation: 'approve',
         data: {
           'studentId': studentId,
           'interventionId': interventionId,
@@ -292,10 +292,9 @@ class RiskRepository {
       );
     } else {
       // Queue for sync when online
-      await _sync.queueOperation(
+      await _sync.queueCreate(
         entityType: 'teacher_contact',
         entityId: studentId,
-        operation: 'create',
         data: data,
       );
     }

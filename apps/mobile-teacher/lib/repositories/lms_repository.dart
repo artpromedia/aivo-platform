@@ -2,7 +2,7 @@
 /// Handles OAuth, sync, assignments, and grade passback
 library;
 
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide SyncResult;
 import '../models/lms_integration.dart';
 import '../services/database/local_database.dart';
 import '../services/sync/sync_service.dart';
@@ -12,7 +12,7 @@ import '../services/sync/connectivity_monitor.dart';
 class LmsRepository {
   LmsRepository({
     required AivoApiClient api,
-    required LocalDatabase db,
+    required TeacherLocalDatabase db,
     required SyncService sync,
     required ConnectivityMonitor connectivity,
   })  : _api = api,
@@ -21,7 +21,7 @@ class LmsRepository {
         _connectivity = connectivity;
 
   final AivoApiClient _api;
-  final LocalDatabase _db;
+  final TeacherLocalDatabase _db;
   final SyncService _sync;
   final ConnectivityMonitor _connectivity;
 
@@ -98,12 +98,12 @@ class LmsRepository {
 
         return courses;
       } catch (e) {
-        if (cached.isNotEmpty) return cached;
+        if (cached.isNotEmpty) return cached.cast<ClassroomCourse>();
         rethrow;
       }
     }
 
-    return cached;
+    return cached.cast<ClassroomCourse>();
   }
 
   /// Get a single course by ID
@@ -147,12 +147,12 @@ class LmsRepository {
 
         return mappings;
       } catch (e) {
-        if (cached.isNotEmpty) return cached;
+        if (cached.isNotEmpty) return cached.cast<CourseMapping>();
         rethrow;
       }
     }
 
-    return cached;
+    return cached.cast<CourseMapping>();
   }
 
   /// Create a new course mapping
@@ -239,7 +239,7 @@ class LmsRepository {
     String? classId,
     int limit = 50,
   }) async {
-    final cached = await _db.getCachedSyncHistory(courseId: courseId);
+    final cached = await _db.getCachedSyncHistory();
 
     if (await _connectivity.isOnline) {
       try {
@@ -256,16 +256,16 @@ class LmsRepository {
             .map((json) => SyncHistoryEntry.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        await _db.cacheSyncHistory(history, courseId: courseId);
+        await _db.cacheSyncHistory(history);
 
         return history;
       } catch (e) {
-        if (cached.isNotEmpty) return cached;
+        if (cached.isNotEmpty) return cached.cast<SyncHistoryEntry>();
         rethrow;
       }
     }
 
-    return cached;
+    return cached.cast<SyncHistoryEntry>();
   }
 
   // ==========================================================================
@@ -288,7 +288,7 @@ class LmsRepository {
 
   /// Get linked assignments
   Future<List<AssignmentLink>> getAssignments({String? courseId}) async {
-    final cached = await _db.getCachedAssignmentLinks(courseId: courseId);
+    final cached = await _db.getCachedAssignmentLinks();
 
     if (await _connectivity.isOnline) {
       try {
@@ -303,16 +303,16 @@ class LmsRepository {
             .map((json) => AssignmentLink.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        await _db.cacheAssignmentLinks(assignments, courseId: courseId);
+        await _db.cacheAssignmentLinks(assignments);
 
         return assignments;
       } catch (e) {
-        if (cached.isNotEmpty) return cached;
+        if (cached.isNotEmpty) return cached.cast<AssignmentLink>();
         rethrow;
       }
     }
 
-    return cached;
+    return cached.cast<AssignmentLink>();
   }
 
   /// Delete an assignment link
@@ -330,7 +330,7 @@ class LmsRepository {
 
   /// Get pending grades awaiting sync
   Future<List<PendingGrade>> getPendingGrades({String? courseId}) async {
-    final cached = await _db.getCachedPendingGrades(courseId: courseId);
+    final cached = await _db.getCachedPendingGrades();
 
     if (await _connectivity.isOnline) {
       try {
@@ -345,16 +345,16 @@ class LmsRepository {
             .map((json) => PendingGrade.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        await _db.cachePendingGrades(grades, courseId: courseId);
+        await _db.cachePendingGrades(grades);
 
         return grades;
       } catch (e) {
-        if (cached.isNotEmpty) return cached;
+        if (cached.isNotEmpty) return cached.cast<PendingGrade>();
         rethrow;
       }
     }
 
-    return cached;
+    return cached.cast<PendingGrade>();
   }
 
   /// Sync a single grade to Google Classroom
@@ -366,10 +366,9 @@ class LmsRepository {
   }) async {
     if (!await _connectivity.isOnline) {
       // Queue for later sync
-      await _sync.queueOperation(
+      await _sync.queueUpdate(
         entityType: 'grade_passback',
         entityId: '$assignmentId-$studentId',
-        operation: 'sync',
         data: {
           'assignmentId': assignmentId,
           'studentId': studentId,

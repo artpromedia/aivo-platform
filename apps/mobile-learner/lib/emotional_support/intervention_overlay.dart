@@ -101,7 +101,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: urgencyColor.withOpacity(0.2),
+              color: urgencyColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -129,7 +129,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
             intervention.reason,
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
@@ -143,7 +143,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -215,7 +215,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
                   : 'Not right now',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -293,7 +293,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
             _getCompletionMessage(),
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
@@ -339,7 +339,7 @@ class _InterventionOverlayState extends State<InterventionOverlay>
               label: const Text('Read a Social Story'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                side: BorderSide(color: Colors.white.withOpacity(0.5)),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

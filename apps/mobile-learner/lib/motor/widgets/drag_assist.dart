@@ -198,8 +198,8 @@ class DragAssistOverlay extends StatelessWidget {
                     width: isClose ? 3 : 2,
                   ),
                   color: isClose
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.grey.withOpacity(0.1),
+                      ? Colors.green.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.1),
                 ),
                 child: isClose
                     ? const Icon(Icons.check, color: Colors.green, size: 24)
@@ -286,7 +286,7 @@ class _DragAssistTargetState<T extends Object>
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               transform: _isHovering
-                  ? (Matrix4.identity()..scale(1.05))
+                  ? (Matrix4.identity()..scaleByDouble(1.05))
                   : Matrix4.identity(),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular((12 * multiplier).toDouble()),
@@ -296,7 +296,7 @@ class _DragAssistTargetState<T extends Object>
                 boxShadow: _isHovering
                     ? [
                         BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
+                          color: Colors.green.withValues(alpha: 0.3),
                           blurRadius: 12,
                           spreadRadius: 2,
                         ),

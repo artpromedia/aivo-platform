@@ -335,7 +335,7 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
       children: [
         LinearProgressIndicator(
           value: progress.clamp(0.0, 1.0),
-          backgroundColor: Colors.white.withOpacity(0.3),
+          backgroundColor: Colors.white.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(4),
         ),
         const SizedBox(height: 4),
@@ -367,14 +367,14 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             border: Border.all(
               color: Colors.blue,
               width: 3,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.withOpacity(0.2),
+                color: Colors.blue.withValues(alpha: 0.2),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -409,7 +409,7 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
       height: 160,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.teal.withOpacity(0.2),
+        color: Colors.teal.withValues(alpha: 0.2),
       ),
       child: Center(
         child: Text(
@@ -429,7 +429,7 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
       height: 160,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: _getCategoryColor().withOpacity(0.2),
+        color: _getCategoryColor().withValues(alpha: 0.2),
       ),
       child: Center(
         child: Icon(
@@ -488,7 +488,7 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -544,8 +544,8 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
             color: isCompleted
                 ? _getCategoryColor()
                 : isActive
-                    ? _getCategoryColor().withOpacity(0.7)
-                    : Colors.grey.withOpacity(0.3),
+                    ? _getCategoryColor().withValues(alpha: 0.7)
+                    : Colors.grey.withValues(alpha: 0.3),
           ),
         );
       }),
@@ -781,7 +781,7 @@ class _CompletionDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

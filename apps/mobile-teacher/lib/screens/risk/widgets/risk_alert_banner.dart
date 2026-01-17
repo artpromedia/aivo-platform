@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../models/risk_prediction.dart';
 import 'risk_level_badge.dart';
 
 /// Banner showing critical risk alert
@@ -26,13 +27,13 @@ class RiskAlertBanner extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             RiskLevelColors.critical,
-            RiskLevelColors.critical.withOpacity(0.8),
+            RiskLevelColors.critical.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: RiskLevelColors.critical.withOpacity(0.3),
+            color: RiskLevelColors.critical.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -71,7 +72,7 @@ class RiskAlertBanner extends StatelessWidget {
                       Text(
                         '$criticalCount student${criticalCount != 1 ? 's' : ''} need${criticalCount == 1 ? 's' : ''} immediate attention',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                         ),
                       ),
@@ -81,7 +82,7 @@ class RiskAlertBanner extends StatelessWidget {
                 // Arrow
                 Icon(
                   Icons.arrow_forward,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ],
             ),
@@ -325,6 +326,3 @@ enum RiskAlertType {
   noContact,
   interventionDue,
 }
-
-// Import RiskLevel
-import '../../../models/risk_prediction.dart';

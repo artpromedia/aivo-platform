@@ -332,7 +332,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
               height: 240 * scale,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _getPhaseColor().withOpacity(0.1),
+                color: _getPhaseColor().withValues(alpha: 0.1),
               ),
             ),
             // Middle ring
@@ -342,7 +342,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _getPhaseColor().withOpacity(0.3),
+                  color: _getPhaseColor().withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
@@ -355,13 +355,13 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _getPhaseColor().withOpacity(0.6),
-                    _getPhaseColor().withOpacity(0.3),
+                    _getPhaseColor().withValues(alpha: 0.6),
+                    _getPhaseColor().withValues(alpha: 0.3),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: _getPhaseColor().withOpacity(0.3),
+                    color: _getPhaseColor().withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -439,7 +439,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
-        color: _getPhaseColor().withOpacity(0.1),
+        color: _getPhaseColor().withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -555,7 +555,7 @@ class _BoxBreathingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
 

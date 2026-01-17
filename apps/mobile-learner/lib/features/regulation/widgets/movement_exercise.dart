@@ -223,8 +223,8 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
                 color: isCompleted
                     ? Colors.orange
                     : isActive
-                        ? Colors.orange.withOpacity(0.5)
-                        : Colors.grey.withOpacity(0.3),
+                        ? Colors.orange.withValues(alpha: 0.5)
+                        : Colors.grey.withValues(alpha: 0.3),
               ),
             ),
           );
@@ -248,9 +248,9 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
@@ -331,7 +331,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.withOpacity(0.3),
+                        color: Colors.orange.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
@@ -406,7 +406,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
         Chip(
           avatar: const Icon(Icons.speed, size: 16),
           label: Text('Step ${_currentStepIndex + 1}/${widget.activity.steps.length}'),
-          backgroundColor: Colors.grey.withOpacity(0.1),
+          backgroundColor: Colors.grey.withValues(alpha: 0.1),
           side: BorderSide.none,
         ),
       ],
@@ -432,7 +432,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
         color: colors[intensity] ?? Colors.orange,
       ),
       label: Text(labels[intensity] ?? 'Moderate'),
-      backgroundColor: (colors[intensity] ?? Colors.orange).withOpacity(0.1),
+      backgroundColor: (colors[intensity] ?? Colors.orange).withValues(alpha: 0.1),
       side: BorderSide.none,
     );
   }
@@ -481,9 +481,9 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

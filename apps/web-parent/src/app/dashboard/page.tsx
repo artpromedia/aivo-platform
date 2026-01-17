@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Settings,
   Award,
+  Users,
 } from 'lucide-react';
 
 // Components
@@ -169,6 +170,18 @@ export default function DashboardPage() {
             selectedId={selectedChildId}
             onSelect={setSelectedChildId}
           />
+
+          {/* Communication Button */}
+          <button
+            onClick={() => router.push('/communication')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            aria-label="Communication & Progress"
+          >
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">
+              Communication
+            </span>
+          </button>
 
           {/* Download Report Button */}
           <button

@@ -85,6 +85,7 @@ export interface SessionInfo {
 
 const BCRYPT_ROUNDS = 12;
 const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_HISTORY_COUNT = 5; // Prevent reuse of last 5 passwords
 const PASSWORD_PATTERNS = {
   uppercase: /[A-Z]/,
   lowercase: /[a-z]/,
@@ -170,6 +171,15 @@ export class AuthService {
       },
       include: { roles: true },
     });
+
+    // Save initial password to history
+    await this.savePasswordHistory(
+      user.id,
+      tenantId,
+      passwordHash,
+      input.deviceInfo?.ip,
+      'account_creation'
+    );
 
     // Create email verification token
     await this.createEmailVerificationToken(user.id, email);
@@ -464,7 +474,70 @@ export class AuthService {
     }
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<void> {
+  /**
+   * Check if password has been used before
+   */
+  private async checkPasswordHistory(
+    userId: string,
+    tenantId: string,
+    newPassword: string
+  ): Promise<void> {
+    // Get last N password hashes
+    const history = await this.prisma.passwordHistory.findMany({
+      where: { userId, tenantId },
+      orderBy: { changedAt: 'desc' },
+      take: PASSWORD_HISTORY_COUNT,
+    });
+
+    // Check if new password matches any previous passwords
+    for (const entry of history) {
+      const matches = await bcrypt.compare(newPassword, entry.passwordHash);
+      if (matches) {
+        throw new Error(
+          `Password has been used recently. Please choose a different password (cannot reuse last ${PASSWORD_HISTORY_COUNT} passwords)`
+        );
+      }
+    }
+  }
+
+  /**
+   * Save password to history and cleanup old entries
+   */
+  private async savePasswordHistory(
+    userId: string,
+    tenantId: string,
+    passwordHash: string,
+    changedByIp?: string,
+    changedReason?: string
+  ): Promise<void> {
+    // Create new history entry
+    await this.prisma.passwordHistory.create({
+      data: {
+        userId,
+        tenantId,
+        passwordHash,
+        changedByIp,
+        changedReason,
+      },
+    });
+
+    // Cleanup old entries (keep only last N)
+    const allHistory = await this.prisma.passwordHistory.findMany({
+      where: { userId, tenantId },
+      orderBy: { changedAt: 'desc' },
+    });
+
+    if (allHistory.length > PASSWORD_HISTORY_COUNT) {
+      const toDelete = allHistory.slice(PASSWORD_HISTORY_COUNT);
+      await this.prisma.passwordHistory.deleteMany({
+        where: {
+          id: { in: toDelete.map((h) => h.id) },
+        },
+      });
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string, ipAddress?: string): Promise<void> {
     validatePasswordStrength(newPassword);
 
     const tokenHash = hashToken(token);
@@ -482,6 +555,9 @@ export class AuthService {
       throw new Error('Invalid or expired reset token');
     }
 
+    // Check password history
+    await this.checkPasswordHistory(resetToken.userId, resetToken.user.tenantId, newPassword);
+
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
     // Update password and mark token as used
@@ -496,6 +572,15 @@ export class AuthService {
       }),
     ]);
 
+    // Save to password history
+    await this.savePasswordHistory(
+      resetToken.userId,
+      resetToken.user.tenantId,
+      passwordHash,
+      ipAddress,
+      'password_reset'
+    );
+
     // Revoke all sessions for security
     await this.logoutAllSessions(resetToken.userId);
   }
@@ -503,7 +588,8 @@ export class AuthService {
   async changePassword(
     userId: string,
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
+    ipAddress?: string
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -520,12 +606,24 @@ export class AuthService {
 
     validatePasswordStrength(newPassword);
 
+    // Check password history
+    await this.checkPasswordHistory(userId, user.tenantId, newPassword);
+
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
     await this.prisma.user.update({
       where: { id: userId },
       data: { passwordHash },
     });
+
+    // Save to password history
+    await this.savePasswordHistory(
+      userId,
+      user.tenantId,
+      passwordHash,
+      ipAddress,
+      'user_initiated'
+    );
   }
 
   // --------------------------------------------------------------------------

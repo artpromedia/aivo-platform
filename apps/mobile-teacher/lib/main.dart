@@ -34,6 +34,7 @@ import 'screens/sessions/live_session_screen.dart';
 import 'screens/monitoring/class_monitoring_screen.dart';
 import 'screens/monitoring/ai_transparency_dashboard_screen.dart';
 import 'screens/monitoring/student_ai_conversations_screen.dart';
+import 'behavior_tracking/behavior_tracking_screen.dart';
 import 'theme/teacher_theme.dart';
 
 /// Secure storage instance for tokens.
@@ -348,6 +349,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
           final studentId = state.pathParameters['studentId']!;
           final studentName = state.uri.queryParameters['name'];
           return StudentAIConversationsScreen(
+            studentId: studentId,
+            studentName: studentName,
+          );
+        },
+      ),
+      // Behavior Tracking route
+      GoRoute(
+        path: '/students/:studentId/behavior',
+        builder: (context, state) {
+          final studentId = state.pathParameters['studentId']!;
+          final studentName = state.uri.queryParameters['name'] ?? 'Student';
+          return BehaviorTrackingScreen(
             studentId: studentId,
             studentName: studentName,
           );

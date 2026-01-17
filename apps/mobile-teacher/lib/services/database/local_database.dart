@@ -620,4 +620,188 @@ class TeacherLocalDatabase {
           : null,
     );
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // LMS / GOOGLE CLASSROOM CACHE
+  // ════════════════════════════════════════════════════════════════════════════
+
+  Future<dynamic> _getCachedValue(String key) async {
+    final content = await _db.getContent(key);
+    if (content == null) return null;
+    return jsonDecode(content.jsonPayload);
+  }
+
+  Future<void> _setCachedValue(String key, dynamic value) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
+    final jsonData = jsonEncode(value);
+    
+    await _db.upsertContent(OfflineContent(
+      contentKey: key,
+      contentType: 'lms_cache',
+      subject: 'google_classroom',
+      gradeBand: 'K-12',
+      jsonPayload: jsonData,
+      mediaPathsJson: null,
+      sizeBytes: jsonData.length,
+      expiresAt: expiresAt,
+      createdAt: now,
+      lastAccessedAt: now,
+    ));
+  }
+
+  /// Get cached LMS connection status
+  Future<dynamic> getCachedLmsConnectionStatus() async {
+    return _getCachedValue('lms_connection_status');
+  }
+
+  /// Cache LMS connection status
+  Future<void> cacheLmsConnectionStatus(dynamic status) async {
+    await _setCachedValue('lms_connection_status', status);
+  }
+
+  /// Get cached classroom courses
+  Future<List<dynamic>> getCachedClassroomCourses() async {
+    final cached = await _getCachedValue('classroom_courses');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache classroom courses
+  Future<void> cacheClassroomCourses(List<dynamic> courses) async {
+    await _setCachedValue('classroom_courses', courses);
+  }
+
+  /// Get cached classroom course by ID
+  Future<dynamic> getCachedClassroomCourse(String courseId) async {
+    return _getCachedValue('classroom_course_$courseId');
+  }
+
+  /// Get cached course mappings
+  Future<List<dynamic>> getCachedCourseMappings() async {
+    final cached = await _getCachedValue('course_mappings');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache course mappings
+  Future<void> cacheCourseMappings(List<dynamic> mappings) async {
+    await _setCachedValue('course_mappings', mappings);
+  }
+
+  /// Get cached sync history
+  Future<List<dynamic>> getCachedSyncHistory() async {
+    final cached = await _getCachedValue('lms_sync_history');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache sync history
+  Future<void> cacheSyncHistory(List<dynamic> history) async {
+    await _setCachedValue('lms_sync_history', history);
+  }
+
+  /// Get cached assignment links
+  Future<List<dynamic>> getCachedAssignmentLinks() async {
+    final cached = await _getCachedValue('assignment_links');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache assignment links
+  Future<void> cacheAssignmentLinks(List<dynamic> links) async {
+    await _setCachedValue('assignment_links', links);
+  }
+
+  /// Get cached pending grades for passback
+  Future<List<dynamic>> getCachedPendingGrades() async {
+    final cached = await _getCachedValue('pending_grades');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache pending grades
+  Future<void> cachePendingGrades(List<dynamic> grades) async {
+    await _setCachedValue('pending_grades', grades);
+  }
+
+  /// Clear all LMS/Google Classroom cache
+  Future<void> clearLmsCache() async {
+    await _db.deleteContentByKeys([
+      'lms_connection_status',
+      'classroom_courses',
+      'course_mappings',
+      'lms_sync_history',
+      'assignment_links',
+      'pending_grades',
+    ]);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // RISK PREDICTION CACHE
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get cached risk prediction for a student
+  Future<dynamic> getCachedRiskPrediction(String studentId) async {
+    return _getCachedValue('risk_prediction_$studentId');
+  }
+
+  /// Cache risk prediction for a student
+  Future<void> cacheRiskPrediction(String studentId, dynamic prediction) async {
+    await _setCachedValue('risk_prediction_$studentId', prediction);
+  }
+
+  /// Get cached classroom risk summary
+  Future<dynamic> getCachedClassroomRiskSummary(String classroomId) async {
+    return _getCachedValue('classroom_risk_summary_$classroomId');
+  }
+
+  /// Cache classroom risk summary
+  Future<void> cacheClassroomRiskSummary(String classroomId, dynamic summary) async {
+    await _setCachedValue('classroom_risk_summary_$classroomId', summary);
+  }
+
+  /// Get cached early warning report
+  Future<dynamic> getCachedEarlyWarningReport(String classId) async {
+    return _getCachedValue('early_warning_report_$classId');
+  }
+
+  /// Cache early warning report
+  Future<void> cacheEarlyWarningReport(String classId, dynamic report) async {
+    await _setCachedValue('early_warning_report_$classId', report);
+  }
+
+  /// Get cached at-risk students list
+  Future<List<dynamic>> getCachedAtRiskStudents() async {
+    final cached = await _getCachedValue('at_risk_students');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache at-risk students list
+  Future<void> cacheAtRiskStudents(List<dynamic> students) async {
+    await _setCachedValue('at_risk_students', students);
+  }
+
+  /// Get cached risk history for a student
+  Future<List<dynamic>> getCachedRiskHistory(String studentId) async {
+    final cached = await _getCachedValue('risk_history_$studentId');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache risk history for a student
+  Future<void> cacheRiskHistory(String studentId, List<dynamic> history) async {
+    await _setCachedValue('risk_history_$studentId', history);
+  }
+
+  /// Get cached student IDs
+  Future<List<String>> getCachedStudentIds() async {
+    final cached = await _getCachedValue('student_ids');
+    if (cached == null) return [];
+    return (cached as List<dynamic>).cast<String>();
+  }
+
+  /// Clear all risk prediction cache
+  Future<void> clearRiskCache() async {
+    // Delete all content with 'risk' in the key (using batch delete would be more efficient)
+    // For now, we'll delete the main known keys
+    await _db.deleteContentByKeys([
+      'at_risk_students',
+      'student_ids',
+    ]);
+  }
 }

@@ -43,6 +43,54 @@ export default async function LearningLayout({ children }: { children: ReactNode
               🎯 Goals
             </Link>
             <Link
+              href="/focus"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              ⏱️ Focus
+            </Link>
+            <Link
+              href="/executive-function"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              🧠 EF Tools
+            </Link>
+            <Link
+              href="/sel"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              😊 SEL
+            </Link>
+            <Link
+              href="/reading-tools"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              📖 Reading
+            </Link>
+            <Link
+              href="/math-support"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              🧮 Math
+            </Link>
+            <Link
+              href="/writing-tools"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              ✍️ Writing
+            </Link>
+            <Link
+              href="/visual-learning"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              🎨 Visual
+            </Link>
+            <Link
+              href="/study-skills"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            >
+              📚 Study Skills
+            </Link>
+            <Link
               href="/assessments"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
             >
@@ -87,13 +135,29 @@ export default async function LearningLayout({ children }: { children: ReactNode
             <span className="text-xl">📚</span>
             Courses
           </Link>
+          <Link href="/reading-tools" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">📖</span>
+            Reading
+          </Link>
+          <Link href="/math-support" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">🧮</span>
+            Math
+          </Link>
+          <Link href="/writing-tools" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">✍️</span>
+            Writing
+          </Link>
+          <Link href="/visual-learning" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">🎨</span>
+            Visual
+          </Link>
+          <Link href="/study-skills" className="flex flex-col items-center gap-1 text-xs text-slate-600">
+            <span className="text-xl">📚</span>
+            Study
+          </Link>
           <Link href="/goals" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🎯</span>
             Goals
-          </Link>
-          <Link href="/assessments" className="flex flex-col items-center gap-1 text-xs text-slate-600">
-            <span className="text-xl">📝</span>
-            Tests
           </Link>
           <Link href="/games" className="flex flex-col items-center gap-1 text-xs text-slate-600">
             <span className="text-xl">🎮</span>

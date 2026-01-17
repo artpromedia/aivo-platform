@@ -189,7 +189,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
             'Breath ${_breathCount + 1} of $_totalBreaths',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 40),
@@ -206,12 +206,12 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                   gradient: RadialGradient(
                     colors: [
                       AivoBrand.sky[400]!,
-                      AivoBrand.sky[600]!.withOpacity(0.6),
+                      AivoBrand.sky[600]!.withValues(alpha: 0.6),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AivoBrand.calmingBlue.withOpacity(0.4),
+                      color: AivoBrand.calmingBlue.withValues(alpha: 0.4),
                       blurRadius: 30,
                       spreadRadius: 10,
                     ),
@@ -237,7 +237,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
             _getPhaseDescription(),
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -251,7 +251,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -390,7 +390,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
                   shape: BoxShape.circle,
                   color: index <= _currentStep
                       ? _steps[index].color
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                 ),
               );
             }),
@@ -402,7 +402,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: step.color.withOpacity(0.2),
+              color: step.color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -465,7 +465,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -579,7 +579,7 @@ class _MovementBreakWidgetState extends State<MovementBreakWidget> {
             'Activity ${_currentActivity + 1} of ${_activities.length}',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 40),
@@ -589,7 +589,7 @@ class _MovementBreakWidgetState extends State<MovementBreakWidget> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AivoBrand.calmingGreen.withOpacity(0.2),
+              color: AivoBrand.calmingGreen.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -627,7 +627,7 @@ class _MovementBreakWidgetState extends State<MovementBreakWidget> {
             activity.instruction,
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -641,7 +641,7 @@ class _MovementBreakWidgetState extends State<MovementBreakWidget> {
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -716,7 +716,7 @@ class _SensoryExerciseWidgetState extends State<SensoryExerciseWidget> {
             'Feel the soft vibration',
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 60),
@@ -732,7 +732,7 @@ class _SensoryExerciseWidgetState extends State<SensoryExerciseWidget> {
                 gradient: SweepGradient(
                   colors: [
                     const Color(0xFF9C27B0),
-                    const Color(0xFF9C27B0).withOpacity(0.3),
+                    const Color(0xFF9C27B0).withValues(alpha: 0.3),
                     const Color(0xFF9C27B0),
                   ],
                   stops: [0, progress, 1],
@@ -770,7 +770,7 @@ class _SensoryExerciseWidgetState extends State<SensoryExerciseWidget> {
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -846,7 +846,7 @@ class _EncouragementWidgetState extends State<EncouragementWidget> {
                   shape: BoxShape.circle,
                   color: index <= _currentIndex
                       ? const Color(0xFFFFD700)
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                 ),
               );
             }),
@@ -903,7 +903,7 @@ class _EncouragementWidgetState extends State<EncouragementWidget> {
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -992,7 +992,7 @@ class _BreakTimerWidgetState extends State<BreakTimerWidget> {
             widget.intervention.content.instructions,
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -1008,7 +1008,7 @@ class _BreakTimerWidgetState extends State<BreakTimerWidget> {
                 child: CircularProgressIndicator(
                   value: progress,
                   strokeWidth: 8,
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     Color(0xFF64B5F6),
                   ),
@@ -1088,7 +1088,7 @@ class GenericInterventionWidget extends StatelessWidget {
             intervention.content.instructions,
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -1153,7 +1153,7 @@ class GenericInterventionWidget extends StatelessWidget {
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),

@@ -204,7 +204,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
                 color: isCompleted
                     ? Theme.of(context).colorScheme.primary
                     : isActive
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               child: isActive
@@ -277,8 +277,8 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              color.withOpacity(0.3),
-              color.withOpacity(0.1),
+              color.withValues(alpha: 0.3),
+              color.withValues(alpha: 0.1),
             ],
           ),
           border: Border.all(color: color, width: 3),
@@ -369,7 +369,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -410,7 +410,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
           height: 48,
           decoration: BoxDecoration(
             border: Border.all(
-              color: _getColorForStep(_currentStepIndex).withOpacity(0.5),
+              color: _getColorForStep(_currentStepIndex).withValues(alpha: 0.5),
               width: 2,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -473,9 +473,9 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withOpacity(0.3)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -681,7 +681,7 @@ class _FiveToOneGroundingWidgetState extends State<FiveToOneGroundingWidget> {
                     ? Colors.green
                     : isActive
                         ? Colors.blue
-                        : Colors.grey.withOpacity(0.3),
+                        : Colors.grey.withValues(alpha: 0.3),
               ),
               child: Center(
                 child: Text(

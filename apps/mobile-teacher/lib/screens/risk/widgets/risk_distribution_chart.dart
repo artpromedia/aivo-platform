@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../../models/risk_prediction.dart';
+import '../../../repositories/risk_repository.dart';
 import 'risk_level_badge.dart';
 
 /// Horizontal stacked bar chart showing risk distribution
@@ -175,9 +176,9 @@ class RiskIndicator extends StatelessWidget {
           // Background
           Container(
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: color.withOpacity(0.3), width: 2),
+              border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
             ),
           ),
           // Need attention count
@@ -262,7 +263,7 @@ class RiskCategoryBreakdown extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: score,
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation(_getScoreColor(score)),
             minHeight: 8,
           ),
@@ -372,8 +373,8 @@ class _RiskHistoryPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        Colors.red.withOpacity(0.2),
-        Colors.green.withOpacity(0.1),
+        Colors.red.withValues(alpha: 0.2),
+        Colors.green.withValues(alpha: 0.1),
       ],
     );
     fillPaint.shader = gradient.createShader(
@@ -391,6 +392,3 @@ class _RiskHistoryPainter extends CustomPainter {
     return oldDelegate.history != history;
   }
 }
-
-// Import for RiskHistoryEntry
-import '../../../repositories/risk_repository.dart';

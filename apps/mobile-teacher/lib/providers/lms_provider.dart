@@ -424,7 +424,7 @@ class SyncOperationNotifier extends StateNotifier<SyncOperationState> {
 
       state = state.copyWith(isSyncing: false);
 
-      return results;
+      return Future.value(results);
     } catch (e) {
       state = state.copyWith(
         isSyncing: false,

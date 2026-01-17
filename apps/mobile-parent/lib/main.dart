@@ -28,6 +28,7 @@ import 'screens/payment_setup_screen.dart';
 import 'screens/progress_report_screen.dart';
 import 'screens/subscription_management_screen.dart';
 import 'screens/virtual_brain_screen.dart';
+import 'home_activities/home_activities_screen.dart';
 import 'theme/parent_theme.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
@@ -162,6 +163,14 @@ final _routerProvider = Provider<GoRouter>((ref) {
             learnerId: learnerId,
             learnerName: extra['learnerName']?.toString() ?? 'Child',
           );
+        },
+      ),
+      // Home Activities
+      GoRoute(
+        path: '/children/:childId/home-activities',
+        builder: (context, state) {
+          final childId = state.pathParameters['childId'] ?? '';
+          return HomeActivitiesScreen(childId: childId);
         },
       ),
     ],

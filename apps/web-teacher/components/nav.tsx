@@ -8,6 +8,7 @@ const navItems = [
   { href: '/classrooms', label: 'Classrooms' },
   { href: '/gradebook', label: 'Gradebook' },
   { href: '/iep', label: 'IEP Manager' },
+  { href: '/accessibility', label: 'Accessibility' },
   { href: '/library', label: 'Library' },
   { href: '/planning', label: 'Planning' },
 ];

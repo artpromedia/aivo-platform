@@ -109,7 +109,7 @@ class _AccidentalTouchFilterListenerState
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Colors.orange.withOpacity(0.5),
+                    color: Colors.orange.withValues(alpha: 0.5),
                     width: widget.edgeMargin,
                   ),
                 ),
@@ -141,7 +141,7 @@ class EdgeZoneVisualizer extends StatelessWidget {
         size: Size.infinite,
         painter: _EdgeZonePainter(
           edgeMargin: edgeMargin,
-          color: zoneColor.withOpacity(0.2),
+          color: zoneColor.withValues(alpha: 0.2),
           borderColor: zoneColor,
         ),
       ),

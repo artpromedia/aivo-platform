@@ -623,8 +623,8 @@ class _MentalMathGameState extends State<_MentalMathGame> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
@@ -678,8 +678,8 @@ class _MentalMathGameState extends State<_MentalMathGame> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: _isCorrect == true
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.red.withOpacity(0.2),
+                    ? Colors.green.withValues(alpha: 0.2)
+                    : Colors.red.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -802,7 +802,7 @@ class _AnagramGameState extends State<_AnagramGame> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   border: Border.all(
                     color: Theme.of(context).colorScheme.primary,
                     width: 2,
@@ -850,8 +850,8 @@ class _AnagramGameState extends State<_AnagramGame> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: _isCorrect == true
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.red.withOpacity(0.2),
+                    ? Colors.green.withValues(alpha: 0.2)
+                    : Colors.red.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

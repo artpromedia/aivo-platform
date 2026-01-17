@@ -238,6 +238,23 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
+/// Password history for preventing password reuse
+model PasswordHistory {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  tenantId        String    @db.Uuid
+  passwordHash    String    // Hashed previous password
+  
+  // Metadata
+  changedAt       DateTime  @default(now())
+  changedByIp     String?
+  changedReason   String?   // e.g., "user_initiated", "admin_reset", "forced_expiry"
+  
+  @@index([userId])
+  @@index([tenantId])
+  @@index([changedAt])
+}
+
 /// Email verification tokens
 model EmailVerificationToken {
   id              String    @id @default(uuid()) @db.Uuid
