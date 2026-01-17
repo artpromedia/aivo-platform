@@ -5,9 +5,11 @@
  * safety layer. The AI agent prompt also includes guardrail instructions,
  * but post-processing catches any leaks.
  *
- * In a production system, this would integrate with the SAFETY agent for
- * more sophisticated content moderation.
+ * Integrates with the ai-orchestrator SAFETY agent for comprehensive
+ * content moderation and age-appropriate content verification.
  */
+
+import { config } from '../config.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DIRECT ANSWER DETECTION PATTERNS
@@ -190,26 +192,118 @@ export function analyzeAndSanitize(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SAFETY AGENT INTEGRATION (stub for future implementation)
+// SAFETY AGENT INTEGRATION
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Placeholder for SAFETY agent integration.
- * In production, this would call the ai-orchestrator SAFETY agent
- * for more sophisticated content analysis.
+ * Additional safety patterns for comprehensive content analysis.
+ * These supplement the direct answer patterns with content safety checks.
+ */
+const CONTENT_SAFETY_PATTERNS = [
+  // Self-harm related
+  /\b(suicide|self-harm|kill\s+(myself|yourself)|hurt\s+(myself|yourself))\b/i,
+  // Dangerous content
+  /\b(bomb|weapon|gun)\s+(make|build|create)\b/i,
+  /\bhow\s+(do\s+)?(i|to)\s+(make|build|create)\s+(a\s+)?(bomb|weapon|gun)\b/i,
+  // Explicit content
+  /\b(porn|pornography|xxx|explicit\s+content)\b/i,
+  // Hate speech
+  /\b(hate|kill)\s+(all|every)\s+\w+/i,
+  // Diagnosis-like statements (inappropriate for AI tutor)
+  /\byou\s+(are|have)\s+(autistic|autism|adhd|dyslexia|anxiety|depression)\b/i,
+];
+
+/**
+ * Check content with the SAFETY agent via ai-orchestrator.
  *
- * @param _text - Text to analyze
+ * Calls the ai-orchestrator's internal API for comprehensive safety analysis,
+ * including age-appropriate content checks and content moderation.
+ *
+ * @param text - Text to analyze
+ * @param context - Optional context for more accurate analysis
  * @returns Promise resolving to safety check result
  */
-export async function checkWithSafetyAgent(_text: string): Promise<{
+export async function checkWithSafetyAgent(
+  text: string,
+  context?: { tenantId?: string; learnerId?: string; agentType?: string }
+): Promise<{
   isSafe: boolean;
   concerns: string[];
 }> {
-  // TODO: Implement SAFETY agent integration
-  // const response = await aiOrchestratorClient.callSafetyAgent(text);
-  // return response;
+  const concerns: string[] = [];
 
-  // For now, just use static patterns
+  // First, do local pattern checking for fast response
+  const lowerText = text.toLowerCase();
+  for (const pattern of CONTENT_SAFETY_PATTERNS) {
+    if (pattern.test(lowerText)) {
+      concerns.push(`Pattern match: ${pattern.source}`);
+    }
+  }
+
+  // If we found concerns locally, return early
+  if (concerns.length > 0) {
+    return {
+      isSafe: false,
+      concerns,
+    };
+  }
+
+  // Call ai-orchestrator for comprehensive safety check (if configured)
+  if (config.aiOrchestratorUrl && config.aiOrchestratorApiKey) {
+    try {
+      const response = await fetch(`${config.aiOrchestratorUrl}/internal/ai/test-agent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-API-Key': config.aiOrchestratorApiKey,
+        },
+        body: JSON.stringify({
+          tenantId: context?.tenantId ?? 'homework-helper',
+          agentType: 'SAFETY',
+          payload: {
+            content: text,
+            checkType: 'content_moderation',
+          },
+          metadata: {
+            source: 'homework-helper-svc',
+            learnerId: context?.learnerId,
+          },
+        }),
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+
+      if (response.ok) {
+        const result = (await response.json()) as {
+          response?: {
+            status?: string;
+            label?: string;
+            reason?: string;
+          };
+        };
+
+        // Check if the safety agent flagged the content
+        if (result.response?.status === 'BLOCKED' || result.response?.status === 'NEEDS_REVIEW') {
+          concerns.push(result.response.reason ?? 'Content flagged by safety agent');
+          return {
+            isSafe: false,
+            concerns,
+          };
+        }
+      } else {
+        // Log but don't fail - graceful degradation
+        console.warn('[SafetyAgent] ai-orchestrator returned non-OK status', {
+          status: response.status,
+        });
+      }
+    } catch (error) {
+      // Log but don't fail - graceful degradation
+      console.warn('[SafetyAgent] Failed to call ai-orchestrator', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  // If no concerns from either local or remote checks
   return {
     isSafe: true,
     concerns: [],
