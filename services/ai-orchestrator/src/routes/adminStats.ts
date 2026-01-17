@@ -94,158 +94,6 @@ interface DsrStats {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
-// MOCK DATA GENERATORS (TODO: Replace with real queries when tables exist)
-// ════════════════════════════════════════════════════════════════════════════════
-
-function generateMockAiCallLogStats(from: string, to: string): AiCallLogStats {
-  // TODO: Replace with real database aggregation query
-  // SELECT COUNT(*), AVG(latency_ms), PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms) as p95_latency_ms,
-  // SUM(cost_cents_estimate), ... FROM ai_call_logs WHERE created_at BETWEEN $1 AND $2
-  return {
-    totalCalls: 15782,
-    callsByAgentType: {
-      BASELINE: 4521,
-      HOMEWORK_HELPER: 6834,
-      FOCUS_MONITOR: 2145,
-      SAFETY_MONITOR: 1982,
-      VIRTUAL_BRAIN: 300,
-    },
-    safetyDistribution: {
-      SAFE: 14892,
-      LOW: 612,
-      MEDIUM: 245,
-      HIGH: 33,
-    },
-    avgLatencyMs: 423,
-    p95LatencyMs: 1250,
-    avgCostCentsPerCall: 0.12,
-    totalCostCents: 1893.84,
-    callsByProvider: {
-      OPENAI: 12543,
-      ANTHROPIC: 3239,
-    },
-    callsByStatus: {
-      SUCCESS: 15634,
-      ERROR: 148,
-    },
-    periodStart: from,
-    periodEnd: to,
-  };
-}
-
-function generateMockIncidentStats(from: string, to: string): AiIncidentStats {
-  // TODO: Replace with real database aggregation query
-  // SELECT severity, COUNT(*) FROM ai_incidents WHERE created_at BETWEEN $1 AND $2 GROUP BY severity
-  return {
-    totalIncidents: 47,
-    incidentCountsBySeverity: {
-      INFO: 12,
-      LOW: 18,
-      MEDIUM: 11,
-      HIGH: 5,
-      CRITICAL: 1,
-    },
-    incidentCountsByCategory: {
-      SAFETY: 23,
-      PRIVACY: 8,
-      COMPLIANCE: 6,
-      PERFORMANCE: 7,
-      COST: 3,
-    },
-    incidentCountsByStatus: {
-      OPEN: 14,
-      INVESTIGATING: 8,
-      RESOLVED: 21,
-      DISMISSED: 4,
-    },
-    openIncidentsBySeverity: {
-      INFO: 3,
-      LOW: 5,
-      MEDIUM: 4,
-      HIGH: 2,
-      CRITICAL: 0,
-    },
-    topTenantsByIncidentCount: [
-      { tenantId: 'tenant-001', tenantName: 'Springfield School District', incidentCount: 12 },
-      { tenantId: 'tenant-002', tenantName: 'Riverdale Academy', incidentCount: 8 },
-      { tenantId: 'tenant-003', tenantName: 'Hillcrest Charter', incidentCount: 7 },
-      { tenantId: 'tenant-004', tenantName: 'Oakwood Elementary', incidentCount: 5 },
-      { tenantId: 'tenant-005', tenantName: 'Maple Grove Schools', incidentCount: 4 },
-    ],
-    periodStart: from,
-    periodEnd: to,
-  };
-}
-
-function generateMockDsrStats(from: string, to: string): DsrStats {
-  // TODO: Replace with real database aggregation query from dsr_requests table
-  // SELECT request_type, COUNT(*) FROM dsr_requests WHERE created_at BETWEEN $1 AND $2 GROUP BY request_type
-  return {
-    totalRequests: 34,
-    countsByType: {
-      EXPORT: 28,
-      DELETE: 6,
-    },
-    countsByStatus: {
-      PENDING: 3,
-      IN_PROGRESS: 2,
-      COMPLETED: 26,
-      REJECTED: 2,
-      FAILED: 1,
-    },
-    recentRequests: [
-      {
-        id: 'dsr-001',
-        tenantId: 'tenant-001',
-        tenantName: 'Springfield School District',
-        requestType: 'EXPORT',
-        status: 'PENDING',
-        learnerId: 'learner-abc',
-        createdAt: new Date().toISOString(),
-        completedAt: null,
-      },
-      {
-        id: 'dsr-002',
-        tenantId: 'tenant-002',
-        tenantName: 'Riverdale Academy',
-        requestType: 'DELETE',
-        status: 'IN_PROGRESS',
-        learnerId: 'learner-def',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        completedAt: null,
-      },
-      {
-        id: 'dsr-003',
-        tenantId: 'tenant-001',
-        tenantName: 'Springfield School District',
-        requestType: 'EXPORT',
-        status: 'COMPLETED',
-        learnerId: 'learner-ghi',
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        completedAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ],
-    periodStart: from,
-    periodEnd: to,
-  };
-}
-
-function generateMockPolicySummary(): ActivePolicySummary {
-  // TODO: Replace with real database query
-  // SELECT * FROM policy_documents WHERE scope_type = 'GLOBAL' AND is_active = true
-  // SELECT COUNT(*) FROM policy_documents WHERE scope_type = 'TENANT' AND is_active = true
-  return {
-    globalPolicy: {
-      id: 'policy-global-001',
-      name: 'Global Default Policy v1',
-      version: 1,
-      updatedAt: new Date(Date.now() - 604800000).toISOString(),
-    },
-    tenantOverrideCount: 3,
-  };
-}
-
-// ════════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ════════════════════════════════════════════════════════════════════════════════
 
@@ -253,11 +101,350 @@ interface AdminStatsRoutesOptions {
   pool: Pool;
 }
 
+// ════════════════════════════════════════════════════════════════════════════════
+// DATABASE QUERY FUNCTIONS
+// ════════════════════════════════════════════════════════════════════════════════
+
+async function getAiCallLogStats(pool: Pool, from: string, to: string): Promise<AiCallLogStats> {
+  const fromDate = `${from}T00:00:00Z`;
+  const toDate = `${to}T23:59:59Z`;
+
+  // Get total calls and timing stats
+  const basicStatsResult = await pool.query<{
+    total_calls: string;
+    avg_latency_ms: string;
+    p95_latency_ms: string;
+    avg_cost_cents: string;
+    total_cost_cents: string;
+  }>(`
+    SELECT 
+      COUNT(*)::text as total_calls,
+      COALESCE(AVG(latency_ms), 0)::text as avg_latency_ms,
+      COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms), 0)::text as p95_latency_ms,
+      COALESCE(AVG(cost_cents_estimate), 0)::text as avg_cost_cents,
+      COALESCE(SUM(cost_cents_estimate), 0)::text as total_cost_cents
+    FROM ai_call_logs 
+    WHERE created_at BETWEEN $1 AND $2
+  `, [fromDate, toDate]);
+
+  // Get calls by agent type
+  const agentTypeResult = await pool.query<{ agent_type: string; count: string }>(`
+    SELECT agent_type, COUNT(*)::text as count
+    FROM ai_call_logs
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY agent_type
+  `, [fromDate, toDate]);
+
+  // Get safety distribution
+  const safetyResult = await pool.query<{ safety_label: string; count: string }>(`
+    SELECT COALESCE(safety_label, 'SAFE') as safety_label, COUNT(*)::text as count
+    FROM ai_call_logs
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY safety_label
+  `, [fromDate, toDate]);
+
+  // Get calls by provider
+  const providerResult = await pool.query<{ provider: string; count: string }>(`
+    SELECT provider, COUNT(*)::text as count
+    FROM ai_call_logs
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY provider
+  `, [fromDate, toDate]);
+
+  // Get calls by status
+  const statusResult = await pool.query<{ status: string; count: string }>(`
+    SELECT status, COUNT(*)::text as count
+    FROM ai_call_logs
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY status
+  `, [fromDate, toDate]);
+
+  const basicStats = basicStatsResult.rows[0] || {
+    total_calls: '0',
+    avg_latency_ms: '0',
+    p95_latency_ms: '0',
+    avg_cost_cents: '0',
+    total_cost_cents: '0',
+  };
+
+  const callsByAgentType: Record<string, number> = {};
+  for (const row of agentTypeResult.rows) {
+    callsByAgentType[row.agent_type] = parseInt(row.count, 10);
+  }
+
+  const safetyDistribution: Record<string, number> = {
+    SAFE: 0, LOW: 0, MEDIUM: 0, HIGH: 0,
+  };
+  for (const row of safetyResult.rows) {
+    safetyDistribution[row.safety_label] = parseInt(row.count, 10);
+  }
+
+  const callsByProvider: Record<string, number> = {};
+  for (const row of providerResult.rows) {
+    callsByProvider[row.provider] = parseInt(row.count, 10);
+  }
+
+  const callsByStatus: { SUCCESS: number; ERROR: number } = { SUCCESS: 0, ERROR: 0 };
+  for (const row of statusResult.rows) {
+    if (row.status === 'SUCCESS' || row.status === 'ERROR') {
+      callsByStatus[row.status] = parseInt(row.count, 10);
+    }
+  }
+
+  return {
+    totalCalls: parseInt(basicStats.total_calls, 10),
+    callsByAgentType,
+    safetyDistribution: safetyDistribution as Record<(typeof SAFETY_LABELS)[number], number>,
+    avgLatencyMs: Math.round(parseFloat(basicStats.avg_latency_ms)),
+    p95LatencyMs: Math.round(parseFloat(basicStats.p95_latency_ms)),
+    avgCostCentsPerCall: parseFloat(basicStats.avg_cost_cents),
+    totalCostCents: parseFloat(basicStats.total_cost_cents),
+    callsByProvider,
+    callsByStatus,
+    periodStart: from,
+    periodEnd: to,
+  };
+}
+
+async function getIncidentStats(pool: Pool, from: string, to: string): Promise<AiIncidentStats> {
+  const fromDate = `${from}T00:00:00Z`;
+  const toDate = `${to}T23:59:59Z`;
+
+  // Get total incidents
+  const totalResult = await pool.query<{ count: string }>(`
+    SELECT COUNT(*)::text as count
+    FROM ai_incidents
+    WHERE created_at BETWEEN $1 AND $2
+  `, [fromDate, toDate]);
+
+  // Get counts by severity
+  const severityResult = await pool.query<{ severity: string; count: string }>(`
+    SELECT severity, COUNT(*)::text as count
+    FROM ai_incidents
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY severity
+  `, [fromDate, toDate]);
+
+  // Get counts by category
+  const categoryResult = await pool.query<{ category: string; count: string }>(`
+    SELECT category, COUNT(*)::text as count
+    FROM ai_incidents
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY category
+  `, [fromDate, toDate]);
+
+  // Get counts by status
+  const statusResult = await pool.query<{ status: string; count: string }>(`
+    SELECT status, COUNT(*)::text as count
+    FROM ai_incidents
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY status
+  `, [fromDate, toDate]);
+
+  // Get open incidents by severity
+  const openSeverityResult = await pool.query<{ severity: string; count: string }>(`
+    SELECT severity, COUNT(*)::text as count
+    FROM ai_incidents
+    WHERE status = 'OPEN'
+    GROUP BY severity
+  `);
+
+  // Get top tenants by incident count
+  const topTenantsResult = await pool.query<{ tenant_id: string; count: string }>(`
+    SELECT tenant_id, COUNT(*)::text as count
+    FROM ai_incidents
+    WHERE created_at BETWEEN $1 AND $2
+    GROUP BY tenant_id
+    ORDER BY count DESC
+    LIMIT 5
+  `, [fromDate, toDate]);
+
+  const incidentCountsBySeverity: Record<string, number> = {
+    INFO: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0,
+  };
+  for (const row of severityResult.rows) {
+    incidentCountsBySeverity[row.severity] = parseInt(row.count, 10);
+  }
+
+  const incidentCountsByCategory: Record<string, number> = {
+    SAFETY: 0, PRIVACY: 0, COMPLIANCE: 0, PERFORMANCE: 0, COST: 0,
+  };
+  for (const row of categoryResult.rows) {
+    incidentCountsByCategory[row.category] = parseInt(row.count, 10);
+  }
+
+  const incidentCountsByStatus: Record<string, number> = {
+    OPEN: 0, INVESTIGATING: 0, RESOLVED: 0, DISMISSED: 0,
+  };
+  for (const row of statusResult.rows) {
+    incidentCountsByStatus[row.status] = parseInt(row.count, 10);
+  }
+
+  const openIncidentsBySeverity: Record<string, number> = {
+    INFO: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0,
+  };
+  for (const row of openSeverityResult.rows) {
+    openIncidentsBySeverity[row.severity] = parseInt(row.count, 10);
+  }
+
+  const topTenantsByIncidentCount: TenantIncidentCount[] = topTenantsResult.rows.map((row) => ({
+    tenantId: row.tenant_id,
+    tenantName: `Tenant ${row.tenant_id.substring(0, 8)}`, // Placeholder - would need tenant-svc lookup
+    incidentCount: parseInt(row.count, 10),
+  }));
+
+  return {
+    totalIncidents: parseInt(totalResult.rows[0]?.count || '0', 10),
+    incidentCountsBySeverity: incidentCountsBySeverity as Record<(typeof INCIDENT_SEVERITIES)[number], number>,
+    incidentCountsByCategory: incidentCountsByCategory as Record<(typeof INCIDENT_CATEGORIES)[number], number>,
+    incidentCountsByStatus: incidentCountsByStatus as Record<(typeof INCIDENT_STATUSES)[number], number>,
+    openIncidentsBySeverity: openIncidentsBySeverity as Record<(typeof INCIDENT_SEVERITIES)[number], number>,
+    topTenantsByIncidentCount,
+    periodStart: from,
+    periodEnd: to,
+  };
+}
+
+async function getDsrStats(pool: Pool, from: string, to: string): Promise<DsrStats> {
+  const fromDate = `${from}T00:00:00Z`;
+  const toDate = `${to}T23:59:59Z`;
+
+  // Note: DSR requests may be in a different database/service (dsr-svc)
+  // This query assumes a dsr_requests table exists in this database
+  // If not, this will return empty results which is acceptable
+  
+  try {
+    // Get total requests
+    const totalResult = await pool.query<{ count: string }>(`
+      SELECT COUNT(*)::text as count
+      FROM dsr_requests
+      WHERE created_at BETWEEN $1 AND $2
+    `, [fromDate, toDate]);
+
+    // Get counts by type
+    const typeResult = await pool.query<{ request_type: string; count: string }>(`
+      SELECT request_type, COUNT(*)::text as count
+      FROM dsr_requests
+      WHERE created_at BETWEEN $1 AND $2
+      GROUP BY request_type
+    `, [fromDate, toDate]);
+
+    // Get counts by status
+    const statusResult = await pool.query<{ status: string; count: string }>(`
+      SELECT status, COUNT(*)::text as count
+      FROM dsr_requests
+      WHERE created_at BETWEEN $1 AND $2
+      GROUP BY status
+    `, [fromDate, toDate]);
+
+    // Get recent requests
+    const recentResult = await pool.query<{
+      id: string;
+      tenant_id: string;
+      request_type: string;
+      status: string;
+      learner_id: string;
+      created_at: Date;
+      completed_at: Date | null;
+    }>(`
+      SELECT id, tenant_id, request_type, status, learner_id, created_at, completed_at
+      FROM dsr_requests
+      WHERE created_at BETWEEN $1 AND $2
+      ORDER BY created_at DESC
+      LIMIT 10
+    `, [fromDate, toDate]);
+
+    const countsByType: Record<string, number> = {};
+    for (const row of typeResult.rows) {
+      countsByType[row.request_type] = parseInt(row.count, 10);
+    }
+
+    const countsByStatus: Record<string, number> = {};
+    for (const row of statusResult.rows) {
+      countsByStatus[row.status] = parseInt(row.count, 10);
+    }
+
+    const recentRequests = recentResult.rows.map((row) => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      tenantName: `Tenant ${row.tenant_id.substring(0, 8)}`,
+      requestType: row.request_type,
+      status: row.status,
+      learnerId: row.learner_id,
+      createdAt: row.created_at.toISOString(),
+      completedAt: row.completed_at?.toISOString() || null,
+    }));
+
+    return {
+      totalRequests: parseInt(totalResult.rows[0]?.count || '0', 10),
+      countsByType,
+      countsByStatus,
+      recentRequests,
+      periodStart: from,
+      periodEnd: to,
+    };
+  } catch {
+    // Table may not exist - return empty stats
+    return {
+      totalRequests: 0,
+      countsByType: {},
+      countsByStatus: {},
+      recentRequests: [],
+      periodStart: from,
+      periodEnd: to,
+    };
+  }
+}
+
+async function getPolicySummary(pool: Pool): Promise<ActivePolicySummary> {
+  try {
+    // Get global policy
+    const globalResult = await pool.query<{
+      id: string;
+      name: string;
+      version: number;
+      updated_at: Date;
+    }>(`
+      SELECT id, name, version, updated_at
+      FROM policy_documents
+      WHERE scope_type = 'GLOBAL' AND is_active = true
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `);
+
+    // Get tenant override count
+    const overrideResult = await pool.query<{ count: string }>(`
+      SELECT COUNT(*)::text as count
+      FROM policy_documents
+      WHERE scope_type = 'TENANT' AND is_active = true
+    `);
+
+    const globalRow = globalResult.rows[0];
+    return {
+      globalPolicy: globalRow
+        ? {
+            id: globalRow.id,
+            name: globalRow.name,
+            version: globalRow.version,
+            updatedAt: globalRow.updated_at.toISOString(),
+          }
+        : null,
+      tenantOverrideCount: parseInt(overrideResult.rows[0]?.count || '0', 10),
+    };
+  } catch {
+    // Table may not exist - return empty summary
+    return {
+      globalPolicy: null,
+      tenantOverrideCount: 0,
+    };
+  }
+}
+
 export const registerAdminStatsRoutes: FastifyPluginAsync<AdminStatsRoutesOptions> = async (
   fastify: FastifyInstance,
   opts
 ) => {
-  const { pool: _pool } = opts;
+  const { pool } = opts;
 
   /**
    * GET /admin/ai/call-logs/stats
@@ -272,10 +459,7 @@ export const registerAdminStatsRoutes: FastifyPluginAsync<AdminStatsRoutesOption
     }
 
     const { from, to } = parsed.data;
-
-    // TODO: Implement real database query
-    // For now, return mock data to enable frontend development
-    const stats = generateMockAiCallLogStats(from, to);
+    const stats = await getAiCallLogStats(pool, from, to);
     reply.code(200).send(stats);
   });
 
@@ -292,9 +476,7 @@ export const registerAdminStatsRoutes: FastifyPluginAsync<AdminStatsRoutesOption
     }
 
     const { from, to } = parsed.data;
-
-    // TODO: Implement real database query
-    const stats = generateMockIncidentStats(from, to);
+    const stats = await getIncidentStats(pool, from, to);
     reply.code(200).send(stats);
   });
 
@@ -304,8 +486,7 @@ export const registerAdminStatsRoutes: FastifyPluginAsync<AdminStatsRoutesOption
    * Returns a summary of active policies (global + tenant override count).
    */
   fastify.get('/admin/policies/active-summary', async (_request, reply) => {
-    // TODO: Implement real database query
-    const summary = generateMockPolicySummary();
+    const summary = await getPolicySummary(pool);
     reply.code(200).send(summary);
   });
 
@@ -324,15 +505,22 @@ export const registerAdminStatsRoutes: FastifyPluginAsync<AdminStatsRoutesOption
 
     const { from, to } = parsed.data;
 
-    // TODO: Implement real database queries for each section
+    // Execute all queries in parallel for efficiency
+    const [aiStats, incidentStats, dsrStats, policyStatus] = await Promise.all([
+      getAiCallLogStats(pool, from, to),
+      getIncidentStats(pool, from, to),
+      getDsrStats(pool, from, to),
+      getPolicySummary(pool),
+    ]);
+
     const report: ComplianceReport = {
       generatedAt: new Date().toISOString(),
       periodStart: from,
       periodEnd: to,
-      aiStats: generateMockAiCallLogStats(from, to),
-      incidentStats: generateMockIncidentStats(from, to),
-      dsrStats: generateMockDsrStats(from, to),
-      policyStatus: generateMockPolicySummary(),
+      aiStats,
+      incidentStats,
+      dsrStats,
+      policyStatus,
     };
 
     reply.code(200).send(report);

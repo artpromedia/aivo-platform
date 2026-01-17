@@ -14,6 +14,11 @@ import {
   LearnerParamsSchema,
   CareTeamMemberParamsSchema,
 } from '../schemas/index.js';
+import {
+  publishCareTeamMemberAdded,
+  publishCareTeamMemberUpdated,
+  publishCareTeamMemberRemoved,
+} from '../events/publisher.js';
 import { z } from 'zod';
 
 type CreateCareTeamMemberBody = z.infer<typeof CreateCareTeamMemberSchema>;
@@ -147,7 +152,15 @@ export async function careTeamRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for care team member added
+    // Publish NATS event for care team member added
+    void publishCareTeamMemberAdded(tenantId, params.learnerId, userId, {
+      memberId: member.id,
+      userId: member.userId,
+      displayName: member.displayName,
+      role: member.role as 'PARENT' | 'TEACHER' | 'THERAPIST' | 'SPECIALIST' | 'ADMIN' | 'OTHER',
+      title: member.title,
+      addedByUserId: userId,
+    });
 
     return reply.status(201).send({ data: member });
   });
@@ -201,7 +214,17 @@ export async function careTeamRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for care team member updated
+    // Publish NATS event for care team member updated
+    void publishCareTeamMemberUpdated(tenantId, params.learnerId, userId, {
+      memberId: member.id,
+      changes: body as Record<string, unknown>,
+      previousValues: {
+        displayName: existingMember.displayName,
+        role: existingMember.role,
+        title: existingMember.title,
+        isActive: existingMember.isActive,
+      } as Record<string, unknown>,
+    });
 
     return reply.send({ data: member });
   });
@@ -246,7 +269,13 @@ export async function careTeamRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for care team member removed
+    // Publish NATS event for care team member removed
+    void publishCareTeamMemberRemoved(tenantId, params.learnerId, userId, {
+      memberId: member.id,
+      userId: member.userId,
+      displayName: member.displayName,
+      role: member.role as 'PARENT' | 'TEACHER' | 'THERAPIST' | 'SPECIALIST' | 'ADMIN' | 'OTHER',
+    });
 
     return reply.send({ data: member });
   });

@@ -9,6 +9,7 @@
 
 import type { FastifyRequest } from 'fastify';
 
+import { prisma } from '../prisma.js';
 import type { AuthUser, UserRole, Visibility } from '../types/index.js';
 
 import { ForbiddenError } from './errorHandler.js';
@@ -109,31 +110,58 @@ export function getDefaultVisibility(user: AuthUser, therapistMode = false): Vis
 }
 
 /**
- * Stub: Check if teacher/therapist has access to a learner
+ * Check if teacher/therapist has access to a learner
  *
- * In production, this would query:
- * - teacher_learner_assignments table
- * - classroom_members table
- * - caseload assignments
+ * Access is granted if:
+ * 1. The teacher has created any goals for this learner
+ * 2. The teacher has created any session plans for this learner
+ * 3. Any educator in the same tenant has worked with this learner 
+ *    (learner exists in the tenant's data)
  *
- * For now, returns true for educators (stub implementation).
+ * This provides implicit assignment through work history.
+ * For explicit assignments, consider adding a teacher_learner_assignments table.
  */
 export async function teacherHasAccessToLearner(
-  _userId: string,
-  _learnerId: string,
-  _tenantId: string
+  userId: string,
+  learnerId: string,
+  tenantId: string
 ): Promise<boolean> {
-  // TODO: Implement actual assignment lookup
-  // Example query:
-  // SELECT 1 FROM teacher_learner_assignments
-  // WHERE teacher_user_id = $userId AND learner_id = $learnerId AND tenant_id = $tenantId
-  // UNION
-  // SELECT 1 FROM classroom_members cm
-  // JOIN classroom_teachers ct ON ct.classroom_id = cm.classroom_id
-  // WHERE ct.teacher_user_id = $userId AND cm.learner_id = $learnerId
+  // Check if the teacher has directly created content for this learner
+  const [hasGoal, hasSessionPlan] = await Promise.all([
+    prisma.goal.findFirst({
+      where: {
+        tenantId,
+        learnerId,
+        createdByUserId: userId,
+      },
+      select: { id: true },
+    }),
+    prisma.sessionPlan.findFirst({
+      where: {
+        tenantId,
+        learnerId,
+        createdByUserId: userId,
+      },
+      select: { id: true },
+    }),
+  ]);
 
-  // Stub: Allow all educators for now
-  return true;
+  if (hasGoal || hasSessionPlan) {
+    return true;
+  }
+
+  // Check if the learner exists in this tenant's data at all
+  // This allows educators to access any learner in their tenant
+  // (more permissive, but practical for small tenants)
+  const learnerExistsInTenant = await prisma.goal.findFirst({
+    where: {
+      tenantId,
+      learnerId,
+    },
+    select: { id: true },
+  });
+
+  return !!learnerExistsInTenant;
 }
 
 /**

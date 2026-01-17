@@ -15,6 +15,11 @@ import {
   LearnerParamsSchema,
   CareNoteParamsSchema,
 } from '../schemas/index.js';
+import {
+  publishCareNoteCreated,
+  publishCareNoteUpdated,
+  publishCareNoteDeleted,
+} from '../events/publisher.js';
 import { z } from 'zod';
 
 type CreateCareNoteBody = z.infer<typeof CreateCareNoteSchema>;
@@ -274,8 +279,20 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for note created
-    // TODO: Send notification to relevant care team members
+    // Publish NATS event for note created
+    void publishCareNoteCreated(tenantId, params.learnerId, userId, {
+      noteId: note.id,
+      noteType: note.noteType as 'OBSERVATION' | 'PROGRESS_UPDATE' | 'CONCERN' | 'MEETING_NOTES' | 'RECOMMENDATION' | 'GENERAL',
+      title: note.title,
+      visibility: note.visibility as 'TEAM' | 'EDUCATORS_ONLY' | 'PARENTS_ONLY' | 'PRIVATE',
+      authorId: note.authorId,
+      authorName: note.author.displayName,
+      actionPlanId: note.actionPlanId,
+      meetingId: note.meetingId,
+      requiresFollowUp: note.requiresFollowUp,
+      tags: note.tags,
+    });
+    // NOTE: Notifications should be sent by a separate notification service
 
     return reply.status(201).send({ data: note });
   });
@@ -334,7 +351,11 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for note updated
+    // Publish NATS event for note updated
+    void publishCareNoteUpdated(tenantId, params.learnerId, userId, {
+      noteId: note.id,
+      changes: body as Record<string, unknown>,
+    });
 
     return reply.send({ data: note });
   });
@@ -437,7 +458,12 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
       where: { id: params.noteId },
     });
 
-    // TODO: Publish NATS event for note deleted
+    // Publish NATS event for note deleted
+    void publishCareNoteDeleted(tenantId, params.learnerId, userId, {
+      noteId: params.noteId,
+      noteType: existingNote.noteType as 'OBSERVATION' | 'PROGRESS_UPDATE' | 'CONCERN' | 'MEETING_NOTES' | 'RECOMMENDATION' | 'GENERAL',
+      authorId: existingNote.authorId,
+    });
 
     return reply.status(204).send();
   });

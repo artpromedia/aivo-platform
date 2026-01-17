@@ -248,10 +248,10 @@ export async function getRecentlyUsedLOIds(
 }
 
 /**
- * Full-text search using PostgreSQL (for future enhancement).
- * Currently using simple LIKE matching.
+ * Semantic search for Learning Objects.
  *
- * For vector/embedding search, would integrate with pgvector:
+ * Currently falls back to text-based search using the existing searchContent function.
+ * When pgvector and embeddings are available, this will use vector similarity search:
  * ```sql
  * SELECT id, title, 1 - (embedding <=> $1) as similarity
  * FROM learning_object_embeddings
@@ -261,11 +261,19 @@ export async function getRecentlyUsedLOIds(
  * ```
  */
 export async function semanticSearch(
-  _query: string,
-  _options: { tenantId?: string; limit?: number }
+  query: string,
+  options: { tenantId?: string; limit?: number } = {}
 ): Promise<SearchResult[]> {
-  // TODO: Implement pgvector semantic search when embeddings are available
-  // For now, fall back to text search
-  console.warn('Semantic search not yet implemented, falling back to text search');
-  return [];
+  const { tenantId, limit = 20 } = options;
+
+  // Fall back to text search until embedding infrastructure is available
+  // This provides functionality while semantic search is being built out
+  const response = await searchContent({
+    tenantId,
+    textQuery: query,
+    limit,
+    offset: 0,
+  });
+
+  return response.items;
 }

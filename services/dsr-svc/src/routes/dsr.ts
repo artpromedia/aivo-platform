@@ -363,78 +363,77 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
 
       const { from, to } = parsed.data;
 
-      // TODO: Replace with real database aggregation queries
-      // For now, return mock data to enable frontend development
-      //
-      // Real implementation would be:
-      // const typeStats = await pool.query(
-      //   `SELECT request_type, COUNT(*) as count FROM dsr_requests
-      //    WHERE created_at >= $1 AND created_at <= $2 GROUP BY request_type`,
-      //   [from, to]
-      // );
-      // const statusStats = await pool.query(
-      //   `SELECT status, COUNT(*) as count FROM dsr_requests
-      //    WHERE created_at >= $1 AND created_at <= $2 GROUP BY status`,
-      //   [from, to]
-      // );
-      // const recent = await pool.query(
-      //   `SELECT r.*, t.name as tenant_name FROM dsr_requests r
-      //    LEFT JOIN tenants t ON r.tenant_id = t.id
-      //    WHERE r.created_at >= $1 AND r.created_at <= $2
-      //    ORDER BY r.created_at DESC LIMIT 10`,
-      //   [from, to]
-      // );
+      // Query type statistics
+      const typeStatsResult = await pool.query<{ request_type: string; count: string }>(
+        `SELECT request_type, COUNT(*)::text as count FROM dsr_requests
+         WHERE created_at >= $1 AND created_at <= $2 GROUP BY request_type`,
+        [from, to]
+      );
 
-      const mockStats = {
-        totalRequests: 34,
-        countsByType: {
-          EXPORT: 28,
-          DELETE: 6,
-        },
-        countsByStatus: {
-          PENDING: 3,
-          IN_PROGRESS: 2,
-          COMPLETED: 26,
-          REJECTED: 2,
-          FAILED: 1,
-        },
-        recentRequests: [
-          {
-            id: 'dsr-001',
-            tenantId: 'tenant-001',
-            tenantName: 'Springfield School District',
-            requestType: 'EXPORT',
-            status: 'PENDING',
-            learnerId: 'learner-abc',
-            createdAt: new Date().toISOString(),
-            completedAt: null,
-          },
-          {
-            id: 'dsr-002',
-            tenantId: 'tenant-002',
-            tenantName: 'Riverdale Academy',
-            requestType: 'DELETE',
-            status: 'IN_PROGRESS',
-            learnerId: 'learner-def',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            completedAt: null,
-          },
-          {
-            id: 'dsr-003',
-            tenantId: 'tenant-001',
-            tenantName: 'Springfield School District',
-            requestType: 'EXPORT',
-            status: 'COMPLETED',
-            learnerId: 'learner-ghi',
-            createdAt: new Date(Date.now() - 172800000).toISOString(),
-            completedAt: new Date(Date.now() - 86400000).toISOString(),
-          },
-        ],
+      // Query status statistics
+      const statusStatsResult = await pool.query<{ status: string; count: string }>(
+        `SELECT status, COUNT(*)::text as count FROM dsr_requests
+         WHERE created_at >= $1 AND created_at <= $2 GROUP BY status`,
+        [from, to]
+      );
+
+      // Query recent requests with tenant info
+      const recentResult = await pool.query<{
+        id: string;
+        tenant_id: string;
+        tenant_name: string | null;
+        request_type: string;
+        status: string;
+        learner_id: string;
+        created_at: Date;
+        completed_at: Date | null;
+      }>(
+        `SELECT r.id, r.tenant_id, t.name as tenant_name, r.request_type, r.status,
+                r.learner_id, r.created_at, r.completed_at
+         FROM dsr_requests r
+         LEFT JOIN tenants t ON r.tenant_id::uuid = t.id
+         WHERE r.created_at >= $1 AND r.created_at <= $2
+         ORDER BY r.created_at DESC LIMIT 10`,
+        [from, to]
+      );
+
+      // Build counts by type
+      const countsByType: Record<string, number> = {};
+      for (const row of typeStatsResult.rows) {
+        countsByType[row.request_type] = parseInt(row.count, 10);
+      }
+
+      // Build counts by status  
+      const countsByStatus: Record<string, number> = {};
+      for (const row of statusStatsResult.rows) {
+        countsByStatus[row.status] = parseInt(row.count, 10);
+      }
+
+      // Calculate total
+      const totalRequests = Object.values(countsByType).reduce((sum, c) => sum + c, 0);
+
+      // Format recent requests
+      const recentRequests = recentResult.rows.map(row => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        tenantName: row.tenant_name ?? 'Unknown',
+        requestType: row.request_type,
+        status: row.status,
+        learnerId: row.learner_id,
+        createdAt: row.created_at.toISOString(),
+        completedAt: row.completed_at?.toISOString() ?? null,
+      }));
+
+      const stats = {
+        totalRequests,
+        countsByType,
+        countsByStatus,
+        recentRequests,
         periodStart: from,
         periodEnd: to,
       };
 
-      reply.code(200).send(mockStats);
+      reply.code(200).send(stats);
     }
   );
 };

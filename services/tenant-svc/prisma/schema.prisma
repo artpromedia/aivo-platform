@@ -178,6 +178,7 @@ model ClassroomSessionCode {
   classroomId String   @db.Uuid
   code        String   @unique  // e.g., "ABC123"
   teacherId   String   @db.Uuid
+  teacherName String?  // Display name for the teacher (optional for backwards compat)
   isActive    Boolean  @default(true)
   expiresAt   DateTime
   createdAt   DateTime @default(now())

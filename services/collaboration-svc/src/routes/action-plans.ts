@@ -14,6 +14,11 @@ import {
   LearnerParamsSchema,
   ActionPlanParamsSchema,
 } from '../schemas/index.js';
+import {
+  publishActionPlanCreated,
+  publishActionPlanUpdated,
+  publishActionPlanArchived,
+} from '../events/publisher.js';
 import { z } from 'zod';
 
 type CreateActionPlanBody = z.infer<typeof CreateActionPlanSchema>;
@@ -217,7 +222,16 @@ export async function actionPlanRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for action plan created
+    // Publish NATS event for action plan created
+    void publishActionPlanCreated(tenantId, params.learnerId, userId, {
+      planId: plan.id,
+      title: plan.title,
+      status: plan.status as 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+      linkedGoalId: plan.linkedGoalId,
+      linkedProfileId: plan.linkedProfileId,
+      focusAreas: plan.focusAreas,
+      createdById: plan.createdById,
+    });
 
     return reply.status(201).send({ data: plan });
   });
@@ -280,7 +294,16 @@ export async function actionPlanRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for action plan updated
+    // Publish NATS event for action plan updated
+    void publishActionPlanUpdated(tenantId, params.learnerId, userId, {
+      planId: plan.id,
+      changes: body as Record<string, unknown>,
+      previousValues: {
+        title: existingPlan.title,
+        description: existingPlan.description,
+        status: existingPlan.status,
+      } as Record<string, unknown>,
+    });
 
     return reply.send({ data: plan });
   });
@@ -325,7 +348,12 @@ export async function actionPlanRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for action plan archived
+    // Publish NATS event for action plan archived
+    void publishActionPlanArchived(tenantId, params.learnerId, userId, {
+      planId: plan.id,
+      title: existingPlan.title,
+      previousStatus: existingPlan.status as 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+    });
 
     return reply.send({ data: plan });
   });

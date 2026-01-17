@@ -113,48 +113,112 @@ export async function registerRoutes(
       });
     }
 
-    // TODO: Fetch actual progress from learner-model-svc
-    // This is a mock response structure
-    const progress = {
-      learnerId: request.params.learnerId,
-      subjects: [
+    const startTime = Date.now();
+    const learnerModelSvcUrl = process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4003';
+    
+    try {
+      // Fetch from learner-model-svc Virtual Brain endpoint
+      const virtualBrainResponse = await fetch(
+        `${learnerModelSvcUrl}/virtual-brains/${request.params.learnerId}`,
         {
-          subject: 'MATH',
-          overallMastery: 0.72,
-          skillsCount: 45,
-          masteredSkills: 18,
-          lastActivityAt: new Date().toISOString(),
-        },
-        {
-          subject: 'READING',
-          overallMastery: 0.65,
-          skillsCount: 38,
-          masteredSkills: 12,
-          lastActivityAt: new Date().toISOString(),
-        },
-      ],
-      engagement: {
-        totalSessions: 47,
-        totalTimeMinutes: 892,
-        currentStreak: 5,
-        longestStreak: 12,
-        averageSessionLength: 19,
-      },
-      lastUpdated: new Date().toISOString(),
-    };
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tenant-id': apiKeyAuth.tenantId,
+            // Service-to-service auth
+            Authorization: `Bearer ${process.env.INTERNAL_SERVICE_TOKEN || 'internal'}`,
+          },
+        }
+      );
 
-    // Log usage
-    await apiKeyService.logUsage({
-      apiKeyId: apiKeyAuth.apiKeyId!,
-      endpoint: `/public/learners/${request.params.learnerId}/progress`,
-      method: 'GET',
-      statusCode: 200,
-      responseTimeMs: 0, // Would be calculated with actual timing
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
+      if (!virtualBrainResponse.ok) {
+        if (virtualBrainResponse.status === 404) {
+          return reply.status(404).send({
+            error: 'LEARNER_NOT_FOUND',
+            message: 'No progress data found for this learner',
+          });
+        }
+        throw new Error(`learner-model-svc returned ${virtualBrainResponse.status}`);
+      }
 
-    return progress;
+      const virtualBrain = await virtualBrainResponse.json() as {
+        summary: {
+          totalSkills: number;
+          byDomain: Record<string, { count: number; avgMastery: number }>;
+        };
+        updatedAt: string;
+        skillStates: Array<{
+          domain: string;
+          masteryLevel: number;
+          lastAssessedAt: string;
+        }>;
+      };
+
+      // Transform Virtual Brain response to partner API format
+      const domainToSubject: Record<string, string> = {
+        ELA: 'READING',
+        MATH: 'MATH',
+        SCIENCE: 'SCIENCE',
+        SPEECH: 'SPEECH',
+        SEL: 'SEL',
+      };
+
+      const subjects = Object.entries(virtualBrain.summary.byDomain)
+        .filter(([, data]) => data.count > 0)
+        .map(([domain, data]) => {
+          const domainSkills = virtualBrain.skillStates.filter(s => s.domain === domain);
+          const masteredSkills = domainSkills.filter(s => s.masteryLevel >= 0.8).length;
+          const lastActivityTime = Math.max(
+            ...domainSkills.map(s => new Date(s.lastAssessedAt).getTime()),
+            0
+          );
+          const lastActivity = new Date(lastActivityTime);
+
+          return {
+            subject: domainToSubject[domain] || domain,
+            overallMastery: Math.round(data.avgMastery * 100) / 100,
+            skillsCount: data.count,
+            masteredSkills,
+            lastActivityAt: lastActivity.toISOString(),
+          };
+        });
+
+      const progress = {
+        learnerId: request.params.learnerId,
+        subjects,
+        engagement: {
+          // Note: Engagement data would come from session-svc
+          totalSessions: 0,
+          totalTimeMinutes: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          averageSessionLength: 0,
+        },
+        lastUpdated: virtualBrain.updatedAt,
+      };
+
+      const responseTimeMs = Date.now() - startTime;
+
+      // Log usage
+      await apiKeyService.logUsage({
+        apiKeyId: apiKeyAuth.apiKeyId!,
+        endpoint: `/public/learners/${request.params.learnerId}/progress`,
+        method: 'GET',
+        statusCode: 200,
+        responseTimeMs,
+        ipAddress: request.ip,
+        userAgent: request.headers['user-agent'],
+      });
+
+      return progress;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      app.log.error({ err: message, learnerId: request.params.learnerId }, 'Failed to fetch learner progress');
+      
+      return reply.status(503).send({
+        error: 'SERVICE_UNAVAILABLE',
+        message: 'Unable to fetch learner progress at this time',
+      });
+    }
   });
 
   /**

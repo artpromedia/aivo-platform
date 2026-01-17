@@ -3,8 +3,19 @@
 // =============================================================================
 //
 // Publishes transition events to NATS JetStream.
-// TODO: Add transition event types to @aivo/events library
+// Uses @aivo/events schemas for type-safe event publishing.
 
+import { v4 as uuidv4 } from 'uuid';
+import { EventPublisher, createEventPublisher } from '@aivo/events';
+import type {
+  TransitionStarted,
+  TransitionWarning as TransitionWarningEvent,
+  TransitionAcknowledged,
+  TransitionRoutineStep as TransitionRoutineStepEvent,
+  TransitionCompleted,
+} from '@aivo/events';
+
+import { config } from '../config.js';
 import { logger } from '../logger.js';
 import type {
   TransitionPlan,
@@ -13,91 +24,32 @@ import type {
   TransitionRoutineStep,
 } from './transition.types.js';
 
-// -----------------------------------------------------------------------------
-// Event Payload Types
-// -----------------------------------------------------------------------------
+// Re-export payload types from @aivo/events for backwards compatibility
+export type TransitionStartedPayload = TransitionStarted['payload'];
+export type TransitionWarningPayload = TransitionWarningEvent['payload'];
+export type TransitionAcknowledgedPayload = TransitionAcknowledged['payload'];
+export type TransitionRoutineStepPayload = TransitionRoutineStepEvent['payload'];
+export type TransitionCompletedPayload = TransitionCompleted['payload'];
 
-export interface TransitionStartedPayload {
-  transitionId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  fromActivity?: {
-    id: string;
-    title: string;
-    type: string;
+// Service version for event source
+const SERVICE_NAME = 'session-svc';
+const SERVICE_VERSION = '1.0.0';
+
+/**
+ * Creates a base event envelope with standard fields.
+ */
+function createEventEnvelope(eventType: string, tenantId: string) {
+  return {
+    eventId: uuidv4(),
+    tenantId,
+    eventType,
+    eventVersion: '1.0.0' as const,
+    timestamp: new Date().toISOString(),
+    source: {
+      service: SERVICE_NAME,
+      version: SERVICE_VERSION,
+    },
   };
-  toActivity: {
-    id: string;
-    title: string;
-    type: string;
-  };
-  plan: {
-    totalDuration: number;
-    warningIntervals: number[];
-    visualStyle: string;
-    colorScheme: string;
-    enableAudio: boolean;
-    enableHaptic: boolean;
-    hasRoutine: boolean;
-    hasFirstThenBoard: boolean;
-  };
-  scheduledAt: string;
-}
-
-export interface TransitionWarningPayload {
-  transitionId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  warningNumber: number;
-  secondsRemaining: number;
-  isTimerVisible: boolean;
-  visualStyle: string;
-  audioType: string | null;
-  hapticPattern: string | null;
-  timestamp: string;
-}
-
-export interface TransitionAcknowledgedPayload {
-  transitionId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  acknowledgedAt: string;
-  secondsBeforeStart: number;
-  readyState: 'ready' | 'needs_more_time' | 'skipped';
-}
-
-export interface TransitionRoutineStepPayload {
-  transitionId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  stepIndex: number;
-  stepType: string;
-  stepDuration: number;
-  completed: boolean;
-  skipped: boolean;
-  timestamp: string;
-}
-
-export interface TransitionCompletedPayload {
-  transitionId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  fromActivityId: string;
-  toActivityId: string;
-  outcome: 'smooth' | 'successful' | 'struggled' | 'refused' | 'timed_out';
-  plannedDuration: number;
-  actualDuration: number;
-  warningsDelivered: number;
-  warningsAcknowledged: number;
-  routineStepsCompleted: number;
-  routineStepsTotal: number;
-  learnerInteractions: number;
-  completedAt: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -106,12 +58,79 @@ export interface TransitionCompletedPayload {
 
 /**
  * Transition event publisher service.
- * TODO: Integrate with @aivo/events when transition event schemas are added.
- * For now, events are logged locally.
+ * Publishes events to NATS JetStream using @aivo/events schemas.
  */
 class TransitionEventPublisherService {
-  private logEvent(eventType: string, payload: unknown): void {
-    logger.info({ payload }, `[TransitionEvent] ${eventType}`);
+  private publisher: EventPublisher | null = null;
+  private isConnecting = false;
+
+  constructor() {
+    if (config.nats.enabled) {
+      this.initializePublisher();
+    } else {
+      logger.info('[TransitionEvents] NATS disabled, events will be logged only');
+    }
+  }
+
+  private async initializePublisher(): Promise<void> {
+    if (this.isConnecting || this.publisher) {
+      return;
+    }
+
+    this.isConnecting = true;
+
+    try {
+      this.publisher = createEventPublisher({
+        servers: config.nats.servers,
+        serviceName: SERVICE_NAME,
+        serviceVersion: SERVICE_VERSION,
+        name: 'session-svc-transition-publisher',
+        token: config.nats.token,
+        user: config.nats.user,
+        pass: config.nats.pass,
+      });
+
+      await this.publisher.connect();
+      logger.info('[TransitionEvents] Connected to NATS');
+    } catch (err) {
+      logger.error({ err }, '[TransitionEvents] Failed to connect to NATS');
+      this.publisher = null;
+    } finally {
+      this.isConnecting = false;
+    }
+  }
+
+  private async ensureConnected(): Promise<EventPublisher | null> {
+    if (!config.nats.enabled) {
+      return null;
+    }
+
+    if (this.publisher?.isConnected()) {
+      return this.publisher;
+    }
+
+    await this.initializePublisher();
+    return this.publisher;
+  }
+
+  private async publishEvent(eventType: string, tenantId: string, event: unknown): Promise<void> {
+    const publisher = await this.ensureConnected();
+
+    if (publisher) {
+      try {
+        const result = await publisher.publish(eventType, event);
+        if (result.success) {
+          logger.debug({ eventType, sequence: result.sequence }, '[TransitionEvent] Published event');
+        } else {
+          logger.error({ eventType, error: result.error?.message }, '[TransitionEvent] Failed to publish');
+        }
+      } catch (error) {
+        logger.error({ error, eventType }, '[TransitionEvent] Error publishing event');
+      }
+    } else {
+      // Log event when NATS is not available
+      logger.debug({ eventType, tenantId, event }, '[TransitionEvent] Event not sent (NATS unavailable)');
+    }
   }
 
   /**
@@ -155,7 +174,13 @@ class TransitionEventPublisherService {
       scheduledAt: new Date().toISOString(),
     };
 
-    this.logEvent('transition.started', payload);
+    const event: TransitionStarted = {
+      ...createEventEnvelope('transition.started', tenantId),
+      eventType: 'transition.started',
+      payload,
+    };
+
+    await this.publishEvent('transition.started', tenantId, event);
   }
 
   /**
@@ -183,7 +208,13 @@ class TransitionEventPublisherService {
       timestamp: new Date().toISOString(),
     };
 
-    this.logEvent('transition.warning', payload);
+    const event: TransitionWarningEvent = {
+      ...createEventEnvelope('transition.warning', tenantId),
+      eventType: 'transition.warning',
+      payload,
+    };
+
+    await this.publishEvent('transition.warning', tenantId, event);
   }
 
   /**
@@ -207,7 +238,13 @@ class TransitionEventPublisherService {
       readyState,
     };
 
-    this.logEvent('transition.acknowledged', payload);
+    const event: TransitionAcknowledged = {
+      ...createEventEnvelope('transition.acknowledged', tenantId),
+      eventType: 'transition.acknowledged',
+      payload,
+    };
+
+    await this.publishEvent('transition.acknowledged', tenantId, event);
   }
 
   /**
@@ -236,7 +273,13 @@ class TransitionEventPublisherService {
       timestamp: new Date().toISOString(),
     };
 
-    this.logEvent('transition.routine.step', payload);
+    const event: TransitionRoutineStepEvent = {
+      ...createEventEnvelope('transition.routine.step', tenantId),
+      eventType: 'transition.routine.step',
+      payload,
+    };
+
+    await this.publishEvent('transition.routine.step', tenantId, event);
   }
 
   /**
@@ -269,14 +312,23 @@ class TransitionEventPublisherService {
       completedAt: new Date().toISOString(),
     };
 
-    this.logEvent('transition.completed', payload);
+    const event: TransitionCompleted = {
+      ...createEventEnvelope('transition.completed', tenantId),
+      eventType: 'transition.completed',
+      payload,
+    };
+
+    await this.publishEvent('transition.completed', tenantId, event);
   }
 
   /**
    * Gracefully close the publisher connection.
    */
   async close(): Promise<void> {
-    // No-op for now - will implement when NATS integration is added
+    if (this.publisher) {
+      await this.publisher.close();
+      this.publisher = null;
+    }
   }
 }
 

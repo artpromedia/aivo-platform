@@ -157,6 +157,48 @@ export {
   MARKETPLACE_SUBJECTS,
 } from './marketplace.js';
 
+// Transition events
+export {
+  TransitionStartedSchema,
+  TransitionWarningSchema,
+  TransitionAcknowledgedSchema,
+  TransitionRoutineStepSchema,
+  TransitionCompletedSchema,
+  TransitionEventSchema,
+  TRANSITION_EVENT_TYPES,
+  type TransitionStarted,
+  type TransitionWarning,
+  type TransitionAcknowledged,
+  type TransitionRoutineStep,
+  type TransitionCompleted,
+  type TransitionEvent,
+} from './transition.js';
+
+// Predictability events
+export {
+  SessionPlanCreatedSchema,
+  SessionProgressUpdatedSchema,
+  UnexpectedChangeRequestedSchema,
+  ChangeAppliedSchema,
+  AnxietyReportedSchema,
+  RoutineStartedSchema,
+  RoutineStepCompletedSchema,
+  RoutineCompletedSchema,
+  PreferencesUpdatedSchema,
+  PredictabilityEventSchema,
+  PREDICTABILITY_EVENT_TYPES,
+  type SessionPlanCreated,
+  type SessionProgressUpdated,
+  type UnexpectedChangeRequested,
+  type ChangeApplied,
+  type AnxietyReported,
+  type RoutineStarted,
+  type RoutineStepCompleted,
+  type RoutineCompleted,
+  type PreferencesUpdated,
+  type PredictabilityEvent,
+} from './predictability.js';
+
 // -----------------------------------------------------------------------------
 // All Events Union
 // -----------------------------------------------------------------------------
@@ -167,7 +209,9 @@ import { FocusEventSchema } from './focus.js';
 import { HomeworkEventSchema } from './homework.js';
 import { LearningEventSchema } from './learning.js';
 import { MarketplaceEvent } from './marketplace.js';
+import { PredictabilityEventSchema } from './predictability.js';
 import { RecommendationEventSchema } from './recommendation.js';
+import { TransitionEventSchema } from './transition.js';
 
 /**
  * Union of all AIVO event types.
@@ -178,6 +222,8 @@ export const AivoEventSchema = z.union([
   HomeworkEventSchema,
   RecommendationEventSchema,
   MarketplaceEvent,
+  TransitionEventSchema,
+  PredictabilityEventSchema,
 ]);
 
 export type AivoEvent = z.infer<typeof AivoEventSchema>;
@@ -196,6 +242,8 @@ export const EVENT_STREAM_MAP: Record<string, string> = {
   recommendation: 'RECOMMENDATION',
   content: 'CONTENT',
   marketplace: 'MARKETPLACE',
+  transition: 'TRANSITION',
+  predictability: 'PREDICTABILITY',
 };
 
 /**

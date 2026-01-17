@@ -16,6 +16,13 @@ import {
   CareMeetingParamsSchema,
   MeetingParticipantParamsSchema,
 } from '../schemas/index.js';
+import {
+  publishMeetingScheduled,
+  publishMeetingUpdated,
+  publishMeetingStarted,
+  publishMeetingEnded,
+  publishMeetingCancelled,
+} from '../events/publisher.js';
 import { z } from 'zod';
 
 type CreateMeetingBody = z.infer<typeof CreateCareMeetingSchema>;
@@ -251,8 +258,20 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for meeting created
-    // TODO: Send calendar invites to participants
+    // Publish NATS event for meeting scheduled
+    void publishMeetingScheduled(tenantId, params.learnerId, userId, {
+      meetingId: meeting.id,
+      title: meeting.title,
+      meetingType: meeting.meetingType as 'CHECK_IN' | 'IEP_REVIEW' | 'PARENT_TEACHER' | 'CARE_COORDINATION' | 'PROGRESS_REVIEW' | 'EMERGENCY' | 'OTHER',
+      scheduledStart: meeting.scheduledStart,
+      scheduledEnd: meeting.scheduledEnd,
+      location: meeting.location,
+      videoLink: meeting.videoLink,
+      actionPlanId: meeting.actionPlanId,
+      participantIds: body.participantIds,
+      organizerUserId: userId,
+    });
+    // NOTE: Calendar invites should be sent by a separate notification service
 
     return reply.status(201).send({ data: meeting });
   });
@@ -317,8 +336,14 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for meeting updated
-    // TODO: If rescheduled, send updated calendar invites
+    // Publish NATS event for meeting updated
+    void publishMeetingUpdated(tenantId, params.learnerId, userId, {
+      meetingId: meeting.id,
+      changes: body as Record<string, unknown>,
+      previousScheduledStart: existingMeeting.scheduledStart,
+      newScheduledStart: body.scheduledStart ?? existingMeeting.scheduledStart,
+    });
+    // NOTE: Calendar updates should be sent by a separate notification service
 
     return reply.send({ data: meeting });
   });
@@ -364,9 +389,20 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
         actualStart: new Date(),
         updatedByUserId: userId,
       },
+      include: {
+        _count: {
+          select: { participants: true },
+        },
+      },
     });
 
-    // TODO: Publish NATS event for meeting started
+    // Publish NATS event for meeting started
+    void publishMeetingStarted(tenantId, params.learnerId, userId, {
+      meetingId: meeting.id,
+      title: existingMeeting.title,
+      actualStart: meeting.actualStart as Date,
+      participantCount: meeting._count.participants,
+    });
 
     return reply.send({ data: meeting });
   });
@@ -405,16 +441,33 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Meeting is not in progress' });
     }
 
+    const actualEnd = new Date();
+    const durationMinutes = existingMeeting.actualStart
+      ? Math.round((actualEnd.getTime() - existingMeeting.actualStart.getTime()) / 60000)
+      : 0;
+
     const meeting = await prisma.careMeeting.update({
       where: { id: params.meetingId },
       data: {
         status: 'COMPLETED',
-        actualEnd: new Date(),
+        actualEnd,
         updatedByUserId: userId,
+      },
+      include: {
+        participants: {
+          where: { attended: true },
+        },
       },
     });
 
-    // TODO: Publish NATS event for meeting ended
+    // Publish NATS event for meeting ended
+    void publishMeetingEnded(tenantId, params.learnerId, userId, {
+      meetingId: meeting.id,
+      title: existingMeeting.title,
+      actualEnd,
+      durationMinutes,
+      attendeeCount: meeting.participants.length,
+    });
 
     return reply.send({ data: meeting });
   });
@@ -459,10 +512,21 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
         status: 'CANCELLED',
         updatedByUserId: userId,
       },
+      include: {
+        participants: {
+          select: { careTeamMemberId: true },
+        },
+      },
     });
 
-    // TODO: Publish NATS event for meeting cancelled
-    // TODO: Send cancellation notices to participants
+    // Publish NATS event for meeting cancelled
+    void publishMeetingCancelled(tenantId, params.learnerId, userId, {
+      meetingId: meeting.id,
+      title: existingMeeting.title,
+      scheduledStart: existingMeeting.scheduledStart,
+      participantIds: meeting.participants.map((p) => p.careTeamMemberId),
+    });
+    // NOTE: Cancellation notices should be sent by a separate notification service
 
     return reply.send({ data: meeting });
   });
@@ -547,7 +611,7 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Send calendar invite to new participant
+    // NOTE: Calendar invites should be sent by a separate notification service listening to events
 
     return reply.status(201).send({ data: participant });
   });

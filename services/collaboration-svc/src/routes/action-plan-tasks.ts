@@ -18,6 +18,11 @@ import {
   ActionPlanTaskParamsSchema,
   TaskCompletionParamsSchema,
 } from '../schemas/index.js';
+import {
+  publishTaskCreated,
+  publishTaskUpdated,
+  publishTaskCompletionRecorded,
+} from '../events/publisher.js';
 import { z } from 'zod';
 
 type CreateTaskBody = z.infer<typeof CreateActionPlanTaskSchema>;
@@ -232,7 +237,15 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for task created
+    // Publish NATS event for task created
+    void publishTaskCreated(tenantId, params.learnerId, userId, {
+      taskId: task.id,
+      actionPlanId: params.planId,
+      title: task.title,
+      context: task.context as 'HOME' | 'SCHOOL' | 'THERAPY' | 'COMMUNITY' | 'ALL',
+      frequency: task.frequency as 'DAILY' | 'WEEKLY' | 'AS_NEEDED' | 'ONCE',
+      assigneeId: task.assigneeId,
+    });
 
     return reply.status(201).send({ data: task });
   });
@@ -307,7 +320,12 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Publish NATS event for task updated
+    // Publish NATS event for task updated
+    void publishTaskUpdated(tenantId, params.learnerId, tenantId, {
+      taskId: task.id,
+      actionPlanId: params.planId,
+      changes: body as Record<string, unknown>,
+    });
 
     return reply.send({ data: task });
   });
@@ -354,7 +372,12 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
       data: { isActive: false },
     });
 
-    // TODO: Publish NATS event for task deactivated
+    // Publish NATS event for task deactivated (using updated event)
+    void publishTaskUpdated(tenantId, params.learnerId, tenantId, {
+      taskId: task.id,
+      actionPlanId: params.planId,
+      changes: { isActive: false },
+    });
 
     return reply.send({ data: task });
   });
@@ -476,7 +499,16 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // TODO: Publish NATS event for task completion recorded
+      // Publish NATS event for task completion recorded
+      void publishTaskCompletionRecorded(tenantId, params.learnerId, userId, {
+        completionId: completion.id,
+        taskId: params.taskId,
+        actionPlanId: params.planId,
+        status: completion.status,
+        completedAt: completion.completedAt,
+        effectivenessRating: completion.effectivenessRating,
+        context: completion.completedInContext as 'HOME' | 'SCHOOL' | 'THERAPY' | 'COMMUNITY' | 'ALL' | null,
+      });
 
       return reply.status(201).send({ data: completion });
     }

@@ -12,6 +12,7 @@ import { logger, metrics } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../email/email.service.js';
 import { I18nService } from '../i18n/i18n.service.js';
+import { FirebaseService } from '../firebase/firebase.service.js';
 import { config } from '../config.js';
 
 interface SendNotificationOptions {
@@ -36,6 +37,7 @@ export class NotificationService {
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
     private readonly i18n: I18nService,
+    private readonly firebase: FirebaseService,
   ) {}
 
   /**
@@ -124,32 +126,53 @@ export class NotificationService {
     body: string,
     data?: Record<string, unknown>
   ): Promise<void> {
-    for (const sub of subscriptions) {
-      try {
-        // TODO: Integrate with Firebase Cloud Messaging or other push service
-        if (config.environment === 'development') {
-          logger.info('Push notification (dev mode)', {
-            platform: sub.platform,
-            title,
-          });
-          continue;
-        }
+    // Filter subscriptions that have valid tokens
+    const validTokens = subscriptions
+      .filter((sub): sub is { platform: string; token: string; endpoint: string } => !!sub.token)
+      .map(sub => ({ platform: sub.platform, token: sub.token, endpoint: sub.endpoint }));
 
-        // Example with FCM:
-        // await admin.messaging().send({
-        //   token: sub.token,
-        //   notification: { title, body },
-        //   data: data as Record<string, string>,
-        // });
+    if (validTokens.length === 0) {
+      logger.debug('No valid push tokens to send to');
+      return;
+    }
 
-        metrics.increment('push.sent', { platform: sub.platform });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        logger.error('Failed to send push notification', {
-          endpoint: sub.endpoint,
-          error: message,
+    // In development mode without Firebase configured, just log
+    if (config.environment === 'development' && !this.firebase.isConfigured()) {
+      for (const sub of validTokens) {
+        logger.info('Push notification (dev mode, Firebase not configured)', {
+          platform: sub.platform,
+          title,
         });
       }
+      return;
+    }
+
+    // Convert data values to strings (FCM requires string values)
+    const stringData = data
+      ? Object.fromEntries(
+          Object.entries(data).map(([k, v]) => [k, String(v)])
+        )
+      : undefined;
+
+    // Send to all tokens using multicast
+    const tokens = validTokens.map(sub => sub.token);
+    const result = await this.firebase.sendMulticast(tokens, title, body, stringData);
+
+    // Track metrics
+    metrics.increment('push.sent', {}, result.successCount);
+    metrics.increment('push.failed', {}, result.failureCount);
+
+    // Mark invalid tokens as inactive
+    if (result.invalidTokens.length > 0) {
+      logger.info('Deactivating invalid push tokens', {
+        count: result.invalidTokens.length,
+      });
+      await this.prisma.pushSubscription.updateMany({
+        where: {
+          token: { in: result.invalidTokens },
+        },
+        data: { active: false },
+      });
     }
   }
 

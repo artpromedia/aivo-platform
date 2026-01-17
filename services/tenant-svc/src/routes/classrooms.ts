@@ -44,6 +44,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
     const body = z
       .object({
         teacherId: z.string().uuid(),
+        teacherName: z.string().min(1).max(100).optional(),
         expiresInHours: z.number().min(1).max(24).default(DEFAULT_CODE_EXPIRY_HOURS),
       })
       .safeParse(request.body);
@@ -83,6 +84,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
         classroomId: params.data.classroomId,
         code,
         teacherId: body.data.teacherId,
+        teacherName: body.data.teacherName ?? null,
         expiresAt,
       },
     });
@@ -136,7 +138,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
     const roster = {
       classroomId: sessionCode.classroom.id,
       classroomName: sessionCode.classroom.name,
-      teacherName: 'Teacher', // TODO: Fetch from teacher service
+      teacherName: sessionCode.teacherName ?? 'Teacher',
       gradeBand: sessionCode.classroom.grade,
       displayMode: 'FIRST_NAME_LAST_INITIAL',
       learners: sessionCode.classroom.learners.map(

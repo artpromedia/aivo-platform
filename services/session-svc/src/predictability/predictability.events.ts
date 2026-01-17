@@ -2,9 +2,24 @@
  * Predictability Events Publisher - ND-2.2
  *
  * Publishes predictability-related events for analytics and monitoring.
- * TODO: Integrate with @aivo/events when predictability event schemas are added.
+ * Uses @aivo/events schemas for type-safe event publishing.
  */
 
+import { v4 as uuidv4 } from 'uuid';
+import { EventPublisher, createEventPublisher } from '@aivo/events';
+import type {
+  SessionPlanCreated,
+  SessionProgressUpdated,
+  UnexpectedChangeRequested,
+  ChangeApplied,
+  AnxietyReported,
+  RoutineStarted,
+  RoutineStepCompleted,
+  RoutineCompleted,
+  PreferencesUpdated,
+} from '@aivo/events';
+
+import { config } from '../config.js';
 import { logger } from '../logger.js';
 import type {
   SessionOutlineItem,
@@ -12,127 +27,36 @@ import type {
   ChangeExplanation,
 } from './predictability.types.js';
 
-// ══════════════════════════════════════════════════════════════════════════════
-// EVENT PAYLOAD TYPES
-// ══════════════════════════════════════════════════════════════════════════════
+// Re-export payload types from @aivo/events for backwards compatibility
+export type SessionPlanCreatedPayload = SessionPlanCreated['payload'];
+export type SessionProgressUpdatedPayload = SessionProgressUpdated['payload'];
+export type UnexpectedChangeRequestedPayload = UnexpectedChangeRequested['payload'];
+export type ChangeAppliedPayload = ChangeApplied['payload'];
+export type AnxietyReportedPayload = AnxietyReported['payload'];
+export type RoutineStartedPayload = RoutineStarted['payload'];
+export type RoutineStepCompletedPayload = RoutineStepCompleted['payload'];
+export type RoutineCompletedPayload = RoutineCompleted['payload'];
+export type PreferencesUpdatedPayload = PreferencesUpdated['payload'];
 
-export interface SessionPlanCreatedPayload {
-  planId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  structureType: 'default' | 'minimal' | 'high_support' | 'custom';
-  itemCount: number;
-  estimatedMinutes: number;
-  hasWelcome: boolean;
-  hasCheckin: boolean;
-  hasGoodbye: boolean;
-  activityCount: number;
-  breakCount: number;
-  createdAt: string;
-}
+// Service version for event source
+const SERVICE_NAME = 'session-svc';
+const SERVICE_VERSION = '1.0.0';
 
-export interface SessionProgressUpdatedPayload {
-  planId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  currentItemId: string;
-  currentPhase: string;
-  completedItems: number;
-  totalItems: number;
-  progressPercent: number;
-  remainingMinutes: number;
-  timestamp: string;
-}
-
-export interface UnexpectedChangeRequestedPayload {
-  planId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  changeType: 'add' | 'remove' | 'reorder' | 'skip' | 'extend';
-  reason: string;
-  severity: 'low' | 'medium' | 'high';
-  explanation: ChangeExplanation;
-  requiresApproval: boolean;
-  approvalStatus?: 'pending' | 'approved' | 'declined';
-  timestamp: string;
-}
-
-export interface ChangeAppliedPayload {
-  planId: string;
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  changeId: string;
-  changeType: 'add' | 'remove' | 'reorder' | 'skip' | 'extend';
-  wasApproved: boolean;
-  appliedAt: string;
-}
-
-export interface AnxietyReportedPayload {
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  level: 'mild' | 'moderate' | 'severe';
-  triggerCategory?: string;
-  triggerId?: string;
-  supportActions: string[];
-  copingStrategyUsed?: string;
-  calmedDownAfterSeconds?: number;
-  reportedAt: string;
-}
-
-export interface RoutineStartedPayload {
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  routineId: string;
-  routineType: string;
-  totalSteps: number;
-  estimatedSeconds: number;
-  isCustom: boolean;
-  startedAt: string;
-}
-
-export interface RoutineStepCompletedPayload {
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  routineId: string;
-  routineType: string;
-  stepIndex: number;
-  stepType: string;
-  wasSkipped: boolean;
-  durationSeconds: number;
-  timestamp: string;
-}
-
-export interface RoutineCompletedPayload {
-  sessionId: string;
-  learnerId: string;
-  tenantId: string;
-  routineId: string;
-  routineType: string;
-  outcome: 'completed' | 'partial' | 'skipped' | 'interrupted';
-  stepsCompleted: number;
-  stepsTotal: number;
-  actualDurationSeconds: number;
-  plannedDurationSeconds: number;
-  completedAt: string;
-}
-
-export interface PreferencesUpdatedPayload {
-  learnerId: string;
-  tenantId: string;
-  enabled: boolean;
-  warnMinutesBefore: number;
-  showRemainingTime: boolean;
-  useVisualSchedule: boolean;
-  preferredRoutines: string[];
-  changes: string[];
-  updatedAt: string;
+/**
+ * Creates a base event envelope with standard fields.
+ */
+function createEventEnvelope(eventType: string, tenantId: string) {
+  return {
+    eventId: uuidv4(),
+    tenantId,
+    eventType,
+    eventVersion: '1.0.0' as const,
+    timestamp: new Date().toISOString(),
+    source: {
+      service: SERVICE_NAME,
+      version: SERVICE_VERSION,
+    },
+  };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -141,13 +65,79 @@ export interface PreferencesUpdatedPayload {
 
 /**
  * Predictability event publisher service.
- * TODO: Integrate with @aivo/events when predictability event schemas are added.
- * For now, events are logged locally.
+ * Publishes events to NATS JetStream using @aivo/events schemas.
  */
 class PredictabilityEventPublisherService {
-  private logEvent(eventType: string, payload: unknown): void {
-    // In development, log event
-    logger.info({ payload }, `[PredictabilityEvent] ${eventType}`);
+  private publisher: EventPublisher | null = null;
+  private isConnecting = false;
+
+  constructor() {
+    if (config.nats.enabled) {
+      this.initializePublisher();
+    } else {
+      logger.info('[PredictabilityEvents] NATS disabled, events will be logged only');
+    }
+  }
+
+  private async initializePublisher(): Promise<void> {
+    if (this.isConnecting || this.publisher) {
+      return;
+    }
+
+    this.isConnecting = true;
+
+    try {
+      this.publisher = createEventPublisher({
+        servers: config.nats.servers,
+        serviceName: SERVICE_NAME,
+        serviceVersion: SERVICE_VERSION,
+        name: 'session-svc-predictability-publisher',
+        token: config.nats.token,
+        user: config.nats.user,
+        pass: config.nats.pass,
+      });
+
+      await this.publisher.connect();
+      logger.info('[PredictabilityEvents] Connected to NATS');
+    } catch (err) {
+      logger.error({ err }, '[PredictabilityEvents] Failed to connect to NATS');
+      this.publisher = null;
+    } finally {
+      this.isConnecting = false;
+    }
+  }
+
+  private async ensureConnected(): Promise<EventPublisher | null> {
+    if (!config.nats.enabled) {
+      return null;
+    }
+
+    if (this.publisher?.isConnected()) {
+      return this.publisher;
+    }
+
+    await this.initializePublisher();
+    return this.publisher;
+  }
+
+  private async publishEvent(eventType: string, tenantId: string, event: unknown): Promise<void> {
+    const publisher = await this.ensureConnected();
+
+    if (publisher) {
+      try {
+        const result = await publisher.publish(eventType, event);
+        if (result.success) {
+          logger.debug({ eventType, sequence: result.sequence }, '[PredictabilityEvent] Published event');
+        } else {
+          logger.error({ eventType, error: result.error?.message }, '[PredictabilityEvent] Failed to publish');
+        }
+      } catch (error) {
+        logger.error({ error, eventType }, '[PredictabilityEvent] Error publishing event');
+      }
+    } else {
+      // Log event when NATS is not available
+      logger.debug({ eventType, tenantId, event }, '[PredictabilityEvent] Event not sent (NATS unavailable)');
+    }
   }
 
   /**
@@ -165,7 +155,6 @@ class PredictabilityEventPublisherService {
       planId,
       sessionId,
       learnerId,
-      tenantId,
       structureType,
       itemCount: outline.length,
       estimatedMinutes: outline.reduce((sum, item) => sum + item.estimatedMinutes, 0),
@@ -177,7 +166,13 @@ class PredictabilityEventPublisherService {
       createdAt: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.session_plan.created', payload);
+    const event: SessionPlanCreated = {
+      ...createEventEnvelope('predictability.session_plan.created', tenantId),
+      eventType: 'predictability.session_plan.created',
+      payload,
+    };
+
+    await this.publishEvent('predictability.session_plan.created', tenantId, event);
   }
 
   /**
@@ -196,7 +191,6 @@ class PredictabilityEventPublisherService {
       planId,
       sessionId,
       learnerId,
-      tenantId,
       currentItemId,
       currentPhase: phase,
       completedItems: progress.completed,
@@ -206,7 +200,13 @@ class PredictabilityEventPublisherService {
       timestamp: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.progress.updated', payload);
+    const event: SessionProgressUpdated = {
+      ...createEventEnvelope('predictability.progress.updated', tenantId),
+      eventType: 'predictability.progress.updated',
+      payload,
+    };
+
+    await this.publishEvent('predictability.progress.updated', tenantId, event);
   }
 
   /**
@@ -226,17 +226,27 @@ class PredictabilityEventPublisherService {
       planId,
       sessionId,
       learnerId,
-      tenantId,
       changeType,
       reason,
       severity: explanation.severity,
-      explanation,
+      explanation: {
+        severity: explanation.severity,
+        title: explanation.title,
+        message: explanation.message,
+        iconType: explanation.iconType,
+      },
       requiresApproval,
       approvalStatus: requiresApproval ? 'pending' : undefined,
       timestamp: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.change.requested', payload);
+    const event: UnexpectedChangeRequested = {
+      ...createEventEnvelope('predictability.change.requested', tenantId),
+      eventType: 'predictability.change.requested',
+      payload,
+    };
+
+    await this.publishEvent('predictability.change.requested', tenantId, event);
   }
 
   /**
@@ -255,14 +265,19 @@ class PredictabilityEventPublisherService {
       planId,
       sessionId,
       learnerId,
-      tenantId,
       changeId,
       changeType,
       wasApproved,
       appliedAt: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.change.applied', payload);
+    const event: ChangeApplied = {
+      ...createEventEnvelope('predictability.change.applied', tenantId),
+      eventType: 'predictability.change.applied',
+      payload,
+    };
+
+    await this.publishEvent('predictability.change.applied', tenantId, event);
   }
 
   /**
@@ -280,7 +295,6 @@ class PredictabilityEventPublisherService {
     const payload: AnxietyReportedPayload = {
       sessionId,
       learnerId,
-      tenantId,
       level,
       triggerCategory,
       triggerId,
@@ -288,7 +302,13 @@ class PredictabilityEventPublisherService {
       reportedAt: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.anxiety.reported', payload);
+    const event: AnxietyReported = {
+      ...createEventEnvelope('predictability.anxiety.reported', tenantId),
+      eventType: 'predictability.anxiety.reported',
+      payload,
+    };
+
+    await this.publishEvent('predictability.anxiety.reported', tenantId, event);
   }
 
   /**
@@ -307,7 +327,6 @@ class PredictabilityEventPublisherService {
     const payload: RoutineStartedPayload = {
       sessionId,
       learnerId,
-      tenantId,
       routineId,
       routineType,
       totalSteps,
@@ -316,7 +335,13 @@ class PredictabilityEventPublisherService {
       startedAt: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.routine.started', payload);
+    const event: RoutineStarted = {
+      ...createEventEnvelope('predictability.routine.started', tenantId),
+      eventType: 'predictability.routine.started',
+      payload,
+    };
+
+    await this.publishEvent('predictability.routine.started', tenantId, event);
   }
 
   /**
@@ -336,7 +361,6 @@ class PredictabilityEventPublisherService {
     const payload: RoutineStepCompletedPayload = {
       sessionId,
       learnerId,
-      tenantId,
       routineId,
       routineType,
       stepIndex,
@@ -346,7 +370,13 @@ class PredictabilityEventPublisherService {
       timestamp: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.routine.step_completed', payload);
+    const event: RoutineStepCompleted = {
+      ...createEventEnvelope('predictability.routine.step_completed', tenantId),
+      eventType: 'predictability.routine.step_completed',
+      payload,
+    };
+
+    await this.publishEvent('predictability.routine.step_completed', tenantId, event);
   }
 
   /**
@@ -367,7 +397,6 @@ class PredictabilityEventPublisherService {
     const payload: RoutineCompletedPayload = {
       sessionId,
       learnerId,
-      tenantId,
       routineId,
       routineType,
       outcome,
@@ -378,7 +407,13 @@ class PredictabilityEventPublisherService {
       completedAt: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.routine.completed', payload);
+    const event: RoutineCompleted = {
+      ...createEventEnvelope('predictability.routine.completed', tenantId),
+      eventType: 'predictability.routine.completed',
+      payload,
+    };
+
+    await this.publishEvent('predictability.routine.completed', tenantId, event);
   }
 
   /**
@@ -392,7 +427,6 @@ class PredictabilityEventPublisherService {
   ): Promise<void> {
     const payload: PreferencesUpdatedPayload = {
       learnerId,
-      tenantId,
       enabled: preferences.enabled,
       warnMinutesBefore: preferences.warnMinutesBefore,
       showRemainingTime: preferences.showRemainingTime,
@@ -402,15 +436,24 @@ class PredictabilityEventPublisherService {
       updatedAt: new Date().toISOString(),
     };
 
-    this.logEvent('predictability.preferences.updated', payload);
+    const event: PreferencesUpdated = {
+      ...createEventEnvelope('predictability.preferences.updated', tenantId),
+      eventType: 'predictability.preferences.updated',
+      payload,
+    };
+
+    await this.publishEvent('predictability.preferences.updated', tenantId, event);
   }
 
   /**
    * Gracefully close the publisher connection.
    */
   async close(): Promise<void> {
-    // No-op for now; will be used when integrating with NATS
-    logger.info('[PredictabilityEventPublisher] Closing publisher');
+    if (this.publisher) {
+      await this.publisher.close();
+      this.publisher = null;
+    }
+    logger.info('[PredictabilityEventPublisher] Publisher closed');
   }
 }
 

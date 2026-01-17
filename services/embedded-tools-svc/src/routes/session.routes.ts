@@ -49,13 +49,39 @@ const SessionIdSchema = z.object({
 // Helper Functions
 // ══════════════════════════════════════════════════════════════════════════════
 
+interface MarketplaceToolConfigResponse {
+  launchUrl: string;
+  launchType: string;
+  requiredScopes: string[];
+  optionalScopes: string[];
+  sandboxAttributes: string[];
+  cspDirectives?: string | null;
+  defaultConfigJson?: Record<string, unknown> | null;
+}
+
+interface MarketplaceInstallationResponse {
+  id: string;
+  tenantId: string;
+  status: string;
+  marketplaceItem: {
+    id: string;
+    slug: string;
+    vendor: {
+      slug: string;
+    };
+  };
+  version: {
+    id: string;
+    embeddedToolConfig: MarketplaceToolConfigResponse | null;
+  };
+}
+
 /**
  * Fetch embedded tool config from marketplace-svc
- * In production, this would be an HTTP call to marketplace-svc
  */
 async function fetchToolConfig(
-  _marketplaceItemId: string,
-  _marketplaceItemVersionId: string
+  tenantId: string,
+  installationId: string
 ): Promise<{
   launchUrl: string;
   launchType: EmbeddedToolLaunchType;
@@ -66,18 +92,63 @@ async function fetchToolConfig(
   vendorSlug: string;
   defaultConfig?: Record<string, unknown>;
 }> {
-  // TODO: Fetch from marketplace-svc
-  // For now, return mock data
-  return {
-    launchUrl: 'https://tool.example.com/launch',
-    launchType: EmbeddedToolLaunchType.IFRAME_WEB,
-    requiredScopes: [ToolScope.LEARNER_PROFILE_MIN, ToolScope.SESSION_EVENTS_WRITE],
-    optionalScopes: [ToolScope.THEME_READ],
-    sandboxAttributes: ['allow-scripts', 'allow-same-origin', 'allow-forms'],
-    cspDirectives: "frame-src 'self' https://tool.example.com",
-    vendorSlug: 'example-vendor',
-    defaultConfig: {},
-  };
+  try {
+    const response = await fetch(
+      `${config.marketplaceSvcUrl}/tenants/${tenantId}/installations/${installationId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to fetch installation from marketplace-svc: ${response.status} - ${error}`);
+    }
+
+    const installation = (await response.json()) as MarketplaceInstallationResponse;
+
+    if (installation.status !== 'APPROVED' && installation.status !== 'ACTIVE') {
+      throw new Error(`Installation is not approved: ${installation.status}`);
+    }
+
+    const toolConfig = installation.version.embeddedToolConfig;
+    if (!toolConfig) {
+      throw new Error('Installation does not have embedded tool configuration');
+    }
+
+    // Map string scopes to enum values
+    const mapScopes = (scopes: string[]): ToolScope[] =>
+      scopes
+        .map((s) => ToolScope[s as keyof typeof ToolScope])
+        .filter((s): s is ToolScope => s !== undefined);
+
+    // Map launch type string to enum
+    const launchTypeMap: Record<string, EmbeddedToolLaunchType> = {
+      IFRAME_WEB: EmbeddedToolLaunchType.IFRAME_WEB,
+      IFRAME_MOBILE: EmbeddedToolLaunchType.IFRAME_MOBILE,
+      POPUP: EmbeddedToolLaunchType.POPUP,
+      WEBVIEW: EmbeddedToolLaunchType.WEBVIEW,
+      LTI_1_3: EmbeddedToolLaunchType.LTI_1_3,
+    };
+
+    return {
+      launchUrl: toolConfig.launchUrl,
+      launchType: launchTypeMap[toolConfig.launchType] ?? EmbeddedToolLaunchType.IFRAME_WEB,
+      requiredScopes: mapScopes(toolConfig.requiredScopes),
+      optionalScopes: mapScopes(toolConfig.optionalScopes),
+      sandboxAttributes: toolConfig.sandboxAttributes,
+      cspDirectives: toolConfig.cspDirectives ?? undefined,
+      vendorSlug: installation.marketplaceItem.vendor.slug,
+      defaultConfig: (toolConfig.defaultConfigJson as Record<string, unknown>) ?? undefined,
+    };
+  } catch (error) {
+    // Log and re-throw with more context
+    console.error('[fetchToolConfig] Error fetching tool configuration:', error);
+    throw error;
+  }
 }
 
 /**
@@ -170,8 +241,8 @@ async function createSession(
 ): Promise<CreateSessionResponse> {
   const data = CreateSessionSchema.parse(request.body);
 
-  // 1. Fetch tool configuration
-  const toolConfig = await fetchToolConfig(data.marketplaceItemId, data.marketplaceItemVersionId ?? '');
+  // 1. Fetch tool configuration from marketplace-svc via installation
+  const toolConfig = await fetchToolConfig(data.tenantId, data.installationId);
 
   // 2. Fetch tenant policy
   const tenantPolicy = await fetchTenantPolicy(data.tenantId);

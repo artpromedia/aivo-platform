@@ -9,14 +9,21 @@ import { randomUUID } from 'node:crypto';
 import {
   COLLABORATION_SUBJECTS,
   type CareTeamMemberAddedEvent,
+  type CareTeamMemberUpdatedEvent,
   type CareTeamMemberRemovedEvent,
   type ActionPlanCreatedEvent,
+  type ActionPlanUpdatedEvent,
   type ActionPlanStatusChangedEvent,
+  type ActionPlanArchivedEvent,
   type TaskCreatedEvent,
+  type TaskUpdatedEvent,
   type TaskCompletionRecordedEvent,
   type CareNoteCreatedEvent,
+  type CareNoteUpdatedEvent,
   type CareNoteAcknowledgedEvent,
+  type CareNoteDeletedEvent,
   type MeetingScheduledEvent,
+  type MeetingUpdatedEvent,
   type MeetingStartedEvent,
   type MeetingEndedEvent,
   type MeetingCancelledEvent,
@@ -253,4 +260,106 @@ export async function publishMeetingCancelled(
     payload,
   };
   await publishEvent(COLLABORATION_SUBJECTS.MEETING_CANCELLED, event);
+}
+
+// =============================================================================
+// ADDITIONAL EVENT PUBLISHERS
+// =============================================================================
+
+export async function publishCareTeamMemberUpdated(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: CareTeamMemberUpdatedEvent['payload']
+): Promise<void> {
+  const event: CareTeamMemberUpdatedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'CARE_TEAM_MEMBER_UPDATED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.CARE_TEAM_MEMBER_UPDATED, event);
+}
+
+export async function publishActionPlanUpdated(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: ActionPlanUpdatedEvent['payload']
+): Promise<void> {
+  const event: ActionPlanUpdatedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'ACTION_PLAN_UPDATED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.ACTION_PLAN_UPDATED, event);
+}
+
+export async function publishActionPlanArchived(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: ActionPlanArchivedEvent['payload']
+): Promise<void> {
+  const event: ActionPlanArchivedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'ACTION_PLAN_ARCHIVED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.ACTION_PLAN_ARCHIVED, event);
+}
+
+export async function publishTaskUpdated(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: TaskUpdatedEvent['payload']
+): Promise<void> {
+  const event: TaskUpdatedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'TASK_UPDATED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.TASK_UPDATED, event);
+}
+
+export async function publishCareNoteUpdated(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: CareNoteUpdatedEvent['payload']
+): Promise<void> {
+  const event: CareNoteUpdatedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'CARE_NOTE_UPDATED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.CARE_NOTE_UPDATED, event);
+}
+
+export async function publishCareNoteDeleted(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: CareNoteDeletedEvent['payload']
+): Promise<void> {
+  const event: CareNoteDeletedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'CARE_NOTE_DELETED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.CARE_NOTE_DELETED, event);
+}
+
+export async function publishMeetingUpdated(
+  tenantId: string,
+  learnerId: string,
+  triggeredByUserId: string,
+  payload: MeetingUpdatedEvent['payload']
+): Promise<void> {
+  const event: MeetingUpdatedEvent = {
+    ...createBaseEvent(tenantId, learnerId, triggeredByUserId),
+    type: 'MEETING_UPDATED',
+    payload,
+  };
+  await publishEvent(COLLABORATION_SUBJECTS.MEETING_UPDATED, event);
 }
