@@ -513,13 +513,53 @@ export class Lti11LaunchHandler {
 
   /**
    * Generate opaque session token
+   *
+   * Uses SESSION_SECRET environment variable for HMAC signing.
+   * In production, SESSION_SECRET must be set - the service will fail to start otherwise.
    */
   private generateSessionToken(sessionId: string, userId: string): string {
+    const sessionSecret = this.getSessionSecret();
     const payload = `${sessionId}:${userId}:${Date.now()}`;
     const signature = crypto
-      .createHmac('sha256', process.env.SESSION_SECRET || 'dev-secret')
+      .createHmac('sha256', sessionSecret)
       .update(payload)
       .digest('base64url');
     return `lti11_${Buffer.from(payload).toString('base64url')}.${signature}`;
+  }
+
+  /**
+   * Get session secret with validation
+   *
+   * @throws {Lti11Error} if SESSION_SECRET is not set in production
+   */
+  private getSessionSecret(): string {
+    const secret = process.env.SESSION_SECRET;
+
+    if (!secret) {
+      // In production, SESSION_SECRET is required
+      if (process.env.NODE_ENV === 'production') {
+        throw new Lti11Error(
+          'SESSION_SECRET environment variable is required in production',
+          'MISSING_SESSION_SECRET',
+          500
+        );
+      }
+
+      // In development, warn but allow with a dev-only secret
+      console.warn(
+        '[LTI11] WARNING: SESSION_SECRET not set - using development fallback. ' +
+          'This is INSECURE and should never happen in production.'
+      );
+      return 'dev-secret-not-for-production';
+    }
+
+    // Validate secret strength
+    if (secret.length < 32) {
+      console.warn(
+        '[LTI11] WARNING: SESSION_SECRET should be at least 32 characters for security'
+      );
+    }
+
+    return secret;
   }
 }
