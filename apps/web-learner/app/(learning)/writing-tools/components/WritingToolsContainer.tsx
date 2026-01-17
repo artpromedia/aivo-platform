@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+
+import { GrammarHelp } from './GrammarHelp';
 import { GraphicOrganizers } from './GraphicOrganizers';
 import { SentenceStarters } from './SentenceStarters';
-import { GrammarHelp } from './GrammarHelp';
 import { WritingTemplates } from './WritingTemplates';
 
 interface WritingToolsContainerProps {
@@ -19,7 +20,7 @@ type Tab = 'organizers' | 'starters' | 'grammar' | 'templates';
 export function WritingToolsContainer({ learnerId }: Readonly<WritingToolsContainerProps>) {
   const [activeTab, setActiveTab] = useState<Tab>('organizers');
 
-  const tabs: Array<{ id: Tab; label: string; icon: string }> = [
+  const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'organizers', label: 'Graphic Organizers', icon: '🗂️' },
     { id: 'starters', label: 'Sentence Starters', icon: '💬' },
     { id: 'grammar', label: 'Grammar Help', icon: '✏️' },
@@ -34,7 +35,9 @@ export function WritingToolsContainer({ learnerId }: Readonly<WritingToolsContai
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+              }}
               className={`pb-3 px-2 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-indigo-600 text-indigo-600'

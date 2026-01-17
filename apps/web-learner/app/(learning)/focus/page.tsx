@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { getAuthSession } from '../../../lib/auth';
+
 import { FocusToolsContainer } from './components/FocusToolsContainer';
 
 export const metadata = {
@@ -10,7 +11,7 @@ export const metadata = {
 
 /**
  * Focus Tools Page
- * 
+ *
  * Main page for focus tools including:
  * - Focus timer (Pomodoro, Custom, Deep Work modes)
  * - Break activities
@@ -35,7 +36,7 @@ export default async function FocusPage() {
       </div>
 
       {/* Focus Tools Container */}
-      <FocusToolsContainer learnerId={session.id} />
+      <FocusToolsContainer learnerId={session.userId} />
     </div>
   );
 }

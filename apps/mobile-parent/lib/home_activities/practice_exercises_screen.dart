@@ -30,12 +30,12 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
         // Filters
         Container(
           padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedSubject,
+                  initialValue: _selectedSubject,
                   decoration: const InputDecoration(
                     labelText: 'Subject',
                     border: OutlineInputBorder(),
@@ -54,7 +54,7 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<DifficultyLevel>(
-                  value: _selectedDifficulty,
+                  initialValue: _selectedDifficulty,
                   decoration: const InputDecoration(
                     labelText: 'Difficulty',
                     border: OutlineInputBorder(),

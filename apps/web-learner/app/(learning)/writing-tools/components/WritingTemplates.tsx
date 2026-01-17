@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+import type { WritingTemplate, WritingProject } from '@/lib/writing-api';
 import {
-  WritingTemplate,
-  WritingProject,
   getWritingTemplates,
   getTemplatesByType,
   getTemplate,
@@ -33,12 +33,7 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
   const [view, setView] = useState<'templates' | 'projects' | 'editor'>('templates');
   const [filterType, setFilterType] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadTemplates();
-    void loadProjects();
-  }, [learnerId]);
-
-  async function loadTemplates(type?: string) {
+  const loadTemplates = useCallback(async (type?: string) => {
     try {
       setLoading(true);
       const data = type ? await getTemplatesByType(type) : await getWritingTemplates();
@@ -49,22 +44,27 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadProjects() {
+  const loadProjects = useCallback(async () => {
     try {
       const data = await getWritingProjects(learnerId);
       setProjects(data);
     } catch (err: unknown) {
       console.error('Failed to load projects:', err);
     }
-  }
+  }, [learnerId]);
+
+  useEffect(() => {
+    void loadTemplates();
+    void loadProjects();
+  }, [loadTemplates, loadProjects]);
 
   async function handleSelectTemplate(template: WritingTemplate) {
     try {
       const fullTemplate = await getTemplate(template.id);
       setSelectedTemplate(fullTemplate);
-      
+
       // Initialize new project with template
       const newProject: WritingProject = {
         id: `temp-${Date.now()}`,
@@ -78,7 +78,7 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
         createdAt: new Date().toISOString(),
         lastModified: new Date().toISOString(),
       };
-      
+
       setCurrentProject(newProject);
       setView('editor');
     } catch (err: unknown) {
@@ -205,7 +205,9 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
       {/* View Selector */}
       <div className="mb-4 flex gap-2">
         <button
-          onClick={() => setView('templates')}
+          onClick={() => {
+            setView('templates');
+          }}
           className={`px-4 py-2 rounded-md font-medium ${
             view === 'templates'
               ? 'bg-indigo-600 text-white'
@@ -215,7 +217,9 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
           Templates
         </button>
         <button
-          onClick={() => setView('projects')}
+          onClick={() => {
+            setView('projects');
+          }}
           className={`px-4 py-2 rounded-md font-medium ${
             view === 'projects'
               ? 'bg-indigo-600 text-white'
@@ -236,7 +240,7 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
               onChange={(e) => {
                 const type = e.target.value || null;
                 setFilterType(type);
-                void loadTemplates(type || undefined);
+                loadTemplates(type || undefined).catch(console.error);
               }}
               className="px-3 py-2 border border-slate-300 rounded-md"
             >
@@ -277,7 +281,9 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
             <div className="text-center py-12">
               <p className="text-slate-500 mb-4">You don&apos;t have any writing projects yet.</p>
               <button
-                onClick={() => setView('templates')}
+                onClick={() => {
+                  setView('templates');
+                }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               >
                 Start a New Project
@@ -323,7 +329,9 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
               <input
                 type="text"
                 value={currentProject.title}
-                onChange={(e) => setCurrentProject({ ...currentProject, title: e.target.value })}
+                onChange={(e) => {
+                  setCurrentProject({ ...currentProject, title: e.target.value });
+                }}
                 className="text-xl font-semibold border-none outline-none focus:ring-2 focus:ring-indigo-200 rounded px-2 py-1 w-full"
                 placeholder="Enter project title..."
               />
@@ -358,7 +366,9 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
 
                 <textarea
                   value={section.content}
-                  onChange={(e) => updateSection(section.id, e.target.value)}
+                  onChange={(e) => {
+                    updateSection(section.id, e.target.value);
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md"
                   rows={section.minWords ? Math.max(4, Math.ceil(section.minWords / 15)) : 6}
                   placeholder={section.placeholder || 'Start writing...'}
@@ -366,8 +376,8 @@ export function WritingTemplates({ learnerId }: Readonly<WritingTemplatesProps>)
 
                 {section.minWords && (
                   <p className="text-xs text-slate-500 mt-1">
-                    {section.content.split(/\s+/).filter(Boolean).length} /{' '}
-                    {section.minWords} words minimum
+                    {section.content.split(/\s+/).filter(Boolean).length} / {section.minWords} words
+                    minimum
                   </p>
                 )}
               </div>

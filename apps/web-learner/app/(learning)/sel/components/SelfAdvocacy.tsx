@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { getSelfAdvocacyTools, type SelfAdvocacyTool } from '../../../../lib/sel-api';
 
 interface SelfAdvocacyProps {
@@ -9,19 +10,20 @@ interface SelfAdvocacyProps {
 
 /**
  * Self-Advocacy Component
- * 
+ *
  * Helps learners develop self-advocacy skills:
  * - Communication scripts
  * - Practice scenarios
  * - Tips for speaking up
  * - Templates for requests
  */
-export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
+export function SelfAdvocacy({ learnerId: _learnerId }: Readonly<SelfAdvocacyProps>) {
   const [tools, setTools] = useState<SelfAdvocacyTool[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTool, setSelectedTool] = useState<SelfAdvocacyTool | null>(null);
   const [isViewing, setIsViewing] = useState(false);
   const [practiceResponse, setPracticeResponse] = useState('');
+  const [_isPracticing, setIsPracticing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const categories = [
@@ -34,7 +36,7 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
   ];
 
   useEffect(() => {
-    loadTools();
+    void loadTools();
   }, []);
 
   const loadTools = async () => {
@@ -48,9 +50,8 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
     }
   };
 
-  const filteredTools = selectedCategory === 'all'
-    ? tools
-    : tools.filter((t) => t.category === selectedCategory);
+  const filteredTools =
+    selectedCategory === 'all' ? tools : tools.filter((t) => t.category === selectedCategory);
 
   const openTool = (tool: SelfAdvocacyTool) => {
     setSelectedTool(tool);
@@ -135,7 +136,9 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                     <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">
                       {getTypeLabel(selectedTool.type)}
                     </span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(selectedTool.difficulty)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(selectedTool.difficulty)}`}
+                    >
                       {selectedTool.difficulty}
                     </span>
                   </div>
@@ -148,7 +151,12 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                   aria-label="Close"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -165,7 +173,8 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                     </div>
                     <div className="mt-4 pt-4 border-t border-indigo-200">
                       <p className="text-sm text-indigo-800">
-                        💡 <strong>Tip:</strong> Practice saying this out loud a few times before using it.
+                        💡 <strong>Tip:</strong> Practice saying this out loud a few times before
+                        using it.
                       </p>
                     </div>
                   </div>
@@ -183,7 +192,8 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                     </div>
                     <div className="bg-blue-50 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
-                        📝 Fill in the blanks with your specific information. You can copy this template and customize it.
+                        📝 Fill in the blanks with your specific information. You can copy this
+                        template and customize it.
                       </p>
                     </div>
                   </div>
@@ -199,13 +209,18 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                     </div>
 
                     <div>
-                      <label htmlFor="practice-response" className="block text-sm font-medium text-slate-700 mb-2">
+                      <label
+                        htmlFor="practice-response"
+                        className="block text-sm font-medium text-slate-700 mb-2"
+                      >
                         How would you respond? (Practice here)
                       </label>
                       <textarea
                         id="practice-response"
                         value={practiceResponse}
-                        onChange={(e) => setPracticeResponse(e.target.value)}
+                        onChange={(e) => {
+                          setPracticeResponse(e.target.value);
+                        }}
                         rows={6}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Type your response here..."
@@ -214,7 +229,8 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
 
                     <div className="bg-green-50 rounded-lg p-4">
                       <p className="text-sm text-green-800">
-                        ✅ <strong>Remember:</strong> There's no one "right" answer. Practice different ways of responding.
+                        ✅ <strong>Remember:</strong> There&apos;s no one &quot;right&quot; answer.
+                        Practice different ways of responding.
                       </p>
                     </div>
                   </div>
@@ -223,9 +239,7 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                 {selectedTool.type === 'tip' && (
                   <div className="bg-yellow-50 rounded-lg p-6">
                     <h4 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
-                      <span>💡</span>
-                      {' '}
-                      Helpful Tip:
+                      <span>💡</span> Helpful Tip:
                     </h4>
                     <div className="prose prose-sm max-w-none">
                       <p className="text-slate-800 leading-relaxed whitespace-pre-line">
@@ -266,7 +280,9 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
           {categories.map((category) => (
             <button
               key={category.value}
-              onClick={() => setSelectedCategory(category.value)}
+              onClick={() => {
+                setSelectedCategory(category.value);
+              }}
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
                 ${
@@ -300,7 +316,9 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                     <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium text-right">
                       {getTypeLabel(tool.type)}
                     </span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium text-right ${getDifficultyColor(tool.difficulty)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium text-right ${getDifficultyColor(tool.difficulty)}`}
+                    >
                       {tool.difficulty}
                     </span>
                   </div>
@@ -317,7 +335,9 @@ export function SelfAdvocacy({ learnerId }: Readonly<SelfAdvocacyProps>) {
                 </div>
 
                 <button
-                  onClick={() => openTool(tool)}
+                  onClick={() => {
+                    openTool(tool);
+                  }}
                   className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
                 >
                   View Tool

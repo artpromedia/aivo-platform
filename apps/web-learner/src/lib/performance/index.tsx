@@ -9,10 +9,10 @@
  * - Performance monitoring
  */
 
+import type { ComponentType } from 'react';
 import React, {
   lazy,
   Suspense,
-  ComponentType,
   memo,
   useCallback,
   useMemo,
@@ -34,6 +34,7 @@ interface LazyOptions {
 /**
  * Enhanced lazy loading with retry logic
  */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands */
 export function lazyWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
   options: LazyOptions = {}
@@ -55,15 +56,15 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       }
     }
 
-    throw lastError;
+    throw lastError || new Error('Component loading failed');
   });
 }
 
 /**
  * Preload a lazy component
  */
-export function preloadComponent<T extends ComponentType<any>>(
-  factory: () => Promise<{ default: T }>
+export function preloadComponent(
+  factory: () => Promise<{ default: ComponentType<Record<string, unknown>> }>
 ): void {
   factory().catch(() => {
     // Silently fail - component will be loaded when needed
@@ -73,13 +74,13 @@ export function preloadComponent<T extends ComponentType<any>>(
 /**
  * Create a lazily loaded component with loading fallback
  */
-export function createLazyComponent<P extends object>(
+export function createLazyComponent<P extends object = object>(
   factory: () => Promise<{ default: ComponentType<P> }>,
   LoadingComponent?: ComponentType
 ): ComponentType<P> {
   const LazyComponent = lazyWithRetry(factory);
 
-  return function LazyWrapper(props: P) {
+  return function LazyWrapper(props: P): React.JSX.Element {
     return (
       <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
         <LazyComponent {...props} />
@@ -182,10 +183,7 @@ export function useVirtualList<T>({
 
   const visibleCount = Math.ceil(containerHeight / itemHeight);
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(
-    items.length,
-    startIndex + visibleCount + overscan * 2
-  );
+  const endIndex = Math.min(items.length, startIndex + visibleCount + overscan * 2);
 
   const visibleItems = useMemo(() => {
     return items.slice(startIndex, endIndex).map((item, index) => ({
@@ -237,7 +235,7 @@ export function useVirtualList<T>({
 export function generateSrcSet(
   src: string,
   widths: number[] = [640, 750, 828, 1080, 1200, 1920, 2048],
-  quality: number = 75
+  quality = 75
 ): string {
   return widths
     .map((w) => {
@@ -308,14 +306,18 @@ export function useLazyImage(
 
     observer.observe(element);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [options.threshold, options.rootMargin]);
 
   useEffect(() => {
     if (isInView && ref.current) {
       const img = new Image();
       img.src = src;
-      img.onload = () => setIsLoaded(true);
+      img.onload = () => {
+        setIsLoaded(true);
+      };
     }
   }, [isInView, src]);
 
@@ -366,9 +368,9 @@ export function useWebVitals(
     // Largest Contentful Paint
     const lcpObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
-      const lcp = entries[entries.length - 1];
-      if (lcp) {
-        const value = lcp.startTime;
+      const lcp = entries[entries.length - 1] as PerformanceEntry | undefined;
+      const value = lcp?.startTime;
+      if (value !== undefined) {
         setMetrics((m) => ({ ...m, lcp: value }));
         onReport?.({ lcp: value });
       }
@@ -378,8 +380,8 @@ export function useWebVitals(
     // First Input Delay
     const fidObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
-      const fid = entries[0];
-      if (fid) {
+      const fid = entries[0] as PerformanceEventTiming | undefined;
+      if (fid?.processingStart !== undefined) {
         const value = fid.processingStart - fid.startTime;
         setMetrics((m) => ({ ...m, fid: value }));
         onReport?.({ fid: value });
@@ -401,10 +403,10 @@ export function useWebVitals(
     clsObserver.observe({ type: 'layout-shift', buffered: true });
 
     // Time to First Byte
-    const navEntry = performance.getEntriesByType(
-      'navigation'
-    )[0] as PerformanceNavigationTiming;
-    if (navEntry) {
+    const navEntry = performance.getEntriesByType('navigation')[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (navEntry?.responseStart !== undefined) {
       const ttfb = navEntry.responseStart - navEntry.requestStart;
       setMetrics((m) => ({ ...m, ttfb }));
       onReport?.({ ttfb });
@@ -424,11 +426,7 @@ export function useWebVitals(
 /**
  * Report metrics to analytics
  */
-export function reportWebVitals(metric: {
-  name: string;
-  value: number;
-  id: string;
-}): void {
+export function reportWebVitals(metric: { name: string; value: number; id: string }): void {
   const body = JSON.stringify({
     name: metric.name,
     value: metric.value,
@@ -437,16 +435,19 @@ export function reportWebVitals(metric: {
     timestamp: Date.now(),
   });
 
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon('/api/analytics/vitals', body);
+  // Use sendBeacon if available for reliability, fallback to fetch
+  const sendBeaconFn = navigator.sendBeacon?.bind(navigator);
+  if (sendBeaconFn) {
+    sendBeaconFn('/api/analytics/vitals', body);
   } else {
-    fetch('/api/analytics/vitals', {
+    void fetch('/api/analytics/vitals', {
       method: 'POST',
       body,
       keepalive: true,
     });
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands */
 
 // ============================================================================
 // RENDER OPTIMIZATION
@@ -455,13 +456,10 @@ export function reportWebVitals(metric: {
 /**
  * Hook to defer expensive renders
  */
-export function useDeferredRender<T>(
-  value: T,
-  delay: number = 100
-): { current: T; isPending: boolean } {
+export function useDeferredRender<T>(value: T, delay = 100): { current: T; isPending: boolean } {
   const [deferredValue, setDeferredValue] = useState(value);
   const [isPending, setIsPending] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     setIsPending(true);
@@ -517,19 +515,30 @@ export function useBatchedState<T extends object>(
 /**
  * Hook for idle callback scheduling
  */
-export function useIdleCallback(
-  callback: () => void,
-  options: { timeout?: number } = {}
-): void {
+export function useIdleCallback(callback: () => void, options: { timeout?: number } = {}): void {
+  const optionsTimeoutRef = useRef(options.timeout);
+  optionsTimeoutRef.current = options.timeout;
+
   useEffect(() => {
     if ('requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(callback, options);
-      return () => (window as any).cancelIdleCallback(id);
+      const id = (window as Record<string, unknown>).requestIdleCallback as (
+        cb: () => void,
+        opts?: { timeout?: number }
+      ) => number;
+      const handle = id(callback, { timeout: optionsTimeoutRef.current });
+      return () => {
+        const cancelId = (window as Record<string, unknown>).cancelIdleCallback as (
+          handle: number
+        ) => void;
+        cancelId(handle);
+      };
     } else {
       const id = setTimeout(callback, 1);
-      return () => clearTimeout(id);
+      return () => {
+        clearTimeout(id);
+      };
     }
-  }, [callback, options.timeout]);
+  }, [callback]);
 }
 
 // ============================================================================
@@ -553,9 +562,7 @@ export function withRenderTracking<P extends object>(
     useEffect(() => {
       const renderTime = performance.now() - startTime;
       if (renderTime > 16) {
-        console.warn(
-          `[Performance] ${name} took ${renderTime.toFixed(2)}ms to render`
-        );
+        console.warn(`[Performance] ${name} took ${renderTime.toFixed(2)}ms to render`);
       }
     });
 
@@ -577,19 +584,22 @@ export function useIntersectionObserver(
   const [isIntersecting, setIsIntersecting] = useState(false);
 
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+    const currentElement = ref.current;
+    if (!currentElement) return;
 
     const observer = new IntersectionObserver(([entry]) => {
       setIsIntersecting(entry.isIntersecting);
     }, options);
 
-    observer.observe(element);
+    observer.observe(currentElement);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.root, options.rootMargin, options.threshold]);
 
-  return [ref as React.RefObject<HTMLElement>, isIntersecting];
+  return [ref, isIntersecting];
 }
 
 // ============================================================================
@@ -635,7 +645,9 @@ export function useThrottle<T>(value: T, interval: number): T {
         setThrottledValue(value);
       }, interval - timeSinceLastUpdate);
 
-      return () => clearTimeout(timeoutId);
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
   }, [value, interval]);
 

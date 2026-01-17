@@ -1,7 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { createTask, updateTask, deleteTask, breakdownTask } from '../../../../lib/executive-function-api';
+import React, { useState } from 'react';
+
+import {
+  createTask,
+  updateTask,
+  deleteTask,
+  breakdownTask,
+} from '../../../../lib/executive-function-api';
 import type { Task, Subtask } from '../../../../lib/executive-function-api';
 
 // Utility function moved to outer scope
@@ -26,7 +32,7 @@ interface TaskManagerProps {
 
 /**
  * Task Manager Component
- * 
+ *
  * Provides task breakdown and management features
  */
 export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManagerProps>) {
@@ -111,7 +117,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex gap-2">
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => {
+              setFilter('all');
+            }}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
               filter === 'all'
                 ? 'bg-blue-600 text-white'
@@ -121,7 +129,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
             All
           </button>
           <button
-            onClick={() => setFilter('todo')}
+            onClick={() => {
+              setFilter('todo');
+            }}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
               filter === 'todo'
                 ? 'bg-blue-600 text-white'
@@ -131,7 +141,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
             To Do
           </button>
           <button
-            onClick={() => setFilter('in-progress')}
+            onClick={() => {
+              setFilter('in-progress');
+            }}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
               filter === 'in-progress'
                 ? 'bg-blue-600 text-white'
@@ -141,7 +153,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
             In Progress
           </button>
           <button
-            onClick={() => setFilter('completed')}
+            onClick={() => {
+              setFilter('completed');
+            }}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
               filter === 'completed'
                 ? 'bg-blue-600 text-white'
@@ -153,7 +167,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
         </div>
 
         <button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => {
+            setShowCreateForm(true);
+          }}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
         >
           + New Task
@@ -168,7 +184,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
             <h3 className="mt-4 text-lg font-bold text-slate-900">No tasks yet</h3>
             <p className="mt-2 text-slate-600">Create your first task to get started!</p>
             <button
-              onClick={() => setShowCreateForm(true)}
+              onClick={() => {
+                setShowCreateForm(true);
+              }}
               className="mt-4 rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Create Task
@@ -176,7 +194,10 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
           </div>
         ) : (
           filteredTasks.map((task) => (
-            <div key={task.id} className="rounded-xl bg-white p-6 shadow transition hover:shadow-md">
+            <div
+              key={task.id}
+              className="rounded-xl bg-white p-6 shadow transition hover:shadow-md"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
@@ -193,7 +214,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
                     />
                     <h3
                       className={`text-lg font-bold ${
-                        task.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-900'
+                        task.status === 'completed'
+                          ? 'text-slate-400 line-through'
+                          : 'text-slate-900'
                       }`}
                     >
                       {task.title}
@@ -228,7 +251,7 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
                               const updatedSubtasks = task.subtasks.map((st) =>
                                 st.id === subtask.id ? { ...st, completed: e.target.checked } : st
                               );
-                              handleUpdateTask(task.id, { subtasks: updatedSubtasks });
+                              void handleUpdateTask(task.id, { subtasks: updatedSubtasks });
                             }}
                             className="h-4 w-4 rounded border-slate-300 text-blue-600"
                           />
@@ -263,7 +286,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
                 <div className="flex gap-2">
                   {task.subtasks.length === 0 && (
                     <button
-                      onClick={() => setBreakdowningTask(task)}
+                      onClick={() => {
+                        setBreakdowningTask(task);
+                      }}
                       className="rounded-lg bg-purple-100 px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-200"
                       title="Break down task"
                     >
@@ -271,7 +296,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
                     </button>
                   )}
                   <button
-                    onClick={() => setEditingTask(task)}
+                    onClick={() => {
+                      setEditingTask(task);
+                    }}
                     className="rounded-lg bg-blue-100 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-200"
                   >
                     Edit
@@ -293,7 +320,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
       {showCreateForm && (
         <TaskForm
           onSubmit={handleCreateTask}
-          onCancel={() => setShowCreateForm(false)}
+          onCancel={() => {
+            setShowCreateForm(false);
+          }}
         />
       )}
 
@@ -302,7 +331,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
         <TaskForm
           task={editingTask}
           onSubmit={(data) => handleUpdateTask(editingTask.id, data)}
-          onCancel={() => setEditingTask(null)}
+          onCancel={() => {
+            setEditingTask(null);
+          }}
         />
       )}
 
@@ -311,7 +342,9 @@ export function TaskManager({ learnerId, tasks, onUpdate }: Readonly<TaskManager
         <BreakdownModal
           task={breakdowningTask}
           onSubmit={(subtasks) => handleBreakdown(breakdowningTask.id, subtasks)}
-          onCancel={() => setBreakdowningTask(null)}
+          onCancel={() => {
+            setBreakdowningTask(null);
+          }}
         />
       )}
     </div>
@@ -340,7 +373,10 @@ function TaskForm({
     e.preventDefault();
     onSubmit({
       ...formData,
-      tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: formData.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
       dueDate: formData.dueDate || undefined,
     } as Partial<Task>);
   }
@@ -352,23 +388,31 @@ function TaskForm({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="task-title" className="block text-sm font-medium text-slate-700">Title *</label>
+            <label htmlFor="task-title" className="block text-sm font-medium text-slate-700">
+              Title *
+            </label>
             <input
               id="task-title"
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value });
+              }}
               required
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label htmlFor="task-description" className="block text-sm font-medium text-slate-700">Description</label>
+            <label htmlFor="task-description" className="block text-sm font-medium text-slate-700">
+              Description
+            </label>
             <textarea
               id="task-description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value });
+              }}
               rows={3}
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
@@ -376,11 +420,18 @@ function TaskForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="task-priority" className="block text-sm font-medium text-slate-700">Priority</label>
+              <label htmlFor="task-priority" className="block text-sm font-medium text-slate-700">
+                Priority
+              </label>
               <select
                 id="task-priority"
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    priority: e.target.value as 'low' | 'medium' | 'high',
+                  });
+                }}
                 className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
               >
                 <option value="low">Low</option>
@@ -390,12 +441,16 @@ function TaskForm({
             </div>
 
             <div>
-              <label htmlFor="task-due-date" className="block text-sm font-medium text-slate-700">Due Date</label>
+              <label htmlFor="task-due-date" className="block text-sm font-medium text-slate-700">
+                Due Date
+              </label>
               <input
                 id="task-due-date"
                 type="date"
                 value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, dueDate: e.target.value });
+                }}
                 className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -409,7 +464,9 @@ function TaskForm({
               id="task-tags"
               type="text"
               value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, tags: e.target.value });
+              }}
               placeholder="homework, math, urgent"
               className="mt-1 w-full rounded-lg border-2 border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
@@ -479,13 +536,13 @@ function BreakdownModal({
       <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
         <h2 className="text-xl font-bold text-slate-900">Break Down Task</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Break "{task.title}" into smaller, manageable steps
+          Break &quot;{task.title}&quot; into smaller, manageable steps
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-3">
             {subtasks.map((subtask, index) => (
-              <div key={`subtask-${index}-${subtask.slice(0, 10)}`} className="flex gap-2">
+              <div key={subtask || `subtask-${index}`} className="flex gap-2">
                 <input
                   type="text"
                   value={subtask}
@@ -500,7 +557,9 @@ function BreakdownModal({
                 {subtasks.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => removeSubtask(index)}
+                    onClick={() => {
+                      removeSubtask(index);
+                    }}
                     className="rounded-lg bg-red-100 px-3 text-red-700 hover:bg-red-200"
                   >
                     ✕

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { getAuthSession } from '../../../lib/auth';
+
 import { ExecutiveFunctionContainer } from './components/ExecutiveFunctionContainer';
 
 export const metadata = {
@@ -10,7 +11,7 @@ export const metadata = {
 
 /**
  * Executive Function Tools Page
- * 
+ *
  * Provides tools for executive function including:
  * - Task breakdown and management
  * - Study planner
@@ -35,7 +36,7 @@ export default async function ExecutiveFunctionPage() {
       </div>
 
       {/* Executive Function Container */}
-      <ExecutiveFunctionContainer learnerId={session.id} />
+      <ExecutiveFunctionContainer learnerId={session.userId} />
     </div>
   );
 }

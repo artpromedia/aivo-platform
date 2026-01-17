@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 
 export default function JoinPage() {
   const [classCode, setClassCode] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -51,9 +52,7 @@ export default function JoinPage() {
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-purple-400)] to-[var(--aivo-brand-primary)] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <span className="text-4xl">🎫</span>
           </div>
-          <h1 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">
-            Join Your Class
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">Join Your Class</h1>
           <p className="text-[var(--aivo-neutral-600)]">
             Enter the code from your teacher or parent
           </p>
@@ -63,23 +62,26 @@ export default function JoinPage() {
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[var(--aivo-purple-100)]">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="classCode" className="block text-sm font-medium text-[var(--aivo-neutral-700)] mb-2">
+              <label
+                htmlFor="classCode"
+                className="block text-sm font-medium text-[var(--aivo-neutral-700)] mb-2"
+              >
                 Class Code
               </label>
               <input
                 type="text"
                 id="classCode"
                 value={classCode}
-                onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setClassCode(e.target.value.toUpperCase());
+                }}
                 placeholder="ENTER CODE"
                 className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border-2 border-[var(--aivo-purple-200)] rounded-xl focus:border-[var(--aivo-brand-primary)] focus:ring-2 focus:ring-[var(--aivo-purple-100)] outline-none transition-all"
                 maxLength={10}
                 autoComplete="off"
                 autoCapitalize="characters"
               />
-              {error && (
-                <p className="mt-2 text-sm text-[var(--aivo-color-error)]">{error}</p>
-              )}
+              {error && <p className="mt-2 text-sm text-[var(--aivo-color-error)]">{error}</p>}
             </div>
 
             <button
@@ -114,7 +116,10 @@ export default function JoinPage() {
 
         {/* Back link */}
         <div className="mt-6 text-center">
-          <Link href="/" className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] text-sm font-medium">
+          <Link
+            href="/"
+            className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] text-sm font-medium"
+          >
             ← Back to home
           </Link>
         </div>

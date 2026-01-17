@@ -13,7 +13,7 @@ export interface MoodCheckIn {
   intensity: number; // 1-5 scale
   triggers?: string[];
   notes?: string;
-  coping StrategiesUsed?: string[];
+  copingStrategiesUsed?: string[];
 }
 
 export interface EmotionRegulationStrategy {
@@ -82,6 +82,7 @@ export interface SELProgress {
 }
 
 // Mood Check-In APIs
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
 export async function createMoodCheckIn(
   learnerId: string,
@@ -97,7 +98,9 @@ export async function createMoodCheckIn(
 }
 
 export async function getMoodCheckIns(learnerId: string, limit = 30): Promise<MoodCheckIn[]> {
-  const response = await fetch(`${SEL_API_BASE}/mood-checkins?learnerId=${learnerId}&limit=${limit}`);
+  const response = await fetch(
+    `${SEL_API_BASE}/mood-checkins?learnerId=${learnerId}&limit=${limit}`
+  );
   if (!response.ok) throw new Error('Failed to fetch mood check-ins');
   return response.json();
 }
@@ -143,10 +146,7 @@ export async function getStoryById(storyId: string): Promise<SocialStory> {
   return response.json();
 }
 
-export async function markStoryCompleted(
-  learnerId: string,
-  storyId: string
-): Promise<void> {
+export async function markStoryCompleted(learnerId: string, storyId: string): Promise<void> {
   const response = await fetch(`${SEL_API_BASE}/social-stories/${storyId}/complete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

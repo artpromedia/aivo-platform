@@ -1225,7 +1225,7 @@ class _CommunicationTemplatesTabState
                 labelText: field.label,
                 border: const OutlineInputBorder(),
               ),
-              value: _fieldValues[field.id],
+              initialValue: _fieldValues[field.id],
               items: field.options.map((option) {
                 return DropdownMenuItem(
                   value: option,

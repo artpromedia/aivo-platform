@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { getAuthSession } from '../../../lib/auth';
+
 import { SELContainer } from './components/SELContainer';
 
 export const metadata = {
@@ -10,7 +11,7 @@ export const metadata = {
 
 /**
  * Social-Emotional Learning Page
- * 
+ *
  * Provides SEL tools including:
  * - Mood check-ins
  * - Emotion regulation strategies
@@ -29,13 +30,11 @@ export default async function SELPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Social-Emotional Learning</h1>
-        <p className="mt-1 text-slate-600">
-          Build skills for understanding and managing emotions
-        </p>
+        <p className="mt-1 text-slate-600">Build skills for understanding and managing emotions</p>
       </div>
 
       {/* SEL Container */}
-      <SELContainer learnerId={session.id} />
+      <SELContainer learnerId={session.userId} />
     </div>
   );
 }
