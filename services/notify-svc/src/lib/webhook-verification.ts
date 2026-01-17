@@ -5,7 +5,7 @@
  * to ensure requests are authentic and not spoofed.
  */
 
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, createVerify, timingSafeEqual, X509Certificate } from 'node:crypto';
 import type { FastifyRequest } from 'fastify';
 
 import { config } from '../config.js';
@@ -170,20 +170,85 @@ export function verifyTwilioSignature(
 // AWS SNS MESSAGE VERIFICATION
 // ============================================================================
 
+// Certificate cache to avoid repeated fetches
+const certificateCache: Map<string, { cert: string; fetchedAt: number }> = new Map();
+const CERT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Fetch and cache SNS signing certificate
+ */
+async function fetchSigningCertificate(certUrl: string): Promise<string> {
+  // Check cache first
+  const cached = certificateCache.get(certUrl);
+  if (cached && Date.now() - cached.fetchedAt < CERT_CACHE_TTL) {
+    return cached.cert;
+  }
+
+  const response = await fetch(certUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch certificate: ${response.status}`);
+  }
+
+  const cert = await response.text();
+
+  // Cache the certificate
+  certificateCache.set(certUrl, { cert, fetchedAt: Date.now() });
+
+  return cert;
+}
+
+/**
+ * Build the string to sign for SNS message verification
+ * Order of fields matters and is different for Notification vs SubscriptionConfirmation
+ */
+function buildSigningString(message: Record<string, unknown>): string {
+  const messageType = message.Type as string;
+  const fields: string[] = [];
+
+  if (messageType === 'Notification') {
+    // Notification message signing string
+    fields.push('Message', message.Message as string);
+    if (message.MessageId) fields.push('MessageId', message.MessageId as string);
+    if (message.Subject) fields.push('Subject', message.Subject as string);
+    fields.push('Timestamp', message.Timestamp as string);
+    fields.push('TopicArn', message.TopicArn as string);
+    fields.push('Type', messageType);
+  } else {
+    // SubscriptionConfirmation or UnsubscribeConfirmation
+    fields.push('Message', message.Message as string);
+    fields.push('MessageId', message.MessageId as string);
+    fields.push('SubscribeURL', message.SubscribeURL as string);
+    fields.push('Timestamp', message.Timestamp as string);
+    fields.push('Token', message.Token as string);
+    fields.push('TopicArn', message.TopicArn as string);
+    fields.push('Type', messageType);
+  }
+
+  // Build string with key\nvalue\n format
+  let signingString = '';
+  for (let i = 0; i < fields.length; i += 2) {
+    signingString += `${fields[i]}\n${fields[i + 1]}\n`;
+  }
+
+  return signingString;
+}
+
 /**
  * Verify AWS SNS message signature
+ *
+ * Implements full certificate-based verification per AWS documentation:
+ * 1. Validates SigningCertURL is from amazonaws.com
+ * 2. Fetches and caches the signing certificate
+ * 3. Verifies the certificate is valid
+ * 4. Verifies the message signature using the certificate
  *
  * @see https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html
  */
 export async function verifySnsSignature(
   message: Record<string, unknown>
 ): Promise<{ valid: boolean; error?: string }> {
-  // In production, we should verify the SNS message signature
-  // This requires fetching the signing certificate from AWS
-
   const messageType = message.Type as string | undefined;
 
-  // For now, we do basic validation
   if (!messageType) {
     return { valid: false, error: 'Missing message type' };
   }
@@ -193,27 +258,84 @@ export async function verifySnsSignature(
     return { valid: false, error: 'Missing TopicArn' };
   }
 
-  // Validate that the TopicArn matches our expected AWS account
-  // In production, restrict to specific ARN patterns
-  const allowedArnPatterns = [
-    /^arn:aws:sns:[a-z0-9-]+:\d{12}:.+$/,
-  ];
-
-  const isValidArn = allowedArnPatterns.some(pattern => pattern.test(topicArn));
+  // Validate TopicArn format
+  const allowedArnPatterns = [/^arn:aws:sns:[a-z0-9-]+:\d{12}:.+$/];
+  const isValidArn = allowedArnPatterns.some((pattern) => pattern.test(topicArn));
   if (!isValidArn) {
     return { valid: false, error: 'Invalid TopicArn format' };
   }
 
-  // TODO: Implement full certificate-based verification for production
-  // This would involve:
-  // 1. Fetching the signing certificate from message.SigningCertURL
-  // 2. Verifying the certificate is from amazonaws.com
-  // 3. Using the certificate to verify the message signature
-  // For now, we trust the basic validation and AWS VPC security
-
-  if (process.env.NODE_ENV === 'production' && !process.env.SNS_SKIP_VERIFICATION) {
-    console.warn('[Webhook] SNS message verification is basic - implement full certificate verification for production');
+  // Skip full verification in development or if explicitly disabled
+  if (process.env.NODE_ENV !== 'production' || process.env.SNS_SKIP_VERIFICATION === 'true') {
+    console.log('[Webhook] SNS verification skipped (non-production or explicitly disabled)');
+    return { valid: true };
   }
 
-  return { valid: true };
+  // Get signing certificate URL
+  const signingCertUrl = message.SigningCertURL as string | undefined;
+  if (!signingCertUrl) {
+    return { valid: false, error: 'Missing SigningCertURL' };
+  }
+
+  // Validate certificate URL is from Amazon
+  try {
+    const certUrlParsed = new URL(signingCertUrl);
+    if (
+      !certUrlParsed.hostname.endsWith('.amazonaws.com') ||
+      certUrlParsed.protocol !== 'https:'
+    ) {
+      return { valid: false, error: 'SigningCertURL must be from amazonaws.com over HTTPS' };
+    }
+  } catch {
+    return { valid: false, error: 'Invalid SigningCertURL format' };
+  }
+
+  // Get signature
+  const signature = message.Signature as string | undefined;
+  if (!signature) {
+    return { valid: false, error: 'Missing Signature' };
+  }
+
+  try {
+    // Fetch the signing certificate
+    const certPem = await fetchSigningCertificate(signingCertUrl);
+
+    // Validate certificate
+    const cert = new X509Certificate(certPem);
+
+    // Check certificate is from Amazon
+    if (!cert.subject.includes('CN=sns.amazonaws.com')) {
+      return { valid: false, error: 'Certificate is not from SNS' };
+    }
+
+    // Check certificate is not expired
+    const now = new Date();
+    if (now < new Date(cert.validFrom) || now > new Date(cert.validTo)) {
+      return { valid: false, error: 'Certificate has expired' };
+    }
+
+    // Build the signing string
+    const signingString = buildSigningString(message);
+
+    // Determine signature version and algorithm
+    const signatureVersion = message.SignatureVersion as string;
+    const algorithm = signatureVersion === '2' ? 'sha256' : 'sha1';
+
+    // Verify signature
+    const verifier = createVerify(algorithm);
+    verifier.update(signingString);
+    const isValid = verifier.verify(certPem, signature, 'base64');
+
+    if (!isValid) {
+      return { valid: false, error: 'Invalid signature' };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('[Webhook] SNS signature verification error:', error);
+    return {
+      valid: false,
+      error: `Verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
 }
