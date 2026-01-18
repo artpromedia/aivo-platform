@@ -11,13 +11,16 @@ import * as routingService from './services/routingService.js';
 import * as processorService from './services/processorService.js';
 import * as metricsService from './services/metricsService.js';
 import * as ingestService from './services/ingestService.js';
+import { createLogger } from '@aivo/ts-api-utils';
+
+const logger = createLogger('event-collector-svc');
 
 async function main() {
   const app = createApp();
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
-    console.log(`Received ${signal}, shutting down gracefully...`);
+    logger.info({ signal }, 'Received shutdown signal, shutting down gracefully');
 
     try {
       // Stop accepting new events
@@ -34,10 +37,10 @@ async function main() {
       // Disconnect database
       await prisma.$disconnect();
 
-      console.log('Shutdown complete');
+      logger.info('Shutdown complete');
       process.exit(0);
     } catch (error) {
-      console.error('Error during shutdown:', error);
+      logger.error({ error }, 'Error during shutdown');
       process.exit(1);
     }
   };
@@ -48,7 +51,7 @@ async function main() {
   try {
     // Connect to database
     await prisma.$connect();
-    console.log('Connected to database');
+    logger.info('Connected to database');
 
     // Initialize services
     await ingestService.initIngest();
@@ -60,10 +63,10 @@ async function main() {
 
     // Start server
     await app.listen({ port: config.port, host: config.host });
-    console.log(`Event Collector Service listening on ${config.host}:${config.port}`);
-    console.log(`Instance ID: ${config.instanceId}`);
+    logger.info({ host: config.host, port: config.port }, 'Event Collector Service listening');
+    logger.info({ instanceId: config.instanceId }, 'Instance ID');
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error({ error }, 'Failed to start server');
     process.exit(1);
   }
 }

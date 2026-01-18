@@ -8,6 +8,14 @@ import { resolve } from 'path';
 
 import { startServer } from './server.js';
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 // Cache for loaded keys
 const keyCache = new Map<string, string>();
 
@@ -59,7 +67,7 @@ async function getPrivateKey(keyRef: string): Promise<string> {
   return key;
 }
 
-const baseUrl = process.env.LTI_BASE_URL || 'http://localhost:3008';
+const baseUrl = requireEnvInProduction('LTI_BASE_URL', 'http://localhost:3008');
 const port = parseInt(process.env.PORT || '3008', 10);
 
 void startServer({

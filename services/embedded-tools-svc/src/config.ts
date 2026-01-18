@@ -2,6 +2,14 @@
  * Embedded Tools Service - Configuration
  */
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? '4080', 10),
   host: process.env.HOST ?? '0.0.0.0',
@@ -28,8 +36,8 @@ export const config = {
   messageOrigin: process.env.MESSAGE_ORIGIN ?? 'https://app.aivolearning.com',
 
   // Marketplace service URL (for fetching tool configs)
-  marketplaceSvcUrl: process.env.MARKETPLACE_SVC_URL ?? 'http://localhost:4070',
+  marketplaceSvcUrl: requireEnvInProduction('MARKETPLACE_SVC_URL', 'http://localhost:4070'),
 
   // Session service URL (for recording events)
-  sessionSvcUrl: process.env.SESSION_SVC_URL ?? 'http://localhost:4050',
+  sessionSvcUrl: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:4050'),
 };

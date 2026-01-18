@@ -6,6 +6,7 @@
 
 import Fastify, { type FastifyInstance } from 'fastify';
 import rawBody from 'fastify-raw-body';
+import rateLimit from '@fastify/rate-limit';
 
 import { config } from './config.js';
 import { exportMetrics } from './metrics.js';
@@ -54,6 +55,26 @@ export async function buildApp(): Promise<FastifyInstance> {
     encoding: 'utf8',
     runFirst: true,
     routes: ['/payments/webhook/stripe'],
+  });
+
+  // Rate limiting - protect webhook and API endpoints from abuse
+  await app.register(rateLimit, {
+    global: true,
+    max: 100, // 100 requests per minute by default
+    timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      // Use forwarded IP in production (behind load balancer)
+      return (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+        request.ip ||
+        'unknown';
+    },
+    errorResponseBuilder: (request, context) => ({
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded. Please try again later.',
+      retryAfter: context.after,
+    }),
+    // Skip rate limiting for health checks
+    allowList: (request) => request.url === '/health' || request.url === '/internal/metrics',
   });
 
   // Health check endpoint

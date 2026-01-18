@@ -61,7 +61,6 @@ function formatDate(dateStr: string): string {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function fetchProjects(
-  accessToken: string,
   filters: { status?: string[]; type?: string[] } = {}
 ): Promise<ProjectsResponse> {
   const params = new URLSearchParams();
@@ -70,7 +69,7 @@ async function fetchProjects(
   params.set('limit', '50');
 
   const res = await fetch(`/api/research/projects?${params}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    credentials: 'include', // Auth handled via session cookies
   });
 
   if (!res.ok) throw new Error('Failed to fetch projects');
@@ -94,8 +93,7 @@ export default function ResearchProjectsPage() {
     setError(null);
 
     try {
-      const accessToken = 'mock-token'; // TODO: Get from auth context
-      const response = await fetchProjects(accessToken, { status: statusFilter });
+      const response = await fetchProjects({ status: statusFilter });
       setProjects(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load projects');

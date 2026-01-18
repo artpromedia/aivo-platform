@@ -5,6 +5,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 
 import { config } from './config.js';
 import { authenticate } from './middleware/auth.js';
@@ -37,6 +38,28 @@ export function createApp() {
 
   app.register(helmet, {
     contentSecurityPolicy: false,
+  });
+
+  // Rate limiting - protect ingestion endpoints from abuse
+  app.register(rateLimit, {
+    global: true,
+    max: 500, // 500 requests per minute (high throughput service)
+    timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      // Use forwarded IP or tenant ID from auth context for rate limiting
+      const tenantId = (request as { tenantId?: string }).tenantId;
+      if (tenantId) return `tenant:${tenantId}`;
+      return (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+        request.ip ||
+        'unknown';
+    },
+    errorResponseBuilder: (request, context) => ({
+      error: 'Too Many Requests',
+      message: 'Event ingestion rate limit exceeded. Please reduce event frequency.',
+      retryAfter: context.after,
+    }),
+    // Skip rate limiting for health checks
+    allowList: (request) => request.url === '/health' || request.url === '/ready',
   });
 
   // Health check (no auth)

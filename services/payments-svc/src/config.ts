@@ -2,6 +2,10 @@
  * Payments Service Configuration
  */
 
+import { createLogger } from '@aivo/ts-api-utils';
+
+const logger = createLogger('payments-svc');
+
 function requireEnv(name: string, defaultValue?: string): string {
   const value = process.env[name] ?? defaultValue;
   if (!value) {
@@ -32,7 +36,7 @@ export const config = {
   },
 
   // Billing service URL (for DB operations)
-  billingServiceUrl: process.env.BILLING_SERVICE_URL ?? 'http://localhost:4060',
+  billingServiceUrl: requireEnvInProduction('BILLING_SERVICE_URL', 'http://localhost:4060'),
 
   // Database URL (shared with billing-svc or separate)
   databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_billing'),
@@ -41,7 +45,7 @@ export const config = {
   defaultTrialDays: parseInt(process.env.DEFAULT_TRIAL_DAYS ?? '30', 10),
 
   // Entitlements service URL (for sync operations)
-  entitlementsSvcUrl: process.env.ENTITLEMENTS_SVC_URL ?? 'http://localhost:4080',
+  entitlementsSvcUrl: requireEnvInProduction('ENTITLEMENTS_SVC_URL', 'http://localhost:4080'),
 
   // Dunning configuration
   dunning: {
@@ -51,7 +55,7 @@ export const config = {
 
   // Event bus configuration (Redis pub/sub)
   eventBus: {
-    redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
+    redisUrl: requireEnvInProduction('REDIS_URL', 'redis://localhost:6379'),
     channelPrefix: process.env.EVENT_BUS_CHANNEL_PREFIX ?? 'aivo:billing',
     enabled: process.env.EVENT_BUS_ENABLED !== 'false',
   },
@@ -60,7 +64,7 @@ export const config = {
 // Validate Stripe keys in production
 if (config.nodeEnv === 'production') {
   if (config.stripe.secretKey.startsWith('sk_test')) {
-    console.warn('⚠️  WARNING: Using Stripe test key in production!');
+    logger.warn('Using Stripe test key in production');
   }
   if (config.stripe.webhookSecret === 'whsec_placeholder') {
     throw new Error('STRIPE_WEBHOOK_SECRET must be set in production');

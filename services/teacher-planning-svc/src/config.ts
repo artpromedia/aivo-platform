@@ -28,8 +28,8 @@ export const config = {
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
 
   // External services
-  learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4003',
-  sessionSvcUrl: process.env.SESSION_SVC_URL || 'http://localhost:4004',
+  learnerModelSvcUrl: requireEnvInProduction('LEARNER_MODEL_SVC_URL', 'http://localhost:4003'),
+  sessionSvcUrl: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:4004'),
 
   // Pagination defaults
   defaultPageSize: 20,

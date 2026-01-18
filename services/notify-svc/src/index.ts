@@ -21,7 +21,7 @@ async function start() {
 
   try {
     await app.listen({ port: config.port, host: config.host });
-    console.log(`📣 Notify Service running on http://${config.host}:${config.port}`);
+    app.log.info({ host: config.host, port: config.port }, 'Notify Service started');
   } catch (err) {
     app.log.error(err);
     await prisma.$disconnect();

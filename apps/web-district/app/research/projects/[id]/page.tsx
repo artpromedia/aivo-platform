@@ -125,7 +125,7 @@ export default function ProjectDetailPage() {
 
     try {
       const res = await fetch(`/api/research/projects/${projectId}`, {
-        headers: { Authorization: 'Bearer mock-token' },
+        credentials: 'include', // Auth handled via session cookies
       });
 
       if (!res.ok) throw new Error('Failed to load project');
@@ -134,7 +134,7 @@ export default function ProjectDetailPage() {
 
       // Load exports
       const exportsRes = await fetch(`/api/research/exports?projectId=${projectId}`, {
-        headers: { Authorization: 'Bearer mock-token' },
+        credentials: 'include',
       });
       if (exportsRes.ok) {
         const exportsData = await exportsRes.json();
@@ -158,8 +158,8 @@ export default function ProjectDetailPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer mock-token',
         },
+        credentials: 'include', // Auth handled via session cookies
         body: action === 'reject' ? JSON.stringify({ reason: 'Please provide more details about the methodology.' }) : undefined,
       });
 

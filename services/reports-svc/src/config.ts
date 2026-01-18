@@ -3,6 +3,14 @@
  * Aggregates data from other microservices.
  */
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '4050', 10),
   host: process.env.HOST || '0.0.0.0',
@@ -10,11 +18,11 @@ export const config = {
 
   // Service URLs
   services: {
-    baseline: process.env.BASELINE_SVC_URL || 'http://localhost:4010',
-    learnerModel: process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4020',
-    analytics: process.env.ANALYTICS_SVC_URL || 'http://localhost:4030',
-    goal: process.env.GOAL_SVC_URL || 'http://localhost:4040',
-    tenant: process.env.TENANT_SVC_URL || 'http://localhost:4000',
+    baseline: requireEnvInProduction('BASELINE_SVC_URL', 'http://localhost:4010'),
+    learnerModel: requireEnvInProduction('LEARNER_MODEL_SVC_URL', 'http://localhost:4020'),
+    analytics: requireEnvInProduction('ANALYTICS_SVC_URL', 'http://localhost:4030'),
+    goal: requireEnvInProduction('GOAL_SVC_URL', 'http://localhost:4040'),
+    tenant: requireEnvInProduction('TENANT_SVC_URL', 'http://localhost:4000'),
   },
 
   // JWT validation

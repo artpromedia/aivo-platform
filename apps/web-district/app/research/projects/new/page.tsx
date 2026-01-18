@@ -57,8 +57,8 @@ export default function NewProjectPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer mock-token', // TODO: Get from auth
         },
+        credentials: 'include', // Auth handled via session cookies
         body: JSON.stringify({
           ...form,
           startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,

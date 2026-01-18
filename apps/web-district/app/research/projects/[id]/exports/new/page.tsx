@@ -77,13 +77,13 @@ export default function NewExportPage() {
     try {
       const [cohortsRes, datasetsRes, templatesRes] = await Promise.all([
         fetch(`/api/research/cohorts?projectId=${projectId}`, {
-          headers: { Authorization: 'Bearer mock-token' },
+          credentials: 'include', // Auth handled via session cookies
         }),
         fetch(`/api/research/dataset-definitions?projectId=${projectId}`, {
-          headers: { Authorization: 'Bearer mock-token' },
+          credentials: 'include',
         }),
         fetch('/api/research/dataset-templates', {
-          headers: { Authorization: 'Bearer mock-token' },
+          credentials: 'include',
         }),
       ]);
 
@@ -134,8 +134,8 @@ export default function NewExportPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer mock-token',
         },
+        credentials: 'include', // Auth handled via session cookies
         body: JSON.stringify({
           projectId,
           datasetDefinitionId: form.datasetDefinitionId,

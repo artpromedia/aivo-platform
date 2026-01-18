@@ -4,6 +4,14 @@
 
 import { readFileSync } from 'fs';
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 function loadKey(envKey: string, pathEnvKey: string): string {
   const inline = process.env[envKey];
   if (inline) return inline;
@@ -24,18 +32,18 @@ export const config = {
   logLevel: process.env.LOG_LEVEL || 'info',
 
   // Database
-  databaseUrl: process.env.DATABASE_URL || 'postgresql://localhost:5432/aivo_writing',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_writing'),
   pgSsl: process.env.PGSSL === 'true',
 
   // JWT Authentication
   jwtPublicKey: loadKey('JWT_PUBLIC_KEY', 'JWT_PUBLIC_KEY_PATH'),
 
   // AI Orchestrator
-  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4010',
+  aiOrchestratorUrl: requireEnvInProduction('AI_ORCHESTRATOR_URL', 'http://localhost:4010'),
   aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
 
   // Session Service
-  sessionSvcUrl: process.env.SESSION_SVC_URL || 'http://localhost:4020',
+  sessionSvcUrl: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:4020'),
   sessionSvcApiKey: process.env.SESSION_SVC_API_KEY || '',
 
   // Writing Settings

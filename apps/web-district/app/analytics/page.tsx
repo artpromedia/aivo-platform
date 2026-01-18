@@ -41,12 +41,9 @@ export default function DistrictAnalyticsPage() {
     setError(null);
 
     try {
-      // In production, get access token from auth context
-      const accessToken = 'mock-token';
-
       const [overviewData, schoolsData] = await Promise.all([
-        fetchTenantOverview(tenantId, accessToken, dateRange),
-        fetchTenantSchools(tenantId, accessToken, dateRange),
+        fetchTenantOverview(tenantId, dateRange),
+        fetchTenantSchools(tenantId, dateRange),
       ]);
 
       setOverview(overviewData);

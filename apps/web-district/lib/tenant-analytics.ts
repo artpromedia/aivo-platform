@@ -217,7 +217,6 @@ function mockTenantSchools(tenantId: string): TenantSchoolsResponse {
 
 export async function fetchTenantOverview(
   tenantId: string,
-  accessToken: string,
   options?: { from?: string; to?: string }
 ): Promise<TenantOverviewResponse> {
   if (USE_MOCK) {
@@ -228,11 +227,12 @@ export async function fetchTenantOverview(
   if (options?.from) params.set('from', options.from);
   if (options?.to) params.set('to', options.to);
 
-  const url = `${ANALYTICS_BASE_URL}/analytics/tenants/${tenantId}/overview?${params.toString()}`;
+  // Use internal API route which handles auth via session cookies
+  const url = `/api/analytics/tenants/${tenantId}/overview?${params.toString()}`;
 
   const res = await fetch(url, {
+    credentials: 'include', // Auth handled via session cookies
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -246,7 +246,6 @@ export async function fetchTenantOverview(
 
 export async function fetchTenantSchools(
   tenantId: string,
-  accessToken: string,
   options?: { from?: string; to?: string }
 ): Promise<TenantSchoolsResponse> {
   if (USE_MOCK) {
@@ -257,11 +256,12 @@ export async function fetchTenantSchools(
   if (options?.from) params.set('from', options.from);
   if (options?.to) params.set('to', options.to);
 
-  const url = `${ANALYTICS_BASE_URL}/analytics/tenants/${tenantId}/schools?${params.toString()}`;
+  // Use internal API route which handles auth via session cookies
+  const url = `/api/analytics/tenants/${tenantId}/schools?${params.toString()}`;
 
   const res = await fetch(url, {
+    credentials: 'include', // Auth handled via session cookies
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });

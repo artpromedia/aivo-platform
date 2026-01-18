@@ -2,6 +2,14 @@
  * AIVO Legal Hold Service - Configuration
  */
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '4061', 10),
   host: process.env.HOST || '0.0.0.0',
@@ -9,7 +17,7 @@ export const config = {
   logLevel: process.env.LOG_LEVEL || 'info',
 
   // Database
-  databaseUrl: process.env.DATABASE_URL || 'postgresql://localhost:5432/aivo_legal_hold',
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_legal_hold'),
 
   // Authentication
   jwtPublicKeyPath: process.env.JWT_PUBLIC_KEY_PATH || '../../.keys/jwt-public.pem',
@@ -17,19 +25,19 @@ export const config = {
 
   // Redis
   redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: requireEnvInProduction('REDIS_URL', 'redis://localhost:6379'),
   },
 
   // NATS
   nats: {
-    url: process.env.NATS_URL || 'nats://localhost:4222',
+    url: requireEnvInProduction('NATS_URL', 'nats://localhost:4222'),
     enabled: process.env.NATS_ENABLED !== 'false',
   },
 
   // Email (for notifications)
   email: {
     enabled: process.env.EMAIL_ENABLED === 'true',
-    host: process.env.SMTP_HOST || 'localhost',
+    host: requireEnvInProduction('SMTP_HOST', 'localhost'),
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER || '',

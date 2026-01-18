@@ -253,6 +253,102 @@ export const mockRegistry = new MockRegistry();
 // EXPORTS
 // ══════════════════════════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ENVIRONMENT VARIABLE UTILITIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Require an environment variable in production, with a development fallback.
+ *
+ * CRITICAL: Addresses HIGH-002 - localhost fallbacks in production
+ *
+ * Usage:
+ * ```typescript
+ * import { requireEnvInProduction } from '@aivo/ts-api-utils';
+ *
+ * const config = {
+ *   databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/mydb'),
+ *   redisUrl: requireEnvInProduction('REDIS_URL', 'redis://localhost:6379'),
+ * };
+ * ```
+ *
+ * @param name - The environment variable name
+ * @param devDefault - Default value for development (NEVER used in production)
+ * @returns The environment variable value, or devDefault in non-production
+ * @throws Error if the variable is missing in production
+ */
+export function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && isProduction()) {
+    throw new Error(
+      `Environment variable ${name} is required in production. ` +
+      `Refusing to use default value "${devDefault}" in production environment.`
+    );
+  }
+  return value || devDefault;
+}
+
+/**
+ * Get an optional environment variable with a fallback.
+ * Unlike requireEnvInProduction, this won't throw in production.
+ * Use for truly optional configuration.
+ *
+ * @param name - The environment variable name
+ * @param fallback - Default value if not set
+ * @returns The environment variable value or fallback
+ */
+export function getEnvWithDefault(name: string, fallback: string): string {
+  return process.env[name] || fallback;
+}
+
+/**
+ * Parse an integer from environment variable with fallback.
+ *
+ * @param name - The environment variable name
+ * @param fallback - Default value if not set or invalid
+ * @returns The parsed integer or fallback
+ */
+export function getEnvInt(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) return fallback;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? fallback : parsed;
+}
+
+/**
+ * Parse a boolean from environment variable.
+ * Treats 'true', '1', 'yes' as true (case insensitive).
+ *
+ * @param name - The environment variable name
+ * @param fallback - Default value if not set
+ * @returns The parsed boolean or fallback
+ */
+export function getEnvBool(name: string, fallback: boolean): boolean {
+  const value = process.env[name]?.toLowerCase();
+  if (!value) return fallback;
+  return ['true', '1', 'yes'].includes(value);
+}
+
+/**
+ * Validate that required environment variables are set in production.
+ * Call during service startup.
+ *
+ * @param required - Array of required environment variable names
+ * @throws Error listing all missing variables
+ */
+export function validateRequiredEnv(required: string[]): void {
+  if (!isProduction()) return;
+
+  const missing = required.filter(name => !process.env[name]);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables in production:\n` +
+      missing.map(name => `  - ${name}`).join('\n')
+    );
+  }
+}
+
 export const MockMode = {
   isDevelopment,
   isProduction,
@@ -264,4 +360,15 @@ export const MockMode = {
   getUsageMetrics: getMockUsageMetrics,
   clearUsageMetrics: clearMockUsageMetrics,
   registry: mockRegistry,
+};
+
+export const EnvUtils = {
+  requireInProduction: requireEnvInProduction,
+  getWithDefault: getEnvWithDefault,
+  getInt: getEnvInt,
+  getBool: getEnvBool,
+  validateRequired: validateRequiredEnv,
+  isDevelopment,
+  isProduction,
+  isTest,
 };

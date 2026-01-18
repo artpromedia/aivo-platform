@@ -2,6 +2,14 @@ import 'dotenv/config';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
 function loadPublicKey(): string | undefined {
   const keyPath = process.env.JWT_PUBLIC_KEY_PATH;
   if (!keyPath) return undefined;
@@ -21,15 +29,15 @@ export const config = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
   // Session Service
-  sessionSvcUrl: process.env.SESSION_SVC_URL ?? 'http://localhost:4020',
+  sessionSvcUrl: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:4020'),
   sessionSvcApiKey: process.env.SESSION_SVC_API_KEY ?? '',
 
   // Learner Model Service (Virtual Brain)
-  learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL ?? 'http://localhost:4022',
+  learnerModelSvcUrl: requireEnvInProduction('LEARNER_MODEL_SVC_URL', 'http://localhost:4022'),
   learnerModelSvcApiKey: process.env.LEARNER_MODEL_SVC_API_KEY ?? '',
 
   // AI Orchestrator (for future FOCUS agent)
-  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL ?? 'http://localhost:4010',
+  aiOrchestratorUrl: requireEnvInProduction('AI_ORCHESTRATOR_URL', 'http://localhost:4010'),
   aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY ?? '',
 
   // Focus Detection Thresholds

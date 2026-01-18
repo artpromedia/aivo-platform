@@ -61,17 +61,15 @@ interface ExperimentDetail {
 // API CLIENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-const API_BASE = process.env.NEXT_PUBLIC_ANALYTICS_API_URL ?? 'http://localhost:3400';
-
 async function fetchExperiments(
-  accessToken: string,
   status?: string
 ): Promise<ExperimentSummary[]> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
 
-  const res = await fetch(`${API_BASE}/analytics/experiments?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  // Use internal API route which handles auth via session cookies
+  const res = await fetch(`/api/analytics/experiments?${params.toString()}`, {
+    credentials: 'include', // Auth handled via session cookies
   });
 
   if (!res.ok) throw new Error('Failed to fetch experiments');
@@ -80,11 +78,11 @@ async function fetchExperiments(
 }
 
 async function fetchExperimentDetail(
-  accessToken: string,
   experimentKey: string
 ): Promise<ExperimentDetail> {
-  const res = await fetch(`${API_BASE}/analytics/experiments/${experimentKey}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  // Use internal API route which handles auth via session cookies
+  const res = await fetch(`/api/analytics/experiments/${experimentKey}`, {
+    credentials: 'include',
   });
 
   if (!res.ok) throw new Error('Failed to fetch experiment detail');
@@ -217,8 +215,7 @@ export default function ExperimentsAnalyticsPage() {
     setError(null);
 
     try {
-      const accessToken = 'mock-token'; // In production, get from auth context
-      const data = await fetchExperiments(accessToken, statusFilter);
+      const data = await fetchExperiments(statusFilter);
       setExperiments(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load experiments');
@@ -229,8 +226,7 @@ export default function ExperimentsAnalyticsPage() {
 
   const loadExperimentDetail = async (experimentKey: string) => {
     try {
-      const accessToken = 'mock-token';
-      const detail = await fetchExperimentDetail(accessToken, experimentKey);
+      const detail = await fetchExperimentDetail(experimentKey);
       setSelectedExperiment(detail);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load experiment detail');
