@@ -1,11 +1,14 @@
 /**
  * API Key Authentication Service
- * 
+ *
  * Handles API key generation, validation, and rate limiting for public APIs.
  */
 
-import { PrismaClient, ApiKeyStatus, ApiScope } from '@prisma/client';
 import { randomBytes, createHash } from 'crypto';
+
+import type { PrismaClient, ApiScope } from '@prisma/client';
+import { ApiKeyStatus } from '@prisma/client';
+
 import { API_KEY_PREFIX } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -43,7 +46,7 @@ export class ApiKeyService {
 
   /**
    * Generate a new API key
-   * 
+   *
    * @returns Object containing the key (shown once) and prefix for storage
    */
   async createApiKey(params: {
@@ -84,10 +87,7 @@ export class ApiKeyService {
   /**
    * Validate an API key
    */
-  async validateApiKey(
-    rawKey: string,
-    clientIp?: string
-  ): Promise<ApiKeyValidationResult> {
+  async validateApiKey(rawKey: string, clientIp?: string): Promise<ApiKeyValidationResult> {
     // Check key format
     if (!rawKey.startsWith(API_KEY_PREFIX)) {
       return { valid: false, error: 'Invalid API key format', errorCode: 'INVALID_KEY' };
@@ -167,11 +167,7 @@ export class ApiKeyService {
   /**
    * Revoke an API key
    */
-  async revokeApiKey(
-    apiKeyId: string,
-    revokedBy: string,
-    reason?: string
-  ): Promise<void> {
+  async revokeApiKey(apiKeyId: string, revokedBy: string, reason?: string): Promise<void> {
     await this.prisma.apiKey.update({
       where: { id: apiKeyId },
       data: {
@@ -247,10 +243,7 @@ export class ApiKeyService {
   /**
    * Check rate limit for an API key
    */
-  private async checkRateLimit(
-    apiKeyId: string,
-    limitPerMinute: number
-  ): Promise<RateLimitResult> {
+  private async checkRateLimit(apiKeyId: string, limitPerMinute: number): Promise<RateLimitResult> {
     const now = Date.now();
     const windowMs = 60000; // 1 minute
     const key = `rate:${apiKeyId}`;
@@ -310,7 +303,13 @@ interface ApiKeyListItem {
 export class ApiKeyValidationError extends Error {
   constructor(
     message: string,
-    public code: 'INVALID_KEY' | 'EXPIRED' | 'REVOKED' | 'RATE_LIMITED' | 'IP_BLOCKED' | 'INSUFFICIENT_SCOPE'
+    public code:
+      | 'INVALID_KEY'
+      | 'EXPIRED'
+      | 'REVOKED'
+      | 'RATE_LIMITED'
+      | 'IP_BLOCKED'
+      | 'INSUFFICIENT_SCOPE'
   ) {
     super(message);
     this.name = 'ApiKeyValidationError';
@@ -339,7 +338,7 @@ export async function createApiKey(params: {
   // This is a simplified version for module-level exports
   // In production, use the ApiKeyService class instance
   const { prisma } = await import('./prisma.js');
-  
+
   const rawKey = `${API_KEY_PREFIX}${randomBytes(32).toString('hex')}`;
   const keyPrefix = rawKey.substring(0, 16);
   const keyHash = hashApiKey(rawKey);
@@ -371,7 +370,7 @@ export async function validateApiKey(
   requiredScope: string
 ): Promise<{ valid: boolean; tenantId?: string; apiKeyId?: string }> {
   const { prisma } = await import('./prisma.js');
-  
+
   const keyHash = hashApiKey(rawKey);
 
   const apiKey = await prisma.apiKey.findUnique({
@@ -419,7 +418,7 @@ export async function revokeApiKey(
   reason?: string
 ): Promise<void> {
   const { prisma } = await import('./prisma.js');
-  
+
   await prisma.apiKey.update({
     where: {
       id: apiKeyId,

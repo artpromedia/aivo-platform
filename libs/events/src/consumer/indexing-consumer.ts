@@ -29,11 +29,11 @@ import type { BaseEvent } from '../schemas/index.js';
 import { BaseConsumer } from './base-consumer.js';
 import type {
   ConsumerConnectionConfig,
-
-const log = createLogger('indexing-consumer');
   ConsumerOptions,
   ProcessedMessage,
 } from './base-consumer.js';
+
+const log = createLogger('indexing-consumer');
 
 // -----------------------------------------------------------------------------
 // Types
@@ -158,10 +158,7 @@ export class IndexingConsumer extends BaseConsumer {
       // Write events in parallel (within batch)
       await Promise.all(batch.map((event) => this.writeEvent(event)));
 
-      log.debug(
-        { stream: this.consumerOptions.stream, count: batch.length },
-        'Indexed events'
-      );
+      log.debug({ stream: this.consumerOptions.stream, count: batch.length }, 'Indexed events');
     } catch (err) {
       // Put failed events back in buffer for retry
       this.buffer.unshift(...batch);

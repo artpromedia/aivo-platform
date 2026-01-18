@@ -294,7 +294,7 @@ export function parseGoogleError(error: unknown): ParsedGoogleError {
   }
 
   // Parse Google API errors
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const err = error as any;
   const status = err?.status || err?.code || err?.response?.status || 500;
   const errorMessage = extractErrorMessage(error);
@@ -315,7 +315,7 @@ export function parseGoogleError(error: unknown): ParsedGoogleError {
  */
 function extractErrorMessage(error: unknown): string {
   if (typeof error === 'string') return error;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const err = error as any;
   if (err?.message) return err.message;
   if (err?.response?.data?.error?.message) return err.response.data.error.message;

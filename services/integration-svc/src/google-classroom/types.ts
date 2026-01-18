@@ -446,7 +446,6 @@ export class GoogleClassroomError extends Error {
   }
 
   static fromGoogleError(error: unknown): GoogleClassroomError {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = error as any;
     const code = err.code || err.status || 500;
     const message = err.message || 'Unknown Google API error';

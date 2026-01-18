@@ -1,14 +1,17 @@
 /**
  * Webhook Dispatcher
- * 
+ *
  * Handles the delivery of webhook events to registered endpoints.
  * Includes retry logic with exponential backoff.
  */
 
-import { PrismaClient, WebhookDeliveryStatus, WebhookEventType } from '@prisma/client';
-import { signWebhookPayload, generateWebhookHeaders } from './webhook-signing.js';
-import { WebhookPayload } from './types.js';
 import { randomUUID } from 'crypto';
+
+import type { PrismaClient, WebhookEventType } from '@prisma/client';
+import { WebhookDeliveryStatus } from '@prisma/client';
+
+import type { WebhookPayload } from './types.js';
+import { signWebhookPayload, generateWebhookHeaders } from './webhook-signing.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -33,12 +36,12 @@ export interface WebhookDispatcherConfig {
 
 const DEFAULT_CONFIG: WebhookDispatcherConfig = {
   maxAttempts: 5,
-  initialRetryDelayMs: 1000,      // 1 second
-  maxRetryDelayMs: 3600000,       // 1 hour
+  initialRetryDelayMs: 1000, // 1 second
+  maxRetryDelayMs: 3600000, // 1 hour
   backoffMultiplier: 2,
-  requestTimeoutMs: 30000,        // 30 seconds
+  requestTimeoutMs: 30000, // 30 seconds
   maxConsecutiveFailures: 10,
-  getSecret: async (ref) => ref,  // Default: use ref as secret (for dev)
+  getSecret: async (ref) => ref, // Default: use ref as secret (for dev)
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -56,7 +59,7 @@ export class WebhookDispatcher {
 
   /**
    * Queue a webhook event for delivery to all matching endpoints
-   * 
+   *
    * @param tenantId - The tenant ID for the event
    * @param eventType - The type of event
    * @param payload - The event payload
@@ -114,7 +117,7 @@ export class WebhookDispatcher {
    * Process pending webhook deliveries
    * This should be called by a background worker
    */
-  async processPendingDeliveries(batchSize: number = 10): Promise<void> {
+  async processPendingDeliveries(batchSize = 10): Promise<void> {
     const now = new Date();
 
     // Get pending deliveries that are due for processing
@@ -140,9 +143,7 @@ export class WebhookDispatcher {
     });
 
     // Process each delivery
-    await Promise.allSettled(
-      deliveries.map((delivery) => this.attemptDelivery(delivery))
-    );
+    await Promise.allSettled(deliveries.map((delivery) => this.attemptDelivery(delivery)));
   }
 
   /**
@@ -153,7 +154,7 @@ export class WebhookDispatcher {
       webhook: Awaited<ReturnType<typeof this.prisma.webhookEndpoint.findFirst>>;
     }
   ): Promise<void> {
-    if (!delivery || !delivery.webhook) return;
+    if (!delivery?.webhook) return;
 
     const startTime = Date.now();
     const timestamp = Math.floor(startTime / 1000);
@@ -184,10 +185,9 @@ export class WebhookDispatcher {
 
       // Make the HTTP request
       const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        this.config.requestTimeoutMs
-      );
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, this.config.requestTimeoutMs);
 
       const response = await fetch(delivery.webhook.url, {
         method: 'POST',
@@ -307,7 +307,12 @@ export class WebhookDispatcher {
    * Schedule a retry for a failed delivery
    */
   private async scheduleRetry(
-    delivery: { id: string; attemptCount: number; maxAttempts: number; webhook: { id: string; failureCount: number } },
+    delivery: {
+      id: string;
+      attemptCount: number;
+      maxAttempts: number;
+      webhook: { id: string; failureCount: number };
+    },
     statusCode: number | null,
     responseTimeMs: number,
     errorMessage: string
@@ -402,10 +407,7 @@ export class WebhookDispatcher {
   /**
    * Check if a payload matches the endpoint's filters
    */
-  private matchesFilter(
-    filter: Record<string, unknown> | null,
-    payload: WebhookPayload
-  ): boolean {
+  private matchesFilter(filter: Record<string, unknown> | null, payload: WebhookPayload): boolean {
     if (!filter) return true;
 
     const data = (payload as unknown as { data?: Record<string, unknown> }).data;
@@ -514,11 +516,7 @@ export class WebhookEventProducer {
       },
     };
 
-    return this.dispatcher.queueEvent(
-      params.tenantId,
-      'SESSION_COMPLETED',
-      payload
-    );
+    return this.dispatcher.queueEvent(params.tenantId, 'SESSION_COMPLETED', payload);
   }
 
   async baselineCompleted(params: {
@@ -548,11 +546,7 @@ export class WebhookEventProducer {
       },
     };
 
-    return this.dispatcher.queueEvent(
-      params.tenantId,
-      'BASELINE_COMPLETED',
-      payload
-    );
+    return this.dispatcher.queueEvent(params.tenantId, 'BASELINE_COMPLETED', payload);
   }
 
   async skillMasteryUpdated(params: {
@@ -582,11 +576,7 @@ export class WebhookEventProducer {
       },
     };
 
-    return this.dispatcher.queueEvent(
-      params.tenantId,
-      'SKILL_MASTERY_UPDATED',
-      payload
-    );
+    return this.dispatcher.queueEvent(params.tenantId, 'SKILL_MASTERY_UPDATED', payload);
   }
 
   async recommendationCreated(params: {
@@ -614,11 +604,7 @@ export class WebhookEventProducer {
       },
     };
 
-    return this.dispatcher.queueEvent(
-      params.tenantId,
-      'RECOMMENDATION_CREATED',
-      payload
-    );
+    return this.dispatcher.queueEvent(params.tenantId, 'RECOMMENDATION_CREATED', payload);
   }
 }
 
@@ -665,15 +651,13 @@ export async function queueWebhookDelivery(
 /**
  * Deliver a single webhook (standalone function for testing)
  */
-export async function deliverWebhook(
-  attempt: {
-    id: string;
-    payload: Record<string, unknown>;
-    status: string;
-    retryCount: number;
-    endpoint: { id: string; url: string; secret: string; tenantId: string };
-  }
-): Promise<{ success: boolean; error?: string }> {
+export async function deliverWebhook(attempt: {
+  id: string;
+  payload: Record<string, unknown>;
+  status: string;
+  retryCount: number;
+  endpoint: { id: string; url: string; secret: string; tenantId: string };
+}): Promise<{ success: boolean; error?: string }> {
   const { prisma } = await import('./prisma.js');
   const { signWebhookPayload } = await import('./webhook-signing.js');
 
@@ -683,7 +667,9 @@ export async function deliverWebhook(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, TIMEOUT_MS);
 
     const response = await Promise.race([
       fetch(attempt.endpoint.url, {
@@ -695,9 +681,11 @@ export async function deliverWebhook(
         body: payload,
         signal: controller.signal,
       }),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), TIMEOUT_MS)
-      ),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Request timeout'));
+        }, TIMEOUT_MS);
+      }),
     ]);
 
     clearTimeout(timeoutId);
@@ -719,7 +707,7 @@ export async function deliverWebhook(
     return { success: false, error: `HTTP ${response.status}` };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     await prisma.webhookDeliveryAttempt.update({
       where: { id: attempt.id },
       data: {
@@ -746,10 +734,7 @@ export async function processDeliveryQueue(): Promise<{ processed: number }> {
     where: {
       status: { in: ['PENDING', 'FAILED'] },
       retryCount: { lt: MAX_RETRIES },
-      OR: [
-        { nextRetryAt: null },
-        { nextRetryAt: { lte: now } },
-      ],
+      OR: [{ nextRetryAt: null }, { nextRetryAt: { lte: now } }],
     },
     include: {
       endpoint: true,
@@ -792,15 +777,17 @@ export async function processDeliveryQueue(): Promise<{ processed: number }> {
  */
 export async function getDeliveryStatus(
   endpointId: string,
-  limit: number = 10
-): Promise<Array<{
-  id: string;
-  status: string;
-  createdAt: Date;
-  deliveredAt?: Date;
-  responseStatus?: number;
-  retryCount?: number;
-}>> {
+  limit = 10
+): Promise<
+  {
+    id: string;
+    status: string;
+    createdAt: Date;
+    deliveredAt?: Date;
+    responseStatus?: number;
+    retryCount?: number;
+  }[]
+> {
   const { prisma } = await import('./prisma.js');
 
   const deliveries = await prisma.webhookDeliveryAttempt.findMany({

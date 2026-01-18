@@ -16,6 +16,7 @@
 import type { PrismaClient } from '@prisma/client';
 
 import { createLogger } from '../logger.js';
+
 import type { AssignmentSyncService } from './assignment-sync.service.js';
 import type { GoogleClassroomService } from './google-classroom.service.js';
 import type { SyncResult } from './types.js';
@@ -77,7 +78,10 @@ export class ScheduledSyncJob {
       return;
     }
 
-    log.info({ intervalMs: this.config.syncIntervalMs, maxCoursesPerRun: this.config.maxCoursesPerRun }, 'Starting scheduled Google Classroom sync job');
+    log.info(
+      { intervalMs: this.config.syncIntervalMs, maxCoursesPerRun: this.config.maxCoursesPerRun },
+      'Starting scheduled Google Classroom sync job'
+    );
 
     // Run immediately on start
     this.runSync().catch((err) => log.error({ err }, 'Sync error'));
@@ -129,12 +133,15 @@ export class ScheduledSyncJob {
       await this.cleanupOldLogs();
 
       const duration = Date.now() - startTime;
-      log.info({
-        durationMs: duration,
-        coursesSynced: syncResults.length,
-        successful: syncResults.filter((r) => r.success).length,
-        failed: syncResults.filter((r) => !r.success).length,
-      }, 'Completed scheduled sync cycle');
+      log.info(
+        {
+          durationMs: duration,
+          coursesSynced: syncResults.length,
+          successful: syncResults.filter((r) => r.success).length,
+          failed: syncResults.filter((r) => !r.success).length,
+        },
+        'Completed scheduled sync cycle'
+      );
     } catch (error) {
       log.error({ err: error }, 'Error during scheduled sync');
     } finally {
@@ -164,7 +171,10 @@ export class ScheduledSyncJob {
         // Find a teacher credential for this course
         const credential = await this.findCredentialForCourse(registration.courseId);
         if (!credential) {
-          log.warn({ courseId: registration.courseId }, 'No credential found for course, deactivating webhook');
+          log.warn(
+            { courseId: registration.courseId },
+            'No credential found for course, deactivating webhook'
+          );
           await this.prisma.googleClassroomWebhookRegistration.update({
             where: { id: registration.id },
             data: { active: false },
@@ -187,7 +197,10 @@ export class ScheduledSyncJob {
 
         log.info({ courseId: registration.courseId }, 'Renewed webhook for course');
       } catch (error) {
-        log.error({ err: error, courseId: registration.courseId }, 'Failed to renew webhook for course');
+        log.error(
+          { err: error, courseId: registration.courseId },
+          'Failed to renew webhook for course'
+        );
       }
     }
   }
@@ -307,7 +320,10 @@ export class ScheduledSyncJob {
       },
     });
 
-    log.info({ count: assignmentsWithPendingGrades.length }, 'Found assignments with pending grades');
+    log.info(
+      { count: assignmentsWithPendingGrades.length },
+      'Found assignments with pending grades'
+    );
 
     for (const assignment of assignmentsWithPendingGrades) {
       try {
@@ -320,7 +336,10 @@ export class ScheduledSyncJob {
           assignment.googleCourseId
         );
       } catch (error) {
-        log.error({ err: error, assignmentId: assignment.id }, 'Failed to sync grades for assignment');
+        log.error(
+          { err: error, assignmentId: assignment.id },
+          'Failed to sync grades for assignment'
+        );
       }
     }
   }
@@ -484,14 +503,20 @@ export class GradeSyncJob {
           );
 
           if (result.synced > 0 || result.failed > 0) {
-            log.info({
-              courseId: course.googleCourseId,
-              synced: result.synced,
-              failed: result.failed,
-            }, 'Grade sync result');
+            log.info(
+              {
+                courseId: course.googleCourseId,
+                synced: result.synced,
+                failed: result.failed,
+              },
+              'Grade sync result'
+            );
           }
         } catch (error) {
-          log.error({ err: error, courseId: course.googleCourseId }, 'Grade sync failed for course');
+          log.error(
+            { err: error, courseId: course.googleCourseId },
+            'Grade sync failed for course'
+          );
         }
       }
     } finally {

@@ -11,7 +11,7 @@ import {
   UpdateGoalSchema,
   CreateObjectiveSchema,
   UpdateObjectiveSchema,
-  GoalFiltersSchema,
+  // GoalFiltersSchema - TODO: implement filtering when needed
 } from '../schemas/goal.schemas.js';
 import * as goalService from '../services/goalService.js';
 
@@ -34,8 +34,8 @@ declare module 'fastify' {
 
 function getTenantContext(request: FastifyRequest): { tenantId: string; userId: string } {
   // In production, these come from auth middleware
-  const tenantId = request.headers['x-tenant-id'] as string || request.user?.tenantId;
-  const userId = request.headers['x-user-id'] as string || request.user?.userId;
+  const tenantId = (request.headers['x-tenant-id'] as string) || request.user?.tenantId;
+  const userId = (request.headers['x-user-id'] as string) || request.user?.userId;
 
   if (!tenantId) {
     throw new Error('Missing tenant context');
@@ -55,13 +55,10 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.post(
     '/goals',
-    async (
-      request: FastifyRequest<{ Body: unknown }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const body = CreateGoalSchema.parse({
-        ...request.body as object,
+        ...(request.body as object),
         tenantId: ctx.tenantId,
         createdByUserId: ctx.userId,
       }) as Parameters<typeof goalService.createGoal>[0];
@@ -118,10 +115,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.get(
     '/goals/:goalId',
-    async (
-      request: FastifyRequest<{ Params: { goalId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { goalId: string } }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const { goalId } = request.params;
 
@@ -167,10 +161,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.delete(
     '/goals/:goalId',
-    async (
-      request: FastifyRequest<{ Params: { goalId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { goalId: string } }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const { goalId } = request.params;
 
@@ -192,10 +183,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.post(
     '/goals/:goalId/complete',
-    async (
-      request: FastifyRequest<{ Params: { goalId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { goalId: string } }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const { goalId } = request.params;
 
@@ -228,7 +216,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       const ctx = getTenantContext(request);
       const { goalId } = request.params;
       const body = CreateObjectiveSchema.parse({
-        ...request.body as object,
+        ...(request.body as object),
         goalId,
       }) as Parameters<typeof goalService.createObjective>[0];
 
@@ -238,7 +226,10 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
         return reply.status(404).send({ error: 'Goal not found' });
       }
 
-      fastify.log.info({ objectiveId: objective.id, goalId, tenantId: ctx.tenantId }, 'Objective created');
+      fastify.log.info(
+        { objectiveId: objective.id, goalId, tenantId: ctx.tenantId },
+        'Objective created'
+      );
 
       return reply.status(201).send({ data: objective });
     }
@@ -276,10 +267,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.delete(
     '/objectives/:objectiveId',
-    async (
-      request: FastifyRequest<{ Params: { objectiveId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { objectiveId: string } }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const { objectiveId } = request.params;
 
@@ -301,10 +289,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.post(
     '/objectives/:objectiveId/met',
-    async (
-      request: FastifyRequest<{ Params: { objectiveId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { objectiveId: string } }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const { objectiveId } = request.params;
 
@@ -330,10 +315,7 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.get(
     '/learners/:learnerId/goals/summary',
-    async (
-      request: FastifyRequest<{ Params: { learnerId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
       const ctx = getTenantContext(request);
       const { learnerId } = request.params;
 

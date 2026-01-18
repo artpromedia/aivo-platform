@@ -14,6 +14,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { createLogger } from '../logger.js';
+
 import type { AssignmentSyncService } from './assignment-sync.service.js';
 import {
   ConnectGoogleClassroomSchema,

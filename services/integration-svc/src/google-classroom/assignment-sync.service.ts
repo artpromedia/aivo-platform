@@ -12,6 +12,7 @@ import type { EventEmitter } from 'node:events';
 import type { PrismaClient } from '@prisma/client';
 
 import { createLogger } from '../logger.js';
+
 import type { GoogleClassroomService } from './google-classroom.service.js';
 import type {
   ClassroomAssignment,
@@ -164,11 +165,14 @@ export class AssignmentSyncService {
       },
     });
 
-    log.info({
-      lessonId,
-      courseId,
-      assignmentId: assignment.id,
-    }, 'Posted lesson as Classroom assignment');
+    log.info(
+      {
+        lessonId,
+        courseId,
+        assignmentId: assignment.id,
+      },
+      'Posted lesson as Classroom assignment'
+    );
 
     this.eventEmitter?.emit('google-classroom.assignment.posted', {
       lessonId,

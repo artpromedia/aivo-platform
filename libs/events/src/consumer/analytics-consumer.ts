@@ -290,7 +290,7 @@ export class AnalyticsConsumer extends BaseConsumer {
     }
   }
 
-  private aggregateActivityCompleted(event: ActivityCompleted, hourBucket: Date): void {
+  private aggregateActivityCompleted(_event: ActivityCompleted, _hourBucket: Date): void {
     // Activities contribute to the nearest session metrics bucket
     // This is a simplified aggregation
   }

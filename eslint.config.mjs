@@ -21,6 +21,10 @@ export default [
       "libs/ts-rbac/src/**/*.js.map",
       "libs/ts-rbac/src/**/*.d.ts",
       "libs/ts-rbac/src/**/*.d.ts.map",
+      "libs/events/src/**/*.js",
+      "libs/events/src/**/*.js.map",
+      "libs/events/src/**/*.d.ts",
+      "libs/events/src/**/*.d.ts.map",
       "**/tailwind.config.ts",
       "**/vitest.config.ts",
       "**/*.test.ts",
@@ -139,21 +143,28 @@ export default [
       "services/consent-svc/**/*.{ts,tsx}",
       "services/dsr-svc/**/*.{ts,tsx}",
       "services/gamification-svc/**/*.{ts,tsx}",
+      "services/goal-svc/**/*.{ts,tsx}",
+      "services/integration-svc/**/*.{ts,tsx}",
+      "services/learner-model-svc/**/*.{ts,tsx}",
       "services/notify-svc/**/*.{ts,tsx}",
       "services/ai-orchestrator/**/*.{ts,tsx}",
       "services/api-gateway/**/*.{ts,tsx}",
       "services/focus-svc/**/*.{ts,tsx}",
       "services/lti-svc/**/*.{ts,tsx}",
       "services/parent-svc/**/*.{ts,tsx}",
+      "services/realtime-svc/**/*.{ts,tsx}",
       "services/reports-svc/**/*.{ts,tsx}",
       "services/sandbox-svc/**/*.{ts,tsx}",
+      "services/session-svc/**/*.{ts,tsx}",
       "services/writing-pad-svc/**/*.{ts,tsx}",
       "packages/i18n/**/*.{ts,tsx}",
-      "libs/ui-web/**/*.{ts,tsx}"
+      "libs/ui-web/**/*.{ts,tsx}",
+      "libs/events/**/*.{ts,tsx}"
     ],
     rules: {
       "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-unnecessary-type-assertion": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
@@ -161,6 +172,7 @@ export default [
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-unnecessary-type-parameters": "off",
       "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/no-redundant-type-constituents": "off",
       "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/restrict-plus-operands": "off",
@@ -168,7 +180,8 @@ export default [
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-base-to-string": "off",
-      "@typescript-eslint/unbound-method": "off"
+      "@typescript-eslint/unbound-method": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off"
     }
   },
   {

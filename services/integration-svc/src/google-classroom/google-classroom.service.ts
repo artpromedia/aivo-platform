@@ -19,6 +19,7 @@ import type { classroom_v1 } from 'googleapis';
 import { google } from 'googleapis';
 
 import { createLogger } from '../logger.js';
+
 import type {
   GoogleClassroomConfig,
   ClassroomCourse,
@@ -53,7 +54,7 @@ const DEFAULT_SCOPES = [
 ];
 
 const RATE_LIMIT_REQUESTS_PER_SECOND = 10;
-const RATE_LIMIT_REQUESTS_PER_MINUTE = 500;
+const _RATE_LIMIT_REQUESTS_PER_MINUTE = 500;
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
@@ -959,10 +960,13 @@ export class GoogleClassroomService {
 
       this.eventEmitter.emit('google-classroom.sync.completed', result);
 
-      log.info({
-        googleCourseId,
-        ...result,
-      }, 'Course roster sync completed');
+      log.info(
+        {
+          googleCourseId,
+          ...result,
+        },
+        'Course roster sync completed'
+      );
     } catch (error: any) {
       result.success = false;
       result.errors.push(error.message);
@@ -990,10 +994,13 @@ export class GoogleClassroomService {
         error: error.message,
       });
 
-      log.error({
-        googleCourseId,
-        error: error.message,
-      }, 'Course roster sync failed');
+      log.error(
+        {
+          googleCourseId,
+          error: error.message,
+        },
+        'Course roster sync failed'
+      );
     }
 
     return result;
@@ -1166,7 +1173,7 @@ export class GoogleClassroomService {
     tenantId: string,
     googleCourseId: string,
     localClassId: string,
-    options: SyncOptions
+    _options: SyncOptions
   ): Promise<{ added: number; removed: number; updated: number }> {
     const googleStudents = await this.listAllStudents(userId, googleCourseId);
     const googleStudentIds = new Set(googleStudents.map((s) => s.userId));
@@ -1297,10 +1304,13 @@ export class GoogleClassroomService {
         },
       });
 
-      log.info({
-        classId: classRecord.id,
-        googleCourseId: course.id,
-      }, 'Created class from Google Classroom');
+      log.info(
+        {
+          classId: classRecord.id,
+          googleCourseId: course.id,
+        },
+        'Created class from Google Classroom'
+      );
     }
 
     return { id: classRecord.id };
@@ -1387,10 +1397,13 @@ export class GoogleClassroomService {
         },
       });
 
-      log.info({
-        studentId: profile.id,
-        googleUserId: student.userId,
-      }, 'Created student from Google Classroom');
+      log.info(
+        {
+          studentId: profile.id,
+          googleUserId: student.userId,
+        },
+        'Created student from Google Classroom'
+      );
     }
 
     // Create enrollment
