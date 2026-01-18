@@ -16,6 +16,7 @@ import {
   shopRoutes,
   teamRoutes,
   competitionRoutes,
+  internalRoutes,
 } from './routes/index.js';
 
 const app: Application = express();
@@ -83,6 +84,12 @@ apiRouter.use('/teams', teamRoutes);
 apiRouter.use('/competitions', competitionRoutes);
 
 app.use('/api/gamification', apiRouter);
+
+// ============================================================================
+// INTERNAL ROUTES (DSR Compliance)
+// ============================================================================
+
+app.use('/internal', internalRoutes);
 
 // ============================================================================
 // ERROR HANDLING

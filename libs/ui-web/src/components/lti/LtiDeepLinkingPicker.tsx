@@ -174,11 +174,11 @@ export function LtiDeepLinkingPicker({
                     {item.thumbnail ? (
                       <img
                         src={item.thumbnail}
-                        alt={`Thumbnail for ${item.title}`}
+                        alt={`Preview thumbnail for ${item.title} ${typeLabels[item.type].toLowerCase()}`}
                         className="h-16 w-24 rounded object-cover"
                       />
                     ) : (
-                      <div className="flex h-16 w-24 items-center justify-center rounded bg-muted">
+                      <div className="flex h-16 w-24 items-center justify-center rounded bg-muted" role="img" aria-label={`${typeLabels[item.type]} content`}>
                         {typeIcons[item.type]}
                       </div>
                     )}

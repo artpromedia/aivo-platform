@@ -16,7 +16,10 @@ import type {
   ConnectionOptions,
 } from 'nats';
 
+import { createLogger } from '../logger.js';
 import type { BaseEvent } from '../schemas/index.js';
+
+const log = createLogger('base-consumer');
 
 // -----------------------------------------------------------------------------
 // Types
@@ -211,8 +214,9 @@ export abstract class BaseConsumer {
       // expires: 30000,
     });
 
-    console.log(
-      `[Consumer:${this.consumerOptions.durableName}] Started consuming from ${this.consumerOptions.stream}`
+    log.info(
+      { durableName: this.consumerOptions.durableName, stream: this.consumerOptions.stream },
+      'Started consuming'
     );
 
     try {
@@ -225,7 +229,7 @@ export abstract class BaseConsumer {
       }
     } catch (err) {
       if (this.isRunning) {
-        console.error(`[Consumer:${this.consumerOptions.durableName}] Error:`, err);
+        log.error({ err, durableName: this.consumerOptions.durableName }, 'Consumer error');
         throw err;
       }
     }
@@ -260,14 +264,15 @@ export abstract class BaseConsumer {
 
       const latency = Date.now() - startTime;
       if (latency > 1000) {
-        console.warn(
-          `[Consumer:${this.consumerOptions.durableName}] Slow message processing: ${latency}ms`
+        log.warn(
+          { durableName: this.consumerOptions.durableName, latencyMs: latency },
+          'Slow message processing'
         );
       }
     } catch (err) {
-      console.error(
-        `[Consumer:${this.consumerOptions.durableName}] Failed to process message:`,
-        err
+      log.error(
+        { err, durableName: this.consumerOptions.durableName },
+        'Failed to process message'
       );
 
       // Check if max deliveries reached
@@ -288,8 +293,9 @@ export abstract class BaseConsumer {
   }
 
   protected async handleDeadLetter(msg: JsMsg, _error: unknown): Promise<void> {
-    console.error(
-      `[Consumer:${this.consumerOptions.durableName}] Message moved to DLQ after ${msg.info.deliveryCount} attempts`
+    log.error(
+      { durableName: this.consumerOptions.durableName, deliveryCount: msg.info.deliveryCount },
+      'Message moved to DLQ'
     );
     // Subclasses can override to publish to DLQ stream
   }

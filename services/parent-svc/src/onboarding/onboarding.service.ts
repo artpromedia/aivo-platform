@@ -6,6 +6,7 @@
  */
 
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   LocationInput,
@@ -242,13 +243,13 @@ export class OnboardingService {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error('[OnboardingService] Failed to send learner app notification:', errorBody);
+        logger.error('Failed to send learner app notification', { error: errorBody });
       } else {
-        console.log('[OnboardingService] Learner app download notification sent successfully');
+        logger.info('Learner app download notification sent successfully');
       }
     } catch (error) {
       // Don't fail the registration if notification fails
-      console.error('[OnboardingService] Error sending learner app notification:', error);
+      logger.error('Error sending learner app notification', { error });
     }
   }
 

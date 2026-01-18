@@ -15,9 +15,12 @@
 
 import type { PrismaClient } from '@prisma/client';
 
+import { createLogger } from '../logger.js';
 import type { AssignmentSyncService } from './assignment-sync.service.js';
 import type { GoogleClassroomService } from './google-classroom.service.js';
 import type { SyncResult } from './types.js';
+
+const log = createLogger('google-classroom-sync');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -70,21 +73,18 @@ export class ScheduledSyncJob {
    */
   start(): void {
     if (this.intervalId) {
-      console.warn('Scheduled sync job already running');
+      log.warn('Scheduled sync job already running');
       return;
     }
 
-    console.log('Starting scheduled Google Classroom sync job', {
-      intervalMs: this.config.syncIntervalMs,
-      maxCoursesPerRun: this.config.maxCoursesPerRun,
-    });
+    log.info({ intervalMs: this.config.syncIntervalMs, maxCoursesPerRun: this.config.maxCoursesPerRun }, 'Starting scheduled Google Classroom sync job');
 
     // Run immediately on start
-    this.runSync().catch(console.error);
+    this.runSync().catch((err) => log.error({ err }, 'Sync error'));
 
     // Schedule recurring runs
     this.intervalId = setInterval(() => {
-      this.runSync().catch(console.error);
+      this.runSync().catch((err) => log.error({ err }, 'Sync error'));
     }, this.config.syncIntervalMs);
   }
 
@@ -95,7 +95,7 @@ export class ScheduledSyncJob {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
-      console.log('Stopped scheduled Google Classroom sync job');
+      log.info('Stopped scheduled Google Classroom sync job');
     }
   }
 
@@ -104,14 +104,14 @@ export class ScheduledSyncJob {
    */
   async runSync(): Promise<void> {
     if (this.isRunning) {
-      console.log('Sync already in progress, skipping');
+      log.debug('Sync already in progress, skipping');
       return;
     }
 
     this.isRunning = true;
     const startTime = Date.now();
 
-    console.log('Starting scheduled sync cycle');
+    log.info('Starting scheduled sync cycle');
 
     try {
       // Step 1: Renew expiring webhook registrations
@@ -129,14 +129,14 @@ export class ScheduledSyncJob {
       await this.cleanupOldLogs();
 
       const duration = Date.now() - startTime;
-      console.log('Completed scheduled sync cycle', {
+      log.info({
         durationMs: duration,
         coursesSynced: syncResults.length,
         successful: syncResults.filter((r) => r.success).length,
         failed: syncResults.filter((r) => !r.success).length,
-      });
+      }, 'Completed scheduled sync cycle');
     } catch (error) {
-      console.error('Error during scheduled sync:', error);
+      log.error({ err: error }, 'Error during scheduled sync');
     } finally {
       this.isRunning = false;
     }
@@ -157,16 +157,14 @@ export class ScheduledSyncJob {
       },
     });
 
-    console.log(`Found ${expiringRegistrations.length} webhook registrations to renew`);
+    log.info({ count: expiringRegistrations.length }, 'Found webhook registrations to renew');
 
     for (const registration of expiringRegistrations) {
       try {
         // Find a teacher credential for this course
         const credential = await this.findCredentialForCourse(registration.courseId);
         if (!credential) {
-          console.warn(
-            `No credential found for course ${registration.courseId}, deactivating webhook`
-          );
+          log.warn({ courseId: registration.courseId }, 'No credential found for course, deactivating webhook');
           await this.prisma.googleClassroomWebhookRegistration.update({
             where: { id: registration.id },
             data: { active: false },
@@ -187,9 +185,9 @@ export class ScheduledSyncJob {
           data: { active: false },
         });
 
-        console.log(`Renewed webhook for course ${registration.courseId}`);
+        log.info({ courseId: registration.courseId }, 'Renewed webhook for course');
       } catch (error) {
-        console.error(`Failed to renew webhook for course ${registration.courseId}:`, error);
+        log.error({ err: error, courseId: registration.courseId }, 'Failed to renew webhook for course');
       }
     }
   }
@@ -222,7 +220,7 @@ export class ScheduledSyncJob {
       ],
     });
 
-    console.log(`Found ${coursesToSync.length} courses to sync`);
+    log.info({ count: coursesToSync.length }, 'Found courses to sync');
 
     const results: SyncResult[] = [];
 
@@ -231,7 +229,7 @@ export class ScheduledSyncJob {
         // Find a valid credential for this course
         const credential = await this.findCredentialForCourse(syncRecord.googleCourseId);
         if (!credential) {
-          console.warn(`No credential found for course ${syncRecord.googleCourseId}`);
+          log.warn({ courseId: syncRecord.googleCourseId }, 'No credential found for course');
           continue;
         }
 
@@ -250,7 +248,7 @@ export class ScheduledSyncJob {
         // Delay between courses
         await this.delay(this.config.delayBetweenCoursesMs);
       } catch (error: any) {
-        console.error(`Failed to sync course ${syncRecord.googleCourseId}:`, error);
+        log.error({ err: error, courseId: syncRecord.googleCourseId }, 'Failed to sync course');
 
         // Log failure
         await this.logSyncOperation(
@@ -279,7 +277,7 @@ export class ScheduledSyncJob {
    * Sync pending grades to Google Classroom
    */
   private async syncPendingGrades(): Promise<void> {
-    console.log('Syncing pending grades');
+    log.info('Syncing pending grades');
 
     // Find all linked assignments with pending grades
     const assignmentsWithPendingGrades = await this.prisma.googleClassroomAssignment.findMany({
@@ -309,7 +307,7 @@ export class ScheduledSyncJob {
       },
     });
 
-    console.log(`Found ${assignmentsWithPendingGrades.length} assignments with pending grades`);
+    log.info({ count: assignmentsWithPendingGrades.length }, 'Found assignments with pending grades');
 
     for (const assignment of assignmentsWithPendingGrades) {
       try {
@@ -322,7 +320,7 @@ export class ScheduledSyncJob {
           assignment.googleCourseId
         );
       } catch (error) {
-        console.error(`Failed to sync grades for assignment ${assignment.id}:`, error);
+        log.error({ err: error, assignmentId: assignment.id }, 'Failed to sync grades for assignment');
       }
     }
   }
@@ -340,7 +338,7 @@ export class ScheduledSyncJob {
     });
 
     if (deleted.count > 0) {
-      console.log(`Cleaned up ${deleted.count} old sync logs`);
+      log.info({ count: deleted.count }, 'Cleaned up old sync logs');
     }
   }
 
@@ -436,10 +434,10 @@ export class GradeSyncJob {
   start(): void {
     if (this.intervalId) return;
 
-    console.log('Starting grade sync job', { intervalMs: this.intervalMs });
+    log.info({ intervalMs: this.intervalMs }, 'Starting grade sync job');
 
     this.intervalId = setInterval(() => {
-      this.runSync().catch(console.error);
+      this.runSync().catch((err) => log.error({ err }, 'Grade sync error'));
     }, this.intervalMs);
   }
 
@@ -486,14 +484,14 @@ export class GradeSyncJob {
           );
 
           if (result.synced > 0 || result.failed > 0) {
-            console.log('Grade sync result', {
+            log.info({
               courseId: course.googleCourseId,
               synced: result.synced,
               failed: result.failed,
-            });
+            }, 'Grade sync result');
           }
         } catch (error) {
-          console.error(`Grade sync failed for course ${course.googleCourseId}:`, error);
+          log.error({ err: error, courseId: course.googleCourseId }, 'Grade sync failed for course');
         }
       }
     } finally {

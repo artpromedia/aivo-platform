@@ -102,6 +102,7 @@ model Goal {
   // Timestamps
   createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime?  @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   // Relations
   objectives        GoalObjective[]
@@ -113,6 +114,7 @@ model Goal {
   @@index([learnerId])
   @@index([skillId])
   @@index([createdByUserId])
+  @@index([deletedAt])
   @@map("goals")
 }
 
@@ -135,6 +137,7 @@ model GoalObjective {
   // Timestamps
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   // Relations
   goal              Goal              @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -143,6 +146,7 @@ model GoalObjective {
 
   @@index([goalId])
   @@index([goalId, status])
+  @@index([deletedAt])
   @@map("goal_objectives")
 }
 
@@ -173,6 +177,7 @@ model SessionPlan {
   // Timestamps
   createdAt                DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt                DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt                DateTime?         @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   // Relations
   items         SessionPlanItem[]
@@ -182,6 +187,7 @@ model SessionPlan {
   @@index([tenantId, scheduledFor])
   @@index([sessionId])
   @@index([createdByUserId])
+  @@index([deletedAt])
   @@map("session_plans")
 }
 
@@ -246,6 +252,7 @@ model ProgressNote {
   // Timestamps
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   // Relations
   sessionPlan   SessionPlan?   @relation(fields: [sessionPlanId], references: [id], onDelete: SetNull)
@@ -257,5 +264,6 @@ model ProgressNote {
   @@index([goalId])
   @@index([sessionPlanId])
   @@index([createdByUserId])
+  @@index([deletedAt])
   @@map("progress_notes")
 }

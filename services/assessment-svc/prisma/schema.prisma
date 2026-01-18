@@ -156,12 +156,14 @@ model Assessment {
   updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz
   publishedAt      DateTime?        @map("published_at") @db.Timestamptz
   archivedAt       DateTime?        @map("archived_at") @db.Timestamptz
+  deletedAt        DateTime?        @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   @@index([tenantId])
   @@index([subjectId])
   @@index([status])
   @@index([type])
   @@index([authorId])
+  @@index([deletedAt])
   @@map("assessments")
 }
 
@@ -300,12 +302,14 @@ model Attempt {
   gradedAt         DateTime?     @map("graded_at") @db.Timestamptz
   gradesReleasedAt DateTime?     @map("grades_released_at") @db.Timestamptz
   feedback         String?       @db.Text // Overall feedback
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   @@index([assessmentId])
   @@index([userId])
   @@index([tenantId])
   @@index([status])
   @@index([userId, assessmentId])
+  @@index([deletedAt])
   @@map("attempts")
 }
 
@@ -352,11 +356,13 @@ model QuestionResponse {
   attempt          Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question         Question  @relation(fields: [questionId], references: [id])
   gradingRecords   GradingRecord[]
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz /// GDPR soft delete
 
   @@unique([attemptId, questionId])
   @@index([attemptId])
   @@index([questionId])
   @@index([status])
+  @@index([deletedAt])
   @@map("question_responses")
 }
 

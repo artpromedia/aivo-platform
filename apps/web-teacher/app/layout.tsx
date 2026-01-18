@@ -46,9 +46,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" data-grade-theme="navigator">
       <body className="min-h-screen bg-background text-text antialiased">
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         <Providers initialAuth={initialAuth}>
           <Nav />
-          <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>
+          <main id="main-content" className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6" tabIndex={-1}>{children}</main>
         </Providers>
       </body>
     </html>

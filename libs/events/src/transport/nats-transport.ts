@@ -20,8 +20,11 @@ import type {
 } from 'nats';
 import { v4 as uuidv4 } from 'uuid';
 
+import { createLogger } from '../logger.js';
 import type { BaseEvent } from '../schemas/index.js';
 import { validateEvent, BaseEventSchema, getStreamForEventType } from '../schemas/index.js';
+
+const log = createLogger('nats-transport');
 
 // -----------------------------------------------------------------------------
 // Types
@@ -190,16 +193,16 @@ export class NatsTransport {
         const statusType = status.type as string;
         switch (statusType) {
           case 'disconnect':
-            console.warn('[NatsTransport] Disconnected from NATS');
+            log.warn('Disconnected from NATS');
             break;
           case 'reconnect':
-            console.info('[NatsTransport] Reconnected to NATS');
+            log.info('Reconnected to NATS');
             break;
           case 'error':
-            console.error('[NatsTransport] Connection error:', status.data);
+            log.error({ data: status.data }, 'Connection error');
             break;
           case 'ldm':
-            console.warn('[NatsTransport] Lame duck mode detected');
+            log.warn('Lame duck mode detected');
             break;
         }
       }
@@ -382,7 +385,7 @@ export class NatsTransport {
       const data = this.sc.encode(JSON.stringify(dlqEvent));
       await this.js.publish(dlqSubject, data);
     } catch (error_) {
-      console.error('[NatsTransport] Failed to publish to DLQ:', error_);
+      log.error({ err: error_ }, 'Failed to publish to DLQ');
     }
   }
 

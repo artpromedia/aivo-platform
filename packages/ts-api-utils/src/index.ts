@@ -11,6 +11,7 @@
  * - HIGH-007: Crypto-safe random utilities (no Math.random)
  * - HIGH-008: Rate limiting for public endpoints
  * - HIGH-009: Admin audit logging
+ * - Production environment validation
  */
 
 export * from './mock-mode.js';
@@ -20,3 +21,5 @@ export * from './random.js';
 export * from './audit.js';
 export * from './service-urls.js';
 export * from './dataloader.js';
+export * from './env-validation.js';
+export * from './soft-delete.js';

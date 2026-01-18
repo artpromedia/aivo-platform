@@ -11,6 +11,7 @@ import type { EventEmitter } from 'node:events';
 
 import type { PrismaClient } from '@prisma/client';
 
+import { createLogger } from '../logger.js';
 import type { GoogleClassroomService } from './google-classroom.service.js';
 import type {
   ClassroomAssignment,
@@ -18,6 +19,8 @@ import type {
   BatchGradePassbackResult,
 } from './types.js';
 import { GoogleClassroomError } from './types.js';
+
+const log = createLogger('assignment-sync');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -161,11 +164,11 @@ export class AssignmentSyncService {
       },
     });
 
-    console.log('Posted lesson as Classroom assignment', {
+    log.info({
       lessonId,
       courseId,
       assignmentId: assignment.id,
-    });
+    }, 'Posted lesson as Classroom assignment');
 
     this.eventEmitter?.emit('google-classroom.assignment.posted', {
       lessonId,
@@ -260,7 +263,7 @@ export class AssignmentSyncService {
       },
     });
 
-    console.log('Deleted linked assignment', { linkId });
+    log.info({ linkId }, 'Deleted linked assignment');
 
     this.eventEmitter?.emit('google-classroom.assignment.deleted', {
       linkId,

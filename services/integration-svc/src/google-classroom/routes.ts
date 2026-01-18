@@ -13,6 +13,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+import { createLogger } from '../logger.js';
 import type { AssignmentSyncService } from './assignment-sync.service.js';
 import {
   ConnectGoogleClassroomSchema,
@@ -42,6 +43,8 @@ export interface GoogleClassroomRouteOptions {
   assignmentSyncService: AssignmentSyncService;
   frontendUrl: string;
 }
+
+const log = createLogger('google-classroom-routes');
 
 interface AuthenticatedRequest extends FastifyRequest {
   user: {
@@ -130,7 +133,7 @@ export async function registerGoogleClassroomRoutes(
 
         return reply.redirect(`${redirectUrl}?connected=google_classroom`);
       } catch (err: any) {
-        console.error('OAuth callback error:', err);
+        log.error({ err }, 'OAuth callback error');
         return reply.redirect(
           `${frontendUrl}/settings/integrations?error=connection_failed&message=${encodeURIComponent(err.message)}`
         );
@@ -542,7 +545,7 @@ export async function registerGoogleClassroomRoutes(
     const body = WebhookNotificationSchema.safeParse(request.body);
 
     if (!body.success) {
-      console.warn('Invalid webhook payload:', body.error);
+      log.warn({ error: body.error }, 'Invalid webhook payload');
       return { received: false };
     }
 
@@ -552,7 +555,7 @@ export async function registerGoogleClassroomRoutes(
 
         await googleClassroomService.processWebhookNotification(notification);
       } catch (error) {
-        console.error('Error processing webhook:', error);
+        log.error({ err: error }, 'Error processing webhook');
       }
     }
 

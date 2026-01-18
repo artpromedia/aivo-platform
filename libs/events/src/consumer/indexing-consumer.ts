@@ -23,11 +23,14 @@
 //     indexed_at TIMESTAMPTZ DEFAULT NOW()
 //   );
 
+import { createLogger } from '../logger.js';
 import type { BaseEvent } from '../schemas/index.js';
 
 import { BaseConsumer } from './base-consumer.js';
 import type {
   ConsumerConnectionConfig,
+
+const log = createLogger('indexing-consumer');
   ConsumerOptions,
   ProcessedMessage,
 } from './base-consumer.js';
@@ -90,7 +93,7 @@ export class IndexingConsumer extends BaseConsumer {
     // Start flush timer
     this.flushTimer = setInterval(() => {
       this.flush().catch((err: unknown) => {
-        console.error('[IndexingConsumer] Flush error:', err);
+        log.error({ err }, 'Flush error');
       });
     }, this.flushIntervalMs);
 
@@ -155,8 +158,9 @@ export class IndexingConsumer extends BaseConsumer {
       // Write events in parallel (within batch)
       await Promise.all(batch.map((event) => this.writeEvent(event)));
 
-      console.log(
-        `[IndexingConsumer:${this.consumerOptions.stream}] Indexed ${batch.length} events`
+      log.debug(
+        { stream: this.consumerOptions.stream, count: batch.length },
+        'Indexed events'
       );
     } catch (err) {
       // Put failed events back in buffer for retry

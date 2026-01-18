@@ -73,7 +73,7 @@ export async function createServer(config: ServerConfig): Promise<{
   if (config.googleClassroom) {
     googleClassroom = createGoogleClassroomIntegration(prisma, config.googleClassroom);
     await googleClassroom.registerRoutes(app);
-    console.log('Google Classroom integration registered');
+    app.log.info('Google Classroom integration registered');
   }
 
   // Webhook worker interval
@@ -82,7 +82,7 @@ export async function createServer(config: ServerConfig): Promise<{
   const start = async () => {
     // Connect to database
     await prisma.$connect();
-    console.log('Connected to database');
+    app.log.info('Connected to database');
 
     // Start webhook delivery worker
     const workerIntervalMs = config.webhookWorkerIntervalMs ?? 5000;
@@ -92,21 +92,21 @@ export async function createServer(config: ServerConfig): Promise<{
       try {
         await webhookDispatcher.processPendingDeliveries(batchSize);
       } catch (error) {
-        console.error('Webhook worker error:', error);
+        app.log.error({ err: error }, 'Webhook worker error');
       }
     }, workerIntervalMs);
 
-    console.log(`Webhook worker started (interval: ${workerIntervalMs}ms, batch: ${batchSize})`);
+    app.log.info({ workerIntervalMs, batchSize }, 'Webhook worker started');
 
     // Start Google Classroom scheduled jobs if configured
     if (googleClassroom) {
       googleClassroom.startScheduledJobs();
-      console.log('Google Classroom scheduled jobs started');
+      app.log.info('Google Classroom scheduled jobs started');
     }
 
     // Start server
     await app.listen({ port: config.port, host: config.host || '0.0.0.0' });
-    console.log(`Integration service listening on port ${config.port}`);
+    app.log.info({ port: config.port }, 'Integration service listening');
   };
 
   const stop = async () => {

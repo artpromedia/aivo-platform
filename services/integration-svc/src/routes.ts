@@ -260,40 +260,92 @@ export async function registerRoutes(
       });
     }
 
-    // TODO: Fetch actual sessions from session-svc
-    // Mock response
-    const sessions = {
-      sessions: [
+    // Fetch sessions from session-svc via internal API
+    const sessionSvcUrl = process.env.SESSION_SVC_URL || 'http://session-svc:3000';
+    const startTime = Date.now();
+    
+    try {
+      const queryParams = new URLSearchParams({
+        page: String(request.query.page),
+        pageSize: String(request.query.pageSize),
+      });
+      if (request.query.from) queryParams.append('from', request.query.from);
+      if (request.query.to) queryParams.append('to', request.query.to);
+
+      const response = await fetch(
+        `${sessionSvcUrl}/internal/learners/${request.params.learnerId}/sessions?${queryParams}`,
         {
-          sessionId: '123e4567-e89b-12d3-a456-426614174000',
-          sessionType: 'LEARNING',
-          subject: 'MATH',
-          startedAt: new Date(Date.now() - 86400000).toISOString(),
-          endedAt: new Date(Date.now() - 86400000 + 1200000).toISOString(),
-          durationMinutes: 20,
-          activitiesCompleted: 5,
-          status: 'COMPLETED',
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Service': 'integration-svc',
+            'X-Tenant-Id': apiKeyAuth.tenantId!,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return reply.status(response.status).send({
+          error: 'SESSION_SVC_ERROR',
+          message: errorData.message || 'Failed to fetch sessions from session service',
+        });
+      }
+
+      const sessionsData = await response.json();
+      
+      // Transform to public API format
+      const sessions = {
+        sessions: sessionsData.sessions.map((s: any) => ({
+          sessionId: s.id,
+          sessionType: s.type,
+          subject: s.subject,
+          startedAt: s.startedAt,
+          endedAt: s.endedAt,
+          durationMinutes: s.durationMinutes,
+          activitiesCompleted: s.activitiesCompleted,
+          status: s.status,
+        })),
+        pagination: {
+          total: sessionsData.total,
+          page: request.query.page,
+          pageSize: request.query.pageSize,
+          hasMore: sessionsData.hasMore,
         },
-      ],
-      pagination: {
-        total: 47,
-        page: request.query.page,
-        pageSize: request.query.pageSize,
-        hasMore: true,
-      },
-    };
+      };
 
-    await apiKeyService.logUsage({
-      apiKeyId: apiKeyAuth.apiKeyId!,
-      endpoint: `/public/learners/${request.params.learnerId}/sessions`,
-      method: 'GET',
-      statusCode: 200,
-      responseTimeMs: 0,
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
+      const responseTimeMs = Date.now() - startTime;
 
-    return sessions;
+      await apiKeyService.logUsage({
+        apiKeyId: apiKeyAuth.apiKeyId!,
+        endpoint: `/public/learners/${request.params.learnerId}/sessions`,
+        method: 'GET',
+        statusCode: 200,
+        responseTimeMs,
+        ipAddress: request.ip,
+        userAgent: request.headers['user-agent'],
+      });
+
+      return sessions;
+    } catch (error) {
+      const responseTimeMs = Date.now() - startTime;
+      
+      await apiKeyService.logUsage({
+        apiKeyId: apiKeyAuth.apiKeyId!,
+        endpoint: `/public/learners/${request.params.learnerId}/sessions`,
+        method: 'GET',
+        statusCode: 500,
+        responseTimeMs,
+        ipAddress: request.ip,
+        userAgent: request.headers['user-agent'],
+      });
+
+      app.log.error({ error, learnerId: request.params.learnerId }, 'Failed to fetch sessions');
+      return reply.status(500).send({
+        error: 'INTERNAL_ERROR',
+        message: 'Failed to fetch sessions. Please try again later.',
+      });
+    }
   });
 
   // ════════════════════════════════════════════════════════════════════════════

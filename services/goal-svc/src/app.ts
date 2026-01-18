@@ -7,7 +7,12 @@
 import Fastify, { FastifyInstance } from 'fastify';
 
 import { config } from './config.js';
-import { registerGoalRoutes, registerSessionPlanRoutes, registerProgressNoteRoutes } from './routes/index.js';
+import {
+  registerGoalRoutes,
+  registerSessionPlanRoutes,
+  registerProgressNoteRoutes,
+  registerInternalRoutes,
+} from './routes/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -78,6 +83,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerGoalRoutes(app);
   await registerSessionPlanRoutes(app);
   await registerProgressNoteRoutes(app);
+  await registerInternalRoutes(app);
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT

@@ -133,6 +133,10 @@ model Session {
   endedAt     DateTime?     @map("ended_at") @db.Timestamptz
   durationMs  Int?          @map("duration_ms")  // Computed on completion
 
+  /// Soft delete timestamp for GDPR Article 17 compliance
+  /// When set, record is considered deleted but preserved for audit/analytics integrity
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz
+
   /// Flexible metadata - examples:
   /// { "classroomId": "uuid", "assignedByTeacherId": "uuid" }
   /// { "planId": "uuid", "targetSkills": ["SKL001", "SKL002"] }
@@ -145,8 +149,8 @@ model Session {
   events      SessionEvent[]
 
   // ─── Indexes ─────────────────────────────────────────────────────────────────
-  // Primary lookup: sessions for a learner, most recent first
-  @@index([tenantId, learnerId, startedAt(sort: Desc)], name: "idx_sessions_learner_recent")
+  // Primary lookup: sessions for a learner, most recent first (excluding deleted)
+  @@index([tenantId, learnerId, startedAt(sort: Desc), deletedAt], name: "idx_sessions_learner_recent")
   // Filter by type for analytics
   @@index([tenantId, sessionType, startedAt(sort: Desc)], name: "idx_sessions_type_recent")
   // Uncompleted sessions (for resume functionality)
@@ -155,6 +159,8 @@ model Session {
   @@index([endedAt], name: "idx_sessions_active")
   // Origin-based analytics
   @@index([tenantId, origin, startedAt(sort: Desc)], name: "idx_sessions_origin_recent")
+  // Soft delete filter
+  @@index([deletedAt], name: "idx_sessions_deleted")
 
   @@map("sessions")
 }

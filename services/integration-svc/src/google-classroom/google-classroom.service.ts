@@ -18,6 +18,7 @@ import type { OAuth2Client, Credentials } from 'google-auth-library';
 import type { classroom_v1 } from 'googleapis';
 import { google } from 'googleapis';
 
+import { createLogger } from '../logger.js';
 import type {
   GoogleClassroomConfig,
   ClassroomCourse,
@@ -33,6 +34,8 @@ import type {
   WebhookNotification,
 } from './types.js';
 import { GoogleClassroomError } from './types.js';
+
+const log = createLogger('google-classroom');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -167,7 +170,7 @@ export class GoogleClassroomService {
       googleEmail = userInfo.data.email || undefined;
     } catch (error) {
       // Continue without Google user info
-      console.warn('Failed to fetch Google user info:', error);
+      log.warn({ err: error }, 'Failed to fetch Google user info');
     }
 
     await this.prisma.googleClassroomCredential.upsert({
@@ -214,7 +217,7 @@ export class GoogleClassroomService {
     const isExpired = expiryMs && expiryMs < Date.now() + TOKEN_REFRESH_BUFFER_MS;
 
     if (isExpired) {
-      console.log('Refreshing expired Google token', { userId });
+      log.info({ userId }, 'Refreshing expired Google token');
 
       if (!credential.refreshToken) {
         throw new GoogleClassroomError('No refresh token available', 401, false);
@@ -241,7 +244,7 @@ export class GoogleClassroomService {
         await this.oauth2Client.revokeToken(credential.accessToken);
       } catch (error) {
         // Ignore revocation errors - token may already be invalid
-        console.warn('Failed to revoke Google token:', error);
+        log.warn({ err: error }, 'Failed to revoke Google token');
       }
 
       await this.prisma.googleClassroomCredential.delete({
@@ -883,7 +886,7 @@ export class GoogleClassroomService {
     };
 
     try {
-      console.log('Starting course roster sync', { googleCourseId, tenantId });
+      log.info({ googleCourseId, tenantId }, 'Starting course roster sync');
 
       // Get course details
       const course = await this.getCourse(userId, googleCourseId);
@@ -956,10 +959,10 @@ export class GoogleClassroomService {
 
       this.eventEmitter.emit('google-classroom.sync.completed', result);
 
-      console.log('Course roster sync completed', {
+      log.info({
         googleCourseId,
         ...result,
-      });
+      }, 'Course roster sync completed');
     } catch (error: any) {
       result.success = false;
       result.errors.push(error.message);
@@ -987,10 +990,10 @@ export class GoogleClassroomService {
         error: error.message,
       });
 
-      console.error('Course roster sync failed', {
+      log.error({
         googleCourseId,
         error: error.message,
-      });
+      }, 'Course roster sync failed');
     }
 
     return result;
@@ -1294,10 +1297,10 @@ export class GoogleClassroomService {
         },
       });
 
-      console.log('Created class from Google Classroom', {
+      log.info({
         classId: classRecord.id,
         googleCourseId: course.id,
-      });
+      }, 'Created class from Google Classroom');
     }
 
     return { id: classRecord.id };
@@ -1384,10 +1387,10 @@ export class GoogleClassroomService {
         },
       });
 
-      console.log('Created student from Google Classroom', {
+      log.info({
         studentId: profile.id,
         googleUserId: student.userId,
-      });
+      }, 'Created student from Google Classroom');
     }
 
     // Create enrollment
@@ -1505,7 +1508,7 @@ export class GoogleClassroomService {
         await this.createOrUpdateStudent(credential.tenantId, syncRecord.classId, student);
       } catch {
         // Student may have been removed before we could process the webhook
-        console.error('Failed to add student from webhook', { courseId, studentUserId });
+        log.error({ courseId, studentUserId }, 'Failed to add student from webhook');
       }
     } else if (eventType === 'DELETED') {
       await this.prisma.enrollment.updateMany({
@@ -1804,7 +1807,7 @@ export class GoogleClassroomService {
           ? (error.retryAfter || 60) * 1000
           : RETRY_DELAY_MS * Math.pow(2, retries);
 
-        console.log(`Retrying request after ${delay}ms (attempt ${retries + 1}/${MAX_RETRIES})`);
+        log.debug({ delay, attempt: retries + 1, maxRetries: MAX_RETRIES }, 'Retrying request');
         await this.delay(delay);
         return this.executeWithRetry(request, retries + 1);
       }

@@ -5,3 +5,4 @@
 export { registerGoalRoutes } from './goals.js';
 export { registerSessionPlanRoutes } from './sessionPlans.js';
 export { registerProgressNoteRoutes } from './progressNotes.js';
+export { registerInternalRoutes } from './internal.js';

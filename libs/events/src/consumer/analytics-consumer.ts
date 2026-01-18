@@ -11,6 +11,7 @@
 //   - engagement_metrics_hourly: Engagement aggregations
 //   - focus_metrics_hourly: Focus score aggregations
 
+import { createLogger } from '../logger.js';
 import type {
   BaseEvent,
   LearningSessionStarted,
@@ -27,6 +28,8 @@ import type {
   ConsumerOptions,
   ProcessedMessage,
 } from './base-consumer.js';
+
+const log = createLogger('analytics-consumer');
 
 // -----------------------------------------------------------------------------
 // Types
@@ -143,7 +146,7 @@ export class AnalyticsConsumer extends BaseConsumer {
     // Start aggregation flush timer
     this.flushTimer = setInterval(() => {
       this.flush().catch((err: unknown) => {
-        console.error('[AnalyticsConsumer] Flush error:', err);
+        log.error({ err }, 'Flush error');
       });
     }, this.windowMs);
 
@@ -419,8 +422,9 @@ export class AnalyticsConsumer extends BaseConsumer {
 
     if (promises.length > 0) {
       await Promise.all(promises);
-      console.log(
-        `[AnalyticsConsumer:${this.consumerOptions.stream}] Flushed ${promises.length} aggregations`
+      log.debug(
+        { stream: this.consumerOptions.stream, count: promises.length },
+        'Flushed aggregations'
       );
     }
   }

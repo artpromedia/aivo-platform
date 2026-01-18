@@ -55,6 +55,7 @@ model PlayerProfile {
   // Timestamps
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? /// GDPR soft delete
   
   // Relations
   xpTransactions    XPTransaction[]
@@ -74,6 +75,7 @@ model PlayerProfile {
   @@index([totalXp])
   @@index([level])
   @@index([streakDays])
+  @@index([deletedAt])
 }
 
 model XPTransaction {
@@ -85,10 +87,12 @@ model XPTransaction {
   activity    String
   metadata    Json?
   earnedAt    DateTime @default(now())
+  deletedAt   DateTime? /// GDPR soft delete
   
   @@index([studentId])
   @@index([earnedAt])
   @@index([activity])
+  @@index([deletedAt])
 }
 
 // ============================================================================
@@ -102,11 +106,13 @@ model EarnedAchievement {
   
   achievementId String
   earnedAt      DateTime @default(now())
+  deletedAt     DateTime? /// GDPR soft delete
   
   @@unique([studentId, achievementId])
   @@index([studentId])
   @@index([achievementId])
   @@index([earnedAt])
+  @@index([deletedAt])
 }
 
 // ============================================================================

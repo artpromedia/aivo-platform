@@ -196,6 +196,10 @@ model VirtualBrain {
 
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  
+  /// Soft delete timestamp for GDPR Article 17 compliance
+  /// When set, record is considered deleted but preserved for audit/analytics integrity
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
 
   skillStates        LearnerSkillState[]
   bktSkillStates     BKTSkillState[]
@@ -208,6 +212,7 @@ model VirtualBrain {
   @@index([tenantId, learnerId])
   @@index([stateCode])
   @@index([ncesDistrictId])
+  @@index([deletedAt], name: "idx_virtual_brains_deleted")
   @@map("virtual_brains")
 }
 

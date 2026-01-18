@@ -176,12 +176,53 @@ export class TokenService {
       // Revoke old refresh token (one-time use)
       await this.redis.del(`refresh:${payload.tokenId}`);
       
-      // TODO: Fetch fresh user data from database
-      // For now, generate with stored data
-      return this.generateTokenPair(
-        { id: payload.sub },
-        payload.sessionId
-      );
+      // Fetch fresh user data from auth-svc for updated roles/permissions
+      const authSvcUrl = this.configService.get('AUTH_SVC_URL', 'http://auth-svc:3000');
+      let userData: Partial<AuthenticatedUser> = { id: payload.sub };
+      
+      try {
+        const response = await fetch(`${authSvcUrl}/internal/users/${payload.sub}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Service': 'api-gateway',
+          },
+        });
+        
+        if (response.ok) {
+          const freshUser = await response.json();
+          userData = {
+            id: payload.sub,
+            email: freshUser.email,
+            tenantId: freshUser.tenantId,
+            roles: freshUser.roles || [],
+            permissions: freshUser.permissions || [],
+            isMinor: freshUser.isMinor,
+            ageVerified: freshUser.ageVerified,
+            consentStatus: freshUser.consentStatus,
+            mfaEnabled: freshUser.mfaEnabled,
+          };
+          this.logger.debug(`Refreshed user data for ${payload.sub}`);
+        } else {
+          // Fall back to stored data if auth-svc unavailable
+          this.logger.warn(`Could not fetch fresh user data for ${payload.sub}, using stored data`);
+          userData = {
+            id: payload.sub,
+            tenantId: stored.tenantId,
+            roles: stored.roles || [],
+          };
+        }
+      } catch (fetchError) {
+        // Fall back to stored data on network errors
+        this.logger.warn({ error: fetchError }, `Failed to fetch user data, using stored data`);
+        userData = {
+          id: payload.sub,
+          tenantId: stored.tenantId,
+          roles: stored.roles || [],
+        };
+      }
+      
+      return this.generateTokenPair(userData, payload.sessionId, { mfaVerified: stored.mfaVerified });
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
