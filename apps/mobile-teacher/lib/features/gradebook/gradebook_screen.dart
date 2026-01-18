@@ -7,13 +7,21 @@
 /// - Filter and search functionality
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/services/gradebook_service.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class GradebookScreen extends StatefulWidget {
   final String classroomId;
+  final String teacherId;
+  final String tenantId;
 
   const GradebookScreen({
     Key? key,
     required this.classroomId,
+    required this.teacherId,
+    required this.tenantId,
   }) : super(key: key);
 
   @override
@@ -21,8 +29,11 @@ class GradebookScreen extends StatefulWidget {
 }
 
 class _GradebookScreenState extends State<GradebookScreen> {
+  final GradebookService _gradebookService = GradebookService();
+
   List<Student> students = [];
   List<Assignment> assignments = [];
+  GradebookConfig? config;
   bool isLoading = true;
   String searchQuery = '';
   String? selectedAssignmentId;
@@ -36,19 +47,45 @@ class _GradebookScreenState extends State<GradebookScreen> {
   Future<void> _loadGradebook() async {
     setState(() => isLoading = true);
     try {
-      // TODO: API call to fetch gradebook
-      await Future.delayed(const Duration(seconds: 1));
+      final gradebookData = await _gradebookService.getClassroomGradebook(
+        widget.classroomId,
+      );
 
-      // Mock data
       setState(() {
-        students = _getMockStudents();
-        assignments = _getMockAssignments();
+        config = gradebookData.config;
+        students = gradebookData.students.map((s) => Student(
+          id: s.id,
+          name: s.displayName,
+          initials: _getInitials(s.displayName),
+          overallGrade: s.overallGrade ?? 0,
+          missingCount: s.grades.values.where((g) => g.isMissing).length,
+          grades: s.grades.map((k, v) => MapEntry(k, Grade(
+            score: v.pointsEarned,
+            status: v.isMissing ? GradeStatus.missing
+                   : v.isLate ? GradeStatus.late
+                   : GradeStatus.graded,
+            feedback: v.feedback,
+          ))),
+        )).toList();
+        assignments = gradebookData.assignments.map((a) => Assignment(
+          id: a.id,
+          title: a.title,
+          totalPoints: a.maxPoints.toInt(),
+        )).toList();
         isLoading = false;
       });
     } catch (e) {
       setState(() => isLoading = false);
-      _showError('Failed to load gradebook');
+      _showError('Failed to load gradebook: ${e.toString()}');
     }
+  }
+
+  String _getInitials(String name) {
+    final parts = name.split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
   @override
@@ -350,9 +387,23 @@ class _GradebookScreenState extends State<GradebookScreen> {
         student: student,
         assignment: assignment,
         onSave: (score, feedback) async {
-          // TODO: API call to save grade
-          Navigator.pop(context);
-          _loadGradebook();
+          try {
+            await _gradebookService.submitGrade(
+              assignmentId: assignment.id,
+              studentId: student.id,
+              classroomId: widget.classroomId,
+              gradedBy: widget.teacherId,
+              tenantId: widget.tenantId,
+              pointsEarned: score,
+              feedback: feedback,
+            );
+            if (mounted) {
+              Navigator.pop(context);
+              _loadGradebook();
+            }
+          } catch (e) {
+            _showError('Failed to save grade: ${e.toString()}');
+          }
         },
       ),
     );
@@ -365,64 +416,80 @@ class _GradebookScreenState extends State<GradebookScreen> {
         students: students,
         assignments: assignments,
         onSave: (studentId, assignmentId, score) async {
-          // TODO: API call to save grade
-          Navigator.pop(context);
-          _loadGradebook();
+          try {
+            await _gradebookService.submitGrade(
+              assignmentId: assignmentId,
+              studentId: studentId,
+              classroomId: widget.classroomId,
+              gradedBy: widget.teacherId,
+              tenantId: widget.tenantId,
+              pointsEarned: score,
+            );
+            if (mounted) {
+              Navigator.pop(context);
+              _loadGradebook();
+            }
+          } catch (e) {
+            _showError('Failed to save grade: ${e.toString()}');
+          }
         },
       ),
     );
   }
 
-  void _exportGradebook() {
-    // TODO: Export gradebook
+  void _exportGradebook() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Exporting gradebook...')),
     );
+    try {
+      final csv = await _gradebookService.exportGradebook(widget.classroomId);
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/gradebook_${widget.classroomId}.csv');
+      await file.writeAsString(csv);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Gradebook Export',
+      );
+    } catch (e) {
+      _showError('Failed to export gradebook: ${e.toString()}');
+    }
   }
 
   void _showSettings() {
-    // TODO: Show gradebook settings
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => GradebookSettingsSheet(
+        config: config,
+        classroomId: widget.classroomId,
+        teacherId: widget.teacherId,
+        tenantId: widget.tenantId,
+        onSave: (newConfig) async {
+          try {
+            await _gradebookService.upsertGradebookConfig(
+              classroomId: widget.classroomId,
+              teacherId: widget.teacherId,
+              tenantId: widget.tenantId,
+              gradingScale: newConfig['gradingScale'],
+              showOverallGrade: newConfig['showOverallGrade'],
+              allowLateSubmissions: newConfig['allowLateSubmissions'],
+              latePenaltyPercent: newConfig['latePenaltyPercent'],
+            );
+            if (mounted) {
+              Navigator.pop(context);
+              _loadGradebook();
+            }
+          } catch (e) {
+            _showError('Failed to save settings: ${e.toString()}');
+          }
+        },
+      ),
+    );
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
-  }
-
-  // Mock data
-  List<Student> _getMockStudents() {
-    return [
-      Student(
-        id: '1',
-        name: 'Alice Johnson',
-        initials: 'AJ',
-        overallGrade: 92.5,
-        missingCount: 0,
-        grades: {
-          '1': Grade(score: 95, status: GradeStatus.graded),
-          '2': Grade(score: 88, status: GradeStatus.graded),
-        },
-      ),
-      Student(
-        id: '2',
-        name: 'Bob Smith',
-        initials: 'BS',
-        overallGrade: 78.3,
-        missingCount: 2,
-        grades: {
-          '1': Grade(score: 72, status: GradeStatus.late),
-          '2': Grade(score: null, status: GradeStatus.missing),
-        },
-      ),
-    ];
-  }
-
-  List<Assignment> _getMockAssignments() {
-    return [
-      Assignment(id: '1', title: 'Quiz 1', totalPoints: 100),
-      Assignment(id: '2', title: 'Homework 1', totalPoints: 50),
-    ];
   }
 }
 
@@ -764,4 +831,142 @@ enum GradeStatus {
 
 extension DoubleExtension on double {
   String toFixed(int decimals) => toStringAsFixed(decimals);
+}
+
+// Gradebook Settings Sheet
+class GradebookSettingsSheet extends StatefulWidget {
+  final GradebookConfig? config;
+  final String classroomId;
+  final String teacherId;
+  final String tenantId;
+  final Future<void> Function(Map<String, dynamic>) onSave;
+
+  const GradebookSettingsSheet({
+    Key? key,
+    this.config,
+    required this.classroomId,
+    required this.teacherId,
+    required this.tenantId,
+    required this.onSave,
+  }) : super(key: key);
+
+  @override
+  State<GradebookSettingsSheet> createState() => _GradebookSettingsSheetState();
+}
+
+class _GradebookSettingsSheetState extends State<GradebookSettingsSheet> {
+  late String _gradingScale;
+  late bool _showOverallGrade;
+  late bool _allowLateSubmissions;
+  late int _latePenaltyPercent;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _gradingScale = widget.config?.gradingScale ?? 'POINTS';
+    _showOverallGrade = widget.config?.showOverallGrade ?? true;
+    _allowLateSubmissions = widget.config?.allowLateSubmissions ?? true;
+    _latePenaltyPercent = widget.config?.latePenaltyPercent ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Gradebook Settings',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 24),
+          DropdownButtonFormField<String>(
+            value: _gradingScale,
+            decoration: const InputDecoration(
+              labelText: 'Grading Scale',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'POINTS', child: Text('Points')),
+              DropdownMenuItem(value: 'PERCENTAGE', child: Text('Percentage')),
+              DropdownMenuItem(value: 'LETTER', child: Text('Letter Grade')),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _gradingScale = value);
+            },
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Show Overall Grade'),
+            subtitle: const Text('Display overall grade to students'),
+            value: _showOverallGrade,
+            onChanged: (value) => setState(() => _showOverallGrade = value),
+          ),
+          SwitchListTile(
+            title: const Text('Allow Late Submissions'),
+            value: _allowLateSubmissions,
+            onChanged: (value) => setState(() => _allowLateSubmissions = value),
+          ),
+          if (_allowLateSubmissions) ...[
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Late Penalty (%)',
+                border: OutlineInputBorder(),
+                hintText: '0 for no penalty',
+              ),
+              keyboardType: TextInputType.number,
+              controller: TextEditingController(text: _latePenaltyPercent.toString()),
+              onChanged: (value) {
+                final parsed = int.tryParse(value);
+                if (parsed != null) {
+                  setState(() => _latePenaltyPercent = parsed.clamp(0, 100));
+                }
+              },
+            ),
+          ],
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave({
+        'gradingScale': _gradingScale,
+        'showOverallGrade': _showOverallGrade,
+        'allowLateSubmissions': _allowLateSubmissions,
+        'latePenaltyPercent': _latePenaltyPercent,
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
 }
