@@ -8,7 +8,11 @@ import type { PrismaClient, ApiScope, WebhookEventType } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import type { ApiKeyService, type ApiKeyValidationResult } from './api-key-service.js';
+import {
+  isValidApiKey,
+  type ApiKeyService,
+  type ApiKeyValidationResult,
+} from './api-key-service.js';
 import { requireAdminRole } from './middleware/auth.js';
 import {
   API_KEY_HEADER,
@@ -95,7 +99,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
     },
     async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
       const { apiKeyAuth } = request;
-      if (!apiKeyAuth?.scopes?.includes('READ_LEARNER_PROGRESS')) {
+      if (!isValidApiKey(apiKeyAuth) || !apiKeyAuth.scopes.includes('READ_LEARNER_PROGRESS')) {
         return reply.status(403).send({
           error: 'INSUFFICIENT_SCOPE',
           message: 'API key does not have READ_LEARNER_PROGRESS scope',
@@ -201,7 +205,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
 
         // Log usage
         await apiKeyService.logUsage({
-          apiKeyId: apiKeyAuth.apiKeyId!,
+          apiKeyId: apiKeyAuth.apiKeyId,
           endpoint: `/public/learners/${request.params.learnerId}/progress`,
           method: 'GET',
           statusCode: 200,
@@ -253,7 +257,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
       reply: FastifyReply
     ) => {
       const { apiKeyAuth } = request;
-      if (!apiKeyAuth?.scopes?.includes('READ_SESSION_DATA')) {
+      if (!isValidApiKey(apiKeyAuth) || !apiKeyAuth.scopes.includes('READ_SESSION_DATA')) {
         return reply.status(403).send({
           error: 'INSUFFICIENT_SCOPE',
           message: 'API key does not have READ_SESSION_DATA scope',
@@ -290,7 +294,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
             headers: {
               'Content-Type': 'application/json',
               'X-Internal-Service': 'integration-svc',
-              'X-Tenant-Id': apiKeyAuth.tenantId!,
+              'X-Tenant-Id': apiKeyAuth.tenantId,
             },
           }
         );
@@ -328,7 +332,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
         const responseTimeMs = Date.now() - startTime;
 
         await apiKeyService.logUsage({
-          apiKeyId: apiKeyAuth.apiKeyId!,
+          apiKeyId: apiKeyAuth.apiKeyId,
           endpoint: `/public/learners/${request.params.learnerId}/sessions`,
           method: 'GET',
           statusCode: 200,
@@ -342,7 +346,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
         const responseTimeMs = Date.now() - startTime;
 
         await apiKeyService.logUsage({
-          apiKeyId: apiKeyAuth.apiKeyId!,
+          apiKeyId: apiKeyAuth.apiKeyId,
           endpoint: `/public/learners/${request.params.learnerId}/sessions`,
           method: 'GET',
           statusCode: 500,
@@ -380,7 +384,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
       reply: FastifyReply
     ) => {
       const { apiKeyAuth } = request;
-      if (!apiKeyAuth?.scopes?.includes('WRITE_EXTERNAL_EVENTS')) {
+      if (!isValidApiKey(apiKeyAuth) || !apiKeyAuth.scopes.includes('WRITE_EXTERNAL_EVENTS')) {
         return reply.status(403).send({
           error: 'INSUFFICIENT_SCOPE',
           message: 'API key does not have WRITE_EXTERNAL_EVENTS scope',
@@ -403,7 +407,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
       // Create external learning event
       const event = await prisma.externalLearningEvent.create({
         data: {
-          tenantId: apiKeyAuth.tenantId!,
+          tenantId: apiKeyAuth.tenantId,
           learnerId: body.learnerId,
           source: body.source,
           activityType: body.activityType,
@@ -413,12 +417,12 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
           score: body.score,
           completed: body.completed,
           metadataJson: body.metadata,
-          apiKeyId: apiKeyAuth.apiKeyId!,
+          apiKeyId: apiKeyAuth.apiKeyId,
         },
       });
 
       await apiKeyService.logUsage({
-        apiKeyId: apiKeyAuth.apiKeyId!,
+        apiKeyId: apiKeyAuth.apiKeyId,
         endpoint: '/public/events/external-learning',
         method: 'POST',
         statusCode: 201,

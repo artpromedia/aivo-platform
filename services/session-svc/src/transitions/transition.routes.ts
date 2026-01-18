@@ -9,6 +9,11 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import {
+  getUserFromRequest,
+  canAccessTenant,
+  sendUnauthorized,
+} from '../middleware/authHelpers.js';
 import { billingAccessPreHandler } from '../middleware/billingAccess.js';
 
 import { transitionEventPublisher } from './transition.events.js';
@@ -173,29 +178,6 @@ const ListRoutinesQuerySchema = z.object({
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════════════════════════
-
-interface JwtUser {
-  sub: string;
-  tenantId: string;
-  role: string;
-}
-
-function getUserFromRequest(request: FastifyRequest): JwtUser | null {
-  const user = (request as FastifyRequest & { user?: JwtUser }).user;
-  if (!user || typeof user.sub !== 'string' || typeof user.tenantId !== 'string') {
-    return null;
-  }
-  return user;
-}
-
-function canAccessTenant(user: JwtUser, tenantId: string): boolean {
-  if (user.role === 'service') return true;
-  return user.tenantId === tenantId;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -213,7 +195,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = GetPreferencesParamsSchema.safeParse(request.params);
@@ -249,7 +231,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = GetPreferencesParamsSchema.safeParse(request.params);
@@ -305,7 +287,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const parsed = PlanTransitionSchema.safeParse(request.body);
@@ -380,7 +362,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = TransitionIdParamsSchema.safeParse(request.params);
@@ -440,7 +422,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = TransitionIdParamsSchema.safeParse(request.params);
@@ -532,7 +514,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
   fastify.get('/transitions/routines', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const query = ListRoutinesQuerySchema.safeParse(request.query);
@@ -566,7 +548,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
   fastify.post('/transitions/routines', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const body = CreateRoutineSchema.safeParse(request.body);
@@ -616,7 +598,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = RoutineIdParamsSchema.safeParse(request.params);
@@ -658,7 +640,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = RoutineIdParamsSchema.safeParse(request.params);
@@ -716,7 +698,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = RoutineIdParamsSchema.safeParse(request.params);
@@ -767,7 +749,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
   fastify.get('/transitions/analytics', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const query = AnalyticsQuerySchema.safeParse(request.query);

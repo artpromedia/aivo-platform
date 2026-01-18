@@ -8,8 +8,13 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { logger } from '../logger.js';
-import { PredictabilityService } from '../predictability/predictability.service.js';
+import {
+  getUserFromRequest,
+  canAccessTenant,
+  sendUnauthorized,
+} from '../middleware/authHelpers.js';
 import { predictabilityEventPublisher } from '../predictability/predictability.events.js';
+import { PredictabilityService } from '../predictability/predictability.service.js';
 import type { SessionActivityInput, RoutineType } from '../predictability/predictability.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -97,25 +102,6 @@ const GetRoutineQuerySchema = z.object({
 // HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-interface JwtUser {
-  sub: string;
-  tenantId: string;
-  role: string;
-}
-
-function getUserFromRequest(request: FastifyRequest): JwtUser | null {
-  const user = (request as FastifyRequest & { user?: JwtUser }).user;
-  if (!user || typeof user.sub !== 'string' || typeof user.tenantId !== 'string') {
-    return null;
-  }
-  return user;
-}
-
-function canAccessTenant(user: JwtUser, tenantId: string): boolean {
-  if (user.role === 'service') return true;
-  return user.tenantId === tenantId;
-}
-
 // ══════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -131,68 +117,74 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
    * GET /predictability/preferences
    * Get predictability preferences for a learner.
    */
-  fastify.get('/predictability/preferences', async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+  fastify.get(
+    '/predictability/preferences',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return sendUnauthorized(reply);
+      }
+
+      const parsed = GetPreferencesQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Invalid query parameters',
+          details: parsed.error.flatten(),
+        });
+      }
+
+      const { tenantId, learnerId } = parsed.data;
+
+      if (!canAccessTenant(user, tenantId)) {
+        return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+      }
+
+      const preferences = await service.getPreferences(tenantId, learnerId);
+      return reply.send(preferences);
     }
-
-    const parsed = GetPreferencesQuerySchema.safeParse(request.query);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        error: 'Invalid query parameters',
-        details: parsed.error.flatten(),
-      });
-    }
-
-    const { tenantId, learnerId } = parsed.data;
-
-    if (!canAccessTenant(user, tenantId)) {
-      return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
-    }
-
-    const preferences = await service.getPreferences(tenantId, learnerId);
-    return reply.send(preferences);
-  });
+  );
 
   /**
    * PUT /predictability/preferences
    * Update predictability preferences for a learner.
    */
-  fastify.put('/predictability/preferences', async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
+  fastify.put(
+    '/predictability/preferences',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return sendUnauthorized(reply);
+      }
 
-    const parsed = UpsertPreferencesSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        error: 'Invalid request body',
-        details: parsed.error.flatten(),
-      });
-    }
+      const parsed = UpsertPreferencesSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: parsed.error.flatten(),
+        });
+      }
 
-    const { tenantId, learnerId, ...prefs } = parsed.data;
+      const { tenantId, learnerId, ...prefs } = parsed.data;
 
-    if (!canAccessTenant(user, tenantId)) {
-      return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
-    }
+      if (!canAccessTenant(user, tenantId)) {
+        return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+      }
 
-    const preferences = await service.upsertPreferences(tenantId, learnerId, {
-      ...prefs,
-      preferredRoutineTypes: (prefs.preferredRoutineTypes ?? []) as RoutineType[],
-    });
-
-    // Publish event
-    predictabilityEventPublisher
-      .publishPreferencesUpdated(tenantId, learnerId, preferences, Object.keys(prefs))
-      .catch((err) => {
-        logger.error({ err }, '[predictability] Failed to publish preferences.updated event');
+      const preferences = await service.upsertPreferences(tenantId, learnerId, {
+        ...prefs,
+        preferredRoutineTypes: (prefs.preferredRoutineTypes ?? []) as RoutineType[],
       });
 
-    return reply.send(preferences);
-  });
+      // Publish event
+      predictabilityEventPublisher
+        .publishPreferencesUpdated(tenantId, learnerId, preferences, Object.keys(prefs))
+        .catch((err) => {
+          logger.error({ err }, '[predictability] Failed to publish preferences.updated event');
+        });
+
+      return reply.send(preferences);
+    }
+  );
 
   /**
    * GET /predictability/check
@@ -201,7 +193,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
   fastify.get('/predictability/check', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const parsed = GetPreferencesQuerySchema.safeParse(request.query);
@@ -233,7 +225,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
   fastify.post('/predictability/plans', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const parsed = CreateSessionPlanSchema.safeParse(request.body);
@@ -260,7 +252,14 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
 
     // Publish event
     predictabilityEventPublisher
-      .publishSessionPlanCreated(tenantId, learnerId, plan.id, sessionId, plan.outline, structureType)
+      .publishSessionPlanCreated(
+        tenantId,
+        learnerId,
+        plan.id,
+        sessionId,
+        plan.outline,
+        structureType
+      )
       .catch((err) => {
         logger.error({ err }, '[predictability] Failed to publish plan.created event');
       });
@@ -272,44 +271,47 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
    * GET /predictability/plans/:planId
    * Get a session plan by ID.
    */
-  fastify.get('/predictability/plans/:planId', async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+  fastify.get(
+    '/predictability/plans/:planId',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return sendUnauthorized(reply);
+      }
+
+      const paramsSchema = z.object({ planId: z.string().uuid() });
+      const params = paramsSchema.safeParse(request.params);
+      if (!params.success) {
+        return reply.status(400).send({
+          error: 'Invalid plan ID',
+          details: params.error.flatten(),
+        });
+      }
+
+      const querySchema = z.object({ tenantId: z.string().uuid() });
+      const query = querySchema.safeParse(request.query);
+      if (!query.success) {
+        return reply.status(400).send({
+          error: 'Invalid query parameters',
+          details: query.error.flatten(),
+        });
+      }
+
+      const { planId } = params.data;
+      const { tenantId } = query.data;
+
+      if (!canAccessTenant(user, tenantId)) {
+        return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+      }
+
+      const plan = await service.getSessionPlan(tenantId, planId);
+      if (!plan) {
+        return reply.status(404).send({ error: 'Session plan not found' });
+      }
+
+      return reply.send(plan);
     }
-
-    const paramsSchema = z.object({ planId: z.string().uuid() });
-    const params = paramsSchema.safeParse(request.params);
-    if (!params.success) {
-      return reply.status(400).send({
-        error: 'Invalid plan ID',
-        details: params.error.flatten(),
-      });
-    }
-
-    const querySchema = z.object({ tenantId: z.string().uuid() });
-    const query = querySchema.safeParse(request.query);
-    if (!query.success) {
-      return reply.status(400).send({
-        error: 'Invalid query parameters',
-        details: query.error.flatten(),
-      });
-    }
-
-    const { planId } = params.data;
-    const { tenantId } = query.data;
-
-    if (!canAccessTenant(user, tenantId)) {
-      return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
-    }
-
-    const plan = await service.getSessionPlan(tenantId, planId);
-    if (!plan) {
-      return reply.status(404).send({ error: 'Session plan not found' });
-    }
-
-    return reply.send(plan);
-  });
+  );
 
   /**
    * PATCH /predictability/plans/:planId/progress
@@ -320,7 +322,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const paramsSchema = z.object({ planId: z.string().uuid() });
@@ -391,7 +393,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const paramsSchema = z.object({ planId: z.string().uuid() });
@@ -417,7 +419,8 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
       }
 
       const { planId } = params.data;
-      const { tenantId, sessionId, learnerId, changeType, reason, targetItemId, newActivity } = body.data;
+      const { tenantId, sessionId, learnerId, changeType, reason, targetItemId, newActivity } =
+        body.data;
 
       if (!canAccessTenant(user, tenantId)) {
         return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
@@ -465,7 +468,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const paramsSchema = z.object({
@@ -508,7 +511,15 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
       const plan = await service.getSessionPlan(tenantId, planId);
       if (plan) {
         predictabilityEventPublisher
-          .publishChangeApplied(tenantId, plan.learnerId, planId, plan.sessionId, changeId, 'skip', approved)
+          .publishChangeApplied(
+            tenantId,
+            plan.learnerId,
+            planId,
+            plan.sessionId,
+            changeId,
+            'skip',
+            approved
+          )
           .catch((err) => {
             logger.error({ err }, '[predictability] Failed to publish change.applied event');
           });
@@ -529,7 +540,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
   fastify.get('/predictability/routines', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const querySchema = GetPreferencesQuerySchema.extend({
@@ -571,7 +582,7 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
   fastify.post('/predictability/anxiety', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const bodySchema = ReportAnxietySchema.extend({
@@ -604,7 +615,15 @@ export async function predictabilityRoutes(fastify: FastifyInstance): Promise<vo
 
     // Publish event
     predictabilityEventPublisher
-      .publishAnxietyReported(tenantId, sessionId, learnerId, level, result.supportActions, triggerCategory, triggerId)
+      .publishAnxietyReported(
+        tenantId,
+        sessionId,
+        learnerId,
+        level,
+        result.supportActions,
+        triggerCategory,
+        triggerId
+      )
       .catch((err) => {
         logger.error({ err }, '[predictability] Failed to publish anxiety.reported event');
       });

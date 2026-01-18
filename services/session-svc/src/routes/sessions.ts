@@ -2,6 +2,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { logger } from '../logger.js';
+import {
+  getUserFromRequest,
+  canAccessTenant,
+  sendUnauthorized,
+} from '../middleware/authHelpers.js';
 import { billingAccessPreHandler, checkAddonAccess } from '../middleware/billingAccess.js';
 import { prisma } from '../prisma.js';
 import { sessionEventPublisher } from '../services/event-publisher.js';
@@ -95,27 +100,6 @@ const ListSessionsQuerySchema = z.object({
 // HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-interface JwtUser {
-  sub: string;
-  tenantId: string;
-  role: string;
-}
-
-function getUserFromRequest(request: FastifyRequest): JwtUser | null {
-  const user = (request as FastifyRequest & { user?: JwtUser }).user;
-  if (!user || typeof user.sub !== 'string' || typeof user.tenantId !== 'string') {
-    return null;
-  }
-  return user;
-}
-
-function canAccessTenant(user: JwtUser, tenantId: string): boolean {
-  // Service role can access any tenant
-  if (user.role === 'service') return true;
-  // Others must match tenant
-  return user.tenantId === tenantId;
-}
-
 /**
  * Create a progress note in teacher-planning-svc (async, fire-and-forget).
  *
@@ -137,7 +121,17 @@ async function createProgressNoteInPlanningService(params: {
   goalObjectiveId?: string;
   createdByUserId: string;
 }): Promise<void> {
-  const { url, tenantId, learnerId, sessionId, noteText, rating, goalId, goalObjectiveId, createdByUserId } = params;
+  const {
+    url,
+    tenantId,
+    learnerId,
+    sessionId,
+    noteText,
+    rating,
+    goalId,
+    goalObjectiveId,
+    createdByUserId,
+  } = params;
 
   const response = await fetch(`${url}/api/v1/progress-notes`, {
     method: 'POST',
@@ -181,7 +175,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const parsed = CreateSessionSchema.safeParse(request.body);
@@ -264,7 +258,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/sessions', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const parsed = ListSessionsQuerySchema.safeParse(request.query);
@@ -324,7 +318,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/sessions/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const params = SessionIdParamsSchema.safeParse(request.params);
@@ -377,7 +371,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/sessions/:id/events', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const params = SessionIdParamsSchema.safeParse(request.params);
@@ -433,7 +427,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/sessions/:id/complete', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const params = SessionIdParamsSchema.safeParse(request.params);
@@ -545,7 +539,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/sessions/:id/events', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const params = SessionIdParamsSchema.safeParse(request.params);
@@ -584,7 +578,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const querySchema = z.object({
@@ -652,7 +646,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/sessions/from-plan', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const parsed = CreateFromPlanSchema.safeParse(request.body);
@@ -750,7 +744,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = SessionIdParamsSchema.safeParse(request.params);
@@ -848,7 +842,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        return sendUnauthorized(reply);
       }
 
       const params = SessionIdParamsSchema.safeParse(request.params);
@@ -907,7 +901,8 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
       // We don't block the response on this call - the session event is the source of truth.
       // If teacher-planning-svc is unavailable, the note is still captured in session events
       // and can be reconciled later via the event replay mechanism.
-      const teacherPlanningSvcUrl = process.env.TEACHER_PLANNING_SVC_URL || 'http://teacher-planning-svc:3000';
+      const teacherPlanningSvcUrl =
+        process.env.TEACHER_PLANNING_SVC_URL || 'http://teacher-planning-svc:3000';
       createProgressNoteInPlanningService({
         url: teacherPlanningSvcUrl,
         tenantId: session.tenantId,
@@ -920,7 +915,10 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         createdByUserId: user.sub,
       }).catch((err) => {
         // Log but don't fail - session event is the source of truth
-        logger.warn({ err, sessionId: session.id }, '[progress-note] Failed to sync to teacher-planning-svc');
+        logger.warn(
+          { err, sessionId: session.id },
+          '[progress-note] Failed to sync to teacher-planning-svc'
+        );
       });
 
       return reply.status(201).send({
@@ -948,7 +946,7 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/sessions/:id/summary', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = getUserFromRequest(request);
     if (!user) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return sendUnauthorized(reply);
     }
 
     const params = SessionIdParamsSchema.safeParse(request.params);

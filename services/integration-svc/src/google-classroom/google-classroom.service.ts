@@ -178,7 +178,7 @@ export class GoogleClassroomService {
       where: { userId },
       create: {
         userId,
-        accessToken: tokens.access_token!,
+        accessToken: tokens.access_token ?? '',
         refreshToken: tokens.refresh_token,
         expiryDate: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
         scope: tokens.scope || this.config.scopes.join(' '),
@@ -187,7 +187,7 @@ export class GoogleClassroomService {
         email: googleEmail,
       },
       update: {
-        accessToken: tokens.access_token!,
+        accessToken: tokens.access_token ?? '',
         refreshToken: tokens.refresh_token || undefined,
         expiryDate: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
         scope: tokens.scope || undefined,
@@ -226,7 +226,10 @@ export class GoogleClassroomService {
       const newTokens = await this.refreshAccessToken(credential.refreshToken);
       await this.storeTokens(userId, newTokens);
 
-      return newTokens.access_token!;
+      if (!newTokens.access_token) {
+        throw new GoogleClassroomError('Failed to refresh access token', 401, false);
+      }
+      return newTokens.access_token;
     }
 
     return credential.accessToken;
@@ -1065,10 +1068,15 @@ export class GoogleClassroomService {
       })
     );
 
+    const registrationId = response.data.registrationId;
+    if (!registrationId) {
+      throw new GoogleClassroomError('Missing registration ID from Google', 500, true);
+    }
+
     // Store registration
     await this.prisma.googleClassroomWebhookRegistration.create({
       data: {
-        registrationId: response.data.registrationId!,
+        registrationId,
         courseId,
         feedType,
         expiresAt: expirationTime,
@@ -1076,7 +1084,7 @@ export class GoogleClassroomService {
     });
 
     return {
-      registrationId: response.data.registrationId!,
+      registrationId,
       expirationTime,
     };
   }
@@ -1088,26 +1096,32 @@ export class GoogleClassroomService {
     console.debug('Processing Classroom webhook', notification);
 
     const { collection, eventType, resourceId } = notification;
+    const courseId = resourceId.courseId ?? '';
+    const userId = resourceId.userId ?? '';
 
     switch (collection) {
       case 'courses.students':
-        await this.handleStudentChange(resourceId.courseId!, resourceId.userId!, eventType);
+        if (courseId && userId) {
+          await this.handleStudentChange(courseId, userId, eventType);
+        }
         break;
 
       case 'courses.teachers':
-        await this.handleTeacherChange(resourceId.courseId!, resourceId.userId!, eventType);
+        if (courseId && userId) {
+          await this.handleTeacherChange(courseId, userId, eventType);
+        }
         break;
 
       case 'courses':
-        await this.handleCourseChange(resourceId.courseId!, eventType);
+        if (courseId) {
+          await this.handleCourseChange(courseId, eventType);
+        }
         break;
 
       case 'courses.courseWork':
-        await this.handleCourseWorkChange(
-          resourceId.courseId!,
-          resourceId.courseWorkId!,
-          eventType
-        );
+        if (courseId && resourceId.courseWorkId) {
+          await this.handleCourseWorkChange(courseId, resourceId.courseWorkId, eventType);
+        }
         break;
 
       default:
@@ -1640,12 +1654,12 @@ export class GoogleClassroomService {
 
   private mapCourse(course: classroom_v1.Schema$Course): ClassroomCourse {
     return {
-      id: course.id!,
-      name: course.name!,
+      id: course.id ?? '',
+      name: course.name ?? '',
       section: course.section || undefined,
       description: course.descriptionHeading || course.description || undefined,
       room: course.room || undefined,
-      ownerId: course.ownerId!,
+      ownerId: course.ownerId ?? '',
       courseState: course.courseState as CourseState,
       alternateLink: course.alternateLink || undefined,
       creationTime: course.creationTime ? new Date(course.creationTime) : undefined,
@@ -1658,12 +1672,12 @@ export class GoogleClassroomService {
 
   private mapStudent(student: classroom_v1.Schema$Student): ClassroomStudent {
     return {
-      courseId: student.courseId!,
-      userId: student.userId!,
+      courseId: student.courseId ?? '',
+      userId: student.userId ?? '',
       emailAddress: student.profile?.emailAddress || '',
       profile: student.profile
         ? {
-            id: student.profile.id!,
+            id: student.profile.id ?? '',
             name: student.profile.name
               ? {
                   givenName: student.profile.name.givenName || '',
@@ -1680,12 +1694,12 @@ export class GoogleClassroomService {
 
   private mapTeacher(teacher: classroom_v1.Schema$Teacher): ClassroomTeacher {
     return {
-      courseId: teacher.courseId!,
-      userId: teacher.userId!,
+      courseId: teacher.courseId ?? '',
+      userId: teacher.userId ?? '',
       emailAddress: teacher.profile?.emailAddress || '',
       profile: teacher.profile
         ? {
-            id: teacher.profile.id!,
+            id: teacher.profile.id ?? '',
             name: teacher.profile.name
               ? {
                   givenName: teacher.profile.name.givenName || '',
@@ -1702,11 +1716,11 @@ export class GoogleClassroomService {
 
   private mapGuardian(guardian: classroom_v1.Schema$Guardian): ClassroomGuardian {
     return {
-      studentId: guardian.studentId!,
-      guardianId: guardian.guardianId!,
+      studentId: guardian.studentId ?? '',
+      guardianId: guardian.guardianId ?? '',
       guardianProfile: guardian.guardianProfile
         ? {
-            id: guardian.guardianProfile.id!,
+            id: guardian.guardianProfile.id ?? '',
             emailAddress: guardian.guardianProfile.emailAddress || '',
             name: guardian.guardianProfile.name
               ? {
@@ -1723,9 +1737,9 @@ export class GoogleClassroomService {
 
   private mapAssignment(coursework: classroom_v1.Schema$CourseWork): ClassroomAssignment {
     return {
-      id: coursework.id!,
-      courseId: coursework.courseId!,
-      title: coursework.title!,
+      id: coursework.id ?? '',
+      courseId: coursework.courseId ?? '',
+      title: coursework.title ?? '',
       description: coursework.description || undefined,
       state: coursework.state as any,
       alternateLink: coursework.alternateLink || undefined,
@@ -1733,7 +1747,7 @@ export class GoogleClassroomService {
       updateTime: coursework.updateTime ? new Date(coursework.updateTime) : undefined,
       dueDate: coursework.dueDate
         ? new Date(
-            coursework.dueDate.year!,
+            coursework.dueDate.year ?? 2000,
             (coursework.dueDate.month || 1) - 1,
             coursework.dueDate.day || 1
           )
@@ -1746,10 +1760,10 @@ export class GoogleClassroomService {
 
   private mapSubmission(submission: classroom_v1.Schema$StudentSubmission): ClassroomSubmission {
     return {
-      id: submission.id!,
-      courseId: submission.courseId!,
-      courseWorkId: submission.courseWorkId!,
-      userId: submission.userId!,
+      id: submission.id ?? '',
+      courseId: submission.courseId ?? '',
+      courseWorkId: submission.courseWorkId ?? '',
+      userId: submission.userId ?? '',
       state: submission.state as any,
       late: submission.late || false,
       draftGrade: submission.draftGrade || undefined,

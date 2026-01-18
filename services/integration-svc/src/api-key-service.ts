@@ -24,6 +24,26 @@ export interface ApiKeyValidationResult {
   errorCode?: 'INVALID_KEY' | 'EXPIRED' | 'REVOKED' | 'RATE_LIMITED' | 'IP_BLOCKED';
 }
 
+/**
+ * Validated API key result - used after successful validation
+ * where apiKeyId, tenantId, and scopes are guaranteed to be present
+ */
+export interface ValidatedApiKeyResult {
+  valid: true;
+  apiKeyId: string;
+  tenantId: string;
+  scopes: ApiScope[];
+}
+
+/**
+ * Type guard to check if an API key validation result is valid
+ */
+export function isValidApiKey(
+  result: ApiKeyValidationResult | undefined
+): result is ValidatedApiKeyResult {
+  return !!(result?.valid && result.apiKeyId && result.tenantId && result.scopes);
+}
+
 export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
