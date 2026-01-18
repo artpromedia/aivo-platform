@@ -92,7 +92,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           data: preferences,
         });
       } catch (error) {
-        console.error('Error fetching preferences:', error);
+        request.log.error({ error }, 'Error fetching preferences');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }
@@ -123,7 +123,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           data: preferences,
         });
       } catch (error) {
-        console.error('Error fetching preferences:', error);
+        request.log.error({ error }, 'Error fetching learner preferences');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }
@@ -167,7 +167,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           data: updated,
         });
       } catch (error) {
-        console.error('Error updating preferences:', error);
+        request.log.error({ error }, 'Error updating preferences');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }
@@ -215,7 +215,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           data: newPreferences,
         });
       } catch (error) {
-        console.error('Error resetting preferences:', error);
+        request.log.error({ error }, 'Error resetting preferences');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }
@@ -255,7 +255,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           message: 'Device registered successfully',
         });
       } catch (error) {
-        console.error('Error registering device:', error);
+        request.log.error({ error }, 'Error registering device');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }
@@ -287,7 +287,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           message: 'Device unregistered successfully',
         });
       } catch (error) {
-        console.error('Error unregistering device:', error);
+        request.log.error({ error }, 'Error unregistering device');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }
@@ -313,7 +313,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         },
       });
     } catch (error) {
-      console.error('Error fetching devices:', error);
+      request.log.error({ error }, 'Error fetching devices');
       return reply.code(500).send({ error: 'Internal server error' });
     }
   });
@@ -359,7 +359,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         },
       });
     } catch (error) {
-      console.error('Error sending test notification:', error);
+      request.log.error({ error }, 'Error sending test notification');
       return reply.code(500).send({ error: 'Internal server error' });
     }
   });
@@ -425,7 +425,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           },
         });
       } catch (error) {
-        console.error('Error fetching notification history:', error);
+        request.log.error({ error }, 'Error fetching notification history');
         return reply.code(500).send({ error: 'Internal server error' });
       }
     }

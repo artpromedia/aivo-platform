@@ -3,6 +3,8 @@
  */
 
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
 
 import { PrismaClient } from '../generated/prisma-client/index.js';
 
@@ -18,6 +20,36 @@ export interface ServerConfig {
 export async function createServer(config: ServerConfig) {
   const prisma = new PrismaClient();
   const app = Fastify({ logger: true });
+
+  // Security middleware
+  await app.register(helmet, {
+    contentSecurityPolicy: false, // LTI requires embedding in iframes
+    frameguard: false, // LTI content is embedded in LMS iframes
+  });
+
+  // Rate limiting - protect LTI endpoints from abuse
+  await app.register(rateLimit, {
+    global: true,
+    max: 200, // 200 requests per minute (LTI launches can be frequent)
+    timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      // Use client_id from LTI payload or IP for rate limiting
+      const clientId = (request.body as { client_id?: string })?.client_id;
+      if (clientId) return `lti:${clientId}`;
+      return (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+        request.ip ||
+        'unknown';
+    },
+    errorResponseBuilder: (request, context) => ({
+      error: 'Too Many Requests',
+      message: 'LTI request rate limit exceeded.',
+      retryAfter: context.after,
+    }),
+    // Skip rate limiting for health checks and JWKS endpoint
+    allowList: (request) =>
+      request.url === '/health' ||
+      request.url.includes('/.well-known/jwks'),
+  });
 
   // Register form body parser for LTI POST requests
   app.addContentTypeParser(

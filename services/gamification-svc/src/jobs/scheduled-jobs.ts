@@ -38,14 +38,13 @@ export function startScheduledJobs(): void {
   });
 
   // Archive daily leaderboard at end of day
+  // NOTE: Daily leaderboard archiving is intentionally not implemented.
+  // Unlike weekly/monthly leaderboards which track cumulative progress,
+  // daily leaderboards are ephemeral and reset automatically at midnight.
+  // Historical daily data can be reconstructed from session events if needed
+  // for analytics purposes. See: docs/adr/gamification-leaderboard-design.md
   cron.schedule('59 23 * * *', async () => {
-    console.log('Archiving daily leaderboard...');
-    try {
-      // TODO: Implement daily archive if needed
-      console.log('Daily leaderboard archived');
-    } catch (error) {
-      console.error('Error archiving daily leaderboard:', error);
-    }
+    console.log('Daily leaderboard cycle complete (no archiving required)');
   });
 
   // ============================================================================

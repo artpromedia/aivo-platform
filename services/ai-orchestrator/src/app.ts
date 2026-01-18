@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
 import Fastify, { type FastifyRequest } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
 
@@ -55,6 +57,38 @@ export function createApp(options: AppOptions = {}) {
 
   // Initialize Redis for caching and pub/sub
   const redis = new Redis(config.redisUrl || 'redis://localhost:6379');
+
+  // Security middleware
+  app.register(helmet, {
+    contentSecurityPolicy: false,
+  });
+
+  // Rate limiting - protect expensive AI calls
+  app.register(rateLimit, {
+    global: true,
+    max: 30, // 30 AI requests per minute per user (expensive resource)
+    timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      // Use tenant + user for rate limiting to prevent abuse
+      const tenantId = (request as { tenantId?: string }).tenantId;
+      const userId = (request as { userId?: string }).userId;
+      if (tenantId && userId) return `ai:${tenantId}:${userId}`;
+      if (tenantId) return `ai:${tenantId}`;
+      return (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+        request.ip ||
+        'unknown';
+    },
+    errorResponseBuilder: (request, context) => ({
+      error: 'Too Many Requests',
+      message: 'AI orchestrator rate limit exceeded. Please wait before making more AI requests.',
+      retryAfter: context.after,
+    }),
+    // Skip rate limiting for health checks and internal endpoints
+    allowList: (request) =>
+      request.url === '/health' ||
+      request.url === '/ready' ||
+      request.url.startsWith('/internal/'),
+  });
 
   app.addHook('onRequest', async (request, reply) => {
     const incoming = request.headers['x-correlation-id'];

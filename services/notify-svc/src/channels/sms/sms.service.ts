@@ -13,8 +13,11 @@
 
 import type { PrismaClient } from '@prisma/client';
 import { RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
+import { createLogger } from '@aivo/ts-api-utils';
 
 import { config } from '../../config.js';
+
+const logger = createLogger('notify-svc:sms');
 import { twilioProvider } from './twilio.js';
 import { phoneValidationService, toE164 } from './phone-validation.js';
 import { smsConsentService } from './sms-consent.js';
@@ -103,7 +106,7 @@ class SmsService {
       return true;
     }
 
-    console.log('[SmsService] Initializing...');
+    logger.info('Initializing SMS service');
 
     this.prisma = prisma || null;
 
@@ -116,7 +119,7 @@ class SmsService {
     const providerReady = await twilioProvider.initialize();
 
     this._isInitialized = true;
-    console.log('[SmsService] Initialized', { providerReady });
+    logger.info({ providerReady }, 'SMS service initialized');
 
     return providerReady;
   }
@@ -125,7 +128,7 @@ class SmsService {
    * Shutdown the SMS service
    */
   async shutdown(): Promise<void> {
-    console.log('[SmsService] Shutting down...');
+    logger.info('Shutting down SMS service');
     await twilioProvider.shutdown();
     this._isInitialized = false;
   }
@@ -211,18 +214,18 @@ class SmsService {
       await this.logDelivery(options, result);
 
       const duration = Date.now() - startTime;
-      console.log('[SmsService] SMS sent:', {
+      logger.info({
         to: phoneValidationService.maskPhoneNumber(options.to),
         type: options.type,
         segments: result.segments,
         success: result.success,
         duration,
-      });
+      }, 'SMS sent');
 
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[SmsService] Send error:', errorMessage);
+      logger.error({ error: errorMessage }, 'SMS send error');
       return this.createErrorResult('SEND_ERROR', errorMessage);
     }
   }
@@ -300,7 +303,7 @@ class SmsService {
     }
 
     // Without Twilio Verify, OTP verification must be handled externally
-    console.warn('[SmsService] OTP verification not available without Twilio Verify');
+    logger.warn('OTP verification not available without Twilio Verify');
     return false;
   }
 
@@ -383,7 +386,7 @@ class SmsService {
 
       return { allowed: true };
     } catch (error) {
-      console.error('[SmsService] Rate limit check error:', error);
+      logger.error({ error }, 'Rate limit check error');
       return { allowed: true }; // Fail open
     }
   }
@@ -457,7 +460,7 @@ class SmsService {
         },
       });
     } catch (error) {
-      console.error('[SmsService] Failed to log delivery:', error);
+      logger.error({ error }, 'Failed to log SMS delivery');
     }
   }
 

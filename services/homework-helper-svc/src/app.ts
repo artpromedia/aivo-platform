@@ -1,5 +1,7 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
@@ -13,6 +15,32 @@ export async function buildApp() {
     logger: {
       level: config.logLevel,
     },
+  });
+
+  // Security middleware
+  await app.register(helmet, {
+    contentSecurityPolicy: false,
+  });
+
+  // Rate limiting - protect homework helper from abuse
+  await app.register(rateLimit, {
+    global: true,
+    max: 60, // 60 requests per minute (AI calls are expensive)
+    timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      // Use user ID from JWT for rate limiting
+      const userId = (request as { userId?: string }).userId;
+      if (userId) return `user:${userId}`;
+      return (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+        request.ip ||
+        'unknown';
+    },
+    errorResponseBuilder: (request, context) => ({
+      error: 'Too Many Requests',
+      message: 'Homework helper rate limit exceeded. Please wait before making more requests.',
+      retryAfter: context.after,
+    }),
+    allowList: (request) => request.url === '/health' || request.url === '/ready',
   });
 
   // Register multipart support for file uploads

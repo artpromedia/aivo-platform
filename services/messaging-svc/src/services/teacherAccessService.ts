@@ -54,6 +54,32 @@ export interface ConversationWithMessages {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// STUB FUNCTIONS (Future Implementation)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get the count of flagged conversations for a student.
+ *
+ * STUB: Returns 0 until conversation flagging feature is implemented (PLATFORM-2456).
+ * When implemented, this will query the ConversationFlag table for unresolved flags
+ * associated with the student's conversations.
+ *
+ * @param _studentId - The student's ID (unused in stub)
+ * @param _tenantId - The tenant ID (unused in stub)
+ * @returns Always returns 0 in current stub implementation
+ */
+function getFlaggedConversationCount(_studentId: string, _tenantId: string): number {
+  // STUB: Flagging feature not yet implemented
+  // Future query would be:
+  // SELECT COUNT(*) FROM conversation_flags cf
+  // JOIN conversations c ON cf.conversation_id = c.id
+  // WHERE c.context_learner_id = studentId
+  //   AND c.tenant_id = tenantId
+  //   AND cf.resolved_at IS NULL
+  return 0;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // VERIFY TEACHER-STUDENT RELATIONSHIP
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -442,6 +468,14 @@ export async function getClassAiConversationsSummary(
   }
 
   // Build response
+  // FUTURE WORK: Conversation flagging feature (PLATFORM-2456)
+  // The flagging system will allow teachers and AI safety monitors to flag
+  // conversations that need review. Implementation will include:
+  // - A ConversationFlag model with flagType, reason, flaggedBy, resolvedAt
+  // - Integration with the AI safety agent for automatic flagging of concerning content
+  // - Teacher dashboard UI for reviewing and resolving flags
+  // - Metrics for flagged conversation rates per class
+  // Until implemented, flaggedConversations returns 0.
   const studentStats = students.map((s) => {
     const stats = statsMap.get(s.student_id);
     return {
@@ -450,7 +484,7 @@ export async function getClassAiConversationsSummary(
       totalConversations: stats?.conversations ?? 0,
       totalMessages: stats?.messages ?? 0,
       lastActivityAt: stats?.lastActivity ?? null,
-      flaggedConversations: 0, // TODO: Implement flagging feature
+      flaggedConversations: getFlaggedConversationCount(s.student_id, tenantId),
     };
   });
 

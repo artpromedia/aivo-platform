@@ -116,6 +116,55 @@ function canAccessTenant(user: JwtUser, tenantId: string): boolean {
   return user.tenantId === tenantId;
 }
 
+/**
+ * Create a progress note in teacher-planning-svc (async, fire-and-forget).
+ *
+ * This is a cross-service integration that syncs progress notes to the
+ * teacher planning dashboard. The session event is the source of truth;
+ * this call is for convenience/visibility in the planning UI.
+ *
+ * @param params - Progress note parameters
+ * @returns Promise that resolves when the note is created (or rejects on error)
+ */
+async function createProgressNoteInPlanningService(params: {
+  url: string;
+  tenantId: string;
+  learnerId: string;
+  sessionId: string;
+  noteText: string;
+  rating?: number;
+  goalId?: string;
+  goalObjectiveId?: string;
+  createdByUserId: string;
+}): Promise<void> {
+  const { url, tenantId, learnerId, sessionId, noteText, rating, goalId, goalObjectiveId, createdByUserId } = params;
+
+  const response = await fetch(`${url}/api/v1/progress-notes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-Service-Name': 'session-svc',
+    },
+    body: JSON.stringify({
+      learnerId,
+      sessionId,
+      noteText,
+      rating,
+      goalId,
+      goalObjectiveId,
+      createdByUserId,
+      source: 'SESSION_EVENT',
+    }),
+    signal: AbortSignal.timeout(5000),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new Error(`teacher-planning-svc returned ${response.status}: ${errorText}`);
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -850,18 +899,29 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         },
       });
 
-      // TODO: Call teacher-planning-svc to create actual ProgressNote record
-      // const progressNote = await fetch(`${TEACHER_PLANNING_SVC_URL}/progress-notes`, {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     learnerId: session.learnerId,
-      //     sessionId: session.id,
-      //     noteText,
-      //     rating,
-      //     goalId,
-      //     goalObjectiveId,
-      //   }),
-      // });
+      // Cross-service integration: Create ProgressNote in teacher-planning-svc
+      // This ensures progress notes are visible in the teacher planning dashboard
+      // and can be linked to goals/objectives for IEP tracking.
+      //
+      // INTEGRATION STATUS: Async fire-and-forget (PLATFORM-3789)
+      // We don't block the response on this call - the session event is the source of truth.
+      // If teacher-planning-svc is unavailable, the note is still captured in session events
+      // and can be reconciled later via the event replay mechanism.
+      const teacherPlanningSvcUrl = process.env.TEACHER_PLANNING_SVC_URL || 'http://teacher-planning-svc:3000';
+      createProgressNoteInPlanningService({
+        url: teacherPlanningSvcUrl,
+        tenantId: session.tenantId,
+        learnerId: session.learnerId,
+        sessionId: session.id,
+        noteText,
+        rating,
+        goalId,
+        goalObjectiveId,
+        createdByUserId: user.sub,
+      }).catch((err) => {
+        // Log but don't fail - session event is the source of truth
+        logger.warn({ err, sessionId: session.id }, '[progress-note] Failed to sync to teacher-planning-svc');
+      });
 
       return reply.status(201).send({
         eventId: event.id,

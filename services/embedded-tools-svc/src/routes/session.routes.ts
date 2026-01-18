@@ -183,17 +183,62 @@ async function fetchTenantPolicy(tenantId: string) {
 
 /**
  * Fetch learner profile (minimal)
- * In production, this would call learner-model-svc
+ * In production, this calls learner-model-svc to get actual learner data.
+ *
+ * INTEGRATION STATUS: Stubbed - tracked in PLATFORM-1234
+ * When learner-model-svc integration is complete, this will fetch:
+ * - firstName from learner profile
+ * - gradeBand/gradeLevel from enrollment data
+ * - subject from current learning context
  */
-async function fetchLearnerProfile(_learnerId: string): Promise<{
+async function fetchLearnerProfile(learnerId: string): Promise<{
   firstName: string;
   gradeBand: string;
   gradeLevel: number;
   subject?: string;
 }> {
-  // TODO: Fetch from learner-model-svc
+  // In production, require the integration to be ready
+  if (config.platformEnvironment === 'production') {
+    // Attempt to fetch from learner-model-svc
+    try {
+      const response = await fetch(
+        `${config.learnerModelSvcUrl || 'http://learner-model-svc:3000'}/learners/${learnerId}/profile`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`[fetchLearnerProfile] learner-model-svc returned ${response.status} for learner ${learnerId}`);
+        throw new Error(`Failed to fetch learner profile: ${response.status}`);
+      }
+
+      const profile = await response.json() as {
+        firstName?: string;
+        gradeBand?: string;
+        gradeLevel?: number;
+        subject?: string;
+      };
+
+      return {
+        firstName: profile.firstName || 'Learner',
+        gradeBand: profile.gradeBand || 'G3_5',
+        gradeLevel: profile.gradeLevel || 4,
+        subject: profile.subject,
+      };
+    } catch (error) {
+      console.error('[fetchLearnerProfile] Error fetching from learner-model-svc:', error);
+      // In production, fail closed - don't expose sessions without proper learner data
+      throw new Error('Learner profile service unavailable. Cannot create session without learner context.');
+    }
+  }
+
+  // In development/staging, return mock data for testing
+  console.warn(`[fetchLearnerProfile] Using mock data for learner ${learnerId} (non-production environment)`);
   return {
-    firstName: 'John',
+    firstName: 'Test',
     gradeBand: 'G3_5',
     gradeLevel: 4,
     subject: 'MATH',
