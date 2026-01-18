@@ -11,7 +11,7 @@
 
 | Category | Status | Score | Critical Issues |
 |----------|--------|-------|-----------------|
-| Backend Services | ✅ IMPROVED | 85/100 | P0 fixes merged, 132 TODOs remaining |
+| Backend Services | ✅ IMPROVED | 85/100 | P0 fixes merged, 126 TODOs remaining |
 | API Completeness | ✅ GOOD | 88/100 | Most endpoints implemented |
 | Security & Auth | ✅ EXCELLENT | 92/100 | Session secret validation added |
 | Database & Migrations | ✅ GOOD | 90/100 | 56 Prisma schemas present |
@@ -39,7 +39,7 @@ The following critical issues have been resolved in the `claude/fix-production-i
 | homework-helper-svc | directAnswerFilter.ts | ✅ FIXED | Safety agent with pattern matching + AI |
 | lti-svc | launch-handler.ts | ✅ FIXED | Production-safe SESSION_SECRET validation |
 
-### 1.2 Remaining TODO Items (132 Total - Down from 134)
+### 1.2 Remaining TODO Items (126 Total - Down from 132)
 
 | Service | Issue Count | Summary |
 |---------|-------------|---------|
@@ -141,7 +141,8 @@ The following critical issues have been resolved in the `claude/fix-production-i
 - ⚠️ 15+ TODOs for API calls, navigation, auth tokens
 
 **mobile-teacher:**
-- ⚠️ 25+ TODOs (gradebook, monitoring, settings, messages)
+- ⚠️ 19+ TODOs (monitoring, settings, messages)
+- ✅ Gradebook API integration COMPLETED
 - Notification settings not connected to backend
 - WebSocket connection marked TODO
 
@@ -302,7 +303,7 @@ All P0 blockers have been resolved:
 | Backend Services | 67 |
 | Prisma Schemas | 56 |
 | Test Files | 213+ |
-| TODO Items | 132 |
+| TODO Items | 126 |
 | Web Apps | 11 |
 | Mobile Apps | 3 |
 
