@@ -11,7 +11,7 @@
 
 | Category | Status | Score | Critical Issues |
 |----------|--------|-------|-----------------|
-| Backend Services | ✅ IMPROVED | 85/100 | P0 fixes merged, 134 TODOs remaining |
+| Backend Services | ✅ IMPROVED | 85/100 | P0 fixes merged, 132 TODOs remaining |
 | API Completeness | ✅ GOOD | 88/100 | Most endpoints implemented |
 | Security & Auth | ✅ EXCELLENT | 92/100 | Session secret validation added |
 | Database & Migrations | ✅ GOOD | 90/100 | 56 Prisma schemas present |
@@ -39,7 +39,7 @@ The following critical issues have been resolved in the `claude/fix-production-i
 | homework-helper-svc | directAnswerFilter.ts | ✅ FIXED | Safety agent with pattern matching + AI |
 | lti-svc | launch-handler.ts | ✅ FIXED | Production-safe SESSION_SECRET validation |
 
-### 1.2 Remaining TODO Items (134 Total - Down from 138)
+### 1.2 Remaining TODO Items (132 Total - Down from 134)
 
 | Service | Issue Count | Summary |
 |---------|-------------|---------|
@@ -71,7 +71,7 @@ The following critical issues have been resolved in the `claude/fix-production-i
 | Area | Issue |
 |------|-------|
 | Semantic Search | Falls back to text search (pgvector not deployed) |
-| Collaboration Analytics | Returns mock data (fact tables pending) |
+| Collaboration Analytics | ✅ FIXED - Fact tables implemented, routes query real data |
 | Research API | Uses mock auth tokens in some pages |
 
 ---
@@ -268,7 +268,7 @@ All P0 blockers have been resolved:
 ### P2 - Nice to Have (Post-Launch)
 
 1. Semantic search with pgvector
-2. Collaboration analytics fact tables
+2. ~~Collaboration analytics fact tables~~ ✅ COMPLETED
 3. Mobile app notification settings backend
 4. Full metrics instrumentation
 
@@ -302,7 +302,7 @@ All P0 blockers have been resolved:
 | Backend Services | 67 |
 | Prisma Schemas | 56 |
 | Test Files | 213+ |
-| TODO Items | 138 |
+| TODO Items | 132 |
 | Web Apps | 11 |
 | Mobile Apps | 3 |
 
