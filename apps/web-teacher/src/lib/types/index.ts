@@ -132,6 +132,35 @@ export type {
 // Calendar types
 export type { CalendarEvent, EventType, RecurrenceRule, CreateEventDto } from './calendar';
 
+// Assessment types
+export type {
+  QuestionType,
+  QuestionOption,
+  MatchingPair,
+  Question,
+  QuestionRubric,
+  AssessmentType,
+  AssessmentStatus as AssessmentStatusType,
+  Assessment,
+  AssessmentRubric,
+  RubricCriterion as AssessmentRubricCriterion,
+  RubricLevel as AssessmentRubricLevel,
+  AssessmentAccommodations as AssessmentAccommodationsConfig,
+  AutoGradeConfig,
+  AssessmentAssignment,
+  StudentAssessmentOverride,
+  AssessmentSubmission,
+  StudentAnswer,
+  AssessmentResults,
+  QuestionResult,
+  QuestionBankItem,
+  QuestionBankFilter,
+  CreateAssessmentDto,
+  UpdateAssessmentDto,
+  AssignAssessmentDto,
+  GradeSubmissionDto,
+} from './assessment';
+
 // Analytics types
 export type {
   TimePeriod,
