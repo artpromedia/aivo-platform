@@ -1475,3 +1475,417 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
     },
   };
 }
+
+// ============================================================================
+// Sprint 8: Billing & Subscription Mock Data
+// ============================================================================
+
+import type {
+  Plan,
+  Subscription,
+  SubscriptionSeat,
+  PaymentMethod,
+  Invoice,
+  BillingDetails,
+  PlanChangePreview,
+  Coupon,
+} from './billing-types';
+
+export const MOCK_PLANS: Plan[] = [
+  {
+    id: 'plan-free',
+    sku: 'PARENT_FREE',
+    name: 'Free',
+    description: 'Get started with basic features',
+    priceMonthly: 0,
+    priceYearly: 0,
+    pricePerSeatMonthly: 0,
+    pricePerSeatYearly: 0,
+    baseSeats: 1,
+    maxSeats: 1,
+    modules: ['ELA', 'Math'],
+    features: [
+      'Core ELA & Math curriculum',
+      'Basic progress tracking',
+      'Weekly email reports',
+      '1 child account',
+    ],
+    stripeProductId: 'prod_free',
+    stripePriceMonthlyId: 'price_free_monthly',
+    stripePriceYearlyId: 'price_free_yearly',
+  },
+  {
+    id: 'plan-basic',
+    sku: 'PARENT_BASIC',
+    name: 'Basic',
+    description: 'Essential learning tools for families',
+    priceMonthly: 9.99,
+    priceYearly: 95.90, // ~20% discount
+    pricePerSeatMonthly: 4.99,
+    pricePerSeatYearly: 47.90,
+    baseSeats: 1,
+    maxSeats: 5,
+    modules: ['ELA', 'Math', 'Science'],
+    features: [
+      'Core ELA, Math & Science',
+      'Detailed progress tracking',
+      'Weekly reports',
+      'Parent-teacher messaging',
+      'Up to 5 children',
+      'Basic parental controls',
+    ],
+    stripeProductId: 'prod_basic',
+    stripePriceMonthlyId: 'price_basic_monthly',
+    stripePriceYearlyId: 'price_basic_yearly',
+  },
+  {
+    id: 'plan-premium',
+    sku: 'PARENT_PREMIUM',
+    name: 'Premium',
+    description: 'Full access to all learning modules',
+    priceMonthly: 19.99,
+    priceYearly: 191.90, // ~20% discount
+    pricePerSeatMonthly: 7.99,
+    pricePerSeatYearly: 76.70,
+    baseSeats: 2,
+    maxSeats: 10,
+    modules: ['ELA', 'Math', 'Science', 'SEL', 'Speech', 'Coding', 'Writing'],
+    features: [
+      'Everything in Basic',
+      'Social-Emotional Learning',
+      'Speech therapy exercises',
+      'Coding fundamentals',
+      'Writing workshop',
+      'AI-powered insights',
+      'Advanced analytics',
+      'Priority support',
+      'PDF report exports',
+      'Up to 10 children',
+    ],
+    popular: true,
+    stripeProductId: 'prod_premium',
+    stripePriceMonthlyId: 'price_premium_monthly',
+    stripePriceYearlyId: 'price_premium_yearly',
+  },
+  {
+    id: 'plan-family',
+    sku: 'PARENT_FAMILY',
+    name: 'Family',
+    description: 'Best value for larger families',
+    priceMonthly: 29.99,
+    priceYearly: 287.90, // ~20% discount
+    pricePerSeatMonthly: 0, // Unlimited at this tier
+    pricePerSeatYearly: 0,
+    baseSeats: 5,
+    maxSeats: 99,
+    modules: ['ELA', 'Math', 'Science', 'SEL', 'Speech', 'Coding', 'Writing', 'Music', 'Art'],
+    features: [
+      'Everything in Premium',
+      'Music education',
+      'Art curriculum',
+      'Unlimited children',
+      'Family dashboard',
+      'Dedicated support',
+      'Early access to new features',
+      'Custom learning paths',
+    ],
+    stripeProductId: 'prod_family',
+    stripePriceMonthlyId: 'price_family_monthly',
+    stripePriceYearlyId: 'price_family_yearly',
+  },
+];
+
+/**
+ * Get mock plans
+ */
+export function getMockPlans(): Plan[] {
+  assertDevMode('getMockPlans');
+  return MOCK_PLANS;
+}
+
+/**
+ * Get mock subscription
+ */
+export function getMockSubscription(): Subscription {
+  assertDevMode('getMockSubscription');
+
+  const now = new Date();
+  const periodStart = new Date(now);
+  periodStart.setDate(1);
+  const periodEnd = new Date(now);
+  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  periodEnd.setDate(0);
+
+  return {
+    id: 'sub-mock-001',
+    stripeSubscriptionId: 'sub_1234567890',
+    stripeCustomerId: 'cus_1234567890',
+    planId: 'plan-premium',
+    plan: MOCK_PLANS.find(p => p.id === 'plan-premium'),
+    status: 'active',
+    billingPeriod: 'MONTHLY',
+    currentPeriodStart: periodStart.toISOString(),
+    currentPeriodEnd: periodEnd.toISOString(),
+    cancelAtPeriodEnd: false,
+    totalSeats: 3,
+    usedSeats: 2,
+    seats: [
+      {
+        id: 'seat-001',
+        childId: 'student-mock-001',
+        childName: 'Emma Johnson',
+        grade: 4,
+        assignedAt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+      },
+      {
+        id: 'seat-002',
+        childId: 'student-mock-002',
+        childName: 'Noah Johnson',
+        grade: 2,
+        assignedAt: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+      },
+    ],
+    pricePerPeriod: 27.98, // Base 19.99 + 1 extra seat at 7.99
+    nextBillingAmount: 27.98,
+    createdAt: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: now.toISOString(),
+  };
+}
+
+/**
+ * Get mock payment methods
+ */
+export function getMockPaymentMethods(): PaymentMethod[] {
+  assertDevMode('getMockPaymentMethods');
+
+  return [
+    {
+      id: 'pm-001',
+      stripePaymentMethodId: 'pm_1234567890',
+      type: 'card',
+      brand: 'visa',
+      last4: '4242',
+      expiryMonth: 12,
+      expiryYear: 2027,
+      isDefault: true,
+      billingAddress: {
+        name: 'Sarah Johnson',
+        line1: '123 Main Street',
+        line2: 'Apt 4B',
+        city: 'San Francisco',
+        state: 'CA',
+        postalCode: '94102',
+        country: 'US',
+      },
+    },
+    {
+      id: 'pm-002',
+      stripePaymentMethodId: 'pm_0987654321',
+      type: 'card',
+      brand: 'mastercard',
+      last4: '5555',
+      expiryMonth: 3,
+      expiryYear: 2026,
+      isDefault: false,
+      isExpiring: true,
+    },
+  ];
+}
+
+/**
+ * Get mock invoices/payment history
+ */
+export function getMockInvoices(): Invoice[] {
+  assertDevMode('getMockInvoices');
+
+  const now = new Date();
+  const invoices: Invoice[] = [];
+
+  // Generate last 6 months of invoices
+  for (let i = 0; i < 6; i++) {
+    const invoiceDate = new Date(now);
+    invoiceDate.setMonth(invoiceDate.getMonth() - i);
+    invoiceDate.setDate(1);
+
+    const periodStart = new Date(invoiceDate);
+    const periodEnd = new Date(invoiceDate);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+    periodEnd.setDate(0);
+
+    const monthName = invoiceDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    invoices.push({
+      id: `inv-${String(i + 1).padStart(3, '0')}`,
+      stripeInvoiceId: `in_${Math.random().toString(36).substr(2, 14)}`,
+      date: invoiceDate.toISOString(),
+      amount: 27.98,
+      amountPaid: i === 0 ? 0 : 27.98,
+      amountDue: i === 0 ? 27.98 : 0,
+      status: i === 0 ? 'open' : 'paid',
+      description: `Premium Plan - ${monthName}`,
+      lineItems: [
+        {
+          id: `li-${i}-1`,
+          description: 'Premium Plan (Monthly)',
+          quantity: 1,
+          unitAmount: 19.99,
+          amount: 19.99,
+          period: {
+            start: periodStart.toISOString(),
+            end: periodEnd.toISOString(),
+          },
+        },
+        {
+          id: `li-${i}-2`,
+          description: 'Additional Seat',
+          quantity: 1,
+          unitAmount: 7.99,
+          amount: 7.99,
+          period: {
+            start: periodStart.toISOString(),
+            end: periodEnd.toISOString(),
+          },
+        },
+      ],
+      pdfUrl: `/api/billing/invoices/inv-${String(i + 1).padStart(3, '0')}/pdf`,
+      hostedInvoiceUrl: `https://invoice.stripe.com/i/${Math.random().toString(36).substr(2, 20)}`,
+    });
+  }
+
+  return invoices;
+}
+
+/**
+ * Get mock billing details
+ */
+export function getMockBillingDetails(): BillingDetails {
+  assertDevMode('getMockBillingDetails');
+
+  const subscription = getMockSubscription();
+  const paymentMethods = getMockPaymentMethods();
+  const defaultPayment = paymentMethods.find(pm => pm.isDefault) || null;
+
+  const nextMonth = new Date();
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  nextMonth.setDate(1);
+
+  return {
+    subscription,
+    paymentMethods,
+    defaultPaymentMethod: defaultPayment,
+    billingAddress: defaultPayment?.billingAddress || null,
+    nextInvoice: {
+      date: nextMonth.toISOString(),
+      amount: 27.98,
+      items: [
+        {
+          id: 'preview-1',
+          description: 'Premium Plan (Monthly)',
+          quantity: 1,
+          unitAmount: 19.99,
+          amount: 19.99,
+        },
+        {
+          id: 'preview-2',
+          description: 'Additional Seat',
+          quantity: 1,
+          unitAmount: 7.99,
+          amount: 7.99,
+        },
+      ],
+    },
+  };
+}
+
+/**
+ * Get mock plan change preview
+ */
+export function getMockPlanChangePreview(currentPlanId: string, newPlanId: string): PlanChangePreview {
+  assertDevMode('getMockPlanChangePreview');
+
+  const currentPlan = MOCK_PLANS.find(p => p.id === currentPlanId) || MOCK_PLANS[2];
+  const newPlan = MOCK_PLANS.find(p => p.id === newPlanId) || MOCK_PLANS[3];
+
+  const now = new Date();
+  const daysLeftInPeriod = 15; // Assume 15 days left
+  const proratedCredit = (currentPlan.priceMonthly / 30) * daysLeftInPeriod;
+  const proratedCharge = (newPlan.priceMonthly / 30) * daysLeftInPeriod;
+
+  return {
+    currentPlan,
+    newPlan,
+    proratedAmount: proratedCharge - proratedCredit,
+    newPricePerPeriod: newPlan.priceMonthly,
+    effectiveDate: now.toISOString(),
+    creditApplied: proratedCredit,
+    amountDue: Math.max(0, proratedCharge - proratedCredit),
+    lineItems: [
+      {
+        id: 'prorate-credit',
+        description: `Credit for unused time on ${currentPlan.name} Plan`,
+        quantity: 1,
+        unitAmount: -proratedCredit,
+        amount: -proratedCredit,
+      },
+      {
+        id: 'prorate-charge',
+        description: `Prorated charge for ${newPlan.name} Plan`,
+        quantity: 1,
+        unitAmount: proratedCharge,
+        amount: proratedCharge,
+      },
+    ],
+  };
+}
+
+/**
+ * Get mock coupon
+ */
+export function getMockCoupon(code: string): Coupon | null {
+  assertDevMode('getMockCoupon');
+
+  const validCoupons: Record<string, Coupon> = {
+    WELCOME20: {
+      id: 'coupon-welcome20',
+      code: 'WELCOME20',
+      name: 'Welcome Discount',
+      percentOff: 20,
+      duration: 'once',
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      isValid: true,
+    },
+    FAMILY50: {
+      id: 'coupon-family50',
+      code: 'FAMILY50',
+      name: 'Family Discount',
+      amountOff: 50,
+      duration: 'once',
+      validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      isValid: true,
+    },
+    ANNUAL10: {
+      id: 'coupon-annual10',
+      code: 'ANNUAL10',
+      name: '10% Off Annual Plans',
+      percentOff: 10,
+      duration: 'forever',
+      isValid: true,
+    },
+  };
+
+  return validCoupons[code.toUpperCase()] || null;
+}
+
+/**
+ * Get mock available children (not yet assigned to subscription)
+ */
+export function getMockAvailableChildren(): { id: string; name: string; grade: number }[] {
+  assertDevMode('getMockAvailableChildren');
+
+  return [
+    { id: 'child-new-001', name: 'Olivia Johnson', grade: 1 },
+    { id: 'child-new-002', name: 'Liam Johnson', grade: 6 },
+  ];
+}
