@@ -1,0 +1,1 @@
+export { SubjectTemplate } from './SubjectTemplate';
