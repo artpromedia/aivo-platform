@@ -1011,3 +1011,467 @@ export function getMockChildrenEnhanced(): MockChildData[] {
     },
   ];
 }
+
+// ============================================================================
+// Sprint 7: Progress Reports Mock Data
+// ============================================================================
+
+export interface MockProgressReportData {
+  progress: MockDetailedProgress;
+  assessments: MockAssessmentHistoryData;
+  analysis: MockStrengthWeaknessData;
+  timeOnTask: MockTimeOnTaskData;
+  mastery: MockSubjectMasteryData;
+}
+
+export interface MockDetailedProgress {
+  overallScore: number;
+  overallTrend: 'up' | 'down' | 'stable';
+  lessonsCompleted: number;
+  totalLessons: number;
+  averageSessionTime: number;
+  totalLearningTime: number;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  gradeLevel: {
+    current: string;
+    progress: number;
+  };
+  periods: {
+    label: string;
+    score: number;
+    lessonsCompleted: number;
+    timeSpent: number;
+    startDate: string;
+    endDate: string;
+  }[];
+}
+
+export interface MockAssessmentHistoryData {
+  assessments: MockAssessmentEntry[];
+  summary: {
+    totalAssessments: number;
+    averageScore: number;
+    passRate: number;
+    improvementTrend: 'up' | 'down' | 'stable';
+  };
+}
+
+export interface MockAssessmentEntry {
+  id: string;
+  title: string;
+  subject: string;
+  type: 'quiz' | 'test' | 'practice' | 'benchmark';
+  score: number;
+  maxScore: number;
+  percentile?: number;
+  completedAt: string;
+  timeSpent: number;
+  questionCount: number;
+  correctAnswers: number;
+  topics: string[];
+  grade?: string;
+}
+
+export interface MockStrengthWeaknessData {
+  strengths: MockSkillAnalysis[];
+  weaknesses: MockSkillAnalysis[];
+  recommendations: string[];
+  learningStyle: {
+    primary: string;
+    secondary: string;
+    description: string;
+  };
+  skillsProfile: MockSkillProfile[];
+}
+
+export interface MockSkillAnalysis {
+  skill: string;
+  subject: string;
+  score: number;
+  trend: 'up' | 'down' | 'stable';
+  description: string;
+  evidence: string[];
+}
+
+export interface MockSkillProfile {
+  category: string;
+  score: number;
+  maxScore: number;
+  subSkills: {
+    name: string;
+    score: number;
+    maxScore: number;
+  }[];
+}
+
+export interface MockTimeOnTaskData {
+  totalMinutes: number;
+  dailyAverage: number;
+  weeklyAverage: number;
+  mostProductiveTime: string;
+  sessionStats: {
+    averageLength: number;
+    longestSession: number;
+    sessionsThisWeek: number;
+  };
+  dailyBreakdown: {
+    date: string;
+    day: string;
+    totalMinutes: number;
+    learningMinutes: number;
+    practiceMinutes: number;
+    assessmentMinutes: number;
+  }[];
+  subjectBreakdown: {
+    subject: string;
+    totalMinutes: number;
+    percentage: number;
+    trend: 'up' | 'down' | 'stable';
+  }[];
+  activityBreakdown: {
+    activity: string;
+    minutes: number;
+    percentage: number;
+    color: string;
+  }[];
+}
+
+export interface MockSubjectMasteryData {
+  subjects: MockSubjectMasteryEntry[];
+  overallMasteryLevel: number;
+  masteredSkills: number;
+  inProgressSkills: number;
+  totalSkills: number;
+}
+
+export interface MockSubjectMasteryEntry {
+  subject: string;
+  masteryLevel: number;
+  grade: string;
+  trend: 'up' | 'down' | 'stable';
+  standards: {
+    code: string;
+    name: string;
+    mastery: 'mastered' | 'proficient' | 'developing' | 'beginning';
+    progress: number;
+  }[];
+  recentLessons: {
+    title: string;
+    score: number;
+    completedAt: string;
+  }[];
+  nextMilestone: {
+    name: string;
+    progress: number;
+    target: number;
+  };
+}
+
+/**
+ * Get mock progress report data
+ */
+export function getMockProgressReport(studentId: string, dateRange?: { start: string; end: string }): MockProgressReportData {
+  assertDevMode('getMockProgressReport');
+
+  const isEmma = studentId === 'student-mock-001';
+  const now = new Date();
+
+  // Generate period data for last 4 weeks
+  const periods = [];
+  for (let i = 3; i >= 0; i--) {
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - (i + 1) * 7);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+    periods.push({
+      label: `Week ${4 - i}`,
+      score: isEmma ? 80 + Math.floor(Math.random() * 15) : 65 + Math.floor(Math.random() * 20),
+      lessonsCompleted: isEmma ? 5 + Math.floor(Math.random() * 4) : 3 + Math.floor(Math.random() * 4),
+      timeSpent: isEmma ? 120 + Math.floor(Math.random() * 60) : 80 + Math.floor(Math.random() * 40),
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+  }
+
+  return {
+    progress: {
+      overallScore: isEmma ? 87 : 72,
+      overallTrend: isEmma ? 'up' : 'stable',
+      lessonsCompleted: isEmma ? 156 : 89,
+      totalLessons: 200,
+      averageSessionTime: isEmma ? 25 : 18,
+      totalLearningTime: isEmma ? 3900 : 1800,
+      streak: {
+        current: isEmma ? 12 : 3,
+        longest: isEmma ? 21 : 8,
+      },
+      gradeLevel: {
+        current: isEmma ? 'Grade 4' : 'Grade 2',
+        progress: isEmma ? 78 : 45,
+      },
+      periods,
+    },
+    assessments: {
+      assessments: [
+        {
+          id: 'assess-1',
+          title: 'Fractions Unit Test',
+          subject: 'Math',
+          type: 'test',
+          score: isEmma ? 47 : 38,
+          maxScore: 50,
+          percentile: isEmma ? 92 : 65,
+          completedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          timeSpent: 35,
+          questionCount: 25,
+          correctAnswers: isEmma ? 23 : 18,
+          topics: ['Adding Fractions', 'Subtracting Fractions', 'Mixed Numbers'],
+          grade: isEmma ? 'A' : 'B-',
+        },
+        {
+          id: 'assess-2',
+          title: 'Reading Comprehension Quiz',
+          subject: 'Reading',
+          type: 'quiz',
+          score: isEmma ? 18 : 15,
+          maxScore: 20,
+          completedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          timeSpent: 20,
+          questionCount: 10,
+          correctAnswers: isEmma ? 9 : 7,
+          topics: ['Main Idea', 'Supporting Details', 'Inference'],
+        },
+        {
+          id: 'assess-3',
+          title: 'Science Practice: Plant Life',
+          subject: 'Science',
+          type: 'practice',
+          score: isEmma ? 42 : 35,
+          maxScore: 50,
+          completedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          timeSpent: 25,
+          questionCount: 20,
+          correctAnswers: isEmma ? 17 : 14,
+          topics: ['Photosynthesis', 'Plant Parts', 'Life Cycle'],
+        },
+        {
+          id: 'assess-4',
+          title: 'Benchmark: Math Quarterly',
+          subject: 'Math',
+          type: 'benchmark',
+          score: isEmma ? 85 : 70,
+          maxScore: 100,
+          percentile: isEmma ? 88 : 58,
+          completedAt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          timeSpent: 60,
+          questionCount: 50,
+          correctAnswers: isEmma ? 43 : 35,
+          topics: ['Numbers', 'Operations', 'Geometry', 'Fractions'],
+          grade: isEmma ? 'B+' : 'C+',
+        },
+      ],
+      summary: {
+        totalAssessments: 12,
+        averageScore: isEmma ? 88 : 74,
+        passRate: isEmma ? 100 : 83,
+        improvementTrend: 'up',
+      },
+    },
+    analysis: {
+      strengths: [
+        {
+          skill: 'Problem Solving',
+          subject: 'Math',
+          score: isEmma ? 95 : 78,
+          trend: 'up',
+          description: isEmma
+            ? 'Demonstrates excellent analytical thinking and breaks down complex problems effectively'
+            : 'Shows good problem-solving skills with visual aids',
+          evidence: isEmma
+            ? ['Scored 95% on word problems', 'Consistently completes challenge problems', 'Helps peers with difficult concepts']
+            : ['Completes problems when given visual support', 'Shows improvement in multi-step problems'],
+        },
+        {
+          skill: 'Reading Comprehension',
+          subject: 'Reading',
+          score: isEmma ? 92 : 72,
+          trend: 'up',
+          description: isEmma
+            ? 'Reads above grade level with strong inference skills'
+            : 'Making steady progress in understanding main ideas',
+          evidence: isEmma
+            ? ['Reading at 6th grade level', 'Excellent inference scores', 'Strong vocabulary']
+            : ['Improved main idea identification', 'Enjoys reading activities'],
+        },
+      ],
+      weaknesses: isEmma ? [
+        {
+          skill: 'Social Studies Engagement',
+          subject: 'Social Studies',
+          score: 68,
+          trend: 'stable',
+          description: 'Shows less interest and engagement in social studies content',
+          evidence: ['Lower time spent on lessons', 'Skips optional activities', 'Requests to switch subjects'],
+        },
+      ] : [
+        {
+          skill: 'Sustained Attention',
+          subject: 'General',
+          score: 55,
+          trend: 'down',
+          description: 'Struggles with longer lessons and assessments',
+          evidence: ['Performance drops after 15 minutes', 'Frequently pauses sessions', 'Better scores on shorter quizzes'],
+        },
+        {
+          skill: 'Written Expression',
+          subject: 'Writing',
+          score: 60,
+          trend: 'stable',
+          description: 'Needs support with organizing written responses',
+          evidence: ['Inconsistent paragraph structure', 'Difficulty with transitions', 'Strong ideas but weak organization'],
+        },
+      ],
+      recommendations: isEmma
+        ? [
+          'Introduce more challenging math enrichment activities',
+          'Explore interactive history games to boost Social Studies engagement',
+          'Consider joining the advanced reading group',
+        ]
+        : [
+          'Break lessons into 10-15 minute segments',
+          'Use graphic organizers for writing tasks',
+          'Incorporate more visual and hands-on learning activities',
+          'Celebrate small wins to build confidence',
+        ],
+      learningStyle: {
+        primary: isEmma ? 'Logical-Mathematical' : 'Visual-Spatial',
+        secondary: isEmma ? 'Linguistic' : 'Kinesthetic',
+        description: isEmma
+          ? 'Emma learns best through logical reasoning and pattern recognition. She excels when able to analyze information systematically and enjoys challenging problems.'
+          : 'Noah learns best through visual content and hands-on activities. He benefits from diagrams, videos, and interactive exercises.',
+      },
+      skillsProfile: [
+        {
+          category: 'Critical Thinking',
+          score: isEmma ? 90 : 70,
+          maxScore: 100,
+          subSkills: [
+            { name: 'Analysis', score: isEmma ? 92 : 68, maxScore: 100 },
+            { name: 'Evaluation', score: isEmma ? 88 : 72, maxScore: 100 },
+            { name: 'Problem Solving', score: isEmma ? 95 : 70, maxScore: 100 },
+          ],
+        },
+        {
+          category: 'Communication',
+          score: isEmma ? 85 : 65,
+          maxScore: 100,
+          subSkills: [
+            { name: 'Reading', score: isEmma ? 92 : 72, maxScore: 100 },
+            { name: 'Writing', score: isEmma ? 80 : 58, maxScore: 100 },
+            { name: 'Speaking', score: isEmma ? 85 : 68, maxScore: 100 },
+          ],
+        },
+        {
+          category: 'Self-Management',
+          score: isEmma ? 88 : 58,
+          maxScore: 100,
+          subSkills: [
+            { name: 'Focus', score: isEmma ? 90 : 50, maxScore: 100 },
+            { name: 'Organization', score: isEmma ? 85 : 60, maxScore: 100 },
+            { name: 'Time Management', score: isEmma ? 88 : 65, maxScore: 100 },
+          ],
+        },
+      ],
+    },
+    timeOnTask: {
+      totalMinutes: isEmma ? 1250 : 720,
+      dailyAverage: isEmma ? 42 : 24,
+      weeklyAverage: isEmma ? 290 : 168,
+      mostProductiveTime: isEmma ? 'Afternoon' : 'Morning',
+      sessionStats: {
+        averageLength: isEmma ? 28 : 18,
+        longestSession: isEmma ? 55 : 32,
+        sessionsThisWeek: isEmma ? 12 : 7,
+      },
+      dailyBreakdown: [
+        { date: '2024-01-14', day: 'Sunday', totalMinutes: isEmma ? 25 : 0, learningMinutes: isEmma ? 15 : 0, practiceMinutes: isEmma ? 8 : 0, assessmentMinutes: isEmma ? 2 : 0 },
+        { date: '2024-01-15', day: 'Monday', totalMinutes: isEmma ? 45 : 35, learningMinutes: isEmma ? 28 : 20, practiceMinutes: isEmma ? 12 : 10, assessmentMinutes: isEmma ? 5 : 5 },
+        { date: '2024-01-16', day: 'Tuesday', totalMinutes: isEmma ? 38 : 28, learningMinutes: isEmma ? 22 : 18, practiceMinutes: isEmma ? 10 : 8, assessmentMinutes: isEmma ? 6 : 2 },
+        { date: '2024-01-17', day: 'Wednesday', totalMinutes: isEmma ? 52 : 0, learningMinutes: isEmma ? 30 : 0, practiceMinutes: isEmma ? 15 : 0, assessmentMinutes: isEmma ? 7 : 0 },
+        { date: '2024-01-18', day: 'Thursday', totalMinutes: isEmma ? 35 : 32, learningMinutes: isEmma ? 20 : 20, practiceMinutes: isEmma ? 10 : 8, assessmentMinutes: isEmma ? 5 : 4 },
+        { date: '2024-01-19', day: 'Friday', totalMinutes: isEmma ? 42 : 25, learningMinutes: isEmma ? 25 : 15, practiceMinutes: isEmma ? 12 : 8, assessmentMinutes: isEmma ? 5 : 2 },
+        { date: '2024-01-20', day: 'Saturday', totalMinutes: isEmma ? 30 : 15, learningMinutes: isEmma ? 18 : 10, practiceMinutes: isEmma ? 8 : 5, assessmentMinutes: isEmma ? 4 : 0 },
+      ],
+      subjectBreakdown: [
+        { subject: 'Math', totalMinutes: isEmma ? 420 : 250, percentage: isEmma ? 34 : 35, trend: 'up' },
+        { subject: 'Reading', totalMinutes: isEmma ? 350 : 200, percentage: isEmma ? 28 : 28, trend: 'up' },
+        { subject: 'Science', totalMinutes: isEmma ? 230 : 150, percentage: isEmma ? 18 : 21, trend: 'stable' },
+        { subject: 'Writing', totalMinutes: isEmma ? 150 : 80, percentage: isEmma ? 12 : 11, trend: 'up' },
+        { subject: 'Social Studies', totalMinutes: isEmma ? 100 : 40, percentage: isEmma ? 8 : 5, trend: 'down' },
+      ],
+      activityBreakdown: [
+        { activity: 'Lessons', minutes: isEmma ? 625 : 360, percentage: isEmma ? 50 : 50, color: '#6366f1' },
+        { activity: 'Practice', minutes: isEmma ? 375 : 216, percentage: isEmma ? 30 : 30, color: '#a855f7' },
+        { activity: 'Assessments', minutes: isEmma ? 188 : 108, percentage: isEmma ? 15 : 15, color: '#f59e0b' },
+        { activity: 'Games', minutes: isEmma ? 62 : 36, percentage: isEmma ? 5 : 5, color: '#10b981' },
+      ],
+    },
+    mastery: {
+      subjects: [
+        {
+          subject: 'Math',
+          masteryLevel: isEmma ? 85 : 68,
+          grade: isEmma ? 'A-' : 'C+',
+          trend: 'up',
+          standards: [
+            { code: 'CCSS.MATH.4.NF.1', name: 'Equivalent Fractions', mastery: isEmma ? 'mastered' : 'proficient', progress: isEmma ? 100 : 75 },
+            { code: 'CCSS.MATH.4.NF.2', name: 'Comparing Fractions', mastery: isEmma ? 'mastered' : 'developing', progress: isEmma ? 95 : 55 },
+            { code: 'CCSS.MATH.4.OA.1', name: 'Multi-Step Problems', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 78 : 48 },
+          ],
+          recentLessons: [
+            { title: 'Adding Fractions', score: isEmma ? 95 : 75, completedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+            { title: 'Subtracting Fractions', score: isEmma ? 92 : 70, completedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+          ],
+          nextMilestone: { name: 'Fraction Master', progress: isEmma ? 8 : 5, target: 10 },
+        },
+        {
+          subject: 'Reading',
+          masteryLevel: isEmma ? 90 : 72,
+          grade: isEmma ? 'A' : 'B-',
+          trend: 'up',
+          standards: [
+            { code: 'CCSS.ELA.RI.4.1', name: 'Key Details', mastery: isEmma ? 'mastered' : 'proficient', progress: isEmma ? 100 : 70 },
+            { code: 'CCSS.ELA.RI.4.2', name: 'Main Idea', mastery: isEmma ? 'mastered' : 'proficient', progress: isEmma ? 98 : 72 },
+            { code: 'CCSS.ELA.RI.4.3', name: 'Text Structure', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 82 : 55 },
+          ],
+          recentLessons: [
+            { title: 'Chapter 5 Comprehension', score: isEmma ? 100 : 80, completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+            { title: 'Vocabulary Review', score: isEmma ? 95 : 78, completedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+          ],
+          nextMilestone: { name: 'Bookworm Badge', progress: isEmma ? 18 : 10, target: 20 },
+        },
+        {
+          subject: 'Science',
+          masteryLevel: isEmma ? 78 : 65,
+          grade: isEmma ? 'B+' : 'C',
+          trend: 'stable',
+          standards: [
+            { code: 'NGSS.4-LS1-1', name: 'Plant Structures', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 80 : 60 },
+            { code: 'NGSS.4-LS1-2', name: 'Animal Behavior', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 75 : 55 },
+          ],
+          recentLessons: [
+            { title: 'Plant Life Cycles', score: isEmma ? 88 : 70, completedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+          ],
+          nextMilestone: { name: 'Science Explorer', progress: isEmma ? 6 : 3, target: 10 },
+        },
+      ],
+      overallMasteryLevel: isEmma ? 84 : 68,
+      masteredSkills: isEmma ? 24 : 12,
+      inProgressSkills: isEmma ? 18 : 22,
+      totalSkills: 50,
+    },
+  };
+}

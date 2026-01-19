@@ -22,6 +22,7 @@ import {
   getMockMilestones,
   getMockWeeklyReport,
   getMockChildrenEnhanced,
+  getMockProgressReport,
   type MockParentProfile,
   type MockStudentSummary,
   type MockWeeklySummary,
@@ -33,6 +34,7 @@ import {
   type MockMilestone,
   type MockWeeklyReportData,
   type MockChildData,
+  type MockProgressReportData,
 } from './mock-data';
 
 // Query keys for cache management
@@ -50,6 +52,9 @@ export const queryKeys = {
   milestones: (studentId: string) => ['milestones', studentId] as const,
   weeklyReport: (studentId: string, weekStart?: string) => ['weekly-report', studentId, weekStart] as const,
   childrenEnhanced: ['children-enhanced'] as const,
+  // Sprint 7: Progress Reports query keys
+  progressReport: (studentId: string, dateRange?: { start: string; end: string }) =>
+    ['progress-report', studentId, dateRange?.start, dateRange?.end] as const,
 };
 
 /**
@@ -903,6 +908,82 @@ export function useUpdateParentalControls() {
       queryClient.invalidateQueries({
         queryKey: controlsQueryKeys.parentalControls(variables.childId),
       });
+    },
+  });
+}
+
+// ============================================================================
+// Sprint 7: Progress Reports Hooks
+// ============================================================================
+
+/**
+ * Hook to fetch comprehensive progress report for a student
+ */
+export function useProgressReport(
+  studentId: string | null,
+  dateRange?: { start: string; end: string }
+) {
+  return useQuery({
+    queryKey: queryKeys.progressReport(studentId || '', dateRange),
+    queryFn: async (): Promise<MockProgressReportData> => {
+      if (!studentId) {
+        throw new Error('No student selected');
+      }
+
+      try {
+        const params = new URLSearchParams();
+        if (dateRange?.start) params.append('start', dateRange.start);
+        if (dateRange?.end) params.append('end', dateRange.end);
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+
+        const data = await api.get<MockProgressReportData>(
+          `/reports/students/${studentId}/progress${queryString}`
+        );
+        return data;
+      } catch (error) {
+        // In development, fall back to mock data if API fails
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock progress report data');
+          return getMockProgressReport(studentId, dateRange);
+        }
+        throw error;
+      }
+    },
+    enabled: !!studentId,
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 10 * 60 * 1000, // 10 minutes - reports don't change frequently
+  });
+}
+
+/**
+ * Hook to generate and export a PDF report
+ */
+export function useGenerateReportPDF() {
+  return useMutation({
+    mutationFn: async ({
+      studentId,
+      studentName,
+      dateRange,
+    }: {
+      studentId: string;
+      studentName: string;
+      dateRange: { start: string; end: string };
+    }) => {
+      const params = new URLSearchParams();
+      if (dateRange.start) params.append('start', dateRange.start);
+      if (dateRange.end) params.append('end', dateRange.end);
+
+      const blob = await api.getBlob(
+        `/reports/students/${studentId}/progress.pdf?${params.toString()}`
+      );
+      const url = globalThis.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `progress-report-${studentName.toLowerCase().replaceAll(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      globalThis.URL.revokeObjectURL(url);
     },
   });
 }
