@@ -21,10 +21,16 @@ Sprint 2 has been completed successfully. All P0 components have been migrated f
 - `.storybook/` - Storybook configuration
 
 **Dependencies:**
+- Next.js 14+ (peer dependency)
 - React 18.2+
 - clsx, tailwind-merge for styling
 - Vitest, Testing Library for testing
-- Storybook 8.x for documentation
+- Storybook 8.x with Next.js framework
+
+**Next.js Compatibility:**
+- All components use `'use client'` directive where needed
+- No `import.meta.env` usage (uses `process.env` pattern)
+- Compatible with App Router architecture
 
 ### 3. P0 Components Migrated
 
@@ -56,10 +62,12 @@ export type { GameType, FocusMode, FocusState, AssessmentDomain, ... } from './t
 ### 5. Storybook Setup
 
 **Configuration:**
-- React-Vite framework
+- Next.js framework (`@storybook/nextjs`)
+- SWC builder for fast compilation
 - Autodocs enabled
 - A11y addon for accessibility testing
 - AIVO design system CSS variables loaded
+- Webpack alias configuration for path resolution
 
 **Stories Created:**
 - GamePicker.stories.tsx
