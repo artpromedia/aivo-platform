@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import get_settings
-from src.routers import health, recommendations
+from src.routers import health, recommendations, student_brain, special_needs, emotion_recognition, analytics
 from src.services.feature_store import FeatureStore
 from src.services.message_consumer import MessageConsumer
 from src.services.recommendation_engine import RecommendationEngine
@@ -55,9 +55,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="ML Recommendation Service",
-    description="Machine learning-based recommendation microservice for AIVO",
-    version="0.1.0",
+    title="AIVO ML & AI Services",
+    description="""
+Machine learning and AI services for the AIVO learning platform.
+
+## Features
+
+- **Student Brain AI**: Personalized AI model per student
+- **Adaptive Learning**: Real-time difficulty adjustment
+- **Special Needs Support**: Autism, ADHD, Dyslexia accommodations
+- **Emotion Recognition**: SEL with 20+ emotions
+- **Analytics & ROI**: K-anonymity protected metrics
+- **At-Risk Prediction**: ML-based early intervention
+    """,
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -73,6 +84,10 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(recommendations.router, prefix="/recommendations", tags=["Recommendations"])
+app.include_router(student_brain.router, prefix="/student-brain", tags=["Student Brain AI"])
+app.include_router(special_needs.router, prefix="/special-needs", tags=["Special Needs Support"])
+app.include_router(emotion_recognition.router, prefix="/emotions", tags=["Emotion Recognition"])
+app.include_router(analytics.router, prefix="/analytics", tags=["Analytics & ROI"])
 
 
 if __name__ == "__main__":

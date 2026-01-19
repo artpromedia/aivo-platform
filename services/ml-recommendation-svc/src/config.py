@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     min_confidence: float = 0.1
     diversity_factor: float = 0.2
 
+    # AI Providers
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4-turbo-preview"
+    claude_api_key: str | None = None
+    claude_model: str = "claude-3-5-sonnet-20241022"
+
     # Observability
     otel_exporter_endpoint: str | None = None
     otel_service_name: str = "ml-recommendation-svc"
