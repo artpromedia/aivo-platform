@@ -27,7 +27,52 @@ enum GradeBand {
   @@map("grade_band")
 }
 
+enum OnboardingStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+
+  @@map("onboarding_status")
+}
+
 // ── Models ───────────────────────────────────────────────────────────────────
+
+// ── Learner Onboarding Progress ──────────────────────────────────────────────
+
+/// Tracks learner onboarding flow progress including accessibility settings,
+/// sensory profile, and interests collected during onboarding.
+model LearnerOnboardingProgress {
+  id                    String           @id @default(uuid()) @db.Uuid
+  tenantId              String           @map("tenant_id") @db.Uuid
+  learnerId             String           @map("learner_id") @db.Uuid
+
+  // Progress tracking
+  currentStep           String           @default("welcome") @map("current_step") @db.VarChar(50)
+  status                OnboardingStatus @default(NOT_STARTED)
+
+  // Onboarding data collected
+  dataJson              Json?            @map("data_json")
+
+  // Accessibility settings
+  accessibilitySettings Json?            @map("accessibility_settings")
+
+  // Sensory profile
+  sensoryProfile        Json?            @map("sensory_profile")
+
+  // Interests and goals
+  interests             Json?
+
+  // Timestamps
+  startedAt             DateTime?        @map("started_at") @db.Timestamptz
+  completedAt           DateTime?        @map("completed_at") @db.Timestamptz
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, status])
+  @@index([learnerId])
+  @@map("learner_onboarding_progress")
+}
 
 // ── Virtual Brain Templates ───────────────────────────────────────────────────
 
