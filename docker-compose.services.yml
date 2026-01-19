@@ -1,0 +1,186 @@
+version: '3.8'
+
+# AIVO Platform - Python Services Docker Compose
+# Part of Migration from aivo-agentic-ai-learning-app
+
+services:
+  # AI Inference Service
+  ai-inference-svc:
+    build:
+      context: ./services/ai-inference-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=postgresql+asyncpg://aivo:aivo@postgres:5432/ai_inference
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./services/ai-inference-svc:/app
+      - ai-models:/app/models
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Training Service
+  training-svc:
+    build:
+      context: ./services/training-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/training
+      - REDIS_URL=redis://redis:6379/1
+      - AI_INFERENCE_URL=http://ai-inference-svc:8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./services/training-svc:/app
+    depends_on:
+      - ai-inference-svc
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Curriculum Python Service
+  curriculum-py-svc:
+    build:
+      context: ./services/curriculum-py-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/curriculum
+      - REDIS_URL=redis://redis:6379/2
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./services/curriculum-py-svc:/app
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Python API Gateway
+  python-api-gateway:
+    build:
+      context: ./services/python-api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/gateway
+      - REDIS_URL=redis://redis:6379/3
+      - AI_INFERENCE_URL=http://ai-inference-svc:8000
+      - TRAINING_URL=http://training-svc:8000
+      - CURRICULUM_URL=http://curriculum-py-svc:8000
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=["*"]
+    volumes:
+      - ./services/python-api-gateway:/app
+      - uploads:/app/uploads
+    depends_on:
+      - ai-inference-svc
+      - training-svc
+      - curriculum-py-svc
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=aivo
+      - POSTGRES_PASSWORD=aivo
+      - POSTGRES_DB=aivo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aivo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  ai-models:
+  uploads:
+
+networks:
+  aivo-network:
+    driver: bridge
