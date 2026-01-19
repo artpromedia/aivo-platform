@@ -1,0 +1,635 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created": "2026-01-19",
+    "totalSprints": 12,
+    "sprintLength": "2 weeks",
+    "capacityPerSprint": 40,
+    "totalStoryPoints": 385
+  },
+  "priorityLegend": {
+    "P0": "Critical - Must have for parity",
+    "P1": "Important - Should have",
+    "P2": "Nice to have - Can defer"
+  },
+  "sprints": [
+    {
+      "sprint": 1,
+      "name": "Core Learner Experience - Onboarding",
+      "focus": "Onboarding flow and basic navigation",
+      "storyPoints": 38,
+      "features": [
+        {
+          "id": "F001",
+          "name": "OnboardingGuard implementation",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F002",
+          "name": "LearnerProtectedRoute enhancement",
+          "priority": "P0",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": ["F001"]
+        },
+        {
+          "id": "F003",
+          "name": "Multi-step onboarding flow",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 13,
+          "dependencies": ["F001"]
+        },
+        {
+          "id": "F004",
+          "name": "Baseline assessment integration",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 13,
+          "dependencies": ["F003"]
+        }
+      ]
+    },
+    {
+      "sprint": 2,
+      "name": "Assessment System Enhancement",
+      "focus": "Dynamic assessment and results",
+      "storyPoints": 40,
+      "features": [
+        {
+          "id": "F005",
+          "name": "Dynamic assessment engine polish",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 13,
+          "dependencies": ["F004"]
+        },
+        {
+          "id": "F006",
+          "name": "Assessment results dashboard",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 8,
+          "dependencies": ["F005"]
+        },
+        {
+          "id": "F007",
+          "name": "Pre-baseline training module",
+          "priority": "P1",
+          "complexity": "Medium",
+          "storyPoints": 8,
+          "dependencies": ["F004"]
+        },
+        {
+          "id": "F008",
+          "name": "Domain transition tracking",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F005"]
+        },
+        {
+          "id": "F009",
+          "name": "DomainTransition component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F008"]
+        }
+      ]
+    },
+    {
+      "sprint": 3,
+      "name": "Subject Learning - K5",
+      "focus": "K-5 curriculum and theming",
+      "storyPoints": 38,
+      "features": [
+        {
+          "id": "F010",
+          "name": "K-5 Math curriculum enhancement",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F011",
+          "name": "K-5 Reading curriculum enhancement",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F012",
+          "name": "K-5 Science curriculum",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F013",
+          "name": "K-5 Writing curriculum",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F014",
+          "name": "Grade-based theming (K5)",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F010", "F011"]
+        }
+      ]
+    },
+    {
+      "sprint": 4,
+      "name": "Subject Learning - MS",
+      "focus": "Middle school curriculum",
+      "storyPoints": 34,
+      "features": [
+        {
+          "id": "F015",
+          "name": "K-5 Social Studies",
+          "priority": "P1",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F016",
+          "name": "K-5 Art & Music",
+          "priority": "P1",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F017",
+          "name": "MS Algebra enhancement",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F018",
+          "name": "MS Geometry enhancement",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F019",
+          "name": "Grade-based theming (MS)",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F017", "F018"]
+        }
+      ]
+    },
+    {
+      "sprint": 5,
+      "name": "Subject Learning - HS",
+      "focus": "High school curriculum",
+      "storyPoints": 29,
+      "features": [
+        {
+          "id": "F020",
+          "name": "MS Science (Biology/Chemistry)",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F021",
+          "name": "HS Calculus",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F022",
+          "name": "HS Advanced Sciences",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F023",
+          "name": "Grade-based theming (HS)",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F021", "F022"]
+        }
+      ]
+    },
+    {
+      "sprint": 6,
+      "name": "AI Brain System",
+      "focus": "Personalized AI features",
+      "storyPoints": 40,
+      "features": [
+        {
+          "id": "F024",
+          "name": "Personalized AI Brain integration",
+          "priority": "P0",
+          "complexity": "Very High",
+          "storyPoints": 13,
+          "dependencies": []
+        },
+        {
+          "id": "F025",
+          "name": "Real-time adaptive learning",
+          "priority": "P0",
+          "complexity": "Very High",
+          "storyPoints": 13,
+          "dependencies": ["F024"]
+        },
+        {
+          "id": "F026",
+          "name": "Brain memory persistence",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": ["F024"]
+        },
+        {
+          "id": "F027",
+          "name": "ExplainableModelCloning component",
+          "priority": "P1",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F024"]
+        }
+      ]
+    },
+    {
+      "sprint": 7,
+      "name": "AI Tutoring & Homework",
+      "focus": "AI-powered learning assistance",
+      "storyPoints": 36,
+      "features": [
+        {
+          "id": "F028",
+          "name": "AI homework helper UI integration",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": ["F024"]
+        },
+        {
+          "id": "F029",
+          "name": "AI tutoring sessions",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": ["F024"]
+        },
+        {
+          "id": "F030",
+          "name": "HomeworkHelper component",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F031",
+          "name": "HomeworkUpload component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F032",
+          "name": "Homework step components (4)",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 8,
+          "dependencies": ["F030"]
+        }
+      ]
+    },
+    {
+      "sprint": 8,
+      "name": "Focus & Engagement",
+      "focus": "Focus monitoring and mini-games",
+      "storyPoints": 40,
+      "features": [
+        {
+          "id": "F033",
+          "name": "FocusMonitor component (web)",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F034",
+          "name": "GameBreakModal component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F033"]
+        },
+        {
+          "id": "F035",
+          "name": "Mini-games library (5 games)",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 13,
+          "dependencies": ["F034"],
+          "details": [
+            "BreathingExercise",
+            "MathSpeedGame",
+            "SimonSaysGame",
+            "MemoryMatchGame",
+            "CountingGame"
+          ]
+        },
+        {
+          "id": "F036",
+          "name": "Progress visualization enhancement",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F037",
+          "name": "Additional mini-games (4 games)",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": ["F035"],
+          "details": [
+            "ReactionTimeGame",
+            "ShapeSorterGame",
+            "WordScrambleGame",
+            "LogicPuzzleGame"
+          ]
+        }
+      ]
+    },
+    {
+      "sprint": 9,
+      "name": "Neurodiversity Support",
+      "focus": "Self-regulation and executive function",
+      "storyPoints": 40,
+      "features": [
+        {
+          "id": "F038",
+          "name": "SelfRegulationHub component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F039",
+          "name": "EmotionCheckIn component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F038"]
+        },
+        {
+          "id": "F040",
+          "name": "RegulationActivity component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F038"]
+        },
+        {
+          "id": "F041",
+          "name": "CalmingSpace component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F038"]
+        },
+        {
+          "id": "F042",
+          "name": "VisualTimer component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F043",
+          "name": "VisualSchedule component",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F044",
+          "name": "FirstThenBoard component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F045",
+          "name": "TaskBreakdown component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "sprint": 10,
+      "name": "Sensory & Writing",
+      "focus": "Sensory profiles and writing tools",
+      "storyPoints": 34,
+      "features": [
+        {
+          "id": "F046",
+          "name": "SensoryProfile component",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F047",
+          "name": "SensoryProfileSetup component",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": ["F046"]
+        },
+        {
+          "id": "F048",
+          "name": "AccessibilityPanel component",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F046"]
+        },
+        {
+          "id": "F049",
+          "name": "WritingPad component",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F050",
+          "name": "DrawPad component",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 5,
+          "dependencies": ["F049"]
+        }
+      ]
+    },
+    {
+      "sprint": 11,
+      "name": "UX Polish",
+      "focus": "Navigation and UX improvements",
+      "storyPoints": 26,
+      "features": [
+        {
+          "id": "F051",
+          "name": "Theme customization polish",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        },
+        {
+          "id": "F052",
+          "name": "ConnectivityBanner component",
+          "priority": "P1",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": []
+        },
+        {
+          "id": "F053",
+          "name": "OfflineIndicator component",
+          "priority": "P1",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": []
+        },
+        {
+          "id": "F054",
+          "name": "PWAInstallPrompt component",
+          "priority": "P2",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": []
+        },
+        {
+          "id": "F055",
+          "name": "ExitConfirmation component",
+          "priority": "P1",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": []
+        },
+        {
+          "id": "F056",
+          "name": "EncouragementBanner component",
+          "priority": "P1",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": []
+        },
+        {
+          "id": "F057",
+          "name": "AskParentHelp component",
+          "priority": "P1",
+          "complexity": "Low",
+          "storyPoints": 3,
+          "dependencies": []
+        },
+        {
+          "id": "F058",
+          "name": "HomeworkInbox component",
+          "priority": "P1",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": ["F030"]
+        }
+      ]
+    },
+    {
+      "sprint": 12,
+      "name": "Mobile & Testing",
+      "focus": "Mobile completion and QA",
+      "storyPoints": 30,
+      "features": [
+        {
+          "id": "F059",
+          "name": "Mobile learner app completion",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F060",
+          "name": "Mobile teacher app completion",
+          "priority": "P1",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F061",
+          "name": "End-to-end testing",
+          "priority": "P0",
+          "complexity": "High",
+          "storyPoints": 8,
+          "dependencies": []
+        },
+        {
+          "id": "F062",
+          "name": "Accessibility audit",
+          "priority": "P0",
+          "complexity": "Medium",
+          "storyPoints": 5,
+          "dependencies": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "p0Features": 42,
+    "p1Features": 17,
+    "p2Features": 3,
+    "totalFeatures": 62,
+    "estimatedCompletion": "24 weeks",
+    "riskFactors": [
+      "AI integration complexity",
+      "Cross-platform testing",
+      "Accessibility compliance",
+      "Performance optimization"
+    ]
+  }
+}
