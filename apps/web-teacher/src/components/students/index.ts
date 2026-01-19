@@ -6,6 +6,11 @@ export { StudentCard, StudentListItem } from './student-card';
 export { IEPGoalTracker } from './iep-goal-tracker';
 export { AccommodationBadges, AccommodationSelector } from './accommodation-badges';
 
+// Sprint 9: Enhanced Student Roster with IEP/504 Support
+export { StudentRoster } from './StudentRoster';
+export { StudentCard as StudentCardEnhanced } from './StudentCard';
+export { StudentDetailModal } from './StudentDetailModal';
+
 // Risk Dashboard Components
 export {
   RiskLevelBadge,
