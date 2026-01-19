@@ -126,6 +126,89 @@ export type Database = {
           description?: string | null;
         };
       };
+      learner_brain_states: {
+        Row: {
+          id: string;
+          learner_id: string;
+          model_state: Record<string, unknown>;
+          learning_style: string | null;
+          strengths: string[];
+          areas_for_growth: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          learner_id: string;
+          model_state?: Record<string, unknown>;
+          learning_style?: string | null;
+          strengths?: string[];
+          areas_for_growth?: string[];
+        };
+        Update: {
+          model_state?: Record<string, unknown>;
+          learning_style?: string | null;
+          strengths?: string[];
+          areas_for_growth?: string[];
+          updated_at?: string;
+        };
+      };
+      lesson_plans: {
+        Row: {
+          id: string;
+          learner_id: string;
+          subject: string;
+          grade_level: string;
+          plan: Record<string, unknown>;
+          generated_at: string;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          learner_id: string;
+          subject: string;
+          grade_level: string;
+          plan: Record<string, unknown>;
+          generated_at: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          plan?: Record<string, unknown>;
+          completed_at?: string | null;
+        };
+      };
+      activity_completions: {
+        Row: {
+          id: string;
+          learner_id: string;
+          lesson_id: string;
+          activity_id: string;
+          completed: boolean;
+          time_spent: number;
+          accuracy: number | null;
+          engagement: number | null;
+          completed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          learner_id: string;
+          lesson_id: string;
+          activity_id: string;
+          completed: boolean;
+          time_spent: number;
+          accuracy?: number | null;
+          engagement?: number | null;
+          completed_at: string;
+        };
+        Update: {
+          completed?: boolean;
+          time_spent?: number;
+          accuracy?: number | null;
+          engagement?: number | null;
+        };
+      };
     };
   };
 };

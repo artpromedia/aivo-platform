@@ -9,6 +9,8 @@ const K5Science = lazy(() => import('./k5/Science'));
 const K5SocialStudies = lazy(() => import('./k5/SocialStudies'));
 const K5Art = lazy(() => import('./k5/Art'));
 const K5Music = lazy(() => import('./k5/Music'));
+const K5Writing = lazy(() => import('./k5/Writing'));
+const K5PE = lazy(() => import('./k5/PE'));
 
 // Middle School Subjects
 const MSAlgebra = lazy(() => import('./ms/Algebra'));
@@ -39,6 +41,8 @@ export function SubjectRoutes() {
         <Route path="k5/social-studies" element={<K5SocialStudies />} />
         <Route path="k5/art" element={<K5Art />} />
         <Route path="k5/music" element={<K5Music />} />
+        <Route path="k5/writing" element={<K5Writing />} />
+        <Route path="k5/pe" element={<K5PE />} />
 
         {/* Middle School Routes */}
         <Route path="ms/algebra" element={<MSAlgebra />} />
