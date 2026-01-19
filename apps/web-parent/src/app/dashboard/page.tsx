@@ -14,6 +14,7 @@ import {
   Settings,
   Award,
   Users,
+  Flame,
 } from 'lucide-react';
 
 // Components
@@ -29,6 +30,17 @@ import { HomeworkHelperSection } from '@/components/homework-helper-section';
 import { MessagesPreview } from '@/components/messages-preview';
 import { DifficultyRecommendations } from '@/components/difficulty-recommendations';
 
+// Sprint 5: New Dashboard Components
+import {
+  AIInsightsPanel,
+  ActivityTimeline,
+  UpcomingMilestones,
+  WeeklyReport,
+  QuickActions,
+  EnhancedChildSelector,
+  type ChildData,
+} from '@/components/dashboard';
+
 // Hooks
 import {
   useParentProfile,
@@ -40,6 +52,12 @@ import {
   useRespondToRecommendation,
   useDownloadReport,
   useUpdateDailyGoal,
+  // Sprint 5: New hooks
+  useAIInsights,
+  useActivityTimeline,
+  useMilestones,
+  useWeeklyReport,
+  useChildrenEnhanced,
 } from '@/lib/hooks';
 import { isDevMode } from '@/lib/mock-data';
 
@@ -55,6 +73,13 @@ export default function DashboardPage() {
   const { data: homeworkSessions } = useHomeworkSessions(selectedChildId);
   const { data: messages } = useMessages();
   const { data: recommendations } = useDifficultyRecommendations(selectedChildId);
+
+  // Sprint 5: New data hooks
+  const { data: aiInsights, isLoading: insightsLoading } = useAIInsights(selectedChildId);
+  const { data: activityTimeline } = useActivityTimeline(selectedChildId, 15);
+  const { data: milestones } = useMilestones(selectedChildId);
+  const { data: weeklyReportData } = useWeeklyReport(selectedChildId);
+  const { data: enhancedChildren } = useChildrenEnhanced();
 
   // Mutations
   const downloadReport = useDownloadReport();
@@ -139,6 +164,32 @@ export default function DashboardPage() {
 
   const selectedChild = profile?.students?.find(s => s.id === selectedChildId);
 
+  // Transform enhanced children data for the new selector
+  const enhancedChildrenData: ChildData[] = enhancedChildren?.map(child => ({
+    id: child.id,
+    name: child.name,
+    firstName: child.firstName,
+    lastName: child.lastName,
+    gradeLevel: child.gradeLevel,
+    avatar: child.avatar,
+    subjects: child.subjects,
+    lastActive: child.lastActive,
+    currentStreak: child.currentStreak,
+    todayProgress: child.todayProgress,
+    status: child.status,
+  })) || profile?.students?.map(s => ({
+    id: s.id,
+    name: s.name || `${s.firstName} ${s.lastName}`,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    gradeLevel: s.grade,
+    avatar: s.avatar,
+    subjects: [],
+    lastActive: new Date().toISOString(),
+  })) || [];
+
+  const selectedEnhancedChild = enhancedChildrenData.find(c => c.id === selectedChildId) || null;
+
   return (
     <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
       <DevModeIndicator />
@@ -155,17 +206,28 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-4 md:mt-0 flex items-center gap-4">
-          {/* Child Selector */}
-          <ChildSelector
-            children={profile?.students?.map(s => ({
-              id: s.id,
-              name: s.name || `${s.firstName} ${s.lastName}`,
-              grade: s.grade,
-              avatar: s.avatar,
-            })) || []}
-            selectedId={selectedChildId}
-            onSelect={setSelectedChildId}
-          />
+          {/* Enhanced Child Selector (Sprint 5) */}
+          {enhancedChildrenData.length > 0 ? (
+            <EnhancedChildSelector
+              children={enhancedChildrenData}
+              selected={selectedEnhancedChild}
+              onChange={(child) => setSelectedChildId(child.id)}
+              onAddChild={() => router.push('/onboarding/add-child')}
+              showStatus={true}
+              showProgress={true}
+            />
+          ) : (
+            <ChildSelector
+              children={profile?.students?.map(s => ({
+                id: s.id,
+                name: s.name || `${s.firstName} ${s.lastName}`,
+                grade: s.grade,
+                avatar: s.avatar,
+              })) || []}
+              selectedId={selectedChildId}
+              onSelect={setSelectedChildId}
+            />
+          )}
 
           {/* Communication Button */}
           <button
@@ -281,6 +343,24 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Sprint 5: Activity Timeline */}
+          {activityTimeline && activityTimeline.length > 0 && (
+            <ActivityTimeline
+              activities={activityTimeline}
+              maxItems={10}
+              showFilters={true}
+              onActivityClick={(activity) => {
+                // Navigate to activity detail or relevant page
+                if (activity.subject) {
+                  router.push(`/activity?subject=${activity.subject}`);
+                } else {
+                  router.push('/activity');
+                }
+              }}
+              onViewAll={() => router.push('/activity')}
+            />
+          )}
+
           {/* Subject Progress */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -331,10 +411,69 @@ export default function DashboardPage() {
               }}
             />
           )}
+
+          {/* Sprint 5: Weekly Report */}
+          {weeklyReportData && selectedChildId && (
+            <WeeklyReport
+              childId={selectedChildId}
+              childName={selectedChild?.name || selectedEnhancedChild?.name}
+              data={weeklyReportData}
+              onWeekChange={(weekStart) => {
+                // The hook will refetch with new week
+                console.log('Week changed to:', weekStart);
+              }}
+              onDownload={handleDownloadReport}
+              onShare={() => {
+                // Could open share dialog
+                router.push(`/reports/share?childId=${selectedChildId}`);
+              }}
+            />
+          )}
         </div>
 
         {/* Right Column - Sidebar (1 column) */}
         <div className="space-y-6">
+          {/* Sprint 5: AI Insights Panel */}
+          <AIInsightsPanel
+            insights={aiInsights || []}
+            childName={selectedChild?.name || selectedEnhancedChild?.name}
+            isLoading={insightsLoading}
+            onViewDetail={(insight) => {
+              if (insight.actionPath) {
+                router.push(insight.actionPath);
+              }
+            }}
+            onDismiss={(insightId) => {
+              console.log('Dismiss insight:', insightId);
+              // Could call useDismissInsight mutation here
+            }}
+            onViewAllAnalysis={() => router.push(`/insights?childId=${selectedChildId}`)}
+          />
+
+          {/* Sprint 5: Upcoming Milestones */}
+          {milestones && milestones.length > 0 && (
+            <UpcomingMilestones
+              milestones={milestones}
+              onMilestoneClick={(milestone) => {
+                router.push(`/achievements?milestone=${milestone.id}`);
+              }}
+              onViewAll={() => router.push('/achievements')}
+            />
+          )}
+
+          {/* Sprint 5: Quick Actions */}
+          {selectedChildId && (
+            <QuickActions
+              childId={selectedChildId}
+              childName={selectedChild?.name || selectedEnhancedChild?.name}
+              unreadMessages={messages?.filter(m => m.unread).length || 0}
+              pendingApprovals={recommendations?.length || 0}
+              onDownloadReport={handleDownloadReport}
+              onScheduleSession={() => router.push('/settings?tab=schedule')}
+              onContactTeacher={() => router.push('/messages/new')}
+            />
+          )}
+
           {/* Achievements */}
           {summary?.achievements && (
             <AchievementBadges

@@ -17,12 +17,22 @@ import {
   getMockHomeworkSessions,
   getMockMessages,
   getMockDifficultyRecommendations,
+  getMockAIInsights,
+  getMockActivityTimeline,
+  getMockMilestones,
+  getMockWeeklyReport,
+  getMockChildrenEnhanced,
   type MockParentProfile,
   type MockStudentSummary,
   type MockWeeklySummary,
   type MockHomeworkSession,
   type MockMessage,
   type MockDifficultyRecommendation,
+  type MockAIInsight,
+  type MockTimelineActivity,
+  type MockMilestone,
+  type MockWeeklyReportData,
+  type MockChildData,
 } from './mock-data';
 
 // Query keys for cache management
@@ -34,6 +44,12 @@ export const queryKeys = {
   messages: ['messages'] as const,
   difficultyRecommendations: (studentId: string) => ['difficulty-recommendations', studentId] as const,
   notifications: ['notifications'] as const,
+  // Sprint 5: New query keys
+  aiInsights: (studentId: string) => ['ai-insights', studentId] as const,
+  activityTimeline: (studentId: string) => ['activity-timeline', studentId] as const,
+  milestones: (studentId: string) => ['milestones', studentId] as const,
+  weeklyReport: (studentId: string, weekStart?: string) => ['weekly-report', studentId, weekStart] as const,
+  childrenEnhanced: ['children-enhanced'] as const,
 };
 
 /**
@@ -296,6 +312,206 @@ export function useMarkMessagesRead() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.messages });
+    },
+  });
+}
+
+// ============================================================================
+// Sprint 5: New Hooks for Parent Dashboard Enhancement
+// ============================================================================
+
+/**
+ * Hook to fetch AI-powered insights for a student
+ */
+export function useAIInsights(studentId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.aiInsights(studentId || ''),
+    queryFn: async (): Promise<MockAIInsight[]> => {
+      if (!studentId) {
+        throw new Error('No student selected');
+      }
+
+      try {
+        const data = await api.get<{ insights: MockAIInsight[] }>(`/api/ai/parent-insights/${studentId}`);
+        return data.insights || [];
+      } catch (error) {
+        // In development, fall back to mock data if API fails
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock AI insights data');
+          return getMockAIInsights(studentId);
+        }
+        throw error;
+      }
+    },
+    enabled: !!studentId,
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 10 * 60 * 1000, // 10 minutes - insights don't change frequently
+  });
+}
+
+/**
+ * Hook to fetch activity timeline for a student
+ */
+export function useActivityTimeline(studentId: string | null, limit?: number) {
+  return useQuery({
+    queryKey: [...queryKeys.activityTimeline(studentId || ''), limit],
+    queryFn: async (): Promise<MockTimelineActivity[]> => {
+      if (!studentId) {
+        throw new Error('No student selected');
+      }
+
+      try {
+        const params = limit ? `?limit=${limit}` : '';
+        const data = await api.get<{ activities: MockTimelineActivity[] }>(
+          `/parent/students/${studentId}/activity-timeline${params}`
+        );
+        return data.activities || [];
+      } catch (error) {
+        // In development, fall back to mock data if API fails
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock activity timeline data');
+          const activities = getMockActivityTimeline(studentId);
+          return limit ? activities.slice(0, limit) : activities;
+        }
+        throw error;
+      }
+    },
+    enabled: !!studentId,
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 1 * 60 * 1000, // 1 minute - activities update frequently
+  });
+}
+
+/**
+ * Hook to fetch upcoming milestones for a student
+ */
+export function useMilestones(studentId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.milestones(studentId || ''),
+    queryFn: async (): Promise<MockMilestone[]> => {
+      if (!studentId) {
+        throw new Error('No student selected');
+      }
+
+      try {
+        const data = await api.get<{ milestones: MockMilestone[] }>(
+          `/parent/students/${studentId}/milestones`
+        );
+        return data.milestones || [];
+      } catch (error) {
+        // In development, fall back to mock data if API fails
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock milestones data');
+          return getMockMilestones(studentId);
+        }
+        throw error;
+      }
+    },
+    enabled: !!studentId,
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to fetch weekly report for a student
+ */
+export function useWeeklyReport(studentId: string | null, weekStart?: Date) {
+  const weekStartStr = weekStart?.toISOString().split('T')[0];
+
+  return useQuery({
+    queryKey: queryKeys.weeklyReport(studentId || '', weekStartStr),
+    queryFn: async (): Promise<MockWeeklyReportData> => {
+      if (!studentId) {
+        throw new Error('No student selected');
+      }
+
+      try {
+        const params = weekStartStr ? `?weekStart=${weekStartStr}` : '';
+        const data = await api.get<MockWeeklyReportData>(
+          `/parent/students/${studentId}/weekly-report${params}`
+        );
+        return data;
+      } catch (error) {
+        // In development, fall back to mock data if API fails
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock weekly report data');
+          return getMockWeeklyReport(studentId);
+        }
+        throw error;
+      }
+    },
+    enabled: !!studentId,
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 15 * 60 * 1000, // 15 minutes - reports don't change often
+  });
+}
+
+/**
+ * Hook to fetch enhanced children data with status and progress
+ */
+export function useChildrenEnhanced() {
+  return useQuery({
+    queryKey: queryKeys.childrenEnhanced,
+    queryFn: async (): Promise<MockChildData[]> => {
+      try {
+        const data = await api.get<{ children: MockChildData[] }>('/parent/children/enhanced');
+        return data.children || [];
+      } catch (error) {
+        // In development, fall back to mock data if API fails
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock enhanced children data');
+          return getMockChildrenEnhanced();
+        }
+        throw error;
+      }
+    },
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 1 * 60 * 1000, // 1 minute - status can change
+    refetchInterval: 60000, // Refetch every minute for live status
+  });
+}
+
+/**
+ * Hook to dismiss an AI insight
+ */
+export function useDismissInsight() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      studentId,
+      insightId,
+    }: {
+      studentId: string;
+      insightId: string;
+    }) => {
+      return api.post(`/api/ai/insights/${insightId}/dismiss`, { studentId });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiInsights(variables.studentId) });
+    },
+  });
+}
+
+/**
+ * Hook to share a weekly report
+ */
+export function useShareWeeklyReport() {
+  return useMutation({
+    mutationFn: async ({
+      studentId,
+      weekStart,
+      recipientEmail,
+    }: {
+      studentId: string;
+      weekStart: string;
+      recipientEmail?: string;
+    }) => {
+      return api.post(`/parent/students/${studentId}/weekly-report/share`, {
+        weekStart,
+        recipientEmail,
+      });
     },
   });
 }

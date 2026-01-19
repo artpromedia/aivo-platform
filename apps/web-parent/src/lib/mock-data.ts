@@ -543,3 +543,471 @@ export function getMockDifficultyRecommendations(studentId: string): MockDifficu
     },
   ];
 }
+
+// ============================================================================
+// Sprint 5: New Mock Data Types & Functions
+// ============================================================================
+
+export interface MockAIInsight {
+  id: string;
+  type: 'strength' | 'improvement' | 'concern' | 'celebration';
+  title: string;
+  description: string;
+  actionable?: string;
+  actionPath?: string;
+  priority: 'high' | 'medium' | 'low';
+  subject?: string;
+  confidence: number;
+  generatedAt: string;
+}
+
+export interface MockTimelineActivity {
+  id: string;
+  type: 'lesson_started' | 'lesson_completed' | 'quiz_completed' | 'achievement_earned' | 'milestone_reached' | 'game_played' | 'practice_session' | 'assessment_completed';
+  title: string;
+  description: string;
+  subject?: string;
+  subjectColor?: string;
+  score?: number;
+  duration?: number;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MockMilestone {
+  id: string;
+  type: 'lesson_count' | 'streak' | 'subject_mastery' | 'achievement' | 'level_up' | 'time_goal' | 'perfect_score' | 'completion';
+  title: string;
+  description: string;
+  progress: number;
+  target: number;
+  current: number;
+  subject?: string;
+  reward?: {
+    type: 'badge' | 'points' | 'avatar' | 'theme';
+    value: string;
+    points?: number;
+  };
+  estimatedCompletion?: string;
+  isPriority?: boolean;
+}
+
+export interface MockWeeklyReportData {
+  weekStart: string;
+  weekEnd: string;
+  summary: {
+    totalMinutes: number;
+    previousWeekMinutes: number;
+    lessonsCompleted: number;
+    previousWeekLessons: number;
+    averageScore: number;
+    previousWeekScore: number;
+    activeDays: number;
+    previousWeekActiveDays: number;
+  };
+  highlights: {
+    type: 'achievement' | 'improvement' | 'concern' | 'milestone';
+    text: string;
+  }[];
+  subjectBreakdown: {
+    subject: string;
+    minutes: number;
+    lessons: number;
+    averageScore: number;
+    trend: 'up' | 'down' | 'stable';
+  }[];
+  dailyActivity: {
+    day: string;
+    minutes: number;
+    lessons: number;
+  }[];
+  recommendations: string[];
+}
+
+export interface MockChildData {
+  id: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  gradeLevel: string;
+  avatar?: string;
+  subjects: string[];
+  lastActive: string;
+  currentStreak?: number;
+  todayProgress?: {
+    minutesLearned: number;
+    lessonsCompleted: number;
+  };
+  status?: 'online' | 'offline' | 'learning';
+}
+
+/**
+ * Get mock AI insights for a student
+ */
+export function getMockAIInsights(studentId: string): MockAIInsight[] {
+  assertDevMode('getMockAIInsights');
+
+  const isEmma = studentId === 'student-mock-001';
+  const now = new Date().toISOString();
+
+  if (isEmma) {
+    return [
+      {
+        id: 'insight-1',
+        type: 'strength',
+        title: 'Math Problem-Solving Excellence',
+        description: 'Emma demonstrates strong analytical thinking in math. She consistently breaks down complex problems into smaller steps and shows above-average performance on multi-step word problems.',
+        actionable: 'Consider introducing more challenging math enrichment activities',
+        actionPath: '/curriculum/math/advanced',
+        priority: 'medium',
+        subject: 'Math',
+        confidence: 0.92,
+        generatedAt: now,
+      },
+      {
+        id: 'insight-2',
+        type: 'celebration',
+        title: '12-Day Learning Streak!',
+        description: 'Emma has maintained consistent daily learning for 12 days in a row. This dedication is building strong study habits that will benefit her long-term academic success.',
+        priority: 'low',
+        confidence: 1.0,
+        generatedAt: now,
+      },
+      {
+        id: 'insight-3',
+        type: 'improvement',
+        title: 'Social Studies Engagement Opportunity',
+        description: 'Emma\'s engagement with Social Studies content is lower than other subjects. She spends less time on these lessons and occasionally skips optional activities.',
+        actionable: 'Explore interactive history games to boost engagement',
+        actionPath: '/games?subject=social-studies',
+        priority: 'medium',
+        subject: 'Social Studies',
+        confidence: 0.78,
+        generatedAt: now,
+      },
+      {
+        id: 'insight-4',
+        type: 'strength',
+        title: 'Reading Comprehension Above Grade Level',
+        description: 'Emma\'s reading comprehension scores indicate she\'s performing 1-2 grade levels above her peers. She excels at inferencing and identifying main ideas.',
+        priority: 'low',
+        subject: 'Reading',
+        confidence: 0.88,
+        generatedAt: now,
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'insight-1',
+      type: 'improvement',
+      title: 'Building Math Confidence',
+      description: 'Noah sometimes hesitates on math problems even when he knows the answer. Building his confidence through positive reinforcement could help him perform better.',
+      actionable: 'Try the confidence-building math games',
+      actionPath: '/games?subject=math&type=confidence',
+      priority: 'high',
+      subject: 'Math',
+      confidence: 0.85,
+      generatedAt: now,
+    },
+    {
+      id: 'insight-2',
+      type: 'strength',
+      title: 'Strong Visual Learning',
+      description: 'Noah learns best through visual content. He shows 30% better retention when lessons include diagrams, videos, and interactive visuals.',
+      priority: 'medium',
+      confidence: 0.91,
+      generatedAt: now,
+    },
+    {
+      id: 'insight-3',
+      type: 'concern',
+      title: 'Attention Span During Long Sessions',
+      description: 'Noah\'s performance drops significantly in sessions longer than 15 minutes. Shorter, more frequent learning sessions may be more effective.',
+      actionable: 'Adjust session length in learning settings',
+      actionPath: '/settings?tab=learning',
+      priority: 'high',
+      confidence: 0.82,
+      generatedAt: now,
+    },
+  ];
+}
+
+/**
+ * Get mock activity timeline for a student
+ */
+export function getMockActivityTimeline(studentId: string): MockTimelineActivity[] {
+  assertDevMode('getMockActivityTimeline');
+
+  const isEmma = studentId === 'student-mock-001';
+  const now = Date.now();
+
+  return [
+    {
+      id: 'timeline-1',
+      type: 'lesson_completed',
+      title: 'Completed: Fractions - Adding & Subtracting',
+      description: 'Finished the lesson with excellent understanding',
+      subject: 'Math',
+      score: isEmma ? 95 : 78,
+      duration: 22,
+      timestamp: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-2',
+      type: 'quiz_completed',
+      title: 'Quiz: Chapter 5 Vocabulary',
+      description: 'Completed vocabulary assessment',
+      subject: 'Reading',
+      score: isEmma ? 100 : 82,
+      duration: 15,
+      timestamp: new Date(now - 4 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-3',
+      type: 'achievement_earned',
+      title: isEmma ? 'Earned: Math Master Badge' : 'Earned: Rising Star Badge',
+      description: isEmma ? 'Scored 90%+ on 10 math lessons' : 'Improved score by 15%',
+      timestamp: new Date(now - 6 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-4',
+      type: 'game_played',
+      title: 'Math Quest Adventure',
+      description: 'Practiced multiplication through gameplay',
+      subject: 'Math',
+      duration: 12,
+      timestamp: new Date(now - 8 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-5',
+      type: 'lesson_completed',
+      title: 'Completed: Plant Life Cycles',
+      description: 'Learned about photosynthesis and growth',
+      subject: 'Science',
+      score: isEmma ? 88 : 75,
+      duration: 18,
+      timestamp: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-6',
+      type: 'practice_session',
+      title: 'Writing Practice',
+      description: 'Worked on paragraph structure',
+      subject: 'Writing',
+      duration: 20,
+      timestamp: new Date(now - 26 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-7',
+      type: 'lesson_started',
+      title: 'Started: American Revolution',
+      description: 'Beginning new history unit',
+      subject: 'Social Studies',
+      timestamp: new Date(now - 48 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'timeline-8',
+      type: 'milestone_reached',
+      title: 'Milestone: 50 Lessons Completed!',
+      description: 'Reached a major learning milestone',
+      timestamp: new Date(now - 72 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+}
+
+/**
+ * Get mock milestones for a student
+ */
+export function getMockMilestones(studentId: string): MockMilestone[] {
+  assertDevMode('getMockMilestones');
+
+  const isEmma = studentId === 'student-mock-001';
+
+  return [
+    {
+      id: 'milestone-1',
+      type: 'lesson_count',
+      title: '100 Lessons Complete',
+      description: 'Complete 100 lessons to earn this milestone',
+      progress: isEmma ? 87 : 52,
+      target: 100,
+      current: isEmma ? 87 : 52,
+      reward: {
+        type: 'badge',
+        value: 'Century Scholar',
+        points: 500,
+      },
+      estimatedCompletion: new Date(Date.now() + (isEmma ? 5 : 20) * 24 * 60 * 60 * 1000).toISOString(),
+      isPriority: isEmma,
+    },
+    {
+      id: 'milestone-2',
+      type: 'streak',
+      title: '14-Day Streak',
+      description: 'Learn for 14 consecutive days',
+      progress: isEmma ? 85.7 : 21.4,
+      target: 14,
+      current: isEmma ? 12 : 3,
+      reward: {
+        type: 'badge',
+        value: 'Dedicated Learner',
+        points: 200,
+      },
+      isPriority: true,
+    },
+    {
+      id: 'milestone-3',
+      type: 'subject_mastery',
+      title: 'Math Level 5 Mastery',
+      description: 'Complete all Math Level 5 content with 80%+ average',
+      progress: isEmma ? 75 : 40,
+      target: 100,
+      current: isEmma ? 75 : 40,
+      subject: 'Math',
+      reward: {
+        type: 'badge',
+        value: 'Math Champion',
+        points: 300,
+      },
+    },
+    {
+      id: 'milestone-4',
+      type: 'perfect_score',
+      title: '5 Perfect Quizzes',
+      description: 'Score 100% on 5 quizzes',
+      progress: isEmma ? 60 : 20,
+      target: 5,
+      current: isEmma ? 3 : 1,
+      reward: {
+        type: 'avatar',
+        value: 'Star Student Avatar',
+      },
+    },
+    {
+      id: 'milestone-5',
+      type: 'time_goal',
+      title: 'Learning Marathon',
+      description: 'Accumulate 500 minutes of learning time',
+      progress: isEmma ? 78 : 45,
+      target: 500,
+      current: isEmma ? 390 : 225,
+      reward: {
+        type: 'points',
+        value: 'Bonus Points',
+        points: 150,
+      },
+    },
+  ];
+}
+
+/**
+ * Get mock weekly report data
+ */
+export function getMockWeeklyReport(studentId: string): MockWeeklyReportData {
+  assertDevMode('getMockWeeklyReport');
+
+  const isEmma = studentId === 'student-mock-001';
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  return {
+    weekStart: weekStart.toISOString(),
+    weekEnd: weekEnd.toISOString(),
+    summary: {
+      totalMinutes: isEmma ? 185 : 120,
+      previousWeekMinutes: isEmma ? 162 : 115,
+      lessonsCompleted: isEmma ? 24 : 16,
+      previousWeekLessons: isEmma ? 20 : 14,
+      averageScore: isEmma ? 87 : 78,
+      previousWeekScore: isEmma ? 84 : 75,
+      activeDays: isEmma ? 6 : 4,
+      previousWeekActiveDays: isEmma ? 5 : 5,
+    },
+    highlights: isEmma
+      ? [
+          { type: 'achievement', text: 'Earned the Math Whiz badge!' },
+          { type: 'improvement', text: 'Reading comprehension improved by 8%' },
+          { type: 'milestone', text: 'Reached 12-day learning streak' },
+          { type: 'achievement', text: 'Scored 100% on vocabulary quiz' },
+        ]
+      : [
+          { type: 'improvement', text: 'Math scores improved by 5%' },
+          { type: 'milestone', text: 'Completed first Science unit' },
+          { type: 'concern', text: 'Missed 3 days of learning this week' },
+        ],
+    subjectBreakdown: [
+      { subject: 'Math', minutes: isEmma ? 55 : 35, lessons: isEmma ? 8 : 5, averageScore: isEmma ? 92 : 75, trend: 'up' },
+      { subject: 'Reading', minutes: isEmma ? 45 : 30, lessons: isEmma ? 6 : 4, averageScore: isEmma ? 88 : 82, trend: 'up' },
+      { subject: 'Science', minutes: isEmma ? 35 : 25, lessons: isEmma ? 4 : 3, averageScore: isEmma ? 85 : 70, trend: 'stable' },
+      { subject: 'Writing', minutes: isEmma ? 30 : 18, lessons: isEmma ? 4 : 2, averageScore: isEmma ? 90 : 72, trend: 'up' },
+      { subject: 'Social Studies', minutes: isEmma ? 20 : 12, lessons: isEmma ? 2 : 2, averageScore: isEmma ? 78 : 68, trend: 'down' },
+    ],
+    dailyActivity: [
+      { day: 'Sunday', minutes: isEmma ? 15 : 0, lessons: isEmma ? 2 : 0 },
+      { day: 'Monday', minutes: isEmma ? 35 : 25, lessons: isEmma ? 4 : 3 },
+      { day: 'Tuesday', minutes: isEmma ? 28 : 30, lessons: isEmma ? 3 : 4 },
+      { day: 'Wednesday', minutes: isEmma ? 32 : 0, lessons: isEmma ? 4 : 0 },
+      { day: 'Thursday', minutes: isEmma ? 25 : 35, lessons: isEmma ? 4 : 5 },
+      { day: 'Friday', minutes: isEmma ? 30 : 20, lessons: isEmma ? 4 : 2 },
+      { day: 'Saturday', minutes: isEmma ? 20 : 10, lessons: isEmma ? 3 : 2 },
+    ],
+    recommendations: isEmma
+      ? [
+          'Continue challenging Emma with advanced Math content',
+          'Encourage more Social Studies engagement through interactive activities',
+          'Consider extending the streak goal to 21 days',
+        ]
+      : [
+          'Set up daily reminders to help Noah maintain consistency',
+          'Try shorter 10-minute sessions spread throughout the day',
+          'Focus on building Math confidence before introducing harder concepts',
+        ],
+  };
+}
+
+/**
+ * Get enhanced mock children data with status and progress
+ */
+export function getMockChildrenEnhanced(): MockChildData[] {
+  assertDevMode('getMockChildrenEnhanced');
+
+  const now = Date.now();
+
+  return [
+    {
+      id: 'student-mock-001',
+      name: 'Emma Johnson',
+      firstName: 'Emma',
+      lastName: 'Johnson',
+      gradeLevel: '4',
+      subjects: ['Math', 'Reading', 'Science', 'Writing', 'Social Studies'],
+      lastActive: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
+      currentStreak: 12,
+      todayProgress: {
+        minutesLearned: 42,
+        lessonsCompleted: 4,
+      },
+      status: 'online',
+    },
+    {
+      id: 'student-mock-002',
+      name: 'Noah Johnson',
+      firstName: 'Noah',
+      lastName: 'Johnson',
+      gradeLevel: '2',
+      subjects: ['Math', 'Reading', 'Science'],
+      lastActive: new Date(now - 5 * 60 * 60 * 1000).toISOString(),
+      currentStreak: 3,
+      todayProgress: {
+        minutesLearned: 25,
+        lessonsCompleted: 2,
+      },
+      status: 'offline',
+    },
+  ];
+}
