@@ -6,3 +6,12 @@ export type {
   AssessmentResult,
   AssessmentAnalysis,
 } from './useAssessmentAPI';
+
+export { useBrainAPI } from './useBrainAPI';
+export type {
+  BrainState,
+  Recommendation,
+  BrainInsights,
+  ActivityData,
+  BaselineAssessment,
+} from './useBrainAPI';
