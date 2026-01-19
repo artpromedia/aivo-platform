@@ -13,7 +13,7 @@
  * @see https://www.imsglobal.org/specs/lticiv1p0
  */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 import type { PrismaClient } from '../../generated/prisma-client/index.js';
 

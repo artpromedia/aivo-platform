@@ -4,7 +4,8 @@
  * Configures the Fastify instance with plugins and routes.
  */
 
-import Fastify, { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
 import {

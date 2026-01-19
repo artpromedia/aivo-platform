@@ -45,8 +45,8 @@ export class HomeworkController {
     @Query('endDate') endDate?: string
   ) {
     return this.homeworkService.getStudentHomework(req.parent!.id, studentId, {
-      limit: limit ? parseInt(limit, 10) : undefined,
-      offset: offset ? parseInt(offset, 10) : undefined,
+      limit: limit ? Number.parseInt(limit, 10) : undefined,
+      offset: offset ? Number.parseInt(offset, 10) : undefined,
       subject,
       status,
       startDate: startDate ? new Date(startDate) : undefined,
@@ -80,7 +80,7 @@ export class HomeworkController {
     @Query('endDate') endDate?: string
   ) {
     return this.homeworkService.getHomeworkSummary(req.parent!.id, studentId, {
-      days: days ? parseInt(days, 10) : undefined,
+      days: days ? Number.parseInt(days, 10) : undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });
@@ -98,7 +98,7 @@ export class HomeworkController {
     @Query('granularity') granularity?: 'day' | 'week'
   ) {
     return this.homeworkService.getHomeworkTrends(req.parent!.id, studentId, {
-      days: days ? parseInt(days, 10) : undefined,
+      days: days ? Number.parseInt(days, 10) : undefined,
       granularity,
     });
   }

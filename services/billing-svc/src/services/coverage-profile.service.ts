@@ -229,7 +229,7 @@ export class CoverageProfileService {
     }
 
     // Use the first active contract (could be extended to merge multiple)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     const [contractId, contractEntitlements] = byContract.entries().next().value!;
     const firstEntitlement = contractEntitlements[0];
 

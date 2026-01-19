@@ -10,7 +10,7 @@
  * - Parent-friendly summaries, detailed inputs for teachers
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -493,7 +493,7 @@ export const explanationRoutes: FastifyPluginAsync = async (app) => {
         const formatted = events.map(formatExplanation);
 
         // Group by action type for easier consumption
-        const byActionType = formatted.reduce(
+        const byActionType = formatted.reduce<Record<string, FormattedExplanation[]>>(
           (acc, exp) => {
             const key = exp.actionType;
             if (!acc[key]) {
@@ -502,7 +502,7 @@ export const explanationRoutes: FastifyPluginAsync = async (app) => {
             acc[key].push(exp);
             return acc;
           },
-          {} as Record<string, FormattedExplanation[]>
+          {}
         );
 
         return reply.send({
@@ -510,12 +510,12 @@ export const explanationRoutes: FastifyPluginAsync = async (app) => {
           total: formatted.length,
           explanations: formatted,
           byActionType,
-          actionTypeLabels: Object.keys(byActionType).reduce(
+          actionTypeLabels: Object.keys(byActionType).reduce<Record<string, string>>(
             (acc, key) => {
               acc[key] = getActionTypeLabel(key);
               return acc;
             },
-            {} as Record<string, string>
+            {}
           ),
         });
       } catch (error) {

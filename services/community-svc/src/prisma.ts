@@ -3,6 +3,7 @@
  */
 
 import { PrismaClient } from '../generated/prisma-client/index.js';
+
 import { config } from './config.js';
 
 export const prisma = new PrismaClient({

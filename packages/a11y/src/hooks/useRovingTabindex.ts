@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
-import { RovingTabindexOptions } from '../types';
+
+import type { RovingTabindexOptions } from '../types';
 
 interface RovingTabindexReturn<T extends HTMLElement> {
   containerRef: React.RefObject<T | null>;
@@ -94,8 +95,8 @@ export function useRovingTabindex<T extends HTMLElement>(
   const getItemProps = useCallback(
     (index: number) => ({
       tabIndex: index === currentIndex ? 0 : -1,
-      onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(e, index),
-      onFocus: () => setCurrentIndex(index),
+      onKeyDown: (e: React.KeyboardEvent) => { handleKeyDown(e, index); },
+      onFocus: () => { setCurrentIndex(index); },
       ref: (el: HTMLElement | null) => {
         itemRefs.current[index] = el;
       },

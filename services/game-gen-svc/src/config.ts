@@ -1,5 +1,5 @@
 export const config = {
-  port: parseInt(process.env.PORT || '4077', 10),
+  port: Number.parseInt(process.env.PORT || '4077', 10),
   host: process.env.HOST || '0.0.0.0',
   jwtPublicKey: process.env.JWT_PUBLIC_KEY || '',
   internalApiKey: process.env.INTERNAL_API_KEY || '',
@@ -7,5 +7,5 @@ export const config = {
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4',
   assetStorageUrl: process.env.ASSET_STORAGE_URL || '',
-  maxConcurrentGenerations: parseInt(process.env.MAX_CONCURRENT_GENERATIONS || '5', 10),
+  maxConcurrentGenerations: Number.parseInt(process.env.MAX_CONCURRENT_GENERATIONS || '5', 10),
 };

@@ -8,12 +8,13 @@
  * - One-time achievements
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
-import {
+import { prisma } from '../prisma.js';
+import type {
   Achievement,
   AchievementDefinition,
-  AchievementProgress,
+  AchievementProgress} from '../types/gamification.types.js';
+import {
   AchievementCategory,
   AchievementRarity,
   AchievementTier,
@@ -535,7 +536,7 @@ class AchievementService {
   /**
    * Get recent achievements
    */
-  async getRecentAchievements(studentId: string, limit: number = 5): Promise<Achievement[]> {
+  async getRecentAchievements(studentId: string, limit = 5): Promise<Achievement[]> {
     const earned = await prisma.earnedAchievement.findMany({
       where: { studentId },
       orderBy: { earnedAt: 'desc' },

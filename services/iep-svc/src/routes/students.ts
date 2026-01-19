@@ -3,6 +3,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
 import * as studentService from '../services/studentService.js';
 
 export default async function studentRoutes(fastify: FastifyInstance): Promise<void> {

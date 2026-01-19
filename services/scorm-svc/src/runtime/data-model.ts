@@ -897,8 +897,8 @@ export function isValidScorm12Time(time: string): boolean {
   if (!pattern.test(time)) return false;
 
   const parts = time.split(':');
-  const hours = parseInt(parts[0], 10);
-  const minutes = parseInt(parts[1], 10);
+  const hours = Number.parseInt(parts[0], 10);
+  const minutes = Number.parseInt(parts[1], 10);
   const seconds = parseFloat(parts[2]);
 
   return hours >= 0 && minutes >= 0 && minutes < 60 && seconds >= 0 && seconds < 60;
@@ -914,11 +914,11 @@ export function parseIso8601Duration(duration: string): number {
 
   if (!match) return 0;
 
-  const years = parseInt(match[1] || '0', 10);
-  const months = parseInt(match[2] || '0', 10);
-  const days = parseInt(match[3] || '0', 10);
-  const hours = parseInt(match[4] || '0', 10);
-  const minutes = parseInt(match[5] || '0', 10);
+  const years = Number.parseInt(match[1] || '0', 10);
+  const months = Number.parseInt(match[2] || '0', 10);
+  const days = Number.parseInt(match[3] || '0', 10);
+  const hours = Number.parseInt(match[4] || '0', 10);
+  const minutes = Number.parseInt(match[5] || '0', 10);
   const seconds = parseFloat(match[6] || '0');
 
   // Approximate: 1 year = 365 days, 1 month = 30 days
@@ -966,8 +966,8 @@ export function parseScorm12Time(time: string): number {
   const parts = time.split(':');
   if (parts.length !== 3) return 0;
 
-  const hours = parseInt(parts[0], 10);
-  const minutes = parseInt(parts[1], 10);
+  const hours = Number.parseInt(parts[0], 10);
+  const minutes = Number.parseInt(parts[1], 10);
   const seconds = parseFloat(parts[2]);
 
   return hours * 3600 + minutes * 60 + seconds;

@@ -4,15 +4,15 @@
  * Starts the HTTP server for the personalization signals API.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 
-import { config } from './config.js';
 import { buildApp, gracefulShutdown } from './app.js';
+import { config } from './config.js';
 import { initPools } from './db.js';
 
 async function main(): Promise<void> {
   console.log('[personalization-svc] Starting service...');
-  console.log(`[personalization-svc] Environment: ${process.env['NODE_ENV'] ?? 'development'}`);
+  console.log(`[personalization-svc] Environment: ${process.env.NODE_ENV ?? 'development'}`);
 
   try {
     // Initialize database pools

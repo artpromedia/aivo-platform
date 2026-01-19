@@ -4,22 +4,22 @@
  * recording analysis, and home practice features.
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
+import Fastify from 'fastify';
 import 'dotenv/config';
 
 import { connectDatabase, disconnectDatabase, prisma } from './db.js';
-import { goalsRoutes } from './routes/goals.js';
-import { sessionsRoutes } from './routes/sessions.js';
-import { recordingsRoutes } from './routes/recordings.js';
-import { homePracticeRoutes } from './routes/home-practice.js';
-import { reportsRoutes } from './routes/reports.js';
 import { gamificationRoutes } from './routes/gamification.js';
+import { goalsRoutes } from './routes/goals.js';
+import { homePracticeRoutes } from './routes/home-practice.js';
+import { recordingsRoutes } from './routes/recordings.js';
+import { reportsRoutes } from './routes/reports.js';
+import { sessionsRoutes } from './routes/sessions.js';
 import { initializeGamificationService } from './services/speech-gamification.service.js';
 
 const config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: Number.parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '0.0.0.0',
   logLevel: process.env.LOG_LEVEL || 'info',
 };
@@ -40,7 +40,7 @@ async function main() {
     try {
       await connectDatabase();
       return { status: 'ready', service: 'speech-therapy-svc' };
-    } catch (error) {
+    } catch (_error) {
       return { status: 'not_ready', error: 'Database connection failed' };
     }
   });
@@ -75,4 +75,4 @@ async function main() {
   }
 }
 
-main();
+void main();

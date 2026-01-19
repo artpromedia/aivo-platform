@@ -2,12 +2,14 @@
  * SIS Sync Service - Main Entry Point
  */
 
-import Fastify from 'fastify';
 import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import Fastify from 'fastify';
+
 import type { ExtendedPrismaClient } from '../prisma-types.js';
-import { registerRoutes } from './routes';
-import { registerOAuthRoutes } from './oauth';
 import { SyncScheduler } from '../scheduler';
+
+import { registerOAuthRoutes } from './oauth';
+import { registerRoutes } from './routes';
 
 export async function createServer() {
   const prisma = new BasePrismaClient() as unknown as ExtendedPrismaClient;

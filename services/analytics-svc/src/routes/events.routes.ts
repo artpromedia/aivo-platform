@@ -275,7 +275,7 @@ const eventsRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.post<{
     Body: {
-      events: Array<{
+      events: {
         tenantId: string;
         userId: string;
         sessionId?: string;
@@ -294,7 +294,7 @@ const eventsRoutes: FastifyPluginAsync = async (fastify) => {
         platform?: string;
         appVersion?: string;
         timestamp?: string;
-      }>;
+      }[];
     };
   }>(
     '/batch',

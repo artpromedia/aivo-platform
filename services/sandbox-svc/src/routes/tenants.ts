@@ -2,11 +2,12 @@
  * Sandbox Tenant Management Routes
  */
 
+import { randomBytes, createHash } from 'node:crypto';
+
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+
 import type { ExtendedPrismaClient } from '../prisma-types.js';
-import { randomBytes, createHash } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -22,13 +23,6 @@ function generateApiKey(): { key: string; hash: string; prefix: string } {
   const hash = createHash('sha256').update(key).digest('hex');
   const prefix = key.substring(0, 20) + '...';
   return { key, hash, prefix };
-}
-
-/**
- * Generate webhook secret
- */
-function generateWebhookSecret(): string {
-  return `whsec_${randomBytes(32).toString('base64url')}`;
 }
 
 const createApiKeySchema = z.object({
@@ -360,8 +354,8 @@ export const tenantRoutes: FastifyPluginAsync = async (fastify) => {
     const deliveries = await prisma.sandboxWebhookDelivery.findMany({
       where: { endpointId: webhookId },
       orderBy: { createdAt: 'desc' },
-      take: parseInt(limit, 10),
-      skip: parseInt(offset, 10),
+      take: Number.parseInt(limit, 10),
+      skip: Number.parseInt(offset, 10),
     });
 
     const total = await prisma.sandboxWebhookDelivery.count({
@@ -382,8 +376,8 @@ export const tenantRoutes: FastifyPluginAsync = async (fastify) => {
       })),
       pagination: {
         total,
-        limit: parseInt(limit, 10),
-        offset: parseInt(offset, 10),
+        limit: Number.parseInt(limit, 10),
+        offset: Number.parseInt(offset, 10),
       },
     };
   });

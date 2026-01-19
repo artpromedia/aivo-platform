@@ -9,7 +9,7 @@
  * - Effort/streak summaries for learner app
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unused-vars, @typescript-eslint/array-type, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/array-type */
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -54,7 +54,7 @@ function convertToDateKey(date: Date): number {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
-  return parseInt(`${year}${month}${day}`, 10);
+  return Number.parseInt(`${year}${month}${day}`, 10);
 }
 
 function getDefaultDateRange(): { from: Date; to: Date } {

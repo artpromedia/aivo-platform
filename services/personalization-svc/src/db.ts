@@ -6,9 +6,9 @@
  * - Warehouse database (for reading fact tables)
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents */
+ 
 
-// eslint-disable-next-line import/no-unresolved
+ 
 import pg from 'pg';
 
 import { config } from './config.js';

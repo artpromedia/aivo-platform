@@ -5,7 +5,7 @@
  * These run daily (or hourly) to keep dimensions in sync.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+ 
 
 import { getSourcePool, getWarehousePool, withTransaction } from '../db.js';
 import { runJob, createLogger } from '../logger.js';

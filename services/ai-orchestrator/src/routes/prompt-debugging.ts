@@ -222,14 +222,14 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
       }
 
       const health: SystemHealthMetrics = {
-        totalActionsTracked: parseInt(stats.total_actions) || 0,
+        totalActionsTracked: Number.parseInt(stats.total_actions) || 0,
         feedbackRate: parseFloat(stats.feedback_rate) || 0,
         acceptanceRate: parseFloat(stats.acceptance_rate) || 0,
         avgUserRating: parseFloat(stats.avg_rating) || 0,
-        activeExperiments: parseInt(stats.active_experiments) || 0,
-        patternsDetected: parseInt(stats.patterns_detected) || 0,
-        trainingExamplesReady: parseInt(stats.training_ready) || 0,
-        signalsProcessed24h: parseInt(stats.signals_24h) || 0,
+        activeExperiments: Number.parseInt(stats.active_experiments) || 0,
+        patternsDetected: Number.parseInt(stats.patterns_detected) || 0,
+        trainingExamplesReady: Number.parseInt(stats.training_ready) || 0,
+        signalsProcessed24h: Number.parseInt(stats.signals_24h) || 0,
         lastLearningCycle: null, // Would come from a job scheduler table
         systemStatus,
       };
@@ -317,10 +317,10 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
         category: row.category,
         agentType: row.agent_type,
         version: row.version,
-        totalUses: parseInt(row.total_uses) || 0,
+        totalUses: Number.parseInt(row.total_uses) || 0,
         successRate: row.success_rate ? parseFloat(row.success_rate) : null,
         avgRating: row.avg_rating ? parseFloat(row.avg_rating) : null,
-        avgLatencyMs: row.avg_latency_ms ? parseInt(row.avg_latency_ms) : null,
+        avgLatencyMs: row.avg_latency_ms ? Number.parseInt(row.avg_latency_ms) : null,
         trend: row.trend || 'insufficient_data',
         lastUsed: row.last_used,
       }));
@@ -330,8 +330,8 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
         pagination: {
           page,
           limit,
-          total: parseInt(countQuery.rows[0].count),
-          totalPages: Math.ceil(parseInt(countQuery.rows[0].count) / limit),
+          total: Number.parseInt(countQuery.rows[0].count),
+          totalPages: Math.ceil(Number.parseInt(countQuery.rows[0].count) / limit),
         },
       });
     } catch (error) {
@@ -489,7 +489,7 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
                 id: variant.id,
                 name: variant.name,
                 isControl: variant.isControl || false,
-                sampleSize: parseInt(stats.sample_size) || 0,
+                sampleSize: Number.parseInt(stats.sample_size) || 0,
                 successRate: parseFloat(stats.success_rate) || 0,
                 avgRating: stats.avg_rating ? parseFloat(stats.avg_rating) : null,
               };
@@ -506,7 +506,7 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
               ? parseFloat(exp.statistical_significance)
               : null,
             startedAt: exp.started_at,
-            daysRunning: parseInt(exp.days_running) || 0,
+            daysRunning: Number.parseInt(exp.days_running) || 0,
           };
         })
       );
@@ -518,8 +518,8 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
         pagination: {
           page,
           limit,
-          total: parseInt(countQuery.rows[0].count),
-          totalPages: Math.ceil(parseInt(countQuery.rows[0].count) / limit),
+          total: Number.parseInt(countQuery.rows[0].count),
+          totalPages: Math.ceil(Number.parseInt(countQuery.rows[0].count) / limit),
         },
       });
     } catch (error) {
@@ -569,7 +569,7 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
           const stats = statsQuery.rows[0] || {};
           return {
             ...variant,
-            n: parseInt(stats.n) || 0,
+            n: Number.parseInt(stats.n) || 0,
             mean: parseFloat(stats.mean) || 0,
             variance: parseFloat(stats.variance) || 0,
             avgRating: stats.avg_rating ? parseFloat(stats.avg_rating) : null,
@@ -724,8 +724,8 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
         pagination: {
           page,
           limit,
-          total: parseInt(countQuery.rows[0].count),
-          totalPages: Math.ceil(parseInt(countQuery.rows[0].count) / limit),
+          total: Number.parseInt(countQuery.rows[0].count),
+          totalPages: Math.ceil(Number.parseInt(countQuery.rows[0].count) / limit),
         },
       });
     } catch (error) {
@@ -893,8 +893,8 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
         pagination: {
           page,
           limit,
-          total: parseInt(countQuery.rows[0].count),
-          totalPages: Math.ceil(parseInt(countQuery.rows[0].count) / limit),
+          total: Number.parseInt(countQuery.rows[0].count),
+          totalPages: Math.ceil(Number.parseInt(countQuery.rows[0].count) / limit),
         },
       });
     } catch (error) {
@@ -1084,8 +1084,8 @@ export const registerPromptDebuggingRoutes: FastifyPluginAsync<PromptDebuggingRo
         pagination: {
           page,
           limit,
-          total: parseInt(countQuery.rows[0].count),
-          totalPages: Math.ceil(parseInt(countQuery.rows[0].count) / limit),
+          total: Number.parseInt(countQuery.rows[0].count),
+          totalPages: Math.ceil(Number.parseInt(countQuery.rows[0].count) / limit),
         },
       });
     } catch (error) {

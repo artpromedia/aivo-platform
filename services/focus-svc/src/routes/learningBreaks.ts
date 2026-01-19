@@ -364,7 +364,7 @@ export const learningBreakRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/learning-breaks/history/:learnerId', async (request: FastifyRequest, reply) => {
     const params = request.params as { learnerId: string };
     const query = request.query as { limit?: string };
-    const _limit = parseInt(query.limit || '10', 10);
+    const _limit = Number.parseInt(query.limit || '10', 10);
 
     // In production, this would query the database using _limit
     // For now, return placeholder data

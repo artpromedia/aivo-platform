@@ -15,6 +15,7 @@ import { MessagingController } from './messaging/messaging.controller.js';
 import { ReportsController } from './pdf/reports.controller.js';
 import { OnboardingController } from './onboarding/onboarding.controller.js';
 import { HomeworkController } from './homework/homework.controller.js';
+import { LearnerController } from './learner/learner.controller.js';
 
 // Services
 import { ParentService } from './parent/parent.service.js';
@@ -33,6 +34,7 @@ import { I18nService } from './i18n/i18n.service.js';
 
 // Middleware
 import { ParentAuthMiddleware } from './auth/parent-auth.middleware.js';
+import { LearnerAuthMiddleware } from './auth/learner-auth.middleware.js';
 import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
 
 @Module({
@@ -47,6 +49,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     ReportsController,
     OnboardingController,
     HomeworkController,
+    LearnerController,
   ],
   providers: [
     // Core services
@@ -80,7 +83,14 @@ export class ParentModule implements NestModule {
       .apply(RateLimitMiddleware)
       .forRoutes('*');
 
-    // Apply authentication to protected routes
+    // Apply learner authentication to learner routes (except pin-login which is public)
+    consumer
+      .apply(LearnerAuthMiddleware)
+      .forRoutes(
+        { path: 'learner/baseline-status', method: RequestMethod.PATCH },
+      );
+
+    // Apply parent authentication to protected routes
     consumer
       .apply(ParentAuthMiddleware)
       .exclude(
@@ -94,6 +104,9 @@ export class ParentModule implements NestModule {
         // Onboarding location lookup is public
         { path: 'onboarding/lookup-location', method: RequestMethod.POST },
         { path: 'onboarding/districts/state/:stateCode', method: RequestMethod.GET },
+        // Learner routes use their own auth
+        { path: 'learner/pin-login', method: RequestMethod.POST },
+        { path: 'learner/baseline-status', method: RequestMethod.PATCH },
       )
       .forRoutes('*');
   }

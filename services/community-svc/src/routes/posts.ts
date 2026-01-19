@@ -5,8 +5,10 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+
+import type { UserRole } from '../prisma.js';
+import { PostCategory } from '../prisma.js';
 import { postService } from '../services/post.service.js';
-import { PostCategory, UserRole } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -295,8 +297,8 @@ export async function registerPostRoutes(app: FastifyInstance): Promise<void> {
     ) => {
       const ctx = getUserContext(request);
       const { id } = request.params;
-      const limit = request.query.limit ? parseInt(request.query.limit, 10) : 50;
-      const offset = request.query.offset ? parseInt(request.query.offset, 10) : 0;
+      const limit = request.query.limit ? Number.parseInt(request.query.limit, 10) : 50;
+      const offset = request.query.offset ? Number.parseInt(request.query.offset, 10) : 0;
 
       const result = await postService.getComments(id, ctx.tenantId, limit, offset);
 

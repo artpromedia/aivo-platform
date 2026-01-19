@@ -235,7 +235,7 @@ export class PIIDetectionService {
     let isEven = false;
     
     for (let i = digits.length - 1; i >= 0; i--) {
-      let digit = parseInt(digits[i], 10);
+      let digit = Number.parseInt(digits[i], 10);
       
       if (isEven) {
         digit *= 2;

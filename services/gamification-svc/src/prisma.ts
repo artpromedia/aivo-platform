@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+
 import type { ExtendedPrismaClient } from './prisma-types';
 
 const globalForPrisma = globalThis as unknown as {

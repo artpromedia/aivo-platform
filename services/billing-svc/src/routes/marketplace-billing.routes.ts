@@ -407,7 +407,7 @@ async function getVendorRevenue(
   const offset = (page - 1) * limit;
 
   // Query the view
-  const data = await prisma.$queryRawUnsafe<Array<{
+  const data = await prisma.$queryRawUnsafe<{
     vendor_id: string;
     vendor_name: string;
     sku: string;
@@ -415,13 +415,13 @@ async function getVendorRevenue(
     gross_amount_cents: bigint;
     share_percent: number;
     vendor_amount_cents: bigint;
-  }>>(
+  }[]>(
     `SELECT * FROM vw_vendor_revenue ${whereClause} ORDER BY period DESC, vendor_name ASC LIMIT ${limit} OFFSET ${offset}`,
     ...params
   );
 
   // Get total count
-  const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+  const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
     `SELECT COUNT(*) as count FROM vw_vendor_revenue ${whereClause}`,
     ...params
   );
@@ -466,12 +466,12 @@ async function getVendorRevenueSummary(
   }
 
   // Get revenue summary from view
-  const summary = await prisma.$queryRaw<Array<{
+  const summary = await prisma.$queryRaw<{
     total_gross: bigint;
     total_vendor: bigint;
     period_count: bigint;
     distinct_skus: bigint;
-  }>>`
+  }[]>`
     SELECT 
       COALESCE(SUM(gross_amount_cents), 0) as total_gross,
       COALESCE(SUM(vendor_amount_cents), 0) as total_vendor,

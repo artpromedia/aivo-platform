@@ -204,7 +204,7 @@ export async function listDsrRequestsForTenant(
 
   return {
     requests: dataResult.rows.map(mapRequest),
-    total: parseInt(countResult.rows[0]?.count ?? '0', 10),
+    total: Number.parseInt(countResult.rows[0]?.count ?? '0', 10),
   };
 }
 
@@ -551,7 +551,7 @@ export async function listDsrRequestsByStatus(
     `SELECT COUNT(*) FROM dsr_requests ${whereClause}`,
     params
   );
-  const total = parseInt(countResult.rows[0].count, 10);
+  const total = Number.parseInt(countResult.rows[0].count, 10);
 
   const { rows } = await pool.query(
     `SELECT * FROM dsr_requests ${whereClause}
@@ -832,7 +832,7 @@ export async function recordNotification(
  */
 export async function getRequestsNeedingGracePeriodReminder(
   pool: Pool,
-  daysBeforeDeletion: number = 7
+  daysBeforeDeletion = 7
 ): Promise<DsrRequest[]> {
   const { rows } = await pool.query(
     `SELECT r.* FROM dsr_requests r

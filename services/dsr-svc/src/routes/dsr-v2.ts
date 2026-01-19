@@ -8,10 +8,10 @@
  * - Consent data included in exports
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
+ 
+ 
+ 
 
 import { Role, requireRole, type AuthContext } from '@aivo/ts-rbac';
 import { type FastifyInstance, type FastifyPluginAsync, type FastifyRequest } from 'fastify';

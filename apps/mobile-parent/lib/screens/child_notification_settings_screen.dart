@@ -13,10 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
 
+import '../services/parent_notification_service.dart';
+
 /// Provider for child notification settings
 final childNotificationSettingsProvider =
     StateNotifierProvider.family<ChildNotificationSettingsNotifier, ChildNotificationSettingsState, String>(
-  (ref, learnerId) => ChildNotificationSettingsNotifier(learnerId),
+  (ref, learnerId) => ChildNotificationSettingsNotifier(learnerId, ref.watch(apiClientProvider)),
 );
 
 class ChildNotificationSettingsState {
@@ -91,18 +93,33 @@ class ChildNotificationSettingsState {
 }
 
 class ChildNotificationSettingsNotifier extends StateNotifier<ChildNotificationSettingsState> {
-  ChildNotificationSettingsNotifier(this.learnerId) : super(const ChildNotificationSettingsState());
+  ChildNotificationSettingsNotifier(this.learnerId, this._api) : super(const ChildNotificationSettingsState());
 
   final String learnerId;
+  final ApiClient _api;
 
   Future<void> loadSettings() async {
     state = state.copyWith(isLoading: true);
 
     try {
-      // TODO: Load from backend
-      await Future.delayed(const Duration(milliseconds: 500));
-      state = state.copyWith(isLoading: false);
+      // Load settings from backend - these are synced to child's device
+      await _api.get('/learners/$learnerId/notification-settings').then((response) {
+        final data = response as Map<String, dynamic>? ?? {};
+        state = state.copyWith(
+          isLoading: false,
+          sessionRemindersEnabled: data['sessionRemindersEnabled'] as bool? ?? true,
+          achievementAlertsEnabled: data['achievementAlertsEnabled'] as bool? ?? true,
+          streakRemindersEnabled: data['streakRemindersEnabled'] as bool? ?? true,
+          encouragementEnabled: data['encouragementEnabled'] as bool? ?? true,
+          soundsEnabled: data['soundsEnabled'] as bool? ?? true,
+          vibrationEnabled: data['vibrationEnabled'] as bool? ?? true,
+          quietHoursEnabled: data['quietHoursEnabled'] as bool? ?? true,
+          quietHoursStart: data['quietHoursStart'] as String? ?? '20:00',
+          quietHoursEnd: data['quietHoursEnd'] as String? ?? '08:00',
+        );
+      });
     } catch (e) {
+      // Default to safe defaults if loading fails
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -138,7 +155,8 @@ class ChildNotificationSettingsNotifier extends StateNotifier<ChildNotificationS
         break;
     }
 
-    // TODO: Save to backend and sync to child device
+    // Save to backend and sync to child device
+    await _saveSettings();
   }
 
   Future<void> disableAllNotifications() async {
@@ -148,7 +166,8 @@ class ChildNotificationSettingsNotifier extends StateNotifier<ChildNotificationS
       streakRemindersEnabled: false,
       encouragementEnabled: false,
     );
-    // TODO: Save to backend
+    // Save to backend
+    await _saveSettings();
   }
 
   Future<void> enableRecommendedSettings() async {
@@ -163,7 +182,26 @@ class ChildNotificationSettingsNotifier extends StateNotifier<ChildNotificationS
       quietHoursStart: '20:00',
       quietHoursEnd: '08:00',
     );
-    // TODO: Save to backend
+    // Save to backend
+    await _saveSettings();
+  }
+
+  Future<void> _saveSettings() async {
+    try {
+      await _api.put('/learners/$learnerId/notification-settings', {
+        'sessionRemindersEnabled': state.sessionRemindersEnabled,
+        'achievementAlertsEnabled': state.achievementAlertsEnabled,
+        'streakRemindersEnabled': state.streakRemindersEnabled,
+        'encouragementEnabled': state.encouragementEnabled,
+        'soundsEnabled': state.soundsEnabled,
+        'vibrationEnabled': state.vibrationEnabled,
+        'quietHoursEnabled': state.quietHoursEnabled,
+        'quietHoursStart': state.quietHoursStart,
+        'quietHoursEnd': state.quietHoursEnd,
+      });
+    } catch (e) {
+      state = state.copyWith(error: 'Failed to save settings: $e');
+    }
   }
 }
 

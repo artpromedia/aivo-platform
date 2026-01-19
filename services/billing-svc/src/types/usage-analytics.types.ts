@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { GradeBand } from './licensing.types';
+
+import type { GradeBand } from './licensing.types';
 
 // ============================================================================
 // Enums

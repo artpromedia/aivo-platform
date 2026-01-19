@@ -77,7 +77,7 @@ export class MessagingController {
     @Query('before') before?: string
   ) {
     return this.messagingService.getConversationMessages(conversationId, req.parent!.id, {
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit: limit ? Number.parseInt(limit, 10) : undefined,
       before: before || undefined,
     });
   }

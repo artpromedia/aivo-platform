@@ -9,6 +9,7 @@ import React, {
   isValidElement,
   cloneElement,
 } from 'react';
+
 import { KeyboardPatterns } from '../keyboard-navigation';
 
 export interface Tab {
@@ -201,7 +202,7 @@ export const AccessibleTabs = forwardRef<HTMLDivElement, AccessibleTabsProps>(
                 aria-disabled={tab.disabled}
                 tabIndex={isSelected ? 0 : -1}
                 disabled={tab.disabled}
-                onClick={() => handleTabChange(tab.id)}
+                onClick={() => { handleTabChange(tab.id); }}
                 onKeyDown={handleKeyDown}
                 className={tabClassName}
                 style={{

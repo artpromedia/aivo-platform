@@ -8,7 +8,7 @@
  * - customer.subscription.deleted - Handle subscription cancellation
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 
 import * as crypto from 'node:crypto';
 
@@ -321,7 +321,7 @@ async function handleSubscriptionUpdated(
     where: { id: subscription.id },
     data: {
       // Cast to any since we're using inline enum values that match Prisma's enum
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       status: newStatus as any,
       currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
       currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),

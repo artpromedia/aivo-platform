@@ -12,7 +12,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { Redis } from 'ioredis';
 
@@ -828,7 +828,7 @@ export class AutonomousExecutor extends EventEmitter {
       return { allowed: true };
     }
 
-    const lastActionTime = parseInt(lastAction);
+    const lastActionTime = Number.parseInt(lastAction);
     const elapsed = Date.now() - lastActionTime;
     const cooldown = settings.cooldowns.sameActionCooldownMs;
 
@@ -855,7 +855,7 @@ export class AutonomousExecutor extends EventEmitter {
       return { allowed: true };
     }
 
-    if (parseInt(count) >= settings.cooldowns.maxActionsPerHour) {
+    if (Number.parseInt(count) >= settings.cooldowns.maxActionsPerHour) {
       return { allowed: false };
     }
 

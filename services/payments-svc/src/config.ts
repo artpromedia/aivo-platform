@@ -24,7 +24,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 
 export const config = {
   // Server
-  port: parseInt(process.env.PORT ?? '4070', 10),
+  port: Number.parseInt(process.env.PORT ?? '4070', 10),
   host: process.env.HOST ?? '0.0.0.0',
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
@@ -42,14 +42,14 @@ export const config = {
   databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_billing'),
 
   // Default trial days for parent subscriptions
-  defaultTrialDays: parseInt(process.env.DEFAULT_TRIAL_DAYS ?? '30', 10),
+  defaultTrialDays: Number.parseInt(process.env.DEFAULT_TRIAL_DAYS ?? '30', 10),
 
   // Entitlements service URL (for sync operations)
   entitlementsSvcUrl: requireEnvInProduction('ENTITLEMENTS_SVC_URL', 'http://localhost:4080'),
 
   // Dunning configuration
   dunning: {
-    gracePeriodDays: parseInt(process.env.DUNNING_GRACE_PERIOD_DAYS ?? '7', 10),
+    gracePeriodDays: Number.parseInt(process.env.DUNNING_GRACE_PERIOD_DAYS ?? '7', 10),
     enableAutoDowngrade: process.env.DUNNING_AUTO_DOWNGRADE !== 'false',
   },
 

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
+
 import { getLiveRegionManager } from '../live-region';
-import { Politeness } from '../types';
+import type { Politeness } from '../types';
 
 interface UseAriaLiveOptions {
   politeness?: Politeness;

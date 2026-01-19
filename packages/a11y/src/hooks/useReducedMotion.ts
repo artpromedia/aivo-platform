@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
+
 import {
   prefersReducedMotion,
   subscribeToMotionPreference,
   getMotionPreference,
 } from '../reduced-motion';
-import { MotionPreference } from '../types';
+import type { MotionPreference } from '../types';
 
 /**
  * Hook to detect user's reduced motion preference

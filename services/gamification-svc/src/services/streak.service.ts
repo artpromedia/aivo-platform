@@ -8,11 +8,12 @@
  * - Timezone-aware calculations
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+ 
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
-import { Streak, StreakCalendarDay } from '../types/gamification.types.js';
+import { prisma } from '../prisma.js';
+import type { Streak, StreakCalendarDay } from '../types/gamification.types.js';
+
 import { achievementService } from './achievement.service.js';
 
 // ============================================================================
@@ -330,7 +331,7 @@ class StreakService {
   /**
    * Get streak calendar (last N days of activity)
    */
-  async getStreakCalendar(studentId: string, days: number = 30): Promise<StreakCalendarDay[]> {
+  async getStreakCalendar(studentId: string, days = 30): Promise<StreakCalendarDay[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -394,9 +395,9 @@ class StreakService {
       });
 
       const parts = formatter.formatToParts(d);
-      const year = parseInt(parts.find((p) => p.type === 'year')?.value || '2024');
-      const month = parseInt(parts.find((p) => p.type === 'month')?.value || '1') - 1;
-      const day = parseInt(parts.find((p) => p.type === 'day')?.value || '1');
+      const year = Number.parseInt(parts.find((p) => p.type === 'year')?.value || '2024');
+      const month = Number.parseInt(parts.find((p) => p.type === 'month')?.value || '1') - 1;
+      const day = Number.parseInt(parts.find((p) => p.type === 'day')?.value || '1');
 
       return new Date(year, month, day);
     } catch {

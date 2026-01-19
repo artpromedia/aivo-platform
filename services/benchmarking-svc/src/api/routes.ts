@@ -354,7 +354,7 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
       const insights = await insightsService.getInsights(tenantId, {
         category,
         type,
-        limit: limit ? parseInt(limit, 10) : undefined,
+        limit: limit ? Number.parseInt(limit, 10) : undefined,
       });
 
       return { insights };
@@ -453,8 +453,8 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
       const result = await participationService.listParticipants({
         status: status as 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'WITHDRAWN' | undefined,
         state,
-        limit: limit ? parseInt(limit, 10) : undefined,
-        offset: offset ? parseInt(offset, 10) : undefined,
+        limit: limit ? Number.parseInt(limit, 10) : undefined,
+        offset: offset ? Number.parseInt(offset, 10) : undefined,
       });
 
       return result;

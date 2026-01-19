@@ -7,7 +7,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { TokenPayload, AuthToken, AuthenticatedUser } from '../types';
 import { AUTH, SECURITY_ERROR_CODES } from '../constants';
 

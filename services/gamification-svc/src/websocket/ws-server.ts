@@ -4,10 +4,12 @@
  * Real-time notifications for gamification events
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+ 
 
-import { Server as HTTPServer } from 'http';
+import type { Server as HTTPServer } from 'http';
+
 import { WebSocketServer, WebSocket } from 'ws';
+
 import { eventEmitter } from '../events/event-emitter.js';
 
 interface ClientConnection {

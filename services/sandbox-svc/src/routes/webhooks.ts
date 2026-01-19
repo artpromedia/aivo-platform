@@ -2,10 +2,12 @@
  * Webhook Testing Routes
  */
 
+import { createHmac } from 'node:crypto';
+
 import type { FastifyPluginAsync } from 'fastify';
-import type { ExtendedPrismaClient } from '../prisma-types.js';
-import { createHmac, randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
+
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -206,13 +208,13 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
 
     const payload = generateSamplePayload(eventType, tenantCode);
     const payloadJson = JSON.stringify(payload);
-    const results: Array<{
+    const results: {
       endpointId: string;
       url: string;
       status: 'success' | 'failed';
       responseStatus?: number;
       error?: string;
-    }> = [];
+    }[] = [];
 
     // Send to all enabled endpoints
     for (const endpoint of tenant.webhookEndpoints) {
@@ -292,7 +294,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get sample payloads
-  fastify.get('/samples', async (request, reply) => {
+  fastify.get('/samples', async (_request, _reply) => {
     const eventTypes: WebhookEventType[] = [
       'SESSION_COMPLETED',
       'BASELINE_COMPLETED',
@@ -342,7 +344,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Check timestamp freshness (5 minute window)
     const timestampValue = timestamp ?? '0';
-    const timestampAge = Date.now() - parseInt(timestampValue, 10);
+    const timestampAge = Date.now() - Number.parseInt(timestampValue, 10);
     const isFresh = timestampAge < 5 * 60 * 1000;
 
     return {

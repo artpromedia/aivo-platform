@@ -4,7 +4,8 @@
  * visual schedules, planning assistance, and EF strategy recommendations.
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
+
 import { getAITaskBreakdown, getAIStrategyRecommendations, type LearnerEFProfile } from './ai-planning-coach.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

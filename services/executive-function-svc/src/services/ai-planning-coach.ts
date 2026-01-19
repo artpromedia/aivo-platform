@@ -177,7 +177,7 @@ export async function getAIStrategyRecommendations(
 export async function getTimeEstimationCoaching(
   taskType: string,
   historicalAccuracy: number,
-  recentTasks: Array<{ estimated: number; actual: number }>
+  recentTasks: { estimated: number; actual: number }[]
 ): Promise<{ tip: string; adjustmentFactor: number }> {
   // Analyze patterns in time estimation
   const avgUnderestimate =
@@ -273,15 +273,15 @@ function parseBreakdownResponse(
   originalTask: string
 ): AIBreakdownResponse {
   try {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    const jsonMatch = /\{[\s\S]*\}/.exec(response);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as {
-        subtasks?: Array<{
+        subtasks?: {
           title?: string;
           description?: string;
           estimatedMin?: number;
           order?: number;
-        }>;
+        }[];
         strategies?: string[];
         encouragement?: string;
         timeEstimationTip?: string;
@@ -315,15 +315,15 @@ function parseStrategyResponse(
   weakSkills: EFSkill[]
 ): AIStrategyResponse {
   try {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    const jsonMatch = /\{[\s\S]*\}/.exec(response);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as {
-        strategies?: Array<{
+        strategies?: {
           title?: string;
           description?: string;
           targetSkill?: string;
           steps?: string[];
-        }>;
+        }[];
         personalizedTip?: string;
       };
 

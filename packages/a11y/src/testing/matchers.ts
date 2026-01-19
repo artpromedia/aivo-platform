@@ -1,4 +1,5 @@
 import type { Result, NodeResult } from 'axe-core';
+
 import { runAxeTest, formatViolation, type AxeConfig } from './axe-runner';
 
 export interface A11yMatcherResult {
@@ -72,7 +73,7 @@ export const a11yMatchers = {
 
       // Check aria-level
       if (name === 'aria-level') {
-        const level = parseInt(value, 10);
+        const level = Number.parseInt(value, 10);
         if (isNaN(level) || level < 1 || level > 6) {
           errors.push(`aria-level has invalid value: ${value} (must be 1-6)`);
         }
@@ -264,9 +265,10 @@ export const a11yMatchers = {
  * Works with Vitest/Jest
  */
 export function setupA11yMatchers(): void {
-  // For Vitest/Jest
-  if (typeof expect !== 'undefined' && typeof expect.extend === 'function') {
-    expect.extend(a11yMatchers);
+  // For Vitest/Jest - expect should be available globally from the test framework
+   
+  if (typeof expect !== 'undefined' && typeof (expect as { extend?: unknown }).extend === 'function') {
+    (expect as { extend: (matchers: typeof a11yMatchers) => void }).extend(a11yMatchers);
   }
 }
 

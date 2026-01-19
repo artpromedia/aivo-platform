@@ -4,7 +4,7 @@
  * Database operations for experiments and variants.
  */
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 
 import type { Pool } from 'pg';
 
@@ -100,7 +100,7 @@ export async function createExperiment(
         createdByUserId ?? null,
       ]
     );
-    const experiment = experimentResult.rows[0]!;
+    const experiment = experimentResult.rows[0];
 
     // Insert variants
     const variants: ExperimentVariant[] = [];

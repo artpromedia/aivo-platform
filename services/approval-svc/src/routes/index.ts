@@ -81,7 +81,7 @@ export default async function routes(app: FastifyInstance) {
       entityType,
       requestedBy,
       assignedTo,
-      limit: limit ? parseInt(limit) : 50,
+      limit: limit ? Number.parseInt(limit) : 50,
     });
   });
 

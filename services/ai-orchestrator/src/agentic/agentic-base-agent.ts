@@ -14,27 +14,24 @@
  */
 
 import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { PromptBuilder } from '../prompts/prompt-builder.js';
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
-import type { LLMMessage, LLMCompletionResult } from '../providers/llm-provider.interface.js';
+import type { LLMMessage } from '../providers/llm-provider.interface.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
 import type { SafetyFilter } from '../safety/safety-filter-v2.js';
 import type { ToolExecutor, ToolDefinition, ExecutionContext } from '../execution/tool-executor.js';
 import {
   type FunctionCallingOptions,
   type FunctionCallingProvider,
-  toolsToSchemas,
-  parseFunctionCalls,
   DEFAULT_FUNCTION_CALLING_OPTIONS,
 } from './function-calling.js';
-import { ReActLoopExecutor, type ReActConfig, type ReActResult } from './react-loop.js';
+import { ReActLoopExecutor, type ReActResult } from './react-loop.js';
 import { VectorMemoryStore, buildMemoryContext, type MemoryType } from './memory-store.js';
 import {
   AutonomousExecutor,
   createDecision,
-  type AutonomousDecision,
   type DecisionExecutionResult,
   type ActionCategory,
 } from './autonomous-executor.js';
@@ -281,7 +278,9 @@ export abstract class AgenticBaseAgent extends EventEmitter implements AgentHand
           }
         );
         memoryContext = memoryResult;
-        memoriesRecalled = (memoryResult.match(/^-/gm) || []).length;
+        // Track recalled memories count for metrics
+        const _memoriesRecalled = (memoryResult.match(/^-/gm) || []).length;
+        void _memoriesRecalled; // For future use in analytics
       }
 
       // 3. Determine execution path
@@ -563,7 +562,7 @@ export abstract class AgenticBaseAgent extends EventEmitter implements AgentHand
    */
   protected extractRecommendationsFromSteps(
     result: ReActResult,
-    context: AgenticContext
+    _context: AgenticContext
   ): AgentRecommendation[] {
     const recommendations: AgentRecommendation[] = [];
 

@@ -5,7 +5,7 @@
  * Uses SHA-256 hash to ensure consistent assignments across restarts.
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 import { config } from './config.js';
 import type {

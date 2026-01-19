@@ -6,13 +6,14 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import type Redis from 'ioredis';
+
 import { prisma } from '../prisma.js';
+import { mean, compositeScore } from '../utils/statistics.js';
 import {
   getDateRangeForPeriod,
   periodOverPeriodChange,
   getComparisonDateRange,
 } from '../utils/time-series.js';
-import { mean, compositeScore } from '../utils/statistics.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

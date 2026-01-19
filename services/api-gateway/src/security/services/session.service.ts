@@ -6,7 +6,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { AUTH } from '../constants';
 
 export interface Session {

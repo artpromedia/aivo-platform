@@ -8,17 +8,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'cached_activities.dart';
 import 'offline_storage.dart';
 import 'offline_manager.dart';
+import 'offline_api_clients.dart';
 
 /// Service for managing offline regulation activities
 class OfflineRegulationService {
   final OfflineStorage _storage;
   final OfflineManager _offlineManager;
+  final LearnerEventApiClient? _eventApiClient;
 
   OfflineRegulationService({
     required OfflineStorage storage,
     required OfflineManager offlineManager,
+    LearnerEventApiClient? eventApiClient,
   })  : _storage = storage,
-        _offlineManager = offlineManager;
+        _offlineManager = offlineManager,
+        _eventApiClient = eventApiClient;
 
   /// Get all available activities, prioritizing cached built-in activities
   Future<List<CachedActivity>> getAvailableActivities({
@@ -236,15 +240,31 @@ class OfflineRegulationService {
   }
 
   Future<void> _syncUsageData() async {
-    // This would sync with the server in a real implementation
-    // For now, just mark as synced
+    // Sync usage data with the server when online
+    if (_eventApiClient == null) {
+      debugPrint('[OfflineRegulationService] No API client - skipping sync');
+      return;
+    }
+
     try {
       final unsynced = await _storage.getUnsyncedUsage();
       for (final usage in unsynced) {
-        // TODO: Send to server API
-        // await _api.syncUsage(usage);
-        debugPrint('Would sync usage: ${usage['activityId']}');
+        // Send to server API
+        await _eventApiClient.sendRegulationEvent(
+          learnerId: usage['learnerId'] as String,
+          eventType: 'regulation_activity_usage',
+          eventData: {
+            'activityId': usage['activityId'],
+            'completed': usage['completed'],
+            'durationSeconds': usage['durationSeconds'],
+            'timestamp': usage['timestamp'],
+            'mood': usage['mood'],
+          },
+        );
+        debugPrint('Synced usage: ${usage['activityId']}');
       }
+      // Mark as synced in storage
+      await _storage.markUsageSynced();
     } catch (e) {
       debugPrint('Failed to sync usage data: $e');
     }
@@ -541,6 +561,7 @@ final offlineRegulationServiceProvider = Provider<OfflineRegulationService>((ref
   return OfflineRegulationService(
     storage: ref.watch(offlineStorageProvider),
     offlineManager: ref.watch(offlineManagerProvider),
+    eventApiClient: ref.watch(eventApiClientProvider),
   );
 });
 

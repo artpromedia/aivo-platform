@@ -222,7 +222,7 @@ export class WsAuthMiddleware {
       const oldest = await redis.zrange(key, 0, 0, 'WITHSCORES');
       const resetAt =
         oldest.length >= 2
-          ? new Date(parseInt(oldest[1], 10) + this.CONNECTION_RATE_WINDOW * 1000)
+          ? new Date(Number.parseInt(oldest[1], 10) + this.CONNECTION_RATE_WINDOW * 1000)
           : new Date(now + this.CONNECTION_RATE_WINDOW * 1000);
 
       return {

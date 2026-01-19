@@ -4,7 +4,7 @@
  * Provides utilities for respecting user's motion preferences
  */
 
-import { MotionPreference } from './types';
+import type { MotionPreference } from './types';
 
 /**
  * Check if the user prefers reduced motion
@@ -132,9 +132,9 @@ export function createMotionSafeWrapper<T extends (...args: unknown[]) => void>(
 ): T {
   return ((...args: unknown[]) => {
     if (prefersReducedMotion()) {
-      return skipAnimation(...args);
+      skipAnimation(...args); return;
     }
-    return animate(...args);
+    animate(...args);
   }) as T;
 }
 

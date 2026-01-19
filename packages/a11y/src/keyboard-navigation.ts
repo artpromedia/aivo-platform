@@ -4,7 +4,7 @@
  * Standard keyboard patterns for common UI components
  */
 
-import { KeyboardShortcut } from './types';
+import type { KeyboardShortcut } from './types';
 
 /**
  * Keyboard Shortcut Manager
@@ -13,9 +13,9 @@ import { KeyboardShortcut } from './types';
  * modifier keys and scope-based activation.
  */
 export class KeyboardShortcutManager {
-  private shortcuts: Map<string, KeyboardShortcut> = new Map();
-  private scopes: Set<string> = new Set(['global']);
-  private activeScopes: Set<string> = new Set(['global']);
+  private shortcuts = new Map<string, KeyboardShortcut>();
+  private scopes = new Set<string>(['global']);
+  private activeScopes = new Set<string>(['global']);
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
   private isDestroyed = false;
 
@@ -37,7 +37,7 @@ export class KeyboardShortcutManager {
       this.scopes.add(shortcut.scope);
     }
 
-    return () => this.unregister(key);
+    return () => { this.unregister(key); };
   }
 
   /**
@@ -45,7 +45,7 @@ export class KeyboardShortcutManager {
    */
   registerAll(shortcuts: KeyboardShortcut[]): () => void {
     const unregisterFns = shortcuts.map((s) => this.register(s));
-    return () => unregisterFns.forEach((fn) => fn());
+    return () => { unregisterFns.forEach((fn) => { fn(); }); };
   }
 
   /**
@@ -298,6 +298,7 @@ export const KeyboardPatterns = {
 export function formatShortcut(shortcut: KeyboardShortcut): string {
   const isMac =
     typeof navigator !== 'undefined' &&
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
   const parts: string[] = [];

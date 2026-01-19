@@ -7,8 +7,8 @@
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 
-import { prisma } from '../prisma.js';
 import { config } from '../config.js';
+import { prisma } from '../prisma.js';
 import type { NotificationType, AcknowledgeHoldInput } from '../types/index.js';
 
 // Email transporter
@@ -152,11 +152,11 @@ export async function sendBulkNotifications(
   custodianIds: string[],
   notificationType: NotificationType,
   options: { customSubject?: string; customBody?: string } = {}
-): Promise<{ sent: number; failed: number; errors: Array<{ custodianId: string; error: string }> }> {
+): Promise<{ sent: number; failed: number; errors: { custodianId: string; error: string }[] }> {
   const result = {
     sent: 0,
     failed: 0,
-    errors: [] as Array<{ custodianId: string; error: string }>,
+    errors: [] as { custodianId: string; error: string }[],
   };
 
   for (const custodianId of custodianIds) {

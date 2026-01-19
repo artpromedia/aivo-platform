@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 /**
  * Cache Key Builder - Generates consistent, collision-resistant cache keys

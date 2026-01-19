@@ -14,7 +14,7 @@
 
 import { Pool } from 'pg';
 import Redis from 'ioredis';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -852,7 +852,7 @@ export class BrainMemory {
       [learnerId, tenantId]
     );
 
-    const currentCount = parseInt(countResult.rows[0].count.toString(), 10);
+    const currentCount = Number.parseInt(countResult.rows[0].count.toString(), 10);
 
     if (currentCount <= this.config.maxEpisodicMemories) {
       return 0;

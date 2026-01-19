@@ -9,8 +9,8 @@ import {
   assertParentOwnsLearner,
   createDsrRequest,
   getDsrRequestById,
-  getDsrRequestForParent,
-  listDsrRequestsForParent,
+  getDsrRequestForUser,
+  listDsrRequestsForUser,
   listDsrRequestsForTenant,
   listDsrRequestsByStatus,
   approveDsrRequest,
@@ -112,7 +112,7 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
 
   fastify.get('/requests', { preHandler: requireRole([Role.PARENT]) }, async (request, reply) => {
     const auth = (request as any).auth as AuthContext;
-    const requests = await listDsrRequestsForParent(pool, auth.tenantId, auth.userId);
+    const requests = await listDsrRequestsForUser(pool, auth.tenantId, auth.userId);
     reply.code(200).send({ requests });
   });
 
@@ -152,7 +152,7 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
     async (request, reply) => {
       const auth = (request as any).auth as AuthContext;
       const { id } = request.params as { id: string };
-      const record = await getDsrRequestForParent(pool, id, auth.tenantId, auth.userId);
+      const record = await getDsrRequestForUser(pool, id, auth.tenantId, auth.userId);
       if (!record) {
         reply.code(404).send({ error: 'Request not found' });
         return;
@@ -400,13 +400,13 @@ export const registerDsrRoutes: FastifyPluginAsync<{ pool: Pool }> = async (
       // Build counts by type
       const countsByType: Record<string, number> = {};
       for (const row of typeStatsResult.rows) {
-        countsByType[row.request_type] = parseInt(row.count, 10);
+        countsByType[row.request_type] = Number.parseInt(row.count, 10);
       }
 
       // Build counts by status  
       const countsByStatus: Record<string, number> = {};
       for (const row of statusStatsResult.rows) {
-        countsByStatus[row.status] = parseInt(row.count, 10);
+        countsByStatus[row.status] = Number.parseInt(row.count, 10);
       }
 
       // Calculate total

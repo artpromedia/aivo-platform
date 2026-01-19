@@ -3,8 +3,9 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { ExecutiveFunctionService } from '../services/ef.service.js';
+
 import { prisma } from '../db.js';
+import { ExecutiveFunctionService } from '../services/ef.service.js';
 
 const service = new ExecutiveFunctionService(prisma);
 
@@ -30,7 +31,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
       const summary = await service.getPerformanceSummary(
         user.tenantId,
         learnerId,
-        days ? parseInt(days, 10) : 30
+        days ? Number.parseInt(days, 10) : 30
       );
 
       return reply.send(summary);

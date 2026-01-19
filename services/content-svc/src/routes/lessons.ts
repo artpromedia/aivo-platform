@@ -8,7 +8,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS

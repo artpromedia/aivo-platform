@@ -5,7 +5,6 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { logger } from '@aivo/ts-observability';
 
 // Translation dictionaries
 const translations: Record<string, Record<string, string>> = {
@@ -35,6 +34,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'Hi {{name}},',
     'email.verify.body': 'Please verify your email address to complete your account setup.',
     'email.verify.cta': 'Verify Email',
+    'email.welcome.subject': 'Welcome to AIVO Learning!',
+    'email.welcome.greeting': 'Welcome, {{name}}!',
+    'email.welcome.body': 'Thank you for joining AIVO! We\'re excited to have you on board. With AIVO, you can track your child\'s learning progress, communicate with teachers, and stay engaged in their educational journey.',
+    'email.welcome.cta': 'Go to Dashboard',
+    'email.welcome.features': 'Here\'s what you can do:',
+    'email.welcome.feature1': '📊 Track learning progress in real-time',
+    'email.welcome.feature2': '💬 Communicate with teachers',
+    'email.welcome.feature3': '🏆 Celebrate achievements together',
+    'email.welcome.feature4': '📅 Stay updated on assignments and events',
   },
   es: {
     'digest.weekly.title': 'Resumen Semanal de Aprendizaje',
@@ -62,6 +70,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'Hola {{name}},',
     'email.verify.body': 'Por favor verifica tu dirección de correo electrónico para completar la configuración de tu cuenta.',
     'email.verify.cta': 'Verificar Correo',
+    'email.welcome.subject': '¡Bienvenido a AIVO Learning!',
+    'email.welcome.greeting': '¡Bienvenido, {{name}}!',
+    'email.welcome.body': '¡Gracias por unirte a AIVO! Estamos emocionados de tenerte. Con AIVO, puedes seguir el progreso de aprendizaje de tu hijo, comunicarte con los maestros y mantenerte involucrado en su viaje educativo.',
+    'email.welcome.cta': 'Ir al Panel',
+    'email.welcome.features': 'Esto es lo que puedes hacer:',
+    'email.welcome.feature1': '📊 Seguir el progreso de aprendizaje en tiempo real',
+    'email.welcome.feature2': '💬 Comunicarte con los maestros',
+    'email.welcome.feature3': '🏆 Celebrar logros juntos',
+    'email.welcome.feature4': '📅 Mantenerte actualizado sobre tareas y eventos',
   },
   fr: {
     'digest.weekly.title': 'Résumé Hebdomadaire d\'Apprentissage',
@@ -89,6 +106,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'Bonjour {{name}},',
     'email.verify.body': 'Veuillez vérifier votre adresse e-mail pour terminer la configuration de votre compte.',
     'email.verify.cta': 'Vérifier l\'E-mail',
+    'email.welcome.subject': 'Bienvenue sur AIVO Learning !',
+    'email.welcome.greeting': 'Bienvenue, {{name}} !',
+    'email.welcome.body': 'Merci d\'avoir rejoint AIVO ! Nous sommes ravis de vous avoir. Avec AIVO, vous pouvez suivre les progrès d\'apprentissage de votre enfant, communiquer avec les enseignants et rester engagé dans leur parcours éducatif.',
+    'email.welcome.cta': 'Accéder au Tableau de Bord',
+    'email.welcome.features': 'Voici ce que vous pouvez faire :',
+    'email.welcome.feature1': '📊 Suivre les progrès d\'apprentissage en temps réel',
+    'email.welcome.feature2': '💬 Communiquer avec les enseignants',
+    'email.welcome.feature3': '🏆 Célébrer les réussites ensemble',
+    'email.welcome.feature4': '📅 Rester informé des devoirs et événements',
   },
   de: {
     'digest.weekly.title': 'Wöchentliche Lernzusammenfassung',
@@ -116,6 +142,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'Hallo {{name}},',
     'email.verify.body': 'Bitte bestätigen Sie Ihre E-Mail-Adresse, um die Kontoeinrichtung abzuschließen.',
     'email.verify.cta': 'E-Mail Bestätigen',
+    'email.welcome.subject': 'Willkommen bei AIVO Learning!',
+    'email.welcome.greeting': 'Willkommen, {{name}}!',
+    'email.welcome.body': 'Vielen Dank, dass Sie AIVO beigetreten sind! Wir freuen uns, Sie an Bord zu haben. Mit AIVO können Sie den Lernfortschritt Ihres Kindes verfolgen, mit Lehrern kommunizieren und an der Bildungsreise teilhaben.',
+    'email.welcome.cta': 'Zum Dashboard',
+    'email.welcome.features': 'Das können Sie tun:',
+    'email.welcome.feature1': '📊 Lernfortschritt in Echtzeit verfolgen',
+    'email.welcome.feature2': '💬 Mit Lehrern kommunizieren',
+    'email.welcome.feature3': '🏆 Erfolge gemeinsam feiern',
+    'email.welcome.feature4': '📅 Über Aufgaben und Ereignisse informiert bleiben',
   },
   pt: {
     'digest.weekly.title': 'Resumo Semanal de Aprendizado',
@@ -143,6 +178,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'Olá {{name}},',
     'email.verify.body': 'Por favor, verifique seu endereço de e-mail para concluir a configuração da sua conta.',
     'email.verify.cta': 'Verificar E-mail',
+    'email.welcome.subject': 'Bem-vindo ao AIVO Learning!',
+    'email.welcome.greeting': 'Bem-vindo, {{name}}!',
+    'email.welcome.body': 'Obrigado por se juntar ao AIVO! Estamos animados por tê-lo conosco. Com o AIVO, você pode acompanhar o progresso de aprendizado do seu filho, comunicar-se com os professores e participar da jornada educacional.',
+    'email.welcome.cta': 'Ir para o Painel',
+    'email.welcome.features': 'Veja o que você pode fazer:',
+    'email.welcome.feature1': '📊 Acompanhar o progresso de aprendizado em tempo real',
+    'email.welcome.feature2': '💬 Comunicar-se com os professores',
+    'email.welcome.feature3': '🏆 Celebrar conquistas juntos',
+    'email.welcome.feature4': '📅 Manter-se atualizado sobre tarefas e eventos',
   },
   zh: {
     'digest.weekly.title': '每周学习总结',
@@ -170,6 +214,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': '您好 {{name}}，',
     'email.verify.body': '请验证您的电子邮件地址以完成账户设置。',
     'email.verify.cta': '验证邮箱',
+    'email.welcome.subject': '欢迎加入AIVO Learning！',
+    'email.welcome.greeting': '欢迎您，{{name}}！',
+    'email.welcome.body': '感谢您加入AIVO！我们很高兴您的到来。通过AIVO，您可以跟踪孩子的学习进度，与老师沟通，并参与他们的教育旅程。',
+    'email.welcome.cta': '前往仪表板',
+    'email.welcome.features': '您可以做到：',
+    'email.welcome.feature1': '📊 实时跟踪学习进度',
+    'email.welcome.feature2': '💬 与老师沟通',
+    'email.welcome.feature3': '🏆 一起庆祝成就',
+    'email.welcome.feature4': '📅 了解作业和活动的最新动态',
   },
   ja: {
     'digest.weekly.title': '週間学習サマリー',
@@ -197,6 +250,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'こんにちは {{name}}さん、',
     'email.verify.body': 'アカウント設定を完了するためにメールアドレスを確認してください。',
     'email.verify.cta': 'メールを確認',
+    'email.welcome.subject': 'AIVO Learningへようこそ！',
+    'email.welcome.greeting': 'ようこそ、{{name}}さん！',
+    'email.welcome.body': 'AIVOにご参加いただきありがとうございます！お子様の学習進捗を追跡し、先生とコミュニケーションを取り、教育の旅に参加できます。',
+    'email.welcome.cta': 'ダッシュボードへ',
+    'email.welcome.features': 'できること：',
+    'email.welcome.feature1': '📊 リアルタイムで学習進捗を追跡',
+    'email.welcome.feature2': '💬 先生とコミュニケーション',
+    'email.welcome.feature3': '🏆 一緒に達成を祝う',
+    'email.welcome.feature4': '📅 課題やイベントの最新情報を入手',
   },
   ko: {
     'digest.weekly.title': '주간 학습 요약',
@@ -224,6 +286,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': '안녕하세요 {{name}}님,',
     'email.verify.body': '계정 설정을 완료하려면 이메일 주소를 확인하세요.',
     'email.verify.cta': '이메일 확인',
+    'email.welcome.subject': 'AIVO Learning에 오신 것을 환영합니다!',
+    'email.welcome.greeting': '환영합니다, {{name}}님!',
+    'email.welcome.body': 'AIVO에 가입해 주셔서 감사합니다! 자녀의 학습 진행 상황을 추적하고, 선생님과 소통하며, 교육 여정에 참여할 수 있습니다.',
+    'email.welcome.cta': '대시보드로 이동',
+    'email.welcome.features': '할 수 있는 것:',
+    'email.welcome.feature1': '📊 실시간으로 학습 진행 상황 추적',
+    'email.welcome.feature2': '💬 선생님과 소통',
+    'email.welcome.feature3': '🏆 함께 성취를 축하',
+    'email.welcome.feature4': '📅 과제와 이벤트 최신 정보 확인',
   },
   ar: {
     'digest.weekly.title': 'ملخص التعلم الأسبوعي',
@@ -251,6 +322,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'مرحباً {{name}}،',
     'email.verify.body': 'يرجى التحقق من عنوان بريدك الإلكتروني لإكمال إعداد حسابك.',
     'email.verify.cta': 'تحقق من البريد الإلكتروني',
+    'email.welcome.subject': 'مرحباً بك في AIVO Learning!',
+    'email.welcome.greeting': 'أهلاً بك، {{name}}!',
+    'email.welcome.body': 'شكراً لانضمامك إلى AIVO! يسعدنا وجودك معنا. مع AIVO، يمكنك تتبع تقدم طفلك في التعلم والتواصل مع المعلمين والمشاركة في رحلتهم التعليمية.',
+    'email.welcome.cta': 'الذهاب إلى لوحة القيادة',
+    'email.welcome.features': 'إليك ما يمكنك فعله:',
+    'email.welcome.feature1': '📊 تتبع تقدم التعلم في الوقت الفعلي',
+    'email.welcome.feature2': '💬 التواصل مع المعلمين',
+    'email.welcome.feature3': '🏆 الاحتفال بالإنجازات معاً',
+    'email.welcome.feature4': '📅 البقاء على اطلاع بالواجبات والفعاليات',
   },
   hi: {
     'digest.weekly.title': 'साप्ताहिक सीखने का सारांश',
@@ -278,6 +358,15 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.greeting': 'नमस्ते {{name}},',
     'email.verify.body': 'अपना खाता सेटअप पूरा करने के लिए कृपया अपना ईमेल पता सत्यापित करें।',
     'email.verify.cta': 'ईमेल सत्यापित करें',
+    'email.welcome.subject': 'AIVO Learning में आपका स्वागत है!',
+    'email.welcome.greeting': 'स्वागत है, {{name}}!',
+    'email.welcome.body': 'AIVO से जुड़ने के लिए धन्यवाद! हमें आपको साथ पाकर खुशी है। AIVO के साथ, आप अपने बच्चे की सीखने की प्रगति को ट्रैक कर सकते हैं, शिक्षकों से संवाद कर सकते हैं और उनकी शैक्षिक यात्रा में भाग ले सकते हैं।',
+    'email.welcome.cta': 'डैशबोर्ड पर जाएं',
+    'email.welcome.features': 'आप क्या कर सकते हैं:',
+    'email.welcome.feature1': '📊 वास्तविक समय में सीखने की प्रगति ट्रैक करें',
+    'email.welcome.feature2': '💬 शिक्षकों से संवाद करें',
+    'email.welcome.feature3': '🏆 साथ मिलकर उपलब्धियां मनाएं',
+    'email.welcome.feature4': '📅 कार्यों और आयोजनों की जानकारी प्राप्त करें',
   },
 };
 
@@ -293,7 +382,7 @@ export class I18nService {
     // Interpolate arguments
     if (args) {
       for (const [argKey, argValue] of Object.entries(args)) {
-        text = text.replace(new RegExp(`{{${argKey}}}`, 'g'), String(argValue));
+        text = text.replaceAll(`{{${argKey}}}`, String(argValue));
       }
     }
 

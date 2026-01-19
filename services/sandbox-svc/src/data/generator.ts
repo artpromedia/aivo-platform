@@ -4,8 +4,9 @@
  * Generates realistic test data for sandbox environments
  */
 
-import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { v4 as uuidv4 } from 'uuid';
+
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 
 // Sample data pools
 const firstNames = [
@@ -137,7 +138,7 @@ export async function generateSyntheticData(
   }
 
   // Generate classes
-  const classes: Array<{ id: string; subject: string; gradeLevel: number }> = [];
+  const classes: { id: string; subject: string; gradeLevel: number }[] = [];
   for (let i = 0; i < classCount; i++) {
     const subject = randomChoice(subjects);
     const gradeLevel = randomInt(3, 8);

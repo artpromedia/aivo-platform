@@ -11,6 +11,7 @@ export { RTLProvider, useRTL, useRTLContext, type RTLContextValue } from './rtl-
 export {
   rtlStyle,
   rtlTransform,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- Re-exported for backwards compatibility
   rtlValue,
   rtlClass,
   rtlSpacing,

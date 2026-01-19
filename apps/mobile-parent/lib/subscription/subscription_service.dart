@@ -168,6 +168,30 @@ class SubscriptionService {
     );
   }
 
+  /// Schedule a module to be removed at end of billing period.
+  Future<void> scheduleModuleRemoval(
+    String subscriptionId,
+    String moduleCode,
+  ) async {
+    if (_useMock) return;
+
+    await _paymentsDio.post(
+      '/payments/subscriptions/$subscriptionId/modules/$moduleCode/schedule-removal',
+    );
+  }
+
+  /// Add a module to an existing subscription.
+  Future<void> addModuleToSubscription(
+    String subscriptionId,
+    String moduleCode,
+  ) async {
+    if (_useMock) return;
+
+    await _paymentsDio.post(
+      '/payments/subscriptions/$subscriptionId/modules/$moduleCode/add',
+    );
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // PLANS
   // ──────────────────────────────────────────────────────────────────────────

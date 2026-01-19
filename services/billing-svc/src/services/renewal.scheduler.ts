@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/use-unknown-in-catch-callback-variable, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unsafe-argument, no-undef */
+/* eslint-disable no-undef */
 /// <reference types="node" />
 /**
  * Renewal Scheduler

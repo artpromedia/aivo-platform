@@ -7,7 +7,7 @@
  */
 
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import { SisUserRole } from '../providers/types';
+import type { SisUserRole } from '../providers/types';
 
 export interface TransformConfig {
   /** Tenant ID for the transformation */

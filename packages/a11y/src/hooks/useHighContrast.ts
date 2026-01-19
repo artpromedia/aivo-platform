@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+
 import {
   prefersHighContrast,
   getContrastPreference,
   subscribeToContrastPreference,
 } from '../reduced-motion';
-import { ContrastPreference } from '../types';
+import type { ContrastPreference } from '../types';
 
 /**
  * Hook to detect user's high contrast preference
@@ -66,7 +67,7 @@ export function useForcedColors(): boolean {
     };
 
     mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
+    return () => { mediaQuery.removeEventListener('change', handler); };
   }, []);
 
   return forcedColors;

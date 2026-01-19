@@ -16,11 +16,9 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ParentService } from './parent.service.js';
-import { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import { AuthenticatedParentRequest } from '../auth/parent-auth.middleware.js';
 import {
   CreateConsentInput,
   UpdatePrivacySettingsInput,
@@ -37,8 +35,8 @@ export class ParentController {
    * Get parent profile with linked students
    */
   @Get('profile')
-  async getProfile(@Req() req: ParentAuthRequest) {
-    return this.parentService.getParentProfile(req.parent!.id);
+  async getProfile(@Req() req: AuthenticatedParentRequest) {
+    return this.parentService.getParentProfile(req.parent.id);
   }
 
   /**
@@ -46,10 +44,10 @@ export class ParentController {
    */
   @Put('profile')
   async updateProfile(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: { firstName?: string; lastName?: string; phone?: string; language?: string }
   ) {
-    return this.parentService.updateProfile(req.parent!.id, body);
+    return this.parentService.updateProfile(req.parent.id, body);
   }
 
   /**
@@ -57,10 +55,10 @@ export class ParentController {
    */
   @Get('students/:studentId/summary')
   async getStudentSummary(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string
   ) {
-    return this.parentService.getStudentSummary(req.parent!.id, studentId);
+    return this.parentService.getStudentSummary(req.parent.id, studentId);
   }
 
   /**
@@ -68,12 +66,12 @@ export class ParentController {
    */
   @Get('students/:studentId/progress')
   async getProgressReport(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string
   ) {
-    return this.parentService.getProgressReport(req.parent!.id, studentId, {
+    return this.parentService.getProgressReport(req.parent.id, studentId, {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });
@@ -84,12 +82,12 @@ export class ParentController {
    */
   @Get('students/:studentId/weekly-summary')
   async getWeeklySummary(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string,
     @Query('weekOf') weekOf?: string
   ) {
     return this.parentService.generateWeeklySummary(
-      req.parent!.id,
+      req.parent.id,
       studentId,
       weekOf ? new Date(weekOf) : new Date()
     );
@@ -100,10 +98,10 @@ export class ParentController {
    */
   @Get('students/:studentId/consent')
   async getConsentRecords(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string
   ) {
-    return this.parentService.getConsentRecords(req.parent!.id, studentId);
+    return this.parentService.getConsentRecords(req.parent.id, studentId);
   }
 
   /**
@@ -112,12 +110,12 @@ export class ParentController {
   @Post('students/:studentId/consent')
   @HttpCode(HttpStatus.CREATED)
   async recordConsent(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string,
     @Body() body: CreateConsentInput
   ) {
     return this.parentService.recordConsent({
-      parentId: req.parent!.id,
+      parentId: req.parent.id,
       studentId,
       ...body,
     });
@@ -128,10 +126,10 @@ export class ParentController {
    */
   @Put('privacy-settings')
   async updatePrivacySettings(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: UpdatePrivacySettingsInput
   ) {
-    return this.parentService.updatePrivacySettings(req.parent!.id, body);
+    return this.parentService.updatePrivacySettings(req.parent.id, body);
   }
 
   /**
@@ -139,13 +137,13 @@ export class ParentController {
    */
   @Get('notifications')
   async getNotifications(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Query('unreadOnly') unreadOnly?: string,
     @Query('limit') limit?: string
   ) {
-    return this.parentService.getNotifications(req.parent!.id, {
+    return this.parentService.getNotifications(req.parent.id, {
       unreadOnly: unreadOnly === 'true',
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit: limit ? Number.parseInt(limit, 10) : undefined,
     });
   }
 
@@ -154,10 +152,10 @@ export class ParentController {
    */
   @Put('notifications/read')
   async markNotificationsRead(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: { notificationIds: string[] }
   ) {
-    return this.parentService.markNotificationsRead(req.parent!.id, body.notificationIds);
+    return this.parentService.markNotificationsRead(req.parent.id, body.notificationIds);
   }
 
   /**
@@ -165,10 +163,10 @@ export class ParentController {
    */
   @Put('notification-preferences')
   async updateNotificationPreferences(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: Record<string, boolean>
   ) {
-    return this.parentService.updateNotificationPreferences(req.parent!.id, body);
+    return this.parentService.updateNotificationPreferences(req.parent.id, body);
   }
 
   /**
@@ -177,10 +175,10 @@ export class ParentController {
   @Post('push-subscription')
   @HttpCode(HttpStatus.CREATED)
   async registerPushSubscription(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: { platform: string; token?: string; endpoint: string; keys?: Record<string, string> }
   ) {
-    return this.parentService.registerPushSubscription(req.parent!.id, body);
+    return this.parentService.registerPushSubscription(req.parent.id, body);
   }
 
   // ============================================================================
@@ -192,10 +190,10 @@ export class ParentController {
    */
   @Get('students')
   async getLinkedStudents(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Query('includeRevoked') includeRevoked?: string
   ) {
-    return this.parentService.getLinkedStudents(req.parent!.id, {
+    return this.parentService.getLinkedStudents(req.parent.id, {
       includeRevoked: includeRevoked === 'true',
     });
   }
@@ -212,7 +210,7 @@ export class ParentController {
   @Delete('students/:studentId')
   @HttpCode(HttpStatus.OK)
   async removeChildLink(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string,
     @Body() body?: { reason?: string }
   ) {
@@ -220,7 +218,7 @@ export class ParentController {
     const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0];
     const userAgent = req.headers['user-agent'];
 
-    return this.parentService.removeChildLink(req.parent!.id, studentId, {
+    return this.parentService.removeChildLink(req.parent.id, studentId, {
       reason: body?.reason,
       ipAddress,
       userAgent,
@@ -236,10 +234,10 @@ export class ParentController {
    */
   @Get('students/:studentId/difficulty/recommendations')
   async getDifficultyRecommendations(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string
   ) {
-    return this.parentService.getDifficultyRecommendations(req.parent!.id, studentId);
+    return this.parentService.getDifficultyRecommendations(req.parent.id, studentId);
   }
 
   /**
@@ -248,10 +246,10 @@ export class ParentController {
   @Post('difficulty/recommendations/respond')
   @HttpCode(HttpStatus.OK)
   async respondToRecommendation(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: RespondToRecommendationDto
   ) {
-    return this.parentService.respondToRecommendation(req.parent!.id, body);
+    return this.parentService.respondToRecommendation(req.parent.id, body);
   }
 
   /**
@@ -259,10 +257,10 @@ export class ParentController {
    */
   @Get('students/:studentId/difficulty/levels')
   async getDifficultyLevels(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string
   ) {
-    return this.parentService.getDifficultyLevels(req.parent!.id, studentId);
+    return this.parentService.getDifficultyLevels(req.parent.id, studentId);
   }
 
   /**
@@ -271,10 +269,10 @@ export class ParentController {
   @Post('difficulty/domain/set')
   @HttpCode(HttpStatus.OK)
   async setDomainDifficulty(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: SetDomainDifficultyDto
   ) {
-    return this.parentService.setDomainDifficulty(req.parent!.id, body);
+    return this.parentService.setDomainDifficulty(req.parent.id, body);
   }
 
   /**
@@ -282,10 +280,10 @@ export class ParentController {
    */
   @Get('students/:studentId/difficulty/preferences')
   async getDifficultyPreferences(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string
   ) {
-    return this.parentService.getDifficultyPreferences(req.parent!.id, studentId);
+    return this.parentService.getDifficultyPreferences(req.parent.id, studentId);
   }
 
   /**
@@ -293,10 +291,10 @@ export class ParentController {
    */
   @Put('difficulty/preferences')
   async updateDifficultyPreferences(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Body() body: UpdateDifficultyPreferencesDto
   ) {
-    return this.parentService.updateDifficultyPreferences(req.parent!.id, body);
+    return this.parentService.updateDifficultyPreferences(req.parent.id, body);
   }
 
   /**
@@ -304,14 +302,15 @@ export class ParentController {
    */
   @Get('students/:studentId/difficulty/history')
   async getDifficultyHistory(
-    @Req() req: ParentAuthRequest,
+    @Req() req: AuthenticatedParentRequest,
     @Param('studentId') studentId: string,
     @Query('limit') limit?: string
   ) {
     return this.parentService.getDifficultyHistory(
-      req.parent!.id,
+      req.parent.id,
       studentId,
-      limit ? parseInt(limit, 10) : undefined
+      limit ? Number.parseInt(limit, 10) : undefined
     );
   }
 }
+

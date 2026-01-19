@@ -45,7 +45,7 @@ export function verifySendGridSignature(
 
   try {
     // Verify timestamp is recent (within 5 minutes) to prevent replay attacks
-    const timestampNumber = parseInt(timestamp, 10);
+    const timestampNumber = Number.parseInt(timestamp, 10);
     const now = Math.floor(Date.now() / 1000);
     const maxAge = 300; // 5 minutes
 

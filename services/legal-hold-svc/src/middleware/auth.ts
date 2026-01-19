@@ -2,10 +2,11 @@
  * AIVO Legal Hold Service - Authentication Middleware
  */
 
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import { createVerifier } from 'fast-jwt';
 import fs from 'fs';
 import path from 'path';
+
+import { createVerifier } from 'fast-jwt';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { config } from '../config.js';
 import type { JwtPayload } from '../types/index.js';

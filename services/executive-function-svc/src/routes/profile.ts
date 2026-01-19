@@ -4,8 +4,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { ExecutiveFunctionService } from '../services/ef.service.js';
+
 import { prisma } from '../db.js';
+import { ExecutiveFunctionService } from '../services/ef.service.js';
 
 const service = new ExecutiveFunctionService(prisma);
 

@@ -47,13 +47,13 @@ export class TrialService {
 
     // Check for existing trial record
     const existingTrial = await prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         started_at: Date;
         ends_at: Date;
         converted_at: Date | null;
         canceled_at: Date | null;
-      }>
+      }[]
     >`
       SELECT id, started_at, ends_at, converted_at, canceled_at
       FROM trial_records
@@ -129,7 +129,7 @@ export class TrialService {
     endsAt.setDate(endsAt.getDate() + 30); // 30-day trial
 
     // Use raw query because trial_records is in migration but not yet in Prisma schema
-    const result = await prisma.$queryRaw<Array<{ id: string; ends_at: Date }>>`
+    const result = await prisma.$queryRaw<{ id: string; ends_at: Date }[]>`
       INSERT INTO trial_records (tenant_id, learner_id, sku, ends_at, subscription_item_id)
       VALUES (${tenantId}::uuid, ${learnerId}::uuid, ${sku}, ${endsAt}, ${subscriptionId}::uuid)
       ON CONFLICT (tenant_id, learner_id, sku) DO NOTHING
@@ -138,7 +138,7 @@ export class TrialService {
 
     if (result.length === 0) {
       // Trial already exists, fetch it
-      const existing = await prisma.$queryRaw<Array<{ id: string; ends_at: Date }>>`
+      const existing = await prisma.$queryRaw<{ id: string; ends_at: Date }[]>`
         SELECT id, ends_at FROM trial_records
         WHERE tenant_id = ${tenantId}::uuid
           AND learner_id = ${learnerId}::uuid
@@ -183,23 +183,23 @@ export class TrialService {
    * Get all active trials for a tenant
    */
   async getActiveTrials(tenantId: string): Promise<
-    Array<{
+    {
       id: string;
       learnerId: string;
       sku: string;
       startedAt: Date;
       endsAt: Date;
       daysRemaining: number;
-    }>
+    }[]
   > {
     const trials = await prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         learner_id: string;
         sku: string;
         started_at: Date;
         ends_at: Date;
-      }>
+      }[]
     >`
       SELECT id, learner_id, sku, started_at, ends_at
       FROM trial_records
@@ -227,26 +227,26 @@ export class TrialService {
   async getTrialsEndingSoon(
     daysThreshold = 7
   ): Promise<
-    Array<{
+    {
       id: string;
       tenantId: string;
       learnerId: string;
       sku: string;
       endsAt: Date;
       daysRemaining: number;
-    }>
+    }[]
   > {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
 
     const trials = await prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         tenant_id: string;
         learner_id: string;
         sku: string;
         ends_at: Date;
-      }>
+      }[]
     >`
       SELECT id, tenant_id, learner_id, sku, ends_at
       FROM trial_records
@@ -284,13 +284,13 @@ export class TrialService {
     conversionRate: number;
   }> {
     const stats = await prisma.$queryRaw<
-      Array<{
+      {
         total: bigint;
         converted: bigint;
         canceled: bigint;
         active: bigint;
         expired: bigint;
-      }>
+      }[]
     >`
       SELECT
         COUNT(*) as total,

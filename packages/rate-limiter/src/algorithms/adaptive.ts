@@ -11,8 +11,9 @@
  * real-time conditions while maintaining fairness.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { AlgorithmCheckResult, AlgorithmOptions } from '../types';
+import type { RateLimitStore } from '../stores/types';
+import type { AlgorithmCheckResult, AlgorithmOptions } from '../types';
+
 import { SlidingWindow } from './sliding-window';
 
 export interface AdaptiveOptions extends AlgorithmOptions {

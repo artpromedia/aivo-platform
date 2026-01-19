@@ -4,19 +4,19 @@
  * visual schedules, planning assistance, and EF strategy recommendations.
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import Fastify from 'fastify';
 import 'dotenv/config';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
+import { analyticsRoutes } from './routes/analytics.js';
 import { profileRoutes } from './routes/profile.js';
-import { tasksRoutes } from './routes/tasks.js';
 import { schedulesRoutes } from './routes/schedules.js';
 import { strategiesRoutes } from './routes/strategies.js';
-import { analyticsRoutes } from './routes/analytics.js';
+import { tasksRoutes } from './routes/tasks.js';
 
 const config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: Number.parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '0.0.0.0',
   logLevel: process.env.LOG_LEVEL || 'info',
 };

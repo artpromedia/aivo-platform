@@ -262,11 +262,11 @@ function parseVTTTimestamp(timestamp: string): number {
   let seconds: number;
 
   if (parts.length === 3) {
-    hours = parseInt(parts[0]!, 10);
-    minutes = parseInt(parts[1]!, 10);
+    hours = Number.parseInt(parts[0]!, 10);
+    minutes = Number.parseInt(parts[1]!, 10);
     seconds = parseFloat(parts[2]!);
   } else {
-    minutes = parseInt(parts[0]!, 10);
+    minutes = Number.parseInt(parts[0]!, 10);
     seconds = parseFloat(parts[1]!);
   }
 
@@ -279,13 +279,13 @@ function parseVTTSettings(line: string): CaptionPosition | undefined {
 
   const lineMatch = line.match(/line:(\d+%?|auto)/);
   if (lineMatch) {
-    settings.line = lineMatch[1] === 'auto' ? 'auto' : parseInt(lineMatch[1]!, 10);
+    settings.line = lineMatch[1] === 'auto' ? 'auto' : Number.parseInt(lineMatch[1]!, 10);
     hasSettings = true;
   }
 
   const positionMatch = line.match(/position:(\d+)%/);
   if (positionMatch) {
-    settings.horizontal = parseInt(positionMatch[1]!, 10);
+    settings.horizontal = Number.parseInt(positionMatch[1]!, 10);
     hasSettings = true;
   }
 
@@ -336,7 +336,7 @@ export function parseSRT(content: string): CaptionCue[] {
 function parseSRTTimestamp(timestamp: string): number {
   const [time, ms] = timestamp.split(',');
   const [hours, minutes, seconds] = time!.split(':').map(Number);
-  return hours! * 3600 + minutes! * 60 + seconds! + parseInt(ms!, 10) / 1000;
+  return hours! * 3600 + minutes! * 60 + seconds! + Number.parseInt(ms!, 10) / 1000;
 }
 
 /**
@@ -374,10 +374,10 @@ export function parseSBV(content: string): CaptionCue[] {
 
 function parseSBVTimestamp(timestamp: string): number {
   const parts = timestamp.split(':');
-  const hours = parseInt(parts[0]!, 10);
-  const minutes = parseInt(parts[1]!, 10);
+  const hours = Number.parseInt(parts[0]!, 10);
+  const minutes = Number.parseInt(parts[1]!, 10);
   const [seconds, ms] = parts[2]!.split('.');
-  return hours * 3600 + minutes * 60 + parseInt(seconds!, 10) + parseInt(ms!, 10) / 1000;
+  return hours * 3600 + minutes * 60 + Number.parseInt(seconds!, 10) + Number.parseInt(ms!, 10) / 1000;
 }
 
 /**
@@ -418,8 +418,8 @@ function parseTTMLTimestamp(timestamp: string): number {
 
   const parts = timestamp.split(':');
   if (parts.length === 3) {
-    const hours = parseInt(parts[0]!, 10);
-    const minutes = parseInt(parts[1]!, 10);
+    const hours = Number.parseInt(parts[0]!, 10);
+    const minutes = Number.parseInt(parts[1]!, 10);
     const seconds = parseFloat(parts[2]!);
     return hours * 3600 + minutes * 60 + seconds;
   }

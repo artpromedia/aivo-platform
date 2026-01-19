@@ -380,7 +380,7 @@ export function createBaseEvent(
 
 // ─── Privacy Utilities ─────────────────────────────────────────────────────────
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 /**
  * Hash sensitive data for privacy compliance
@@ -431,5 +431,5 @@ export interface BatchResult {
   batchId: string;
   processed: number;
   failed: number;
-  errors: Array<{ eventId: string; error: string }>;
+  errors: { eventId: string; error: string }[];
 }

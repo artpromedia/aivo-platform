@@ -15,7 +15,8 @@
  * Falls back to in-memory handlers when NATS is not available.
  */
 
-import { connect, NatsConnection, JetStreamClient, StringCodec } from 'nats';
+import type { NatsConnection, JetStreamClient} from 'nats';
+import { connect, StringCodec } from 'nats';
 
 // Simple logger using console
 const logger = {

@@ -8,11 +8,11 @@
  * - Efficient Redis-backed rankings
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+ 
 
 import { prisma } from '../prisma.js';
 import { redis } from '../redis.js';
-import { LeaderboardEntry, LeaderboardPeriod, LeaderboardType, LeaderboardResponse } from '../types/gamification.types.js';
+import type { LeaderboardEntry, LeaderboardPeriod, LeaderboardType, LeaderboardResponse } from '../types/gamification.types.js';
 
 // ============================================================================
 // LEADERBOARD SERVICE
@@ -110,7 +110,7 @@ class LeaderboardService {
   async getPlayerContext(
     studentId: string,
     period: LeaderboardPeriod = 'weekly',
-    contextSize: number = 2
+    contextSize = 2
   ): Promise<{
     rank: number | null;
     entries: LeaderboardEntry[];
@@ -343,7 +343,7 @@ class LeaderboardService {
     // Redis returns [member, score, member, score, ...]
     for (let i = 0; i < redisData.length; i += 2) {
       const studentId = redisData[i];
-      const score = parseInt(redisData[i + 1], 10);
+      const score = Number.parseInt(redisData[i + 1], 10);
 
       entries.push({
         rank: startRank + i / 2 + 1,
@@ -495,12 +495,12 @@ class LeaderboardService {
     return rank + 1;
   }
 
-  private parseRedisEntries(data: string[]): Array<{ studentId: string; score: number }> {
+  private parseRedisEntries(data: string[]): { studentId: string; score: number }[] {
     const entries = [];
     for (let i = 0; i < data.length; i += 2) {
       entries.push({
         studentId: data[i],
-        score: parseInt(data[i + 1], 10),
+        score: Number.parseInt(data[i + 1], 10),
       });
     }
     return entries;

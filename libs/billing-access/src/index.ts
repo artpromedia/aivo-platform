@@ -279,7 +279,7 @@ export class BillingAccessClient {
 
   private async fetchWithTimeout(url: string): Promise<Response> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
+    const timeoutId = setTimeout(() => { controller.abort(); }, this.config.timeoutMs);
 
     try {
       return await fetch(url, {
@@ -309,28 +309,28 @@ export function createBillingAccessHook(client: BillingAccessClient) {
     const learnerId = request.headers['x-learner-id'];
 
     if (!tenantId) {
-      return reply.code(400).send({ error: 'Missing x-tenant-id header' });
+      reply.code(400).send({ error: 'Missing x-tenant-id header' }); return;
     }
 
     // If learnerId is provided, check session access
     if (learnerId) {
       const result = await client.canStartSession({ tenantId, learnerId });
       if (!result.allowed) {
-        return reply.code(402).send({
+        reply.code(402).send({
           error: 'SUBSCRIPTION_REQUIRED',
           message: result.reason,
           limitedMode: result.limitedMode,
-        });
+        }); return;
       }
     } else {
       // Just check limited mode for tenant-level access
       const isLimited = await client.isLimitedMode({ tenantId });
       if (isLimited) {
-        return reply.code(402).send({
+        reply.code(402).send({
           error: 'SUBSCRIPTION_PAST_DUE',
           message: 'Your subscription is past due. Please update your payment method.',
           limitedMode: true,
-        });
+        }); return;
       }
     }
   };
@@ -353,26 +353,26 @@ export function createBillingAccessMiddleware(client: BillingAccessClient) {
     const learnerId = req.headers['x-learner-id'];
 
     if (!tenantId) {
-      return res.status(400).json({ error: 'Missing x-tenant-id header' });
+      res.status(400).json({ error: 'Missing x-tenant-id header' }); return;
     }
 
     if (learnerId) {
       const result = await client.canStartSession({ tenantId, learnerId });
       if (!result.allowed) {
-        return res.status(402).json({
+        res.status(402).json({
           error: 'SUBSCRIPTION_REQUIRED',
           message: result.reason,
           limitedMode: result.limitedMode,
-        });
+        }); return;
       }
     } else {
       const isLimited = await client.isLimitedMode({ tenantId });
       if (isLimited) {
-        return res.status(402).json({
+        res.status(402).json({
           error: 'SUBSCRIPTION_PAST_DUE',
           message: 'Your subscription is past due. Please update your payment method.',
           limitedMode: true,
-        });
+        }); return;
       }
     }
 

@@ -6,21 +6,21 @@
  */
 
 import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+} from '@aws-sdk/client-dynamodb';
+import {
   KinesisClient,
   GetRecordsCommand,
   GetShardIteratorCommand,
   DescribeStreamCommand,
   type Record as KinesisRecord,
 } from '@aws-sdk/client-kinesis';
-import {
-  DynamoDBClient,
-  GetItemCommand,
-  PutItemCommand,
-} from '@aws-sdk/client-dynamodb';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
 
-import { prisma } from '../prisma.js';
 import type { AnalyticsEvent } from '../events/event.types.js';
+import { prisma } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -88,10 +88,10 @@ export class KinesisAnalyticsConsumer {
   private readonly dynamo: DynamoDBClient;
   private readonly redis: Redis;
   private readonly config: KinesisConsumerConfig;
-  private readonly handlers: Map<string, EventHandler[]> = new Map();
+  private readonly handlers = new Map<string, EventHandler[]>();
   
   private isRunning = false;
-  private shardIterators: Map<string, string> = new Map();
+  private shardIterators = new Map<string, string>();
   private metrics: ConsumerMetrics = {
     eventsProcessed: 0,
     eventsFailed: 0,

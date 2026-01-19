@@ -4,7 +4,7 @@
  * Handles HMAC-SHA256 signing of webhook payloads for verification by partners.
  */
 
-import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
+import { createHmac, timingSafeEqual, randomBytes } from 'node:crypto';
 
 import { WEBHOOK_HEADERS } from './types.js';
 
@@ -143,7 +143,7 @@ export function generateWebhookSecret(): string {
  * Partners can use this pattern to verify incoming webhooks:
  *
  * ```typescript
- * import crypto from 'crypto';
+ * import crypto from 'node:crypto';
  *
  * function verifyAivoWebhook(
  *   payload: string,
@@ -151,7 +151,7 @@ export function generateWebhookSecret(): string {
  *   timestamp: string,
  *   secret: string
  * ): boolean {
- *   const ts = parseInt(timestamp, 10);
+ *   const ts = Number.parseInt(timestamp, 10);
  *   const now = Math.floor(Date.now() / 1000);
  *
  *   // Check timestamp is within 5 minutes

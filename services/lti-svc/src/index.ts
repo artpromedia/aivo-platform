@@ -68,7 +68,7 @@ async function getPrivateKey(keyRef: string): Promise<string> {
 }
 
 const baseUrl = requireEnvInProduction('LTI_BASE_URL', 'http://localhost:3008');
-const port = parseInt(process.env.PORT || '3008', 10);
+const port = Number.parseInt(process.env.PORT || '3008', 10);
 
 void startServer({
   port,

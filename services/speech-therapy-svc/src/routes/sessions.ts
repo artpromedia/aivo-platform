@@ -4,8 +4,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { SpeechTherapyService } from '../services/speech.service.js';
+
 import { prisma } from '../db.js';
+import { SpeechTherapyService } from '../services/speech.service.js';
 
 const service = new SpeechTherapyService(prisma);
 
@@ -79,7 +80,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
 
       const sessions = await service.getSessions(user.tenantId, learnerId, {
         status: status as any,
-        limit: limit ? parseInt(limit, 10) : undefined,
+        limit: limit ? Number.parseInt(limit, 10) : undefined,
       });
 
       return reply.send({ sessions });
@@ -107,7 +108,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
     try {
       const session = await service.startSession(user.tenantId, sessionId);
       return reply.send(session);
-    } catch (error) {
+    } catch (_error) {
       return reply.code(404).send({ error: 'Session not found' });
     }
   });
@@ -123,7 +124,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
       try {
         const session = await service.endSession(user.tenantId, sessionId, body);
         return reply.send(session);
-      } catch (error) {
+      } catch (_error) {
         return reply.code(404).send({ error: 'Session not found' });
       }
     }
@@ -140,7 +141,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
       try {
         const session = await service.cancelSession(user.tenantId, sessionId, reason);
         return reply.send(session);
-      } catch (error) {
+      } catch (_error) {
         return reply.code(404).send({ error: 'Session not found' });
       }
     }
@@ -160,7 +161,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
           ...body,
         });
         return reply.code(201).send(activity);
-      } catch (error) {
+      } catch (_error) {
         return reply.code(404).send({ error: 'Session not found' });
       }
     }
@@ -180,7 +181,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
           notes: body.notes,
         });
         return reply.send(activity);
-      } catch (error) {
+      } catch (_error) {
         return reply.code(404).send({ error: 'Activity not found' });
       }
     }
@@ -196,7 +197,7 @@ export const sessionsRoutes: FastifyPluginAsync = async (app) => {
       try {
         const activity = await service.completeActivity(activityId, durationSec);
         return reply.send(activity);
-      } catch (error) {
+      } catch (_error) {
         return reply.code(404).send({ error: 'Activity not found' });
       }
     }

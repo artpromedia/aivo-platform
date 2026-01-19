@@ -18,7 +18,7 @@ import type { ExtendedPrismaClient } from '../prisma-types.js';
 // Type aliases since generated types might not be available
 type AdminRole = 'SUPER_ADMIN' | 'SANDBOX_ADMIN' | 'SALES_DEMO' | 'SUPPORT';
 
-type SandboxAdmin = {
+interface SandboxAdmin {
   id: string;
   email: string;
   name: string;
@@ -37,7 +37,7 @@ type SandboxAdmin = {
   createdAt: Date;
   updatedAt: Date;
   createdBy: string | null;
-};
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -448,7 +448,7 @@ export class AdminAuthService {
         throw new Error('Invalid token format');
       }
       email = parts[0];
-      timestamp = parseInt(parts[1], 10);
+      timestamp = Number.parseInt(parts[1], 10);
 
       // Verify token hasn't expired (5 minutes)
       if (Date.now() - timestamp > 5 * 60 * 1000) {
@@ -461,6 +461,10 @@ export class AdminAuthService {
         throw new UnauthorizedException('Invalid MFA token');
       }
     } catch (error) {
+      // Preserve UnauthorizedException, mask other errors for security
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid MFA token');
     }
 
@@ -1077,7 +1081,7 @@ export class AdminAuthService {
       return false;
     }
 
-    const iterations = parseInt(parts[1] ?? '0', 10);
+    const iterations = Number.parseInt(parts[1] ?? '0', 10);
     const salt = Buffer.from(parts[2] ?? '', 'base64');
     const storedKey = Buffer.from(parts[3] ?? '', 'base64');
 
@@ -1388,7 +1392,7 @@ export class AdminAuthService {
 
     const hmacResult = createHmac('sha1', secretBytes).update(counterBuffer).digest();
 
-    const offset = hmacResult[hmacResult.length - 1]! & 0x0f;
+    const offset = hmacResult.at(-1)! & 0x0f;
     const code =
       (((hmacResult[offset]! & 0x7f) << 24) |
         ((hmacResult[offset + 1]! & 0xff) << 16) |
@@ -1430,7 +1434,7 @@ export class AdminAuthService {
    */
   private base32Decode(str: string): Buffer {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    const cleanedStr = str.toUpperCase().replace(/[^A-Z2-7]/g, '');
+    const cleanedStr = str.toUpperCase().replaceAll(/[^A-Z2-7]/g, '');
     const bytes: number[] = [];
     let bits = 0;
     let value = 0;
@@ -1513,7 +1517,7 @@ export class AdminAuthService {
     const [rangeIp, maskStr] = cidr.split('/');
     if (!rangeIp) return false;
 
-    const mask = maskStr ? parseInt(maskStr, 10) : 32;
+    const mask = maskStr ? Number.parseInt(maskStr, 10) : 32;
 
     const ipNum = this.ipToNumber(ip);
     const rangeNum = this.ipToNumber(rangeIp);
@@ -1569,9 +1573,7 @@ let adminAuthServiceInstance: AdminAuthService | null = null;
  * Get the singleton admin auth service instance
  */
 export function getAdminAuthService(prisma: ExtendedPrismaClient): AdminAuthService {
-  if (!adminAuthServiceInstance) {
-    adminAuthServiceInstance = new AdminAuthService(prisma);
-  }
+  adminAuthServiceInstance ??= new AdminAuthService(prisma);
   return adminAuthServiceInstance;
 }
 

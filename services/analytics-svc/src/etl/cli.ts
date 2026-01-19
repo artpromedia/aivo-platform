@@ -12,7 +12,7 @@
  *   node dist/etl/cli.js status
  */
 
-/* eslint-disable @typescript-eslint/use-unknown-in-catch-callback-variable */
+ 
 
 import { parseArgs } from 'node:util';
 

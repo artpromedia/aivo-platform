@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, forwardRef } from 'react';
+
 import { DEFAULT_SKIP_LINKS, skipLinksCSS } from '../skip-links';
 import type { SkipLink } from '../types';
 

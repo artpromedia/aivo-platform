@@ -4,7 +4,7 @@
  * Handles API key generation, validation, and rate limiting for public APIs.
  */
 
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash } from 'node:crypto';
 
 import type { PrismaClient, ApiScope } from '@prisma/client';
 import { ApiKeyStatus } from '@prisma/client';
@@ -58,7 +58,7 @@ const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class ApiKeyService {
-  private prisma: PrismaClient;
+  private readonly prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;

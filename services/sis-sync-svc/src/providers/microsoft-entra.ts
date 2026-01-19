@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 /**
  * Microsoft Entra ID (Azure AD) SIS Provider
  *
@@ -11,7 +11,7 @@
  * @see https://learn.microsoft.com/en-us/graph/api/resources/education-overview
  */
 
-import {
+import type {
   ISisProvider,
   MicrosoftEntraConfig,
   SisSchool,
@@ -65,8 +65,8 @@ interface GraphUser {
   accountEnabled: boolean;
   userType?: string;
   createdDateTime?: string;
-  assignedLicenses?: Array<{ skuId: string }>;
-  memberOf?: Array<{ '@odata.type': string; id: string; displayName: string }>;
+  assignedLicenses?: { skuId: string }[];
+  memberOf?: { '@odata.type': string; id: string; displayName: string }[];
 }
 
 interface GraphGroup {
@@ -398,7 +398,7 @@ export class MicrosoftEntraProvider implements ISisProvider {
         // Apply license filters if configured
         if (this.config.licenseFilters?.length && user.assignedLicenses) {
           const hasMatchingLicense = user.assignedLicenses.some(
-            license => this.config!.licenseFilters!.includes(license.skuId)
+            license => this.config.licenseFilters.includes(license.skuId)
           );
           if (!hasMatchingLicense) continue;
         }

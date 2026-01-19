@@ -8,8 +8,8 @@
  * sliding window calculation.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { AlgorithmCheckResult, AlgorithmOptions } from '../types';
+import type { RateLimitStore } from '../stores/types';
+import type { AlgorithmCheckResult, AlgorithmOptions } from '../types';
 
 export class SlidingWindow {
   constructor(private store: RateLimitStore) {}

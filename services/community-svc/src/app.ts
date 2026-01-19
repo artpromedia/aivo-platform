@@ -4,6 +4,7 @@
  */
 
 import Fastify, { type FastifyInstance } from 'fastify';
+
 import { config } from './config.js';
 import {
   registerPostRoutes,

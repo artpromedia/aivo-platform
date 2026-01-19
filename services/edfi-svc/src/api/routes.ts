@@ -318,8 +318,8 @@ export async function registerRoutes(
     '/api/v1/edfi/configs/:configId/exports',
     async (request, reply) => {
       const { configId } = request.params;
-      const limit = parseInt(request.query.limit || '20', 10);
-      const offset = parseInt(request.query.offset || '0', 10);
+      const limit = Number.parseInt(request.query.limit || '20', 10);
+      const offset = Number.parseInt(request.query.offset || '0', 10);
 
       const { runs, total } = await exportService.getExportHistory(configId, { limit, offset });
 

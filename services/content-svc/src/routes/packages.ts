@@ -447,7 +447,7 @@ export async function contentPackageRoutes(fastify: FastifyInstance) {
       }
 
       const { tenantId, status, limit } = request.query;
-      const limitNum = Math.min(parseInt(limit ?? '50', 10), 100);
+      const limitNum = Math.min(Number.parseInt(limit ?? '50', 10), 100);
 
       // Determine tenant filter
       let tenantFilter: string | undefined = tenantId;

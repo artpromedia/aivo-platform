@@ -241,7 +241,7 @@ export function ScoreDistributionChart({
   className,
 }: ScoreDistributionChartProps) {
   const getBarColor = (range: string): string => {
-    const lowerBound = parseInt(range.split('-')[0], 10);
+    const lowerBound = Number.parseInt(range.split('-')[0], 10);
     if (lowerBound >= 80) return CHART_COLORS.success;
     if (lowerBound >= 60) return CHART_COLORS.warning;
     return CHART_COLORS.danger;

@@ -201,7 +201,7 @@ export class TenantLearningAgent {
       [this.tenantId]
     );
 
-    return parseInt(result.rows[0]?.count || '0');
+    return Number.parseInt(result.rows[0]?.count || '0');
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -762,7 +762,7 @@ export class TenantLearningAgent {
     return {
       meanEffectiveness: parseFloat(stats.mean_eff) || 0,
       stdEffectiveness: parseFloat(stats.std_eff) || 0,
-      sampleCount: parseInt(stats.sample_count) || 0,
+      sampleCount: Number.parseInt(stats.sample_count) || 0,
       validationLoss: model.validationLoss,
     };
   }

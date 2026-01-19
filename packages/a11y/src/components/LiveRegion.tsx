@@ -1,5 +1,6 @@
 import React, { forwardRef, useRef, useEffect, useId } from 'react';
-import { Politeness } from '../types';
+
+import type { Politeness } from '../types';
 
 export interface LiveRegionProps {
   children?: React.ReactNode;

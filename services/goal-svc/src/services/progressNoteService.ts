@@ -247,7 +247,7 @@ export async function getGoalProgressTimeline(
 export async function getLearnerRecentNotes(
   tenantId: string,
   learnerId: string,
-  limit: number = 10
+  limit = 10
 ) {
   const notes = await prisma.progressNote.findMany({
     where: { tenantId, learnerId },

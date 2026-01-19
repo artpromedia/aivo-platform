@@ -138,8 +138,8 @@ export async function registerNotificationRoutes(fastify: FastifyInstance): Prom
           isRead: isRead === 'true' ? true : isRead === 'false' ? false : undefined,
         },
         {
-          page: page ? parseInt(page, 10) : 1,
-          pageSize: pageSize ? parseInt(pageSize, 10) : 20,
+          page: page ? Number.parseInt(page, 10) : 1,
+          pageSize: pageSize ? Number.parseInt(pageSize, 10) : 20,
         }
       );
 

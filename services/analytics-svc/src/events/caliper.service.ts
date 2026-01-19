@@ -3,10 +3,11 @@
 // IMS Global Caliper Analytics 1.2 compliant event generation
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { createHash, randomUUID } from 'crypto';
-import { Redis } from 'ioredis';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { logger, metrics } from '@aivo/ts-observability';
+import type { Redis } from 'ioredis';
+
 
 // ─── Caliper Event Types ───────────────────────────────────────────────────────
 
@@ -272,8 +273,8 @@ export interface CaliperEventInput {
 }
 
 const DEFAULT_CONFIG: CaliperServiceConfig = {
-  endpoint: process.env['CALIPER_ENDPOINT'] ?? 'http://localhost:8080/caliper',
-  apiKey: process.env['CALIPER_API_KEY'] ?? '',
+  endpoint: process.env.CALIPER_ENDPOINT ?? 'http://localhost:8080/caliper',
+  apiKey: process.env.CALIPER_API_KEY ?? '',
   sensorId: 'https://aivolearning.com/sensor/1',
   dataVersion: 'http://purl.imsglobal.org/ctx/caliper/v1p2',
   bufferSize: 50,

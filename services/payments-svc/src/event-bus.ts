@@ -33,6 +33,7 @@ export interface BillingEvent {
 // EVENT BUS CLIENT
 // ══════════════════════════════════════════════════════════════════════════════
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 let redisClient: RedisClientType | null = null;
 let isConnected = false;
 

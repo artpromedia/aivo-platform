@@ -2,9 +2,9 @@
  * Game Service - Core business logic for game library
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
-import { GAME_CATALOG, filterGames, getRandomFocusBreakGame } from '../games/catalog.js';
 import { config } from '../config.js';
+import { GAME_CATALOG, filterGames, getRandomFocusBreakGame } from '../games/catalog.js';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 import type {
   GameDefinition,
   GameFilters,
@@ -101,7 +101,7 @@ export class GameService {
       orderBy: { title: 'asc' },
     });
 
-    return games.map(this.toGameSummary);
+    return games.map((g) => this.toGameSummary(g));
   }
 
   /**
@@ -121,6 +121,7 @@ export class GameService {
   /**
    * Get full game details including config
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   async getGameDetails(idOrSlug: string): Promise<any | null> {
     const game = await this.prisma.game.findFirst({
       where: {
@@ -296,7 +297,7 @@ export class GameService {
       take: limit,
     });
 
-    return sessions.map(this.toSessionResponse);
+    return sessions.map((s) => this.toSessionResponse(s));
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -432,7 +433,7 @@ export class GameService {
       where: { id: { in: plan.gameIds } },
     });
 
-    const gameSummaries = games.map(this.toGameSummary);
+    const gameSummaries = games.map((g) => this.toGameSummary(g));
     const completedCount = plan.completedGameIds.length;
     const totalCount = plan.gameIds.length;
 

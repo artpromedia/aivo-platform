@@ -6,6 +6,7 @@
  */
 
 import { Cron } from 'croner';
+
 import type { PrismaClient } from '../generated/prisma-client/index.js';
 import { AggregationService } from '../services/aggregation.service.js';
 
@@ -41,7 +42,7 @@ export class WeeklyRollupJob {
 
   constructor(
     private prisma: PrismaClient,
-    private schedule: string = '0 2 * * 0', // 2 AM Sunday
+    private schedule = '0 2 * * 0', // 2 AM Sunday
   ) {
     this.aggregationService = new AggregationService(prisma);
   }
@@ -186,7 +187,7 @@ export class WeeklyRollupJob {
     });
 
     // Group by tenant and aggregate
-    const tenantMap = new Map<string, Array<{ metricData: unknown }>>();
+    const tenantMap = new Map<string, { metricData: unknown }[]>();
     for (const m of monthlyMetrics) {
       if (!tenantMap.has(m.tenantId)) {
         tenantMap.set(m.tenantId, []);
@@ -307,7 +308,7 @@ export class WeeklyRollupJob {
   }
 
   private aggregatePeriodMetrics(
-    periods: Array<{ metricData: unknown }>,
+    periods: { metricData: unknown }[],
   ): Record<string, number | null> {
     const result: Record<string, number | null> = {
       totalTimeSeconds: 0,

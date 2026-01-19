@@ -10,10 +10,11 @@
  * - Proctoring integration hooks
  */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
+
+import { publishEvent } from '../events/publisher.js';
 import { prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
-import { publishEvent } from '../events/publisher.js';
 import type { SecurityViolationType, AccommodationType } from '../types/assessment.types.js';
 
 // ============================================================================
@@ -311,7 +312,7 @@ export class SecurityService {
    */
   async getViolationHistory(
     attemptId: string
-  ): Promise<Array<ViolationReport & { id: string }>> {
+  ): Promise<(ViolationReport & { id: string })[]> {
     const violations = await prisma.attemptSecurityViolation.findMany({
       where: { attemptId },
       orderBy: { detectedAt: 'asc' },

@@ -313,7 +313,7 @@ Respond with JSON only:
       if (lexile >= range.min && lexile <= range.max) {
         // Calculate position within the grade range
         const position = (lexile - range.min) / (range.max - range.min);
-        const gradeNum = parseInt(grade, 10) || 0;
+        const gradeNum = Number.parseInt(grade, 10) || 0;
         return gradeNum + position * 0.9; // 0.0 to 0.9 within the grade
       }
     }

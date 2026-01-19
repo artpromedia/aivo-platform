@@ -559,7 +559,7 @@ export class SpeechGamificationService {
     // Base session reward
     xpEarned += 30;
     starsEarned += 1;
-    let sessionsCompleted = rewards.sessionsCompleted + 1;
+    const sessionsCompleted = rewards.sessionsCompleted + 1;
     let perfectSessions = rewards.perfectSessions;
 
     // Accuracy bonus
@@ -735,7 +735,7 @@ export class SpeechGamificationService {
 
     // Update streak
     const today = new Date();
-    let streakBonus = 0;
+    const streakBonus = 0;
     let isNewStreak = false;
     let currentPracticeStreak = rewards.currentPracticeStreak;
     let longestPracticeStreak = rewards.longestPracticeStreak;

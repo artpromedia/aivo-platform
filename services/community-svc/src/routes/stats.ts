@@ -4,6 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
 import { statsService } from '../services/stats.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -53,7 +54,7 @@ export async function registerStatsRoutes(app: FastifyInstance): Promise<void> {
       reply: FastifyReply
     ) => {
       const tenantId = getTenantId(request);
-      const limit = request.query.limit ? parseInt(request.query.limit, 10) : 10;
+      const limit = request.query.limit ? Number.parseInt(request.query.limit, 10) : 10;
 
       const contributors = await statsService.getTopContributors(tenantId, limit);
 

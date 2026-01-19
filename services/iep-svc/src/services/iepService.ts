@@ -2,9 +2,10 @@
  * AIVO IEP Service - IEP Management Service
  */
 
-import { prisma } from '../prisma.js';
-import { config } from '../config.js';
 import { addMonths, addYears, differenceInDays } from 'date-fns';
+
+import { config } from '../config.js';
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // IEP CRUD
@@ -215,7 +216,7 @@ export async function updateGoal(tenantId: string, goalId: string, input: any) {
     include: { iep: { select: { tenantId: true } } },
   });
 
-  if (!goal || goal.iep.tenantId !== tenantId) throw new Error('Goal not found');
+  if (goal?.iep.tenantId !== tenantId) throw new Error('Goal not found');
 
   return prisma.iEPGoal.update({
     where: { id: goalId },
@@ -239,7 +240,7 @@ export async function recordProgress(tenantId: string, goalId: string, input: an
     include: { iep: { select: { tenantId: true } } },
   });
 
-  if (!goal || goal.iep.tenantId !== tenantId) throw new Error('Goal not found');
+  if (goal?.iep.tenantId !== tenantId) throw new Error('Goal not found');
 
   return prisma.progressData.create({
     data: {
@@ -324,7 +325,7 @@ export async function logServiceSession(tenantId: string, serviceId: string, inp
     include: { iep: { select: { tenantId: true } } },
   });
 
-  if (!service || service.iep.tenantId !== tenantId) throw new Error('Service not found');
+  if (service?.iep.tenantId !== tenantId) throw new Error('Service not found');
 
   return prisma.serviceLog.create({
     data: {
@@ -371,7 +372,7 @@ export async function completeMeeting(tenantId: string, meetingId: string, input
     include: { iep: { select: { tenantId: true } } },
   });
 
-  if (!meeting || meeting.iep.tenantId !== tenantId) throw new Error('Meeting not found');
+  if (meeting?.iep.tenantId !== tenantId) throw new Error('Meeting not found');
 
   return prisma.meeting.update({
     where: { id: meetingId },
@@ -406,7 +407,7 @@ export async function checkCompliance(tenantId: string) {
   });
 
   for (const iep of annualReviewsDue) {
-    const daysUntil = differenceInDays(iep.annualReviewDate!, now);
+    const daysUntil = differenceInDays(iep.annualReviewDate, now);
     alerts.push({
       alertType: 'ANNUAL_REVIEW_DUE',
       severity: daysUntil <= 7 ? 'High' : 'Medium',

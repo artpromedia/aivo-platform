@@ -1,9 +1,7 @@
-/**
- * Parent Service Prisma Schema
- *
- * Database models for parent accounts, student linkage,
- * messaging, consent management, and notifications.
- */
+// Parent Service Prisma Schema
+//
+// Database models for parent accounts, student linkage,
+// messaging, consent management, and notifications.
 
 generator client {
   provider = "prisma-client-js"
@@ -375,6 +373,9 @@ model Profile {
   photoUrl        String?
   dateOfBirth     DateTime?
   grade           String?
+  pin             String?   @unique // 6-digit PIN for consumer/home learner login
+  pinHash         String?   // Hashed PIN for security
+  baselineStatus  String    @default("not_started") // not_started, in_progress, completed
   status          String    @default("active")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

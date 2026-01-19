@@ -301,7 +301,7 @@ export async function removeCustodianFromMatter(
     include: { custodian: true, matter: { select: { tenantId: true } } },
   });
 
-  if (!matterCustodian || matterCustodian.matter.tenantId !== tenantId) {
+  if (matterCustodian?.matter.tenantId !== tenantId) {
     throw new Error('Matter custodian not found');
   }
 
@@ -324,7 +324,7 @@ export async function addMatterNote(
   matterId: string,
   userId: string,
   content: string,
-  isPrivate: boolean = false
+  isPrivate = false
 ) {
   const matter = await prisma.legalMatter.findFirst({
     where: { id: matterId, tenantId },

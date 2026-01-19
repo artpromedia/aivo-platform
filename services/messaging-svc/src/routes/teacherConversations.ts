@@ -107,8 +107,8 @@ export async function registerTeacherConversationRoutes(app: FastifyInstance): P
         studentId,
         {
           contextType,
-          limit: limit ? parseInt(limit, 10) : undefined,
-          offset: offset ? parseInt(offset, 10) : undefined,
+          limit: limit ? Number.parseInt(limit, 10) : undefined,
+          offset: offset ? Number.parseInt(offset, 10) : undefined,
         }
       );
 
@@ -187,7 +187,7 @@ export async function registerTeacherConversationRoutes(app: FastifyInstance): P
         ctx.userId,
         conversationId,
         {
-          limit: limit ? parseInt(limit, 10) : undefined,
+          limit: limit ? Number.parseInt(limit, 10) : undefined,
           beforeId,
         }
       );

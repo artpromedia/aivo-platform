@@ -4,7 +4,7 @@
  * Provides utilities for working with ARIA attributes
  */
 
-import { InteractiveRole, LandmarkRole } from './types';
+import type { InteractiveRole, LandmarkRole } from './types';
 
 /**
  * Generate a unique ID for ARIA relationships

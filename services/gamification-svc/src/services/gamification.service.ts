@@ -10,22 +10,24 @@
  * - Respects teacher/parent controls
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
-import {
+import { prisma } from '../prisma.js';
+import type {
   XPTransaction,
   PlayerProfile,
   LevelConfig,
   DailyGoal,
-  Streak,
   PlayerDashboardResponse,
-  PlayerSettings,
+  PlayerSettings} from '../types/gamification.types.js';
+import {
+  Streak
 } from '../types/gamification.types.js';
+
 import { achievementService } from './achievement.service.js';
-import { streakService } from './streak.service.js';
-import { leaderboardService } from './leaderboard.service.js';
 import { challengeService } from './challenge.service.js';
+import { leaderboardService } from './leaderboard.service.js';
 import { rewardService } from './reward.service.js';
+import { streakService } from './streak.service.js';
 
 // ============================================================================
 // XP AWARD CONFIGURATION

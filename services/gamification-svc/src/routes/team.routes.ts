@@ -4,11 +4,14 @@
  * Handles team/guild-related API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
-import { teamService, TeamType, TeamMemberRole } from '../services/team.service.js';
+
+import type { TeamType} from '../services/team.service.js';
+import { teamService, TeamMemberRole } from '../services/team.service.js';
 
 const router: IRouter = Router();
 
@@ -279,7 +282,7 @@ router.get(
     const type = req.query.type as TeamType | undefined;
     const schoolId = req.query.schoolId as string | undefined;
     const period = (req.query.period as 'weekly' | 'monthly' | 'all_time') || 'all_time';
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Number.parseInt(req.query.limit as string) || 20;
 
     const teams = await teamService.getTeamLeaderboard({
       type,

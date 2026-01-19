@@ -4,8 +4,8 @@ import type { Pool } from 'pg';
 
 import { config } from './config.js';
 import { createPool } from './db.js';
-import { registerDsrRoutes } from './routes/dsr.js';
 import { registerDsrRoutesV2 } from './routes/dsr-v2.js';
+import { registerDsrRoutes } from './routes/dsr.js';
 import { startGracePeriodScheduler, stopGracePeriodScheduler } from './scheduler.js';
 
 export function createApp(options: { pool?: Pool; logger?: boolean; enableScheduler?: boolean } = {}) {

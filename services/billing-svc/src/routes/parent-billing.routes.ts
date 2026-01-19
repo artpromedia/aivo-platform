@@ -4,13 +4,13 @@
  * REST API endpoints for parent (consumer) billing operations.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-
 import {
   CheckoutSessionRequestSchema,
   CreateCouponRequestSchema,
   UpdateModulesRequestSchema,
 } from '@aivo/billing-common';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
 
 import { couponService } from '../services/coupon.service.js';
 import { parentBillingService } from '../services/parent-billing.service.js';
@@ -128,7 +128,7 @@ export async function parentBillingRoutes(app: FastifyInstance): Promise<void> {
       reply: FastifyReply
     ) => {
       const ctx = getContext(request);
-      const limit = request.query.limit ? parseInt(request.query.limit, 10) : 10;
+      const limit = request.query.limit ? Number.parseInt(request.query.limit, 10) : 10;
       const startingAfter = request.query.startingAfter;
 
       const result = await parentBillingService.getInvoices(ctx, limit, startingAfter);
@@ -286,8 +286,8 @@ export async function adminBillingRoutes(app: FastifyInstance): Promise<void> {
       const result = await couponService.listCoupons({
         tenantId: tenantId ?? undefined,
         isActive: isActive ? isActive === 'true' : undefined,
-        limit: limit ? parseInt(limit, 10) : undefined,
-        offset: offset ? parseInt(offset, 10) : undefined,
+        limit: limit ? Number.parseInt(limit, 10) : undefined,
+        offset: offset ? Number.parseInt(offset, 10) : undefined,
       });
 
       return reply.send(result);
@@ -396,7 +396,7 @@ export async function adminBillingRoutes(app: FastifyInstance): Promise<void> {
       request: FastifyRequest<{ Querystring: { days?: string } }>,
       reply: FastifyReply
     ) => {
-      const days = request.query.days ? parseInt(request.query.days, 10) : 7;
+      const days = request.query.days ? Number.parseInt(request.query.days, 10) : 7;
       const trials = await trialService.getTrialsEndingSoon(days);
       return reply.send({ trials });
     }

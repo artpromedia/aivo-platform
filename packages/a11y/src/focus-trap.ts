@@ -8,7 +8,7 @@
  * - Popovers
  */
 
-import { FocusTrapOptions } from './types';
+import type { FocusTrapOptions } from './types';
 
 const FOCUSABLE_SELECTORS = [
   'a[href]',

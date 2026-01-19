@@ -5,12 +5,14 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/flutter_common.dart';
 
+import '../providers/core_providers.dart';
 
 /// Provider for teacher notification preferences
 final teacherNotificationPreferencesProvider =
     StateNotifierProvider<TeacherNotificationPreferencesNotifier, TeacherNotificationPreferencesState>(
-  (ref) => TeacherNotificationPreferencesNotifier(),
+  (ref) => TeacherNotificationPreferencesNotifier(ref.watch(apiClientProvider)),
 );
 
 class TeacherNotificationPreferencesState {
@@ -74,16 +76,33 @@ class TeacherNotificationPreferencesState {
 }
 
 class TeacherNotificationPreferencesNotifier extends StateNotifier<TeacherNotificationPreferencesState> {
-  TeacherNotificationPreferencesNotifier() : super(const TeacherNotificationPreferencesState());
+  TeacherNotificationPreferencesNotifier(this._api) : super(const TeacherNotificationPreferencesState());
+
+  final AivoApiClient _api;
 
   Future<void> loadPreferences() async {
     state = state.copyWith(isLoading: true);
 
     try {
-      // TODO: Load from backend
-      await Future.delayed(const Duration(milliseconds: 500));
-      state = state.copyWith(isLoading: false);
+      // Load preferences from backend
+      final response = await _api.get('/users/me/notification-preferences');
+      final data = response.data as Map<String, dynamic>;
+      
+      state = state.copyWith(
+        isLoading: false,
+        pushEnabled: data['pushEnabled'] as bool? ?? true,
+        emailEnabled: data['emailEnabled'] as bool? ?? true,
+        studentAlertsEnabled: data['studentAlertsEnabled'] as bool? ?? true,
+        sessionCompletionsEnabled: data['sessionCompletionsEnabled'] as bool? ?? true,
+        parentMessagesEnabled: data['parentMessagesEnabled'] as bool? ?? true,
+        classRemindersEnabled: data['classRemindersEnabled'] as bool? ?? true,
+        iepRemindersEnabled: data['iepRemindersEnabled'] as bool? ?? true,
+        quietHoursEnabled: data['quietHoursEnabled'] as bool? ?? false,
+        quietHoursStart: data['quietHoursStart'] as String? ?? '22:00',
+        quietHoursEnd: data['quietHoursEnd'] as String? ?? '07:00',
+      );
     } catch (e) {
+      // Fall back to defaults if API fails
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -122,7 +141,27 @@ class TeacherNotificationPreferencesNotifier extends StateNotifier<TeacherNotifi
         break;
     }
 
-    // TODO: Save to backend
+    // Save to backend
+    await _savePreferences();
+  }
+
+  Future<void> _savePreferences() async {
+    try {
+      await _api.put('/users/me/notification-preferences', data: {
+        'pushEnabled': state.pushEnabled,
+        'emailEnabled': state.emailEnabled,
+        'studentAlertsEnabled': state.studentAlertsEnabled,
+        'sessionCompletionsEnabled': state.sessionCompletionsEnabled,
+        'parentMessagesEnabled': state.parentMessagesEnabled,
+        'classRemindersEnabled': state.classRemindersEnabled,
+        'iepRemindersEnabled': state.iepRemindersEnabled,
+        'quietHoursEnabled': state.quietHoursEnabled,
+        'quietHoursStart': state.quietHoursStart,
+        'quietHoursEnd': state.quietHoursEnd,
+      });
+    } catch (e) {
+      state = state.copyWith(error: 'Failed to save preferences: $e');
+    }
   }
 }
 

@@ -24,10 +24,11 @@
  * ```
  */
 
-import { RateLimitStore } from './stores/types';
+import type { RateLimiterLogger} from './logger';
+import { noopLogger } from './logger';
 import { MemoryStore } from './stores/memory-store';
-import { QuotaUsage } from './types';
-import { RateLimiterLogger, noopLogger } from './logger';
+import type { RateLimitStore } from './stores/types';
+import type { QuotaUsage } from './types';
 
 export interface QuotaDefinition {
   /** Daily limit */
@@ -98,7 +99,7 @@ export class QuotaManager {
   async check(
     entityKey: string,
     quotaName: string,
-    cost: number = 1
+    cost = 1
   ): Promise<QuotaCheckResult> {
     const definition = this.quotas[quotaName];
     if (!definition) {
@@ -166,7 +167,7 @@ export class QuotaManager {
   async consume(
     entityKey: string,
     quotaName: string,
-    cost: number = 1
+    cost = 1
   ): Promise<QuotaCheckResult> {
     const definition = this.quotas[quotaName];
     if (!definition) {
@@ -310,7 +311,7 @@ export class QuotaManager {
    */
   private async getCounter(key: string): Promise<number> {
     const value = await this.store.get(key);
-    return value ? parseInt(value, 10) : 0;
+    return value ? Number.parseInt(value, 10) : 0;
   }
 
   /**

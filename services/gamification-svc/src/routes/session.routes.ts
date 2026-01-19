@@ -4,11 +4,13 @@
  * API endpoints for session tracking and break management
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, IRouter } from 'express';
-import { antiAddictionService } from '../services/anti-addiction.service.js';
+import type { Request, Response, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
+import { antiAddictionService } from '../services/anti-addiction.service.js';
 
 const router: IRouter = Router();
 
@@ -132,7 +134,7 @@ router.get('/today-usage', async (req: Request, res: Response) => {
 router.get('/usage-stats', async (req: Request, res: Response) => {
   try {
     const studentId = req.query.studentId as string;
-    const days = req.query.days ? parseInt(req.query.days as string) : 7;
+    const days = req.query.days ? Number.parseInt(req.query.days as string) : 7;
 
     if (!studentId) {
       res.status(400).json({ error: 'studentId is required' });

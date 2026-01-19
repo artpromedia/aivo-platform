@@ -4,7 +4,7 @@ import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+ 
 const auth = sharedAuthMiddleware({ publicKey: config.jwtPublicKey });
 
 const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
@@ -39,7 +39,7 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
     if (path === '/health') return;
 
     // Everything else requires a valid bearer token
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+     
     await auth(request, reply);
   });
   done();

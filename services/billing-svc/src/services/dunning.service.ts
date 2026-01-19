@@ -78,7 +78,7 @@ export class DunningService {
 
     try {
       // Check for existing dunning record
-      const existingDunning = await prisma.$queryRaw<Array<{ id: string; failure_count: number }>>`
+      const existingDunning = await prisma.$queryRaw<{ id: string; failure_count: number }[]>`
         SELECT id, failure_count FROM dunning_records
         WHERE subscription_id = ${subscriptionId}::uuid
           AND resolved_at IS NULL
@@ -102,7 +102,7 @@ export class DunningService {
       }
 
       // Create new dunning record
-      const newDunning = await prisma.$queryRaw<Array<{ id: string }>>`
+      const newDunning = await prisma.$queryRaw<{ id: string }[]>`
         INSERT INTO dunning_records (
           subscription_id, tenant_id, first_failure_at, latest_failure_at,
           day0_notified_at, stripe_invoice_id
@@ -190,7 +190,7 @@ export class DunningService {
   async processDunningEscalations(log: FastifyBaseLogger): Promise<void> {
     // Find all unresolved dunning records
     const activeDunnings = await prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         subscription_id: string;
         tenant_id: string;
@@ -199,7 +199,7 @@ export class DunningService {
         day3_notified_at: Date | null;
         day7_notified_at: Date | null;
         limited_mode_at: Date | null;
-      }>
+      }[]
     >`
       SELECT id, subscription_id, tenant_id, first_failure_at,
              day0_notified_at, day3_notified_at, day7_notified_at, limited_mode_at
@@ -255,7 +255,7 @@ export class DunningService {
     }
 
     const metadata = subscription.metadataJson as Record<string, unknown> | null;
-    const limitedMode = metadata?.['limitedMode'];
+    const limitedMode = metadata?.limitedMode;
     return typeof limitedMode === 'boolean' ? limitedMode : false;
   }
 
@@ -269,11 +269,11 @@ export class DunningService {
     limitedMode: boolean;
   } | null> {
     const dunning = await prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         first_failure_at: Date;
         limited_mode_at: Date | null;
-      }>
+      }[]
     >`
       SELECT id, first_failure_at, limited_mode_at
       FROM dunning_records
@@ -313,7 +313,7 @@ export class DunningService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   private async determineDunningStage(dunningId: string): Promise<DunningStage> {
-    const dunning = await prisma.$queryRaw<Array<{ first_failure_at: Date }>>`
+    const dunning = await prisma.$queryRaw<{ first_failure_at: Date }[]>`
       SELECT first_failure_at FROM dunning_records WHERE id = ${dunningId}::uuid
     `;
 

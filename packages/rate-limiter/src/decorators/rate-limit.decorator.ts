@@ -5,8 +5,9 @@
  */
 
 import { SetMetadata, applyDecorators, UseGuards } from '@nestjs/common';
+
+import type { AlgorithmType } from '../algorithms';
 import type { RateLimitRule } from '../types';
-import { AlgorithmType } from '../algorithms';
 
 // Metadata keys
 export const RATE_LIMIT_KEY = 'rate_limit';

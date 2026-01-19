@@ -7,7 +7,7 @@
  * @see https://developer.classlink.com/
  */
 
-import {
+import type {
   ISisProvider,
   ClassLinkConfig,
   SisSchool,
@@ -44,7 +44,7 @@ interface ClassLinkClass {
   subjects?: string[];
   course?: { sourcedId: string };
   school: { sourcedId: string };
-  terms?: Array<{ sourcedId: string }>;
+  terms?: { sourcedId: string }[];
   subjectCodes?: string[];
   periods?: string[];
 }
@@ -54,10 +54,10 @@ interface ClassLinkUser {
   status: 'active' | 'tobedeleted';
   dateLastModified?: string;
   enabledUser: boolean;
-  orgs: Array<{ sourcedId: string }>;
+  orgs: { sourcedId: string }[];
   role: 'student' | 'teacher' | 'administrator' | 'aide' | 'parent' | 'guardian';
   username?: string;
-  userIds?: Array<{ type: string; identifier: string }>;
+  userIds?: { type: string; identifier: string }[];
   givenName: string;
   familyName: string;
   middleName?: string;
@@ -78,9 +78,7 @@ interface ClassLinkEnrollment {
   endDate?: string;
 }
 
-interface ClassLinkResponse<T> {
-  [key: string]: T[];
-}
+type ClassLinkResponse<T> = Record<string, T[]>;
 
 export class ClassLinkProvider implements ISisProvider {
   readonly providerType = 'CLASSLINK' as const;
@@ -178,7 +176,7 @@ export class ClassLinkProvider implements ISisProvider {
   }
 
   async fetchSchools(cursor?: string): Promise<SyncEntityResult<SisSchool>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/orgs?limit=${PAGE_SIZE}&offset=${offset}&filter=type='school'`;
     
     const response = await this.fetchFromClassLink<ClassLinkOrg>(endpoint);
@@ -204,7 +202,7 @@ export class ClassLinkProvider implements ISisProvider {
   }
 
   async fetchClasses(cursor?: string): Promise<SyncEntityResult<SisClass>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/classes?limit=${PAGE_SIZE}&offset=${offset}`;
     
     const response = await this.fetchFromClassLink<ClassLinkClass>(endpoint);
@@ -232,7 +230,7 @@ export class ClassLinkProvider implements ISisProvider {
   }
 
   async fetchUsers(cursor?: string): Promise<SyncEntityResult<SisUser>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/users?limit=${PAGE_SIZE}&offset=${offset}`;
     
     const response = await this.fetchFromClassLink<ClassLinkUser>(endpoint);
@@ -269,7 +267,7 @@ export class ClassLinkProvider implements ISisProvider {
   }
 
   async fetchEnrollments(cursor?: string): Promise<SyncEntityResult<SisEnrollment>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/enrollments?limit=${PAGE_SIZE}&offset=${offset}`;
     
     const response = await this.fetchFromClassLink<ClassLinkEnrollment>(endpoint);

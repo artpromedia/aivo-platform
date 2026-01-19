@@ -22,14 +22,16 @@
  */
 
 import { DynamicModule, Module, Global, OnModuleInit, Inject } from '@nestjs/common';
-import { RateLimiter, defaultTiers, defaultRules } from '../rate-limiter';
-import { RedisStore } from '../stores/redis-store';
-import { MemoryStore } from '../stores/memory-store';
+import type Redis from 'ioredis';
+
 import { CircuitBreaker } from '../circuit-breaker';
+import { createLogger } from '../logger';
 import { PriorityQueue } from '../priority-queue';
 import { QuotaManager } from '../quota-manager';
-import { createLogger } from '../logger';
-import type Redis from 'ioredis';
+import { RateLimiter, defaultTiers, defaultRules } from '../rate-limiter';
+import { MemoryStore } from '../stores/memory-store';
+import { RedisStore } from '../stores/redis-store';
+
 
 export const GATEWAY_RATE_LIMITER = 'GATEWAY_RATE_LIMITER';
 export const GATEWAY_CIRCUIT_BREAKER = 'GATEWAY_CIRCUIT_BREAKER';
@@ -75,6 +77,7 @@ export interface GatewayRateLimitOptions {
 
 @Global()
 @Module({})
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class GatewayRateLimitModule {
   static forRoot(options: GatewayRateLimitOptions = {}): DynamicModule {
     const providers = [

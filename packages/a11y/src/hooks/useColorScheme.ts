@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+
 import {
   getColorSchemePreference,
   subscribeToColorScheme,
 } from '../reduced-motion';
-import { ColorSchemePreference } from '../types';
+import type { ColorSchemePreference } from '../types';
 
 /**
  * Hook to detect user's color scheme preference

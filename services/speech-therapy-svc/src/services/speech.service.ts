@@ -4,7 +4,7 @@
  * recording analysis, and home practice features.
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 import { logger } from '../logger.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -554,7 +554,7 @@ export class SpeechTherapyService {
     targetPhrase: string,
     apiKey: string,
     region: string,
-    language: string = 'en-US'
+    language = 'en-US'
   ): Promise<RecordingAnalysis & { transcript?: string }> {
     // Azure Speech pronunciation assessment REST endpoint
     const endpoint = `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;

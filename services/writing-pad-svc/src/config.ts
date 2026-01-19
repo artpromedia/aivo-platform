@@ -28,7 +28,7 @@ function loadKey(envKey: string, pathEnvKey: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT || '4030', 10),
+  port: Number.parseInt(process.env.PORT || '4030', 10),
   logLevel: process.env.LOG_LEVEL || 'info',
 
   // Database
@@ -47,7 +47,7 @@ export const config = {
   sessionSvcApiKey: process.env.SESSION_SVC_API_KEY || '',
 
   // Writing Settings
-  maxDocumentSize: parseInt(process.env.MAX_DOCUMENT_SIZE || '50000', 10), // 50KB
-  maxVersionsPerDocument: parseInt(process.env.MAX_VERSIONS_PER_DOCUMENT || '100', 10),
-  autoSaveIntervalMs: parseInt(process.env.AUTO_SAVE_INTERVAL_MS || '30000', 10), // 30s
+  maxDocumentSize: Number.parseInt(process.env.MAX_DOCUMENT_SIZE || '50000', 10), // 50KB
+  maxVersionsPerDocument: Number.parseInt(process.env.MAX_VERSIONS_PER_DOCUMENT || '100', 10),
+  autoSaveIntervalMs: Number.parseInt(process.env.AUTO_SAVE_INTERVAL_MS || '30000', 10), // 30s
 };

@@ -2,9 +2,9 @@
  * AIVO Legal Hold Service - Fastify Application
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { authenticate } from './middleware/auth.js';

@@ -678,7 +678,7 @@ export class AggregationService {
   }
 
   private aggregatePeriodMetrics(
-    periods: Array<{ metricData: unknown }>,
+    periods: { metricData: unknown }[],
   ): MetricData {
     const result: MetricData = {
       totalTimeSeconds: 0,

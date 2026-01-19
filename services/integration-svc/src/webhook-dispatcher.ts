@@ -5,7 +5,7 @@
  * Includes retry logic with exponential backoff.
  */
 
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { PrismaClient, WebhookEventType } from '@prisma/client';
 import { WebhookDeliveryStatus } from '@prisma/client';
@@ -49,8 +49,8 @@ const DEFAULT_CONFIG: WebhookDispatcherConfig = {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class WebhookDispatcher {
-  private prisma: PrismaClient;
-  private config: WebhookDispatcherConfig;
+  private readonly prisma: PrismaClient;
+  private readonly config: WebhookDispatcherConfig;
 
   constructor(prisma: PrismaClient, config: Partial<WebhookDispatcherConfig> = {}) {
     this.prisma = prisma;
@@ -476,7 +476,7 @@ export class WebhookDispatcher {
  * Helper to create and queue webhook events
  */
 export class WebhookEventProducer {
-  private dispatcher: WebhookDispatcher;
+  private readonly dispatcher: WebhookDispatcher;
 
   constructor(dispatcher: WebhookDispatcher) {
     this.dispatcher = dispatcher;

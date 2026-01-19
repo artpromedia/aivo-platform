@@ -33,14 +33,14 @@ export function AnalyticsDashboard({ classId, className }: Readonly<AnalyticsDas
   const handleExport = async (format: 'csv' | 'pdf' | 'xlsx') => {
     try {
       const blob = await exportAnalytics(classId, format, filters);
-      const url = window.URL.createObjectURL(blob);
+      const url = globalThis.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `analytics-${className}-${new Date().toISOString().split('T')[0]}.${format}`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      globalThis.URL.revokeObjectURL(url);
+      a.remove();
     } catch (error: unknown) {
       console.error('Export failed:', error);
     }

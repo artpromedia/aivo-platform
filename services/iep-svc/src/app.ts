@@ -2,10 +2,10 @@
  * AIVO IEP Service - Fastify Application
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
+import Fastify from 'fastify';
 
 import { authenticate } from './middleware/auth.js';
 import { studentRoutes, iepRoutes, complianceRoutes } from './routes/index.js';

@@ -55,7 +55,7 @@ export function parseExplainabilityConfigFromEnv(): ExplainabilityConfig {
     enableAiSummaries: process.env.EXPLAINABILITY_AI_SUMMARIES === 'true',
     asyncWrites: process.env.EXPLAINABILITY_ASYNC_WRITES !== 'false',
     generatorVersion: process.env.EXPLAINABILITY_VERSION ?? '1.0.0',
-    templateCacheTtlMs: parseInt(process.env.EXPLAINABILITY_TEMPLATE_CACHE_TTL_MS ?? '300000', 10),
+    templateCacheTtlMs: Number.parseInt(process.env.EXPLAINABILITY_TEMPLATE_CACHE_TTL_MS ?? '300000', 10),
   };
 }
 

@@ -4,21 +4,21 @@
  * compliance monitoring, and certification management.
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import Fastify from 'fastify';
 import 'dotenv/config';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
-import { programsRoutes } from './routes/programs.js';
-import { enrollmentsRoutes } from './routes/enrollments.js';
-import { requirementsRoutes } from './routes/requirements.js';
-import { complianceRoutes } from './routes/compliance.js';
-import { certificationsRoutes } from './routes/certifications.js';
-import { reportsRoutes } from './routes/reports.js';
 import { activitiesRoutes } from './routes/activities.js';
+import { certificationsRoutes } from './routes/certifications.js';
+import { complianceRoutes } from './routes/compliance.js';
+import { enrollmentsRoutes } from './routes/enrollments.js';
+import { programsRoutes } from './routes/programs.js';
+import { reportsRoutes } from './routes/reports.js';
+import { requirementsRoutes } from './routes/requirements.js';
 
 const config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: Number.parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '0.0.0.0',
   logLevel: process.env.LOG_LEVEL || 'info',
 };

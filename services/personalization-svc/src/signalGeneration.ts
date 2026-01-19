@@ -10,7 +10,7 @@
  * - Supports per-tenant customization
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-non-null-assertion */
 
 import { config } from './config.js';
 import { getMainPool, getWarehousePool, withTransaction } from './db.js';
@@ -74,7 +74,7 @@ function getDateKey(daysAgo: number): number {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
   const datePart = d.toISOString().split('T')[0] ?? '';
-  return parseInt(datePart.replace(/-/g, ''), 10);
+  return Number.parseInt(datePart.replace(/-/g, ''), 10);
 }
 
 /**
@@ -123,9 +123,9 @@ async function generateEngagementSignals(
   const stats = result.rows[0];
   if (!stats) return signals;
 
-  const sessionCount = parseInt(stats.session_count, 10);
+  const sessionCount = Number.parseInt(stats.session_count, 10);
   const avgDuration = parseFloat(stats.avg_duration_minutes);
-  const daysActive = parseInt(stats.days_active, 10);
+  const daysActive = Number.parseInt(stats.days_active, 10);
 
   // Calculate sessions per week
   const dayRange = Math.max(1, Math.floor((toDateKey - fromDateKey) / 7));
@@ -258,8 +258,8 @@ async function generateDifficultySignals(
   // Build response rate map
   const responseRates = new Map<string, number>();
   for (const row of responseResult.rows) {
-    const correct = parseInt(row.correct, 10);
-    const incorrect = parseInt(row.incorrect, 10);
+    const correct = Number.parseInt(row.correct, 10);
+    const incorrect = Number.parseInt(row.incorrect, 10);
     const total = correct + incorrect;
     if (total > 0) {
       responseRates.set(row.session_type, correct / total);
@@ -286,7 +286,7 @@ async function generateDifficultySignals(
   for (const row of progressResult.rows) {
     const subjectCode = row.subject_code;
     const avgMastery = parseFloat(row.avg_mastery);
-    const sessions = parseInt(row.sessions, 10);
+    const sessions = Number.parseInt(row.sessions, 10);
     const correctRate = responseRates.get(subjectCode) ?? 0.5;
 
     // Need minimum sessions for confidence
@@ -387,10 +387,10 @@ async function generateFocusSignals(
   const stats = result.rows[0];
   if (!stats) return signals;
 
-  const totalBreaks = parseInt(stats.total_breaks, 10);
-  const totalSessions = parseInt(stats.total_sessions, 10);
-  const totalInterventions = parseInt(stats.total_interventions, 10);
-  const completedInterventions = parseInt(stats.completed_interventions, 10);
+  const totalBreaks = Number.parseInt(stats.total_breaks, 10);
+  const totalSessions = Number.parseInt(stats.total_sessions, 10);
+  const totalInterventions = Number.parseInt(stats.total_interventions, 10);
+  const completedInterventions = Number.parseInt(stats.completed_interventions, 10);
   const avgBreakDuration = parseFloat(stats.avg_break_duration);
 
   if (totalSessions < 2) return signals;
@@ -496,12 +496,12 @@ async function generateHomeworkSignals(
   const stats = result.rows[0];
   if (!stats) return signals;
 
-  const totalSubmissions = parseInt(stats.total_submissions, 10);
-  const completedSubmissions = parseInt(stats.completed_submissions, 10);
-  const totalSteps = parseInt(stats.total_steps, 10);
-  const hintsRevealed = parseInt(stats.hints_revealed, 10);
-  const correctResponses = parseInt(stats.correct_responses, 10);
-  const totalResponses = parseInt(stats.total_responses, 10);
+  const totalSubmissions = Number.parseInt(stats.total_submissions, 10);
+  const completedSubmissions = Number.parseInt(stats.completed_submissions, 10);
+  const totalSteps = Number.parseInt(stats.total_steps, 10);
+  const hintsRevealed = Number.parseInt(stats.hints_revealed, 10);
+  const correctResponses = Number.parseInt(stats.correct_responses, 10);
+  const totalResponses = Number.parseInt(stats.total_responses, 10);
 
   if (totalSubmissions < 2) return signals;
 
@@ -598,8 +598,8 @@ async function generateRecommendationSignals(
   let totalAccepted = 0;
 
   for (const row of result.rows) {
-    const total = parseInt(row.total_count, 10);
-    const accepted = parseInt(row.accepted_count, 10);
+    const total = Number.parseInt(row.total_count, 10);
+    const accepted = Number.parseInt(row.accepted_count, 10);
     totalRecs += total;
     totalAccepted += accepted;
   }
@@ -653,7 +653,7 @@ async function generateRecommendationSignals(
  */
 export async function jobGeneratePersonalizationSignals(
   targetDate: Date = new Date(),
-  lookbackDays: number = 7
+  lookbackDays = 7
 ): Promise<JobResult> {
   const startTime = Date.now();
   const mainDb = getMainPool();

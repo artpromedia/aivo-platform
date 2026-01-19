@@ -196,14 +196,14 @@ export function kurtosis(values: number[]): number {
 export function histogram(
   values: number[],
   bins: number,
-): Array<{ min: number; max: number; count: number; percentage: number }> {
+): { min: number; max: number; count: number; percentage: number }[] {
   if (values.length === 0 || bins <= 0) return [];
 
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
   const binWidth = (maxVal - minVal) / bins;
 
-  const result: Array<{ min: number; max: number; count: number; percentage: number }> = [];
+  const result: { min: number; max: number; count: number; percentage: number }[] = [];
 
   for (let i = 0; i < bins; i++) {
     const binMin = minVal + i * binWidth;
@@ -368,7 +368,7 @@ export function weightedMean(values: number[], weights: number[]): number {
  * Create a score based on multiple factors
  */
 export function compositeScore(
-  factors: Array<{ value: number; weight: number; max: number }>,
+  factors: { value: number; weight: number; max: number }[],
 ): number {
   if (factors.length === 0) return 0;
 

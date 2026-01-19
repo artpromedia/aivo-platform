@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
+
 import { KeyboardPatterns } from '../keyboard-navigation';
 
 export interface SelectOption {
@@ -254,7 +255,7 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
       };
 
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      return () => { document.removeEventListener('mousedown', handleClickOutside); };
     }, [isOpen, handleClose]);
 
     const describedBy = [description ? descriptionId : null, error ? errorId : null]

@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { ConsentPurpose, ConsentStatus, ConsentType, ConsentRecord } from '../types';
 import { COMPLIANCE } from '../constants';
 import { AuditLogService } from './audit-log.service';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 export interface ConsentVerificationResult {
   purpose: ConsentPurpose;

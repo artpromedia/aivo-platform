@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react';
-import { FocusTrap, createFocusTrap } from '../focus-trap';
-import { FocusTrapOptions } from '../types';
+
+import type { FocusTrap} from '../focus-trap';
+import { createFocusTrap } from '../focus-trap';
+import type { FocusTrapOptions } from '../types';
 
 interface UseFocusTrapOptions extends Omit<FocusTrapOptions, 'onActivate' | 'onDeactivate'> {
   enabled?: boolean;

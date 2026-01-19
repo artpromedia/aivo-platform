@@ -7,19 +7,19 @@
  */
 
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import type { SisProviderType, SyncStatus, SisEntityType } from '../providers/types';
-import { SyncStatus as SyncStatusValues, SisEntityType as SisEntityTypeValues } from '../providers/types';
-import {
+import { createAndInitializeProvider } from '../providers';
+import type { SisProviderType, SyncStatus, SisEntityType ,
   ISisProvider,
   SisSchool,
   SisClass,
   SisUser,
   SisEnrollment,
   SyncStats,
-  SyncEntityResult,
+  SyncEntityResult} from '../providers/types';
+import { SyncStatus as SyncStatusValues, SisEntityType as SisEntityTypeValues ,
   createEmptySyncStats,
 } from '../providers/types';
-import { createAndInitializeProvider } from '../providers';
+
 
 /**
  * Normalize fetch result to always be SyncEntityResult

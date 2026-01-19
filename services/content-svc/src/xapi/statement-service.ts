@@ -12,7 +12,7 @@
  * @see https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Data.md
  */
 
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // XAPI TYPES - Core specification types

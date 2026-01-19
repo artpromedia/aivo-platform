@@ -8,7 +8,7 @@
  * - Focus visible detection
  */
 
-import { RovingTabindexOptions } from './types';
+import type { RovingTabindexOptions } from './types';
 
 /**
  * Selectors for focusable elements

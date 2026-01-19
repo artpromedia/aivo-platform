@@ -10,11 +10,12 @@
 
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { ZodError, z } from 'zod';
+import type { z } from 'zod';
+import { ZodError } from 'zod';
 
-import { rubricService } from '../services/grading/rubric.service.js';
-import { manualGradingService } from '../services/grading/manual-grading.service.js';
 import { autoGradingService } from '../services/grading/auto-grading.service.js';
+import { manualGradingService } from '../services/grading/manual-grading.service.js';
+import { rubricService } from '../services/grading/rubric.service.js';
 import {
   CreateRubricInputSchema,
   GradeResponseInputSchema,
@@ -134,8 +135,8 @@ router.get('/rubrics', async (req: Request, res: Response) => {
       type: type as any,
       search: search as string,
       includePublic: includePublic === 'true',
-      page: page ? parseInt(page as string) : undefined,
-      pageSize: pageSize ? parseInt(pageSize as string) : undefined,
+      page: page ? Number.parseInt(page as string) : undefined,
+      pageSize: pageSize ? Number.parseInt(pageSize as string) : undefined,
     });
 
     res.json(result);
@@ -321,8 +322,8 @@ router.get('/grading/queue', async (req: Request, res: Response) => {
       questionId: questionId as string,
       status: status as any,
       blindGrading: blindGrading === 'true',
-      page: page ? parseInt(page as string) : undefined,
-      pageSize: pageSize ? parseInt(pageSize as string) : undefined,
+      page: page ? Number.parseInt(page as string) : undefined,
+      pageSize: pageSize ? Number.parseInt(pageSize as string) : undefined,
     });
 
     res.json(queue);

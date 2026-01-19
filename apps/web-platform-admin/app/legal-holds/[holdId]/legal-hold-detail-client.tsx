@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -330,7 +331,7 @@ export function LegalHoldDetailClient({ hold, accessToken }: LegalHoldDetailClie
       a.download = `legal-hold-${hold.matterNumber ?? hold.id}.json`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting:', error);

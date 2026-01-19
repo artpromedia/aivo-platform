@@ -3,8 +3,9 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { ProfessionalDevService } from '../services/pd.service.js';
+
 import { prisma } from '../db.js';
+import { ProfessionalDevService } from '../services/pd.service.js';
 
 const service = new ProfessionalDevService(prisma);
 

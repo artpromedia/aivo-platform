@@ -311,7 +311,7 @@ export function getEnvWithDefault(name: string, fallback: string): string {
 export function getEnvInt(name: string, fallback: number): number {
   const value = process.env[name];
   if (!value) return fallback;
-  const parsed = parseInt(value, 10);
+  const parsed = Number.parseInt(value, 10);
   return isNaN(parsed) ? fallback : parsed;
 }
 

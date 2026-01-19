@@ -6,7 +6,7 @@
  * - AAA: 7:1 for normal text, 4.5:1 for large text
  */
 
-import { RGB, HSL, ContrastResult } from './types';
+import type { RGB, HSL, ContrastResult } from './types';
 
 /**
  * Named colors map
@@ -49,26 +49,22 @@ export function parseColor(color: string): RGB | null {
   }
 
   // Handle rgb/rgba
-  const rgbMatch = trimmed.match(
-    /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/
-  );
+  const rgbMatch = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(trimmed);
   if (rgbMatch) {
     return {
-      r: parseInt(rgbMatch[1], 10),
-      g: parseInt(rgbMatch[2], 10),
-      b: parseInt(rgbMatch[3], 10),
+      r: Number.parseInt(rgbMatch[1], 10),
+      g: Number.parseInt(rgbMatch[2], 10),
+      b: Number.parseInt(rgbMatch[3], 10),
     };
   }
 
   // Handle hsl/hsla
-  const hslMatch = trimmed.match(
-    /hsla?\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?/
-  );
+  const hslMatch = /hsla?\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?/.exec(trimmed);
   if (hslMatch) {
     return hslToRgb({
-      h: parseInt(hslMatch[1], 10),
-      s: parseInt(hslMatch[2], 10),
-      l: parseInt(hslMatch[3], 10),
+      h: Number.parseInt(hslMatch[1], 10),
+      s: Number.parseInt(hslMatch[2], 10),
+      l: Number.parseInt(hslMatch[3], 10),
     });
   }
 
@@ -89,17 +85,17 @@ export function hexToRgb(hex: string): RGB | null {
 
   // Handle 3-digit hex
   if (cleanHex.length === 3) {
-    const r = parseInt(cleanHex[0] + cleanHex[0], 16);
-    const g = parseInt(cleanHex[1] + cleanHex[1], 16);
-    const b = parseInt(cleanHex[2] + cleanHex[2], 16);
+    const r = Number.parseInt(cleanHex[0] + cleanHex[0], 16);
+    const g = Number.parseInt(cleanHex[1] + cleanHex[1], 16);
+    const b = Number.parseInt(cleanHex[2] + cleanHex[2], 16);
     return { r, g, b };
   }
 
   // Handle 6-digit hex
   if (cleanHex.length === 6 || cleanHex.length === 8) {
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const r = Number.parseInt(cleanHex.substring(0, 2), 16);
+    const g = Number.parseInt(cleanHex.substring(2, 4), 16);
+    const b = Number.parseInt(cleanHex.substring(4, 6), 16);
     return { r, g, b };
   }
 

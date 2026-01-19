@@ -116,7 +116,7 @@ export function isTenantContext(ctx: RequestContext): ctx is TenantContext {
  * Type guard to check if context is a system context
  */
 export function isSystemContext(ctx: RequestContext): ctx is SystemContext {
-  return 'isSystem' in ctx && ctx.isSystem === true;
+  return 'isSystem' in ctx && ctx.isSystem;
 }
 
 /**

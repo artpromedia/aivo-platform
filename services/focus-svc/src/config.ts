@@ -22,7 +22,7 @@ function loadPublicKey(): string | undefined {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '4026', 10),
+  port: Number.parseInt(process.env.PORT ?? '4026', 10),
   logLevel: process.env.LOG_LEVEL ?? 'info',
   jwtPublicKey: loadPublicKey(),
   isDev: process.env.NODE_ENV !== 'production',
@@ -41,7 +41,7 @@ export const config = {
   aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY ?? '',
 
   // Focus Detection Thresholds
-  idleThresholdMs: parseInt(process.env.IDLE_THRESHOLD_MS ?? '30000', 10),
-  rapidSwitchThreshold: parseInt(process.env.RAPID_SWITCH_THRESHOLD ?? '3', 10),
-  rapidSwitchWindowMs: parseInt(process.env.RAPID_SWITCH_WINDOW_MS ?? '60000', 10),
+  idleThresholdMs: Number.parseInt(process.env.IDLE_THRESHOLD_MS ?? '30000', 10),
+  rapidSwitchThreshold: Number.parseInt(process.env.RAPID_SWITCH_THRESHOLD ?? '3', 10),
+  rapidSwitchWindowMs: Number.parseInt(process.env.RAPID_SWITCH_WINDOW_MS ?? '60000', 10),
 } as const;

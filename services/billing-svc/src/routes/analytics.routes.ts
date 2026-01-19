@@ -5,8 +5,8 @@
  * Access should be restricted to admin users only.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { PrismaClient } from '@prisma/client';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { SubscriptionAnalyticsService } from '../services/analytics.service.js';
@@ -223,7 +223,7 @@ export async function analyticsRoutes(
       }
 
       const query = request.query as { days?: string };
-      const days = Math.min(parseInt(query.days ?? '30', 10), 90);
+      const days = Math.min(Number.parseInt(query.days ?? '30', 10), 90);
 
       const endDate = new Date();
       const startDate = new Date();
@@ -270,7 +270,7 @@ export async function analyticsRoutes(
         return reply.status(404).send({ error: 'No analytics data available' });
       }
 
-      const baseCount = snapshot.addonBreakdown['BASE'] ?? snapshot.totalActiveSubscriptions;
+      const baseCount = snapshot.addonBreakdown.BASE ?? snapshot.totalActiveSubscriptions;
 
       const addons = [
         { sku: 'ADDON_SEL', name: 'Social-Emotional Learning' },

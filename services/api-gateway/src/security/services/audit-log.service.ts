@@ -12,7 +12,7 @@ import {
 } from '@aws-sdk/client-kinesis';
 import { AuditEvent, AuditEventType, AuditEventCategory, AuditSeverity } from '../types';
 import { AUDIT } from '../constants';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class AuditLogService implements OnModuleDestroy {

@@ -14,7 +14,7 @@
 import { EventEmitter } from 'events';
 import type { Pool } from 'pg';
 import type { Redis } from 'ioredis';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -532,12 +532,12 @@ export class VectorMemoryStore extends EventEmitter {
 
     const row = rows[0];
     return {
-      totalMemories: parseInt(row.total) || 0,
+      totalMemories: Number.parseInt(row.total) || 0,
       byType: {
-        EPISODIC: parseInt(row.episodic) || 0,
-        SEMANTIC: parseInt(row.semantic) || 0,
-        PROCEDURAL: parseInt(row.procedural) || 0,
-        WORKING: parseInt(row.working) || 0,
+        EPISODIC: Number.parseInt(row.episodic) || 0,
+        SEMANTIC: Number.parseInt(row.semantic) || 0,
+        PROCEDURAL: Number.parseInt(row.procedural) || 0,
+        WORKING: Number.parseInt(row.working) || 0,
       },
       averageImportance: parseFloat(row.avg_importance) || 0,
       oldestMemory: row.oldest ? new Date(row.oldest) : null,
@@ -691,7 +691,7 @@ export class VectorMemoryStore extends EventEmitter {
       [tenantId, learnerId]
     );
 
-    const count = parseInt(rows[0].count);
+    const count = Number.parseInt(rows[0].count);
     if (count <= this.config.maxMemoriesPerLearner) return;
 
     // Delete oldest, lowest importance memories

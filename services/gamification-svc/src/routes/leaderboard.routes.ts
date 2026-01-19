@@ -4,12 +4,14 @@
  * Handles leaderboard-related API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
 import { leaderboardService } from '../services/index.js';
-import { LeaderboardPeriod } from '../types/gamification.types.js';
+import type { LeaderboardPeriod } from '../types/gamification.types.js';
 
 type LeaderboardScope = 'global' | 'school' | 'class';
 
@@ -112,7 +114,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const studentId = extractStudentId(req);
     const query = leaderboardQuerySchema.parse(req.query);
-    const range = parseInt(req.query.range as string) || 3;
+    const range = Number.parseInt(req.query.range as string) || 3;
 
     let scopeId: string | undefined;
     if (query.scope === 'school') {
@@ -191,7 +193,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const classId = req.params.classId;
     const period = (req.query.period as LeaderboardPeriod) || 'weekly';
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Number.parseInt(req.query.limit as string) || 20;
 
     const entries = await leaderboardService.getLeaderboard({
       scope: 'class',
@@ -213,7 +215,7 @@ router.get(
   '/archives',
   asyncHandler(async (req: Request, res: Response) => {
     const period = (req.query.period as 'weekly' | 'monthly') || 'weekly';
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Number.parseInt(req.query.limit as string) || 10;
 
     const { prisma } = await import('../prisma.js');
     const archives = await prisma.leaderboardArchive.findMany({

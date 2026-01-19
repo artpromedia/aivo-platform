@@ -4,11 +4,11 @@
 // FERPA/GDPR compliant data access
 // ══════════════════════════════════════════════════════════════════════════════
 
+import { logger, metrics } from '@aivo/ts-observability';
 import { Redshift, ExecuteStatementCommand, GetStatementResultCommand } from '@aws-sdk/client-redshift-data';
 import { S3 } from '@aws-sdk/client-s3';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 
-import { logger, metrics } from '@aivo/ts-observability';
 
 import type { PrismaClient } from '../../generated/prisma';
 
@@ -208,10 +208,10 @@ export interface AnalyticsQueryConfig {
 }
 
 const DEFAULT_CONFIG: AnalyticsQueryConfig = {
-  redshiftWorkgroup: process.env['REDSHIFT_WORKGROUP'] ?? 'aivo-analytics',
-  redshiftDatabase: process.env['REDSHIFT_DATABASE'] ?? 'analytics',
-  redshiftSecretArn: process.env['REDSHIFT_SECRET_ARN'] ?? '',
-  awsRegion: process.env['AWS_REGION'] ?? 'us-east-1',
+  redshiftWorkgroup: process.env.REDSHIFT_WORKGROUP ?? 'aivo-analytics',
+  redshiftDatabase: process.env.REDSHIFT_DATABASE ?? 'analytics',
+  redshiftSecretArn: process.env.REDSHIFT_SECRET_ARN ?? '',
+  awsRegion: process.env.AWS_REGION ?? 'us-east-1',
   cacheEnabled: true,
   cacheTtlSeconds: 300, // 5 minutes
   atRiskThresholds: {
@@ -411,7 +411,7 @@ export class AnalyticsQueryService {
     classId: string,
     tenantId: string,
     period: TimeRange
-  ): Promise<Array<{ skillId: string; studentId: string; masteryLevel: number }>> {
+  ): Promise<{ skillId: string; studentId: string; masteryLevel: number }[]> {
     // Validate inputs
     const safeClassId = validateUuid(classId, 'classId');
     const safeTenantId = validateUuid(tenantId, 'tenantId');

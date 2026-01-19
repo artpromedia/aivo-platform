@@ -9,9 +9,9 @@
  * - Class challenges (collaborative)
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
-import {
+import { prisma } from '../prisma.js';
+import type {
   Challenge,
   ChallengeDefinition,
   ChallengeProgress,
@@ -293,7 +293,7 @@ class ChallengeService {
   /**
    * Update challenge progress
    */
-  async updateProgress(studentId: string, metric: string, increment: number = 1): Promise<void> {
+  async updateProgress(studentId: string, metric: string, increment = 1): Promise<void> {
     const now = new Date();
 
     // Find all active challenges that track this metric
@@ -334,7 +334,7 @@ class ChallengeService {
       where: { id: challengeId },
     });
 
-    if (!challenge || challenge.status !== 'active') {
+    if (challenge?.status !== 'active') {
       return false;
     }
 

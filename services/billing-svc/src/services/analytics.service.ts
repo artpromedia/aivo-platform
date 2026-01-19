@@ -11,8 +11,8 @@
  * This service is designed to run as a nightly job (e.g., via cron or scheduled task).
  */
 
-import type { PrismaClient } from '@prisma/client';
 import type { ParentSku } from '@aivo/billing-common';
+import type { PrismaClient } from '@prisma/client';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

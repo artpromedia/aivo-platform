@@ -131,14 +131,10 @@ export default function DashboardPage() {
     );
   }
 
-  // Dev mode indicator
+  // Dev mode indicator - hidden for demo
   const DevModeIndicator = () => {
-    if (!isDevMode()) return null;
-    return (
-      <div className="fixed bottom-4 left-4 px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full border border-amber-200 shadow-sm z-50">
-        DEV MODE - Using mock data
-      </div>
-    );
+    // Temporarily hidden for investor demo
+    return null;
   };
 
   const selectedChild = profile?.students?.find(s => s.id === selectedChildId);

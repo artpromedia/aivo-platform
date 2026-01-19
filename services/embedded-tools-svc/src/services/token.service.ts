@@ -11,11 +11,12 @@
  * - Short expiration (15min default, configurable)
  */
 
-import * as jose from 'jose';
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
-import type { ToolLaunchTokenClaims, ToolScope, LearnerContext } from '../types/index.js';
+import * as jose from 'jose';
+
 import { config } from '../config.js';
+import type { ToolLaunchTokenClaims, ToolScope, LearnerContext } from '../types/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION

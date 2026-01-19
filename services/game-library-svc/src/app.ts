@@ -1,5 +1,5 @@
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { PrismaClient } from './generated/prisma-client/index.js';

@@ -11,7 +11,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { Redis } from 'ioredis';
 
@@ -402,7 +402,7 @@ export class OutcomeTracker extends EventEmitter {
       params
     );
 
-    if (rows.length === 0 || parseInt(rows[0].total_actions) < this.config.minActionsForMetrics) {
+    if (rows.length === 0 || Number.parseInt(rows[0].total_actions) < this.config.minActionsForMetrics) {
       return null;
     }
 
@@ -412,7 +412,7 @@ export class OutcomeTracker extends EventEmitter {
       agentType,
       period: { start: startDate, end: endDate },
       metrics: {
-        totalActions: parseInt(row.total_actions) || 0,
+        totalActions: Number.parseInt(row.total_actions) || 0,
         acceptanceRate: parseFloat(row.acceptance_rate) || 0,
         completionRate: parseFloat(row.completion_rate) || 0,
         avgTimeToDecision: parseFloat(row.avg_time_to_decision) || 0,

@@ -16,7 +16,8 @@ export interface AuthSession {
  */
 export async function getAuthSession(): Promise<AuthSession | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('access_token')?.value;
+  // Check for both cookie names (auth-token from PIN login, access_token from other flows)
+  const token = cookieStore.get('auth-token')?.value || cookieStore.get('access_token')?.value;
 
   if (!token) {
     // For development, return a mock session if MOCK_AUTH is enabled

@@ -4,8 +4,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { ExecutiveFunctionService } from '../services/ef.service.js';
+
 import { prisma } from '../db.js';
+import { ExecutiveFunctionService } from '../services/ef.service.js';
 
 const service = new ExecutiveFunctionService(prisma);
 
@@ -34,8 +35,8 @@ export const strategiesRoutes: FastifyPluginAsync = async (app) => {
 
       const strategies = await service.getStrategies({
         skill: skill as any,
-        minGrade: minGrade ? parseInt(minGrade, 10) : undefined,
-        maxGrade: maxGrade ? parseInt(maxGrade, 10) : undefined,
+        minGrade: minGrade ? Number.parseInt(minGrade, 10) : undefined,
+        maxGrade: maxGrade ? Number.parseInt(maxGrade, 10) : undefined,
       });
 
       return reply.send({ strategies });

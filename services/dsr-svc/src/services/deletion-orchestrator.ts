@@ -11,9 +11,12 @@
  * @module dsr-svc/services/deletion-orchestrator
  */
 
-import { Pool } from 'pg';
 import { EventEmitter } from 'events';
-import { DeleteMode, HardDeleteResult } from '../deleter.js';
+
+import type { Pool } from 'pg';
+
+import type { DeleteMode} from '../deleter.js';
+import { HardDeleteResult } from '../deleter.js';
 import { createAuditEntry } from '../repository.js';
 import { DsrAuditAction } from '../types.js';
 
@@ -104,7 +107,7 @@ function getServiceEndpoint(service: string): ServiceEndpoint {
   // In production, use Kubernetes service discovery or consul
   // For now, use environment variables or default localhost ports
   const host = process.env[`${service.toUpperCase().replace(/-/g, '_')}_HOST`] || 'localhost';
-  const port = parseInt(process.env[`${service.toUpperCase().replace(/-/g, '_')}_PORT`] || '3000', 10);
+  const port = Number.parseInt(process.env[`${service.toUpperCase().replace(/-/g, '_')}_PORT`] || '3000', 10);
   return { host, port };
 }
 
@@ -116,7 +119,7 @@ export class DeletionOrchestrator extends EventEmitter {
   private readonly pool: Pool;
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
-  private activeJobs: Map<string, DeletionJob> = new Map();
+  private activeJobs = new Map<string, DeletionJob>();
 
   constructor(pool: Pool, options?: { maxRetries?: number; retryBaseDelay?: number }) {
     super();
@@ -136,7 +139,7 @@ export class DeletionOrchestrator extends EventEmitter {
     mode: DeleteMode;
     performedByUserId: string;
   }): Promise<DeletionJob> {
-    const jobId = `del_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const jobId = `del_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     // Initialize job
     const job: DeletionJob = {

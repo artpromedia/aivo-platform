@@ -2,10 +2,11 @@
  * Lessons routes for Curriculum Service
  */
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { CurriculumService } from '../services/curriculum.service.js';
+
 import { prisma } from '../db.js';
+import { CurriculumService } from '../services/curriculum.service.js';
 
 const curriculumService = new CurriculumService(prisma);
 
@@ -93,7 +94,7 @@ export async function lessonsRoutes(app: FastifyInstance) {
   // Reorder lessons within a unit
   app.post('/unit/:unitId/reorder', async (request: FastifyRequest<{
     Params: { unitId: string };
-    Body: { lessonOrder: Array<{ lessonId: string; orderIndex: number }> };
+    Body: { lessonOrder: { lessonId: string; orderIndex: number }[] };
     Querystring: { tenantId: string }
   }>) => {
     const { unitId } = request.params;

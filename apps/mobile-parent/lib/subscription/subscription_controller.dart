@@ -341,6 +341,56 @@ class SubscriptionController extends StateNotifier<SubscriptionState> {
     }
   }
 
+  /// Schedule a module to be removed at end of billing period.
+  Future<bool> scheduleModuleRemoval(String moduleCode) async {
+    if (state.subscription == null) return false;
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      await _service.scheduleModuleRemoval(
+        state.subscription!.id,
+        moduleCode,
+      );
+
+      // Reload subscription data
+      await loadSubscriptionData();
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to schedule module removal: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Add a module to the subscription immediately.
+  Future<bool> addModuleToSubscription(String moduleCode) async {
+    if (state.subscription == null) return false;
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      await _service.addModuleToSubscription(
+        state.subscription!.id,
+        moduleCode,
+      );
+
+      // Reload subscription data
+      await loadSubscriptionData();
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to add module: $e',
+      );
+      return false;
+    }
+  }
+
   /// Clear any error.
   void clearError() {
     state = state.copyWith(clearError: true);

@@ -15,7 +15,7 @@ import {
   createCipheriv,
   createDecipheriv,
   randomBytes,
-} from 'crypto';
+} from 'node:crypto';
 import { EncryptedData, EncryptionContext } from '../types';
 import { ENCRYPTION } from '../constants';
 

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
 /**
  * OAuth Routes for SIS Providers
  *
@@ -12,17 +12,15 @@
  * access/refresh tokens securely.
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import { randomBytes, createHash } from 'node:crypto';
 
-// Cast prisma to any to bypass missing model types
-type PrismaAny = any;
-import { SisProviderType, IntegrationStatus } from '../providers/types.js';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { randomBytes, createHash } from 'crypto';
 
+import type { ExtendedPrismaClient as PrismaAny } from '../prisma-types.js';
 import { GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from '../providers/google-workspace';
 import { MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from '../providers/microsoft-entra';
+import { IntegrationStatus } from '../providers/types.js';
 
 // ============================================================================
 // Configuration
@@ -121,7 +119,7 @@ export function registerOAuthRoutes(
     const nonce = randomBytes(16).toString('base64url');
 
     // Calculate code challenge for PKCE
-    const codeChallenge = createHash('sha256')
+    const _codeChallenge = createHash('sha256')
       .update(codeVerifier)
       .digest('base64url');
 
@@ -233,7 +231,7 @@ export function registerOAuthRoutes(
     }
 
     // Redirect to OAuth provider
-    return reply.redirect(302, authUrl);
+    return reply.redirect(authUrl, 302);
   });
 
   // ==========================================================================
@@ -255,7 +253,7 @@ export function registerOAuthRoutes(
     // Handle OAuth error
     if (error) {
       app.log.warn({ error, error_description }, 'OAuth callback error');
-      return reply.redirect(302, `/integrations/sis?error=${encodeURIComponent(error)}`);
+      return reply.redirect(`/integrations/sis?error=${encodeURIComponent(error)}`, 302);
     }
 
     if (!code) {
@@ -428,7 +426,7 @@ export function registerOAuthRoutes(
       await prisma.oAuthState.delete({ where: { id: oauthState.id } });
 
       // Redirect to success page
-      return reply.redirect(302, `/integrations/sis?provider=${provider.id}&connected=true`);
+      return reply.redirect(`/integrations/sis?provider=${provider.id}&connected=true`, 302);
     } catch (err) {
       app.log.error(err, 'OAuth token exchange failed');
 
@@ -446,10 +444,10 @@ export function registerOAuthRoutes(
       await prisma.oAuthState.delete({ where: { id: oauthState.id } });
 
       return reply.redirect(
-        302,
         `/integrations/sis?provider=${provider.id}&error=${encodeURIComponent(
           err instanceof Error ? err.message : 'OAuth failed'
-        )}`
+        )}`,
+        302
       );
     }
   });
@@ -483,16 +481,14 @@ export function registerOAuthRoutes(
     try {
       // Revoke tokens if possible
       if (providerConfig.accessToken) {
-        switch (provider.providerType) {
-          case 'GOOGLE_WORKSPACE':
-            try {
-              await GoogleOAuthHelpers.revokeToken(providerConfig.accessToken);
-            } catch (e) {
-              app.log.warn(e, 'Failed to revoke Google token');
-            }
-            break;
-          // Microsoft and others don't have easy token revocation
+        if (provider.providerType === 'GOOGLE_WORKSPACE') {
+          try {
+            await GoogleOAuthHelpers.revokeToken(providerConfig.accessToken);
+          } catch (e) {
+            app.log.warn(e, 'Failed to revoke Google token');
+          }
         }
+        // Microsoft and others don't have easy token revocation
       }
 
       // Clear tokens and update status

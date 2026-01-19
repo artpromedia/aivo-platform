@@ -4,9 +4,11 @@
  * These endpoints mirror the production API but serve synthetic sandbox data
  */
 
+import { createHash } from 'node:crypto';
+
 import type { FastifyPluginAsync } from 'fastify';
+
 import type { ExtendedPrismaClient } from '../prisma-types.js';
-import { createHash } from 'crypto';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -15,7 +17,7 @@ declare module 'fastify' {
 }
 
 // Type aliases for prisma models
-type SandboxSyntheticLearner = {
+interface SandboxSyntheticLearner {
   id: string;
   externalId: string;
   firstName: string;
@@ -23,18 +25,18 @@ type SandboxSyntheticLearner = {
   email: string;
   gradeLevel: number;
   metadataJson: unknown;
-};
+}
 
-type SandboxSyntheticLearnerProgress = {
+interface SandboxSyntheticLearnerProgress {
   skillDomain: string;
   skillId: string;
   masteryLevel: number;
   progressPct: number;
   lastPracticed: Date | null;
   recordedAt: Date;
-};
+}
 
-type SandboxSyntheticSession = {
+interface SandboxSyntheticSession {
   id: string;
   sessionType: string;
   skillDomain: string;
@@ -46,20 +48,20 @@ type SandboxSyntheticSession = {
   accuracyPct: number | null;
   xpEarned: number;
   eventsJson: unknown;
-};
+}
 
-type SandboxSyntheticClass = {
+interface SandboxSyntheticClass {
   id: string;
   externalId: string;
   name: string;
   subject: string;
   gradeLevel: number;
-};
+}
 
-type SandboxSyntheticEnrollment = {
+interface SandboxSyntheticEnrollment {
   role: string;
   createdAt: Date;
-};
+}
 
 /**
  * API Key authentication hook
@@ -139,7 +141,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
   // =====================
 
   // List learners
-  fastify.get('/learners', async (request: any, reply) => {
+  fastify.get('/learners', async (request: any, _reply) => {
     const { limit = '50', offset = '0', search } = request.query as {
       limit?: string;
       offset?: string;
@@ -159,8 +161,8 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const learners = await prisma.sandboxSyntheticLearner.findMany({
       where,
-      take: parseInt(limit, 10),
-      skip: parseInt(offset, 10),
+      take: Number.parseInt(limit, 10),
+      skip: Number.parseInt(offset, 10),
       orderBy: { lastName: 'asc' },
     });
 
@@ -178,9 +180,9 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
       })),
       pagination: {
         total,
-        limit: parseInt(limit, 10),
-        offset: parseInt(offset, 10),
-        hasMore: parseInt(offset, 10) + parseInt(limit, 10) < total,
+        limit: Number.parseInt(limit, 10),
+        offset: Number.parseInt(offset, 10),
+        hasMore: Number.parseInt(offset, 10) + Number.parseInt(limit, 10) < total,
       },
     };
   });
@@ -282,7 +284,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
   // =====================
 
   // List classes
-  fastify.get('/classes', async (request: any, reply) => {
+  fastify.get('/classes', async (request: any, _reply) => {
     const { limit = '50', offset = '0' } = request.query as {
       limit?: string;
       offset?: string;
@@ -291,8 +293,8 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const classes = await prisma.sandboxSyntheticClass.findMany({
       where: { tenantId: tenant.id },
-      take: parseInt(limit, 10),
-      skip: parseInt(offset, 10),
+      take: Number.parseInt(limit, 10),
+      skip: Number.parseInt(offset, 10),
       include: {
         teacher: {
           select: { id: true, firstName: true, lastName: true },
@@ -322,8 +324,8 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
       })),
       pagination: {
         total,
-        limit: parseInt(limit, 10),
-        offset: parseInt(offset, 10),
+        limit: Number.parseInt(limit, 10),
+        offset: Number.parseInt(offset, 10),
       },
     };
   });
@@ -413,8 +415,8 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
     const sessions = await prisma.sandboxSyntheticSession.findMany({
       where,
       orderBy: { startedAt: 'desc' },
-      take: parseInt(limit, 10),
-      skip: parseInt(offset, 10),
+      take: Number.parseInt(limit, 10),
+      skip: Number.parseInt(offset, 10),
     });
 
     const total = await prisma.sandboxSyntheticSession.count({ where });
@@ -434,8 +436,8 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
       })),
       pagination: {
         total,
-        limit: parseInt(limit, 10),
-        offset: parseInt(offset, 10),
+        limit: Number.parseInt(limit, 10),
+        offset: Number.parseInt(offset, 10),
       },
     };
   });
@@ -536,9 +538,7 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
     // Group progress by skill domain
     const skillDomainAverages: Record<string, { total: number; count: number }> = {};
     allProgress.forEach((p: Progress) => {
-      if (!skillDomainAverages[p.skillDomain]) {
-        skillDomainAverages[p.skillDomain] = { total: 0, count: 0 };
-      }
+      skillDomainAverages[p.skillDomain] ??= { total: 0, count: 0 };
       skillDomainAverages[p.skillDomain]!.total += p.progressPct;
       skillDomainAverages[p.skillDomain]!.count += 1;
     });

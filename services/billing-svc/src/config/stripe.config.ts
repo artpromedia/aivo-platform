@@ -184,7 +184,7 @@ function checkPlaceholder(value: string, name: string, errors: string[]): void {
 /**
  * Check if a price ID is valid with strict format validation
  */
-function checkPriceId(value: string, name: string, errors: string[], isRequired: boolean = true): void {
+function checkPriceId(value: string, name: string, errors: string[], isRequired = true): void {
   if (!value) {
     if (isRequired) {
       errors.push(`${name} is required but not set`);

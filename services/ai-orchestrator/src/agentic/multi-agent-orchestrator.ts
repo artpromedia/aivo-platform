@@ -12,8 +12,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
-import type { Pool } from 'pg';
+import { randomUUID } from 'node:crypto';
 import type { Redis } from 'ioredis';
 
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
@@ -534,7 +533,7 @@ Which recommendation is best for this learner right now?`,
 
     const match = result.content.match(/\d+/);
     if (match) {
-      const index = parseInt(match[0]) - 1;
+      const index = Number.parseInt(match[0]) - 1;
       if (index >= 0 && index < cluster.length) {
         return cluster[index];
       }
@@ -638,7 +637,7 @@ export class MultiAgentOrchestrator extends EventEmitter {
       }
 
       // 6. Synthesize final response
-      const primaryResult = results.find(r => r.agentType === routing.primaryAgent);
+      const _primaryResult = results.find(r => r.agentType === routing.primaryAgent);
       const finalResponse = await this.synthesizeResponse(
         results,
         finalRecommendations,

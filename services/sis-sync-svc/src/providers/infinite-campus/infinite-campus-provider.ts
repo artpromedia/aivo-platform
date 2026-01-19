@@ -18,6 +18,7 @@
  */
 
 import type { Pool } from 'pg';
+
 import { logger } from '../../logger.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -130,11 +131,11 @@ export interface InfiniteCampusStaff {
   email?: string;
   title?: string;
   staffType: 'Teacher' | 'Administrator' | 'Support' | 'Other';
-  assignments: Array<{
+  assignments: {
     schoolID: number;
     role: string;
     isPrimary: boolean;
-  }>;
+  }[];
 }
 
 /**
@@ -204,7 +205,7 @@ export interface SyncResult {
   updated: number;
   deleted: number;
   errors: number;
-  errorDetails: Array<{ id: string; error: string }>;
+  errorDetails: { id: string; error: string }[];
 }
 
 /**
@@ -317,7 +318,11 @@ export class InfiniteCampusClient {
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...options.headers,
+        ...(options.headers instanceof Headers
+          ? Object.fromEntries(options.headers.entries())
+          : Array.isArray(options.headers)
+            ? Object.fromEntries(options.headers)
+            : options.headers),
         Authorization: `${auth.tokenType} ${auth.token}`,
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -439,7 +444,7 @@ export class InfiniteCampusClient {
   async getChanges(
     entityType: 'students' | 'staff' | 'sections' | 'roster',
     since: Date
-  ): Promise<Array<{ action: 'create' | 'update' | 'delete'; data: unknown }>> {
+  ): Promise<{ action: 'create' | 'update' | 'delete'; data: unknown }[]> {
     const sinceISO = since.toISOString();
     return this.requestPaginated(
       `/district/${this.config.districtId}/changes/${entityType}?since=${sinceISO}`
@@ -686,7 +691,7 @@ export class InfiniteCampusSyncService {
       );
 
       for (const schoolRow of schoolsResult.rows) {
-        const schoolId = parseInt(schoolRow.external_id, 10);
+        const schoolId = Number.parseInt(schoolRow.external_id, 10);
         const terms = await this.client.getTerms(schoolId);
 
         for (const term of terms) {
@@ -842,7 +847,7 @@ export class InfiniteCampusSyncService {
       );
 
       for (const schoolRow of schoolsResult.rows) {
-        const schoolId = parseInt(schoolRow.external_id, 10);
+        const schoolId = Number.parseInt(schoolRow.external_id, 10);
         const students = await this.client.getStudents(schoolId);
 
         for (const student of students) {
@@ -1000,7 +1005,7 @@ export class InfiniteCampusSyncService {
       );
 
       for (const schoolRow of schoolsResult.rows) {
-        const schoolId = parseInt(schoolRow.external_id, 10);
+        const schoolId = Number.parseInt(schoolRow.external_id, 10);
         const courses = await this.client.getCourses(schoolId);
 
         for (const course of courses) {
@@ -1081,7 +1086,7 @@ export class InfiniteCampusSyncService {
       );
 
       for (const schoolRow of schoolsResult.rows) {
-        const schoolId = parseInt(schoolRow.external_id, 10);
+        const schoolId = Number.parseInt(schoolRow.external_id, 10);
         const sections = await this.client.getSections(schoolId);
 
         for (const section of sections) {
@@ -1182,7 +1187,7 @@ export class InfiniteCampusSyncService {
       );
 
       for (const sectionRow of sectionsResult.rows) {
-        const sectionId = parseInt(sectionRow.external_id, 10);
+        const sectionId = Number.parseInt(sectionRow.external_id, 10);
         const roster = await this.client.getRoster(sectionId);
 
         for (const enrollment of roster) {

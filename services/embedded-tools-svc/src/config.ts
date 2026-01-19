@@ -11,7 +11,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '4080', 10),
+  port: Number.parseInt(process.env.PORT ?? '4080', 10),
   host: process.env.HOST ?? '0.0.0.0',
   nodeEnv: process.env.NODE_ENV ?? 'development',
   databaseUrl: process.env.DATABASE_URL ?? '',
@@ -23,9 +23,9 @@ export const config = {
   tenantPseudonymSecret: process.env.TENANT_PSEUDONYM_SECRET ?? '',
 
   // Default session settings
-  defaultSessionDurationMin: parseInt(process.env.DEFAULT_SESSION_DURATION_MIN ?? '60', 10),
-  defaultTokenExpiryMin: parseInt(process.env.DEFAULT_TOKEN_EXPIRY_MIN ?? '15', 10),
-  defaultIdleTimeoutMin: parseInt(process.env.DEFAULT_IDLE_TIMEOUT_MIN ?? '15', 10),
+  defaultSessionDurationMin: Number.parseInt(process.env.DEFAULT_SESSION_DURATION_MIN ?? '60', 10),
+  defaultTokenExpiryMin: Number.parseInt(process.env.DEFAULT_TOKEN_EXPIRY_MIN ?? '15', 10),
+  defaultIdleTimeoutMin: Number.parseInt(process.env.DEFAULT_IDLE_TIMEOUT_MIN ?? '15', 10),
 
   // Platform info
   platformVersion: process.env.PLATFORM_VERSION ?? '1.0.0',

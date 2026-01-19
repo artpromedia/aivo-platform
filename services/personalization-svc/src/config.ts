@@ -3,7 +3,7 @@
  */
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '3012', 10),
+  port: Number.parseInt(process.env.PORT ?? '3012', 10),
   host: process.env.HOST ?? '0.0.0.0',
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
@@ -14,15 +14,15 @@ export const config = {
   // Signal generation thresholds (configurable)
   thresholds: {
     // Engagement
-    lowEngagementSessionsPerWeek: parseInt(process.env.THRESHOLD_LOW_ENGAGEMENT_SESSIONS ?? '2', 10),
-    highEngagementSessionsPerWeek: parseInt(process.env.THRESHOLD_HIGH_ENGAGEMENT_SESSIONS ?? '10', 10),
-    shortSessionMinutes: parseInt(process.env.THRESHOLD_SHORT_SESSION_MINUTES ?? '5', 10),
-    longSessionMinutes: parseInt(process.env.THRESHOLD_LONG_SESSION_MINUTES ?? '60', 10),
+    lowEngagementSessionsPerWeek: Number.parseInt(process.env.THRESHOLD_LOW_ENGAGEMENT_SESSIONS ?? '2', 10),
+    highEngagementSessionsPerWeek: Number.parseInt(process.env.THRESHOLD_HIGH_ENGAGEMENT_SESSIONS ?? '10', 10),
+    shortSessionMinutes: Number.parseInt(process.env.THRESHOLD_SHORT_SESSION_MINUTES ?? '5', 10),
+    longSessionMinutes: Number.parseInt(process.env.THRESHOLD_LONG_SESSION_MINUTES ?? '60', 10),
 
     // Difficulty/Mastery
     struggleMasteryThreshold: parseFloat(process.env.THRESHOLD_STRUGGLE_MASTERY ?? '0.4'),
     readyForChallengeThreshold: parseFloat(process.env.THRESHOLD_READY_CHALLENGE ?? '0.75'),
-    minSessionsForDifficultySignal: parseInt(process.env.THRESHOLD_MIN_SESSIONS_DIFFICULTY ?? '3', 10),
+    minSessionsForDifficultySignal: Number.parseInt(process.env.THRESHOLD_MIN_SESSIONS_DIFFICULTY ?? '3', 10),
     lowCorrectRateThreshold: parseFloat(process.env.THRESHOLD_LOW_CORRECT_RATE ?? '0.5'),
 
     // Focus
@@ -38,7 +38,7 @@ export const config = {
     lowAcceptanceRate: parseFloat(process.env.THRESHOLD_LOW_REC_ACCEPTANCE ?? '0.3'),
 
     // Signal confidence
-    minSampleSizeForConfidence: parseInt(process.env.THRESHOLD_MIN_SAMPLE_SIZE ?? '5', 10),
+    minSampleSizeForConfidence: Number.parseInt(process.env.THRESHOLD_MIN_SAMPLE_SIZE ?? '5', 10),
   },
 
   // Signal expiration (days)

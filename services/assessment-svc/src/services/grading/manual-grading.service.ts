@@ -9,10 +9,9 @@
  * - Blind grading support
  */
 
+import { publishEvent } from '../../events/publisher.js';
 import { prisma } from '../../prisma.js';
 import type { PrismaTransactionClient } from '../../prisma.js';
-import { publishEvent } from '../../events/publisher.js';
-import { rubricService } from './rubric.service.js';
 import type {
   Rubric,
   GradingQueue,
@@ -21,6 +20,9 @@ import type {
   QuestionResponse,
   ResponseStatus,
 } from '../../types/assessment.types.js';
+
+import { rubricService } from './rubric.service.js';
+
 
 // ============================================================================
 // TYPES
@@ -33,13 +35,13 @@ export interface GradeResponseInput {
   feedback?: string;
   rubricScores?: Record<string, number>; // criterionId -> points
   rubricFeedback?: Record<string, string>; // criterionId -> feedback
-  annotations?: Array<{
+  annotations?: {
     startOffset: number;
     endOffset: number;
     type: 'highlight' | 'comment' | 'correction';
     text?: string;
     color?: string;
-  }>;
+  }[];
   flagged?: boolean;
   flagReason?: string;
 }
@@ -351,12 +353,12 @@ export class ManualGradingService {
   async batchGrade(
     input: BatchGradeInput,
     tx?: PrismaTransactionClient
-  ): Promise<{ graded: number; errors: Array<{ responseId: string; error: string }> }> {
+  ): Promise<{ graded: number; errors: { responseId: string; error: string }[] }> {
     const client = tx ?? prisma;
 
     const results = {
       graded: 0,
-      errors: [] as Array<{ responseId: string; error: string }>,
+      errors: [] as { responseId: string; error: string }[],
     };
 
     for (const responseId of input.responseIds) {
@@ -607,7 +609,7 @@ export class ManualGradingService {
    */
   private validateRubricScores(
     scores: Record<string, number>,
-    criteria: Array<{ id: string; maxPoints: number }>
+    criteria: { id: string; maxPoints: number }[]
   ): void {
     for (const criterion of criteria) {
       const score = scores[criterion.id];

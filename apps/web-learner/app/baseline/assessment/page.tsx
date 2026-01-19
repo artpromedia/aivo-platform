@@ -1,0 +1,907 @@
+'use client';
+
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ASSESSMENT_DOMAINS, type AssessmentDomain, type AssessmentQuestion } from './types';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 1: Learning Style Questions (existing 7 questions)
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface LearningStyleQuestion {
+  id: string;
+  category: 'learning_style' | 'interests' | 'strengths' | 'challenges' | 'preferences';
+  emoji: string;
+  question: string;
+  type: 'choice' | 'emoji_scale' | 'multi_select';
+  options: { value: string; label: string; emoji?: string }[];
+}
+
+const LEARNING_STYLE_QUESTIONS: LearningStyleQuestion[] = [
+  {
+    id: 'ls-1',
+    category: 'learning_style',
+    emoji: '📚',
+    question: 'When learning something new, I like to...',
+    type: 'choice',
+    options: [
+      { value: 'watch', label: 'Watch videos or pictures', emoji: '🎬' },
+      { value: 'listen', label: 'Listen to someone explain it', emoji: '🎧' },
+      { value: 'read', label: 'Read about it', emoji: '📖' },
+      { value: 'hands_on', label: 'Try it myself', emoji: '🖐️' },
+    ],
+  },
+  {
+    id: 'ls-2',
+    category: 'learning_style',
+    emoji: '🧠',
+    question: 'I remember things best when...',
+    type: 'choice',
+    options: [
+      { value: 'pictures', label: 'I see pictures or diagrams', emoji: '🖼️' },
+      { value: 'songs', label: "There's a song or rhyme", emoji: '🎵' },
+      { value: 'write', label: 'I write it down', emoji: '✏️' },
+      { value: 'move', label: 'I can move around while learning', emoji: '🏃' },
+    ],
+  },
+  {
+    id: 'int-1',
+    category: 'interests',
+    emoji: '⭐',
+    question: 'What subjects do you like? (Pick all that apply!)',
+    type: 'multi_select',
+    options: [
+      { value: 'math', label: 'Math', emoji: '🔢' },
+      { value: 'reading', label: 'Reading', emoji: '📚' },
+      { value: 'science', label: 'Science', emoji: '🔬' },
+      { value: 'art', label: 'Art', emoji: '🎨' },
+      { value: 'music', label: 'Music', emoji: '🎵' },
+      { value: 'pe', label: 'Sports/PE', emoji: '⚽' },
+      { value: 'games', label: 'Games', emoji: '🎮' },
+    ],
+  },
+  {
+    id: 'str-1',
+    category: 'strengths',
+    emoji: '💪',
+    question: 'I feel really good at...',
+    type: 'multi_select',
+    options: [
+      { value: 'solving_puzzles', label: 'Solving puzzles', emoji: '🧩' },
+      { value: 'being_creative', label: 'Being creative', emoji: '🎨' },
+      { value: 'helping_others', label: 'Helping friends', emoji: '🤝' },
+      { value: 'building', label: 'Building things', emoji: '🏗️' },
+      { value: 'telling_stories', label: 'Telling stories', emoji: '📖' },
+      { value: 'sports', label: 'Playing sports', emoji: '🏆' },
+    ],
+  },
+  {
+    id: 'ch-1',
+    category: 'challenges',
+    emoji: '🌱',
+    question: 'Sometimes I find it hard to...',
+    type: 'multi_select',
+    options: [
+      { value: 'focus', label: 'Stay focused for a long time', emoji: '👀' },
+      { value: 'reading', label: 'Read lots of words', emoji: '📖' },
+      { value: 'math', label: 'Do math problems', emoji: '🔢' },
+      { value: 'writing', label: 'Write things down', emoji: '✍️' },
+      { value: 'sitting', label: 'Sit still', emoji: '🪑' },
+      { value: 'none', label: 'Nothing - I got this!', emoji: '💪' },
+    ],
+  },
+  {
+    id: 'pref-1',
+    category: 'preferences',
+    emoji: '🎯',
+    question: 'How do you feel about taking breaks?',
+    type: 'emoji_scale',
+    options: [
+      { value: 'love', label: 'Love them!', emoji: '🥳' },
+      { value: 'like', label: "They're nice", emoji: '😊' },
+      { value: 'okay', label: "They're okay", emoji: '😐' },
+      { value: 'rather_keep_going', label: 'Rather keep going', emoji: '🚀' },
+    ],
+  },
+  {
+    id: 'pref-2',
+    category: 'preferences',
+    emoji: '⏰',
+    question: 'When do you feel most ready to learn?',
+    type: 'choice',
+    options: [
+      { value: 'morning', label: 'In the morning', emoji: '🌅' },
+      { value: 'afternoon', label: 'In the afternoon', emoji: '☀️' },
+      { value: 'evening', label: 'In the evening', emoji: '🌙' },
+      { value: 'anytime', label: 'Anytime!', emoji: '⏰' },
+    ],
+  },
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GAME BREAKS - Fun mini-activities between domains
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface GameBreak {
+  id: string;
+  type: 'breathing' | 'movement' | 'mindful' | 'celebration';
+  title: string;
+  emoji: string;
+  instruction: string;
+  duration: number; // seconds
+}
+
+const GAME_BREAKS: GameBreak[] = [
+  {
+    id: 'break-1',
+    type: 'breathing',
+    title: 'Balloon Breath! 🎈',
+    emoji: '🎈',
+    instruction: 'Take a deep breath in... now blow up an imaginary balloon! 🎈',
+    duration: 8,
+  },
+  {
+    id: 'break-2',
+    type: 'movement',
+    title: 'Shake It Out! 💃',
+    emoji: '💃',
+    instruction: 'Stand up and shake your arms and legs for 10 seconds! 🕺',
+    duration: 10,
+  },
+  {
+    id: 'break-3',
+    type: 'mindful',
+    title: 'Star Gazing ⭐',
+    emoji: '⭐',
+    instruction: "Close your eyes and imagine you're looking at stars in the sky... ✨",
+    duration: 8,
+  },
+  {
+    id: 'break-4',
+    type: 'celebration',
+    title: 'Dance Party! 🎉',
+    emoji: '🎉',
+    instruction: 'Do your favorite dance move! You earned it! 🕺💃',
+    duration: 8,
+  },
+  {
+    id: 'break-5',
+    type: 'breathing',
+    title: 'Flower Smell 🌸',
+    emoji: '🌸',
+    instruction: 'Breathe in like smelling a flower... breathe out like blowing a dandelion! 🌼',
+    duration: 8,
+  },
+  {
+    id: 'break-6',
+    type: 'movement',
+    title: 'Stretch Time! 🧘',
+    emoji: '🧘',
+    instruction: 'Reach your arms up high like a giraffe! 🦒 Now touch your toes!',
+    duration: 10,
+  },
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSESSMENT PHASES
+// ══════════════════════════════════════════════════════════════════════════════
+
+type AssessmentPhase = 
+  | 'learning_style' 
+  | 'transition_to_domains'
+  | 'domain_intro'
+  | 'domain_questions' 
+  | 'game_break' 
+  | 'completing';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+export default function BaselineAssessmentPage() {
+  const router = useRouter();
+  
+  // Phase management
+  const [phase, setPhase] = useState<AssessmentPhase>('learning_style');
+  
+  // Learning style phase state
+  const [lsIndex, setLsIndex] = useState(0);
+  const [lsAnswers, setLsAnswers] = useState<Record<string, string | string[]>>({});
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  
+  // Domain assessment phase state
+  const [currentDomainIndex, setCurrentDomainIndex] = useState(0);
+  const [currentQuestionInDomain, setCurrentQuestionInDomain] = useState(0);
+  const [domainQuestions, setDomainQuestions] = useState<AssessmentQuestion[]>([]);
+  const [domainAnswers, setDomainAnswers] = useState<Record<string, { answer: number | string; latencyMs: number }>>({});
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  
+  // Game break state
+  const [currentBreakIndex, setCurrentBreakIndex] = useState(0);
+  const [breakCountdown, setBreakCountdown] = useState(0);
+  
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Current domain info
+  const currentDomain = ASSESSMENT_DOMAINS[currentDomainIndex];
+  const currentBreak = GAME_BREAKS[currentBreakIndex % GAME_BREAKS.length];
+
+  // Calculate overall progress
+  const totalQuestions = LEARNING_STYLE_QUESTIONS.length + (ASSESSMENT_DOMAINS.length * 5);
+  const questionsCompleted = phase === 'learning_style' 
+    ? lsIndex 
+    : LEARNING_STYLE_QUESTIONS.length + (currentDomainIndex * 5) + currentQuestionInDomain;
+  const overallProgress = (questionsCompleted / totalQuestions) * 100;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FETCH DOMAIN QUESTIONS FROM AI
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const fetchDomainQuestions = useCallback(async (domain: AssessmentDomain) => {
+    setIsLoadingQuestions(true);
+    try {
+      const response = await fetch('/api/baseline/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain, count: 5 }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDomainQuestions(data.questions);
+      } else {
+        // Fallback to stub questions if API fails
+        setDomainQuestions(generateStubQuestions(domain));
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error);
+      setDomainQuestions(generateStubQuestions(domain));
+    } finally {
+      setIsLoadingQuestions(false);
+      setQuestionStartTime(Date.now());
+    }
+  }, []);
+
+  // Generate stub questions for demo/fallback
+  function generateStubQuestions(domain: AssessmentDomain): AssessmentQuestion[] {
+    const stubs: Record<AssessmentDomain, AssessmentQuestion[]> = {
+      MATH: [
+        { id: 'math-1', domain: 'MATH', skillCode: 'MATH_NUMBER_SENSE', questionType: 'MULTIPLE_CHOICE', questionText: 'What is 7 + 5?', options: ['10', '11', '12', '13'], difficulty: 2, questionNumber: 1 },
+        { id: 'math-2', domain: 'MATH', skillCode: 'MATH_OPERATIONS', questionType: 'MULTIPLE_CHOICE', questionText: 'What is 15 - 8?', options: ['5', '6', '7', '8'], difficulty: 2, questionNumber: 2 },
+        { id: 'math-3', domain: 'MATH', skillCode: 'MATH_FRACTIONS', questionType: 'MULTIPLE_CHOICE', questionText: 'What is half of 10?', options: ['3', '4', '5', '6'], difficulty: 2, questionNumber: 3 },
+        { id: 'math-4', domain: 'MATH', skillCode: 'MATH_GEOMETRY', questionType: 'MULTIPLE_CHOICE', questionText: 'How many sides does a triangle have?', options: ['2', '3', '4', '5'], difficulty: 1, questionNumber: 4 },
+        { id: 'math-5', domain: 'MATH', skillCode: 'MATH_PROBLEM_SOLVING', questionType: 'MULTIPLE_CHOICE', questionText: 'If you have 3 apples and get 4 more, how many do you have?', options: ['5', '6', '7', '8'], difficulty: 2, questionNumber: 5 },
+      ],
+      ELA: [
+        { id: 'ela-1', domain: 'ELA', skillCode: 'ELA_PHONEMIC_AWARENESS', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word rhymes with "cat"?', options: ['Dog', 'Hat', 'Bird', 'Fish'], difficulty: 1, questionNumber: 1 },
+        { id: 'ela-2', domain: 'ELA', skillCode: 'ELA_VOCABULARY', questionType: 'MULTIPLE_CHOICE', questionText: 'What does "happy" mean?', options: ['Sad', 'Joyful', 'Angry', 'Tired'], difficulty: 1, questionNumber: 2 },
+        { id: 'ela-3', domain: 'ELA', skillCode: 'ELA_FLUENCY', questionType: 'MULTIPLE_CHOICE', questionText: 'Which sentence is correct?', options: ['The dog run fast.', 'The dog runs fast.', 'The dog running fast.', 'The dog runned fast.'], difficulty: 2, questionNumber: 3 },
+        { id: 'ela-4', domain: 'ELA', skillCode: 'ELA_COMPREHENSION', questionType: 'MULTIPLE_CHOICE', questionText: 'In the story "The Three Little Pigs", what did the wolf try to do?', options: ['Help build houses', 'Blow the houses down', 'Give the pigs food', 'Teach the pigs to dance'], difficulty: 2, questionNumber: 4 },
+        { id: 'ela-5', domain: 'ELA', skillCode: 'ELA_WRITING', questionType: 'MULTIPLE_CHOICE', questionText: 'Which punctuation ends a question?', options: ['.', '!', '?', ','], difficulty: 1, questionNumber: 5 },
+      ],
+      SPEECH: [
+        { id: 'speech-1', domain: 'SPEECH', skillCode: 'SPEECH_ARTICULATION', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word starts with the same sound as "sun"?', options: ['Ball', 'Cat', 'Soap', 'Tree'], difficulty: 1, questionNumber: 1 },
+        { id: 'speech-2', domain: 'SPEECH', skillCode: 'SPEECH_FLUENCY', questionType: 'MULTIPLE_CHOICE', questionText: 'When speaking to a group, you should...', options: ['Whisper quietly', 'Speak clearly', 'Talk very fast', 'Look at the floor'], difficulty: 2, questionNumber: 2 },
+        { id: 'speech-3', domain: 'SPEECH', skillCode: 'SPEECH_VOICE', questionType: 'MULTIPLE_CHOICE', questionText: 'How should you speak when someone is sleeping nearby?', options: ['Very loudly', 'In a normal voice', 'Quietly', 'Not at all'], difficulty: 1, questionNumber: 3 },
+        { id: 'speech-4', domain: 'SPEECH', skillCode: 'SPEECH_LANGUAGE', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word means the same as "big"?', options: ['Small', 'Tiny', 'Large', 'Short'], difficulty: 1, questionNumber: 4 },
+        { id: 'speech-5', domain: 'SPEECH', skillCode: 'SPEECH_PRAGMATICS', questionType: 'MULTIPLE_CHOICE', questionText: 'When meeting someone new, you should...', options: ['Look away', 'Say hello', 'Stay silent', 'Run away'], difficulty: 1, questionNumber: 5 },
+      ],
+      SEL: [
+        { id: 'sel-1', domain: 'SEL', skillCode: 'SEL_SELF_AWARENESS', questionType: 'MULTIPLE_CHOICE', questionText: 'When I feel angry, I...', options: ['Yell at others', 'Take deep breaths', 'Break things', 'Ignore it'], difficulty: 2, questionNumber: 1 },
+        { id: 'sel-2', domain: 'SEL', skillCode: 'SEL_SELF_MANAGEMENT', questionType: 'MULTIPLE_CHOICE', questionText: 'If homework is hard, I should...', options: ['Give up', 'Ask for help', 'Throw it away', 'Cry'], difficulty: 2, questionNumber: 2 },
+        { id: 'sel-3', domain: 'SEL', skillCode: 'SEL_SOCIAL_AWARENESS', questionType: 'MULTIPLE_CHOICE', questionText: 'If a friend looks sad, I could...', options: ['Laugh at them', 'Ask if they are okay', 'Walk away', 'Tell others'], difficulty: 1, questionNumber: 3 },
+        { id: 'sel-4', domain: 'SEL', skillCode: 'SEL_RELATIONSHIPS', questionType: 'MULTIPLE_CHOICE', questionText: 'Good friends...', options: ['Share and take turns', 'Always fight', 'Ignore each other', 'Keep secrets'], difficulty: 1, questionNumber: 4 },
+        { id: 'sel-5', domain: 'SEL', skillCode: 'SEL_DECISIONS', questionType: 'MULTIPLE_CHOICE', questionText: 'Before making a choice, I should...', options: ['Do it right away', 'Think about what might happen', 'Ask a stranger', 'Flip a coin'], difficulty: 2, questionNumber: 5 },
+      ],
+      SPELLING: [
+        { id: 'spell-1', domain: 'SPELLING', skillCode: 'SPELL_PATTERNS', questionType: 'MULTIPLE_CHOICE', questionText: 'Which spelling is correct?', options: ['freind', 'friend', 'frend', 'frind'], difficulty: 2, questionNumber: 1 },
+        { id: 'spell-2', domain: 'SPELLING', skillCode: 'SPELL_PHONICS', questionType: 'MULTIPLE_CHOICE', questionText: 'How do you spell the word for a large body of water?', options: ['oshun', 'ocen', 'ocean', 'oshen'], difficulty: 2, questionNumber: 2 },
+        { id: 'spell-3', domain: 'SPELLING', skillCode: 'SPELL_RULES', questionType: 'MULTIPLE_CHOICE', questionText: 'Which is the correct plural of "cat"?', options: ['cates', 'cats', 'caties', "cat's"], difficulty: 1, questionNumber: 3 },
+        { id: 'spell-4', domain: 'SPELLING', skillCode: 'SPELL_SIGHT_WORDS', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word is spelled correctly?', options: ['becuz', 'becuase', 'because', 'becouse'], difficulty: 2, questionNumber: 4 },
+        { id: 'spell-5', domain: 'SPELLING', skillCode: 'SPELL_COMPOUND', questionType: 'MULTIPLE_CHOICE', questionText: 'How do you spell "sun" + "flower"?', options: ['sunflower', 'sun flower', 'sunflawer', 'son flower'], difficulty: 2, questionNumber: 5 },
+      ],
+      CREATIVE_WRITING: [
+        { id: 'cw-1', domain: 'CREATIVE_WRITING', skillCode: 'CW_STORY_ELEMENTS', questionType: 'MULTIPLE_CHOICE', questionText: 'Every story needs a...', options: ['Beginning, middle, and end', 'Picture', 'Long title', 'Rhyme'], difficulty: 1, questionNumber: 1 },
+        { id: 'cw-2', domain: 'CREATIVE_WRITING', skillCode: 'CW_CHARACTER', questionType: 'MULTIPLE_CHOICE', questionText: 'A character in a story is...', options: ['The setting', 'A person or animal', 'The ending', 'The title'], difficulty: 1, questionNumber: 2 },
+        { id: 'cw-3', domain: 'CREATIVE_WRITING', skillCode: 'CW_SETTING', questionType: 'MULTIPLE_CHOICE', questionText: 'The setting tells us...', options: ['Who is in the story', 'Where and when', 'What happens last', 'The moral'], difficulty: 1, questionNumber: 3 },
+        { id: 'cw-4', domain: 'CREATIVE_WRITING', skillCode: 'CW_DESCRIPTIVE', questionType: 'MULTIPLE_CHOICE', questionText: 'Which sentence is more descriptive?', options: ['The dog ran.', 'The fluffy brown dog ran quickly.', 'Dog.', 'Running.'], difficulty: 2, questionNumber: 4 },
+        { id: 'cw-5', domain: 'CREATIVE_WRITING', skillCode: 'CW_IMAGINATION', questionType: 'MULTIPLE_CHOICE', questionText: 'In creative writing, you can...', options: ['Only write facts', 'Make up stories', 'Copy from books', 'Only use real people'], difficulty: 1, questionNumber: 5 },
+      ],
+      LIFE_SKILLS: [
+        { id: 'life-1', domain: 'LIFE_SKILLS', skillCode: 'LIFE_TIME', questionType: 'MULTIPLE_CHOICE', questionText: 'What time do we usually eat lunch?', options: ['Midnight', 'Around noon', '6am', '10pm'], difficulty: 1, questionNumber: 1 },
+        { id: 'life-2', domain: 'LIFE_SKILLS', skillCode: 'LIFE_MONEY', questionType: 'MULTIPLE_CHOICE', questionText: 'If something costs $3 and you have $5, how much change do you get?', options: ['$1', '$2', '$3', '$8'], difficulty: 2, questionNumber: 2 },
+        { id: 'life-3', domain: 'LIFE_SKILLS', skillCode: 'LIFE_SAFETY', questionType: 'MULTIPLE_CHOICE', questionText: 'Before crossing the street, you should...', options: ['Run quickly', 'Look both ways', 'Close your eyes', 'Skip'], difficulty: 1, questionNumber: 3 },
+        { id: 'life-4', domain: 'LIFE_SKILLS', skillCode: 'LIFE_HYGIENE', questionType: 'MULTIPLE_CHOICE', questionText: 'When should you wash your hands?', options: ['Never', 'Before eating', 'Only on Mondays', 'Once a year'], difficulty: 1, questionNumber: 4 },
+        { id: 'life-5', domain: 'LIFE_SKILLS', skillCode: 'LIFE_ORGANIZATION', questionType: 'MULTIPLE_CHOICE', questionText: 'Keeping your things organized helps you...', options: ['Lose things', 'Find things easily', 'Make a mess', 'Forget things'], difficulty: 1, questionNumber: 5 },
+      ],
+    };
+    return stubs[domain] || [];
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // LEARNING STYLE PHASE HANDLERS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const currentLsQuestion = LEARNING_STYLE_QUESTIONS[lsIndex];
+  const isLastLsQuestion = lsIndex === LEARNING_STYLE_QUESTIONS.length - 1;
+
+  useEffect(() => {
+    if (phase === 'learning_style' && currentLsQuestion?.type === 'multi_select') {
+      const existing = lsAnswers[currentLsQuestion.id];
+      setSelectedOptions(Array.isArray(existing) ? existing : []);
+    } else {
+      setSelectedOptions([]);
+    }
+  }, [lsIndex, currentLsQuestion?.id, currentLsQuestion?.type, lsAnswers, phase]);
+
+  const handleLsSingleSelect = (value: string) => {
+    setLsAnswers((prev) => ({ ...prev, [currentLsQuestion.id]: value }));
+    
+    setTimeout(() => {
+      if (isLastLsQuestion) {
+        // Move to domain assessment phase
+        setPhase('transition_to_domains');
+      } else {
+        setLsIndex((prev) => prev + 1);
+      }
+    }, 300);
+  };
+
+  const handleLsMultiSelect = (value: string) => {
+    setSelectedOptions((prev) => {
+      if (prev.includes(value)) {
+        return prev.filter((v) => v !== value);
+      } else {
+        if (value === 'none') return ['none'];
+        return [...prev.filter((v) => v !== 'none'), value];
+      }
+    });
+  };
+
+  const handleLsMultiSelectContinue = () => {
+    if (selectedOptions.length === 0) return;
+    
+    setLsAnswers((prev) => ({ ...prev, [currentLsQuestion.id]: selectedOptions }));
+    
+    if (isLastLsQuestion) {
+      setPhase('transition_to_domains');
+    } else {
+      setLsIndex((prev) => prev + 1);
+    }
+  };
+
+  const handleLsBack = () => {
+    if (lsIndex > 0) {
+      setLsIndex((prev) => prev - 1);
+    }
+  };
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // DOMAIN ASSESSMENT HANDLERS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const startDomainAssessment = useCallback(() => {
+    setCurrentDomainIndex(0);
+    setCurrentQuestionInDomain(0);
+    setPhase('domain_intro');
+  }, []);
+
+  const startCurrentDomain = useCallback(() => {
+    if (currentDomain) {
+      fetchDomainQuestions(currentDomain.id);
+      setPhase('domain_questions');
+    }
+  }, [currentDomain, fetchDomainQuestions]);
+
+  const handleDomainAnswer = (optionIndex: number) => {
+    const currentQuestion = domainQuestions[currentQuestionInDomain];
+    if (!currentQuestion) return;
+
+    const latencyMs = Date.now() - questionStartTime;
+    
+    setDomainAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: { answer: optionIndex, latencyMs },
+    }));
+
+    setTimeout(() => {
+      if (currentQuestionInDomain < 4) {
+        // More questions in this domain
+        setCurrentQuestionInDomain((prev) => prev + 1);
+        setQuestionStartTime(Date.now());
+      } else {
+        // Domain complete - show game break or complete
+        if (currentDomainIndex < ASSESSMENT_DOMAINS.length - 1) {
+          setPhase('game_break');
+        } else {
+          // All domains complete!
+          setPhase('completing');
+          void handleFinalSubmit();
+        }
+      }
+    }, 300);
+  };
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // GAME BREAK HANDLERS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const breakTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const moveToNextDomain = useCallback(() => {
+    setCurrentBreakIndex((prev) => prev + 1);
+    setCurrentDomainIndex((prev) => prev + 1);
+    setCurrentQuestionInDomain(0);
+    setPhase('domain_intro');
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'game_break') {
+      setBreakCountdown(currentBreak.duration);
+      
+      breakTimerRef.current = setInterval(() => {
+        setBreakCountdown((prev) => {
+          if (prev <= 1) {
+            if (breakTimerRef.current) {
+              clearInterval(breakTimerRef.current);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (breakTimerRef.current) {
+          clearInterval(breakTimerRef.current);
+        }
+      };
+    }
+  }, [phase, currentBreak.duration]);
+
+  const skipBreak = () => {
+    if (breakTimerRef.current) {
+      clearInterval(breakTimerRef.current);
+    }
+    moveToNextDomain();
+  };
+
+  // Auto-advance when break countdown reaches 0
+  useEffect(() => {
+    if (phase === 'game_break' && breakCountdown === 0) {
+      const timer = setTimeout(moveToNextDomain, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, breakCountdown, moveToNextDomain]);
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FINAL SUBMISSION
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // Submit both learning style answers and domain answers
+      const response = await fetch('/api/baseline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learningStyleAnswers: lsAnswers,
+          domainAnswers,
+          completedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save baseline');
+      }
+
+      // Navigate to brain cloning page
+      router.push('/baseline/brain-clone');
+    } catch (error) {
+      console.error('Failed to submit baseline:', error);
+      // Still proceed to brain cloning
+      router.push('/baseline/brain-clone');
+    }
+  };
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // RENDER FUNCTIONS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const renderLearningStylePhase = () => (
+    <div className="flex-1 flex items-center justify-center p-4">
+      <div className="max-w-xl w-full">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4">
+              <span className="text-4xl">{currentLsQuestion.emoji}</span>
+            </div>
+            <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)]">
+              {currentLsQuestion.question}
+            </h2>
+            {currentLsQuestion.type === 'multi_select' && (
+              <p className="text-sm text-[var(--aivo-neutral-500)] mt-2">
+                Pick as many as you want! 👆
+              </p>
+            )}
+          </div>
+
+          <div className={`grid gap-3 ${currentLsQuestion.type === 'multi_select' ? 'grid-cols-2' : ''}`}>
+            {currentLsQuestion.options.map((option) => {
+              const isSelected = 
+                currentLsQuestion.type === 'multi_select'
+                  ? selectedOptions.includes(option.value)
+                  : lsAnswers[currentLsQuestion.id] === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    if (currentLsQuestion.type === 'multi_select') {
+                      handleLsMultiSelect(option.value);
+                    } else {
+                      handleLsSingleSelect(option.value);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3
+                    ${isSelected
+                      ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md'
+                      : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
+                    }`}
+                >
+                  {option.emoji && <span className="text-2xl flex-shrink-0">{option.emoji}</span>}
+                  <span className={`font-medium ${isSelected ? 'text-[var(--aivo-brand-primary)]' : 'text-[var(--aivo-brand-navy)]'}`}>
+                    {option.label}
+                  </span>
+                  {isSelected && currentLsQuestion.type === 'multi_select' && (
+                    <span className="ml-auto text-[var(--aivo-brand-primary)]">✓</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {currentLsQuestion.type === 'multi_select' && (
+            <div className="mt-6">
+              <button
+                onClick={handleLsMultiSelectContinue}
+                disabled={selectedOptions.length === 0}
+                className="w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+                  hover:opacity-90 disabled:opacity-50 text-white text-lg font-bold rounded-xl transition-all disabled:cursor-not-allowed"
+              >
+                Continue →
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-between items-center">
+          <button
+            onClick={handleLsBack}
+            disabled={lsIndex === 0}
+            className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+          >
+            ← Back
+          </button>
+          <div className="flex gap-1">
+            {LEARNING_STYLE_QUESTIONS.map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  idx === lsIndex ? 'bg-[var(--aivo-brand-primary)]' : 
+                  idx < lsIndex ? 'bg-[var(--aivo-teal-400)]' : 'bg-[var(--aivo-neutral-200)]'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="w-12" />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTransitionToDomains = () => (
+    <div className="flex-1 flex items-center justify-center p-4">
+      <div className="max-w-xl w-full text-center">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-bounce">
+            <span className="text-5xl">🎉</span>
+          </div>
+          <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-4">
+            Great job so far!
+          </h2>
+          <p className="text-lg text-[var(--aivo-neutral-600)] mb-6">
+            Now let&apos;s explore what you know! We&apos;ll play some quick games in different subjects.
+          </p>
+          
+          <div className="grid grid-cols-4 gap-3 mb-8">
+            {ASSESSMENT_DOMAINS.slice(0, 4).map((domain) => (
+              <div key={domain.id} className="text-center">
+                <div className="w-14 h-14 mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2">
+                  <span className="text-2xl">{domain.emoji}</span>
+                </div>
+                <span className="text-xs text-[var(--aivo-neutral-500)]">{domain.name}</span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-8 max-w-xs mx-auto">
+            {ASSESSMENT_DOMAINS.slice(4).map((domain) => (
+              <div key={domain.id} className="text-center">
+                <div className="w-14 h-14 mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2">
+                  <span className="text-2xl">{domain.emoji}</span>
+                </div>
+                <span className="text-xs text-[var(--aivo-neutral-500)]">{domain.name}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-sm text-[var(--aivo-neutral-500)] mb-6">
+            Don&apos;t worry - there are no wrong answers! Just do your best. 💪
+          </p>
+
+          <button
+            onClick={startDomainAssessment}
+            className="w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+              hover:opacity-90 text-white text-xl font-bold rounded-xl transition-all"
+          >
+            Let&apos;s Go! 🚀
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDomainIntro = () => (
+    <div className="flex-1 flex items-center justify-center p-4">
+      <div className="max-w-xl w-full text-center">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+          <div className={`w-28 h-28 mx-auto bg-gradient-to-br ${currentDomain?.color || 'from-purple-400 to-purple-600'} rounded-full flex items-center justify-center mb-6 shadow-lg`}>
+            <span className="text-6xl">{currentDomain?.emoji}</span>
+          </div>
+          <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-3">
+            {currentDomain?.name}
+          </h2>
+          <p className="text-lg text-[var(--aivo-neutral-600)] mb-2">
+            {currentDomain?.description}
+          </p>
+          <div className="inline-block bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)] px-4 py-2 rounded-full text-sm font-medium mb-6">
+            5 quick questions
+          </div>
+
+          <button
+            onClick={startCurrentDomain}
+            className="w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+              hover:opacity-90 text-white text-xl font-bold rounded-xl transition-all"
+          >
+            Start! ✨
+          </button>
+        </div>
+
+        {/* Domain progress indicator */}
+        <div className="mt-6 flex justify-center gap-2">
+          {ASSESSMENT_DOMAINS.map((domain, idx) => (
+            <div
+              key={domain.id}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                idx < currentDomainIndex 
+                  ? 'bg-[var(--aivo-teal-400)] text-white' 
+                  : idx === currentDomainIndex
+                    ? 'bg-[var(--aivo-brand-primary)] text-white ring-4 ring-[var(--aivo-purple-200)]'
+                    : 'bg-white text-[var(--aivo-neutral-400)] border-2 border-[var(--aivo-neutral-200)]'
+              }`}
+            >
+              {idx < currentDomainIndex ? '✓' : <span className="text-lg">{domain.emoji}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDomainQuestions = () => {
+    if (isLoadingQuestions) {
+      return (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4 animate-pulse">
+              <span className="text-4xl">{currentDomain?.emoji}</span>
+            </div>
+            <p className="text-lg text-[var(--aivo-neutral-600)]">Getting your questions ready...</p>
+          </div>
+        </div>
+      );
+    }
+
+    const currentQ = domainQuestions[currentQuestionInDomain];
+    if (!currentQ) return null;
+
+    return (
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full">
+          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+            {/* Domain badge */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="text-2xl">{currentDomain?.emoji}</span>
+              <span className="text-sm font-medium text-[var(--aivo-neutral-500)]">
+                {currentDomain?.name} • Question {currentQuestionInDomain + 1} of 5
+              </span>
+            </div>
+
+            {/* Question */}
+            <h2 className="text-xl font-bold text-[var(--aivo-brand-navy)] text-center mb-6">
+              {currentQ.questionText}
+            </h2>
+
+            {/* Options */}
+            <div className="grid gap-3">
+              {currentQ.options?.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleDomainAnswer(idx)}
+                  className="p-4 rounded-xl border-2 border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-brand-primary)] 
+                    hover:bg-[var(--aivo-purple-50)] transition-all text-left font-medium text-[var(--aivo-brand-navy)]"
+                >
+                  <span className="inline-flex items-center justify-center w-8 h-8 bg-[var(--aivo-purple-100)] 
+                    text-[var(--aivo-brand-primary)] rounded-full mr-3 text-sm font-bold">
+                    {String.fromCharCode(65 + idx)}
+                  </span>
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Question progress dots */}
+          <div className="mt-6 flex justify-center gap-2">
+            {[0, 1, 2, 3, 4].map((idx) => (
+              <div
+                key={idx}
+                className={`w-3 h-3 rounded-full transition-colors ${
+                  idx === currentQuestionInDomain 
+                    ? 'bg-[var(--aivo-brand-primary)]' 
+                    : idx < currentQuestionInDomain
+                      ? 'bg-[var(--aivo-teal-400)]'
+                      : 'bg-[var(--aivo-neutral-200)]'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGameBreak = () => (
+    <div className="flex-1 flex items-center justify-center p-4">
+      <div className="max-w-xl w-full text-center">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
+            <span className="text-7xl">{currentBreak.emoji}</span>
+          </div>
+          <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-4">
+            {currentBreak.title}
+          </h2>
+          <p className="text-xl text-[var(--aivo-neutral-600)] mb-6">
+            {currentBreak.instruction}
+          </p>
+
+          {/* Countdown circle */}
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            <svg className="w-24 h-24 transform -rotate-90">
+              <circle
+                cx="48"
+                cy="48"
+                r="40"
+                stroke="var(--aivo-neutral-200)"
+                strokeWidth="8"
+                fill="none"
+              />
+              <circle
+                cx="48"
+                cy="48"
+                r="40"
+                stroke="var(--aivo-brand-primary)"
+                strokeWidth="8"
+                fill="none"
+                strokeDasharray={251.2}
+                strokeDashoffset={251.2 * (1 - breakCountdown / currentBreak.duration)}
+                className="transition-all duration-1000"
+              />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-[var(--aivo-brand-primary)]">
+              {breakCountdown}
+            </span>
+          </div>
+
+          <button
+            onClick={skipBreak}
+            className="text-[var(--aivo-neutral-500)] hover:text-[var(--aivo-brand-primary)] text-sm"
+          >
+            Skip break →
+          </button>
+        </div>
+
+        {/* Celebration message */}
+        <div className="mt-6 bg-[var(--aivo-teal-50)] rounded-2xl p-4">
+          <p className="text-[var(--aivo-teal-700)] font-medium">
+            🎉 You completed {currentDomain?.name}! {ASSESSMENT_DOMAINS.length - currentDomainIndex - 1} more to go!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCompleting = () => (
+    <div className="flex-1 flex items-center justify-center p-4">
+      <div className="text-center">
+        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-pulse shadow-lg">
+          <span className="text-6xl">🧠</span>
+        </div>
+        <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">
+          Amazing work! 🌟
+        </h2>
+        <p className="text-lg text-[var(--aivo-neutral-600)]">
+          Preparing your personalized learning brain...
+        </p>
+        <div className="mt-4 flex justify-center gap-1">
+          <div className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    </div>
+  );
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // MAIN RENDER
+  // ════════════════════════════════════════════════════════════════════════════
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[var(--aivo-teal-50)] to-[var(--aivo-purple-50)] flex flex-col">
+      {/* Header with progress */}
+      <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto flex items-center gap-4">
+          <Image
+            src="/icons/aivo-appicon-explorer.svg"
+            alt="AIVO"
+            width={40}
+            height={40}
+            className="rounded-lg"
+          />
+          <div className="flex-1">
+            <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-1">
+              <span>
+                {phase === 'learning_style' && 'Getting to know you...'}
+                {phase === 'transition_to_domains' && 'Ready for the fun part!'}
+                {phase === 'domain_intro' && `Starting ${currentDomain?.name}...`}
+                {phase === 'domain_questions' && `${currentDomain?.name} - Q${currentQuestionInDomain + 1}/5`}
+                {phase === 'game_break' && 'Break time! 🎉'}
+                {phase === 'completing' && 'Almost done!'}
+              </span>
+              <span>{Math.round(overallProgress)}% complete</span>
+            </div>
+            <div className="h-3 bg-[var(--aivo-purple-100)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] transition-all duration-500"
+                style={{ width: `${overallProgress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Phase content */}
+      {phase === 'learning_style' && renderLearningStylePhase()}
+      {phase === 'transition_to_domains' && renderTransitionToDomains()}
+      {phase === 'domain_intro' && renderDomainIntro()}
+      {phase === 'domain_questions' && renderDomainQuestions()}
+      {phase === 'game_break' && renderGameBreak()}
+      {phase === 'completing' && renderCompleting()}
+    </div>
+  );
+}

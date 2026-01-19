@@ -17,6 +17,7 @@ import { Server, type Socket } from 'socket.io';
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+import { updateConnectionCount } from '../metrics/prometheus.js';
 import { getRedisClient, getSubscriberClient, RedisKeys } from '../redis/index.js';
 import type { MessageBrokerService } from '../services/message-broker.service.js';
 import type { PresenceService } from '../services/presence.service.js';
@@ -58,7 +59,7 @@ const USER_COLORS = [
 export class WebSocketGateway {
   private io: Server;
   private readonly serverId: string;
-  private heartbeatTimers = new Map<string, ReturnType<typeof setInterval>>();
+  private readonly heartbeatTimers = new Map<string, ReturnType<typeof setInterval>>();
   private metricsInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -774,7 +775,7 @@ export class WebSocketGateway {
    * Get consistent color for user
    */
   private getUserColor(userId: string): string {
-    const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = userId.split('').reduce((acc, char) => acc + (char.codePointAt(0) ?? 0), 0);
     return USER_COLORS[hash % USER_COLORS.length];
   }
 
@@ -795,7 +796,9 @@ export class WebSocketGateway {
     this.metricsInterval = setInterval(() => {
       const connections = this.io.sockets.sockets.size;
       logger.info({ connections }, 'Active WebSocket connections');
-      // TODO: Emit to Prometheus metrics
+      
+      // Update Prometheus gauge
+      updateConnectionCount(connections);
     }, 30000);
   }
 

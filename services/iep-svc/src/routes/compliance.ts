@@ -3,6 +3,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
 import * as iepService from '../services/iepService.js';
 
 export default async function complianceRoutes(fastify: FastifyInstance): Promise<void> {

@@ -630,7 +630,7 @@ export class FineTuningManager {
 
     return {
       jobs: jobsResult.rows.map((row) => this.mapJobRow(row)),
-      total: parseInt(countResult.rows[0].count),
+      total: Number.parseInt(countResult.rows[0].count),
     };
   }
 
@@ -736,7 +736,7 @@ export class FineTuningManager {
 
     return {
       models: modelsResult.rows.map((row) => this.mapModelRow(row)),
-      total: parseInt(countResult.rows[0].count),
+      total: Number.parseInt(countResult.rows[0].count),
     };
   }
 
@@ -995,7 +995,7 @@ export class FineTuningManager {
       SELECT COUNT(*) FROM fine_tuning_jobs
       WHERE status IN ('pending', 'validating', 'queued', 'running')
     `);
-    return parseInt(result.rows[0].count);
+    return Number.parseInt(result.rows[0].count);
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

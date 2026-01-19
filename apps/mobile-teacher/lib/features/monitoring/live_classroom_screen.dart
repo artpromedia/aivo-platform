@@ -12,6 +12,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/flutter_common.dart';
+
+import '../../providers/core_providers.dart';
 
 /// Focus states for students
 enum FocusState {
@@ -127,7 +131,7 @@ class ClassroomAlert {
 }
 
 /// Live Classroom Screen
-class LiveClassroomScreen extends StatefulWidget {
+class LiveClassroomScreen extends ConsumerStatefulWidget {
   final String classroomId;
   final String classroomName;
 
@@ -138,10 +142,10 @@ class LiveClassroomScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<LiveClassroomScreen> createState() => _LiveClassroomScreenState();
+  ConsumerState<LiveClassroomScreen> createState() => _LiveClassroomScreenState();
 }
 
-class _LiveClassroomScreenState extends State<LiveClassroomScreen> {
+class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -151,13 +155,117 @@ class _LiveClassroomScreenState extends State<LiveClassroomScreen> {
   bool _isConnected = false;
   String? _errorMessage;
   FocusState? _filterState;
+  
+  WebSocketClient? _wsClient;
+  StreamSubscription<WSMessage>? _messageSubscription;
+  StreamSubscription<ConnectionStatus>? _statusSubscription;
 
   @override
   void initState() {
     super.initState();
     _initializeNotifications();
     _loadClassroomData();
-    // TODO: Initialize WebSocket connection
+    _initializeWebSocket();
+  }
+  
+  @override
+  void dispose() {
+    _messageSubscription?.cancel();
+    _statusSubscription?.cancel();
+    _wsClient?.disconnect();
+    super.dispose();
+  }
+  
+  /// Initialize WebSocket connection
+  Future<void> _initializeWebSocket() async {
+    final apiClient = ref.read(apiClientProvider);
+    
+    _wsClient = WebSocketClient(
+      config: const WebSocketConfig(
+        url: 'wss://realtime.aivo.cloud/v1',
+        pingInterval: Duration(seconds: 30),
+        reconnectDelay: Duration(seconds: 2),
+        maxReconnectAttempts: 10,
+      ),
+      getAuthToken: () => apiClient.accessToken ?? '',
+    );
+    
+    // Subscribe to connection status
+    _statusSubscription = _wsClient!.statusStream.listen((status) {
+      setState(() {
+        _isConnected = status == ConnectionStatus.connected;
+      });
+    });
+    
+    // Subscribe to incoming messages
+    _messageSubscription = _wsClient!.messageStream.listen((message) {
+      _handleWebSocketMessage(message);
+    });
+    
+    // Connect and join the classroom room
+    await _wsClient!.connect();
+    await _wsClient!.joinRoom('classroom:${widget.classroomId}');
+  }
+  
+  /// Handle incoming WebSocket messages
+  void _handleWebSocketMessage(WSMessage message) {
+    switch (message.event) {
+      case 'student:status':
+        final status = StudentStatus.fromJson(message.data);
+        setState(() {
+          final index = _students.indexWhere((s) => s.studentId == status.studentId);
+          if (index >= 0) {
+            _students[index] = status;
+          } else {
+            _students.add(status);
+          }
+        });
+        break;
+        
+      case 'classroom:alert':
+        final alert = ClassroomAlert.fromJson(message.data);
+        setState(() {
+          _alerts.add(alert);
+        });
+        if (alert.priority == 'urgent') {
+          _showLocalNotification(alert);
+        }
+        break;
+        
+      case 'classroom:snapshot':
+        final data = message.data;
+        setState(() {
+          _students = (data['students'] as List)
+              .map((s) => StudentStatus.fromJson(s as Map<String, dynamic>))
+              .toList();
+          _alerts = (data['alerts'] as List? ?? [])
+              .map((a) => ClassroomAlert.fromJson(a as Map<String, dynamic>))
+              .toList();
+        });
+        break;
+    }
+  }
+  
+  /// Show local notification for urgent alerts
+  Future<void> _showLocalNotification(ClassroomAlert alert) async {
+    const androidDetails = AndroidNotificationDetails(
+      'urgent_alerts',
+      'Urgent Alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    
+    await _notificationsPlugin.show(
+      alert.hashCode,
+      'Student Needs Attention',
+      '${alert.studentName}: ${alert.message}',
+      details,
+    );
   }
 
   /// Initialize push notifications
@@ -180,23 +288,23 @@ class _LiveClassroomScreenState extends State<LiveClassroomScreen> {
     });
 
     try {
-      // TODO: Replace with actual API call
-      // final response = await http.get(
-      //   Uri.parse('$apiUrl/monitor/classroom/${widget.classroomId}'),
-      //   headers: {'Authorization': 'Bearer $token'},
-      // );
-
-      // Mock data for now
-      await Future.delayed(const Duration(seconds: 1));
-
+      // Load classroom monitoring data from API
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.get('/monitor/classroom/${widget.classroomId}');
+      final data = response.data as Map<String, dynamic>;
+      
       setState(() {
-        _students = []; // Parse from response
+        _students = (data['students'] as List? ?? [])
+            .map((s) => StudentStatus.fromJson(s as Map<String, dynamic>))
+            .toList();
+        _alerts = (data['alerts'] as List? ?? [])
+            .map((a) => ClassroomAlert.fromJson(a as Map<String, dynamic>))
+            .toList();
         _isLoading = false;
-        _isConnected = true;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load classroom data';
+        _errorMessage = 'Failed to load classroom data: $e';
         _isLoading = false;
       });
     }
@@ -259,10 +367,38 @@ class _LiveClassroomScreenState extends State<LiveClassroomScreen> {
 
   /// Send intervention
   Future<void> _sendIntervention(String studentId, String type) async {
-    // TODO: Implement API call
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Sending $type intervention...')),
-    );
+    try {
+      // Send intervention via API
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.post('/interventions', data: {
+        'studentId': studentId,
+        'classroomId': widget.classroomId,
+        'type': type,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$type intervention sent successfully')),
+        );
+      }
+      
+      // Also notify via WebSocket for real-time update
+      _wsClient?.send('intervention:send', {
+        'studentId': studentId,
+        'classroomId': widget.classroomId,
+        'type': type,
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send intervention: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -427,7 +563,12 @@ class _LiveClassroomScreenState extends State<LiveClassroomScreen> {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to student detail
+          // Navigate to student detail screen
+          Navigator.pushNamed(
+            context,
+            '/students/${student.studentId}',
+            arguments: {'classroomId': widget.classroomId},
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

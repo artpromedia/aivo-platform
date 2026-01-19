@@ -5,9 +5,10 @@
  */
 
 import cron from 'node-cron';
+
+import { eventEmitter } from '../events/event-emitter.js';
 import { prisma } from '../prisma.js';
 import { streakService, challengeService, leaderboardService } from '../services/index.js';
-import { eventEmitter } from '../events/event-emitter.js';
 
 export function startScheduledJobs(): void {
   // ============================================================================

@@ -5,7 +5,7 @@
 type EventHandler = (...args: unknown[]) => void | Promise<void>;
 
 class EventEmitter {
-  private handlers: Map<string, Set<EventHandler>> = new Map();
+  private handlers = new Map<string, Set<EventHandler>>();
 
   on(event: string, handler: EventHandler): void {
     if (!this.handlers.has(event)) {

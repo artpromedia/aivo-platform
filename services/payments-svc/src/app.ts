@@ -4,9 +4,9 @@
  * Fastify application setup with routes and middleware.
  */
 
+import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
 import rawBody from 'fastify-raw-body';
-import rateLimit from '@fastify/rate-limit';
 
 import { config } from './config.js';
 import { exportMetrics } from './metrics.js';

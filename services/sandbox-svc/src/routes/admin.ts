@@ -9,7 +9,6 @@
 
 import { randomBytes } from 'node:crypto';
 
-import type { ExtendedPrismaClient } from '../prisma-types.js';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { generateSyntheticData } from '../data/generator.js';
@@ -19,6 +18,7 @@ import {
   getRequestContext,
   requirePermissions,
 } from '../middleware/admin-auth.middleware.js';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { getAdminAuthService } from '../services/admin-auth.service.js';
 
 declare module 'fastify' {
@@ -634,10 +634,10 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
           count: u._count.id,
         })),
         dailyApiCalls: dailyUsage,
-        webhookDeliveries: webhookStats.reduce((acc: Record<string, number>, s: typeof webhookStats[number]) => {
+        webhookDeliveries: webhookStats.reduce<Record<string, number>>((acc: Record<string, number>, s: typeof webhookStats[number]) => {
           acc[s.status.toLowerCase()] = s._count.id;
           return acc;
-        }, {} as Record<string, number>),
+        }, {}),
       };
     }
   );

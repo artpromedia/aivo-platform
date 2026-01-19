@@ -2,31 +2,63 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 
 export default function JoinPage() {
-  const [classCode, setClassCode] = useState('');
+  const router = useRouter();
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!classCode.trim()) {
-      setError('Please enter your class code');
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      setError('Please enter your code');
       return;
     }
 
-    if (classCode.length < 6) {
-      setError('Class codes are at least 6 characters');
+    if (trimmedCode.length < 6) {
+      setError('Codes are at least 6 characters');
       return;
     }
 
-    // TODO: Validate class code with API and redirect to learning session
-    console.log('Joining with code:', classCode);
-    // For now, simulate validation
-    setError('This feature is coming soon! Ask your teacher or parent for help.');
+    setIsLoading(true);
+
+    try {
+      // Determine if it's a PIN (all digits) or class code (alphanumeric)
+      const isPinCode = /^\d{6}$/.test(trimmedCode);
+      
+      const response = await fetch('/api/auth/code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          code: trimmedCode,
+          type: isPinCode ? 'pin' : 'class'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Invalid code');
+      }
+
+      // Check if learner needs baseline assessment
+      if (data.needsBaseline) {
+        router.push('/baseline');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid code. Please check and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -52,9 +84,9 @@ export default function JoinPage() {
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-purple-400)] to-[var(--aivo-brand-primary)] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <span className="text-4xl">🎫</span>
           </div>
-          <h1 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">Join Your Class</h1>
+          <h1 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">Enter Your Code</h1>
           <p className="text-[var(--aivo-neutral-600)]">
-            Enter the code from your teacher or parent
+            Use the code from your teacher or the PIN from your parent
           </p>
         </div>
 
@@ -63,32 +95,45 @@ export default function JoinPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
-                htmlFor="classCode"
+                htmlFor="code"
                 className="block text-sm font-medium text-[var(--aivo-neutral-700)] mb-2"
               >
-                Class Code
+                Class Code or PIN
               </label>
               <input
                 type="text"
-                id="classCode"
-                value={classCode}
+                id="code"
+                value={code}
                 onChange={(e) => {
-                  setClassCode(e.target.value.toUpperCase());
+                  setCode(e.target.value.toUpperCase());
+                  setError('');
                 }}
                 placeholder="ENTER CODE"
                 className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border-2 border-[var(--aivo-purple-200)] rounded-xl focus:border-[var(--aivo-brand-primary)] focus:ring-2 focus:ring-[var(--aivo-purple-100)] outline-none transition-all"
                 maxLength={10}
                 autoComplete="off"
                 autoCapitalize="characters"
+                disabled={isLoading}
               />
               {error && <p className="mt-2 text-sm text-[var(--aivo-color-error)]">{error}</p>}
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] hover:opacity-90 text-white font-semibold rounded-xl transition-all shadow-lg"
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] hover:opacity-90 disabled:opacity-60 text-white font-semibold rounded-xl transition-all shadow-lg disabled:cursor-not-allowed"
             >
-              Start Learning! 🚀
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Checking...
+                </span>
+              ) : (
+                'Start Learning! 🚀'
+              )}
             </button>
           </form>
 

@@ -1,5 +1,6 @@
-import { runAxeTest, type AxeConfig, type AxeTestResult } from './axe-runner';
 import { FOCUSABLE_SELECTOR, isFocusable, getFocusableElements } from '../focus-management';
+
+import { runAxeTest, type AxeConfig, type AxeTestResult } from './axe-runner';
 
 interface TestAccessibilityOptions extends Partial<AxeConfig> {
   failOnViolation?: boolean;
@@ -58,7 +59,7 @@ export function checkKeyboardNavigation(
   // Check for logical tab order
   const tabIndexes = focusableElements.map((el) => {
     const tabIndex = el.getAttribute('tabindex');
-    return tabIndex ? parseInt(tabIndex, 10) : 0;
+    return tabIndex ? Number.parseInt(tabIndex, 10) : 0;
   });
 
   const hasPositiveTabIndex = tabIndexes.some((i) => i > 0);

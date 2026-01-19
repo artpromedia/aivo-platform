@@ -4,8 +4,8 @@
  * Manages legal holds and preservation orders.
  */
 
-import { prisma } from '../prisma.js';
 import { config } from '../config.js';
+import { prisma } from '../prisma.js';
 import type {
   CreateHoldInput,
   UpdateHoldInput,
@@ -464,7 +464,7 @@ export async function removeCustodianFromHold(
     },
   });
 
-  if (!holdCustodian || holdCustodian.hold.tenantId !== tenantId) {
+  if (holdCustodian?.hold.tenantId !== tenantId) {
     throw new Error('Hold custodian not found');
   }
 

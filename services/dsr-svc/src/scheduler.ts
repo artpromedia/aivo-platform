@@ -13,7 +13,6 @@
 import type { Pool } from 'pg';
 
 import { deidentifyLearner, DeleteError } from './deleter.js';
-import { DeletionOrchestrator } from './services/deletion-orchestrator.js';
 import {
   getDeletionRequestsReadyForProcessing,
   getRequestsNeedingGracePeriodReminder,
@@ -25,6 +24,8 @@ import {
   recordNotification,
   deleteArtifact,
 } from './repository.js';
+import { DeletionOrchestrator } from './services/deletion-orchestrator.js';
+import { sendCompletionNotification } from './services/notification-service.js';
 import type { DsrRequest } from './types.js';
 import { DSR_CONFIG } from './types.js';
 
@@ -89,8 +90,16 @@ async function processSingleDeletion(pool: Pool, request: DsrRequest): Promise<v
       details: { deletion_type: 'soft_delete' },
     });
 
-    // TODO: Send completion notification email
-    // await sendCompletionNotification(pool, request);
+    // Send completion notification email (GDPR Article 17 compliance)
+    try {
+      await sendCompletionNotification(pool, request);
+    } catch (notifyError) {
+      // Log but don't fail the deletion - notification is non-blocking
+      console.warn(
+        `[DsrScheduler] Failed to send completion notification for request ${request.id}:`,
+        notifyError
+      );
+    }
 
     console.log(`[DsrScheduler] Completed deletion for request ${request.id}`);
   } catch (err) {
@@ -179,7 +188,7 @@ async function cleanupExpiredArtifacts(pool: Pool): Promise<void> {
  * After this period, records are permanently deleted to reduce storage costs
  * while still allowing for recovery during the retention window.
  */
-const SOFT_DELETE_RETENTION_DAYS = parseInt(process.env.SOFT_DELETE_RETENTION_DAYS ?? '90', 10);
+const SOFT_DELETE_RETENTION_DAYS = Number.parseInt(process.env.SOFT_DELETE_RETENTION_DAYS ?? '90', 10);
 
 /**
  * Services that support soft delete and need periodic purging.

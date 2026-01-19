@@ -5,7 +5,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { ENCRYPTION, AUTH } from '../constants';
 
 @Injectable()

@@ -3,7 +3,7 @@
  */
 
 export const config = {
-  port: parseInt(process.env.PORT || '4070', 10),
+  port: Number.parseInt(process.env.PORT || '4070', 10),
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
 

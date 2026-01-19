@@ -254,12 +254,12 @@ export async function getLearnerInterventionStats(
   });
 
   return {
-    byType: interventions.reduce(
+    byType: interventions.reduce<Record<string, number>>(
       (acc, i) => {
         acc[i.interventionType] = i._count.id;
         return acc;
       },
-      {} as Record<string, number>
+      {}
     ),
     total: interventions.reduce((sum, i) => sum + i._count.id, 0),
     acceptedCount,

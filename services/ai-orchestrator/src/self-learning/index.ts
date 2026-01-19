@@ -327,13 +327,13 @@ export class SelfLearningManager {
     };
 
     return {
-      totalActions: parseInt(stats.total_actions, 10) || 0,
+      totalActions: Number.parseInt(stats.total_actions, 10) || 0,
       feedbackRate: parseFloat(stats.feedback_rate ?? '0') || 0,
       acceptanceRate: parseFloat(stats.acceptance_rate ?? '0') || 0,
       avgRating: parseFloat(stats.avg_rating ?? '0') || 0,
       activeExperiments: experiments.length,
-      patternsDetected: parseInt(patterns.rows[0]?.count ?? '0', 10) || 0,
-      trainingExamples: parseInt(examples.rows[0]?.count ?? '0', 10) || 0,
+      patternsDetected: Number.parseInt(patterns.rows[0]?.count ?? '0', 10) || 0,
+      trainingExamples: Number.parseInt(examples.rows[0]?.count ?? '0', 10) || 0,
     };
   }
 

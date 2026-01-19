@@ -8,16 +8,17 @@
  * @author AIVO Platform Team
  */
 
-import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { logger } from '../logger.js';
-import type { ISisProvider, SisProviderCredentials, SisProviderType } from './types.js';
-import { CleverProvider } from './clever.js';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
+
 import { ClassLinkProvider } from './classlink.js';
-import { OneRosterApiProvider } from './oneroster-api.js';
-import { OneRosterCsvProvider } from './oneroster-csv.js';
+import { CleverProvider } from './clever.js';
+import { EdFiProvider, type EdFiProviderConfig } from './edfi/edfi-provider.js';
 import { GoogleWorkspaceProvider } from './google-workspace.js';
 import { MicrosoftEntraProvider } from './microsoft-entra.js';
-import { EdFiProvider, type EdFiProviderConfig } from './edfi/edfi-provider.js';
+import { OneRosterApiProvider } from './oneroster-api.js';
+import { OneRosterCsvProvider } from './oneroster-csv.js';
+import type { ISisProvider, SisProviderCredentials, SisProviderType } from './types.js';
 
 /**
  * Provider configuration from database
@@ -49,14 +50,14 @@ interface CachedProvider {
  */
 export class ProviderFactory {
   private prisma: PrismaClient;
-  private cache: Map<string, CachedProvider> = new Map();
+  private cache = new Map<string, CachedProvider>();
   private secretsResolver: SecretsResolver;
   private cacheTtlMs: number;
 
   constructor(
     prisma: PrismaClient,
     secretsResolver: SecretsResolver,
-    cacheTtlMs: number = 3600000 // 1 hour default
+    cacheTtlMs = 3600000 // 1 hour default
   ) {
     this.prisma = prisma;
     this.secretsResolver = secretsResolver;
@@ -83,7 +84,7 @@ export class ProviderFactory {
       where: { id: providerId },
     });
 
-    if (!providerConfig || providerConfig.tenantId !== tenantId) {
+    if (providerConfig?.tenantId !== tenantId) {
       return null;
     }
 

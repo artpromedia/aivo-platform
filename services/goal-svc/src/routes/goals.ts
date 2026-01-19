@@ -100,8 +100,8 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
           domain: domain as any,
         },
         {
-          page: page ? parseInt(page, 10) : 1,
-          pageSize: pageSize ? parseInt(pageSize, 10) : 20,
+          page: page ? Number.parseInt(page, 10) : 1,
+          pageSize: pageSize ? Number.parseInt(pageSize, 10) : 20,
         }
       );
 

@@ -5,7 +5,6 @@
  */
 
 import type { Prisma } from '../../generated/prisma-client/index.js';
-
 import { prisma } from '../prisma.js';
 import type {
   CreateLicenseAssignmentSchema,
@@ -33,7 +32,7 @@ export class SeatEntitlementRepository {
    * Create a new seat entitlement.
    */
   async create(
-    data: Zod.infer<typeof CreateSeatEntitlementSchema>
+    data: z.infer<typeof CreateSeatEntitlementSchema>
   ): Promise<SeatEntitlement> {
     return prisma.seatEntitlement.create({
       data: {
@@ -137,7 +136,7 @@ export class SeatEntitlementRepository {
    */
   async update(
     id: string,
-    data: Zod.infer<typeof UpdateSeatEntitlementSchema>
+    data: z.infer<typeof UpdateSeatEntitlementSchema>
   ): Promise<SeatEntitlement> {
     return prisma.seatEntitlement.update({
       where: { id },
@@ -249,7 +248,7 @@ export class LicenseAssignmentRepository {
    * Create a new license assignment.
    */
   async create(
-    data: Zod.infer<typeof CreateLicenseAssignmentSchema> & {
+    data: z.infer<typeof CreateLicenseAssignmentSchema> & {
       isOverage?: boolean;
     }
   ): Promise<LicenseAssignment> {
@@ -456,7 +455,7 @@ export class LicenseEventRepository {
    * Create a license event.
    */
   async create(
-    data: Zod.infer<typeof CreateLicenseEventSchema>
+    data: z.infer<typeof CreateLicenseEventSchema>
   ): Promise<LicenseEvent> {
     return prisma.licenseEvent.create({
       data: {

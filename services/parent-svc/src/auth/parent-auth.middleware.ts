@@ -6,13 +6,29 @@
 
 import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { logger } from '@aivo/ts-observability';
 import { config } from '../config.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export interface ParentAuthRequest extends Request {
   parent?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    language: string;
+    verified: boolean;
+    status: string;
+  };
+}
+
+/**
+ * Request type for routes protected by ParentAuthMiddleware.
+ * After middleware runs, parent is guaranteed to be present.
+ */
+export interface AuthenticatedParentRequest extends Request {
+  parent: {
     id: string;
     email: string;
     firstName: string;
@@ -37,7 +53,7 @@ export class ParentAuthMiddleware implements NestMiddleware {
     const token = authHeader.substring(7);
 
     try {
-      const payload = verify(token, config.jwtSecret) as {
+      const payload = jwt.verify(token, config.jwtSecret) as {
         sub: string;
         type: string;
         iat: number;

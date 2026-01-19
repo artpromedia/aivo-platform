@@ -8,6 +8,9 @@
  * - Analytics
  */
 
+/* eslint-disable no-redeclare */
+// This file uses the TypeScript pattern of const + type with same name which ESLint doesn't understand
+
 import { z } from 'zod';
 
 // ============================================================================
@@ -153,7 +156,7 @@ export interface HotspotRegion {
   width?: number;
   height?: number;
   // Polygon
-  points?: Array<{ x: number; y: number }>;
+  points?: { x: number; y: number }[];
   // Common
   label?: string;
   correct?: boolean;
@@ -228,12 +231,12 @@ export interface BaseQuestion {
   authorId: string;
   createdAt: Date;
   updatedAt: Date;
-  standards?: Array<{
+  standards?: {
     id: string;
     code: string;
     name: string;
     framework: string;
-  }>;
+  }[];
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
@@ -286,7 +289,7 @@ export interface MatchingQuestion extends BaseQuestion {
 
 export interface OrderingQuestion extends BaseQuestion {
   type: 'ORDERING';
-  items: Array<{ id: string; text: string }>;
+  items: { id: string; text: string }[];
   correctOrder: string[]; // Ordered item IDs
 }
 
@@ -440,7 +443,7 @@ export interface Assessment {
   publishedAt?: Date;
   questions: AssessmentQuestionItem[];
   questionPools: AssessmentQuestionPool[];
-  standards?: Array<{ id: string; code: string; name: string }>;
+  standards?: { id: string; code: string; name: string }[];
 }
 
 // ============================================================================
@@ -508,7 +511,7 @@ export type QuestionAnswer =
   | boolean // True/false
   | number // Numeric
   | Record<string, string> // Matching (left -> right)
-  | Array<{ x: number; y: number }> // Hotspot
+  | { x: number; y: number }[] // Hotspot
   | Record<string, string[]> // Drag drop (zone -> items)
   | { code: string; language: string }; // Code
 
@@ -525,12 +528,12 @@ export interface QuestionResponse {
   autoGraded: boolean;
   status: 'not_answered' | 'answered' | 'graded' | 'flagged';
   flagged: boolean;
-  rubricScores?: Array<{
+  rubricScores?: {
     criterionId: string;
     levelId: string;
     points: number;
     comment?: string;
-  }>;
+  }[];
   startedAt: Date;
   answeredAt?: Date;
   timeSpentSeconds: number;
@@ -626,7 +629,7 @@ export interface ItemAnalysisReport {
   assessmentTitle: string;
   analyzedAt: Date;
   totalAttempts: number;
-  items: Array<{
+  items: {
     questionId: string;
     questionStem: string;
     questionType: QuestionType;
@@ -639,7 +642,7 @@ export interface ItemAnalysisReport {
     averageTime: number;
     answerDistribution: Record<string, number>;
     flags: string[]; // e.g., "Low discrimination", "Too easy", "Negative correlation"
-  }>;
+  }[];
   reliability: {
     cronbachAlpha: number;
     standardError: number;
@@ -669,11 +672,11 @@ export interface GradingQueue {
   total: number;
   pending: number;
   items: GradingQueueItem[];
-  byAssessment: Array<{
+  byAssessment: {
     assessmentId: string;
     assessmentTitle: string;
     pendingCount: number;
-  }>;
+  }[];
 }
 
 export interface GradingSummary {
@@ -698,7 +701,7 @@ export interface GradingSummary {
     standardDeviation: number;
     passRate?: number;
   };
-  studentBreakdown: Array<{
+  studentBreakdown: {
     studentId: string;
     studentName: string;
     attemptId: string;
@@ -707,7 +710,7 @@ export interface GradingSummary {
     submittedAt?: Date;
     gradedResponsesCount: number;
     totalResponses: number;
-  }>;
+  }[];
 }
 
 // ============================================================================

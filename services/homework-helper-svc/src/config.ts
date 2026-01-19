@@ -22,7 +22,7 @@ function loadPublicKey(): string | undefined {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '4025', 10),
+  port: Number.parseInt(process.env.PORT ?? '4025', 10),
   logLevel: process.env.LOG_LEVEL ?? 'info',
   jwtPublicKey: loadPublicKey(),
   isDev: process.env.NODE_ENV !== 'production',

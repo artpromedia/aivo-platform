@@ -12,7 +12,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { Redis } from 'ioredis';
 
@@ -353,7 +353,7 @@ export class LearningSignalProcessor extends EventEmitter {
 
     for (const row of rows) {
       const avgStrength = parseFloat(row.avg_strength);
-      const sampleSize = parseInt(row.sample_size);
+      const sampleSize = Number.parseInt(row.sample_size);
       const stddev = parseFloat(row.strength_stddev) || 0;
 
       // Calculate confidence based on sample size and variance
@@ -597,13 +597,13 @@ export class LearningSignalProcessor extends EventEmitter {
     return {
       period: { start: startDate, end: endDate },
       metrics: {
-        totalSignals: parseInt(rows[0].total_signals) || 0,
+        totalSignals: Number.parseInt(rows[0].total_signals) || 0,
         avgStrength: parseFloat(rows[0].avg_strength) || 0,
         avgPositiveStrength: parseFloat(rows[0].avg_positive_strength) || 0,
         avgNegativeStrength: parseFloat(rows[0].avg_negative_strength) || 0,
         positiveRate: parseFloat(rows[0].positive_rate) || 0,
-        uniqueLearners: parseInt(rows[0].unique_learners) || 0,
-        uniqueSessions: parseInt(rows[0].unique_sessions) || 0,
+        uniqueLearners: Number.parseInt(rows[0].unique_learners) || 0,
+        uniqueSessions: Number.parseInt(rows[0].unique_sessions) || 0,
       },
     };
   }
@@ -657,7 +657,7 @@ export class LearningSignalProcessor extends EventEmitter {
       [tenantId]
     );
 
-    if (parseInt(rows[0].count) >= this.config.minSignalsForPattern) {
+    if (Number.parseInt(rows[0].count) >= this.config.minSignalsForPattern) {
       // Trigger async pattern detection
       setImmediate(() => this.detectPatterns(tenantId));
     }

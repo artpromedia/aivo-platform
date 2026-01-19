@@ -4,13 +4,16 @@
  * Handles competition/tournament API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
+import type {
+  CompetitionType} from '../services/competition.service.js';
 import {
   competitionService,
-  CompetitionType,
   CompetitionDuration,
   CompetitionCategory,
 } from '../services/competition.service.js';
@@ -172,7 +175,7 @@ router.get(
   '/history',
   asyncHandler(async (req: Request, res: Response) => {
     const participantId = req.query.participantId as string | undefined;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Number.parseInt(req.query.limit as string) || 20;
 
     const competitions = await competitionService.listCompletedCompetitions({
       participantId,

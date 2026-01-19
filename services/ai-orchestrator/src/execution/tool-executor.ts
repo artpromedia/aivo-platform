@@ -480,21 +480,21 @@ export class ToolExecutor extends EventEmitter {
 
     // Check minute limit
     const minuteKey = `${baseKey}:minute:${Math.floor(Date.now() / 60000)}`;
-    const minuteCount = parseInt(await this.redis.get(minuteKey) ?? '0', 10);
+    const minuteCount = Number.parseInt(await this.redis.get(minuteKey) ?? '0', 10);
     if (minuteCount >= limit.maxPerMinute) {
       return { allowed: false, retryAfterSeconds: 60 };
     }
 
     // Check hour limit
     const hourKey = `${baseKey}:hour:${Math.floor(Date.now() / 3600000)}`;
-    const hourCount = parseInt(await this.redis.get(hourKey) ?? '0', 10);
+    const hourCount = Number.parseInt(await this.redis.get(hourKey) ?? '0', 10);
     if (hourCount >= limit.maxPerHour) {
       return { allowed: false, retryAfterSeconds: 3600 };
     }
 
     // Check day limit
     const dayKey = `${baseKey}:day:${new Date().toISOString().split('T')[0]}`;
-    const dayCount = parseInt(await this.redis.get(dayKey) ?? '0', 10);
+    const dayCount = Number.parseInt(await this.redis.get(dayKey) ?? '0', 10);
     if (dayCount >= limit.maxPerDay) {
       return { allowed: false, retryAfterSeconds: 86400 };
     }
@@ -626,9 +626,9 @@ export class ToolExecutor extends EventEmitter {
           clearTimeout(timer);
           resolve(result);
         })
-        .catch(error => {
+        .catch((error: unknown) => {
           clearTimeout(timer);
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         });
     });
   }
@@ -678,7 +678,7 @@ export class ToolExecutor extends EventEmitter {
   // ──────────────────────────────────────────────────────────────────────────────
 
   private generateId(prefix: string): string {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private async createErrorResult(
@@ -764,7 +764,7 @@ export function createBuiltInTools(pool: Pool): ToolDefinition[] {
       },
       rateLimit: { maxPerMinute: 10, maxPerHour: 100, maxPerDay: 1000, scope: 'learner' },
       timeout: 10000,
-      handler: async (context, params) => {
+      handler: async (_context, _params) => {
         // This would call the recommendation engine
         return {
           success: true,
@@ -795,7 +795,7 @@ export function createBuiltInTools(pool: Pool): ToolDefinition[] {
       },
       rateLimit: { maxPerMinute: 10, maxPerHour: 100, maxPerDay: 500, scope: 'user' },
       timeout: 5000,
-      handler: async (context, params) => {
+      handler: async (_context, _params) => {
         // This would call the notification service
         return { success: true, data: { notificationId: 'notif_123', sent: true } };
       },

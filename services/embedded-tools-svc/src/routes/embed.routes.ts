@@ -8,18 +8,19 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { config } from '../config.js';
 import { prisma } from '../prisma.js';
 import {
   generateLaunchToken,
   generatePseudonymousLearnerId,
 } from '../services/token.service.js';
-import {
-  ToolSessionStatus,
+import type {
   ToolScope,
+  ToolSessionStatus,
   type LaunchContext,
   type ToolLaunchConfig,
 } from '../types/index.js';
-import { config } from '../config.js';
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Schema Validation
@@ -88,7 +89,7 @@ async function launchTool(
     return reply.status(400).send({ error: 'Tool installation is disabled' });
   }
 
-  if (!tenantPolicy || !tenantPolicy.isEnabled) {
+  if (!tenantPolicy?.isEnabled) {
     return reply.status(403).send({ error: 'Tenant has not enabled this tool' });
   }
 

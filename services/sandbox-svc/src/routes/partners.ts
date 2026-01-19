@@ -4,6 +4,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+
 import type { ExtendedPrismaClient } from '../prisma-types.js';
 
 declare module 'fastify' {
@@ -13,31 +14,31 @@ declare module 'fastify' {
 }
 
 // Type aliases for prisma models (to work around missing generated types)
-type SandboxApiKey = {
+interface SandboxApiKey {
   id: string;
   name: string;
   keyPrefix: string;
   scopes: string[];
   lastUsedAt: Date | null;
   createdAt: Date;
-};
+}
 
-type SandboxWebhookEndpoint = {
+interface SandboxWebhookEndpoint {
   id: string;
   name: string;
   url: string;
   eventTypes: string[];
   isEnabled: boolean;
-};
+}
 
-type SandboxTenant = {
+interface SandboxTenant {
   id: string;
   tenantCode: string;
   name: string;
   isActive: boolean;
   apiKeys: SandboxApiKey[];
   webhookEndpoints: SandboxWebhookEndpoint[];
-};
+}
 
 const registerSchema = z.object({
   companyName: z.string().min(2).max(200),

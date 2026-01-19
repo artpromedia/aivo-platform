@@ -404,22 +404,22 @@ export const registerFineTuningRoutes: FastifyPluginAsync<FineTuningRoutesOption
 
       reply.code(200).send({
         totals: {
-          pending: parseInt(stats.pending_count) || 0,
-          approved: parseInt(stats.approved_count) || 0,
-          exported: parseInt(stats.exported_count) || 0,
-          rejected: parseInt(stats.rejected_count) || 0,
-          available: (parseInt(stats.pending_count) || 0) + (parseInt(stats.approved_count) || 0),
+          pending: Number.parseInt(stats.pending_count) || 0,
+          approved: Number.parseInt(stats.approved_count) || 0,
+          exported: Number.parseInt(stats.exported_count) || 0,
+          rejected: Number.parseInt(stats.rejected_count) || 0,
+          available: (Number.parseInt(stats.pending_count) || 0) + (Number.parseInt(stats.approved_count) || 0),
         },
         quality: {
           average: parseFloat(stats.avg_quality) || 0,
         },
         diversity: {
-          agentTypes: parseInt(stats.agent_type_count) || 0,
-          categories: parseInt(stats.category_count) || 0,
+          agentTypes: Number.parseInt(stats.agent_type_count) || 0,
+          categories: Number.parseInt(stats.category_count) || 0,
         },
         byAgentType: byAgentQuery.rows.map((row) => ({
           agentType: row.agent_type,
-          count: parseInt(row.count),
+          count: Number.parseInt(row.count),
           avgQuality: parseFloat(row.avg_quality),
         })),
       });
@@ -485,7 +485,7 @@ export const registerFineTuningRoutes: FastifyPluginAsync<FineTuningRoutesOption
       );
 
       reply.code(200).send({
-        totalAvailable: parseInt(countResult.rows[0].count),
+        totalAvailable: Number.parseInt(countResult.rows[0].count),
         preview: result.rows.map((row) => ({
           id: row.id,
           agentType: row.agent_type,

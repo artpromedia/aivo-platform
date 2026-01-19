@@ -137,7 +137,7 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const user = getUser(request);
       const learnerId = request.query.learnerId || user.learnerId;
-      const limit = parseInt(request.query.limit || '20', 10);
+      const limit = Number.parseInt(request.query.limit || '20', 10);
 
       if (!learnerId) {
         return reply.code(400).send({ error: 'learnerId is required' });
@@ -154,7 +154,7 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get<{ Querystring: { limit?: string } }>('/leaderboard', async (request, reply) => {
     const user = getUser(request);
-    const limit = parseInt(request.query.limit || '10', 10);
+    const limit = Number.parseInt(request.query.limit || '10', 10);
 
     const leaderboard = getLeaderboard(user.tenantId, Math.min(limit, 50));
     return reply.send({ leaderboard });

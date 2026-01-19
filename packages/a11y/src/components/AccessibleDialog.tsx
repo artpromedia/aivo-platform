@@ -6,8 +6,9 @@ import React, {
   useState,
   useId,
 } from 'react';
-import { createFocusTrap } from '../focus-trap';
+
 import { saveFocus, restoreFocus } from '../focus-management';
+import { createFocusTrap } from '../focus-trap';
 import type { FocusTrap as FocusTrapType } from '../focus-trap';
 
 export interface AccessibleDialogProps {
@@ -168,7 +169,7 @@ export const AccessibleDialog = forwardRef<HTMLDivElement, AccessibleDialogProps
           aria-labelledby={titleId}
           aria-describedby={description ? descriptionId : undefined}
           className={className}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); }}
           onKeyDown={handleKeyDown}
           tabIndex={-1}
           style={{

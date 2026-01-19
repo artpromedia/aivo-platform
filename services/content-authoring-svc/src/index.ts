@@ -54,7 +54,7 @@ import { sharingRoutes } from './routes/sharing.routes.js';
 import { translationRoutes } from './routes/translations.js';
 import { versionRoutes } from './routes/versions.js';
 
-const PORT = parseInt(process.env.PORT ?? '4021', 10);
+const PORT = Number.parseInt(process.env.PORT ?? '4021', 10);
 
 async function main() {
   const fastify = Fastify({

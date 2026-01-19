@@ -5,6 +5,7 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
+
 import {
   getProgressSummary,
   getAchievementProgress,
@@ -46,7 +47,7 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
         return reply.code(400).send({ error: 'learnerId is required' });
       }
 
-      const summary = getProgressSummary(user.tenantId, learnerId);
+      const summary = await getProgressSummary(user.tenantId, learnerId);
 
       // Calculate next level progress
       const xpInCurrentLevel = summary.totalXp;
@@ -232,7 +233,7 @@ function getLevelTitle(level: number): string {
   // Find the highest matching title
   let title = 'Beginner';
   for (const [lvl, t] of Object.entries(titles)) {
-    if (level >= parseInt(lvl)) {
+    if (level >= Number.parseInt(lvl)) {
       title = t;
     }
   }

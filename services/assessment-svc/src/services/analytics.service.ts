@@ -61,7 +61,7 @@ export interface ScoreDistribution {
   kurtosis: number;
   range: number;
   percentiles: Record<number, number>; // 10th, 25th, 50th, 75th, 90th
-  histogram: Array<{ min: number; max: number; count: number }>;
+  histogram: { min: number; max: number; count: number }[];
 }
 
 export interface ReliabilityMetrics {
@@ -871,7 +871,7 @@ export class AnalyticsService {
   private createHistogram(
     sorted: number[],
     buckets: number
-  ): Array<{ min: number; max: number; count: number }> {
+  ): { min: number; max: number; count: number }[] {
     if (sorted.length === 0) return [];
 
     const min = sorted[0];
@@ -879,7 +879,7 @@ export class AnalyticsService {
     const range = max - min || 1;
     const bucketSize = range / buckets;
 
-    const histogram: Array<{ min: number; max: number; count: number }> = [];
+    const histogram: { min: number; max: number; count: number }[] = [];
     for (let i = 0; i < buckets; i++) {
       const bucketMin = min + i * bucketSize;
       const bucketMax = min + (i + 1) * bucketSize;

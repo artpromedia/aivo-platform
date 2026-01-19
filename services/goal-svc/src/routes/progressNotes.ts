@@ -112,8 +112,8 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
           createdTo: createdTo ? new Date(createdTo) : undefined,
         },
         {
-          page: page ? parseInt(page, 10) : 1,
-          pageSize: pageSize ? parseInt(pageSize, 10) : 20,
+          page: page ? Number.parseInt(page, 10) : 1,
+          pageSize: pageSize ? Number.parseInt(pageSize, 10) : 20,
         }
       );
 
@@ -220,8 +220,8 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
         ctx.tenantId,
         goalId,
         {
-          page: page ? parseInt(page, 10) : 1,
-          pageSize: pageSize ? parseInt(pageSize, 10) : 50,
+          page: page ? Number.parseInt(page, 10) : 1,
+          pageSize: pageSize ? Number.parseInt(pageSize, 10) : 50,
         }
       );
 
@@ -257,7 +257,7 @@ export async function registerProgressNoteRoutes(fastify: FastifyInstance): Prom
       const notes = await progressNoteService.getLearnerRecentNotes(
         ctx.tenantId,
         learnerId,
-        limit ? parseInt(limit, 10) : 10
+        limit ? Number.parseInt(limit, 10) : 10
       );
 
       return reply.send({ data: notes });

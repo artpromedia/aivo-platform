@@ -13,7 +13,7 @@
  * @module @aivo/ts-utils/event-publisher
  */
 
-import { z, ZodError } from 'zod';
+import type { z } from 'zod';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -157,7 +157,7 @@ const defaultLogger: EventLogger = {
  */
 export class InMemoryTransport implements EventTransport {
   name = 'in-memory';
-  private events: Map<string, BaseEvent[]> = new Map();
+  private events = new Map<string, BaseEvent[]>();
 
   async publish(topic: string, event: BaseEvent): Promise<void> {
     const topicEvents = this.events.get(topic) ?? [];
@@ -348,7 +348,7 @@ export class EventPublisher {
   async publishBatch<T extends z.ZodSchema>(
     topic: string,
     schema: T,
-    eventsData: Array<Omit<z.infer<T>, 'eventId' | 'timestamp' | 'source' | 'eventVersion'>>
+    eventsData: Omit<z.infer<T>, 'eventId' | 'timestamp' | 'source' | 'eventVersion'>[]
   ): Promise<BatchPublishResult> {
     const results: PublishResult[] = [];
     let successful = 0;

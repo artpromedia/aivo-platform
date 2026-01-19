@@ -4,7 +4,7 @@
  * Database operations for experiment exposure logging.
  */
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 
 import type { Pool } from 'pg';
 
@@ -37,7 +37,7 @@ export async function logExposure(
       input.metadata ? JSON.stringify(input.metadata) : null,
     ]
   );
-  return result.rows[0]!;
+  return result.rows[0];
 }
 
 /**
@@ -125,7 +125,7 @@ export async function getExposureStats(
      WHERE experiment_id = $1`,
     [experimentId]
   );
-  const totals = totalsResult.rows[0]!;
+  const totals = totalsResult.rows[0];
 
   // By variant
   const byVariantResult = await pool.query<{
@@ -161,17 +161,17 @@ export async function getExposureStats(
 
   return {
     experimentKey,
-    totalExposures: parseInt(totals.total_exposures, 10),
-    uniqueTenants: parseInt(totals.unique_tenants, 10),
-    uniqueLearners: parseInt(totals.unique_learners, 10),
+    totalExposures: Number.parseInt(totals.total_exposures, 10),
+    uniqueTenants: Number.parseInt(totals.unique_tenants, 10),
+    uniqueLearners: Number.parseInt(totals.unique_learners, 10),
     byVariant: byVariantResult.rows.map((row) => ({
       variantKey: row.variant_key,
-      exposures: parseInt(row.exposures, 10),
-      uniqueSubjects: parseInt(row.unique_subjects, 10),
+      exposures: Number.parseInt(row.exposures, 10),
+      uniqueSubjects: Number.parseInt(row.unique_subjects, 10),
     })),
     byFeatureArea: byFeatureAreaResult.rows.map((row) => ({
       featureArea: row.feature_area,
-      exposures: parseInt(row.exposures, 10),
+      exposures: Number.parseInt(row.exposures, 10),
     })),
   };
 }

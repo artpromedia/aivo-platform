@@ -180,7 +180,7 @@ export class ThreatDetectionService implements OnModuleDestroy {
     
     // Check if we should block
     const count = await this.redis.hget(key, 'count');
-    if (parseInt(count || '0') >= AUTH.LOCKOUT.MAX_ATTEMPTS) {
+    if (Number.parseInt(count || '0') >= AUTH.LOCKOUT.MAX_ATTEMPTS) {
       await this.blockIP(ip, 'Brute force attack detected');
       
       if (userId) {
@@ -200,8 +200,8 @@ export class ThreatDetectionService implements OnModuleDestroy {
       return null;
     }
     
-    const count = parseInt(data.count);
-    const firstAttempt = parseInt(data.firstAttempt);
+    const count = Number.parseInt(data.count);
+    const firstAttempt = Number.parseInt(data.firstAttempt);
     const duration = (Date.now() - firstAttempt) / 1000;
     
     // Calculate attempts per minute

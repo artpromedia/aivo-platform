@@ -698,7 +698,7 @@ export class WeeklyDigestService {
         hour: 'numeric',
         hour12: false,
       });
-      const hour = parseInt(formatter.format(now), 10);
+      const hour = Number.parseInt(formatter.format(now), 10);
 
       // Send between 6 PM and 7 PM local time
       return hour === 18;

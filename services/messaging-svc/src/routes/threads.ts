@@ -152,8 +152,8 @@ export async function registerThreadRoutes(fastify: FastifyInstance): Promise<vo
         ctx.userId,
         learnerId,
         {
-          page: page ? parseInt(page, 10) : 1,
-          pageSize: pageSize ? parseInt(pageSize, 10) : 20,
+          page: page ? Number.parseInt(page, 10) : 1,
+          pageSize: pageSize ? Number.parseInt(pageSize, 10) : 20,
         }
       );
 
@@ -334,8 +334,8 @@ export async function registerThreadRoutes(fastify: FastifyInstance): Promise<vo
       }
 
       const result = await conversationService.listConversations(filters, {
-        page: query.page ? parseInt(query.page, 10) : 1,
-        pageSize: query.pageSize ? parseInt(query.pageSize, 10) : 20,
+        page: query.page ? Number.parseInt(query.page, 10) : 1,
+        pageSize: query.pageSize ? Number.parseInt(query.pageSize, 10) : 20,
       });
 
       return reply.send(result);

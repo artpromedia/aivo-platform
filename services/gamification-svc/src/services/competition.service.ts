@@ -10,8 +10,8 @@
  * - Anti-cheating measures
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
+import { prisma } from '../prisma.js';
 
 export type CompetitionType = 'individual' | 'team' | 'class' | 'school';
 export type CompetitionDuration = 'daily' | 'weekly' | 'seasonal';
@@ -346,7 +346,7 @@ class CompetitionService {
     increment: number
   ): Promise<void> {
     const competition = await this.getCompetition(competitionId);
-    if (!competition || competition.status !== 'active') {
+    if (competition?.status !== 'active') {
       return; // Silently ignore if competition not active
     }
 

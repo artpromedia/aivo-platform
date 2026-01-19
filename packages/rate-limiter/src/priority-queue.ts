@@ -26,9 +26,10 @@
  * ```
  */
 
-import { RateLimitStore } from './stores/types';
+import type { RateLimiterLogger} from './logger';
+import { noopLogger } from './logger';
 import { MemoryStore } from './stores/memory-store';
-import { RateLimiterLogger, noopLogger } from './logger';
+import type { RateLimitStore } from './stores/types';
 
 export interface QueueItem<T = any> {
   /** Unique identifier for the item */
@@ -76,8 +77,8 @@ export class PriorityQueue<T = any> {
   private readonly onFull?: (item: QueueItem<T>) => void;
 
   private queue: QueueItem<T>[] = [];
-  private processing: boolean = false;
-  private processorTimer: NodeJS.Timeout | null = null;
+  private processing = false;
+  private processorTimer: ReturnType<typeof setTimeout> | null = null;
   private processor: ((item: QueueItem<T>) => Promise<void>) | null = null;
 
   constructor(options: PriorityQueueOptions = {}) {

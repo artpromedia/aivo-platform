@@ -6,6 +6,7 @@
  */
 
 import { Cron } from 'croner';
+
 import type { PrismaClient } from '../generated/prisma-client/index.js';
 import { AggregationService } from '../services/aggregation.service.js';
 
@@ -38,7 +39,7 @@ export class DailyAggregationJob {
 
   constructor(
     private prisma: PrismaClient,
-    private schedule: string = '0 1 * * *', // 1 AM daily
+    private schedule = '0 1 * * *', // 1 AM daily
   ) {
     this.aggregationService = new AggregationService(prisma);
   }

@@ -20,13 +20,13 @@
  * @author AIVO Platform Team
  */
 
-import { createHash, createHmac, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+
 import { logger } from '../logger.js';
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import type { ISisProvider, FieldMapping, SisProviderType } from '../providers/types';
-import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine';
-import { createProvider } from '../providers';
 import type { ProviderFactory } from '../providers/factory';
+import type { FieldMapping, ISisProvider } from '../providers/types';
+import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine';
 
 /**
  * Supported webhook provider types
@@ -95,11 +95,11 @@ export interface WebhookResult {
  * Rate limiter for webhook processing
  */
 class RateLimiter {
-  private buckets: Map<string, { count: number; resetAt: number }> = new Map();
-  private maxRequests: number;
-  private windowMs: number;
+  private readonly buckets = new Map<string, { count: number; resetAt: number }>();
+  private readonly maxRequests: number;
+  private readonly windowMs: number;
 
-  constructor(maxRequests: number = 100, windowMs: number = 60000) {
+  constructor(maxRequests = 100, windowMs = 60000) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }
@@ -126,14 +126,14 @@ class RateLimiter {
  * Idempotency tracker
  */
 class IdempotencyTracker {
-  private processed: Map<string, number> = new Map();
-  private ttlMs: number;
+  private readonly processed = new Map<string, number>();
+  private readonly ttlMs: number;
 
-  constructor(ttlMs: number = 3600000) { // 1 hour default
+  constructor(ttlMs = 3600000) { // 1 hour default
     this.ttlMs = ttlMs;
 
     // Cleanup old entries periodically
-    setInterval(() => this.cleanup(), 60000);
+    setInterval(() => { this.cleanup(); }, 60000);
   }
 
   check(eventId: string): boolean {
@@ -161,12 +161,12 @@ class IdempotencyTracker {
  * Central service for processing webhooks from all SIS providers.
  */
 export class WebhookHandlerService {
-  private prisma: PrismaClient;
-  private deltaSyncEngine: DeltaSyncEngine;
-  private providerFactory: ProviderFactory;
-  private rateLimiter: RateLimiter;
-  private idempotency: IdempotencyTracker;
-  private configs: Map<string, WebhookConfig> = new Map();
+  private readonly prisma: PrismaClient;
+  private readonly deltaSyncEngine: DeltaSyncEngine;
+  private readonly providerFactory: ProviderFactory;
+  private readonly rateLimiter: RateLimiter;
+  private readonly idempotency: IdempotencyTracker;
+  private readonly configs = new Map<string, WebhookConfig>();
 
   constructor(
     prisma: PrismaClient,
@@ -559,7 +559,7 @@ export class WebhookHandlerService {
   ): boolean {
     // Google uses push subscription with authentication
     // The secret is used as the token in the query parameter
-    const authHeader = headers['authorization'];
+    const authHeader = headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) return false;
 
     // In production, validate the JWT token
@@ -668,7 +668,7 @@ export class WebhookHandlerService {
       {
         tenantId: config.tenantId,
         providerId: config.providerId,
-        provider: provider as ISisProvider,
+        provider: provider,
         batchSize: 1,
         maxRetries: 3,
         conflictResolution: 'source_wins',
@@ -726,7 +726,7 @@ export class WebhookHandlerService {
       'educationSchools': 'org',
     };
 
-    const normalized = resourceType.toLowerCase().replace(/[^a-z]/g, '');
+    const normalized = resourceType.toLowerCase().replaceAll(/[^a-z]/g, '');
     return mapping[resourceType] || mapping[normalized] || null;
   }
 
@@ -938,14 +938,14 @@ export class WebhookHandlerService {
   }
 
   private calculateHash(data: Record<string, any>): string {
-    const normalized = JSON.stringify(data, Object.keys(data).sort());
+    const normalized = JSON.stringify(data, Object.keys(data).sort((a, b) => a.localeCompare(b)));
     return createHash('sha256').update(normalized).digest('hex');
   }
 
   /**
    * Retry failed webhooks from dead letter queue
    */
-  async retryDeadLetterQueue(maxRetries: number = 3): Promise<number> {
+  async retryDeadLetterQueue(maxRetries = 3): Promise<number> {
     const failedEvents = await this.prisma.webhookDeadLetter.findMany({
       where: {
         retryCount: { lt: maxRetries },

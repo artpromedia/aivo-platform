@@ -5,7 +5,7 @@
  * for keyboard navigation.
  */
 
-import { SkipLink } from './types';
+import type { SkipLink } from './types';
 
 /**
  * Default skip links
@@ -226,7 +226,7 @@ export function ensureSkipTarget(element: HTMLElement): void {
  * Add skip target to existing elements
  */
 export function addSkipTargets(
-  targets: Array<{ selector: string; id?: string }>
+  targets: { selector: string; id?: string }[]
 ): void {
   targets.forEach(({ selector, id }) => {
     const element = document.querySelector<HTMLElement>(selector);

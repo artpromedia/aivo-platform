@@ -6,12 +6,14 @@
  */
 
 import * as cron from 'node-cron';
+
+import { logger } from '../logger.js';
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { SisProvider, SyncStatus } from '../providers/types';
 import { SyncStatus as SyncStatusValues } from '../providers/types';
 import { SyncEngine } from '../sync/engine';
-import { EntityTransformer, TransformConfig } from '../sync/transformer';
-import { logger } from '../logger.js';
+import type { TransformConfig } from '../sync/transformer';
+import { EntityTransformer } from '../sync/transformer';
 
 export interface SchedulerConfig {
   /** Whether to start scheduled jobs on initialization */
@@ -45,8 +47,8 @@ export class SyncScheduler {
   private prisma: PrismaClient;
   private syncEngine: SyncEngine;
   private config: SchedulerConfig;
-  private scheduledJobs: Map<string, ScheduledJob> = new Map();
-  private activeLocks: Map<string, SyncLock> = new Map();
+  private scheduledJobs = new Map<string, ScheduledJob>();
+  private activeLocks = new Map<string, SyncLock>();
   private instanceId: string;
 
   constructor(
@@ -319,11 +321,11 @@ export class SyncScheduler {
   /**
    * Get all scheduled jobs
    */
-  getScheduledJobs(): Array<{
+  getScheduledJobs(): {
     providerId: string;
     tenantId: string;
     schedule: string;
-  }> {
+  }[] {
     return Array.from(this.scheduledJobs.values()).map((job) => ({
       providerId: job.providerId,
       tenantId: job.tenantId,

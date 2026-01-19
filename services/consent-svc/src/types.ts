@@ -295,7 +295,7 @@ export interface ConsentRequiredError {
 export interface ParentConsentSummary {
   learnerId: string;
   learnerName: string;
-  consents: Array<{
+  consents: {
     type: ConsentType;
     status: ConsentStatus;
     required: boolean;
@@ -303,7 +303,7 @@ export interface ParentConsentSummary {
     grantedAt: string | null;
     expiresAt: string | null;
     canRevoke: boolean;
-  }>;
+  }[];
 }
 
 export interface ConsentActionRequest {

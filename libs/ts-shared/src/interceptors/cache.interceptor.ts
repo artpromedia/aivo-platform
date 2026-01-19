@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Request, Response } from 'express';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 /**
  * Cache metadata keys

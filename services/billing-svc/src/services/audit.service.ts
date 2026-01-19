@@ -8,7 +8,7 @@
  * - Manual overrides by FinOps staff
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 
 import { prisma } from '../prisma.js';
 
@@ -91,7 +91,7 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
         timestamp: new Date().toISOString(),
       },
       processedAt: new Date(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any,
   });
 }

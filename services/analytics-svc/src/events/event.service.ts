@@ -4,14 +4,17 @@
 // FERPA/GDPR compliant data handling
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { Kinesis, PutRecordsCommand, PutRecordsRequestEntry } from '@aws-sdk/client-kinesis';
-import { createHash } from 'crypto';
-import { Redis } from 'ioredis';
+import { createHash } from 'node:crypto';
 
 import { logger, metrics } from '@aivo/ts-observability';
+import type { PutRecordsRequestEntry } from '@aws-sdk/client-kinesis';
+import { Kinesis, PutRecordsCommand } from '@aws-sdk/client-kinesis';
+import type { Redis } from 'ioredis';
 
 import type { PrismaClient } from '../../generated/prisma';
-import {
+
+import type { CaliperService } from './caliper.service';
+import type {
   AnalyticsEvent,
   AssessmentEvent,
   CollaborationEvent,
@@ -19,12 +22,12 @@ import {
   EventContext,
   EventMetadata,
   LearningEvent,
-  SystemEvent,
+  SystemEvent} from './event.types';
+import {
   createEventId,
   validateEventDetailed,
 } from './event.types';
 import type { XAPIService } from './xapi.service';
-import type { CaliperService } from './caliper.service';
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 

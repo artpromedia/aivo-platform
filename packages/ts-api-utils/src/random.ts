@@ -20,7 +20,7 @@
  * ```
  */
 
-import { randomBytes, randomUUID } from 'crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // RANDOM ID GENERATION

@@ -7,8 +7,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
 import { config } from '../config.js';
+import { prisma } from '../prisma.js';
 import {
   generateToolLaunchToken,
   buildLearnerContext,
@@ -142,7 +142,7 @@ async function fetchToolConfig(
       sandboxAttributes: toolConfig.sandboxAttributes,
       cspDirectives: toolConfig.cspDirectives ?? undefined,
       vendorSlug: installation.marketplaceItem.vendor.slug,
-      defaultConfig: (toolConfig.defaultConfigJson as Record<string, unknown>) ?? undefined,
+      defaultConfig: (toolConfig.defaultConfigJson) ?? undefined,
     };
   } catch (error) {
     // Log and re-throw with more context

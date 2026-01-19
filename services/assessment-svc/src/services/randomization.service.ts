@@ -214,7 +214,7 @@ export class RandomizationService {
       },
     });
 
-    if (!attempt || !attempt.questionOrder) return null;
+    if (!attempt?.questionOrder) return null;
 
     return {
       questionOrder: attempt.questionOrder as string[],
@@ -228,12 +228,12 @@ export class RandomizationService {
    */
   async createQuestionPools(
     assessmentId: string,
-    pools: Array<{
+    pools: {
       name: string;
       questionIds: string[];
       selectCount: number;
       points: number;
-    }>,
+    }[],
     tx?: PrismaTransactionClient
   ): Promise<void> {
     const client = tx ?? prisma;

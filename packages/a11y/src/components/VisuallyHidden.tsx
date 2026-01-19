@@ -38,8 +38,8 @@ export const VisuallyHidden = forwardRef<HTMLSpanElement, VisuallyHiddenProps>(
   ({ as: Component = 'span', focusable = false, style, children, ...props }, ref) => {
     const [isFocused, setIsFocused] = React.useState(false);
 
-    const handleFocus = () => setIsFocused(true);
-    const handleBlur = () => setIsFocused(false);
+    const handleFocus = () => { setIsFocused(true); };
+    const handleBlur = () => { setIsFocused(false); };
 
     const combinedStyles: React.CSSProperties =
       focusable && isFocused

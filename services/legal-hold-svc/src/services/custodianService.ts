@@ -301,11 +301,11 @@ export async function getCustodianCompliance(tenantId: string, custodianId: stri
 export async function bulkImportCustodians(
   tenantId: string,
   custodians: CreateCustodianInput[]
-): Promise<{ imported: number; skipped: number; errors: Array<{ email: string; error: string }> }> {
+): Promise<{ imported: number; skipped: number; errors: { email: string; error: string }[] }> {
   const result = {
     imported: 0,
     skipped: 0,
-    errors: [] as Array<{ email: string; error: string }>,
+    errors: [] as { email: string; error: string }[],
   };
 
   for (const input of custodians) {
@@ -336,7 +336,7 @@ export async function bulkImportCustodians(
 export async function searchCustodians(
   tenantId: string,
   searchTerm: string,
-  limit: number = 10
+  limit = 10
 ) {
   return prisma.custodian.findMany({
     where: {

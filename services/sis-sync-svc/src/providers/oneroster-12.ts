@@ -16,9 +16,20 @@
  * @author AIVO Platform Team
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
+
+import type { AxiosInstance } from 'axios';
+import axios from 'axios';
+
+
 import { logger } from '../logger.js';
+import type {
+  SyncEntityType,
+  DeltaFetchOptions,
+  DeltaResponse,
+  DeltaRecord,
+} from '../sync/delta-sync-engine.js';
+
 import type {
   ISisProvider,
   SisSchool,
@@ -29,12 +40,6 @@ import type {
   SisProviderCredentials,
   SisParentStudentRelationship,
 } from './types.js';
-import type {
-  SyncEntityType,
-  DeltaFetchOptions,
-  DeltaResponse,
-  DeltaRecord,
-} from '../sync/delta-sync-engine.js';
 
 /**
  * OneRoster 1.2 API configuration
@@ -70,8 +75,8 @@ export class OneRoster12Provider implements ISisProvider {
   readonly supportsDeletionDetection = true;
   readonly rateLimitDelay?: number;
 
-  private config: OneRoster12Config;
-  private http: AxiosInstance;
+  private readonly config: OneRoster12Config;
+  private readonly http: AxiosInstance;
   private accessToken?: string;
   private tokenExpiry?: Date;
 
@@ -361,7 +366,7 @@ export class OneRoster12Provider implements ISisProvider {
 
     const params: Record<string, any> = {
       limit: options.limit,
-      offset: options.cursor ? parseInt(options.cursor, 10) : 0,
+      offset: options.cursor ? Number.parseInt(options.cursor, 10) : 0,
     };
 
     // OneRoster 1.2 supports dateLastModified filter
@@ -370,7 +375,7 @@ export class OneRoster12Provider implements ISisProvider {
     }
 
     try {
-      const response = await this.http.get<{ [key: string]: any[] }>(endpoint, { params });
+      const response = await this.http.get<Record<string, any[]>>(endpoint, { params });
 
       const items = Object.values(response.data)[0] || [];
 
@@ -420,7 +425,7 @@ export class OneRoster12Provider implements ISisProvider {
     let hasMore = true;
 
     while (hasMore) {
-      const response = await this.http.get<{ [key: string]: any[] }>(endpoint, {
+      const response = await this.http.get<Record<string, any[]>>(endpoint, {
         params: {
           limit: this.config.pageSize,
           offset,
@@ -576,7 +581,7 @@ export class OneRoster12Provider implements ISisProvider {
   }
 
   private calculateHash(data: Record<string, any>): string {
-    const normalized = JSON.stringify(data, Object.keys(data).sort());
+    const normalized = JSON.stringify(data, Object.keys(data).sort((a, b) => a.localeCompare(b)));
     return createHash('sha256').update(normalized).digest('hex');
   }
 
@@ -594,7 +599,7 @@ interface OneRosterOrg {
   name: string;
   type: string;
   identifier?: string;
-  identifiers?: Array<{ type: string; identifier: string }>;
+  identifiers?: { type: string; identifier: string }[];
   parent?: { sourcedId: string };
 }
 
@@ -610,7 +615,7 @@ interface OneRosterClass {
   subjects?: string[];
   course?: { sourcedId: string };
   school?: { sourcedId: string };
-  terms?: Array<{ sourcedId: string }>;
+  terms?: { sourcedId: string }[];
   periods?: string[];
 }
 
@@ -631,12 +636,12 @@ interface OneRosterUser {
   birthDate?: string;
   sex?: string;
   grades?: string[];
-  orgs?: Array<{ sourcedId: string }>;
-  agents?: Array<{ sourcedId: string }>;
+  orgs?: { sourcedId: string }[];
+  agents?: { sourcedId: string }[];
 }
 
 interface OneRosterUserDetails extends OneRosterUser {
-  agents?: Array<{
+  agents?: {
     sourcedId: string;
     role?: string;
     primary?: boolean;
@@ -645,7 +650,7 @@ interface OneRosterUserDetails extends OneRosterUser {
     pickupAuthorized?: boolean;
     livesWithStudent?: boolean;
     priority?: number;
-  }>;
+  }[];
 }
 
 interface OneRosterEnrollment {

@@ -319,7 +319,7 @@ export class EdfiClient {
 
     // Total count may be in header
     const totalCount = response.headers['total-count']
-      ? parseInt(response.headers['total-count'] as string, 10)
+      ? Number.parseInt(response.headers['total-count'] as string, 10)
       : undefined;
 
     return { data: response.data, totalCount };

@@ -2,10 +2,11 @@
  * Curricula routes for Curriculum Service
  */
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { CurriculumService } from '../services/curriculum.service.js';
+
 import { prisma } from '../db.js';
+import { CurriculumService } from '../services/curriculum.service.js';
 
 const curriculumService = new CurriculumService(prisma);
 

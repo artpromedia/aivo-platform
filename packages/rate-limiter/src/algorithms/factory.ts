@@ -4,13 +4,15 @@
  * Factory for creating rate limiting algorithm instances.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { SlidingWindow } from './sliding-window';
-import { TokenBucket } from './token-bucket';
+import type { RateLimitStore } from '../stores/types';
+
+import { AdaptiveRateLimiter } from './adaptive';
 import { FixedWindow } from './fixed-window';
 import { LeakyBucket } from './leaky-bucket';
-import { AdaptiveRateLimiter } from './adaptive';
-import { AlgorithmType } from './index';
+import { SlidingWindow } from './sliding-window';
+import { TokenBucket } from './token-bucket';
+
+import type { AlgorithmType } from './index';
 
 export type Algorithm =
   | SlidingWindow

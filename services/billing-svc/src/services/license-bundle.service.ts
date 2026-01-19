@@ -7,7 +7,7 @@
  * - Parent subscription: Parent subscribes → Parent invites teacher
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 
 import { getBundleConfig, type BundleType as ConfigBundleType } from '../config/plans.config';
 import type { PrismaClient } from '../generated/prisma-client';

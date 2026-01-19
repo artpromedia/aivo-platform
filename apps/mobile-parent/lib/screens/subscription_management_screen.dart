@@ -251,10 +251,10 @@ class _SubscriptionManagementScreenState
       );
 
       if (confirmed == true) {
-        // TODO: Call backend API to schedule module removal
-        // await ref.read(subscriptionControllerProvider.notifier)
-        //     .scheduleModuleRemoval(module.code);
-        if (mounted) {
+        // Call backend API to schedule module removal
+        final success = await ref.read(subscriptionControllerProvider.notifier)
+            .scheduleModuleRemoval(module.code);
+        if (mounted && success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -266,8 +266,7 @@ class _SubscriptionManagementScreenState
       }
     } else {
       // Turning ON - for users already on paid plan
-      // TODO: Call backend API to add module to subscription
-      // This would typically update the subscription with add-ons
+      // Update subscription with the new module add-on
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -290,10 +289,10 @@ class _SubscriptionManagementScreenState
       );
 
       if (confirmed == true) {
-        // TODO: Call backend API to add module
-        // await ref.read(subscriptionControllerProvider.notifier)
-        //     .addModuleToSubscription(module.code);
-        if (mounted) {
+        // Call backend API to add module
+        final success = await ref.read(subscriptionControllerProvider.notifier)
+            .addModuleToSubscription(module.code);
+        if (mounted && success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${module.displayName} has been enabled!'),

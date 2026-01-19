@@ -11,14 +11,18 @@
  * @author AIVO Platform Team
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance} from 'fastify';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import { DeltaSyncEngine, SyncEntityType } from '../sync/delta-sync-engine.js';
-import { WebhookHandlerService, WebhookProviderType } from '../webhooks/webhook-handler.service.js';
-import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';
+
 import { logger } from '../logger.js';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
+import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';
 import type { ISisProvider, FieldMapping } from '../providers/types.js';
+import type { SyncEntityType } from '../sync/delta-sync-engine.js';
+import { DeltaSyncEngine } from '../sync/delta-sync-engine.js';
+import type { WebhookProviderType } from '../webhooks/webhook-handler.service.js';
+import { WebhookHandlerService } from '../webhooks/webhook-handler.service.js';
 
 /**
  * Register SIS sync routes

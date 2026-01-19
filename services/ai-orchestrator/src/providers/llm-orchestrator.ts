@@ -8,7 +8,7 @@
  * - Unified interface for all AI agents
  */
 
-import { CircuitBreaker, CircuitBreakerState } from '../utils/circuit-breaker.js';
+import { CircuitBreaker } from '../utils/circuit-breaker.js';
 
 import { AnthropicProvider } from './anthropic.provider.js';
 import { GoogleGeminiProvider } from './google-gemini.provider.js';
@@ -273,12 +273,12 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
       apiKey: process.env.OPENAI_API_KEY,
       organizationId: process.env.OPENAI_ORGANIZATION_ID,
       rateLimits: {
-        tokensPerMinute: parseInt(process.env.OPENAI_RATE_LIMIT_TPM ?? '150000', 10),
-        requestsPerMinute: parseInt(process.env.OPENAI_RATE_LIMIT_RPM ?? '500', 10),
+        tokensPerMinute: Number.parseInt(process.env.OPENAI_RATE_LIMIT_TPM ?? '150000', 10),
+        requestsPerMinute: Number.parseInt(process.env.OPENAI_RATE_LIMIT_RPM ?? '500', 10),
       },
       cacheConfig: {
         enabled: process.env.LLM_CACHE_ENABLED !== 'false',
-        ttlSeconds: parseInt(process.env.LLM_CACHE_TTL_SECONDS ?? '3600', 10),
+        ttlSeconds: Number.parseInt(process.env.LLM_CACHE_TTL_SECONDS ?? '3600', 10),
         redisUrl: process.env.LLM_CACHE_REDIS_URL,
       },
     };
@@ -289,12 +289,12 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
     config.anthropic = {
       apiKey: process.env.ANTHROPIC_API_KEY,
       rateLimits: {
-        tokensPerMinute: parseInt(process.env.ANTHROPIC_RATE_LIMIT_TPM ?? '100000', 10),
-        requestsPerMinute: parseInt(process.env.ANTHROPIC_RATE_LIMIT_RPM ?? '500', 10),
+        tokensPerMinute: Number.parseInt(process.env.ANTHROPIC_RATE_LIMIT_TPM ?? '100000', 10),
+        requestsPerMinute: Number.parseInt(process.env.ANTHROPIC_RATE_LIMIT_RPM ?? '500', 10),
       },
       cacheConfig: {
         enabled: process.env.LLM_CACHE_ENABLED !== 'false',
-        ttlSeconds: parseInt(process.env.LLM_CACHE_TTL_SECONDS ?? '3600', 10),
+        ttlSeconds: Number.parseInt(process.env.LLM_CACHE_TTL_SECONDS ?? '3600', 10),
         redisUrl: process.env.LLM_CACHE_REDIS_URL,
       },
     };
@@ -307,12 +307,12 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
       projectId: process.env.GOOGLE_PROJECT_ID,
       location: process.env.GOOGLE_LOCATION ?? 'us-central1',
       rateLimits: {
-        tokensPerMinute: parseInt(process.env.GOOGLE_RATE_LIMIT_TPM ?? '100000', 10),
-        requestsPerMinute: parseInt(process.env.GOOGLE_RATE_LIMIT_RPM ?? '500', 10),
+        tokensPerMinute: Number.parseInt(process.env.GOOGLE_RATE_LIMIT_TPM ?? '100000', 10),
+        requestsPerMinute: Number.parseInt(process.env.GOOGLE_RATE_LIMIT_RPM ?? '500', 10),
       },
       cacheConfig: {
         enabled: process.env.LLM_CACHE_ENABLED !== 'false',
-        ttlSeconds: parseInt(process.env.LLM_CACHE_TTL_SECONDS ?? '3600', 10),
+        ttlSeconds: Number.parseInt(process.env.LLM_CACHE_TTL_SECONDS ?? '3600', 10),
         redisUrl: process.env.LLM_CACHE_REDIS_URL,
       },
     };
@@ -325,4 +325,17 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
     .map((s) => s.trim());
 
   return new LLMOrchestrator(config);
+}
+
+// Singleton instance
+let orchestratorInstance: LLMOrchestrator | null = null;
+
+/**
+ * Get the singleton LLM Orchestrator instance
+ */
+export function getLLMOrchestrator(): LLMOrchestrator {
+  if (!orchestratorInstance) {
+    orchestratorInstance = createLLMOrchestratorFromEnv();
+  }
+  return orchestratorInstance;
 }

@@ -327,8 +327,8 @@ export class ScreenTimeEnforcementService extends EventEmitter {
     const usageKey = `${this.cachePrefix}:usage:${tenantId}:${learnerId}:${today}`;
     const usage = await this.redis.hgetall(usageKey);
 
-    const dailyUsedMinutes = parseInt(usage.dailyMinutes ?? '0', 10);
-    const currentSessionMinutes = parseInt(usage.sessionMinutes ?? '0', 10);
+    const dailyUsedMinutes = Number.parseInt(usage.dailyMinutes ?? '0', 10);
+    const currentSessionMinutes = Number.parseInt(usage.sessionMinutes ?? '0', 10);
     const lastBreakAt = usage.lastBreakAt ? new Date(usage.lastBreakAt) : null;
 
     // Calculate remaining time

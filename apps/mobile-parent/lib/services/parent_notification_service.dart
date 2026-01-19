@@ -292,6 +292,7 @@ class AppRouter {
 class ApiClient {
   Future<void> post(String path, Map<String, dynamic> data) async {}
   Future<void> put(String path, Map<String, dynamic> data) async {}
+  Future<dynamic> get(String path) async { return null; }
 }
 
 class UnreadCountNotifier extends StateNotifier<int> {

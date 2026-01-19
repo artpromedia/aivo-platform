@@ -13,10 +13,10 @@
  * @author AIVO Platform Team
  */
 
-import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import { SyncStatus as SyncStatusValues } from '../providers/types';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
+
 import { logger } from '../logger.js';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import type { ISisProvider } from '../providers/types.js';
 
 /**
@@ -173,7 +173,7 @@ export function createEmptySyncStats(): SyncStats {
  * Implements efficient delta synchronization for SIS data at scale.
  */
 export class DeltaSyncEngine {
-  private prisma: PrismaClient;
+  private readonly prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -354,7 +354,10 @@ export class DeltaSyncEngine {
       // Create new entity
       await this.createEntity(config, entityType, record);
       operation = 'create';
-    } else if (existing.sourceHash !== currentHash) {
+    } else if (existing.sourceHash === currentHash) {
+      // No change
+      operation = 'update';
+    } else {
       // Check for conflicts
       if (existing.locallyModified && config.conflictResolution !== 'source_wins') {
         conflict = await this.createConflict(config, entityType, existing, record);
@@ -367,9 +370,6 @@ export class DeltaSyncEngine {
 
       // Update existing entity
       await this.updateEntity(config, entityType, existing, record, currentHash);
-      operation = 'update';
-    } else {
-      // No change
       operation = 'update';
     }
 
@@ -860,9 +860,9 @@ export class DeltaSyncEngine {
       case 'parseDate':
         return new Date(value);
       case 'parseInteger':
-        return parseInt(value, 10);
+        return Number.parseInt(value, 10);
       case 'parseFloat':
-        return parseFloat(value);
+        return Number.parseFloat(value);
       case 'parseBoolean':
         return value === 'true' || value === '1' || value === true;
       case 'gradeToNumber':
@@ -897,7 +897,7 @@ export class DeltaSyncEngine {
       '12': 12, '12th': 12, Twelfth: 12, Senior: 12,
     };
 
-    return gradeMap[grade] ?? (parseInt(grade, 10) || 0);
+    return gradeMap[grade] ?? (Number.parseInt(grade, 10) || 0);
   }
 
   /**
@@ -927,7 +927,7 @@ export class DeltaSyncEngine {
    * Calculate hash of data for change detection
    */
   calculateHash(data: Record<string, any>): string {
-    const normalized = JSON.stringify(data, Object.keys(data).sort());
+    const normalized = JSON.stringify(data, Object.keys(data).sort((a, b) => a.localeCompare(b)));
     return createHash('sha256').update(normalized).digest('hex');
   }
 
@@ -1030,7 +1030,8 @@ export class DeltaSyncEngine {
    */
   private setNestedValue(obj: any, path: string, value: any): void {
     const keys = path.split('.');
-    const lastKey = keys.pop()!;
+    const lastKey = keys.pop();
+    if (!lastKey) return;
     const target = keys.reduce((current, key) => {
       if (!current[key]) current[key] = {};
       return current[key];
@@ -1120,7 +1121,7 @@ export class DeltaSyncEngine {
     tenantId: string,
     entityType: SyncEntityType,
     providerId: string
-  ): Promise<Array<{ id: string; sourceId: string }>> {
+  ): Promise<{ id: string; sourceId: string }[]> {
     switch (entityType) {
       case 'org':
         return this.prisma.sisRawSchool

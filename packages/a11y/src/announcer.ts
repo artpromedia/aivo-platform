@@ -6,7 +6,7 @@
  * and announcement queuing.
  */
 
-import { Politeness, AnnouncementOptions } from './types';
+import type { Politeness, AnnouncementOptions } from './types';
 
 interface QueuedAnnouncement {
   message: string;
@@ -297,30 +297,30 @@ export function destroyAnnouncer(): void {
 
 // Convenience functions
 export const announce = (message: string, options?: AnnouncementOptions) =>
-  getAnnouncer().announce(message, options);
+  { getAnnouncer().announce(message, options); };
 
 export const announceError = (message: string) =>
-  getAnnouncer().announceError(message);
+  { getAnnouncer().announceError(message); };
 
 export const announceSuccess = (message: string) =>
-  getAnnouncer().announceSuccess(message);
+  { getAnnouncer().announceSuccess(message); };
 
 export const announceRouteChange = (pageName: string) =>
-  getAnnouncer().announceRouteChange(pageName);
+  { getAnnouncer().announceRouteChange(pageName); };
 
 export const announcePolite = (message: string) =>
-  getAnnouncer().announcePolite(message);
+  { getAnnouncer().announcePolite(message); };
 
 export const announceImmediate = (message: string) =>
-  getAnnouncer().announceImmediate(message);
+  { getAnnouncer().announceImmediate(message); };
 
 export const announceLoading = (
   isLoading: boolean,
   loadingMessage?: string,
   loadedMessage?: string
-) => getAnnouncer().announceLoading(isLoading, loadingMessage, loadedMessage);
+) => { getAnnouncer().announceLoading(isLoading, loadingMessage, loadedMessage); };
 
 export const announceProgress = (current: number, total: number, label?: string) =>
-  getAnnouncer().announceProgress(current, total, label);
+  { getAnnouncer().announceProgress(current, total, label); };
 
 export { ScreenReaderAnnouncer };

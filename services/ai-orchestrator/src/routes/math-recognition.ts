@@ -288,7 +288,7 @@ export async function mathRecognitionRoutes(fastify: FastifyInstance) {
           return true;
         })
         .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
-        .slice(0, parseInt(limit, 10));
+        .slice(0, Number.parseInt(limit, 10));
 
       return reply.send({ sessions: learnerSessions });
     }

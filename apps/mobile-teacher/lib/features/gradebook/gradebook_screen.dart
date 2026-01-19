@@ -7,8 +7,13 @@
 /// - Filter and search functionality
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class GradebookScreen extends StatefulWidget {
+import '../../models/models.dart';
+import '../../providers/providers.dart';
+
+class GradebookScreen extends ConsumerStatefulWidget {
   final String classroomId;
 
   const GradebookScreen({
@@ -17,13 +22,12 @@ class GradebookScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<GradebookScreen> createState() => _GradebookScreenState();
+  ConsumerState<GradebookScreen> createState() => _GradebookScreenState();
 }
 
-class _GradebookScreenState extends State<GradebookScreen> {
+class _GradebookScreenState extends ConsumerState<GradebookScreen> {
   List<Student> students = [];
   List<Assignment> assignments = [];
-  bool isLoading = true;
   String searchQuery = '';
   String? selectedAssignmentId;
 
@@ -34,25 +38,72 @@ class _GradebookScreenState extends State<GradebookScreen> {
   }
 
   Future<void> _loadGradebook() async {
-    setState(() => isLoading = true);
-    try {
-      // TODO: API call to fetch gradebook
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Mock data
-      setState(() {
-        students = _getMockStudents();
-        assignments = _getMockAssignments();
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
-      _showError('Failed to load gradebook');
+    // Load gradebook via provider - uses offline-first repository pattern
+    await ref.read(gradebookProvider(widget.classroomId).notifier).loadGradebook();
+    
+    // Convert gradebook data to local Student/Assignment models for display
+    final gradebookState = ref.read(gradebookProvider(widget.classroomId));
+    if (gradebookState.gradebook != null) {
+      _updateFromGradebook(gradebookState.gradebook!);
     }
+  }
+
+  void _updateFromGradebook(Gradebook gradebook) {
+    setState(() {
+      students = gradebook.students.map((gs) => Student(
+        id: gs.id,
+        name: gs.name,
+        initials: _getInitials(gs.name),
+        overallGrade: gs.overallGrade?.percent ?? 0.0,
+        missingCount: gs.overallGrade?.assignmentsMissing ?? 0,
+        grades: Map.fromEntries(
+          gs.grades.map((g) => MapEntry(
+            g.assignmentId,
+            Grade(
+              score: g.pointsEarned?.toDouble() ?? 0.0,
+              status: _mapGradeStatus(g),
+            ),
+          )),
+        ),
+      )).toList();
+      
+      assignments = gradebook.assignments.map((a) => Assignment(
+        id: a.id,
+        title: a.title,
+        maxPoints: a.pointsPossible.toDouble() ?? 100.0,
+        dueDate: a.dueAt,
+      )).toList();
+    });
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  GradeStatus _mapGradeStatus(GradebookGrade grade) {
+    if (grade.isExcused) return GradeStatus.excused;
+    if (grade.isMissing) return GradeStatus.missing;
+    if (grade.pointsEarned != null) return GradeStatus.graded;
+    return GradeStatus.pending;
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the gradebook state for reactive updates
+    final gradebookState = ref.watch(gradebookProvider(widget.classroomId));
+    final isLoading = gradebookState.isLoading;
+    
+    // Update local state when gradebook data changes
+    if (gradebookState.gradebook != null && students.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateFromGradebook(gradebookState.gradebook!);
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gradebook'),
@@ -350,9 +401,19 @@ class _GradebookScreenState extends State<GradebookScreen> {
         student: student,
         assignment: assignment,
         onSave: (score, feedback) async {
-          // TODO: API call to save grade
-          Navigator.pop(context);
-          _loadGradebook();
+          // Save grade via provider
+          await ref.read(gradebookProvider(widget.classroomId).notifier).updateGrade(
+            student.id,
+            assignment.id,
+            UpdateGradeDto(
+              pointsEarned: score,
+              feedback: feedback,
+            ),
+          );
+          if (mounted) {
+            Navigator.pop(context);
+            _loadGradebook();
+          }
         },
       ),
     );
@@ -365,23 +426,122 @@ class _GradebookScreenState extends State<GradebookScreen> {
         students: students,
         assignments: assignments,
         onSave: (studentId, assignmentId, score) async {
-          // TODO: API call to save grade
-          Navigator.pop(context);
-          _loadGradebook();
+          // Save grade via provider
+          await ref.read(gradebookProvider(widget.classroomId).notifier).updateGrade(
+            studentId,
+            assignmentId,
+            UpdateGradeDto(pointsEarned: score),
+          );
+          if (mounted) {
+            Navigator.pop(context);
+            _loadGradebook();
+          }
         },
       ),
     );
   }
 
-  void _exportGradebook() {
-    // TODO: Export gradebook
+  Future<void> _exportGradebook() async {
+    // Export gradebook via provider - returns download URL
+    final downloadUrl = await ref.read(gradebookProvider(widget.classroomId).notifier).exportGradebook();
+    if (downloadUrl != null) {
+      final uri = Uri.parse(downloadUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        _showError('Could not open export file');
+      }
+    } else {
+      final gradebookState = ref.read(gradebookProvider(widget.classroomId));
+      if (gradebookState.error != null) {
+        _showError(gradebookState.error!);
+      } else {
+        _showError('Export requires internet connection');
+      }
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Exporting gradebook...')),
     );
   }
 
   void _showSettings() {
-    // TODO: Show gradebook settings
+    // Show gradebook settings modal
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(16),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const Text(
+                'Gradebook Settings',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.calculate),
+                title: const Text('Recalculate Grades'),
+                subtitle: const Text('Recompute all student averages'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  try {
+                    await ref.read(gradebookProvider(widget.classroomId).notifier).recalculateGrades();
+                    _loadGradebook();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Grades recalculated')),
+                      );
+                    }
+                  } catch (e) {
+                    _showError('Failed to recalculate grades');
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.refresh),
+                title: const Text('Refresh from Server'),
+                subtitle: const Text('Sync latest data from server'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await ref.read(gradebookProvider(widget.classroomId).notifier).refreshGradebook();
+                  _loadGradebook();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.download),
+                title: const Text('Export as CSV'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _exportGradebook();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showError(String message) {
@@ -677,10 +837,43 @@ class StudentGradeDetailScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView(
-              children: [
-                // TODO: List all assignments and grades
-              ],
+            child: ListView.builder(
+              itemCount: student.grades.length,
+              itemBuilder: (context, index) {
+                final entry = student.grades.entries.elementAt(index);
+                final assignmentId = entry.key;
+                final grade = entry.value;
+                
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: ListTile(
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: _getGradeColor(grade),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          grade?.score != null ? '${grade!.score!.toInt()}' : '-',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    title: Text('Assignment $assignmentId'),
+                    subtitle: Text(_getGradeStatusText(grade)),
+                    trailing: grade?.feedback != null
+                        ? const Icon(Icons.comment, color: Colors.blue, size: 20)
+                        : null,
+                    onTap: () => _showGradeDetails(context, assignmentId, grade),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -709,6 +902,84 @@ class StudentGradeDetailScreen extends StatelessWidget {
       ],
     );
   }
+
+  Color _getGradeColor(Grade? grade) {
+    if (grade == null) return Colors.grey;
+    switch (grade.status) {
+      case GradeStatus.graded:
+        if (grade.score != null) {
+          if (grade.score! >= 90) return Colors.green;
+          if (grade.score! >= 80) return Colors.blue;
+          if (grade.score! >= 70) return Colors.orange;
+          return Colors.red;
+        }
+        return Colors.grey;
+      case GradeStatus.missing:
+        return Colors.red;
+      case GradeStatus.late:
+        return Colors.orange;
+      case GradeStatus.excused:
+        return Colors.grey;
+      case GradeStatus.pending:
+        return Colors.grey;
+    }
+  }
+
+  String _getGradeStatusText(Grade? grade) {
+    if (grade == null) return 'Not submitted';
+    switch (grade.status) {
+      case GradeStatus.graded:
+        return 'Graded';
+      case GradeStatus.missing:
+        return 'Missing';
+      case GradeStatus.late:
+        return 'Late';
+      case GradeStatus.excused:
+        return 'Excused';
+      case GradeStatus.pending:
+        return 'Pending';
+    }
+  }
+
+  void _showGradeDetails(BuildContext context, String assignmentId, Grade? grade) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Assignment $assignmentId',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('Score: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(grade?.score != null ? '${grade!.score!.toInt()} pts' : 'Not graded'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text('Status: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(_getGradeStatusText(grade)),
+              ],
+            ),
+            if (grade?.feedback != null) ...[
+              const SizedBox(height: 16),
+              const Text('Feedback:', style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              Text(grade!.feedback!),
+            ],
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Models
@@ -733,13 +1004,18 @@ class Student {
 class Assignment {
   final String id;
   final String title;
-  final int totalPoints;
+  final double maxPoints;
+  final DateTime? dueDate;
 
   Assignment({
     required this.id,
     required this.title,
-    required this.totalPoints,
+    required this.maxPoints,
+    this.dueDate,
   });
+
+  // Compatibility getter for old code
+  int get totalPoints => maxPoints.toInt();
 }
 
 class Grade {
@@ -758,6 +1034,7 @@ enum GradeStatus {
   graded,
   missing,
   late,
+  excused,
   exempt,
   pending,
 }

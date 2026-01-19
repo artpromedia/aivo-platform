@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../offline/offline_api_clients.dart';
+
 const _baseUrl = String.fromEnvironment('SESSION_BASE_URL', defaultValue: 'http://localhost:4020');
 const _useTransitionMock = bool.fromEnvironment('USE_TRANSITION_MOCK', defaultValue: false);
 
@@ -453,13 +455,22 @@ class TransitionException implements Exception {
 
 /// Service for Transition Support API calls.
 class TransitionService {
-  TransitionService({String? accessToken})
-      : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
-          headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
-        ));
+  TransitionService({Future<String?> Function()? getAccessToken})
+      : _getAccessToken = getAccessToken,
+        _dio = Dio(BaseOptions(baseUrl: _baseUrl));
 
   final Dio _dio;
+  final Future<String?> Function()? _getAccessToken;
+
+  /// Ensure auth token is set on requests.
+  Future<void> _ensureAuth() async {
+    if (_getAccessToken != null) {
+      final token = await _getAccessToken();
+      if (token != null) {
+        _dio.options.headers['Authorization'] = 'Bearer $token';
+      }
+    }
+  }
 
   /// Get transition preferences for a learner.
   /// GET /transitions/preferences/:learnerId
@@ -471,6 +482,8 @@ class TransitionService {
       await Future.delayed(const Duration(milliseconds: 100));
       return _mockPreferences();
     }
+
+    await _ensureAuth();
 
     try {
       final response = await _dio.get<Map<String, dynamic>>(
@@ -792,8 +805,10 @@ class TransitionService {
 
 /// Provider for the transition service.
 final transitionServiceProvider = Provider<TransitionService>((ref) {
-  // TODO: Get access token from auth provider
-  return TransitionService();
+  // Get access token from auth provider
+  final getToken = ref.watch(accessTokenProvider);
+  // Create service - token will be fetched when needed for API calls
+  return TransitionService(getAccessToken: getToken);
 });
 
 /// Provider for current transition plan.

@@ -4,9 +4,11 @@
  * Handles achievement-related API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
+
 import { achievementService, ACHIEVEMENT_DEFINITIONS } from '../services/index.js';
 
 const router: IRouter = Router();
@@ -103,7 +105,7 @@ router.get(
   '/recent/list',
   asyncHandler(async (req: Request, res: Response) => {
     const studentId = extractStudentId(req);
-    const limit = parseInt(req.query.limit as string) || 5;
+    const limit = Number.parseInt(req.query.limit as string) || 5;
 
     const { prisma } = await import('../prisma.js');
     const recent = await prisma.earnedAchievement.findMany({

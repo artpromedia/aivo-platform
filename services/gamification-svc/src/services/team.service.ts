@@ -9,8 +9,8 @@
  * - Team achievements
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
+import { prisma } from '../prisma.js';
 
 export type TeamType = 'classroom' | 'school' | 'cross_school';
 export type TeamMemberRole = 'owner' | 'captain' | 'member';
@@ -598,7 +598,7 @@ class TeamService {
       where: { teamId, studentId: updatedBy },
     });
 
-    if (!updater || updater.role !== 'owner') {
+    if (updater?.role !== 'owner') {
       throw new Error('Only team owner can update roles');
     }
 

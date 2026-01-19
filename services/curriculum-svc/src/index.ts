@@ -4,20 +4,20 @@
  * unit/lesson organization, standards alignment, pacing guides, and teacher progress tracking.
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import Fastify from 'fastify';
 import 'dotenv/config';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
 import { curriculaRoutes } from './routes/curricula.js';
-import { unitsRoutes } from './routes/units.js';
 import { lessonsRoutes } from './routes/lessons.js';
-import { standardsRoutes } from './routes/standards.js';
 import { pacingRoutes } from './routes/pacing.js';
 import { progressRoutes } from './routes/progress.js';
+import { standardsRoutes } from './routes/standards.js';
+import { unitsRoutes } from './routes/units.js';
 
 const config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: Number.parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '0.0.0.0',
   logLevel: process.env.LOG_LEVEL || 'info',
 };

@@ -82,6 +82,7 @@ export async function runAxeTest(
 /**
  * Import axe-core dynamically
  */
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 async function importAxe(): Promise<typeof import('axe-core')> {
   const axe = await import('axe-core');
   return axe.default || axe;
@@ -92,6 +93,7 @@ async function importAxe(): Promise<typeof import('axe-core')> {
  */
 export class AxeRunner {
   private config: AxeConfig;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   private axeInstance: typeof import('axe-core') | null = null;
 
   constructor(config: Partial<AxeConfig> = {}) {
@@ -190,5 +192,5 @@ export function logViolations(violations: Result[]): void {
   }
 
   console.error(`✗ Found ${violations.length} accessibility violation(s):`);
-  violations.forEach((v) => console.error(formatViolation(v)));
+  violations.forEach((v) => { console.error(formatViolation(v)); });
 }

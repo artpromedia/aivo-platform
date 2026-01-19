@@ -306,7 +306,7 @@ export function createTenantScopedClient<T extends PrismaClientLike>(
             return query(args);
           }
 
-          const typedArgs = args as Record<string, unknown>;
+          const typedArgs = args;
           const op = operation as PrismaOperation;
 
           // Handle different operations
@@ -481,30 +481,34 @@ export function createTenantScopedClient<T extends PrismaClientLike>(
 
     client: {
       // Block raw queries if configured
-      $queryRaw(..._args: unknown[]) {
+      $queryRaw(...args: unknown[]) {
         if (blockRawQueries) {
           throw new RawQueryBlockedError(tenantId);
         }
         // Fallback to original (shouldn't reach here with default config)
-        return (prismaAny.$queryRaw as Function).apply(prismaAny, arguments);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        return (prismaAny.$queryRaw as Function).apply(prismaAny, args);
       },
-      $queryRawUnsafe(..._args: unknown[]) {
+      $queryRawUnsafe(...args: unknown[]) {
         if (blockRawQueries) {
           throw new RawQueryBlockedError(tenantId);
         }
-        return (prismaAny.$queryRawUnsafe as Function).apply(prismaAny, arguments);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        return (prismaAny.$queryRawUnsafe as Function).apply(prismaAny, args);
       },
-      $executeRaw(..._args: unknown[]) {
+      $executeRaw(...args: unknown[]) {
         if (blockRawQueries) {
           throw new RawQueryBlockedError(tenantId);
         }
-        return (prismaAny.$executeRaw as Function).apply(prismaAny, arguments);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        return (prismaAny.$executeRaw as Function).apply(prismaAny, args);
       },
-      $executeRawUnsafe(..._args: unknown[]) {
+      $executeRawUnsafe(...args: unknown[]) {
         if (blockRawQueries) {
           throw new RawQueryBlockedError(tenantId);
         }
-        return (prismaAny.$executeRawUnsafe as Function).apply(prismaAny, arguments);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        return (prismaAny.$executeRawUnsafe as Function).apply(prismaAny, args);
       },
 
       /**

@@ -3,7 +3,8 @@
  * Business logic for community posts
  */
 
-import { prisma, PostCategory, UserRole } from '../prisma.js';
+import type { PostCategory, UserRole } from '../prisma.js';
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

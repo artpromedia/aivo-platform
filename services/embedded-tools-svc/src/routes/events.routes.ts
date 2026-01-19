@@ -324,7 +324,7 @@ async function recordEventsBatch(
   request: FastifyRequest<{
     Body: {
       sessionId: string;
-      events: Array<Omit<RecordEventRequest, 'sessionId'>>;
+      events: Omit<RecordEventRequest, 'sessionId'>[];
     };
   }>,
   reply: FastifyReply

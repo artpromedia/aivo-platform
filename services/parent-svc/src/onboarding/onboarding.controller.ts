@@ -49,8 +49,8 @@ export class OnboardingController {
   ) {
     return this.onboardingService.getDistrictsByState(stateCode, {
       search,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      offset: offset ? parseInt(offset, 10) : undefined,
+      limit: limit ? Number.parseInt(limit, 10) : undefined,
+      offset: offset ? Number.parseInt(offset, 10) : undefined,
     });
   }
 

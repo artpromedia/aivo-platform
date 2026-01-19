@@ -43,7 +43,7 @@ export default async function routes(app: FastifyInstance) {
     return gameGenService.listGenerations(request.tenantId!, {
       status,
       gameType,
-      limit: limit ? parseInt(limit) : 50,
+      limit: limit ? Number.parseInt(limit) : 50,
     });
   });
 
@@ -61,7 +61,7 @@ export default async function routes(app: FastifyInstance) {
       gameType,
       isPublished: isPublished !== undefined ? isPublished === 'true' : undefined,
       tags: tags ? tags.split(',') : undefined,
-      limit: limit ? parseInt(limit) : 50,
+      limit: limit ? Number.parseInt(limit) : 50,
     });
   });
 
@@ -126,7 +126,7 @@ export default async function routes(app: FastifyInstance) {
       topic,
       difficulty,
       questionType,
-      count: count ? parseInt(count) : 10,
+      count: count ? Number.parseInt(count) : 10,
       excludeIds: excludeIds ? excludeIds.split(',') : undefined,
     });
   });

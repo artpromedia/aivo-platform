@@ -9,7 +9,6 @@
  * - Invoice retrieval
  */
 
-import Stripe from 'stripe';
 
 import type {
   BillingPeriod,
@@ -22,7 +21,6 @@ import type {
   UpdateModulesRequest,
   UpdateModulesResponse,
 } from '@aivo/billing-common';
-
 import {
   getSkuCatalog,
   getSkuConfig,
@@ -33,9 +31,11 @@ import {
   ParentSkuSchema,
   validateSkuSelection,
 } from '@aivo/billing-common';
+import Stripe from 'stripe';
 
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
+
 import { CouponService } from './coupon.service.js';
 import { TrialService } from './trial.service.js';
 
@@ -229,7 +229,7 @@ export class ParentBillingService {
     const items: SubscriptionItemSummary[] = subscription.subscriptionItems.map((item) => {
       const skuConfig = getSkuConfig(item.sku as ParentSku);
       const itemMetadata = item.metadataJson as Record<string, unknown> | null;
-      const trialEndsAt = itemMetadata?.['trialEndsAt'] as string | null;
+      const trialEndsAt = itemMetadata?.trialEndsAt as string | null;
       const isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
 
       return {
@@ -255,11 +255,11 @@ export class ParentBillingService {
     return {
       id: subscription.id,
       status: this.mapSubscriptionStatus(subscription.status),
-      billingPeriod: (metadata?.['billingPeriod'] as BillingPeriod) ?? 'monthly',
+      billingPeriod: (metadata?.billingPeriod as BillingPeriod) ?? 'monthly',
       currentPeriodStart: subscription.currentPeriodStart.toISOString(),
       currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-      limitedMode: (metadata?.['limitedMode'] as boolean) ?? false,
+      limitedMode: (metadata?.limitedMode as boolean) ?? false,
       items,
       totalMonthlyAmountCents,
       currency: 'usd',
@@ -336,7 +336,7 @@ export class ParentBillingService {
         const existingItem = stripeSubscription.items.data.find(
           (item) =>
             item.price.id === priceId &&
-            item.metadata?.['learnerId'] === update.learnerId
+            item.metadata?.learnerId === update.learnerId
         );
 
         if (existingItem) {
@@ -471,7 +471,7 @@ export class ParentBillingService {
     limit = 10,
     startingAfter?: string
   ): Promise<{
-    invoices: Array<{
+    invoices: {
       id: string;
       stripeInvoiceId: string;
       invoiceNumber: string | null;
@@ -484,7 +484,7 @@ export class ParentBillingService {
       hostedInvoiceUrl: string | null;
       invoicePdfUrl: string | null;
       createdAt: string;
-    }>;
+    }[];
     hasMore: boolean;
   }> {
     const { tenantId } = ctx;
@@ -685,8 +685,8 @@ export class ParentBillingService {
     tenantId: string,
     learnerIds: string[],
     skus: ParentSku[]
-  ): Promise<Array<{ learnerId: string; sku: ParentSku }>> {
-    const eligible: Array<{ learnerId: string; sku: ParentSku }> = [];
+  ): Promise<{ learnerId: string; sku: ParentSku }[]> {
+    const eligible: { learnerId: string; sku: ParentSku }[] = [];
 
     for (const sku of skus) {
       if (!isTrialEligible(sku)) continue;
@@ -776,7 +776,7 @@ export class ParentBillingService {
       const metadata = item.metadata ?? {};
 
       // Find or create plan for this SKU
-      const sku = metadata['sku'] ?? 'BASE';
+      const sku = metadata.sku ?? 'BASE';
       let plan = await prisma.plan.findFirst({ where: { sku } });
 
       if (!plan) {
@@ -796,7 +796,7 @@ export class ParentBillingService {
           planId: plan.id,
           sku,
           quantity: item.quantity ?? 1,
-          learnerId: metadata['learnerId'] ?? null,
+          learnerId: metadata.learnerId ?? null,
           metadataJson: {
             stripeSubscriptionItemId: item.id,
             stripePriceId: price.id,

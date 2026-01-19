@@ -86,7 +86,7 @@ export function getGradeBandForSku(sku: string): GradeBand | null {
  * Maps a learner's grade level to a grade band.
  */
 export function gradeToGradeBand(grade: number | string): GradeBand {
-  const gradeNum = typeof grade === 'string' ? parseInt(grade, 10) : grade;
+  const gradeNum = typeof grade === 'string' ? Number.parseInt(grade, 10) : grade;
   
   if (isNaN(gradeNum) || gradeNum < 0) {
     return GradeBand.K_2;
@@ -337,12 +337,12 @@ export interface TenantSeatUsageSummary {
   totalOverage: number;
   utilizationPercent: number;
   byGradeBand: TenantSeatUsage[];
-  contracts: Array<{
+  contracts: {
     contractId: string;
     contractNumber: string;
     status: string;
     endDate: string;
-  }>;
+  }[];
 }
 
 /**

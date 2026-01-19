@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
+
 import { insertSkipLinks, injectSkipLinksCSS } from '../skip-links';
-import { SkipLink } from '../types';
+import type { SkipLink } from '../types';
 
 interface UseSkipLinksOptions {
   links?: SkipLink[];

@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
     
     if (isDev) {
+      // Generate 6-digit PIN for web learner login
+      const pin = Math.floor(100000 + Math.random() * 900000).toString();
+      
       const mockLearner = {
         id: `learner_${Date.now()}`,
         firstName,
@@ -30,6 +33,7 @@ export async function POST(request: NextRequest) {
         gradeLevel,
         zipCode: zipCode || null,
         classCode: `AIVO${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        pin, // 6-digit PIN for web/mobile login
         createdAt: new Date().toISOString(),
       };
 

@@ -88,15 +88,15 @@ export default function AccessPage() {
 
             <Link
               href="/join"
-              className="block w-full p-4 border-2 border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] rounded-xl hover:bg-[var(--aivo-purple-100)] transition-all group"
+              className="block w-full p-4 border-2 border-[var(--aivo-purple-200)] rounded-xl hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)] transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[var(--aivo-purple-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-[var(--aivo-teal-100)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🎫</span>
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-[var(--aivo-brand-primary)]">I have a Class Code</div>
-                  <div className="text-sm text-[var(--aivo-purple-600)]">Join with your teacher&apos;s code</div>
+                  <div className="font-semibold text-[var(--aivo-brand-navy)]">I have a Code</div>
+                  <div className="text-sm text-[var(--aivo-neutral-500)]">Class code or PIN from your parent</div>
                 </div>
               </div>
             </Link>
@@ -110,7 +110,7 @@ export default function AccessPage() {
             href="/join" 
             className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] font-medium"
           >
-            Enter your class code to start learning →
+            Enter your code to start learning →
           </Link>
         </div>
       </div>

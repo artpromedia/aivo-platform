@@ -6,11 +6,10 @@
  * POST /personalization/recommendation-feedback - Record recommendation feedback
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition */
 
-// eslint-disable-next-line import/no-unresolved
+ 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-// eslint-disable-next-line import/no-unresolved
 import { z } from 'zod';
 
 import { getMainPool } from './db.js';
@@ -147,7 +146,7 @@ async function getSignals(
       if (!acc[type]) {
         acc[type] = [];
       }
-      acc[type]!.push(signal);
+      acc[type].push(signal);
       return acc;
     },
     {} as Record<SignalType, PersonalizationSignal[]>
@@ -236,7 +235,7 @@ async function getDecisionLog(
   }
 
   const countResult = await pool.query<{ total: string }>(countQuery, countParams);
-  const total = parseInt(countResult.rows[0]?.total ?? '0', 10);
+  const total = Number.parseInt(countResult.rows[0]?.total ?? '0', 10);
 
   const decisions: PersonalizationDecisionLog[] = result.rows.map((row) => ({
     id: row.id,
@@ -246,7 +245,7 @@ async function getDecisionLog(
     decisionType: row.decision_type,
     inputSignals: (row.input_signal_keys ?? []).map((key: string, idx: number) => ({
       signalKey: key,
-      signalValue: (row.input_context as any)?.signalValues?.[idx] ?? 0,
+      signalValue: (row.input_context)?.signalValues?.[idx] ?? 0,
     })),
     decision: {
       action: row.output_decision?.action ?? 'NONE',

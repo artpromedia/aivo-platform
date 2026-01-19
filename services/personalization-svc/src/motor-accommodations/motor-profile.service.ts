@@ -5,7 +5,7 @@
  * Provides profile CRUD, auto-configuration, interaction logging, and analytics.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any */
 
 import type { Pool, PoolClient } from 'pg';
 
@@ -358,7 +358,7 @@ export class MotorProfileService {
     if (!input.successful && input.attemptCount > 3) {
       // Fire and forget - don't await
       this.analyzeAndSuggestAdjustments(input.learnerId, input.tenantId).catch(
-        (err) => console.error('Analysis failed:', err)
+        (err: unknown) => { console.error('Analysis failed:', err); }
       );
     }
   }
@@ -478,7 +478,7 @@ export class MotorProfileService {
     const activityModifications: Record<string, unknown> = {};
 
     if (profile.dragAssistEnabled) {
-      activityModifications['drag_and_drop'] = {
+      activityModifications.drag_and_drop = {
         snapToGrid: profile.dragSnapToGrid,
         gridSize: profile.dragGridSize,
         autoComplete: profile.dragAutoComplete,
@@ -487,7 +487,7 @@ export class MotorProfileService {
     }
 
     if (profile.extendedResponseTime) {
-      activityModifications['timed_activities'] = {
+      activityModifications.timed_activities = {
         timeMultiplier: profile.responseTimeMultiplier,
         disabled: profile.disableTimedElements,
       };
@@ -521,7 +521,7 @@ export class MotorProfileService {
       hasFatigue: row.has_fatigue,
       fatigueThresholdMinutes: row.fatigue_threshold_minutes ?? null,
       enlargedTouchTargets: row.enlarged_touch_targets,
-      touchTargetMultiplier: Number(row.touch_target_multiplier),
+        touchTargetMultiplier: row.touch_target_multiplier,
       touchHoldDuration: row.touch_hold_duration,
       accidentalTouchFilter: row.accidental_touch_filter,
       edgeIgnoreMargin: row.edge_ignore_margin,
@@ -530,14 +530,14 @@ export class MotorProfileService {
       disableMultiTouch: row.disable_multi_touch,
       disablePinchZoom: row.disable_pinch_zoom,
       disableSwipe: row.disable_swipe,
-      swipeDistanceMultiplier: Number(row.swipe_distance_multiplier),
+        swipeDistanceMultiplier: row.swipe_distance_multiplier,
       dragAssistEnabled: row.drag_assist_enabled,
       dragSnapToGrid: row.drag_snap_to_grid,
       dragGridSize: row.drag_grid_size,
       dragAutoComplete: row.drag_auto_complete,
       dragAutoCompleteThreshold: row.drag_auto_complete_threshold,
       extendedResponseTime: row.extended_response_time,
-      responseTimeMultiplier: Number(row.response_time_multiplier),
+        responseTimeMultiplier: row.response_time_multiplier,
       disableTimedElements: row.disable_timed_elements,
       autoAdvanceDelay: row.auto_advance_delay,
       voiceInputEnabled: row.voice_input_enabled,
@@ -566,7 +566,7 @@ export class MotorProfileService {
       breakReminderIntervalMinutes: row.break_reminder_interval_minutes,
       reduceRequirementsOnFatigue: row.reduce_requirements_on_fatigue,
       customGestures: row.custom_gestures as Record<string, { action: string; gesture: string }> | undefined,
-      assessedBy: (row.assessed_by as string) ?? null,
+        assessedBy: row.assessed_by ?? null,
       assessedAt: row.assessed_at ?? null,
       accommodationNotes: row.accommodation_notes ?? null,
       createdAt: row.created_at,

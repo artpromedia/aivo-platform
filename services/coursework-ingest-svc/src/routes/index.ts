@@ -17,7 +17,7 @@ export default async function routes(app: FastifyInstance) {
     return ingestService.listJobs(request.tenantId!, {
       status,
       createdBy,
-      limit: limit ? parseInt(limit) : 50,
+      limit: limit ? Number.parseInt(limit) : 50,
     });
   });
 
@@ -43,7 +43,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/jobs/:jobId/logs', async (request) => {
     const { jobId } = request.params as { jobId: string };
     const { limit } = request.query as { limit?: string };
-    return ingestService.getJobLogs(request.tenantId!, jobId, limit ? parseInt(limit) : 100);
+    return ingestService.getJobLogs(request.tenantId!, jobId, limit ? Number.parseInt(limit) : 100);
   });
 
   // Item Management

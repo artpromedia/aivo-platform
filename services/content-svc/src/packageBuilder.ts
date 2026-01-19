@@ -11,7 +11,7 @@ import type {
   LearningObjectGradeBand,
   LearningObjectSubject,
 } from '@prisma/client';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

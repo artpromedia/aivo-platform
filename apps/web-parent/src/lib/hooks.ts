@@ -272,14 +272,14 @@ export function useDownloadReport() {
       studentName: string;
     }) => {
       const blob = await api.getBlob(`/reports/students/${studentId}/progress.pdf`);
-      const url = window.URL.createObjectURL(blob);
+      const url = globalThis.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `progress-report-${studentName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      a.download = `progress-report-${studentName.toLowerCase().replaceAll(/\s+/g, '-')}.pdf`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      a.remove();
+      globalThis.URL.revokeObjectURL(url);
     },
   });
 }

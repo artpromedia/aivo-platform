@@ -273,6 +273,18 @@ export class NotificationService {
           <a href="${data.verifyUrl}" class="cta-button">${t('cta')}</a>
         `;
 
+      case 'welcome':
+        return `
+          <p style="margin-bottom: 24px;">${t('features')}</p>
+          <ul style="list-style: none; padding: 0; margin: 0 0 24px;">
+            <li style="margin-bottom: 12px; padding-left: 8px;">${t('feature1')}</li>
+            <li style="margin-bottom: 12px; padding-left: 8px;">${t('feature2')}</li>
+            <li style="margin-bottom: 12px; padding-left: 8px;">${t('feature3')}</li>
+            <li style="margin-bottom: 12px; padding-left: 8px;">${t('feature4')}</li>
+          </ul>
+          <a href="${data.dashboardUrl}" class="cta-button">${t('cta')}</a>
+        `;
+
       default:
         return '';
     }

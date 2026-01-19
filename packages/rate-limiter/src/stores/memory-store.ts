@@ -5,7 +5,7 @@
  * multi-instance deployments.
  */
 
-import { RateLimitStore } from './types';
+import type { RateLimitStore } from './types';
 
 interface CacheEntry {
   value: string;
@@ -21,11 +21,11 @@ interface SortedSetEntry {
  * Memory-based rate limit store
  */
 export class MemoryStore implements RateLimitStore {
-  private cache: Map<string, CacheEntry> = new Map();
-  private sortedSets: Map<string, SortedSetEntry[]> = new Map();
+  private cache = new Map<string, CacheEntry>();
+  private sortedSets = new Map<string, SortedSetEntry[]>();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(cleanupIntervalMs: number = 60000) {
+  constructor(cleanupIntervalMs = 60000) {
     // Periodic cleanup of expired entries
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
@@ -52,9 +52,9 @@ export class MemoryStore implements RateLimitStore {
     this.cache.set(key, entry);
   }
 
-  async increment(key: string, amount: number = 1, ttlSeconds?: number): Promise<number> {
+  async increment(key: string, amount = 1, ttlSeconds?: number): Promise<number> {
     const current = await this.get(key);
-    const newValue = (parseInt(current || '0', 10) + amount);
+    const newValue = (Number.parseInt(current || '0', 10) + amount);
 
     const entry: CacheEntry = { value: String(newValue) };
 
@@ -70,7 +70,7 @@ export class MemoryStore implements RateLimitStore {
     return newValue;
   }
 
-  async decrement(key: string, amount: number = 1): Promise<number> {
+  async decrement(key: string, amount = 1): Promise<number> {
     return this.increment(key, -amount);
   }
 
@@ -93,7 +93,7 @@ export class MemoryStore implements RateLimitStore {
 
   async ttl(key: string): Promise<number> {
     const entry = this.cache.get(key);
-    if (!entry || !entry.expiresAt) return -1;
+    if (!entry?.expiresAt) return -1;
 
     const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
     return remaining > 0 ? remaining : -2;

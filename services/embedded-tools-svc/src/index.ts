@@ -5,9 +5,9 @@
  * with COPPA/FERPA-compliant sandboxing and session management.
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { prisma } from './prisma.js';

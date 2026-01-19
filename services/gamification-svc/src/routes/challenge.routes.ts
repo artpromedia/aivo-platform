@@ -4,10 +4,12 @@
  * Handles challenge-related API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
 import { challengeService, CHALLENGE_TEMPLATES } from '../services/index.js';
 
 const router: IRouter = Router();
@@ -210,8 +212,8 @@ router.get(
   '/completed',
   asyncHandler(async (req: Request, res: Response) => {
     const studentId = extractStudentId(req);
-    const limit = parseInt(req.query.limit as string) || 20;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Number.parseInt(req.query.limit as string) || 20;
+    const offset = Number.parseInt(req.query.offset as string) || 0;
 
     const { prisma } = await import('../prisma.js');
     const completed = await prisma.activeChallenge.findMany({

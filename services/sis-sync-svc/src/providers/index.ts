@@ -4,19 +4,19 @@
  * Creates and initializes SIS providers based on type and configuration
  */
 
-import type { SisProviderType } from './types';
-import {
-  ISisProvider,
-  ProviderConfig,
-} from './types';
-import { CleverProvider } from './clever';
 import { ClassLinkProvider } from './classlink';
+import { CleverProvider } from './clever';
+import { GoogleWorkspaceProvider } from './google-workspace';
+import { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider';
+import { MicrosoftEntraProvider } from './microsoft-entra';
 import { OneRosterApiProvider } from './oneroster-api';
 import { OneRosterCsvProvider } from './oneroster-csv';
-import { GoogleWorkspaceProvider } from './google-workspace';
-import { MicrosoftEntraProvider } from './microsoft-entra';
 import { PowerSchoolClient, PowerSchoolSyncService } from './powerschool/powerschool-provider';
-import { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider';
+import type {
+  ISisProvider,
+  ProviderConfig,
+ SisProviderType } from './types';
+
 
 export function createProvider(providerType: SisProviderType): ISisProvider {
   switch (providerType) {

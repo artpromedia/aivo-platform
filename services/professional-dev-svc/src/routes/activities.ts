@@ -6,8 +6,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { ProfessionalDevService } from '../services/pd.service.js';
+
 import { prisma } from '../db.js';
+import { ProfessionalDevService } from '../services/pd.service.js';
 
 const service = new ProfessionalDevService(prisma);
 
@@ -67,7 +68,7 @@ export const activitiesRoutes: FastifyPluginAsync = async (app) => {
     const activities = await service.getTeacherActivities(user.tenantId, teacherId, {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit: limit ? Number.parseInt(limit, 10) : undefined,
     });
 
     return reply.send({ activities });

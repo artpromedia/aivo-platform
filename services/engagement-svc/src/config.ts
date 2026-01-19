@@ -5,7 +5,7 @@
 import 'dotenv/config';
 
 export const config = {
-  port: parseInt(process.env.PORT || '3021', 10),
+  port: Number.parseInt(process.env.PORT || '3021', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   
   // NATS

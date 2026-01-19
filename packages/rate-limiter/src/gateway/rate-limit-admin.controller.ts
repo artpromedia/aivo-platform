@@ -18,10 +18,12 @@ import {
   Inject,
   UseGuards,
 } from '@nestjs/common';
+
+import { SkipRateLimit } from '../decorators/rate-limit.decorator';
 import { RateLimiter } from '../rate-limiter';
 import { RateLimitRule, RateLimitTier } from '../types';
+
 import { GATEWAY_RATE_LIMITER } from './gateway-rate-limit.module';
-import { SkipRateLimit } from '../decorators/rate-limit.decorator';
 
 // You would typically create an AdminGuard in your application
 // import { AdminGuard } from '../guards/admin.guard';

@@ -16,9 +16,19 @@
  * @author AIVO Platform Team
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
+
+import type { AxiosInstance, AxiosError } from 'axios';
+import axios from 'axios';
+
+
 import { logger } from '../../logger.js';
+import type {
+  SyncEntityType,
+  DeltaFetchOptions,
+  DeltaResponse,
+  DeltaRecord,
+} from '../../sync/delta-sync-engine.js';
 import type {
   ISisProvider,
   SisSchool,
@@ -28,12 +38,6 @@ import type {
   SisUserRole,
   SisProviderCredentials,
 } from '../types.js';
-import type {
-  SyncEntityType,
-  DeltaFetchOptions,
-  DeltaResponse,
-  DeltaRecord,
-} from '../../sync/delta-sync-engine.js';
 
 /**
  * Ed-Fi API versions
@@ -113,7 +117,7 @@ export class EdFiProvider implements ISisProvider {
   private http: AxiosInstance;
   private accessToken?: string;
   private tokenExpiry?: Date;
-  private lastChangeVersion: number = 0;
+  private lastChangeVersion = 0;
 
   constructor(config: EdFiProviderConfig) {
     this.config = {
@@ -333,7 +337,7 @@ export class EdFiProvider implements ISisProvider {
     }
 
     const minChangeVersion = options.cursor
-      ? parseInt(options.cursor, 10)
+      ? Number.parseInt(options.cursor, 10)
       : this.lastChangeVersion;
 
     try {
@@ -390,7 +394,7 @@ export class EdFiProvider implements ISisProvider {
 
     try {
       const response = await this.fetchPage<any>(endpoint, {
-        offset: options.cursor ? parseInt(options.cursor, 10) : 0,
+        offset: options.cursor ? Number.parseInt(options.cursor, 10) : 0,
         limit: options.limit,
         // Ed-Fi supports lastModifiedDate filter on some endpoints
         lastModifiedDate: options.since?.toISOString(),
@@ -411,7 +415,7 @@ export class EdFiProvider implements ISisProvider {
       }
 
       const nextOffset = response.nextLink
-        ? (options.cursor ? parseInt(options.cursor, 10) : 0) + records.length
+        ? (options.cursor ? Number.parseInt(options.cursor, 10) : 0) + records.length
         : undefined;
 
       return {
@@ -507,12 +511,12 @@ export class EdFiProvider implements ISisProvider {
     });
 
     // Parse Link header for pagination
-    const linkHeader = response.headers['link'] as string | undefined;
+    const linkHeader = response.headers.link;
     const nextLink = this.parseNextLink(linkHeader);
 
     return {
       data: response.data,
-      totalCount: parseInt(response.headers['total-count'] as string, 10),
+      totalCount: Number.parseInt(response.headers['total-count'], 10),
       nextLink,
     };
   }
@@ -711,7 +715,7 @@ export class EdFiProvider implements ISisProvider {
       email,
       username: staff.loginId || staff.staffUniqueId,
       role: this.mapStaffRole(staff),
-      status: staff.highlyQualifiedTeacher !== false ? 'active' : 'inactive',
+      status: staff.highlyQualifiedTeacher ? 'active' : 'inactive',
       schoolSourceIds: staff.schoolAssociations?.map((a) =>
         String(a.schoolReference?.schoolId)
       ) || [],
@@ -858,12 +862,12 @@ interface EdFiSchool {
   nameOfInstitution: string;
   schoolTypeDescriptor?: string;
   addresses?: EdFiAddress[];
-  institutionTelephones?: Array<{ telephoneNumber: string }>;
-  gradeLevels?: Array<{ gradeLevelDescriptor: string }>;
-  identificationCodes?: Array<{
+  institutionTelephones?: { telephoneNumber: string }[];
+  gradeLevels?: { gradeLevelDescriptor: string }[];
+  identificationCodes?: {
     educationOrganizationIdentificationSystemDescriptor: string;
     identificationCode: string;
-  }>;
+  }[];
 }
 
 interface EdFiSection {
@@ -873,7 +877,7 @@ interface EdFiSection {
   courseOfferingReference?: { localCourseCode: string };
   sessionReference?: { sessionName: string; schoolId: number; schoolYear: number };
   academicSubjectDescriptor?: string;
-  classPeriods?: Array<{ classPeriodName: string }>;
+  classPeriods?: { classPeriodName: string }[];
   locationClassroomIdentificationCode?: string;
 }
 
@@ -885,16 +889,16 @@ interface EdFiStudent {
   birthDate?: string;
   sexDescriptor?: string;
   hispanicLatinoEthnicity?: boolean;
-  races?: Array<{ raceDescriptor: string }>;
-  electronicMails?: Array<{
+  races?: { raceDescriptor: string }[];
+  electronicMails?: {
     electronicMailAddress: string;
     electronicMailTypeDescriptor?: string;
-  }>;
+  }[];
   loginId?: string;
-  schoolAssociations?: Array<{
+  schoolAssociations?: {
     schoolReference?: { schoolId: number };
     gradeLevel?: string;
-  }>;
+  }[];
 }
 
 interface EdFiStaff {
@@ -904,14 +908,14 @@ interface EdFiStaff {
   middleName?: string;
   staffClassificationDescriptor?: string;
   highlyQualifiedTeacher?: boolean;
-  electronicMails?: Array<{
+  electronicMails?: {
     electronicMailAddress: string;
     electronicMailTypeDescriptor?: string;
-  }>;
+  }[];
   loginId?: string;
-  schoolAssociations?: Array<{
+  schoolAssociations?: {
     schoolReference?: { schoolId: number };
-  }>;
+  }[];
 }
 
 interface EdFiParent {
@@ -919,12 +923,12 @@ interface EdFiParent {
   firstName: string;
   lastSurname: string;
   middleName?: string;
-  electronicMails?: Array<{
+  electronicMails?: {
     electronicMailAddress: string;
     electronicMailTypeDescriptor?: string;
-  }>;
+  }[];
   loginId?: string;
-  telephones?: Array<{ telephoneNumber: string }>;
+  telephones?: { telephoneNumber: string }[];
 }
 
 interface EdFiAddress {

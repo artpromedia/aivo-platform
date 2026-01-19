@@ -12,7 +12,7 @@
  *   const result = await enforcementHooks.onLearnerActivation(tenantId, learnerId, gradeLevel);
  */
 
-import { licensingService } from './licensing.service.js';
+import { gradeToGradeBand } from '../types/licensing.types.js';
 import type {
   GradeBand,
   LicenseAssignment,
@@ -20,7 +20,8 @@ import type {
   LicenseAvailabilityResult,
   TenantSeatUsageSummary,
 } from '../types.js';
-import { gradeToGradeBand } from '../types/licensing.types.js';
+
+import { licensingService } from './licensing.service.js';
 
 // ============================================================================
 // Enforcement Hook Results

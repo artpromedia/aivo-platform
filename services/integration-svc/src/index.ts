@@ -5,12 +5,12 @@
 import 'dotenv/config';
 import { createServer } from './server.js';
 
-const port = parseInt(process.env.PORT || '3009', 10);
+const port = Number.parseInt(process.env.PORT || '3009', 10);
 
 const { app, start } = await createServer({
   port,
-  webhookWorkerIntervalMs: parseInt(process.env.WEBHOOK_WORKER_INTERVAL_MS || '5000', 10),
-  webhookBatchSize: parseInt(process.env.WEBHOOK_BATCH_SIZE || '10', 10),
+  webhookWorkerIntervalMs: Number.parseInt(process.env.WEBHOOK_WORKER_INTERVAL_MS || '5000', 10),
+  webhookBatchSize: Number.parseInt(process.env.WEBHOOK_BATCH_SIZE || '10', 10),
 });
 
 // Handle graceful shutdown

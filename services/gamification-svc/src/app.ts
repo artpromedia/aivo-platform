@@ -2,11 +2,13 @@
  * Gamification Service - Express App
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import express, { Request, Response, NextFunction, Application } from 'express';
-import helmet from 'helmet';
 import cors from 'cors';
+import type { Request, Response, NextFunction, Application } from 'express';
+import express from 'express';
+import helmet from 'helmet';
+
 import {
   gamificationRoutes,
   achievementRoutes,

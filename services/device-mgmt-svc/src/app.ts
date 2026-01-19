@@ -1,8 +1,9 @@
 import Fastify from 'fastify';
+
 import { prismaPlugin } from './plugins/prisma.js';
 import { deviceRoutes } from './routes/devices.js';
-import { poolRoutes } from './routes/pools.js';
 import { policyRoutes } from './routes/policies.js';
+import { poolRoutes } from './routes/pools.js';
 
 export async function buildApp() {
   const app = Fastify({

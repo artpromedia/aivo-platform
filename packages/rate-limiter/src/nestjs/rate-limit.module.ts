@@ -19,11 +19,12 @@
  */
 
 import { DynamicModule, Module, Global, Provider } from '@nestjs/common';
+import type Redis from 'ioredis';
+
 import { RateLimiter, RateLimiterConfig } from '../rate-limiter';
-import { RateLimitStore } from '../stores/types';
 import { MemoryStore } from '../stores/memory-store';
 import { RedisStore } from '../stores/redis-store';
-import type Redis from 'ioredis';
+import { RateLimitStore } from '../stores/types';
 
 export const RATE_LIMITER = 'RATE_LIMITER';
 export const RATE_LIMIT_OPTIONS = 'RATE_LIMIT_OPTIONS';
@@ -46,6 +47,7 @@ export interface RateLimitModuleAsyncOptions {
 
 @Global()
 @Module({})
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class RateLimitModule {
   /**
    * Register the module with static configuration
@@ -77,13 +79,14 @@ export class RateLimitModule {
    * Register the module with async configuration
    */
   static forRootAsync(options: RateLimitModuleAsyncOptions): DynamicModule {
-    const { isGlobal = true, imports = [], inject = [], useFactory } = options;
+    const { isGlobal = true, imports = [], inject = [], useFactory: optionsFactory } = options;
 
     const rateLimiterProvider: Provider = {
       provide: RATE_LIMITER,
       inject: inject,
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       useFactory: async (...args: any[]) => {
-        const config = await useFactory(...args);
+        const config = await optionsFactory(...args);
         return new RateLimiter(config);
       },
     };
@@ -91,8 +94,9 @@ export class RateLimitModule {
     const optionsProvider: Provider = {
       provide: RATE_LIMIT_OPTIONS,
       inject: inject,
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       useFactory: async (...args: any[]) => {
-        return await useFactory(...args);
+        return await optionsFactory(...args);
       },
     };
 

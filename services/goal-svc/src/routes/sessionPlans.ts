@@ -99,8 +99,8 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
           scheduledTo: scheduledTo ? new Date(scheduledTo) : undefined,
         },
         {
-          page: page ? parseInt(page, 10) : 1,
-          pageSize: pageSize ? parseInt(pageSize, 10) : 20,
+          page: page ? Number.parseInt(page, 10) : 1,
+          pageSize: pageSize ? Number.parseInt(pageSize, 10) : 20,
         }
       );
 
@@ -371,8 +371,8 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       const sessions = await sessionPlanService.getUpcomingSessions(ctx.tenantId, {
         learnerId,
         createdByUserId: ctx.userId,
-        days: days ? parseInt(days, 10) : 7,
-        limit: limit ? parseInt(limit, 10) : 10,
+        days: days ? Number.parseInt(days, 10) : 7,
+        limit: limit ? Number.parseInt(limit, 10) : 10,
       });
 
       return reply.send({ data: sessions });

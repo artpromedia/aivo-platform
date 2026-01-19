@@ -12,14 +12,17 @@
  * @module consent-svc/services/per-learner-consent
  */
 
-import { Pool, PoolClient } from 'pg';
-import { randomBytes, createHash } from 'crypto';
-import {
+import { randomBytes, createHash } from 'node:crypto';
+
+import type { Pool, PoolClient } from 'pg';
+
+import type {
   Consent,
   ConsentType,
   ConsentStatus,
   ConsentSource,
-  ConsentGateResult,
+  ConsentGateResult} from '../types.js';
+import {
   ParentConsentSummary,
 } from '../types.js';
 
@@ -71,10 +74,10 @@ export interface BatchConsentRequest {
   tenantId: string;
   parentId: string;
   learnerIds: string[];
-  consents: Array<{
+  consents: {
     type: ConsentType;
     action: 'GRANT' | 'REVOKE';
-  }>;
+  }[];
   source: ConsentSource;
   ipAddress?: string;
   userAgent?: string;
@@ -85,13 +88,13 @@ export interface BatchConsentResult {
   totalProcessed: number;
   successful: number;
   failed: number;
-  results: Array<{
+  results: {
     learnerId: string;
     consentType: ConsentType;
     action: 'GRANT' | 'REVOKE';
     success: boolean;
     error?: string;
-  }>;
+  }[];
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -716,8 +719,8 @@ export class PerLearnerConsentService {
   async getExpiringConsents(
     tenantId: string,
     parentId: string,
-    daysThreshold: number = 30
-  ): Promise<Array<{ learnerId: string; learnerName: string; consent: LearnerConsentDetail }>> {
+    daysThreshold = 30
+  ): Promise<{ learnerId: string; learnerName: string; consent: LearnerConsentDetail }[]> {
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + daysThreshold);
 

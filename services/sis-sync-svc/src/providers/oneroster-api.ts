@@ -6,7 +6,7 @@
  * @see https://www.imsglobal.org/oneroster-v11-final-specification
  */
 
-import {
+import type {
   ISisProvider,
   OneRosterApiConfig,
   SisSchool,
@@ -43,7 +43,7 @@ interface OneRosterClass {
   subjects?: string[];
   course?: { sourcedId: string; type: string };
   school: { sourcedId: string; type: string };
-  terms?: Array<{ sourcedId: string; type: string }>;
+  terms?: { sourcedId: string; type: string }[];
   subjectCodes?: string[];
   periods?: string[];
 }
@@ -53,10 +53,10 @@ interface OneRosterUser {
   status: 'active' | 'tobedeleted';
   dateLastModified?: string;
   enabledUser: boolean;
-  orgs: Array<{ sourcedId: string; type: string }>;
+  orgs: { sourcedId: string; type: string }[];
   role: 'student' | 'teacher' | 'administrator' | 'aide' | 'parent' | 'guardian' | 'proctor' | 'relative';
   username?: string;
-  userIds?: Array<{ type: string; identifier: string }>;
+  userIds?: { type: string; identifier: string }[];
   givenName: string;
   familyName: string;
   middleName?: string;
@@ -64,7 +64,7 @@ interface OneRosterUser {
   grades?: string[];
   phone?: string;
   sms?: string;
-  agents?: Array<{ sourcedId: string; type: string }>;
+  agents?: { sourcedId: string; type: string }[];
 }
 
 interface OneRosterEnrollment {
@@ -79,9 +79,7 @@ interface OneRosterEnrollment {
   endDate?: string;
 }
 
-interface OneRosterResponse<T> {
-  [key: string]: T[];
-}
+type OneRosterResponse<T> = Record<string, T[]>;
 
 export class OneRosterApiProvider implements ISisProvider {
   readonly providerType = 'ONEROSTER_API' as const;
@@ -176,7 +174,7 @@ export class OneRosterApiProvider implements ISisProvider {
   }
 
   async fetchSchools(cursor?: string): Promise<SyncEntityResult<SisSchool>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/orgs?limit=${PAGE_SIZE}&offset=${offset}&filter=type='school'`;
     
     const response = await this.fetchFromOneRoster<OneRosterOrg>(endpoint);
@@ -202,7 +200,7 @@ export class OneRosterApiProvider implements ISisProvider {
   }
 
   async fetchClasses(cursor?: string): Promise<SyncEntityResult<SisClass>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/classes?limit=${PAGE_SIZE}&offset=${offset}`;
     
     const response = await this.fetchFromOneRoster<OneRosterClass>(endpoint);
@@ -230,7 +228,7 @@ export class OneRosterApiProvider implements ISisProvider {
   }
 
   async fetchUsers(cursor?: string): Promise<SyncEntityResult<SisUser>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/users?limit=${PAGE_SIZE}&offset=${offset}`;
     
     const response = await this.fetchFromOneRoster<OneRosterUser>(endpoint);
@@ -271,7 +269,7 @@ export class OneRosterApiProvider implements ISisProvider {
   }
 
   async fetchEnrollments(cursor?: string): Promise<SyncEntityResult<SisEnrollment>> {
-    const offset = cursor ? parseInt(cursor, 10) : 0;
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
     const endpoint = `/enrollments?limit=${PAGE_SIZE}&offset=${offset}`;
     
     const response = await this.fetchFromOneRoster<OneRosterEnrollment>(endpoint);

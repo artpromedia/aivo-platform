@@ -2,16 +2,16 @@
  * Gamification Service - Entry Point
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
 import app from './app.js';
-import { prisma } from './prisma.js';
-import { redis, isRedisAvailable } from './redis.js';
 import { eventEmitter } from './events/event-emitter.js';
 import { startScheduledJobs } from './jobs/scheduled-jobs.js';
+import { prisma } from './prisma.js';
+import { redis, isRedisAvailable } from './redis.js';
 import { startWebSocketServer } from './websocket/ws-server.js';
 
-const PORT = parseInt(process.env.PORT || '3006', 10);
+const PORT = Number.parseInt(process.env.PORT || '3006', 10);
 
 async function main() {
   console.log('Starting Gamification Service...');

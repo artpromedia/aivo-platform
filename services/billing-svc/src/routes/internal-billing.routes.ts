@@ -5,9 +5,9 @@
  * They should NOT be exposed through the public API gateway.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { PrismaClient } from '@prisma/client';
 import type { ParentSku } from '@aivo/billing-common';
+import type { PrismaClient } from '@prisma/client';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 interface SubscriptionAccessInfo {
   hasActiveSubscription: boolean;

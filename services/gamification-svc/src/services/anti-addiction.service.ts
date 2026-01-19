@@ -5,8 +5,8 @@
  * to promote healthy learning habits
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
+import { prisma } from '../prisma.js';
 
 interface SessionStartResult {
   sessionId: string;
@@ -212,8 +212,8 @@ class AntiAddictionService {
   /**
    * Get usage statistics for a period
    */
-  async getUsageStats(studentId: string, days: number = 7): Promise<{
-    daily: Array<{ date: string; minutes: number }>;
+  async getUsageStats(studentId: string, days = 7): Promise<{
+    daily: { date: string; minutes: number }[];
     average: number;
     total: number;
   }> {

@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
-import { getAnnouncer, Politeness } from '../announcer';
+
+import type { Politeness } from '../announcer';
+import { getAnnouncer } from '../announcer';
 
 interface UseAnnounceReturn {
   announce: (message: string, politeness?: Politeness) => void;

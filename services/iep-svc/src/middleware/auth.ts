@@ -2,9 +2,11 @@
  * AIVO IEP Service - Authentication Middleware
  */
 
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import { createVerifier } from 'fast-jwt';
 import fs from 'fs';
+
+import { createVerifier } from 'fast-jwt';
+import type { FastifyRequest, FastifyReply } from 'fastify';
+
 import { config } from '../config.js';
 
 let jwtVerifier: any = null;

@@ -8,15 +8,16 @@
  * - Item purchases and inventory
  */
 
-import { prisma } from '../prisma.js';
 import { eventEmitter } from '../events/event-emitter.js';
-import {
+import { prisma } from '../prisma.js';
+import type {
   ShopItem,
   ShopCategory,
   PurchaseResult,
   ShopResponse,
   LevelReward,
 } from '../types/gamification.types.js';
+
 import { LEVEL_CONFIG } from './gamification.service.js';
 
 // ============================================================================
@@ -384,7 +385,7 @@ class RewardService {
       where: { id: itemId },
     });
 
-    if (!item || !item.isActive) {
+    if (!item?.isActive) {
       return { success: false, message: 'Item not found' };
     }
 

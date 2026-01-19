@@ -3,7 +3,8 @@
  * Business logic for shared resources (lesson plans, worksheets, etc.)
  */
 
-import { prisma, ResourceType } from '../prisma.js';
+import type { ResourceType } from '../prisma.js';
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

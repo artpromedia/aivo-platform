@@ -209,7 +209,7 @@ export class DataClassificationService {
     
     // Check for grade level indicating K-6 (typically under 13)
     if (data.gradeLevel) {
-      const grade = parseInt(data.gradeLevel.toString().replace(/\D/g, ''));
+      const grade = Number.parseInt(data.gradeLevel.toString().replace(/\D/g, ''));
       return !isNaN(grade) && grade <= 6;
     }
     

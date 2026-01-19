@@ -206,14 +206,14 @@ export function usePDCertificates(): UsePDCertificatesReturn {
 
   const downloadCertificate = React.useCallback(async (id: string) => {
     const blob = await pdCertificatesApi.download(id);
-    const url = window.URL.createObjectURL(blob);
+    const url = globalThis.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `certificate-${id}.pdf`;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    a.remove();
+    globalThis.URL.revokeObjectURL(url);
   }, []);
 
   React.useEffect(() => {

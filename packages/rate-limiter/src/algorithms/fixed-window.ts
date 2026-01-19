@@ -8,8 +8,8 @@
  * Simple and memory-efficient but can allow bursts at window boundaries.
  */
 
-import { RateLimitStore } from '../stores/types';
-import { AlgorithmCheckResult, AlgorithmOptions } from '../types';
+import type { RateLimitStore } from '../stores/types';
+import type { AlgorithmCheckResult, AlgorithmOptions } from '../types';
 
 export class FixedWindow {
   constructor(private store: RateLimitStore) {}
@@ -27,7 +27,7 @@ export class FixedWindow {
     const windowKey = this.getWindowKey(key, windowSeconds, now);
 
     const countStr = await this.store.get(windowKey);
-    const count = countStr ? parseInt(countStr, 10) : 0;
+    const count = countStr ? Number.parseInt(countStr, 10) : 0;
 
     const allowed = count < limit;
     const remaining = Math.max(0, limit - count);
@@ -68,7 +68,7 @@ export class FixedWindow {
     const windowKey = this.getWindowKey(key, windowSeconds, now);
 
     const countStr = await this.store.get(windowKey);
-    return countStr ? parseInt(countStr, 10) : 0;
+    return countStr ? Number.parseInt(countStr, 10) : 0;
   }
 
   /**

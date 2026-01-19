@@ -6,7 +6,7 @@
  */
 
 import type { Prisma } from '../../generated/prisma-client/index.js';
-
+import { prisma } from '../prisma.js';
 import {
   contractRepository,
   contractLineItemRepository,
@@ -18,7 +18,6 @@ import {
   priceBookRepository,
   productRepository,
 } from '../repositories/contract.repository.js';
-import { prisma } from '../prisma.js';
 import type {
   Contract,
   ContractAllocation,
@@ -73,7 +72,7 @@ export class ContractService {
    * Create a new contract with validation.
    */
   async createContract(
-    data: Zod.infer<typeof CreateContractSchema>
+    data: z.infer<typeof CreateContractSchema>
   ): Promise<Contract> {
     // Validate billing profile exists
     const profile = await districtBillingProfileRepository.getById(
@@ -269,7 +268,7 @@ export class ContractService {
    * Add a line item to a contract.
    */
   async addLineItem(
-    data: Zod.infer<typeof CreateContractLineItemSchema>
+    data: z.infer<typeof CreateContractLineItemSchema>
   ): Promise<ContractLineItem> {
     const contract = await contractRepository.getById(data.contractId);
     if (!contract) {
@@ -362,7 +361,7 @@ export class ContractService {
     }
 
     const contract = await contractRepository.getById(lineItem.contractId);
-    if (!contract || contract.status !== 'DRAFT') {
+    if (contract?.status !== 'DRAFT') {
       throw new Error('Can only update line items on DRAFT contracts');
     }
 
@@ -386,7 +385,7 @@ export class ContractService {
     }
 
     const contract = await contractRepository.getById(lineItem.contractId);
-    if (!contract || contract.status !== 'DRAFT') {
+    if (contract?.status !== 'DRAFT') {
       throw new Error('Can only remove line items from DRAFT contracts');
     }
 

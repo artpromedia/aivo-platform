@@ -12,6 +12,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod';
 
 import { config } from '../config.js';
+import { publishRecommendationEvent } from '../events/event-publisher.js';
 import type {
   BrainUpdateRequest,
   BrainUpdateResult,
@@ -247,30 +248,31 @@ class VirtualBrainService {
     for (const update of updates) {
       // High accuracy - recommend advancing difficulty
       if (update.accuracy >= 0.9 && update.attemptCount >= 5) {
-        recommendations.push({
-          type: 'MASTERY_ADVANCE',
-          subject: update.subject,
-          skill: update.skillCode,
-          fromValue: update.accuracy - update.masteryDelta,
-          toValue: update.accuracy,
-          confidence: update.confidence,
-          reason: 'HIGH_ACCURACY_SUSTAINED',
-        });
-
-        recommendations.push({
-          type: 'DIFFICULTY_CHANGE',
-          subject: update.subject,
-          skill: update.skillCode,
-          fromValue: 1,
-          toValue: 2, // Increase difficulty level
-          confidence: update.confidence * 0.9,
-          reason: 'READY_FOR_CHALLENGE',
-        });
+        recommendations.push(
+          {
+            type: 'MASTERY_ADVANCE',
+            subject: update.subject,
+            skill: update.skillCode,
+            fromValue: update.accuracy - update.masteryDelta,
+            toValue: update.accuracy,
+            confidence: update.confidence,
+            reason: 'HIGH_ACCURACY_SUSTAINED',
+          },
+          {
+            type: 'DIFFICULTY_CHANGE',
+            subject: update.subject,
+            skill: update.skillCode,
+            fromValue: 1,
+            toValue: 2, // Increase difficulty level
+            confidence: update.confidence * 0.9,
+            reason: 'READY_FOR_CHALLENGE',
+          }
+        );
       }
 
       // Low accuracy - recommend review or intervention
       if (update.accuracy < 0.4 && update.attemptCount >= 3) {
-        recommendations.push({
+        const reviewRec: LearnerRecommendation = {
           type: 'SKILL_REVIEW',
           subject: update.subject,
           skill: update.skillCode,
@@ -278,19 +280,24 @@ class VirtualBrainService {
           toValue: 0.7, // Target mastery
           confidence: update.confidence,
           reason: 'STRUGGLING_NEEDS_SUPPORT',
-        });
+        };
 
         // Recommend focus intervention for very low accuracy
         if (update.accuracy < 0.2) {
-          recommendations.push({
-            type: 'FOCUS_INTERVENTION',
-            subject: update.subject,
-            skill: update.skillCode,
-            fromValue: update.accuracy,
-            toValue: 0.5,
-            confidence: update.confidence * 0.8,
-            reason: 'SIGNIFICANT_DIFFICULTY',
-          });
+          recommendations.push(
+            reviewRec,
+            {
+              type: 'FOCUS_INTERVENTION',
+              subject: update.subject,
+              skill: update.skillCode,
+              fromValue: update.accuracy,
+              toValue: 0.5,
+              confidence: update.confidence * 0.8,
+              reason: 'SIGNIFICANT_DIFFICULTY',
+            }
+          );
+        } else {
+          recommendations.push(reviewRec);
         }
       }
     }
@@ -299,7 +306,7 @@ class VirtualBrainService {
   }
 
   /**
-   * Emit recommendation events to NATS.
+   * Emit recommendation events to Redis pub/sub (and future NATS JetStream).
    */
   private async emitRecommendations(
     tenantId: string,
@@ -307,7 +314,18 @@ class VirtualBrainService {
     recommendations: LearnerRecommendation[]
   ): Promise<void> {
     for (const rec of recommendations) {
-      // TODO: Emit to NATS JetStream
+      // Publish to event bus for downstream consumers (notifications, analytics, dashboards)
+      await publishRecommendationEvent(tenantId, learnerId, {
+        type: rec.type as 'MASTERY_ADVANCE' | 'DIFFICULTY_CHANGE' | 'SKILL_REVIEW' | 'FOCUS_INTERVENTION' | 'PRACTICE_MORE',
+        subject: rec.subject,
+        skill: rec.skill,
+        fromValue: rec.fromValue,
+        toValue: rec.toValue,
+        confidence: rec.confidence,
+        reason: rec.reason,
+      });
+
+      // Also log for debugging/audit
       console.log(
         JSON.stringify({
           event: 'RecommendationCreated',

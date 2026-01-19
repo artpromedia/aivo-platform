@@ -106,7 +106,7 @@ export async function registerMessageRoutes(fastify: FastifyInstance): Promise<v
           beforeId,
           afterId,
         },
-        pageSize ? parseInt(pageSize, 10) : 50
+        pageSize ? Number.parseInt(pageSize, 10) : 50
       );
 
       return reply.send(result);

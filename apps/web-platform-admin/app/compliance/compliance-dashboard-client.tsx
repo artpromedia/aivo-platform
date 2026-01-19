@@ -636,7 +636,7 @@ function ExportSection({ dateRange, accessToken, onExportStart, onExportEnd }: E
       a.download = `compliance-report-${dateRange.from}-to-${dateRange.to}.json`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
       URL.revokeObjectURL(url);
 
       onExportEnd(true);

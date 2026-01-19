@@ -59,7 +59,7 @@ function mapRow(row: PolicyDocumentRow): PolicyDocument {
 // ════════════════════════════════════════════════════════════════════════════════
 
 export class PolicyRepository {
-  constructor(private pool: Pool) {}
+  constructor(private readonly pool: Pool) {}
 
   // ────────────────────────────────────────────────────────────────────────────
   // READ OPERATIONS
@@ -143,7 +143,7 @@ export class PolicyRepository {
 
     return {
       policies: dataResult.rows.map(mapRow),
-      total: parseInt(countResult.rows[0]?.count ?? '0', 10),
+      total: Number.parseInt(countResult.rows[0]?.count ?? '0', 10),
     };
   }
 

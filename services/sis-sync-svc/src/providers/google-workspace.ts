@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 /**
  * Google Workspace for Education SIS Provider
  *
@@ -11,7 +11,7 @@
  * @see https://developers.google.com/classroom
  */
 
-import {
+import type {
   ISisProvider,
   GoogleWorkspaceConfig,
   SisSchool,
@@ -65,13 +65,13 @@ interface GoogleUser {
   suspended?: boolean;
   orgUnitPath?: string;
   customSchemas?: Record<string, Record<string, unknown>>;
-  relations?: Array<{ type: string; value: string }>;
-  externalIds?: Array<{ type: string; value: string }>;
-  organizations?: Array<{
+  relations?: { type: string; value: string }[];
+  externalIds?: { type: string; value: string }[];
+  organizations?: {
     title?: string;
     department?: string;
     primary?: boolean;
-  }>;
+  }[];
   creationTime?: string;
   lastLoginTime?: string;
 }
@@ -251,7 +251,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       const orgUnits = data.organizationUnits || [];
       const filteredOrgUnits = this.config.orgUnitPaths?.length
         ? orgUnits.filter(ou => 
-            this.config!.orgUnitPaths!.some(path => ou.orgUnitPath.startsWith(path))
+            this.config.orgUnitPaths.some(path => ou.orgUnitPath.startsWith(path))
           )
         : orgUnits;
 
@@ -393,7 +393,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
         // Filter by organizational unit if configured
         if (this.config.orgUnitPaths?.length && user.orgUnitPath) {
           const matchesOrgUnit = this.config.orgUnitPaths.some(
-            path => user.orgUnitPath!.startsWith(path)
+            path => user.orgUnitPath.startsWith(path)
           );
           if (!matchesOrgUnit) {
             continue;
@@ -598,7 +598,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
       lastName: user.name.familyName,
       username: user.primaryEmail.split('@')[0],
       studentNumber,
-      schoolExternalIds: schoolExternalIds.filter(Boolean) as string[],
+      schoolExternalIds: schoolExternalIds.filter(Boolean),
       isActive: !user.suspended,
       rawData: user as unknown as Record<string, unknown>,
     };
@@ -718,7 +718,7 @@ export class GoogleWorkspaceProvider implements ISisProvider {
 
   private inferGrade(courseName: string): string | undefined {
     // Look for grade patterns like "Grade 5", "5th Grade", "G5", etc.
-    const gradeMatch = courseName.match(/(?:grade|gr?)\s*(\d+)|(\d+)(?:st|nd|rd|th)\s*grade/i);
+    const gradeMatch = /(?:grade|gr?)\s*(\d+)|(\d+)(?:st|nd|rd|th)\s*grade/i.exec(courseName);
     if (gradeMatch) {
       const grade = gradeMatch[1] || gradeMatch[2];
       return grade;

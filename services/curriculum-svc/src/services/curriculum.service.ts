@@ -4,7 +4,7 @@
  * standards alignment, and pacing guide functionality.
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -370,7 +370,7 @@ export class CurriculumService {
         lessonType: request.lessonType,
         activities: (request.activities as any) ?? [],
         materials: request.materials ?? [],
-        differentiation: request.differentiation as any,
+        differentiation: request.differentiation,
         assessmentNotes: request.assessmentNotes,
       },
     });
@@ -407,7 +407,7 @@ export class CurriculumService {
         ...(updates.lessonType !== undefined && { lessonType: updates.lessonType }),
         ...(updates.activities && { activities: updates.activities as any }),
         ...(updates.materials && { materials: updates.materials }),
-        ...(updates.differentiation !== undefined && { differentiation: updates.differentiation as any }),
+        ...(updates.differentiation !== undefined && { differentiation: updates.differentiation }),
         ...(updates.assessmentNotes !== undefined && { assessmentNotes: updates.assessmentNotes }),
       },
     });

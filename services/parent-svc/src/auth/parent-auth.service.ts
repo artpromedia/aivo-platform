@@ -5,7 +5,7 @@
  */
 
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { sign } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { logger, metrics } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CryptoService } from '../crypto/crypto.service.js';
@@ -167,6 +167,17 @@ export class ParentAuthService {
       data: {
         firstName,
         verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
+      },
+    });
+
+    // Send welcome email
+    await this.notification.sendEmail({
+      to: parent.email,
+      template: 'welcome',
+      language,
+      data: {
+        firstName,
+        dashboardUrl: `${config.appUrl}/dashboard`,
       },
     });
 
@@ -333,7 +344,7 @@ export class ParentAuthService {
    * Generate access token
    */
   private generateAccessToken(parentId: string): string {
-    return sign(
+    return jwt.sign(
       { sub: parentId, type: 'parent' },
       config.jwtSecret,
       { expiresIn: config.accessTokenExpiresIn }

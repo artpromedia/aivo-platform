@@ -195,8 +195,8 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           pagination: {
             page,
             limit,
-            total: parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
-            totalPages: Math.ceil(parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / limit),
+            total: Number.parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
+            totalPages: Math.ceil(Number.parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / limit),
           },
         });
       } catch (error) {
@@ -490,8 +490,8 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           pagination: {
             page: query.page,
             limit: query.limit,
-            total: parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
-            totalPages: Math.ceil(parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / query.limit),
+            total: Number.parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
+            totalPages: Math.ceil(Number.parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / query.limit),
           },
         });
       } catch (error) {
@@ -568,8 +568,8 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
           pagination: {
             page: query.page,
             limit: query.limit,
-            total: parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
-            totalPages: Math.ceil(parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / query.limit),
+            total: Number.parseInt(String((countResult.rows[0] as Record<string, unknown>).count)),
+            totalPages: Math.ceil(Number.parseInt(String((countResult.rows[0] as Record<string, unknown>).count)) / query.limit),
           },
         });
       } catch (error) {
@@ -665,23 +665,23 @@ export const registerFederatedLearningRoutes: FastifyPluginAsync<FederatedLearni
 
         reply.code(200).send({
           rounds: {
-            total: parseInt(String(rounds.total_rounds)) || 0,
-            completed: parseInt(String(rounds.completed_rounds)) || 0,
-            failed: parseInt(String(rounds.failed_rounds)) || 0,
+            total: Number.parseInt(String(rounds.total_rounds)) || 0,
+            completed: Number.parseInt(String(rounds.completed_rounds)) || 0,
+            failed: Number.parseInt(String(rounds.failed_rounds)) || 0,
             avgContributions: parseFloat(String(rounds.avg_contributions)) || 0,
-            totalDistributions: parseInt(String(rounds.total_distributions)) || 0,
+            totalDistributions: Number.parseInt(String(rounds.total_distributions)) || 0,
           },
           tenants: {
-            total: parseInt(String(tenants.total_tenants)) || 0,
-            enabled: parseInt(String(tenants.enabled_tenants)) || 0,
-            autoParticipate: parseInt(String(tenants.auto_participate_tenants)) || 0,
+            total: Number.parseInt(String(tenants.total_tenants)) || 0,
+            enabled: Number.parseInt(String(tenants.enabled_tenants)) || 0,
+            autoParticipate: Number.parseInt(String(tenants.auto_participate_tenants)) || 0,
             avgPrivacyUsed: parseFloat(String(tenants.avg_privacy_used)) || 0,
             avgPrivacyRemaining: parseFloat(String(tenants.avg_privacy_remaining)) || 0,
           },
           models: {
-            total: parseInt(String(models.total_models)) || 0,
-            types: parseInt(String(models.model_types)) || 0,
-            totalTrainingSamples: parseInt(String(models.total_training_samples)) || 0,
+            total: Number.parseInt(String(models.total_models)) || 0,
+            types: Number.parseInt(String(models.model_types)) || 0,
+            totalTrainingSamples: Number.parseInt(String(models.total_training_samples)) || 0,
             avgContributors: parseFloat(String(models.avg_contributors)) || 0,
           },
           activeRounds: server.getActiveRounds().length,

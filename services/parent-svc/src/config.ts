@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import 'dotenv/config';
 
 const configSchema = z.object({
   environment: z.enum(['development', 'staging', 'production']).default('development'),
@@ -12,6 +13,10 @@ const configSchema = z.object({
   corsOrigins: z.string().transform((val) => val.split(',')),
   jwtSecret: z.string(),
   appUrl: z.string().default('http://localhost:3000'),
+
+  // Token expiry settings (in seconds)
+  accessTokenExpiresIn: z.coerce.number().default(3600), // 1 hour
+  refreshTokenExpiresIn: z.coerce.number().default(2592000), // 30 days
 
   // Email configuration
   smtpHost: z.string().optional(),

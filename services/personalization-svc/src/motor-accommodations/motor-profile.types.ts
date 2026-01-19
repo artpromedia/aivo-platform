@@ -29,15 +29,10 @@ export type MotorInteractionType =
   | 'switch_selection';
 
 // Motor accommodations configuration (flexible to allow flat or nested properties)
-export interface MotorAccommodations {
-  // Allow any property - the actual structure varies
-  [key: string]: unknown;
-}
+export type MotorAccommodations = Record<string, unknown>;
 
 // Motor content adaptations (flexible to allow any properties)
-export interface MotorContentAdaptations {
-  [key: string]: unknown;
-}
+export type MotorContentAdaptations = Record<string, unknown>;
 
 // Motor profile (flexible - includes base properties plus any additional)
 export interface MotorProfile {

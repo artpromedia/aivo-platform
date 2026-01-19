@@ -10,7 +10,7 @@
 
 import type { Pool } from 'pg';
 import type { Redis } from 'ioredis';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import {
   type TenantId,
   type RoundId,
@@ -78,7 +78,7 @@ export class FederatedAggregationServer {
   private config: FederatedServerConfig;
   private activeRounds: Map<RoundId, FederatedRound> = new Map();
   private eventHandlers: FederatedEventHandler[] = [];
-  private roundScheduler: NodeJS.Timeout | null = null;
+  private roundScheduler: ReturnType<typeof setInterval> | null = null;
   private tenantAgents: Map<TenantId, TenantLearningAgent> = new Map();
 
   constructor(

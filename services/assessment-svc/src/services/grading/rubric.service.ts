@@ -7,9 +7,9 @@
  * - Rubric cloning and sharing
  */
 
+import { publishEvent } from '../../events/publisher.js';
 import { prisma } from '../../prisma.js';
 import type { PrismaTransactionClient } from '../../prisma.js';
-import { publishEvent } from '../../events/publisher.js';
 import type {
   Rubric,
   RubricCriterion,
@@ -338,7 +338,7 @@ export class RubricService {
   /**
    * Get rubric templates (common rubric patterns)
    */
-  getRubricTemplates(): Array<Omit<CreateRubricInput, 'isPublic'>> {
+  getRubricTemplates(): Omit<CreateRubricInput, 'isPublic'>[] {
     return [
       {
         name: '4-Point Scale',

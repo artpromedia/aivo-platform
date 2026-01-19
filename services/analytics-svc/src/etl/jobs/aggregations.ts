@@ -118,7 +118,7 @@ export async function jobBuildDailyStudentMetrics(targetDate: Date, force = fals
       [dayStart, dayEnd]
     );
 
-    const metrics = metricsResult.rows as Array<{
+    const metrics = metricsResult.rows as {
       user_id: string;
       tenant_id: string;
       sessions_count: number;
@@ -134,7 +134,7 @@ export async function jobBuildDailyStudentMetrics(targetDate: Date, force = fals
       skills_mastered: number;
       active_hours: number;
       last_activity: Date | null;
-    }>;
+    }[];
 
     rowsProcessed = metrics.length;
 
@@ -309,7 +309,7 @@ export async function jobBuildSkillPerformance(targetDate: Date, force = false):
       [dayStart, dayEnd]
     );
 
-    const skills = skillsResult.rows as Array<{
+    const skills = skillsResult.rows as {
       skill_id: string;
       tenant_id: string;
       subject_id: string;
@@ -322,7 +322,7 @@ export async function jobBuildSkillPerformance(targetDate: Date, force = false):
       mastery_stddev: number | null;
       avg_practice_count: number;
       avg_response_time_ms: number | null;
-    }>;
+    }[];
 
     if (skills.length === 0) {
       logger.info(`No skill performance data to aggregate for ${formatDate(targetDate)}`);

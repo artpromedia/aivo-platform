@@ -11,7 +11,7 @@
  * @module realtime-svc/services/realtime-dashboard
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import Redis from 'ioredis';
 import { logger } from '../logger.js';
 import { RedisKeys, getRedisClient } from '../redis/index.js';
@@ -184,9 +184,9 @@ export interface AlertEvent extends DashboardEventPayload {
 // ════════════════════════════════════════════════════════════════════════════════
 
 export class RealtimeDashboardService extends EventEmitter {
-  private redis: Redis;
-  private subscriptions: Map<string, DashboardSubscription> = new Map();
-  private metricsCache: Map<string, { data: unknown; timestamp: Date }> = new Map();
+  private readonly redis: Redis;
+  private readonly subscriptions: Map<string, DashboardSubscription> = new Map();
+  private readonly metricsCache: Map<string, { data: unknown; timestamp: Date }> = new Map();
   private readonly cacheTtlMs = 5000; // 5 seconds cache
   private updateInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -338,6 +338,7 @@ export class RealtimeDashboardService extends EventEmitter {
   /**
    * Get classroom monitoring dashboard
    */
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   async getClassroomDashboard(
     classId: string,
     tenantId: string
@@ -439,16 +440,16 @@ export class RealtimeDashboardService extends EventEmitter {
       currentSession: sessionData?.activityType ? {
         activityType: sessionData.activityType as ActivityType,
         contentTitle: sessionData.contentTitle ?? '',
-        progress: parseInt(sessionData.progress ?? '0', 10),
+        progress: Number.parseInt(sessionData.progress ?? '0', 10),
         startedAt: new Date(sessionData.startedAt ?? Date.now()),
-        focusScore: parseInt(sessionData.focusScore ?? '0', 10),
+        focusScore: Number.parseInt(sessionData.focusScore ?? '0', 10),
       } : undefined,
       todayStats: {
-        totalTimeMinutes: parseInt(statsData?.totalTime ?? '0', 10),
-        focusedTimeMinutes: parseInt(statsData?.focusedTime ?? '0', 10),
-        lessonsCompleted: parseInt(statsData?.lessonsCompleted ?? '0', 10),
-        xpEarned: parseInt(statsData?.xpEarned ?? '0', 10),
-        streak: parseInt(statsData?.streak ?? '0', 10),
+        totalTimeMinutes: Number.parseInt(statsData?.totalTime ?? '0', 10),
+        focusedTimeMinutes: Number.parseInt(statsData?.focusedTime ?? '0', 10),
+        lessonsCompleted: Number.parseInt(statsData?.lessonsCompleted ?? '0', 10),
+        xpEarned: Number.parseInt(statsData?.xpEarned ?? '0', 10),
+        streak: Number.parseInt(statsData?.streak ?? '0', 10),
       },
       recentActivities: recentActivities.map(a => {
         const parsed = JSON.parse(a);
@@ -667,7 +668,7 @@ export class RealtimeDashboardService extends EventEmitter {
     message: string;
   }): Promise<StudentAlert> {
     const alert: StudentAlert = {
-      id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `alert_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type: params.type,
       severity: params.severity,
       message: params.message,
@@ -810,13 +811,13 @@ export class RealtimeDashboardService extends EventEmitter {
       currentActivityType: (data.activityType as ActivityType) ?? 'IDLE',
       contentId: data.contentId || undefined,
       contentTitle: data.contentTitle || undefined,
-      progress: parseInt(data.progress ?? '0', 10),
+      progress: Number.parseInt(data.progress ?? '0', 10),
       focusState: (data.focusState as FocusState) ?? 'AWAY',
-      focusScore: parseInt(data.focusScore ?? '0', 10),
+      focusScore: Number.parseInt(data.focusScore ?? '0', 10),
       timeOnTask: 0,
       lastInteraction: new Date(data.lastInteraction ?? Date.now()),
-      errorCount: parseInt(data.errorCount ?? '0', 10),
-      successRate: parseInt(data.successRate ?? '0', 10),
+      errorCount: Number.parseInt(data.errorCount ?? '0', 10),
+      successRate: Number.parseInt(data.successRate ?? '0', 10),
       idleTime: 0,
       isActive: data.isActive === '1',
       needsHelp: data.needsHelp === '1',

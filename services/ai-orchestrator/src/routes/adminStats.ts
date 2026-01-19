@@ -169,30 +169,30 @@ async function getAiCallLogStats(pool: Pool, from: string, to: string): Promise<
 
   const callsByAgentType: Record<string, number> = {};
   for (const row of agentTypeResult.rows) {
-    callsByAgentType[row.agent_type] = parseInt(row.count, 10);
+    callsByAgentType[row.agent_type] = Number.parseInt(row.count, 10);
   }
 
   const safetyDistribution: Record<string, number> = {
     SAFE: 0, LOW: 0, MEDIUM: 0, HIGH: 0,
   };
   for (const row of safetyResult.rows) {
-    safetyDistribution[row.safety_label] = parseInt(row.count, 10);
+    safetyDistribution[row.safety_label] = Number.parseInt(row.count, 10);
   }
 
   const callsByProvider: Record<string, number> = {};
   for (const row of providerResult.rows) {
-    callsByProvider[row.provider] = parseInt(row.count, 10);
+    callsByProvider[row.provider] = Number.parseInt(row.count, 10);
   }
 
   const callsByStatus: { SUCCESS: number; ERROR: number } = { SUCCESS: 0, ERROR: 0 };
   for (const row of statusResult.rows) {
     if (row.status === 'SUCCESS' || row.status === 'ERROR') {
-      callsByStatus[row.status] = parseInt(row.count, 10);
+      callsByStatus[row.status] = Number.parseInt(row.count, 10);
     }
   }
 
   return {
-    totalCalls: parseInt(basicStats.total_calls, 10),
+    totalCalls: Number.parseInt(basicStats.total_calls, 10),
     callsByAgentType,
     safetyDistribution: safetyDistribution as Record<(typeof SAFETY_LABELS)[number], number>,
     avgLatencyMs: Math.round(parseFloat(basicStats.avg_latency_ms)),
@@ -263,38 +263,38 @@ async function getIncidentStats(pool: Pool, from: string, to: string): Promise<A
     INFO: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0,
   };
   for (const row of severityResult.rows) {
-    incidentCountsBySeverity[row.severity] = parseInt(row.count, 10);
+    incidentCountsBySeverity[row.severity] = Number.parseInt(row.count, 10);
   }
 
   const incidentCountsByCategory: Record<string, number> = {
     SAFETY: 0, PRIVACY: 0, COMPLIANCE: 0, PERFORMANCE: 0, COST: 0,
   };
   for (const row of categoryResult.rows) {
-    incidentCountsByCategory[row.category] = parseInt(row.count, 10);
+    incidentCountsByCategory[row.category] = Number.parseInt(row.count, 10);
   }
 
   const incidentCountsByStatus: Record<string, number> = {
     OPEN: 0, INVESTIGATING: 0, RESOLVED: 0, DISMISSED: 0,
   };
   for (const row of statusResult.rows) {
-    incidentCountsByStatus[row.status] = parseInt(row.count, 10);
+    incidentCountsByStatus[row.status] = Number.parseInt(row.count, 10);
   }
 
   const openIncidentsBySeverity: Record<string, number> = {
     INFO: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0,
   };
   for (const row of openSeverityResult.rows) {
-    openIncidentsBySeverity[row.severity] = parseInt(row.count, 10);
+    openIncidentsBySeverity[row.severity] = Number.parseInt(row.count, 10);
   }
 
   const topTenantsByIncidentCount: TenantIncidentCount[] = topTenantsResult.rows.map((row) => ({
     tenantId: row.tenant_id,
     tenantName: `Tenant ${row.tenant_id.substring(0, 8)}`, // Placeholder - would need tenant-svc lookup
-    incidentCount: parseInt(row.count, 10),
+    incidentCount: Number.parseInt(row.count, 10),
   }));
 
   return {
-    totalIncidents: parseInt(totalResult.rows[0]?.count || '0', 10),
+    totalIncidents: Number.parseInt(totalResult.rows[0]?.count || '0', 10),
     incidentCountsBySeverity: incidentCountsBySeverity as Record<(typeof INCIDENT_SEVERITIES)[number], number>,
     incidentCountsByCategory: incidentCountsByCategory as Record<(typeof INCIDENT_CATEGORIES)[number], number>,
     incidentCountsByStatus: incidentCountsByStatus as Record<(typeof INCIDENT_STATUSES)[number], number>,
@@ -356,12 +356,12 @@ async function getDsrStats(pool: Pool, from: string, to: string): Promise<DsrSta
 
     const countsByType: Record<string, number> = {};
     for (const row of typeResult.rows) {
-      countsByType[row.request_type] = parseInt(row.count, 10);
+      countsByType[row.request_type] = Number.parseInt(row.count, 10);
     }
 
     const countsByStatus: Record<string, number> = {};
     for (const row of statusResult.rows) {
-      countsByStatus[row.status] = parseInt(row.count, 10);
+      countsByStatus[row.status] = Number.parseInt(row.count, 10);
     }
 
     const recentRequests = recentResult.rows.map((row) => ({
@@ -376,7 +376,7 @@ async function getDsrStats(pool: Pool, from: string, to: string): Promise<DsrSta
     }));
 
     return {
-      totalRequests: parseInt(totalResult.rows[0]?.count || '0', 10),
+      totalRequests: Number.parseInt(totalResult.rows[0]?.count || '0', 10),
       countsByType,
       countsByStatus,
       recentRequests,
@@ -429,7 +429,7 @@ async function getPolicySummary(pool: Pool): Promise<ActivePolicySummary> {
             updatedAt: globalRow.updated_at.toISOString(),
           }
         : null,
-      tenantOverrideCount: parseInt(overrideResult.rows[0]?.count || '0', 10),
+      tenantOverrideCount: Number.parseInt(overrideResult.rows[0]?.count || '0', 10),
     };
   } catch {
     // Table may not exist - return empty summary

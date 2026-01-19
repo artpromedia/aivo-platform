@@ -4,7 +4,7 @@
  * compliance monitoring, and certification management.
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -478,7 +478,7 @@ export class ProfessionalDevService {
       const req = pr.requirement;
 
       // Get or create progress record
-      let progress = await this.prisma.teacherRequirementProgress.findFirst({
+      const progress = await this.prisma.teacherRequirementProgress.findFirst({
         where: { tenantId, teacherId, requirementId: req.id },
       });
 

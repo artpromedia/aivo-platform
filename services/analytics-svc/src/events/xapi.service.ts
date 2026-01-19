@@ -4,10 +4,11 @@
 // ADL xAPI 1.0.3 compliant
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { createHash, randomUUID } from 'crypto';
-import { Redis } from 'ioredis';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { logger, metrics } from '@aivo/ts-observability';
+import type { Redis } from 'ioredis';
+
 
 // ─── xAPI Vocabulary ───────────────────────────────────────────────────────────
 
@@ -155,7 +156,7 @@ export interface XAPIActivity {
     moreInfo?: string;
     interactionType?: string;
     correctResponsesPattern?: string[];
-    choices?: Array<{ id: string; description: Record<string, string> }>;
+    choices?: { id: string; description: Record<string, string> }[];
     extensions?: Record<string, unknown>;
   };
 }
@@ -205,13 +206,13 @@ export interface XAPIStatement {
   stored?: string;
   authority?: XAPIActor;
   version?: string;
-  attachments?: Array<{
+  attachments?: {
     usageType: string;
     display: Record<string, string>;
     contentType: string;
     length: number;
     sha2: string;
-  }>;
+  }[];
 }
 
 // ─── Service Types ─────────────────────────────────────────────────────────────
@@ -255,9 +256,9 @@ export interface StatementInput {
 }
 
 const DEFAULT_CONFIG: XAPIServiceConfig = {
-  lrsEndpoint: process.env['XAPI_LRS_ENDPOINT'] ?? 'http://localhost:8000/xapi',
-  lrsUsername: process.env['XAPI_LRS_USERNAME'] ?? '',
-  lrsPassword: process.env['XAPI_LRS_PASSWORD'] ?? '',
+  lrsEndpoint: process.env.XAPI_LRS_ENDPOINT ?? 'http://localhost:8000/xapi',
+  lrsUsername: process.env.XAPI_LRS_USERNAME ?? '',
+  lrsPassword: process.env.XAPI_LRS_PASSWORD ?? '',
   version: '1.0.3',
   authority: {
     objectType: 'Agent',
@@ -710,7 +711,7 @@ export class XAPIService {
   async getStatementCount(activityId: string): Promise<number> {
     const countKey = `xapi:activity:${activityId}:count`;
     const count = await this.redis.get(countKey);
-    return count ? parseInt(count, 10) : 0;
+    return count ? Number.parseInt(count, 10) : 0;
   }
 
   // ============================================================================

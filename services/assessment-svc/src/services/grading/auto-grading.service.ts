@@ -81,7 +81,7 @@ export class AutoGradingService {
         return this.gradeNumeric(question as NumericQuestion, answer as number);
 
       case 'HOTSPOT':
-        return this.gradeHotspot(question as HotspotQuestion, answer as Array<{ x: number; y: number }>);
+        return this.gradeHotspot(question as HotspotQuestion, answer as { x: number; y: number }[]);
 
       case 'DRAG_DROP':
         return this.gradeDragDrop(question as DragDropQuestion, answer as Record<string, string[]>);
@@ -129,7 +129,7 @@ export class AutoGradingService {
     const isCorrect = answer === question.correctAnswer;
     const selectedOption = question.options.find(o => o.id === answer);
 
-    let feedback = isCorrect
+    const feedback = isCorrect
       ? question.feedback?.correct
       : question.feedback?.incorrect || selectedOption?.feedback;
 
@@ -385,7 +385,7 @@ export class AutoGradingService {
 
   private gradeHotspot(
     question: HotspotQuestion,
-    answer: Array<{ x: number; y: number }>
+    answer: { x: number; y: number }[]
   ): GradingResult {
     const correctRegions = question.regions.filter(r => r.correct);
     
@@ -496,13 +496,13 @@ export class AutoGradingService {
     let passedTests = 0;
     let totalPoints = 0;
     let earnedPoints = 0;
-    const testResults: Array<{
+    const testResults: {
       id: string;
       passed: boolean;
       expected: string;
       actual?: string;
       error?: string;
-    }> = [];
+    }[] = [];
 
     for (const testCase of testCases) {
       const points = testCase.points ?? 1;
@@ -602,11 +602,11 @@ export class AutoGradingService {
       y?: number;
       width?: number;
       height?: number;
-      points?: Array<{ x: number; y: number }>;
+      points?: { x: number; y: number }[];
     }
   ): boolean {
     switch (region.type) {
-      case 'circle':
+      case 'circle': {
         if (region.centerX === undefined || region.centerY === undefined || region.radius === undefined) {
           return false;
         }
@@ -614,6 +614,7 @@ export class AutoGradingService {
           Math.pow(point.x - region.centerX, 2) + Math.pow(point.y - region.centerY, 2)
         );
         return distance <= region.radius;
+      }
 
       case 'rectangle':
         if (region.x === undefined || region.y === undefined || 
@@ -640,7 +641,7 @@ export class AutoGradingService {
 
   private isPointInPolygon(
     point: { x: number; y: number },
-    polygon: Array<{ x: number; y: number }>
+    polygon: { x: number; y: number }[]
   ): boolean {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {

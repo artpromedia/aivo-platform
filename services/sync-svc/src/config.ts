@@ -12,7 +12,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 
 export const config = {
   server: {
-    port: parseInt(process.env.PORT || '3080', 10),
+    port: Number.parseInt(process.env.PORT || '3080', 10),
     host: process.env.HOST || '0.0.0.0',
   },
 
@@ -30,21 +30,21 @@ export const config = {
   },
 
   sync: {
-    batchSize: parseInt(process.env.SYNC_BATCH_SIZE || '100', 10),
-    maxConflicts: parseInt(process.env.SYNC_MAX_CONFLICTS || '50', 10),
-    conflictTtlDays: parseInt(process.env.SYNC_CONFLICT_TTL_DAYS || '30', 10),
-    historyRetentionDays: parseInt(
+    batchSize: Number.parseInt(process.env.SYNC_BATCH_SIZE || '100', 10),
+    maxConflicts: Number.parseInt(process.env.SYNC_MAX_CONFLICTS || '50', 10),
+    conflictTtlDays: Number.parseInt(process.env.SYNC_CONFLICT_TTL_DAYS || '30', 10),
+    historyRetentionDays: Number.parseInt(
       process.env.SYNC_HISTORY_RETENTION_DAYS || '90',
       10
     ),
   },
 
   websocket: {
-    heartbeatIntervalMs: parseInt(
+    heartbeatIntervalMs: Number.parseInt(
       process.env.WS_HEARTBEAT_INTERVAL_MS || '30000',
       10
     ),
-    clientTimeoutMs: parseInt(process.env.WS_CLIENT_TIMEOUT_MS || '90000', 10),
+    clientTimeoutMs: Number.parseInt(process.env.WS_CLIENT_TIMEOUT_MS || '90000', 10),
   },
 
   jobs: {

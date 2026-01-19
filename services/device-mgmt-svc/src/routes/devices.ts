@@ -1,6 +1,7 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { DeviceType } from '../../generated/prisma-client/index.js';
+
+import type { DeviceType } from '../../generated/prisma-client/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -192,7 +193,7 @@ export const deviceRoutes: FastifyPluginAsync = async (fastify) => {
 
     const policies = device.poolMemberships
       .filter((m) => m.pool.policy)
-      .map((m) => m.pool.policy!.policyJson as PolicyJson);
+      .map((m) => m.pool.policy.policyJson as PolicyJson);
 
     const policySnapshot = mergePolicies(policies);
 
@@ -248,7 +249,7 @@ export const deviceRoutes: FastifyPluginAsync = async (fastify) => {
     // Get current policy snapshot
     const policies = device.poolMemberships
       .filter((m) => m.pool.policy)
-      .map((m) => m.pool.policy!.policyJson as PolicyJson);
+      .map((m) => m.pool.policy.policyJson as PolicyJson);
 
     const policySnapshot = mergePolicies(policies);
 
@@ -376,7 +377,7 @@ export const deviceRoutes: FastifyPluginAsync = async (fastify) => {
 
     const policies = device.poolMemberships
       .filter((m) => m.pool.policy)
-      .map((m) => m.pool.policy!.policyJson as PolicyJson);
+      .map((m) => m.pool.policy.policyJson as PolicyJson);
 
     return reply.status(200).send({
       id: device.id,

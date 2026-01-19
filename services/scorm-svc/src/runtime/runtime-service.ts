@@ -582,7 +582,7 @@ export class ScormRuntimeService {
     for (const key of session.dataModel.keys()) {
       const match = key.match(pattern);
       if (match) {
-        indices.add(parseInt(match[1], 10));
+        indices.add(Number.parseInt(match[1], 10));
       }
     }
 

@@ -7,8 +7,8 @@
  * - Engagement: likes, comments, downloads
  */
 
-import { config } from './config.js';
 import { buildApp } from './app.js';
+import { config } from './config.js';
 import { prisma } from './prisma.js';
 
 async function start() {

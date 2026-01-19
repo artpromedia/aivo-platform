@@ -5,8 +5,8 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import type { PrismaClient } from '../generated/prisma-client/index.js';
 import { GameService } from '../services/game.service.js';
-import { PrismaClient } from '../generated/prisma-client/index.js';
 import type { GradeBand, GameContext } from '../types/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -132,7 +132,7 @@ export const registerGameRoutes: FastifyPluginAsync<{ prisma: PrismaClient }> = 
     const recommendations = await gameService.getRecommendations(
       user.tenantId,
       learnerId,
-      context as 'BREAK' | 'BRAIN_TRAINING' | 'FREE_PLAY',
+      context,
       gradeBand as GradeBand,
       limit
     );
@@ -243,7 +243,7 @@ export const registerGameRoutes: FastifyPluginAsync<{ prisma: PrismaClient }> = 
     const learnerId = getLearnerId(user);
 
     const limitParam = (request.query as any).limit;
-    const limit = limitParam ? parseInt(limitParam, 10) : 20;
+    const limit = limitParam ? Number.parseInt(limitParam, 10) : 20;
 
     const sessions = await gameService.getSessionHistory(user.tenantId, learnerId, limit);
     return reply.send({ sessions });

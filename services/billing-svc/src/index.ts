@@ -5,8 +5,8 @@
 import Fastify from 'fastify';
 
 import { config } from './config.js';
-import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { billingEventPublisher } from './events/billing.publisher.js';
+import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { coverageRoutes } from './routes/coverage.routes.js';
 import { entitlementsRoutes } from './routes/entitlements.routes.js';
 import { finopsRoutes } from './routes/finops.routes.js';

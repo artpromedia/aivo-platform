@@ -12,7 +12,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { Redis } from 'ioredis';
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
@@ -251,7 +251,7 @@ export class PromptOptimizer extends EventEmitter {
        WHERE tenant_id = $1 AND agent_type = $2`,
       [input.tenantId, input.agentType]
     );
-    const version = parseInt(versionRows[0].next_version) || 1;
+    const version = Number.parseInt(versionRows[0].next_version) || 1;
 
     const template: PromptTemplate = {
       id,
@@ -363,7 +363,7 @@ export class PromptOptimizer extends EventEmitter {
       [input.tenantId, input.agentType]
     );
 
-    if (parseInt(existingRows[0].count) >= this.config.maxConcurrentExperiments) {
+    if (Number.parseInt(existingRows[0].count) >= this.config.maxConcurrentExperiments) {
       throw new Error('Maximum concurrent experiments reached');
     }
 
@@ -744,19 +744,19 @@ Provide 3-5 specific suggestions to improve this prompt.`,
       const counters = await this.redis.hgetall(key);
       if (!counters || Object.keys(counters).length === 0) continue;
 
-      const impressions = parseInt(counters.impressions || '0');
+      const impressions = Number.parseInt(counters.impressions || '0');
       if (impressions === 0) continue;
 
       const metrics: Partial<PromptMetrics> = {
         impressions,
-        acceptanceRate: parseInt(counters.accepted || '0') / impressions,
-        completionRate: parseInt(counters.completed || '0') / impressions,
-        avgUserRating: parseInt(counters.ratingCount || '0') > 0
-          ? parseFloat(counters.ratingSum || '0') / parseInt(counters.ratingCount)
+        acceptanceRate: Number.parseInt(counters.accepted || '0') / impressions,
+        completionRate: Number.parseInt(counters.completed || '0') / impressions,
+        avgUserRating: Number.parseInt(counters.ratingCount || '0') > 0
+          ? parseFloat(counters.ratingSum || '0') / Number.parseInt(counters.ratingCount)
           : 0,
-        positiveImpactRate: parseInt(counters.positiveImpact || '0') / impressions,
+        positiveImpactRate: Number.parseInt(counters.positiveImpact || '0') / impressions,
         avgLatencyMs: parseFloat(counters.latencySum || '0') / impressions,
-        errorRate: parseInt(counters.errors || '0') / impressions,
+        errorRate: Number.parseInt(counters.errors || '0') / impressions,
         lastUpdated: new Date(),
       };
 

@@ -5,7 +5,7 @@
  * Provides billing status, reconciliation views, and invoice management.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
@@ -347,7 +347,7 @@ async function getBillingAccounts(
   // Fallback: Query directly
   const [accounts, total] = await Promise.all([
     prisma.billingAccount.findMany({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       where: query.accountType ? ({ accountType: query.accountType } as any) : undefined,
       include: {
         subscriptions: {
@@ -372,7 +372,7 @@ async function getBillingAccounts(
       orderBy: { createdAt: 'desc' },
     }),
     prisma.billingAccount.count({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       where: query.accountType ? ({ accountType: query.accountType } as any) : undefined,
     }),
   ]);

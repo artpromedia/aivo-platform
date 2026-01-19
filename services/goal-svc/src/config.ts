@@ -9,7 +9,7 @@ function requireEnvInProduction(name: string, defaultValue?: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '4030', 10),
+  port: Number.parseInt(process.env.PORT ?? '4030', 10),
   host: process.env.HOST ?? '0.0.0.0',
   databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_goals'),
   nodeEnv: process.env.NODE_ENV ?? 'development',

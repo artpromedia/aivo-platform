@@ -4,8 +4,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { SpeechTherapyService } from '../services/speech.service.js';
+
 import { prisma } from '../db.js';
+import { SpeechTherapyService } from '../services/speech.service.js';
 
 const service = new SpeechTherapyService(prisma);
 

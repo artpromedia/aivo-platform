@@ -5,8 +5,6 @@
  * Supports global and tenant-specific coupons, syncs with Stripe.
  */
 
-import Stripe from 'stripe';
-
 import type {
   CouponSummary,
   CouponValidationResult,
@@ -14,6 +12,8 @@ import type {
   DiscountType,
   ParentSku,
 } from '@aivo/billing-common';
+import Stripe from 'stripe';
+
 
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
@@ -66,7 +66,7 @@ export class CouponService {
 
     // Create local record
     const coupon = await prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         code: string;
         discount_type: string;
@@ -84,7 +84,7 @@ export class CouponService {
         stripe_promotion_code_id: string | null;
         is_active: boolean;
         created_at: Date;
-      }>
+      }[]
     >`
       INSERT INTO coupons (
         code, discount_type, percent_off, amount_off_cents, currency,
@@ -116,7 +116,7 @@ export class CouponService {
    * Get coupon by ID
    */
   async getCoupon(couponId: string): Promise<CouponSummary | null> {
-    const coupons = await prisma.$queryRaw<Array<CouponRow>>`
+    const coupons = await prisma.$queryRaw<CouponRow[]>`
       SELECT * FROM coupons WHERE id = ${couponId}::uuid
     `;
 
@@ -128,7 +128,7 @@ export class CouponService {
    * Get coupon by code
    */
   async getCouponByCode(code: string): Promise<CouponSummary | null> {
-    const coupons = await prisma.$queryRaw<Array<CouponRow>>`
+    const coupons = await prisma.$queryRaw<CouponRow[]>`
       SELECT * FROM coupons WHERE code = ${code.toUpperCase()}
     `;
 
@@ -156,7 +156,7 @@ export class CouponService {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const countResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*) as count FROM coupons WHERE 1=1
     `;
 
@@ -315,22 +315,22 @@ export class CouponService {
     couponId: string,
     limit = 50
   ): Promise<
-    Array<{
+    {
       id: string;
       tenantId: string;
       discountAmountCents: number;
       currency: string;
       appliedAt: Date;
-    }>
+    }[]
   > {
     return prisma.$queryRaw<
-      Array<{
+      {
         id: string;
         tenantId: string;
         discountAmountCents: number;
         currency: string;
         appliedAt: Date;
-      }>
+      }[]
     >`
       SELECT id, tenant_id as "tenantId", discount_amount_cents as "discountAmountCents",
              currency, applied_at as "appliedAt"

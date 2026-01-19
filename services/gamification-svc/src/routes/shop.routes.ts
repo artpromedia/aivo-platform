@@ -4,10 +4,12 @@
  * Handles shop and inventory API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
 import { rewardService } from '../services/index.js';
 
 const router: IRouter = Router();

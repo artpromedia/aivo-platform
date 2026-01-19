@@ -7,14 +7,15 @@
  * @see https://dev.clever.com/reference/overview
  */
 
-import {
+import type {
   ISisProvider,
   CleverConfig,
   SisSchool,
   SisClass,
   SisUser,
   SisEnrollment,
-  SyncEntityResult,
+  SyncEntityResult} from './types';
+import {
   SisUserRole,
   EnrollmentRole,
 } from './types';
@@ -24,7 +25,7 @@ const PAGE_SIZE = 100;
 
 interface CleverResponse<T> {
   data: T[];
-  links?: Array<{ rel: string; uri: string }>;
+  links?: { rel: string; uri: string }[];
 }
 
 interface CleverSchool {
@@ -422,7 +423,7 @@ export class CleverProvider implements ISisProvider {
     const highIdx = gradeOrder.indexOf(highNorm);
 
     if (lowIdx === -1 || highIdx === -1) {
-      return low && high ? [low, high] : [low || high!];
+      return low && high ? [low, high] : [low || high];
     }
 
     return gradeOrder.slice(lowIdx, highIdx + 1);

@@ -355,8 +355,8 @@ export async function registerExposureRoutes(app: FastifyInstance): Promise<void
         return reply.status(404).send({ error: 'NOT_FOUND', message: 'Experiment not found' });
       }
 
-      const limit = parseInt(request.query.limit ?? '100', 10);
-      const offset = parseInt(request.query.offset ?? '0', 10);
+      const limit = Number.parseInt(request.query.limit ?? '100', 10);
+      const offset = Number.parseInt(request.query.offset ?? '0', 10);
 
       const exposures = await listExposures(pool, experiment.id, limit, offset);
       return reply.send({

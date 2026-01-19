@@ -12,7 +12,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT || '4050', 10),
+  port: Number.parseInt(process.env.PORT || '4050', 10),
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
 

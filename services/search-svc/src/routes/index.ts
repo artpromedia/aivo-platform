@@ -68,8 +68,8 @@ export default async function routes(app: FastifyInstance) {
     return searchService.search(request.tenantId!, {
       indexName,
       query: q || '',
-      page: page ? parseInt(page) : 1,
-      pageSize: pageSize ? parseInt(pageSize) : 20,
+      page: page ? Number.parseInt(page) : 1,
+      pageSize: pageSize ? Number.parseInt(pageSize) : 20,
       sortBy,
       sortOrder,
       highlight: highlight === 'true',
@@ -84,7 +84,7 @@ export default async function routes(app: FastifyInstance) {
       request.tenantId!,
       indexName,
       prefix,
-      limit ? parseInt(limit) : 10
+      limit ? Number.parseInt(limit) : 10
     );
   });
 

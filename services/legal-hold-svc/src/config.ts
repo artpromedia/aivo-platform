@@ -11,7 +11,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT || '4061', 10),
+  port: Number.parseInt(process.env.PORT || '4061', 10),
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
   logLevel: process.env.LOG_LEVEL || 'info',
@@ -38,7 +38,7 @@ export const config = {
   email: {
     enabled: process.env.EMAIL_ENABLED === 'true',
     host: requireEnvInProduction('SMTP_HOST', 'localhost'),
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    port: Number.parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER || '',
     password: process.env.SMTP_PASSWORD || '',
@@ -48,23 +48,23 @@ export const config = {
 
   // Hold settings
   holds: {
-    defaultReminderDays: parseInt(process.env.DEFAULT_REMINDER_DAYS || '7', 10),
-    defaultEscalationDays: parseInt(process.env.DEFAULT_ESCALATION_DAYS || '14', 10),
-    acknowledgmentDeadlineDays: parseInt(process.env.ACKNOWLEDGMENT_DEADLINE_DAYS || '5', 10),
-    maxReminders: parseInt(process.env.MAX_REMINDERS || '5', 10),
+    defaultReminderDays: Number.parseInt(process.env.DEFAULT_REMINDER_DAYS || '7', 10),
+    defaultEscalationDays: Number.parseInt(process.env.DEFAULT_ESCALATION_DAYS || '14', 10),
+    acknowledgmentDeadlineDays: Number.parseInt(process.env.ACKNOWLEDGMENT_DEADLINE_DAYS || '5', 10),
+    maxReminders: Number.parseInt(process.env.MAX_REMINDERS || '5', 10),
   },
 
   // Notification settings
   notifications: {
-    batchSize: parseInt(process.env.NOTIFICATION_BATCH_SIZE || '50', 10),
-    retryAttempts: parseInt(process.env.NOTIFICATION_RETRY_ATTEMPTS || '3', 10),
-    retryDelayMs: parseInt(process.env.NOTIFICATION_RETRY_DELAY_MS || '5000', 10),
+    batchSize: Number.parseInt(process.env.NOTIFICATION_BATCH_SIZE || '50', 10),
+    retryAttempts: Number.parseInt(process.env.NOTIFICATION_RETRY_ATTEMPTS || '3', 10),
+    retryDelayMs: Number.parseInt(process.env.NOTIFICATION_RETRY_DELAY_MS || '5000', 10),
   },
 
   // Report settings
   reports: {
-    expirationDays: parseInt(process.env.REPORT_EXPIRATION_DAYS || '7', 10),
-    maxExportSize: parseInt(process.env.MAX_EXPORT_SIZE || '100000', 10),
+    expirationDays: Number.parseInt(process.env.REPORT_EXPIRATION_DAYS || '7', 10),
+    maxExportSize: Number.parseInt(process.env.MAX_EXPORT_SIZE || '100000', 10),
   },
 
   // Service URLs

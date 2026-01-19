@@ -130,8 +130,8 @@ export function isInQuietHours(
   });
 
   const parts = formatter.formatToParts(now);
-  const currentHour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
-  const currentMin = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+  const currentHour = Number.parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  const currentMin = Number.parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
 
   const currentMinutes = currentHour * 60 + currentMin;
   const startMinutes = startHour * 60 + startMin;

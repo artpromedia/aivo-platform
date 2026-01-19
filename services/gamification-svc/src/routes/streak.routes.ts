@@ -4,10 +4,12 @@
  * Handles streak-related API endpoints
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
 import { streakService } from '../services/index.js';
 
 const router: IRouter = Router();
@@ -64,8 +66,8 @@ router.get(
     const studentId = extractStudentId(req);
     const timezone = (req.query.timezone as string) || 'UTC';
 
-    const year = parseInt(req.query.year as string) || new Date().getFullYear();
-    const month = parseInt(req.query.month as string);
+    const year = Number.parseInt(req.query.year as string) || new Date().getFullYear();
+    const month = Number.parseInt(req.query.month as string);
 
     let startDate: Date;
     let endDate: Date;

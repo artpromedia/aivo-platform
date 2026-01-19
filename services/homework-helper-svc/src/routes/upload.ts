@@ -395,7 +395,7 @@ export const registerUploadRoutes: FastifyPluginAsync = async (app) => {
       subject: fields.subject?.value,
       gradeBand: fields.gradeBand?.value,
       detectMath: fields.detectMath?.value === 'true' || fields.detectMath?.value === true,
-      maxSteps: fields.maxSteps?.value ? parseInt(fields.maxSteps.value, 10) : 5,
+      maxSteps: fields.maxSteps?.value ? Number.parseInt(fields.maxSteps.value, 10) : 5,
       autoStart: fields.autoStart?.value !== 'false',
     });
 

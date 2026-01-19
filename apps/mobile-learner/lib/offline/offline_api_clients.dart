@@ -228,6 +228,28 @@ class LearnerEventApiClient implements EventApiClient {
       },
     );
   }
+
+  /// Send a regulation activity event to the server.
+  Future<void> sendRegulationEvent({
+    required String learnerId,
+    required String eventType,
+    required Map<String, dynamic> eventData,
+  }) async {
+    final token = await getAccessToken();
+
+    await _dio.post<void>(
+      '/events/regulation',
+      options: Options(
+        headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+      ),
+      data: {
+        'learnerId': learnerId,
+        'eventType': eventType,
+        'eventData': eventData,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -260,7 +282,8 @@ final sessionApiClientProvider = Provider<SessionApiClient>((ref) {
 });
 
 /// Provider for the event API client.
-final eventApiClientProvider = Provider<EventApiClient>((ref) {
+/// Returns the concrete type to expose app-specific methods like sendRegulationEvent.
+final eventApiClientProvider = Provider<LearnerEventApiClient>((ref) {
   final getToken = ref.watch(accessTokenProvider);
   return LearnerEventApiClient(getAccessToken: getToken);
 });

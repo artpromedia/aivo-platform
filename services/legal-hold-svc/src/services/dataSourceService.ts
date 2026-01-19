@@ -216,7 +216,7 @@ export async function removeDataSourceFromHold(
     },
   });
 
-  if (!holdDataSource || holdDataSource.hold.tenantId !== tenantId) {
+  if (holdDataSource?.hold.tenantId !== tenantId) {
     throw new Error('Hold data source not found');
   }
 
@@ -257,7 +257,7 @@ export async function updatePreservationStatus(
     },
   });
 
-  if (!holdDataSource || holdDataSource.hold.tenantId !== tenantId) {
+  if (holdDataSource?.hold.tenantId !== tenantId) {
     throw new Error('Hold data source not found');
   }
 

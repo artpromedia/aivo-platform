@@ -341,7 +341,7 @@ export function useLtiDeepLinking(
 
         document.body.appendChild(form);
         form.submit();
-        document.body.removeChild(form);
+        form.remove();
 
         onSuccess?.();
       } catch (err) {

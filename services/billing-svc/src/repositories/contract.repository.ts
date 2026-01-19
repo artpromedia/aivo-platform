@@ -6,7 +6,6 @@
  */
 
 import type { Prisma } from '../../generated/prisma-client/index.js';
-
 import { prisma } from '../prisma.js';
 import type {
   Contract,
@@ -39,7 +38,7 @@ export class ProductRepository {
   /**
    * Create a new product/SKU.
    */
-  async create(data: Zod.infer<typeof CreateProductSchema>): Promise<Product> {
+  async create(data: z.infer<typeof CreateProductSchema>): Promise<Product> {
     return prisma.product.create({
       data: {
         ...data,
@@ -91,7 +90,7 @@ export class ProductRepository {
    */
   async update(
     id: string,
-    data: Partial<Zod.infer<typeof CreateProductSchema>>
+    data: Partial<z.infer<typeof CreateProductSchema>>
   ): Promise<Product> {
     return prisma.product.update({
       where: { id },
@@ -122,7 +121,7 @@ export class PriceBookRepository {
    * Create a new price book.
    */
   async create(
-    data: Zod.infer<typeof CreatePriceBookSchema>
+    data: z.infer<typeof CreatePriceBookSchema>
   ): Promise<PriceBook> {
     return prisma.priceBook.create({
       data: {
@@ -175,7 +174,7 @@ export class PriceBookRepository {
    */
   async update(
     id: string,
-    data: Partial<Zod.infer<typeof CreatePriceBookSchema>>
+    data: Partial<z.infer<typeof CreatePriceBookSchema>>
   ): Promise<PriceBook> {
     return prisma.priceBook.update({
       where: { id },
@@ -212,7 +211,7 @@ export class PriceBookEntryRepository {
    * Create a new price book entry.
    */
   async create(
-    data: Zod.infer<typeof CreatePriceBookEntrySchema>
+    data: z.infer<typeof CreatePriceBookEntrySchema>
   ): Promise<PriceBookEntry> {
     return prisma.priceBookEntry.create({
       data: {
@@ -251,7 +250,7 @@ export class PriceBookEntryRepository {
    */
   async update(
     id: string,
-    data: Partial<Zod.infer<typeof CreatePriceBookEntrySchema>>
+    data: Partial<z.infer<typeof CreatePriceBookEntrySchema>>
   ): Promise<PriceBookEntry> {
     return prisma.priceBookEntry.update({
       where: { id },
@@ -279,7 +278,7 @@ export class DistrictBillingProfileRepository {
    * Create a district billing profile.
    */
   async create(
-    data: Zod.infer<typeof CreateDistrictBillingProfileSchema>
+    data: z.infer<typeof CreateDistrictBillingProfileSchema>
   ): Promise<DistrictBillingProfile> {
     return prisma.districtBillingProfile.create({
       data: {
@@ -324,7 +323,7 @@ export class DistrictBillingProfileRepository {
    */
   async update(
     id: string,
-    data: Partial<Zod.infer<typeof CreateDistrictBillingProfileSchema>>
+    data: Partial<z.infer<typeof CreateDistrictBillingProfileSchema>>
   ): Promise<DistrictBillingProfile> {
     return prisma.districtBillingProfile.update({
       where: { id },
@@ -373,7 +372,7 @@ export class ContractRepository {
   /**
    * Create a new contract.
    */
-  async create(data: Zod.infer<typeof CreateContractSchema>): Promise<Contract> {
+  async create(data: z.infer<typeof CreateContractSchema>): Promise<Contract> {
     const contractNumber = await this.generateContractNumber();
 
     return prisma.contract.create({
@@ -506,7 +505,7 @@ export class ContractRepository {
    */
   async update(
     id: string,
-    data: Partial<Zod.infer<typeof CreateContractSchema>>
+    data: Partial<z.infer<typeof CreateContractSchema>>
   ): Promise<Contract> {
     return prisma.contract.update({
       where: { id },
@@ -527,7 +526,7 @@ export class ContractLineItemRepository {
    * Create a line item.
    */
   async create(
-    data: Zod.infer<typeof CreateContractLineItemSchema>
+    data: z.infer<typeof CreateContractLineItemSchema>
   ): Promise<ContractLineItem> {
     // Calculate total value
     const totalValueCents = BigInt(
@@ -575,7 +574,7 @@ export class ContractLineItemRepository {
    */
   async update(
     id: string,
-    data: Partial<Zod.infer<typeof CreateContractLineItemSchema>>
+    data: Partial<z.infer<typeof CreateContractLineItemSchema>>
   ): Promise<ContractLineItem> {
     // Recalculate total if quantity or price changed
     const existing = await prisma.contractLineItem.findUnique({
@@ -617,7 +616,7 @@ export class ContractAllocationRepository {
    * Create an allocation.
    */
   async create(
-    data: Zod.infer<typeof CreateContractAllocationSchema>
+    data: z.infer<typeof CreateContractAllocationSchema>
   ): Promise<ContractAllocation> {
     return prisma.contractAllocation.create({
       data: {
@@ -693,7 +692,7 @@ export class ContractEntitlementRepository {
    * Create an entitlement.
    */
   async create(
-    data: Zod.infer<typeof CreateContractEntitlementSchema>
+    data: z.infer<typeof CreateContractEntitlementSchema>
   ): Promise<ContractEntitlement> {
     return prisma.contractEntitlement.create({
       data: {
@@ -785,7 +784,7 @@ export class ContractInvoiceScheduleRepository {
    * Create an invoice schedule entry.
    */
   async create(
-    data: Zod.infer<typeof CreateInvoiceScheduleSchema>
+    data: z.infer<typeof CreateInvoiceScheduleSchema>
   ): Promise<ContractInvoiceSchedule> {
     return prisma.contractInvoiceSchedule.create({
       data: {

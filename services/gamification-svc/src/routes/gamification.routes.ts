@@ -4,10 +4,12 @@
  * Handles player profiles, XP, levels, and dashboard
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports */
 
-import { Router, Request, Response, NextFunction, IRouter } from 'express';
+import type { Request, Response, NextFunction, IRouter } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
+
 import { gamificationService, achievementService, streakService, challengeService } from '../services/index.js';
 
 const router: IRouter = Router();
@@ -133,8 +135,8 @@ router.get(
   '/xp/history',
   asyncHandler(async (req: Request, res: Response) => {
     const studentId = extractStudentId(req);
-    const limit = parseInt(req.query.limit as string) || 20;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Number.parseInt(req.query.limit as string) || 20;
+    const offset = Number.parseInt(req.query.offset as string) || 0;
 
     const { prisma } = await import('../prisma.js');
     const transactions = await prisma.xPTransaction.findMany({

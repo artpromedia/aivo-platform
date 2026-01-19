@@ -4,14 +4,14 @@
  * HTTP server for personalization signals API.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
-// eslint-disable-next-line import/no-unresolved
-import Fastify from 'fastify';
-// eslint-disable-next-line import/no-unresolved
-import type { FastifyInstance } from 'fastify';
-// eslint-disable-next-line import/no-unresolved
+ 
 import cors from '@fastify/cors';
+import Fastify from 'fastify';
+import type { FastifyInstance } from 'fastify';
+
+ 
 import { config } from './config.js';
 import { registerRoutes } from './routes.js';
 
@@ -20,7 +20,7 @@ import { registerRoutes } from './routes.js';
 // ══════════════════════════════════════════════════════════════════════════════
 
 export async function buildApp(): Promise<FastifyInstance> {
-  const loggerOptions = process.env['NODE_ENV'] !== 'production'
+  const loggerOptions = process.env.NODE_ENV !== 'production'
     ? {
         level: 'info',
         transport: {
@@ -42,7 +42,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // CORS
   await app.register(cors as any, {
-    origin: process.env['NODE_ENV'] === 'production' ? false : true,
+    origin: process.env.NODE_ENV === 'production' ? false : true,
     credentials: true,
   });
 
@@ -121,7 +121,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     // Default error
     reply.code(500).send({
       error: 'Internal server error',
-      message: process.env['NODE_ENV'] !== 'production' ? error.message : undefined,
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined,
     });
   });
 

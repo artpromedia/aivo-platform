@@ -11,7 +11,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT ?? '3018', 10),
+  port: Number.parseInt(process.env.PORT ?? '3018', 10),
   host: process.env.HOST ?? '0.0.0.0',
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
@@ -29,14 +29,14 @@ export const config = {
   },
 
   // Policy cache
-  policyCacheTtlMs: parseInt(process.env.POLICY_CACHE_TTL_MS ?? '30000', 10),
+  policyCacheTtlMs: Number.parseInt(process.env.POLICY_CACHE_TTL_MS ?? '30000', 10),
 
   // Exposure logging
   exposure: {
     // Batch size for warehouse inserts
-    batchSize: parseInt(process.env.EXPOSURE_BATCH_SIZE ?? '100', 10),
+    batchSize: Number.parseInt(process.env.EXPOSURE_BATCH_SIZE ?? '100', 10),
     // Flush interval in ms
-    flushIntervalMs: parseInt(process.env.EXPOSURE_FLUSH_INTERVAL_MS ?? '5000', 10),
+    flushIntervalMs: Number.parseInt(process.env.EXPOSURE_FLUSH_INTERVAL_MS ?? '5000', 10),
   },
 
   // JWT verification (optional, for authenticated endpoints)

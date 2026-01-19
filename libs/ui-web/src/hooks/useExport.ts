@@ -65,7 +65,7 @@ export function useExport(options: UseExportOptions = {}): UseExportReturn {
   } = options;
 
   const [jobs, setJobs] = useState<ExportJob[]>([]);
-  const pollingRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const pollingRef = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   // Clean up polling on unmount
   useEffect(() => {
@@ -126,10 +126,12 @@ export function useExport(options: UseExportOptions = {}): UseExportReturn {
 
       if (job.status === 'completed') {
         clearInterval(pollingRef.current[jobId]);
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete pollingRef.current[jobId];
         onComplete?.(job);
       } else if (job.status === 'error') {
         clearInterval(pollingRef.current[jobId]);
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete pollingRef.current[jobId];
         onError?.(new Error(job.error || 'Export failed'), job);
       }
@@ -201,6 +203,7 @@ export function useExport(options: UseExportOptions = {}): UseExportReturn {
     // Stop polling
     if (pollingRef.current[jobId]) {
       clearInterval(pollingRef.current[jobId]);
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete pollingRef.current[jobId];
     }
 
@@ -231,7 +234,7 @@ export function useExport(options: UseExportOptions = {}): UseExportReturn {
     link.download = job.fileName || `export-${job.format}-${jobId}.zip`;
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
   }, [jobs]);
 
   // Clear completed/errored jobs

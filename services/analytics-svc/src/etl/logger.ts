@@ -4,9 +4,9 @@
  * Structured logging for ETL jobs with job run tracking.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+ 
 
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 import { getWarehousePool, withTransaction } from './db.js';
 import type { JobName, JobStatus, JobResult, ETLLogger } from './types.js';

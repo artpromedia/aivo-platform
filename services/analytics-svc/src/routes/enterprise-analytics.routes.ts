@@ -8,8 +8,9 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type Redis from 'ioredis';
 import { z } from 'zod';
-import { AnalyticsQueryService } from '../query/analytics-query.service.js';
+
 import { EventService } from '../events/event.service.js';
+import { AnalyticsQueryService } from '../query/analytics-query.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
@@ -671,7 +672,7 @@ const enterpriseAnalyticsRoutes: FastifyPluginAsync<EnterpriseAnalyticsRoutesOpt
       return reply.send({
         success: true,
         data: {
-          hourlyActiveUsers: parseInt(hourlyCount || '0', 10),
+          hourlyActiveUsers: Number.parseInt(hourlyCount || '0', 10),
           dailyActiveUsers: dauCount,
           timestamp: now.toISOString(),
         },
@@ -714,9 +715,9 @@ const enterpriseAnalyticsRoutes: FastifyPluginAsync<EnterpriseAnalyticsRoutesOpt
       return reply.send({
         success: true,
         data: {
-          activeUsersNow: parseInt(hourlyCount || '0', 10),
+          activeUsersNow: Number.parseInt(hourlyCount || '0', 10),
           activeUsersToday: dailyCount,
-          eventsToday: parseInt(todayEvents || '0', 10),
+          eventsToday: Number.parseInt(todayEvents || '0', 10),
           timestamp: now.toISOString(),
           period: {
             hour,
@@ -733,7 +734,7 @@ const enterpriseAnalyticsRoutes: FastifyPluginAsync<EnterpriseAnalyticsRoutesOpt
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getCommonRiskFactors(
-  atRiskStudents: Array<{ indicators: { riskFactors: Array<{ type: string }> } }>
+  atRiskStudents: { indicators: { riskFactors: { type: string }[] } }[]
 ): Record<string, number> {
   const factorCounts: Record<string, number> = {};
 

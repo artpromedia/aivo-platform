@@ -4,7 +4,7 @@
  * Database operations for experiment assignments.
  */
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 
 import type { Pool } from 'pg';
 
@@ -59,7 +59,7 @@ export async function upsertAssignment(
      RETURNING *`,
     [experimentId, tenantId, learnerId ?? null, variantKey, reason]
   );
-  return result.rows[0]!;
+  return result.rows[0];
 }
 
 /**
@@ -98,7 +98,7 @@ export async function countAssignmentsByVariant(
 
   const counts = new Map<string, number>();
   for (const row of result.rows) {
-    counts.set(row.variant_key, parseInt(row.count, 10));
+    counts.set(row.variant_key, Number.parseInt(row.count, 10));
   }
   return counts;
 }

@@ -206,6 +206,6 @@ export async function getConsentLogHistory(
 
   return {
     logs: dataResult.rows.map(mapConsentLog),
-    total: parseInt(countResult.rows[0]?.count ?? '0', 10),
+    total: Number.parseInt(countResult.rows[0]?.count ?? '0', 10),
   };
 }

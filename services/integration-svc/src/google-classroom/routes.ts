@@ -484,7 +484,7 @@ export async function registerGoogleClassroomRoutes(
       lessonId: body.lessonId,
       courseId: body.courseId,
       studentId: body.studentId,
-      grade: body.grade!,
+      grade: body.grade,
       draftGrade: body.draftGrade,
       returnToStudent: body.returnToStudent,
     });

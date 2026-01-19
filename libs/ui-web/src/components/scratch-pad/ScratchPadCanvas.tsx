@@ -109,7 +109,7 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
     // Refs
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const contextRef = useRef<CanvasRenderingContext2D | null>(null);
-    const recognizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const recognizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // State
     const [strokes, setStrokes] = useState<Stroke[]>(initialStrokes);
@@ -254,7 +254,7 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
         const width = tool === 'eraser' ? ERASER_WIDTH : strokeWidth;
 
         const newStroke: Stroke = {
-          id: `stroke-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           points: [point],
           color,
           strokeWidth: width,
@@ -611,7 +611,7 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
 
 function hexToInt(hex: string): number {
   const clean = hex.replace('#', '');
-  return parseInt('ff' + clean, 16);
+  return Number.parseInt('ff' + clean, 16);
 }
 
 function intToHex(int: number): string {

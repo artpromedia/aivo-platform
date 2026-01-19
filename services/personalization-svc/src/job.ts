@@ -5,7 +5,7 @@
  * Can be called from analytics-svc ETL or run independently.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-floating-promises */
 
 import { initPools, closePools } from './db.js';
 import { jobGeneratePersonalizationSignals, cleanupExpiredSignals } from './signalGeneration.js';
@@ -86,7 +86,7 @@ function parseArgs(): JobOptions {
       options.targetDate = new Date(args[i + 1]!);
       i++;
     } else if (arg === '--lookback' && args[i + 1]) {
-      options.lookbackDays = parseInt(args[i + 1]!, 10);
+      options.lookbackDays = Number.parseInt(args[i + 1]!, 10);
       i++;
     } else if (arg === '--no-cleanup') {
       options.cleanupExpired = false;

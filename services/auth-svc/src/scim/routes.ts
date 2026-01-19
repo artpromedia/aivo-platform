@@ -127,8 +127,8 @@ export async function registerScimRoutes(
 
     const result = await scimService.listUsers(tenantId, {
       filter,
-      startIndex: startIndex ? parseInt(startIndex, 10) : undefined,
-      count: count ? parseInt(count, 10) : undefined,
+      startIndex: startIndex ? Number.parseInt(startIndex, 10) : undefined,
+      count: count ? Number.parseInt(count, 10) : undefined,
       sortBy,
       sortOrder,
     });
@@ -144,7 +144,7 @@ export async function registerScimRoutes(
     const result = await scimService.getUser(tenantId, id);
 
     if ('status' in result) {
-      return reply.code(parseInt(result.status, 10)).send(result);
+      return reply.code(Number.parseInt(result.status, 10)).send(result);
     }
 
     return reply.send(result);
@@ -158,7 +158,7 @@ export async function registerScimRoutes(
     const result = await scimService.createUser(tenantId, scimUser);
 
     if ('status' in result) {
-      return reply.code(parseInt(result.status, 10)).send(result);
+      return reply.code(Number.parseInt(result.status, 10)).send(result);
     }
 
     return reply.code(201).header('Location', `${baseUrl}/Users/${result.id}`).send(result);
@@ -175,7 +175,7 @@ export async function registerScimRoutes(
       const result = await scimService.replaceUser(tenantId, id, scimUser);
 
       if ('status' in result) {
-        return reply.code(parseInt(result.status, 10)).send(result);
+        return reply.code(Number.parseInt(result.status, 10)).send(result);
       }
 
       return reply.send(result);
@@ -193,7 +193,7 @@ export async function registerScimRoutes(
       const result = await scimService.patchUser(tenantId, id, patchRequest);
 
       if ('status' in result) {
-        return reply.code(parseInt(result.status, 10)).send(result);
+        return reply.code(Number.parseInt(result.status, 10)).send(result);
       }
 
       return reply.send(result);
@@ -208,7 +208,7 @@ export async function registerScimRoutes(
     const result = await scimService.deleteUser(tenantId, id);
 
     if (result && 'status' in result) {
-      return reply.code(parseInt(result.status, 10)).send(result);
+      return reply.code(Number.parseInt(result.status, 10)).send(result);
     }
 
     return reply.code(204).send();

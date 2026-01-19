@@ -1,5 +1,6 @@
 import type { Result, NodeResult } from 'axe-core';
-import { AxeTestResult } from './axe-runner';
+
+import type { AxeTestResult } from './axe-runner';
 
 export interface A11yViolationReport {
   id: string;
@@ -8,11 +9,11 @@ export interface A11yViolationReport {
   help: string;
   helpUrl: string;
   tags: string[];
-  nodes: Array<{
+  nodes: {
     target: string[];
     html: string;
     failureSummary: string;
-  }>;
+  }[];
 }
 
 export interface A11yReport {

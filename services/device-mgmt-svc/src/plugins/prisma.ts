@@ -1,4 +1,5 @@
 import fp from 'fastify-plugin';
+
 import { PrismaClient } from '../../generated/prisma-client/index.js';
 
 declare module 'fastify' {

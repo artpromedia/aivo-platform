@@ -6,8 +6,10 @@
  */
 
 import type { Redis, Cluster } from 'ioredis';
-import { RateLimitStore } from './types';
+
 import { logger } from '../logger';
+
+import type { RateLimitStore } from './types';
 
 /**
  * Redis-based rate limit store with Lua scripts for atomic operations
@@ -17,7 +19,7 @@ export class RedisStore implements RateLimitStore {
 
   constructor(
     private redis: Redis | Cluster,
-    private prefix: string = 'ratelimit'
+    private prefix = 'ratelimit'
   ) {
     this.registerScripts();
   }
@@ -168,7 +170,7 @@ export class RedisStore implements RateLimitStore {
     }
   }
 
-  async increment(key: string, amount: number = 1, ttlSeconds?: number): Promise<number> {
+  async increment(key: string, amount = 1, ttlSeconds?: number): Promise<number> {
     try {
       const fullKey = this.getKey(key);
 
@@ -191,7 +193,7 @@ export class RedisStore implements RateLimitStore {
     }
   }
 
-  async decrement(key: string, amount: number = 1): Promise<number> {
+  async decrement(key: string, amount = 1): Promise<number> {
     try {
       return await this.redis.decrby(this.getKey(key), amount);
     } catch (error) {

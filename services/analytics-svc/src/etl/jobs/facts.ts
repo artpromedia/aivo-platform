@@ -5,7 +5,7 @@
  * These run daily to populate warehouse facts.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+ 
 
 import { toDateKey, formatDate, startOfDay, endOfDay } from '../dateUtils.js';
 import { getSourcePool, getWarehousePool, withTransaction } from '../db.js';

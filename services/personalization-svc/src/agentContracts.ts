@@ -7,7 +7,7 @@
  * These are the "consumption contracts" - stable interfaces that agents depend on.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-explicit-any */
 
 import { getMainPool } from './db.js';
 import type {
@@ -106,7 +106,7 @@ export async function prepareVirtualBrainInput(
   const signalMap: Record<SignalKey, PersonalizationSignal> = {} as any;
   for (const signal of signals) {
     // Take highest confidence signal for each key
-    if (!signalMap[signal.signalKey] || signal.confidence > signalMap[signal.signalKey]!.confidence) {
+    if (!signalMap[signal.signalKey] || signal.confidence > signalMap[signal.signalKey].confidence) {
       signalMap[signal.signalKey] = signal;
     }
   }
@@ -305,7 +305,7 @@ export async function processLessonPlannerOutput(
  */
 export async function analyzeRecommendationFeedback(
   tenantId: string,
-  lookbackDays: number = 30
+  lookbackDays = 30
 ): Promise<ThresholdAdjustment[]> {
   const pool = getMainPool();
   const adjustments: ThresholdAdjustment[] = [];
@@ -349,7 +349,7 @@ export async function analyzeRecommendationFeedback(
     }
 
     // If acceptance is high, consider relaxing
-    if (acceptanceRate > 0.85 && parseInt(row.total_count, 10) > 50) {
+    if (acceptanceRate > 0.85 && Number.parseInt(row.total_count, 10) > 50) {
       adjustments.push({
         thresholdKey: `${recType.toLowerCase()}_confidence_threshold`,
         currentValue: 0.7,
@@ -369,7 +369,7 @@ export async function analyzeRecommendationFeedback(
 export async function getAcceptanceRates(
   tenantId: string,
   learnerId?: string,
-  lookbackDays: number = 30
+  lookbackDays = 30
 ): Promise<RecommendationFeedback[]> {
   const pool = getMainPool();
 
@@ -397,11 +397,11 @@ export async function getAcceptanceRates(
 
   return result.rows.map((row) => ({
     recommendationType: row.recommendation_type,
-    totalCount: parseInt(row.total, 10),
-    acceptedCount: parseInt(row.accepted, 10),
-    declinedCount: parseInt(row.rejected, 10),
-    acceptanceRate: parseInt(row.total, 10) > 0
-      ? parseInt(row.accepted, 10) / parseInt(row.total, 10)
+    totalCount: Number.parseInt(row.total, 10),
+    acceptedCount: Number.parseInt(row.accepted, 10),
+    declinedCount: Number.parseInt(row.rejected, 10),
+    acceptanceRate: Number.parseInt(row.total, 10) > 0
+      ? Number.parseInt(row.accepted, 10) / Number.parseInt(row.total, 10)
       : 0,
     windowDays: lookbackDays,
   } as any));

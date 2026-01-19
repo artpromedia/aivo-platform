@@ -837,7 +837,7 @@ function CountingGame({
   const [userAnswer, setUserAnswer] = useState('');
 
   const handleSubmit = () => {
-    const correct = parseInt(userAnswer) === count;
+    const correct = Number.parseInt(userAnswer) === count;
     onComplete(true, correct ? 1 : 0, 1);
   };
 
@@ -1682,7 +1682,7 @@ function MathQuickGame({
   }, [currentRound, feedback, timePerProblem]);
 
   const handleSubmit = (timedOut = false) => {
-    const isCorrect = !timedOut && parseInt(userAnswer) === problem.answer;
+    const isCorrect = !timedOut && Number.parseInt(userAnswer) === problem.answer;
 
     setFeedback(isCorrect ? 'correct' : 'wrong');
     if (isCorrect) {

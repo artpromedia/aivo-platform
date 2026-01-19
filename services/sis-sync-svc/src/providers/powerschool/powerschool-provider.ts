@@ -108,11 +108,11 @@ export interface PowerSchoolStaff {
     last_name: string;
   };
   email?: string;
-  school_affiliations: Array<{
+  school_affiliations: {
     school_id: number;
     stafftype?: string;
     status: string;
-  }>;
+  }[];
 }
 
 /**
@@ -167,7 +167,7 @@ export interface SyncResult {
   updated: number;
   deleted: number;
   errors: number;
-  errorDetails: Array<{ id: string; error: string }>;
+  errorDetails: { id: string; error: string }[];
 }
 
 /**
@@ -270,7 +270,11 @@ export class PowerSchoolClient {
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...options.headers,
+        ...(options.headers instanceof Headers
+          ? Object.fromEntries(options.headers.entries())
+          : Array.isArray(options.headers)
+            ? Object.fromEntries(options.headers)
+            : options.headers),
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -590,7 +594,7 @@ export class PowerSchoolSyncService {
       );
 
       for (const schoolRow of schoolsResult.rows) {
-        const schoolId = parseInt(schoolRow.external_id, 10);
+        const schoolId = Number.parseInt(schoolRow.external_id, 10);
         const students = await this.client.getStudents(schoolId);
 
         for (const student of students) {
@@ -670,7 +674,7 @@ export class PowerSchoolSyncService {
       );
 
       for (const schoolRow of schoolsResult.rows) {
-        const schoolId = parseInt(schoolRow.external_id, 10);
+        const schoolId = Number.parseInt(schoolRow.external_id, 10);
         const sections = await this.client.getSections(schoolId);
 
         for (const section of sections) {
@@ -752,7 +756,7 @@ export class PowerSchoolSyncService {
       );
 
       for (const sectionRow of sectionsResult.rows) {
-        const sectionId = parseInt(sectionRow.external_id, 10);
+        const sectionId = Number.parseInt(sectionRow.external_id, 10);
         const enrollments = await this.client.getEnrollments(sectionId);
 
         for (const enrollment of enrollments) {

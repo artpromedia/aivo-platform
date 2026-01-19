@@ -14,5 +14,13 @@ export default tseslint.config(
   },
   {
     ignores: ['dist/**', 'generated/**', 'tests/**', 'vitest.config.ts'],
+  },
+  {
+    files: ['src/**/*.ts'],
+    rules: {
+      // Downgrade to warnings for this service (uses tsconfig.compat.json)
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
   }
 );

@@ -1,10 +1,11 @@
 import { useEffect, useCallback, useRef } from 'react';
+
 import {
   getShortcutManager,
   parseShortcut,
   matchesShortcut,
 } from '../keyboard-navigation';
-import { KeyboardShortcut } from '../types';
+import type { KeyboardShortcut } from '../types';
 
 /**
  * Hook for registering keyboard shortcuts
@@ -31,8 +32,8 @@ export function useKeyboardShortcut(
 
     const parsedShortcut: KeyboardShortcut =
       typeof shortcut === 'string'
-        ? parseShortcut(shortcut, (e) => handlerRef.current(e), description)
-        : { ...shortcut, handler: (e) => handlerRef.current(e) };
+        ? parseShortcut(shortcut, (e) => { handlerRef.current(e); }, description)
+        : { ...shortcut, handler: (e) => { handlerRef.current(e); } };
 
     if (scope) {
       parsedShortcut.scope = scope;
@@ -48,11 +49,11 @@ export function useKeyboardShortcut(
  * Hook for registering multiple keyboard shortcuts
  */
 export function useKeyboardShortcuts(
-  shortcuts: Array<{
+  shortcuts: {
     shortcut: KeyboardShortcut | string;
     handler: (e: KeyboardEvent) => void;
     description?: string;
-  }>,
+  }[],
   options: {
     enabled?: boolean;
     scope?: string;

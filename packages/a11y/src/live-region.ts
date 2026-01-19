@@ -4,7 +4,7 @@
  * Manages ARIA live regions for dynamic content announcements.
  */
 
-import { Politeness } from './types';
+import type { Politeness } from './types';
 
 interface LiveRegionConfig {
   politeness: Politeness;
@@ -19,7 +19,7 @@ interface LiveRegionConfig {
  * Creates and manages multiple live regions for different purposes.
  */
 export class LiveRegionManager {
-  private regions: Map<string, HTMLElement> = new Map();
+  private readonly regions = new Map<string, HTMLElement>();
   private container: HTMLElement | null = null;
 
   constructor() {
@@ -95,17 +95,15 @@ export class LiveRegionManager {
   announce(regionName: string, message: string): void {
     let region = this.regions.get(regionName);
 
-    if (!region) {
-      // Create a default polite region
-      region = this.createRegion(regionName, { politeness: 'polite' });
-    }
+    // Create a default polite region if needed
+    region ??= this.createRegion(regionName, { politeness: 'polite' });
 
     // Clear and set message (forces re-announcement)
     region.textContent = '';
 
     // Use setTimeout to ensure screen reader picks up the change
     setTimeout(() => {
-      region!.textContent = message;
+      region.textContent = message;
     }, 50);
   }
 
@@ -157,7 +155,7 @@ export class LiveRegionManager {
 
     // Keep only last 10 entries
     while (region.children.length > 10) {
-      region.removeChild(region.firstChild!);
+      region.firstChild?.remove();
     }
   }
 
@@ -208,9 +206,7 @@ let liveRegionManager: LiveRegionManager | null = null;
  * Get the global live region manager
  */
 export function getLiveRegionManager(): LiveRegionManager {
-  if (!liveRegionManager) {
-    liveRegionManager = new LiveRegionManager();
-  }
+  liveRegionManager ??= new LiveRegionManager();
   return liveRegionManager;
 }
 
@@ -224,10 +220,10 @@ export function destroyLiveRegionManager(): void {
 
 // Convenience functions
 export const announceStatus = (message: string) =>
-  getLiveRegionManager().status(message);
+  { getLiveRegionManager().status(message); };
 
 export const announceAlert = (message: string) =>
-  getLiveRegionManager().alert(message);
+  { getLiveRegionManager().alert(message); };
 
 export const announceLog = (message: string) =>
-  getLiveRegionManager().log(message);
+  { getLiveRegionManager().log(message); };

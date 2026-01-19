@@ -15,14 +15,16 @@
  * @author AIVO Platform Team
  */
 
-import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import type { SisProviderType, SyncStatus } from '../providers/types.js';
 import cron from 'node-cron';
-import { DeltaSyncEngine, SyncEntityType, SyncStats, createEmptySyncStats } from '../sync/delta-sync-engine.js';
-import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';
-import { WebhookHandlerService } from '../webhooks/webhook-handler.service.js';
-import type { FieldMapping } from '../providers/types.js';
+
 import { logger } from '../logger.js';
+import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
+import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';
+import type { SisProviderType, SyncStatus , FieldMapping } from '../providers/types.js';
+import type { SyncEntityType, SyncStats} from '../sync/delta-sync-engine.js';
+import { DeltaSyncEngine, createEmptySyncStats } from '../sync/delta-sync-engine.js';
+import { WebhookHandlerService } from '../webhooks/webhook-handler.service.js';
+
 
 /**
  * Job status
@@ -71,9 +73,9 @@ export class SyncJobProcessor {
   private providerFactory: ProviderFactory;
   private webhookHandler: WebhookHandlerService;
   private config: SyncJobProcessorConfig;
-  private isRunning: boolean = false;
-  private activeJobs: Map<string, SyncJob> = new Map();
-  private scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
+  private isRunning = false;
+  private activeJobs = new Map<string, SyncJob>();
+  private scheduledTasks = new Map<string, cron.ScheduledTask>();
 
   constructor(
     prisma: PrismaClient,

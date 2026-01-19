@@ -109,7 +109,7 @@ export default async function routes(app: FastifyInstance) {
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
-      limit: limit ? parseInt(limit) : 50,
+      limit: limit ? Number.parseInt(limit) : 50,
     });
   });
 

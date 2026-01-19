@@ -5,13 +5,14 @@
 // Internal routes for event replay, DLQ management, and stream inspection.
 // These routes are for internal/admin use only.
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
 import {
   createEventReplayService,
   createDLQService,
   type ReplayOptions,
 } from '@aivo/events';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
+
 import { config } from '../config.js';
 
 // -----------------------------------------------------------------------------
@@ -139,7 +140,7 @@ export async function eventsAdminRoutes(fastify: FastifyInstance): Promise<void>
    */
   fastify.get('/messages/:stream/:sequence', async (request: FastifyRequest, reply: FastifyReply) => {
     const { stream, sequence } = request.params as { stream: string; sequence: string };
-    const seq = parseInt(sequence, 10);
+    const seq = Number.parseInt(sequence, 10);
     
     if (isNaN(seq)) {
       return reply.status(400).send({ error: 'Invalid sequence number' });
@@ -288,7 +289,7 @@ export async function eventsAdminRoutes(fastify: FastifyInstance): Promise<void>
    */
   fastify.get('/dlq/messages/:sequence', async (request: FastifyRequest, reply: FastifyReply) => {
     const { sequence } = request.params as { sequence: string };
-    const seq = parseInt(sequence, 10);
+    const seq = Number.parseInt(sequence, 10);
     
     if (isNaN(seq)) {
       return reply.status(400).send({ error: 'Invalid sequence number' });
@@ -349,7 +350,7 @@ export async function eventsAdminRoutes(fastify: FastifyInstance): Promise<void>
    */
   fastify.post('/dlq/retry/:sequence', async (request: FastifyRequest, reply: FastifyReply) => {
     const { sequence } = request.params as { sequence: string };
-    const seq = parseInt(sequence, 10);
+    const seq = Number.parseInt(sequence, 10);
     
     if (isNaN(seq)) {
       return reply.status(400).send({ error: 'Invalid sequence number' });
@@ -379,7 +380,7 @@ export async function eventsAdminRoutes(fastify: FastifyInstance): Promise<void>
    */
   fastify.delete('/dlq/messages/:sequence', async (request: FastifyRequest, reply: FastifyReply) => {
     const { sequence } = request.params as { sequence: string };
-    const seq = parseInt(sequence, 10);
+    const seq = Number.parseInt(sequence, 10);
     
     if (isNaN(seq)) {
       return reply.status(400).send({ error: 'Invalid sequence number' });

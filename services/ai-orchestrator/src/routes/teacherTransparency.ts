@@ -7,9 +7,13 @@
  * CRITICAL: This addresses HIGH-001 - AI explanation transparency for teachers
  */
 
+import { randomUUID } from 'node:crypto';
+
 import { type FastifyInstance, type FastifyPluginAsync } from 'fastify';
 import type { Pool } from 'pg';
 import { z } from 'zod';
+
+import { publishConcernReportEvent } from '../events/event-publisher.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -150,7 +154,6 @@ async function fetchAiInteractions(
  */
 function mapDbRowToInteraction(row: any): AiInteractionSummary {
   const safetyMeta = row.safety_metadata_json || {};
-  const useCase = row.use_case || row.agent_type;
 
   // Extract decision factors from safety metadata
   const decisionFactors: AiDecisionFactors = {
@@ -209,7 +212,7 @@ function mapAgentTypeToRequestType(agentType: string, useCase?: string): string 
       FOCUS_BREAK_SUGGESTION: 'break_suggestion',
       FOCUS_ENCOURAGEMENT: 'encouragement',
     };
-    return useCaseMap[useCase] ?? useCase.toLowerCase().replace(/_/g, '_');
+    return useCaseMap[useCase] ?? useCase.toLowerCase().replaceAll('_', '_');
   }
 
   const agentMap: Record<string, string> = {
@@ -253,10 +256,22 @@ function extractTopic(promptSummary?: string): string | undefined {
  * Generate human-readable explanation for AI decision
  */
 function generateExplanation(requestType: string, masteryLevel: number, accuracy: number): string {
-  const masteryDesc =
-    masteryLevel < 0.5 ? 'developing' : masteryLevel < 0.7 ? 'proficient' : 'advanced';
-  const accuracyDesc =
-    accuracy < 0.6 ? 'some challenges' : accuracy < 0.8 ? 'good progress' : 'excellent accuracy';
+  // Helper to determine mastery description
+  const getMasteryDesc = (level: number): string => {
+    if (level < 0.5) return 'developing';
+    if (level < 0.7) return 'proficient';
+    return 'advanced';
+  };
+
+  // Helper to determine accuracy description
+  const getAccuracyDesc = (acc: number): string => {
+    if (acc < 0.6) return 'some challenges';
+    if (acc < 0.8) return 'good progress';
+    return 'excellent accuracy';
+  };
+
+  const masteryDesc = getMasteryDesc(masteryLevel);
+  const accuracyDesc = getAccuracyDesc(accuracy);
 
   const explanations: Record<string, string> = {
     homework_help: `Provided step-by-step guidance based on ${masteryDesc} mastery level. Recent work shows ${accuracyDesc}.`,
@@ -296,7 +311,7 @@ async function generateTransparencyReport(
      WHERE learner_id = $1 AND tenant_id = $2 AND created_at >= $3`,
     [studentId, tenantId, cutoffDate]
   );
-  const totalInteractions = parseInt(countResult.rows[0]?.total_count ?? '0', 10);
+  const totalInteractions = Number.parseInt(countResult.rows[0]?.total_count ?? '0', 10);
 
   // Aggregate stats from database
   const statsResult = await pool.query(
@@ -330,14 +345,14 @@ async function generateTransparencyReport(
 
   for (const row of statsResult.rows) {
     const requestType = mapAgentTypeToRequestType(row.agent_type, row.use_case);
-    const count = parseInt(row.count, 10);
+    const count = Number.parseInt(row.count, 10);
     interactionsByType[requestType] = (interactionsByType[requestType] ?? 0) + count;
 
     const safetyLabel = row.safety_label || 'SAFE';
     safetyLevelCounts[safetyLabel] = (safetyLevelCounts[safetyLabel] ?? 0) + count;
 
-    piiRedactionCount += parseInt(row.pii_redactions ?? '0', 10);
-    totalFiltered += parseInt(row.modifications ?? '0', 10);
+    piiRedactionCount += Number.parseInt(row.pii_redactions ?? '0', 10);
+    totalFiltered += Number.parseInt(row.modifications ?? '0', 10);
 
     if (row.avg_mastery != null) {
       masterySum += row.avg_mastery * count;
@@ -564,9 +579,50 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
       return;
     }
 
-    // Create incident report
-    // TODO: Insert into ai_incidents table
-    const reportId = `concern-${Date.now()}`;
+    // Generate report ID and insert into ai_incidents table
+    const reportId = randomUUID();
+
+    try {
+      // Insert into ai_incidents table for tracking and review
+      await pool.query(
+        `INSERT INTO ai_incidents (
+          id, tenant_id, severity, category, status,
+          title, description,
+          first_seen_at, last_seen_at, occurrence_count,
+          created_by_system, metadata_json,
+          created_at, updated_at
+        ) VALUES (
+          $1, $2, 'medium', 'TEACHER_REPORTED', 'OPEN',
+          $3, $4,
+          NOW(), NOW(), 1,
+          FALSE, $5,
+          NOW(), NOW()
+        )`,
+        [
+          reportId,
+          tenantId,
+          `Teacher concern: ${type}`,
+          description,
+          JSON.stringify({
+            interactionId,
+            reportedBy: teacherId,
+            concernType: type,
+          }),
+        ]
+      );
+    } catch (dbError) {
+      // Log but don't fail - report is still created
+      console.error('[TeacherTransparency] Failed to insert ai_incident:', dbError);
+    }
+
+    // Publish event for downstream notifications
+    await publishConcernReportEvent(tenantId, {
+      reportId,
+      interactionId,
+      teacherId,
+      concernType: type,
+      description,
+    });
 
     // Log the concern for audit
     console.info(
@@ -599,7 +655,7 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
     Querystring: { days?: string };
   }>('/teacher/classes/:classId/ai-activity-summary', async (request, reply) => {
     const { classId } = request.params;
-    const days = parseInt(request.query.days ?? '7', 10);
+    const days = Number.parseInt(request.query.days ?? '7', 10);
 
     // Get teacher info from JWT
     const teacherId = (request.user as { sub?: string })?.sub;
@@ -678,16 +734,15 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
     let safeResponses = 0;
     let filteredResponses = 0;
     let piiRedactions = 0;
-    const uniqueStudentsSet = new Set<string>();
 
     for (const row of activityResult.rows) {
       const requestType = mapAgentTypeToRequestType(row.agent_type, row.use_case);
-      const count = parseInt(row.total_interactions, 10);
+      const count = Number.parseInt(row.total_interactions, 10);
       interactionsByType[requestType] = (interactionsByType[requestType] ?? 0) + count;
       totalAiInteractions += count;
-      safeResponses += parseInt(row.safe_count ?? '0', 10);
-      filteredResponses += parseInt(row.filtered_count ?? '0', 10);
-      piiRedactions += parseInt(row.pii_count ?? '0', 10);
+      safeResponses += Number.parseInt(row.safe_count ?? '0', 10);
+      filteredResponses += Number.parseInt(row.filtered_count ?? '0', 10);
+      piiRedactions += Number.parseInt(row.pii_count ?? '0', 10);
     }
 
     // Get count of students actually using AI
@@ -697,7 +752,7 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
        WHERE learner_id = ANY($1) AND tenant_id = $2 AND created_at >= $3`,
       [studentIds, tenantId, from]
     );
-    const studentsUsingAi = parseInt(studentsUsingAiResult.rows[0]?.count ?? '0', 10);
+    const studentsUsingAi = Number.parseInt(studentsUsingAiResult.rows[0]?.count ?? '0', 10);
 
     // Get top topics from prompt summaries
     const topicsResult = await pool.query(
@@ -715,7 +770,7 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
 
     const topicsRequested = topicsResult.rows.map((r: any) => ({
       topic: (r.topic || 'General').slice(0, 30),
-      count: parseInt(r.count, 10),
+      count: Number.parseInt(r.count, 10),
     }));
 
     // Identify students needing attention (low mastery progression or high retry count)

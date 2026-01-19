@@ -182,8 +182,8 @@ export const registerWritingRoutes: FastifyPluginAsync = async (fastify) => {
       userDocs.sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
 
       // Pagination
-      const page = parseInt(query.page || '1', 10);
-      const pageSize = Math.min(parseInt(query.pageSize || '20', 10), 100);
+      const page = Number.parseInt(query.page || '1', 10);
+      const pageSize = Math.min(Number.parseInt(query.pageSize || '20', 10), 100);
       const start = (page - 1) * pageSize;
       const paginatedDocs = userDocs.slice(start, start + pageSize);
 

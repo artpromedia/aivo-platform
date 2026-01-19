@@ -57,7 +57,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
     const tenantId = (req as any).tenantId;
     const { profileId } = req.params as { profileId: string };
     const { days } = req.query as { days?: string };
-    return reply.send(await selService.getMoodTrends(tenantId, profileId, days ? parseInt(days) : 30));
+    return reply.send(await selService.getMoodTrends(tenantId, profileId, days ? Number.parseInt(days) : 30));
   });
 
   // Assessments

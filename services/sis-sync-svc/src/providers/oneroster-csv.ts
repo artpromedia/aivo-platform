@@ -7,10 +7,12 @@
  * @see https://www.imsglobal.org/oneroster-v11-final-csv-tables
  */
 
+import { readFileSync } from 'fs';
+
 import { parse } from 'csv-parse/sync';
 import Client from 'ssh2-sftp-client';
-import { readFileSync } from 'fs';
-import {
+
+import type {
   ISisProvider,
   OneRosterCsvConfig,
   SisSchool,

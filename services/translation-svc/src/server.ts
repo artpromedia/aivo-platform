@@ -30,7 +30,7 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'translation-svc' }));
 app.route('/api/v1', translationRoutes);
 
 // Start server
-const port = parseInt(process.env.PORT ?? '3050', 10);
+const port = Number.parseInt(process.env.PORT ?? '3050', 10);
 
 logger.info({ port }, 'Translation service starting');
 
