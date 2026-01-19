@@ -515,3 +515,394 @@ export function useShareWeeklyReport() {
     },
   });
 }
+
+// ============================================================================
+// Sprint 6: Messaging & Parental Controls Hooks
+// ============================================================================
+
+/**
+ * Types for messaging
+ */
+export interface Conversation {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  teacherAvatar?: string;
+  teacherSubject?: string;
+  studentId: string;
+  studentName: string;
+  subject: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount: number;
+  archived: boolean;
+}
+
+export interface ConversationMessage {
+  id: string;
+  senderId: string;
+  senderType: 'parent' | 'teacher';
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  sentAt: string;
+  readAt?: string;
+  attachments?: {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
+  }[];
+}
+
+/**
+ * Types for parental controls
+ */
+export interface ParentalControlSettings {
+  screenTime: ScreenTimeSettings;
+  contentFilter: ContentFilterSettings;
+  subjectAccess: SubjectAccessSettings;
+  notifications: NotificationControlSettings;
+  safety: SafetyControlSettings;
+}
+
+export interface ScreenTimeSettings {
+  dailyLimit: number;
+  scheduleEnabled: boolean;
+  schedule: Record<string, { start: string; end: string; enabled: boolean }>;
+  breakReminders: boolean;
+  breakInterval: number;
+  breakDuration: number;
+}
+
+export interface ContentFilterSettings {
+  restrictionLevel: 'strict' | 'moderate' | 'minimal';
+  blockExternalLinks: boolean;
+  safeSearch: boolean;
+  hideAchievementLeaderboards: boolean;
+  restrictChat: boolean;
+  blockedTopics: string[];
+  allowedTopics: string[];
+}
+
+export interface SubjectAccessSettings {
+  subjects: Record<string, { enabled: boolean; maxLevel?: number }>;
+  requireParentApprovalForNewSubjects: boolean;
+  allowAdvancedContent: boolean;
+}
+
+export interface NotificationControlSettings {
+  email: {
+    enabled: boolean;
+    dailyDigest: boolean;
+    weeklyReport: boolean;
+    achievements: boolean;
+    concerns: boolean;
+    teacherMessages: boolean;
+  };
+  push: {
+    enabled: boolean;
+    achievements: boolean;
+    milestones: boolean;
+    concerns: boolean;
+    teacherMessages: boolean;
+    screenTimeAlerts: boolean;
+  };
+  inApp: {
+    enabled: boolean;
+    achievements: boolean;
+    progress: boolean;
+    recommendations: boolean;
+  };
+  quietHours: {
+    enabled: boolean;
+    start: string;
+    end: string;
+  };
+}
+
+export interface SafetyControlSettings {
+  privacy: {
+    hideFromClassmates: boolean;
+    hideProfilePhoto: boolean;
+    hideProgress: boolean;
+    anonymousMode: boolean;
+  };
+  data: {
+    allowAnalytics: boolean;
+    allowPersonalization: boolean;
+    allowThirdPartySharing: boolean;
+  };
+  access: {
+    requirePinForSettings: boolean;
+    pin?: string;
+    allowAccountDeletion: boolean;
+    twoFactorEnabled: boolean;
+  };
+  emergency: {
+    emergencyContactEnabled: boolean;
+    emergencyEmail?: string;
+    emergencyPhone?: string;
+  };
+}
+
+// Query keys for messaging and controls
+export const messagingQueryKeys = {
+  conversations: (includeArchived?: boolean) => ['conversations', { includeArchived }] as const,
+  conversationMessages: (conversationId: string) => ['messages', conversationId] as const,
+  childrenWithTeachers: ['children-with-teachers'] as const,
+};
+
+export const controlsQueryKeys = {
+  parentalControls: (childId: string) => ['parental-controls', childId] as const,
+};
+
+/**
+ * Hook to fetch conversations
+ */
+export function useConversations(includeArchived = false) {
+  return useQuery({
+    queryKey: messagingQueryKeys.conversations(includeArchived),
+    queryFn: async (): Promise<Conversation[]> => {
+      try {
+        const data = await api.get<Conversation[]>(
+          `/messages/conversations?includeArchived=${includeArchived}`
+        );
+        return data;
+      } catch (error) {
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock conversations data');
+          return [];
+        }
+        throw error;
+      }
+    },
+    refetchInterval: 30000,
+    retry: isDevMode() ? 0 : 3,
+  });
+}
+
+/**
+ * Hook to fetch messages for a conversation
+ */
+export function useConversationMessages(conversationId: string | null) {
+  return useQuery({
+    queryKey: messagingQueryKeys.conversationMessages(conversationId || ''),
+    queryFn: async (): Promise<{ messages: ConversationMessage[]; conversation: Conversation }> => {
+      if (!conversationId) {
+        throw new Error('No conversation selected');
+      }
+      try {
+        const data = await api.get<{ messages: ConversationMessage[]; conversation: Conversation }>(
+          `/messages/conversations/${conversationId}`
+        );
+        return data;
+      } catch (error) {
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock messages data');
+          return { messages: [], conversation: {} as Conversation };
+        }
+        throw error;
+      }
+    },
+    enabled: !!conversationId,
+    refetchInterval: 10000,
+    retry: isDevMode() ? 0 : 3,
+  });
+}
+
+/**
+ * Hook to send a message
+ */
+export function useSendMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      content,
+    }: {
+      conversationId: string;
+      content: string;
+    }) => {
+      return api.post(`/messages/conversations/${conversationId}/messages`, { content });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: messagingQueryKeys.conversationMessages(variables.conversationId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: messagingQueryKeys.conversations(),
+      });
+    },
+  });
+}
+
+/**
+ * Hook to create a new conversation
+ */
+export function useCreateConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      teacherId: string;
+      childId: string;
+      subject: string;
+      content: string;
+    }) => {
+      return api.post<{ conversationId: string }>('/messages/conversations', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: messagingQueryKeys.conversations(),
+      });
+    },
+  });
+}
+
+/**
+ * Hook to mark conversation as read
+ */
+export function useMarkConversationRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversationId: string) => {
+      return api.put(`/messages/conversations/${conversationId}/read`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: messagingQueryKeys.conversations(),
+      });
+    },
+  });
+}
+
+/**
+ * Hook to fetch parental controls for a child
+ */
+export function useParentalControls(childId: string | null) {
+  return useQuery({
+    queryKey: controlsQueryKeys.parentalControls(childId || ''),
+    queryFn: async (): Promise<ParentalControlSettings> => {
+      if (!childId) {
+        throw new Error('No child selected');
+      }
+      try {
+        const data = await api.get<ParentalControlSettings>(
+          `/parent/children/${childId}/controls`
+        );
+        return data;
+      } catch (error) {
+        if (isDevMode()) {
+          console.warn('[DEV] Using mock parental controls data');
+          return {
+            screenTime: {
+              dailyLimit: 120,
+              scheduleEnabled: false,
+              schedule: {},
+              breakReminders: true,
+              breakInterval: 30,
+              breakDuration: 5,
+            },
+            contentFilter: {
+              restrictionLevel: 'moderate',
+              blockExternalLinks: true,
+              safeSearch: true,
+              hideAchievementLeaderboards: false,
+              restrictChat: true,
+              blockedTopics: [],
+              allowedTopics: [],
+            },
+            subjectAccess: {
+              subjects: {},
+              requireParentApprovalForNewSubjects: true,
+              allowAdvancedContent: false,
+            },
+            notifications: {
+              email: {
+                enabled: true,
+                dailyDigest: false,
+                weeklyReport: true,
+                achievements: true,
+                concerns: true,
+                teacherMessages: true,
+              },
+              push: {
+                enabled: true,
+                achievements: true,
+                milestones: true,
+                concerns: true,
+                teacherMessages: true,
+                screenTimeAlerts: true,
+              },
+              inApp: {
+                enabled: true,
+                achievements: true,
+                progress: true,
+                recommendations: true,
+              },
+              quietHours: {
+                enabled: false,
+                start: '21:00',
+                end: '07:00',
+              },
+            },
+            safety: {
+              privacy: {
+                hideFromClassmates: false,
+                hideProfilePhoto: false,
+                hideProgress: false,
+                anonymousMode: false,
+              },
+              data: {
+                allowAnalytics: true,
+                allowPersonalization: true,
+                allowThirdPartySharing: false,
+              },
+              access: {
+                requirePinForSettings: false,
+                allowAccountDeletion: false,
+                twoFactorEnabled: false,
+              },
+              emergency: {
+                emergencyContactEnabled: false,
+              },
+            },
+          };
+        }
+        throw error;
+      }
+    },
+    enabled: !!childId,
+    retry: isDevMode() ? 0 : 3,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook to update parental controls section
+ */
+export function useUpdateParentalControls() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      childId,
+      section,
+      settings,
+    }: {
+      childId: string;
+      section: keyof ParentalControlSettings;
+      settings: unknown;
+    }) => {
+      return api.put(`/parent/children/${childId}/controls/${section}`, settings);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: controlsQueryKeys.parentalControls(variables.childId),
+      });
+    },
+  });
+}
