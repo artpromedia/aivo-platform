@@ -326,9 +326,15 @@ export default async function DashboardPage() {
         <h2 className="mb-4 font-semibold text-gray-900">Quick Actions</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAction href="/schools" icon="🏫" title="Manage Schools" description="Add, edit, or remove schools" />
-          <QuickAction href="/analytics" icon="📊" title="View Analytics" description="District-wide performance data" />
+          <QuickAction href="/dashboard/analytics" icon="📊" title="View Analytics" description="Cross-school performance data" />
           <QuickAction href="/compliance" icon="✓" title="Compliance Center" description="IEP and regulatory compliance" />
           <QuickAction href="/billing" icon="💳" title="Billing & Licenses" description="Manage subscriptions and seats" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+          <QuickAction href="/users" icon="👥" title="User Management" description="Manage users and roles" />
+          <QuickAction href="/users/import" icon="📤" title="Bulk Import" description="Import users via CSV" />
+          <QuickAction href="/settings/sso" icon="🔐" title="SSO Settings" description="Configure single sign-on" />
+          <QuickAction href="/integrations" icon="🔗" title="Integrations" description="SIS and third-party apps" />
         </div>
       </div>
     </section>
