@@ -39,6 +39,9 @@ import 'screens/sensory_accommodations_screen.dart';
 import 'screens/motor_skills_screen.dart';
 import 'screens/communication_screen.dart';
 import 'social_stories/social_stories.dart';
+import 'features/reading_tools/reading_tools_screen.dart';
+import 'features/progress/progress_screen.dart';
+import 'features/goals/goals_screen.dart';
 import 'learner/theme_loader.dart';
 import 'services/learner_notification_service.dart';
 
@@ -195,6 +198,30 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/communication',
         builder: (context, state) {
           return const CommunicationScreen();
+        },
+      ),
+      // Reading Tools route
+      GoRoute(
+        path: '/reading-tools',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return ReadingToolsScreen(learnerId: learnerId);
+        },
+      ),
+      // Progress Tracking route
+      GoRoute(
+        path: '/progress',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return ProgressScreen(learnerId: learnerId);
+        },
+      ),
+      // Goals Management route
+      GoRoute(
+        path: '/goals',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return GoalsScreen(learnerId: learnerId);
         },
       ),
       if (_enableDesignSystemGallery)

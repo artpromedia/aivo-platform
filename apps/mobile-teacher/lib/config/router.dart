@@ -25,6 +25,10 @@ import '../screens/gradebook/grade_submission_screen.dart';
 import '../screens/assignments/assignment_list_screen.dart';
 import '../screens/assignments/assignment_detail_screen.dart';
 import '../screens/login_screen.dart' show TeacherLoginScreen;
+import '../features/content_library/presentation/content_library_screen.dart';
+import '../features/lesson_planning/presentation/lesson_planning_screen.dart';
+import '../features/analytics/presentation/classroom_analytics_screen.dart';
+import '../features/professional_development/presentation/pd_screen.dart';
 
 /// Application router.
 final GoRouter appRouter = GoRouter(
@@ -162,6 +166,43 @@ final GoRouter appRouter = GoRouter(
         assignmentId: state.pathParameters['assignmentId']!,
         submissionId: state.pathParameters['submissionId']!,
       ),
+    ),
+
+    // Content Library
+    GoRoute(
+      path: '/content-library',
+      builder: (context, state) {
+        final teacherId = state.uri.queryParameters['teacherId'] ?? '';
+        return ContentLibraryScreen(teacherId: teacherId);
+      },
+    ),
+
+    // Lesson Planning
+    GoRoute(
+      path: '/lesson-planning',
+      builder: (context, state) {
+        final teacherId = state.uri.queryParameters['teacherId'] ?? '';
+        return LessonPlanningScreen(teacherId: teacherId);
+      },
+    ),
+
+    // Classroom Analytics
+    GoRoute(
+      path: '/analytics',
+      builder: (context, state) {
+        final teacherId = state.uri.queryParameters['teacherId'] ?? '';
+        final classId = state.uri.queryParameters['classId'];
+        return ClassroomAnalyticsScreen(teacherId: teacherId, classId: classId);
+      },
+    ),
+
+    // Professional Development
+    GoRoute(
+      path: '/professional-development',
+      builder: (context, state) {
+        final teacherId = state.uri.queryParameters['teacherId'] ?? '';
+        return ProfessionalDevelopmentScreen(teacherId: teacherId);
+      },
     ),
   ],
   errorBuilder: (context, state) => Scaffold(

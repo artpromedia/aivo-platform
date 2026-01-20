@@ -8,6 +8,10 @@ import '../features/messages/presentation/conversation_screen.dart';
 import '../features/consent/presentation/consent_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
+import '../features/resources/presentation/resource_library_screen.dart';
+import '../features/community/presentation/community_support_screen.dart';
+import '../features/privacy/presentation/data_rights_screen.dart';
+import '../features/iep/presentation/iep_upload_screen.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
 import '../shared/widgets/main_scaffold.dart';
@@ -75,6 +79,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/settings',
             name: 'settings',
             builder: (context, state) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: '/resources',
+            name: 'resources',
+            builder: (context, state) => const ResourceLibraryScreen(),
+          ),
+          GoRoute(
+            path: '/community',
+            name: 'community',
+            builder: (context, state) => const CommunitySupportScreen(),
+          ),
+          GoRoute(
+            path: '/data-rights',
+            name: 'data-rights',
+            builder: (context, state) => const DataRightsScreen(),
+          ),
+          GoRoute(
+            path: '/iep/:childId',
+            name: 'iep',
+            builder: (context, state) {
+              final childId = state.pathParameters['childId']!;
+              final childName = state.extra as String? ?? 'Child';
+              return IEPUploadScreen(childId: childId, childName: childName);
+            },
           ),
         ],
       ),
