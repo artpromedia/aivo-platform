@@ -7,6 +7,40 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { getProjectAuditLogs, getExportAuditLogs } from '../services/auditService.js';
+import { prisma } from '../prisma.js';
+
+/**
+ * Check if user is a member of the research project.
+ * A user is a member if they:
+ * 1. Created the project
+ * 2. Have an active access grant for the project
+ */
+async function isProjectMember(
+  projectId: string,
+  userId: string,
+  tenantId: string
+): Promise<boolean> {
+  const project = await prisma.researchProject.findFirst({
+    where: {
+      id: projectId,
+      tenantId,
+      OR: [
+        { createdByUserId: userId },
+        {
+          accessGrants: {
+            some: {
+              userId,
+              status: 'ACTIVE',
+            },
+          },
+        },
+      ],
+    },
+    select: { id: true },
+  });
+
+  return project !== null;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -74,10 +108,14 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
 
     // Admins or project members can view project audit logs
     const isAdmin = user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
-    // TODO: Also check if user is project member
 
-    if (!isAdmin) {
-      return reply.status(403).send({ error: 'Only admins can view audit logs' });
+    // Check if user is a project member (creator or has active access grant)
+    const isMember = await isProjectMember(projectId, user.sub, user.tenantId);
+
+    if (!isAdmin && !isMember) {
+      return reply.status(403).send({
+        error: 'Access denied. Only admins or project members can view audit logs.'
+      });
     }
 
     const result = await getProjectAuditLogs(projectId, user.tenantId, {

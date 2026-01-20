@@ -220,9 +220,45 @@ async function createInstallation(
     });
   }
 
-  // Determine initial status based on approval requirements
-  // TODO: Check tenant policies for auto-approval
-  const requiresApproval = item.vendor.type === 'THIRD_PARTY';
+  // Determine initial status based on tenant policies and vendor type
+  // Fetch tenant marketplace policy to determine approval requirements
+  const tenantPolicy = await prisma.tenantMarketplacePolicy.findUnique({
+    where: { tenantId },
+    select: {
+      requireInstallApproval: true,
+      allowThirdPartyVendors: true,
+      blockedVendors: true,
+      blockedItemIds: true,
+    },
+  });
+
+  // Check if vendor or item is blocked by tenant policy
+  if (tenantPolicy) {
+    if (tenantPolicy.blockedVendors.includes(item.vendorId)) {
+      return reply.status(403).send({
+        error: 'This vendor is blocked by your organization\'s marketplace policy',
+      });
+    }
+    if (tenantPolicy.blockedItemIds.includes(data.marketplaceItemId)) {
+      return reply.status(403).send({
+        error: 'This item is blocked by your organization\'s marketplace policy',
+      });
+    }
+    // Block third-party vendors if policy disallows them
+    if (!tenantPolicy.allowThirdPartyVendors && item.vendor.type === 'THIRD_PARTY') {
+      return reply.status(403).send({
+        error: 'Third-party vendor items are not allowed by your organization\'s marketplace policy',
+      });
+    }
+  }
+
+  // Determine if approval is required based on tenant policy and vendor type
+  // Order of precedence:
+  // 1. Tenant policy `requireInstallApproval` if set to true
+  // 2. Third-party vendors require approval by default
+  // 3. Aivo/first-party vendors are auto-approved
+  const requiresApproval =
+    (tenantPolicy?.requireInstallApproval ?? false) || item.vendor.type === 'THIRD_PARTY';
   const status = requiresApproval ? InstallationStatus.PENDING_APPROVAL : InstallationStatus.ACTIVE;
 
   // Create installation

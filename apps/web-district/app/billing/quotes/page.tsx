@@ -2,6 +2,7 @@ import { Badge, Button } from '@aivo/ui-web';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { requireAuth } from '../../../lib/auth';
 import { fetchQuotes, getQuoteStatusTone, type Quote } from '../../../lib/billing-api';
 
 export const metadata: Metadata = {
@@ -36,9 +37,9 @@ function isExpired(validUntil: string): boolean {
 }
 
 export default async function QuotesPage() {
-  // TODO: Replace with actual tenant ID from auth context
-  const tenantId = 'mock-tenant';
-  const quotes = await fetchQuotes(tenantId);
+  // Get tenant ID from authenticated session
+  const session = await requireAuth();
+  const quotes = await fetchQuotes(session.tenantId);
 
   const activeQuotes = quotes.filter((q) => q.status === 'SENT' || q.status === 'DRAFT');
   const pastQuotes = quotes.filter((q) => q.status !== 'SENT' && q.status !== 'DRAFT');

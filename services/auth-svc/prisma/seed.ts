@@ -17,6 +17,12 @@ const prisma = new PrismaClient();
 const DEV_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000002';
 
+// System service account IDs - used by internal services for automated operations
+const SYSTEM_TENANT_ID = '00000000-0000-0000-0000-000000000000'; // Platform-level tenant
+const LTI_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001'; // LTI service account
+const CONSENT_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000002'; // Consent service account
+const SCHEDULER_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000003'; // Scheduler service account
+
 async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
@@ -50,6 +56,102 @@ async function main() {
   });
 
   console.log(`  ✅ Created admin user: ${admin.email}`);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 1b. Create System Service Accounts
+  // These are dedicated service accounts with limited permissions for internal
+  // automated operations. They should never be used for interactive login.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Create system tenant first (for platform-level service accounts)
+  await prisma.tenant.upsert({
+    where: { id: SYSTEM_TENANT_ID },
+    update: {},
+    create: {
+      id: SYSTEM_TENANT_ID,
+      slug: 'system',
+      name: 'AIVO System',
+      ssoEnabled: false,
+      ssoRequired: false,
+    },
+  });
+
+  console.log('  ✅ Created system tenant');
+
+  // System password (long random string - these accounts never use password auth)
+  const systemPassword = await hashPassword('SYSTEM_ACCOUNT_NO_LOGIN_' + Date.now());
+
+  // LTI System Service Account
+  // Used by LTI service for creating links before user context is established
+  const ltiSystem = await prisma.user.upsert({
+    where: {
+      tenantId_email: {
+        tenantId: SYSTEM_TENANT_ID,
+        email: 'lti-service@system.aivo.internal',
+      },
+    },
+    update: {},
+    create: {
+      id: LTI_SYSTEM_USER_ID,
+      tenantId: SYSTEM_TENANT_ID,
+      email: 'lti-service@system.aivo.internal',
+      passwordHash: systemPassword,
+      status: UserStatus.ACTIVE,
+      roles: {
+        create: [{ role: UserRoleEnum.SUPPORT }],
+      },
+    },
+  });
+
+  console.log(`  ✅ Created LTI system service account: ${ltiSystem.email} (${LTI_SYSTEM_USER_ID})`);
+
+  // Consent System Service Account
+  // Used by consent service for automated consent renewal notifications
+  const consentSystem = await prisma.user.upsert({
+    where: {
+      tenantId_email: {
+        tenantId: SYSTEM_TENANT_ID,
+        email: 'consent-service@system.aivo.internal',
+      },
+    },
+    update: {},
+    create: {
+      id: CONSENT_SYSTEM_USER_ID,
+      tenantId: SYSTEM_TENANT_ID,
+      email: 'consent-service@system.aivo.internal',
+      passwordHash: systemPassword,
+      status: UserStatus.ACTIVE,
+      roles: {
+        create: [{ role: UserRoleEnum.SUPPORT }],
+      },
+    },
+  });
+
+  console.log(`  ✅ Created Consent system service account: ${consentSystem.email}`);
+
+  // Scheduler System Service Account
+  // Used by scheduled jobs (cleanup, expiration, etc.)
+  const schedulerSystem = await prisma.user.upsert({
+    where: {
+      tenantId_email: {
+        tenantId: SYSTEM_TENANT_ID,
+        email: 'scheduler-service@system.aivo.internal',
+      },
+    },
+    update: {},
+    create: {
+      id: SCHEDULER_SYSTEM_USER_ID,
+      tenantId: SYSTEM_TENANT_ID,
+      email: 'scheduler-service@system.aivo.internal',
+      passwordHash: systemPassword,
+      status: UserStatus.ACTIVE,
+      roles: {
+        create: [{ role: UserRoleEnum.SUPPORT }],
+      },
+    },
+  });
+
+  console.log(`  ✅ Created Scheduler system service account: ${schedulerSystem.email}`);
 
   // ══════════════════════════════════════════════════════════════════════════
   // 2. Create Author User

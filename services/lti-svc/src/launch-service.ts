@@ -28,13 +28,30 @@ import { LtiUserRole, LtiLaunchStatus, LTI_CLAIMS } from './types.js';
 
 /**
  * System user ID for automated operations.
- * This is a well-known UUID used when no specific user context is available,
- * such as when creating LTI links during initial launch before user resolution.
+ * This is a well-known UUID for the LTI system service account, used when
+ * no specific user context is available (e.g., creating LTI links during
+ * initial launch before user resolution).
  *
- * Note: This should be a real system user in the auth service with limited permissions.
- * TODO: Create dedicated system service account in auth-svc
+ * The service account is provisioned via auth-svc seed data with limited
+ * SUPPORT role permissions. See: services/auth-svc/prisma/seed.ts
+ *
+ * Required environment variable: LTI_SYSTEM_USER_ID
+ * Default matches the seeded system account UUID.
  */
-const SYSTEM_USER_ID = process.env.LTI_SYSTEM_USER_ID || '00000000-0000-0000-0000-000000000001';
+const LTI_SYSTEM_SERVICE_ACCOUNT_ID = '00000000-0000-0000-0000-000000000001';
+
+function getSystemUserId(): string {
+  const envUserId = process.env.LTI_SYSTEM_USER_ID;
+  if (envUserId && envUserId !== LTI_SYSTEM_SERVICE_ACCOUNT_ID) {
+    console.warn(
+      `[LTI] Custom LTI_SYSTEM_USER_ID configured: ${envUserId}. ` +
+      `Ensure this user exists in auth-svc with appropriate permissions.`
+    );
+  }
+  return envUserId || LTI_SYSTEM_SERVICE_ACCOUNT_ID;
+}
+
+const SYSTEM_USER_ID = getSystemUserId();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

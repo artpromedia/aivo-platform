@@ -5,11 +5,21 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
 import { PrismaClient } from '@prisma/client';
 import { ConsentPurpose, ConsentStatus, ConsentType, ConsentRecord } from '../types';
 import { COMPLIANCE } from '../constants';
 import { AuditLogService } from './audit-log.service';
 import { randomUUID } from 'node:crypto';
+import { firstValueFrom } from 'rxjs';
+
+interface ConsentRenewalNotification {
+  userId: string;
+  email: string;
+  consentType: ConsentType;
+  expiresAt: Date;
+  renewalUrl: string;
+}
 
 export interface ConsentVerificationResult {
   purpose: ConsentPurpose;
@@ -25,12 +35,15 @@ export interface ConsentVerificationResult {
 export class ConsentService {
   private readonly logger = new Logger(ConsentService.name);
   private readonly prisma: PrismaClient;
-  
+  private readonly notifyServiceUrl: string;
+
   constructor(
     private readonly configService: ConfigService,
     private readonly auditService: AuditLogService,
+    private readonly httpService: HttpService,
   ) {
     this.prisma = new PrismaClient();
+    this.notifyServiceUrl = this.configService.get<string>('NOTIFY_SERVICE_URL', 'http://notify-svc:3000');
   }
   
   /**
@@ -323,23 +336,163 @@ export class ConsentService {
   
   /**
    * Process expiring consents (called by scheduled job)
+   * Sends FERPA/COPPA compliant renewal reminders to users with expiring consents.
+   *
+   * Reminder schedule:
+   * - 14 days before expiration: First reminder
+   * - 7 days before expiration: Second reminder
+   * - 3 days before expiration: Final reminder
    */
   async processExpiringConsents(): Promise<void> {
-    const warningDays = 14;
-    const warningDate = new Date(Date.now() + warningDays * 24 * 60 * 60 * 1000);
-    
-    const expiringConsents = await this.prisma.consent.findMany({
-      where: {
-        status: 'granted',
-        expiresAt: {
-          lte: warningDate,
-          gt: new Date(),
+    const now = new Date();
+    const reminderWindows = [
+      { days: 14, type: 'first' },
+      { days: 7, type: 'second' },
+      { days: 3, type: 'final' },
+    ];
+
+    for (const window of reminderWindows) {
+      const windowStart = new Date(now.getTime() + (window.days - 1) * 24 * 60 * 60 * 1000);
+      const windowEnd = new Date(now.getTime() + window.days * 24 * 60 * 60 * 1000);
+
+      const expiringConsents = await this.prisma.consent.findMany({
+        where: {
+          status: 'granted',
+          expiresAt: {
+            gte: windowStart,
+            lt: windowEnd,
+          },
         },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              tenantId: true,
+            },
+          },
+        },
+      });
+
+      this.logger.log(`Found expiring consents for ${window.type} reminder`, {
+        count: expiringConsents.length,
+        windowDays: window.days,
+      });
+
+      // Send renewal reminders for each consent
+      for (const consent of expiringConsents) {
+        try {
+          await this.sendConsentRenewalReminder({
+            userId: consent.userId,
+            email: consent.user?.email || '',
+            consentType: consent.consentType as ConsentType,
+            expiresAt: consent.expiresAt!,
+            renewalUrl: this.buildRenewalUrl(consent.userId, consent.consentType),
+          }, window.type as 'first' | 'second' | 'final');
+
+          this.logger.log('Sent consent renewal reminder', {
+            userId: consent.userId,
+            consentType: consent.consentType,
+            reminderType: window.type,
+          });
+        } catch (error) {
+          this.logger.error('Failed to send consent renewal reminder', {
+            userId: consent.userId,
+            consentType: consent.consentType,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Send a consent renewal reminder email via the notification service.
+   * Email content is FERPA/COPPA compliant with clear renewal instructions.
+   */
+  private async sendConsentRenewalReminder(
+    notification: ConsentRenewalNotification,
+    reminderType: 'first' | 'second' | 'final'
+  ): Promise<void> {
+    if (!notification.email) {
+      this.logger.warn('Cannot send renewal reminder - no email address', {
+        userId: notification.userId,
+      });
+      return;
+    }
+
+    const daysUntilExpiry = Math.ceil(
+      (notification.expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)
+    );
+
+    const complianceType = notification.consentType === 'parental'
+      ? 'COPPA parental consent'
+      : 'FERPA consent';
+
+    const urgencyLevel = reminderType === 'final' ? 'high' : 'normal';
+
+    const emailPayload = {
+      templateName: 'consent-renewal-reminder',
+      to: notification.email,
+      context: {
+        consentType: notification.consentType,
+        complianceType,
+        daysUntilExpiry,
+        expiresAt: notification.expiresAt.toISOString(),
+        renewalUrl: notification.renewalUrl,
+        reminderType,
+        urgencyLevel,
+        // FERPA/COPPA required information
+        legalNotice: this.getComplianceLegalNotice(notification.consentType),
       },
-    });
-    
-    // TODO: Send renewal reminders
-    this.logger.log('Found expiring consents', { count: expiringConsents.length });
+      category: 'consent',
+      tags: ['consent-renewal', `reminder-${reminderType}`, notification.consentType],
+      priority: urgencyLevel,
+    };
+
+    try {
+      await firstValueFrom(
+        this.httpService.post(`${this.notifyServiceUrl}/api/v1/email/send`, emailPayload, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'consent-service',
+          },
+          timeout: 10000,
+        })
+      );
+    } catch (error) {
+      // Log but don't throw - we don't want to fail the entire batch
+      this.logger.error('Notification service request failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId: notification.userId,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Build the consent renewal URL for a user
+   */
+  private buildRenewalUrl(userId: string, consentType: string): string {
+    const baseUrl = this.configService.get<string>('APP_BASE_URL', 'https://app.aivolearning.com');
+    return `${baseUrl}/settings/consent/renew?type=${encodeURIComponent(consentType)}&userId=${encodeURIComponent(userId)}`;
+  }
+
+  /**
+   * Get compliance-specific legal notice for the renewal email
+   */
+  private getComplianceLegalNotice(consentType: ConsentType): string {
+    if (consentType === 'parental') {
+      return `This notice is required under the Children's Online Privacy Protection Act (COPPA). ` +
+        `As a parent or legal guardian, your consent is required for your child to continue using AIVO. ` +
+        `If consent is not renewed before the expiration date, your child's access to personalized ` +
+        `learning features will be limited.`;
+    }
+
+    return `This notice is provided in accordance with the Family Educational Rights and Privacy Act (FERPA). ` +
+      `Your consent allows AIVO to collect and process educational records for personalized learning. ` +
+      `If consent is not renewed before the expiration date, certain features that require access to ` +
+      `educational records may become unavailable.`;
   }
   
   async onModuleDestroy(): Promise<void> {

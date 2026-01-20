@@ -23,7 +23,8 @@ import {
   PricingModel,
   EmbeddedToolLaunchType,
 } from '../types/index.js';
-import { extractUserId } from '../middleware/auth.js';
+import { extractUserId, hasVendorAccess } from '../middleware/auth.js';
+import type { FastifyRequest } from 'fastify';
 
 // ============================================================================
 // Schema Validation
@@ -140,19 +141,39 @@ const SubmitForReviewSchema = z.object({
 // ============================================================================
 
 /**
- * Verify that the requesting user has access to the vendor
- * In a real implementation, this would check JWT claims
+ * Verify that the requesting user has access to the vendor.
+ *
+ * Access is granted if:
+ * 1. User has a vendorId claim in their JWT matching this vendor
+ * 2. User has admin/platform_admin role (access to all vendors)
+ *
+ * @param vendorId - The vendor ID to check access for
+ * @param request - The Fastify request object (contains JWT claims)
+ * @returns Vendor details if access is granted, null otherwise
  */
 async function verifyVendorAccess(
   vendorId: string,
-  _userId: string
+  request: FastifyRequest
 ): Promise<{ vendor: { id: string; slug: string; type: string } } | null> {
+  // First check if vendor exists and is active
   const vendor = await prisma.vendor.findUnique({
     where: { id: vendorId, isActive: true },
     select: { id: true, slug: true, type: true },
   });
-  // TODO: Check user is associated with this vendor via auth claims
-  return vendor ? { vendor } : null;
+
+  if (!vendor) {
+    return null;
+  }
+
+  // Check user has access to this vendor via JWT claims
+  // This validates either:
+  // - User's vendorId claim matches this vendor
+  // - User has admin role (access to all vendors)
+  if (!hasVendorAccess(request, vendorId)) {
+    return null;
+  }
+
+  return { vendor };
 }
 
 // ============================================================================
@@ -171,7 +192,7 @@ async function listCreatorItems(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -227,7 +248,7 @@ async function createItem(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -302,7 +323,7 @@ async function getCreatorItem(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -352,7 +373,7 @@ async function updateItem(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -419,7 +440,7 @@ async function createVersion(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -560,7 +581,7 @@ async function setContentPackItems(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -629,7 +650,7 @@ async function setToolConfig(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -723,7 +744,7 @@ async function submitForReview(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }
@@ -811,7 +832,7 @@ async function discardVersion(
 
   // Extract user ID from JWT
   const userId = extractUserId(request);
-  const access = await verifyVendorAccess(vendorId, userId);
+  const access = await verifyVendorAccess(vendorId, request);
   if (!access) {
     return reply.status(403).send({ error: 'Access denied to this vendor' });
   }

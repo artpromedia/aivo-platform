@@ -1,13 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 
+import '../core/api_client.dart';
 import 'models.dart';
 import 'service.dart';
 
-/// Provider for the engagement service
+/// Provider for the engagement service.
+///
+/// Uses the centralized [dioProvider] from core/api_client.dart which includes:
+/// - Proper base URL configuration from environment
+/// - AuthInterceptor for automatic token management
+/// - Token refresh on 401 responses
+/// - Request/response logging
 final parentEngagementServiceProvider = Provider<ParentEngagementService>((ref) {
-  // TODO: Inject properly configured Dio instance from auth/network layer
-  final dio = Dio(BaseOptions(baseUrl: 'https://api.aivolearning.com'));
+  final dio = ref.watch(dioProvider);
   return ParentEngagementService(dio: dio);
 });
 
