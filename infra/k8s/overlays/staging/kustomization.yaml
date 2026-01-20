@@ -1,0 +1,103 @@
+# =============================================================================
+# AIVO Platform - Staging Environment Overlay
+# =============================================================================
+# Staging-specific configuration that overrides base settings.
+# Deployed via GitHub Actions workflow: deploy-staging.yml
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference the base configuration
+resources:
+  - ../../base
+
+# Override namespace for staging
+namespace: aivo-staging
+
+# Staging-specific labels
+commonLabels:
+  environment: staging
+
+# Common annotations
+commonAnnotations:
+  deployment.kubernetes.io/environment: staging
+
+# Image configuration - use GCR registry
+# Note: Image tags are set dynamically by the CI/CD pipeline using:
+#   kustomize edit set image gcr.io/aivo-platform/<service>=gcr.io/aivo-platform/<service>:<tag>
+images:
+  - name: aivo/auth-svc
+    newName: gcr.io/aivo-platform/auth-svc
+  - name: aivo/content-svc
+    newName: gcr.io/aivo-platform/content-svc
+  - name: aivo/session-svc
+    newName: gcr.io/aivo-platform/session-svc
+  - name: aivo/assessment-svc
+    newName: gcr.io/aivo-platform/assessment-svc
+  - name: aivo/analytics-svc
+    newName: gcr.io/aivo-platform/analytics-svc
+  - name: aivo/ai-orchestrator
+    newName: gcr.io/aivo-platform/ai-orchestrator
+  - name: aivo/notify-svc
+    newName: gcr.io/aivo-platform/notify-svc
+  - name: aivo/messaging-svc
+    newName: gcr.io/aivo-platform/messaging-svc
+  - name: aivo/goal-svc
+    newName: gcr.io/aivo-platform/goal-svc
+  - name: aivo/focus-svc
+    newName: gcr.io/aivo-platform/focus-svc
+  - name: aivo/personalization-svc
+    newName: gcr.io/aivo-platform/personalization-svc
+  - name: aivo/billing-svc
+    newName: gcr.io/aivo-platform/billing-svc
+  - name: aivo/consent-svc
+    newName: gcr.io/aivo-platform/consent-svc
+
+# Patches for staging-specific configuration
+patches:
+  # Set NODE_ENV to staging for all ConfigMaps
+  - target:
+      kind: ConfigMap
+    patch: |-
+      - op: replace
+        path: /data/NODE_ENV
+        value: "staging"
+
+  # Reduce replicas for staging (cost optimization)
+  - target:
+      kind: Deployment
+      name: auth-svc
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: content-svc
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: session-svc
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: ai-orchestrator
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Reduce HPA max replicas for staging
+  - target:
+      kind: HorizontalPodAutoscaler
+    patch: |-
+      - op: replace
+        path: /spec/maxReplicas
+        value: 5

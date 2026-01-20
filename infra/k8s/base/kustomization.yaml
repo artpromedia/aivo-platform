@@ -1,0 +1,37 @@
+# =============================================================================
+# AIVO Platform - Kustomize Base Configuration
+# =============================================================================
+# Base configuration for all environments. Use overlays to customize per env.
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/part-of: aivo-platform
+  app.kubernetes.io/managed-by: kustomize
+
+# Core services deployed to all environments
+resources:
+  # Namespace
+  - namespace.yaml
+  # Core authentication and user services
+  - ../deployments/auth-svc.yaml
+  - ../deployments/session-svc.yaml
+  - ../deployments/consent-svc.yaml
+  # Content and learning services
+  - ../deployments/content-svc.yaml
+  - ../deployments/assessment-svc.yaml
+  - ../deployments/personalization-svc.yaml
+  # AI and analytics
+  - ../deployments/ai-orchestrator.yaml
+  - ../deployments/analytics-svc.yaml
+  # Communication services
+  - ../deployments/notify-svc.yaml
+  - ../deployments/messaging-svc.yaml
+  # Goal and focus tracking
+  - ../deployments/goal-svc.yaml
+  - ../deployments/focus-svc.yaml
+  # Billing
+  - ../deployments/billing-svc.yaml

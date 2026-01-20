@@ -66,7 +66,7 @@ jobs:
       - name: Update image tags
         run: |
           cd infra/k8s/overlays/staging
-          
+
           SERVICES=(
             "auth-svc"
             "content-svc"
@@ -82,10 +82,12 @@ jobs:
             "billing-svc"
             "consent-svc"
           )
-          
+
           for service in "${SERVICES[@]}"; do
-            echo "Setting image for $service..."
-            kustomize edit set image gcr.io/${{ env.PROJECT_ID }}/${service}=gcr.io/${{ env.PROJECT_ID }}/${service}:${{ steps.version.outputs.version }} 2>/dev/null || true
+            echo "Setting image for $service to gcr.io/${{ env.PROJECT_ID }}/${service}:${{ steps.version.outputs.version }}"
+            # Use aivo/<service> as the image name since that's what's defined in deployment manifests
+            # kustomize will remap to gcr.io/aivo-platform/<service>:<tag>
+            kustomize edit set image aivo/${service}=gcr.io/${{ env.PROJECT_ID }}/${service}:${{ steps.version.outputs.version }}
           done
 
       - name: Deploy to Kubernetes
@@ -112,19 +114,18 @@ jobs:
         run: |
           # Wait for services to be ready
           sleep 30
-          
-          # Health check endpoints
+
+          # Health check core services (all services use port 3000)
           SERVICES_TO_CHECK=(
-            "auth-svc:4000"
-            "content-svc:4001"
-            "session-svc:4002"
+            "auth-svc"
+            "content-svc"
+            "session-svc"
           )
-          
+
           for svc in "${SERVICES_TO_CHECK[@]}"; do
-            NAME=$(echo $svc | cut -d: -f1)
-            PORT=$(echo $svc | cut -d: -f2)
-            echo "Checking $NAME health..."
-            kubectl exec -n ${{ env.NAMESPACE }} deploy/$NAME -- curl -sf http://localhost:$PORT/health || echo "Warning: $NAME health check failed"
+            echo "Checking $svc health..."
+            # Use the readiness probe endpoint defined in deployments
+            kubectl exec -n ${{ env.NAMESPACE }} deploy/$svc -- curl -sf http://localhost:3000/health/ready || echo "Warning: $svc health check failed"
           done
         continue-on-error: true
 

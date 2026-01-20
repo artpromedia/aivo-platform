@@ -1,0 +1,12 @@
+# =============================================================================
+# AIVO Platform - Base Namespace
+# =============================================================================
+# This namespace is overridden per environment via Kustomize overlay.
+# =============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aivo
+  labels:
+    app.kubernetes.io/part-of: aivo-platform
