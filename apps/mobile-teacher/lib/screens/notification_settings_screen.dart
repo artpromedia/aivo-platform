@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' hide apiClientProvider;
+import 'package:flutter_common/theme/theme.dart';
 
 import '../providers/core_providers.dart';
 
@@ -219,7 +220,7 @@ class _TeacherNotificationSettingsScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text('Failed to load preferences', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -277,10 +278,10 @@ class _TeacherNotificationSettingsScreenState
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.orange.shade100,
+              color: AivoBrand.sunshine[100],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.warning_amber, color: Colors.orange.shade700),
+            child: Icon(Icons.warning_amber, color: AivoBrand.sunshine[700]),
           ),
           value: state.studentAlertsEnabled,
           onChanged: (value) => _updatePreference('studentAlertsEnabled', value),
@@ -292,10 +293,10 @@ class _TeacherNotificationSettingsScreenState
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.green.shade100,
+              color: AivoBrand.mint[100],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.check_circle, color: Colors.green.shade700),
+            child: Icon(Icons.check_circle, color: AivoBrand.mint[700]),
           ),
           value: state.sessionCompletionsEnabled,
           onChanged: (value) => _updatePreference('sessionCompletionsEnabled', value),

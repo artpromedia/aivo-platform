@@ -9,6 +9,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../models/stroke_data.dart';
 import '../services/scratch_pad_service.dart';
 
@@ -277,7 +278,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
           height: widget.height,
           decoration: BoxDecoration(
             color: widget.backgroundColor,
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: AivoBrand.gray.shade300),
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
@@ -317,7 +318,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: AivoBrand.gray.shade100,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -340,7 +341,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
           ),
 
           // Divider
-          Container(width: 1, height: 32, color: Colors.grey.shade400),
+          Container(width: 1, height: 32, color: AivoBrand.gray.shade400),
 
           // Colors
           _ColorButton(
@@ -360,7 +361,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
           ),
 
           // Divider
-          Container(width: 1, height: 32, color: Colors.grey.shade400),
+          Container(width: 1, height: 32, color: AivoBrand.gray.shade400),
 
           // Undo
           _ToolButton(
@@ -387,7 +388,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
             isActive: false,
             enabled: _strokes.isNotEmpty,
             onTap: clear,
-            color: Colors.red,
+            color: AivoBrand.error,
           ),
         ],
       ),
@@ -402,12 +403,12 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
       decoration: BoxDecoration(
         color: _recognitionResult != null
             ? Colors.blue.shade50
-            : Colors.grey.shade100,
+            : AivoBrand.gray.shade100,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: _recognitionResult != null
               ? Colors.blue.shade200
-              : Colors.grey.shade300,
+              : AivoBrand.gray.shade300,
         ),
       ),
       child: Column(
@@ -424,7 +425,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
                 size: 20,
                 color: _recognitionResult != null
                     ? Colors.blue
-                    : Colors.grey.shade600,
+                    : AivoBrand.gray.shade600,
               ),
               const SizedBox(width: 8),
               Text(
@@ -437,7 +438,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
                   fontWeight: FontWeight.w500,
                   color: _recognitionResult != null
                       ? Colors.blue.shade700
-                      : Colors.grey.shade700,
+                      : AivoBrand.gray.shade700,
                 ),
               ),
               const Spacer(),
@@ -480,8 +481,8 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
                       style: TextStyle(
                         fontSize: 16,
                         color: _recognitionResult!.evaluation!.isValid
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
+                            ? AivoBrand.mint.shade700
+                            : AivoBrand.error.shade700,
                       ),
                     ),
                   ],
@@ -492,7 +493,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
                         'Confidence: ${(_recognitionResult!.confidence * 100).toStringAsFixed(0)}%',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: AivoBrand.gray.shade600,
                         ),
                       ),
                       const Spacer(),
@@ -519,7 +520,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
                 'Alternatives:',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: AivoBrand.gray.shade600,
                 ),
               ),
               const SizedBox(height: 4),
@@ -529,7 +530,7 @@ class ScratchPadCanvasState extends State<ScratchPadCanvas> {
                     .take(3)
                     .map((alt) => Chip(
                           label: Text(alt.text),
-                          backgroundColor: Colors.grey.shade200,
+                          backgroundColor: AivoBrand.gray.shade200,
                           labelStyle: const TextStyle(fontSize: 12),
                           padding: EdgeInsets.zero,
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -578,8 +579,8 @@ class _ToolButton extends StatelessWidget {
               icon,
               size: 24,
               color: enabled
-                  ? (color ?? (isActive ? Colors.blue : Colors.grey.shade700))
-                  : Colors.grey.shade400,
+                  ? (color ?? (isActive ? Colors.blue : AivoBrand.gray.shade700))
+                  : AivoBrand.gray.shade400,
             ),
           ),
         ),
@@ -611,7 +612,7 @@ class _ColorButton extends StatelessWidget {
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isActive ? Colors.blue : Colors.grey.shade400,
+            color: isActive ? Colors.blue : AivoBrand.gray.shade400,
             width: isActive ? 3 : 1,
           ),
           boxShadow: isActive
@@ -665,7 +666,7 @@ class _ScratchPadPainter extends CustomPainter {
 
   void _drawGrid(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = AivoBrand.gray.shade200
       ..strokeWidth = 0.5;
 
     const gridSpacing = 20.0;

@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -306,7 +307,7 @@ class SwitchAccessButton extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           constraints: BoxConstraints(minHeight: minHeight),
           decoration: BoxDecoration(
-            color: backgroundColor ?? Colors.grey.shade200,
+            color: backgroundColor ?? AivoBrand.gray.shade200,
             borderRadius: BorderRadius.circular(12),
             border: isFocused
                 ? Border.all(
@@ -390,7 +391,7 @@ class SwitchAccessGrid extends StatelessWidget {
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: AivoBrand.gray.shade100,
                     borderRadius: BorderRadius.circular(12),
                     border: isFocused
                         ? Border.all(color: Colors.blue, width: 4)

@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/providers.dart';
@@ -485,13 +486,13 @@ class _StatsRow extends StatelessWidget {
             icon: Icons.local_fire_department,
             value: '${learner.streakDays}',
             label: 'Day Streak',
-            color: Colors.orange,
+            color: AivoBrand.warning,
           ),
           _StatItem(
             icon: Icons.check_circle,
             value: '${learner.completedActivities}',
             label: 'Completed',
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
           _StatItem(
             icon: Icons.auto_awesome,

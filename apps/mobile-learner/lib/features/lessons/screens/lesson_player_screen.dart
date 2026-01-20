@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 
@@ -720,7 +721,7 @@ class LessonCompleteSheet extends StatelessWidget {
                     icon: Icons.local_fire_department_rounded,
                     value: '$streakDay',
                     label: 'Day Streak',
-                    color: gamification?.heartFull ?? Colors.orange,
+                    color: gamification?.heartFull ?? AivoBrand.warning,
                   ),
               ],
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_common/theme/theme.dart';
 import '../motor_skills/models.dart';
 import '../motor_skills/motor_skills_service.dart';
 
@@ -39,7 +40,7 @@ class _MotorSkillsScreenState extends ConsumerState<MotorSkillsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Motor Skills'),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AivoBrand.mint[700],
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
@@ -144,7 +145,7 @@ class _HandwritingPracticeTabState extends State<HandwritingPracticeTab> {
         // Filters
         Container(
           padding: const EdgeInsets.all(12),
-          color: Colors.green.shade50,
+          color: AivoBrand.mint[50],
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -254,11 +255,11 @@ class _HandwritingPracticeTabState extends State<HandwritingPracticeTab> {
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: Colors.green.shade100,
+                              backgroundColor: AivoBrand.mint[100],
                               child: Text(
                                 exercise.letterOrWord.substring(0, 1).toUpperCase(),
                                 style: TextStyle(
-                                  color: Colors.green.shade700,
+                                  color: AivoBrand.mint[700],
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -272,7 +273,7 @@ class _HandwritingPracticeTabState extends State<HandwritingPracticeTab> {
                                 Row(
                                   children: [
                                     Icon(Icons.stars,
-                                        size: 16, color: Colors.orange.shade700),
+                                        size: 16, color: AivoBrand.sunshine[700]),
                                     const SizedBox(width: 4),
                                     Text('Level ${exercise.difficulty}'),
                                     const SizedBox(width: 12),
@@ -380,7 +381,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.exercise.name),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AivoBrand.mint[700],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -423,7 +424,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
           // Progress
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.green.shade50,
+            color: AivoBrand.mint[50],
             child: Column(
               children: [
                 Row(
@@ -440,8 +441,8 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: (_currentStroke + 1) / widget.exercise.strokes.length,
-                  backgroundColor: Colors.grey.shade300,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade700),
+                  backgroundColor: AivoBrand.gray[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(AivoBrand.mint[700]!),
                 ),
               ],
             ),
@@ -460,7 +461,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                           width: 200,
                           height: 200,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade400, width: 2),
+                            border: Border.all(color: AivoBrand.gray[400]!, width: 2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Center(
@@ -469,7 +470,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                               style: TextStyle(
                                 fontSize: 120,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
+                                color: AivoBrand.mint[700],
                               ),
                             ),
                           ),
@@ -499,7 +500,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                                   'Direction: ${currentStrokeData.direction}',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey.shade700,
+                                    color: AivoBrand.gray[700],
                                   ),
                                 ),
                               ],
@@ -512,14 +513,14 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                           width: double.infinity,
                           height: 150,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.green.shade300, width: 2),
+                            border: Border.all(color: AivoBrand.mint[300]!, width: 2),
                             borderRadius: BorderRadius.circular(8),
-                            color: Colors.green.shade50,
+                            color: AivoBrand.mint[50],
                           ),
                           child: Center(
                             child: Text(
                               'Trace the stroke here',
-                              style: TextStyle(color: Colors.grey.shade600),
+                              style: TextStyle(color: AivoBrand.gray[600]),
                             ),
                           ),
                         ),
@@ -531,7 +532,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.check_circle,
-                            size: 80, color: Colors.green.shade700),
+                            size: 80, color: AivoBrand.mint[700]),
                         const SizedBox(height: 16),
                         const Text(
                           'All strokes completed!',
@@ -561,7 +562,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                       icon: const Icon(Icons.arrow_forward),
                       label: const Text('Next Stroke'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AivoBrand.mint[700],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
@@ -574,7 +575,7 @@ class _HandwritingExerciseScreenState extends State<HandwritingExerciseScreen> {
                       icon: const Icon(Icons.check),
                       label: const Text('Complete Practice'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AivoBrand.mint[700],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
@@ -651,7 +652,7 @@ class _FineMotorActivitiesTabState extends State<FineMotorActivitiesTab> {
         // Type filters
         Container(
           padding: const EdgeInsets.all(12),
-          color: Colors.green.shade50,
+          color: AivoBrand.mint[50],
           child: Wrap(
             spacing: 8,
             children: [
@@ -704,12 +705,12 @@ class _FineMotorActivitiesTabState extends State<FineMotorActivitiesTab> {
                               children: [
                                 Container(
                                   height: 120,
-                                  color: Colors.green.shade100,
+                                  color: AivoBrand.mint[100],
                                   child: Center(
                                     child: Icon(
                                       _getIconForType(activity.type),
                                       size: 60,
-                                      color: Colors.green.shade700,
+                                      color: AivoBrand.mint[700],
                                     ),
                                   ),
                                 ),
@@ -730,7 +731,7 @@ class _FineMotorActivitiesTabState extends State<FineMotorActivitiesTab> {
                                       Row(
                                         children: [
                                           Icon(Icons.stars,
-                                              size: 14, color: Colors.orange.shade700),
+                                              size: 14, color: AivoBrand.sunshine[700]),
                                           const SizedBox(width: 4),
                                           Text('Level ${activity.difficulty}',
                                               style: const TextStyle(fontSize: 12)),
@@ -865,7 +866,7 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.activity.name),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AivoBrand.mint[700],
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -873,7 +874,7 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
           // Progress
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.green.shade50,
+            color: AivoBrand.mint[50],
             child: Column(
               children: [
                 Text(
@@ -883,8 +884,8 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: (_currentStep + 1) / widget.activity.steps.length,
-                  backgroundColor: Colors.grey.shade300,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade700),
+                  backgroundColor: AivoBrand.gray[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(AivoBrand.mint[700]!),
                 ),
               ],
             ),
@@ -908,9 +909,9 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
                           width: double.infinity,
                           height: 300,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.green.shade300, width: 2),
+                            border: Border.all(color: AivoBrand.mint[300]!, width: 2),
                             borderRadius: BorderRadius.circular(8),
-                            color: Colors.green.shade50,
+                            color: AivoBrand.mint[50],
                           ),
                           child: const Center(
                             child: Text('Interactive activity area'),
@@ -924,7 +925,7 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.check_circle,
-                            size: 80, color: Colors.green.shade700),
+                            size: 80, color: AivoBrand.mint[700]),
                         const SizedBox(height: 16),
                         const Text(
                           'Activity completed!',
@@ -947,7 +948,7 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
                       icon: const Icon(Icons.arrow_forward),
                       label: const Text('Next Step'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AivoBrand.mint[700],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
@@ -960,7 +961,7 @@ class _FineMotorActivityScreenState extends State<FineMotorActivityScreen> {
                       icon: const Icon(Icons.check),
                       label: const Text('Complete Activity'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AivoBrand.mint[700],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
@@ -1037,7 +1038,7 @@ class _GrossMotorExercisesTabState extends State<GrossMotorExercisesTab> {
         // Type filters
         Container(
           padding: const EdgeInsets.all(12),
-          color: Colors.green.shade50,
+          color: AivoBrand.mint[50],
           child: Wrap(
             spacing: 8,
             children: [
@@ -1079,9 +1080,9 @@ class _GrossMotorExercisesTabState extends State<GrossMotorExercisesTab> {
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: Colors.green.shade100,
+                              backgroundColor: AivoBrand.mint[100],
                               child: Icon(Icons.directions_run,
-                                  color: Colors.green.shade700),
+                                  color: AivoBrand.mint[700]),
                             ),
                             title: Text(exercise.name),
                             subtitle: Column(
@@ -1096,7 +1097,7 @@ class _GrossMotorExercisesTabState extends State<GrossMotorExercisesTab> {
                                     Text('${exercise.duration.inMinutes} min'),
                                     const SizedBox(width: 12),
                                     Icon(Icons.local_fire_department,
-                                        size: 16, color: Colors.orange),
+                                        size: 16, color: AivoBrand.warning),
                                     const SizedBox(width: 4),
                                     Text('${exercise.caloriesBurned} cal'),
                                   ],
@@ -1199,7 +1200,7 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.exercise.name),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AivoBrand.mint[700],
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -1207,7 +1208,7 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
           // Progress
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.green.shade50,
+            color: AivoBrand.mint[50],
             child: Column(
               children: [
                 Text(
@@ -1217,8 +1218,8 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: (_currentMovement + 1) / widget.exercise.movements.length,
-                  backgroundColor: Colors.grey.shade300,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade700),
+                  backgroundColor: AivoBrand.gray[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(AivoBrand.mint[700]!),
                 ),
               ],
             ),
@@ -1286,16 +1287,16 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
                           width: double.infinity,
                           height: 250,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.green.shade300, width: 2),
+                            border: Border.all(color: AivoBrand.mint[300]!, width: 2),
                             borderRadius: BorderRadius.circular(8),
-                            color: Colors.green.shade50,
+                            color: AivoBrand.mint[50],
                           ),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.play_circle_outline,
-                                    size: 80, color: Colors.green.shade700),
+                                    size: 80, color: AivoBrand.mint[700]),
                                 const SizedBox(height: 8),
                                 const Text('Exercise demonstration'),
                               ],
@@ -1310,7 +1311,7 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.check_circle,
-                            size: 80, color: Colors.green.shade700),
+                            size: 80, color: AivoBrand.mint[700]),
                         const SizedBox(height: 16),
                         const Text(
                           'All movements completed!',
@@ -1319,7 +1320,7 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
                         const SizedBox(height: 8),
                         Text(
                           '${widget.exercise.caloriesBurned} calories burned',
-                          style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+                          style: TextStyle(fontSize: 16, color: AivoBrand.gray[700]),
                         ),
                       ],
                     ),
@@ -1338,7 +1339,7 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
                       icon: const Icon(Icons.arrow_forward),
                       label: const Text('Next Movement'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AivoBrand.mint[700],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
@@ -1351,7 +1352,7 @@ class _GrossMotorExerciseScreenState extends State<GrossMotorExerciseScreen> {
                       icon: const Icon(Icons.check),
                       label: const Text('Complete Exercise'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AivoBrand.mint[700],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
@@ -1476,7 +1477,7 @@ class _AdaptiveInputTabState extends State<AdaptiveInputTab> {
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          color: Colors.green.shade50,
+          color: AivoBrand.mint[50],
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1515,7 +1516,7 @@ class _AdaptiveInputTabState extends State<AdaptiveInputTab> {
                       const SizedBox(height: 4),
                       Text(
                         setting.description,
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: TextStyle(color: AivoBrand.gray[700]),
                       ),
                       const SizedBox(height: 12),
                       _buildControl(setting),

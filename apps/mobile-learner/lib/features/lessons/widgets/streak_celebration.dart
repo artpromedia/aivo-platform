@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Confetti celebration overlay for streaks and achievements.
 class StreakCelebration extends StatelessWidget {
@@ -46,12 +47,12 @@ class _ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final confettiCount = 50;
     final colors = [
-      Colors.red,
+      AivoBrand.error,
       Colors.blue,
-      Colors.green,
+      AivoBrand.success,
       Colors.yellow,
       Colors.purple,
-      Colors.orange,
+      AivoBrand.warning,
       Colors.pink,
     ];
 

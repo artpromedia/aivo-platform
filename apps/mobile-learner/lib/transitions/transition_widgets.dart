@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'transition_service.dart';
 
@@ -305,16 +306,16 @@ class _TransitionWarningWidgetState extends ConsumerState<TransitionWarningWidge
 
     switch (scheme) {
       case TransitionColorScheme.greenYellowRed:
-        if (progress > 0.5) return Colors.green;
-        if (progress > 0.2) return Colors.orange;
-        return Colors.red;
+        if (progress > 0.5) return AivoBrand.success;
+        if (progress > 0.2) return AivoBrand.warning;
+        return AivoBrand.error;
       case TransitionColorScheme.bluePurple:
         if (progress > 0.5) return Colors.blue;
         if (progress > 0.2) return Colors.deepPurple;
         return Colors.purple;
       case TransitionColorScheme.highContrast:
         if (progress > 0.3) return Colors.black;
-        return Colors.red;
+        return AivoBrand.error;
       case TransitionColorScheme.grayscale:
         final value = (progress * 128).toInt() + 64;
         return Color.fromRGBO(value, value, value, 1);
@@ -719,7 +720,7 @@ class _ActivityCard extends StatelessWidget {
 
   Widget _buildActivityIcon() {
     final iconData = _getActivityIcon(activity.type);
-    return Icon(iconData, size: 32, color: Colors.grey[600]);
+    return Icon(iconData, size: 32, color: AivoBrand.gray[600]);
   }
 
   IconData _getActivityIcon(String type) {

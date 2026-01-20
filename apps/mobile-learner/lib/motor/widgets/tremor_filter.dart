@@ -6,6 +6,7 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -476,7 +477,7 @@ class _TremorFilterVisualizerState extends State<TremorFilterVisualizer> {
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
+            border: Border.all(color: AivoBrand.gray),
             borderRadius: BorderRadius.circular(8),
           ),
           child: GestureDetector(
@@ -519,7 +520,7 @@ class _ComparisonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rawPaint = Paint()
-      ..color = Colors.red.withOpacity(0.5)
+      ..color = AivoBrand.error.withOpacity(0.5)
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;

@@ -8,12 +8,13 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Reading strategy type
 enum ReadingStrategy {
   before('Before Reading', Icons.play_arrow, Colors.blue),
-  during('During Reading', Icons.menu_book, Colors.green),
+  during('During Reading', Icons.menu_book, AivoBrand.success),
   after('After Reading', Icons.check_circle, Colors.purple);
 
   const ReadingStrategy(this.label, this.icon, this.color);
@@ -167,7 +168,7 @@ class _ComprehensionAidsWidgetState
       'name': 'Venn Diagram',
       'description': 'Compare and contrast',
       'icon': Icons.compare,
-      'color': Colors.green,
+      'color': AivoBrand.success,
       'elements': ['Different', 'Same', 'Different'],
     },
     {
@@ -181,14 +182,14 @@ class _ComprehensionAidsWidgetState
       'name': 'Cause & Effect',
       'description': 'Show relationships',
       'icon': Icons.arrow_forward,
-      'color': Colors.orange,
+      'color': AivoBrand.warning,
       'elements': ['Cause', 'Effect'],
     },
     {
       'name': 'Timeline',
       'description': 'Order events',
       'icon': Icons.timeline,
-      'color': Colors.red,
+      'color': AivoBrand.error,
       'elements': ['First', 'Next', 'Then', 'Finally'],
     },
     {

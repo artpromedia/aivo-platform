@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../gamification_models.dart';
 
 /// Full leaderboard widget with podium and list
@@ -117,12 +118,12 @@ class _FilterChips extends StatelessWidget {
             label: Text(label),
             selected: isSelected,
             onSelected: onSelected != null ? (_) => onSelected!(option) : null,
-            backgroundColor: Colors.grey.shade100,
+            backgroundColor: AivoBrand.gray[100],
             selectedColor: Colors.blue.shade100,
             labelStyle: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700,
+              color: isSelected ? Colors.blue.shade700 : AivoBrand.gray[700],
             ),
           ),
         );
@@ -145,7 +146,7 @@ class _Podium extends StatelessWidget {
     if (entries.length >= 3) arranged.add(entries[2]);
 
     final heights = [80.0, 100.0, 60.0];
-    final colors = [Colors.grey.shade400, Colors.amber, Colors.brown.shade300];
+    final colors = [AivoBrand.gray[400]!, Colors.amber, Colors.brown.shade300];
     final medals = ['🥈', '🥇', '🥉'];
 
     return Container(
@@ -196,7 +197,7 @@ class _Podium extends StatelessWidget {
                   '${entry.score} XP',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey.shade600,
+                    color: AivoBrand.gray[600],
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -255,7 +256,7 @@ class _LeaderboardRow extends StatelessWidget {
         color: entry.isCurrentUser ? Colors.blue.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: entry.isCurrentUser ? Colors.blue.shade200 : Colors.grey.shade200,
+          color: entry.isCurrentUser ? Colors.blue.shade200 : AivoBrand.gray[200]!,
         ),
       ),
       child: Row(
@@ -267,14 +268,14 @@ class _LeaderboardRow extends StatelessWidget {
               '#${entry.rank}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: entry.isCurrentUser ? Colors.blue : Colors.grey.shade700,
+                color: entry.isCurrentUser ? Colors.blue : AivoBrand.gray[700],
               ),
             ),
           ),
           // Avatar
           CircleAvatar(
             radius: 20,
-            backgroundColor: Colors.grey.shade200,
+            backgroundColor: AivoBrand.gray[200],
             child: entry.avatarUrl != null
                 ? ClipOval(
                     child: Image.network(
@@ -302,7 +303,7 @@ class _LeaderboardRow extends StatelessWidget {
                   'Level ${entry.level}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade500,
+                    color: AivoBrand.gray[500],
                   ),
                 ),
               ],
@@ -313,7 +314,7 @@ class _LeaderboardRow extends StatelessWidget {
             '${entry.score} XP',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: entry.isCurrentUser ? Colors.blue : Colors.grey.shade700,
+              color: entry.isCurrentUser ? Colors.blue : AivoBrand.gray[700],
             ),
           ),
         ],
@@ -356,7 +357,7 @@ class LeaderboardCompact extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: AivoBrand.gray[200]!),
         ),
         child: Column(
           children: [
@@ -402,7 +403,7 @@ class LeaderboardCompact extends StatelessWidget {
                     '${entry.score} XP',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: AivoBrand.gray[600],
                     ),
                   ),
                 ],
@@ -426,7 +427,7 @@ class LeaderboardCompact extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: Colors.grey.shade600,
+          color: AivoBrand.gray[600],
         ),
       ),
     );

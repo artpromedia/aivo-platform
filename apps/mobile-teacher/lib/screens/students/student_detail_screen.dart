@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -112,7 +113,7 @@ class _StudentDetailView extends ConsumerWidget {
                         ),
                         subtitle: LinearProgressIndicator(
                           value: goal.currentValue / goal.targetValue,
-                          backgroundColor: Colors.grey.shade200,
+                          backgroundColor: AivoBrand.gray[200],
                         ),
                         trailing: Text(
                           '${((goal.currentValue / goal.targetValue) * 100).round()}%',

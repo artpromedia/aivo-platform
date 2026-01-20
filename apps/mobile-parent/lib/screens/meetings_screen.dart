@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -34,7 +35,7 @@ class MeetingsScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               Text('Failed to load meetings: $error'),
               const SizedBox(height: 16),
@@ -88,17 +89,17 @@ class _MeetingsView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_outlined, size: 64, color: Colors.grey),
+            Icon(Icons.event_outlined, size: 64, color: AivoBrand.gray),
             SizedBox(height: 16),
             Text(
               'No meetings scheduled',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: AivoBrand.gray),
             ),
             SizedBox(height: 8),
             Text(
               'Schedule a meeting to coordinate\nwith the care team',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),
@@ -174,14 +175,14 @@ class _SectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AivoBrand.gray[200],
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               '$count',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[700],
+                color: AivoBrand.gray[700],
               ),
             ),
           ),
@@ -260,16 +261,16 @@ class _MeetingCard extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                            Icon(Icons.access_time, size: 14, color: AivoBrand.gray[600]),
                             const SizedBox(width: 4),
                             Text(
                               _formatTime(meeting.scheduledAt),
-                              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                              style: TextStyle(fontSize: 13, color: AivoBrand.gray[600]),
                             ),
                             if (meeting.durationMinutes > 0) ...[
                               Text(
                                 ' • ${meeting.durationMinutes} min',
-                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                style: TextStyle(fontSize: 13, color: AivoBrand.gray[600]),
                               ),
                             ],
                           ],
@@ -287,21 +288,21 @@ class _MeetingCard extends ConsumerWidget {
                   Icon(
                     _getMeetingTypeIcon(meeting.meetingType),
                     size: 16,
-                    color: Colors.grey[600],
+                    color: AivoBrand.gray[600],
                   ),
                   const SizedBox(width: 4),
                   Text(
                     meeting.meetingTypeDisplayName,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 13, color: AivoBrand.gray[600]),
                   ),
                   if (meeting.location != null) ...[
                     const SizedBox(width: 12),
-                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.location_on, size: 16, color: AivoBrand.gray[600]),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         meeting.location!,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 13, color: AivoBrand.gray[600]),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -351,7 +352,7 @@ class _MeetingCard extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Text(
                       _getParticipantsSummary(meeting.participants),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                     ),
                   ],
                 ),
@@ -396,13 +397,13 @@ class _MeetingCard extends ConsumerWidget {
       case MeetingStatus.scheduled:
         return Colors.blue;
       case MeetingStatus.inProgress:
-        return Colors.green;
+        return AivoBrand.success;
       case MeetingStatus.completed:
-        return Colors.grey;
+        return AivoBrand.gray;
       case MeetingStatus.cancelled:
-        return Colors.red;
+        return AivoBrand.error;
       case MeetingStatus.rescheduled:
-        return Colors.orange;
+        return AivoBrand.warning;
     }
   }
 
@@ -439,11 +440,11 @@ class _MeetingCard extends ConsumerWidget {
       case CareTeamRole.guardian:
         return Colors.indigo;
       case CareTeamRole.teacher:
-        return Colors.green;
+        return AivoBrand.success;
       case CareTeamRole.therapist:
         return Colors.purple;
       case CareTeamRole.counselor:
-        return Colors.orange;
+        return AivoBrand.warning;
       case CareTeamRole.specialist:
         return Colors.teal;
       case CareTeamRole.administrator:
@@ -454,7 +455,7 @@ class _MeetingCard extends ConsumerWidget {
       case CareTeamRole.aide:
         return Colors.cyan;
       case CareTeamRole.other:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -626,10 +627,10 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
       MeetingStatus.scheduled => (Colors.blue, 'Scheduled'),
-      MeetingStatus.inProgress => (Colors.green, 'In Progress'),
-      MeetingStatus.completed => (Colors.grey, 'Completed'),
-      MeetingStatus.cancelled => (Colors.red, 'Cancelled'),
-      MeetingStatus.rescheduled => (Colors.orange, 'Rescheduled'),
+      MeetingStatus.inProgress => (AivoBrand.success, 'In Progress'),
+      MeetingStatus.completed => (AivoBrand.gray, 'Completed'),
+      MeetingStatus.cancelled => (AivoBrand.error, 'Cancelled'),
+      MeetingStatus.rescheduled => (AivoBrand.warning, 'Rescheduled'),
     };
 
     return Container(
@@ -658,10 +659,10 @@ class _ResponseStatusIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, color) = switch (status) {
-      ResponseStatus.accepted => (Icons.check_circle, Colors.green),
-      ResponseStatus.declined => (Icons.cancel, Colors.red),
-      ResponseStatus.tentative => (Icons.help, Colors.orange),
-      ResponseStatus.pending => (Icons.schedule, Colors.grey),
+      ResponseStatus.accepted => (Icons.check_circle, AivoBrand.success),
+      ResponseStatus.declined => (Icons.cancel, AivoBrand.error),
+      ResponseStatus.tentative => (Icons.help, AivoBrand.warning),
+      ResponseStatus.pending => (Icons.schedule, AivoBrand.gray),
     };
 
     return Icon(icon, size: 20, color: color);
@@ -899,9 +900,9 @@ class _ScheduleMeetingSheetState extends ConsumerState<_ScheduleMeetingSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meeting scheduled!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Meeting scheduled!'),
+            backgroundColor: AivoBrand.success,
           ),
         );
         ref.invalidate(meetingsProvider(widget.learnerId));
@@ -911,7 +912,7 @@ class _ScheduleMeetingSheetState extends ConsumerState<_ScheduleMeetingSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to schedule meeting: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }

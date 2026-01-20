@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../baseline/baseline_controller.dart';
 
@@ -414,11 +415,11 @@ class _ProgressHeader extends StatelessWidget {
       case BaselineDomain.ela:
         return Colors.blue;
       case BaselineDomain.math:
-        return Colors.green;
+        return AivoBrand.success;
       case BaselineDomain.science:
         return Colors.purple;
       case BaselineDomain.speech:
-        return Colors.orange;
+        return AivoBrand.warning;
       case BaselineDomain.sel:
         return Colors.pink;
     }

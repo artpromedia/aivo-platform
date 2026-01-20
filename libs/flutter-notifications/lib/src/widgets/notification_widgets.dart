@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../in_app_notification_service.dart';
 
@@ -265,7 +266,7 @@ class _NotificationTile extends StatelessWidget {
                     ? BorderSide(
                         color: notification.priority == 'URGENT'
                             ? theme.colorScheme.error
-                            : Colors.orange,
+                            : AivoBrand.warning,
                         width: 4,
                       )
                     : BorderSide.none,
@@ -375,7 +376,7 @@ class _NotificationTile extends StatelessWidget {
       case 'ACHIEVEMENT':
         return Colors.amber;
       case 'SESSION_SUMMARY':
-        return Colors.green;
+        return AivoBrand.success;
       case 'REMINDER':
         return theme.colorScheme.primary;
       case 'GOAL_UPDATE':
@@ -387,7 +388,7 @@ class _NotificationTile extends StatelessWidget {
       case 'ALERT':
         return theme.colorScheme.error;
       case 'SYSTEM':
-        return Colors.grey;
+        return AivoBrand.gray;
       default:
         return theme.colorScheme.primary;
     }

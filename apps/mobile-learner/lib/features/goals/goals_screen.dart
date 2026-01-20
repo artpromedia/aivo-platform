@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../progress/progress_models.dart';
@@ -160,9 +161,9 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
       case GoalType.xp:
         return Colors.amber;
       case GoalType.streak:
-        return Colors.orange;
+        return AivoBrand.warning;
       case GoalType.subject:
-        return Colors.green;
+        return AivoBrand.success;
       case GoalType.custom:
         return Colors.teal;
     }
@@ -470,7 +471,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
                                               ? Icons.check_circle
                                               : Icons.radio_button_unchecked,
                                           color: obj.isComplete
-                                              ? Colors.green
+                                              ? AivoBrand.success
                                               : colorScheme.onSurfaceVariant,
                                           size: 20,
                                         ),

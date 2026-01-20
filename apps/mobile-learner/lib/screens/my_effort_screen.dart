@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../learner/effort_controller.dart';
 
@@ -177,7 +178,7 @@ class _StreakSection extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.15),
+                    color: AivoBrand.warning.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -195,7 +196,7 @@ class _StreakSection extends StatelessWidget {
                       '$currentStreak',
                       style: theme.textTheme.displayMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: currentStreak > 0 ? Colors.orange : colors.onSurfaceVariant,
+                        color: currentStreak > 0 ? AivoBrand.warning : colors.onSurfaceVariant,
                       ),
                     ),
                     Text(
@@ -273,12 +274,12 @@ class _StreakFlames extends StatelessWidget {
                 width: 36,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isActive 
-                      ? Colors.orange.withOpacity(0.15) 
-                      : Colors.grey.withOpacity(0.1),
+                  color: isActive
+                      ? AivoBrand.warning.withOpacity(0.15)
+                      : AivoBrand.gray.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isActive ? Colors.orange : Colors.grey.shade300,
+                    color: isActive ? AivoBrand.warning : AivoBrand.gray[300]!,
                     width: 2,
                   ),
                 ),
@@ -432,7 +433,7 @@ class _MilestonesSection extends StatelessWidget {
           Text(
             'Earned (${achieved.length})',
             style: theme.textTheme.titleSmall?.copyWith(
-              color: Colors.green.shade700,
+              color: AivoBrand.mint[700],
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -565,7 +566,7 @@ class _ProgressGoalCard extends StatelessWidget {
                   minHeight: 8,
                   backgroundColor: colors.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation(
-                    progress >= 1.0 ? Colors.green : colors.primary,
+                    progress >= 1.0 ? AivoBrand.success : colors.primary,
                   ),
                 ),
               ),

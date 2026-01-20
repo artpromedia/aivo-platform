@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../models/stroke_data.dart';
 import '../services/scratch_pad_service.dart';
 import 'scratch_pad_canvas.dart';
@@ -181,7 +182,7 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                color: AivoBrand.gray,
               ),
             ),
           ],
@@ -242,10 +243,10 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: _showScratchPad ? Colors.blue.shade50 : Colors.grey.shade100,
+          color: _showScratchPad ? Colors.blue.shade50 : AivoBrand.gray.shade100,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: _showScratchPad ? Colors.blue.shade200 : Colors.grey.shade300,
+            color: _showScratchPad ? Colors.blue.shade200 : AivoBrand.gray.shade300,
           ),
         ),
         child: Row(
@@ -254,21 +255,21 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
             Icon(
               Icons.draw,
               size: 20,
-              color: _showScratchPad ? Colors.blue : Colors.grey.shade700,
+              color: _showScratchPad ? Colors.blue : AivoBrand.gray.shade700,
             ),
             const SizedBox(width: 8),
             Text(
               _showScratchPad ? 'Hide scratch pad' : 'Show your work',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: _showScratchPad ? Colors.blue : Colors.grey.shade700,
+                color: _showScratchPad ? Colors.blue : AivoBrand.gray.shade700,
               ),
             ),
             const SizedBox(width: 4),
             Icon(
               _showScratchPad ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               size: 20,
-              color: _showScratchPad ? Colors.blue : Colors.grey.shade700,
+              color: _showScratchPad ? Colors.blue : AivoBrand.gray.shade700,
             ),
           ],
         ),
@@ -334,14 +335,14 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
                   hintStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.normal,
-                    color: Colors.grey.shade400,
+                    color: AivoBrand.gray.shade400,
                   ),
                   filled: true,
                   fillColor: _isSubmitted
                       ? (_isCorrect == true
-                          ? Colors.green.shade50
-                          : Colors.red.shade50)
-                      : Colors.grey.shade100,
+                          ? AivoBrand.mint.shade50
+                          : AivoBrand.error.shade50)
+                      : AivoBrand.gray.shade100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -349,7 +350,7 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
                   suffixIcon: _isSubmitted
                       ? Icon(
                           _isCorrect == true ? Icons.check_circle : Icons.cancel,
-                          color: _isCorrect == true ? Colors.green : Colors.red,
+                          color: _isCorrect == true ? AivoBrand.success : AivoBrand.error,
                         )
                       : null,
                 ),
@@ -374,17 +375,17 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _isCorrect == true ? Colors.green.shade50 : Colors.red.shade50,
+        color: _isCorrect == true ? AivoBrand.mint.shade50 : AivoBrand.error.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: _isCorrect == true ? Colors.green.shade200 : Colors.red.shade200,
+          color: _isCorrect == true ? AivoBrand.mint.shade200 : AivoBrand.error.shade200,
         ),
       ),
       child: Row(
         children: [
           Icon(
             _isCorrect == true ? Icons.celebration : Icons.info_outline,
-            color: _isCorrect == true ? Colors.green : Colors.red,
+            color: _isCorrect == true ? AivoBrand.success : AivoBrand.error,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -392,8 +393,8 @@ class _MathQuestionWithScratchPadState extends State<MathQuestionWithScratchPad>
               _feedback!,
               style: TextStyle(
                 color: _isCorrect == true
-                    ? Colors.green.shade800
-                    : Colors.red.shade800,
+                    ? AivoBrand.mint.shade800
+                    : AivoBrand.error.shade800,
               ),
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/adaptive_games/adaptive_game_player.dart';
@@ -196,7 +197,7 @@ class _AdaptiveGamesScreenState extends ConsumerState<AdaptiveGamesScreen> {
                     Text(
                       game['description'],
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                            color: AivoBrand.gray[600],
                           ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

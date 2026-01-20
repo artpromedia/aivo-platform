@@ -219,8 +219,8 @@ class _IndependencePill extends StatelessWidget {
 
     switch (label) {
       case IndependenceLabel.needsSupport:
-        bgColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade800;
+        bgColor = AivoBrand.sunshine[100]!;
+        textColor = AivoBrand.sunshine[800]!;
         icon = Icons.support;
         break;
       case IndependenceLabel.buildingIndependence:
@@ -229,8 +229,8 @@ class _IndependencePill extends StatelessWidget {
         icon = Icons.trending_up;
         break;
       case IndependenceLabel.mostlyIndependent:
-        bgColor = Colors.green.shade100;
-        textColor = Colors.green.shade800;
+        bgColor = AivoBrand.mint[100]!;
+        textColor = AivoBrand.mint[800]!;
         icon = Icons.star;
         break;
     }

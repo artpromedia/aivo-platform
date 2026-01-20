@@ -11,6 +11,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/realtime/websocket_client.dart';
@@ -320,15 +321,15 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
   Color _getFocusColor(FocusState state) {
     switch (state) {
       case FocusState.focused:
-        return Colors.green;
+        return AivoBrand.success;
       case FocusState.idle:
-        return Colors.grey;
+        return AivoBrand.gray;
       case FocusState.struggling:
-        return Colors.orange;
+        return AivoBrand.warning;
       case FocusState.frustrated:
         return Colors.deepOrange;
       case FocusState.helpRequested:
-        return Colors.red;
+        return AivoBrand.error;
       case FocusState.offTask:
         return Colors.purple;
     }
@@ -400,7 +401,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send intervention: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }
@@ -423,7 +424,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
             child: Icon(
               Icons.circle,
               size: 12,
-              color: _isConnected ? Colors.green : Colors.red,
+              color: _isConnected ? AivoBrand.success : AivoBrand.error,
             ),
           ),
         ],
@@ -445,7 +446,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text(_errorMessage!),
             const SizedBox(height: 16),
@@ -464,19 +465,19 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
         if (urgentAlerts.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.red.shade50,
+            color: AivoBrand.error[50],
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.warning, color: Colors.red),
+                    Icon(Icons.warning, color: AivoBrand.error),
                     const SizedBox(width: 8),
                     Text(
                       '${urgentAlerts.length} Student${urgentAlerts.length > 1 ? 's' : ''} Need Attention',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: AivoBrand.error,
                       ),
                     ),
                   ],
@@ -486,7 +487,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
                     '${alert.studentName}: ${alert.message}',
-                    style: TextStyle(fontSize: 13, color: Colors.red.shade700),
+                    style: TextStyle(fontSize: 13, color: AivoBrand.error[700]),
                   ),
                 )),
               ],
@@ -523,7 +524,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                      Icon(Icons.people_outline, size: 64, color: AivoBrand.gray),
                       SizedBox(height: 16),
                       Text('No active students'),
                     ],
@@ -543,7 +544,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
 
   Widget _buildFilterChip(String label, FocusState? state, int count) {
     final isSelected = _filterState == state;
-    final color = state != null ? _getFocusColor(state) : Colors.grey;
+    final color = state != null ? _getFocusColor(state) : AivoBrand.gray;
 
     return FilterChip(
       label: Text('$label ($count)'),
@@ -629,7 +630,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
               if (student.currentActivity != null)
                 Text(
                   student.currentActivity!,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: AivoBrand.gray),
                 ),
               const SizedBox(height: 8),
 
@@ -639,7 +640,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
                   Expanded(
                     child: LinearProgressIndicator(
                       value: student.progress / 100,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AivoBrand.gray[200],
                       color: color,
                     ),
                   ),
@@ -658,18 +659,18 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
               // Metrics
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+                  Icon(Icons.access_time, size: 14, color: AivoBrand.gray[600]),
                   const SizedBox(width: 4),
                   Text(
                     _formatDuration(student.timeOnTask),
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.check_circle, size: 14, color: Colors.grey.shade600),
+                  Icon(Icons.check_circle, size: 14, color: AivoBrand.gray[600]),
                   const SizedBox(width: 4),
                   Text(
                     '${student.successRate.round()}% correct',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                   ),
                 ],
               ),

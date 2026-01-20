@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../subscription/subscription_controller.dart';
 import '../subscription/subscription_models.dart';
@@ -296,7 +297,7 @@ class _SubscriptionManagementScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${module.displayName} has been enabled!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AivoBrand.success,
             ),
           );
         }

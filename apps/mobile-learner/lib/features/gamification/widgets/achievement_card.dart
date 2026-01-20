@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../gamification_models.dart';
 
 /// Card displaying a single achievement
@@ -44,10 +45,10 @@ class AchievementCard extends StatelessWidget {
         width: 80,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isLocked ? Colors.grey.shade100 : Colors.white,
+          color: isLocked ? AivoBrand.gray[100] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isLocked ? Colors.grey.shade300 : achievement.rarityColor.withValues(alpha: 0.5),
+            color: isLocked ? AivoBrand.gray[300]! : achievement.rarityColor.withValues(alpha: 0.5),
             width: 2,
           ),
         ),
@@ -61,7 +62,7 @@ class AchievementCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: isLocked ? Colors.grey : Colors.black87,
+                color: isLocked ? AivoBrand.gray : Colors.black87,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -114,7 +115,7 @@ class AchievementCard extends StatelessWidget {
                           achievement.name,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: isLocked ? Colors.grey : Colors.black87,
+                            color: isLocked ? AivoBrand.gray : Colors.black87,
                           ),
                         ),
                       ),
@@ -127,7 +128,7 @@ class AchievementCard extends StatelessWidget {
                     achievement.description,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isLocked ? Colors.grey : Colors.grey.shade600,
+                      color: isLocked ? AivoBrand.gray : AivoBrand.gray[600],
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -144,7 +145,7 @@ class AchievementCard extends StatelessWidget {
                       '${achievement.currentProgress} / ${achievement.targetProgress}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade500,
+                        color: AivoBrand.gray[500],
                       ),
                     ),
                   ],
@@ -156,14 +157,14 @@ class AchievementCard extends StatelessWidget {
                         Icon(
                           Icons.check_circle,
                           size: 14,
-                          color: Colors.green.shade600,
+                          color: AivoBrand.mint[600],
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Earned ${_formatDate(achievement.earnedAt!)}',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.green.shade600,
+                            color: AivoBrand.mint[600],
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -185,15 +186,15 @@ class AchievementCard extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isLocked ? Colors.grey.shade200 : achievement.rarityColor.withValues(alpha: 0.15),
+        color: isLocked ? AivoBrand.gray[200] : achievement.rarityColor.withValues(alpha: 0.15),
         border: Border.all(
-          color: isLocked ? Colors.grey.shade300 : achievement.rarityColor.withValues(alpha: 0.5),
+          color: isLocked ? AivoBrand.gray[300]! : achievement.rarityColor.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
       child: Center(
         child: isLocked
-            ? Icon(Icons.lock, size: size * 0.5, color: Colors.grey.shade400)
+            ? Icon(Icons.lock, size: size * 0.5, color: AivoBrand.gray[400])
             : Text(
                 achievement.icon,
                 style: TextStyle(fontSize: size * 0.5),
@@ -241,9 +242,9 @@ class _RarityBadge extends StatelessWidget {
   Color get _color {
     switch (rarity) {
       case AchievementRarity.common:
-        return Colors.grey;
+        return AivoBrand.gray;
       case AchievementRarity.uncommon:
-        return Colors.green;
+        return AivoBrand.success;
       case AchievementRarity.rare:
         return Colors.blue;
       case AchievementRarity.epic:
@@ -287,7 +288,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: AivoBrand.gray[200],
         borderRadius: BorderRadius.circular(3),
       ),
       child: FractionallySizedBox(

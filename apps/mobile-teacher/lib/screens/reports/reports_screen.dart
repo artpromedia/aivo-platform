@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 
 /// Screen showing available reports.
@@ -31,7 +32,7 @@ class ReportsScreen extends ConsumerWidget {
             icon: Icons.show_chart,
             title: 'Class Analytics',
             description: 'View class performance and engagement metrics',
-            color: Colors.green,
+            color: AivoBrand.success,
             onTap: () => context.push('/reports/analytics'),
           ),
           const SizedBox(height: 12),
@@ -47,7 +48,7 @@ class ReportsScreen extends ConsumerWidget {
             icon: Icons.calendar_month,
             title: 'Session Summary',
             description: 'Summary of completed sessions',
-            color: Colors.orange,
+            color: AivoBrand.warning,
             onTap: () => context.push('/reports/sessions'),
           ),
         ],

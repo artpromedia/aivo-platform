@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Teams Screen
 ///
@@ -36,7 +37,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
   final Map<String, dynamic> _myTeam = {
     'id': 'team-dragons',
     'name': 'Math Dragons',
-    'color': Colors.red,
+    'color': AivoBrand.error,
     'icon': '🐉',
     'rank': 2,
     'score': 4520,
@@ -51,8 +52,8 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
   };
 
   final List<Map<String, dynamic>> _leaderboard = [
-    {'name': 'Star Squad', 'icon': '⭐', 'color': Colors.amber, 'score': 5200, 'rank': 1},
-    {'name': 'Math Dragons', 'icon': '🐉', 'color': Colors.red, 'score': 4520, 'rank': 2},
+    {'name': 'Star Squad', 'icon': '⭐', 'color': AivoBrand.warning, 'score': 5200, 'rank': 1},
+    {'name': 'Math Dragons', 'icon': '🐉', 'color': AivoBrand.error, 'score': 4520, 'rank': 2},
     {'name': 'Science Wizards', 'icon': '🧙', 'color': Colors.purple, 'score': 4180, 'rank': 3},
     {'name': 'Reading Rockets', 'icon': '🚀', 'color': Colors.blue, 'score': 3950, 'rank': 4},
     {'name': 'History Heroes', 'icon': '🏛️', 'color': Colors.brown, 'score': 3600, 'rank': 5},
@@ -321,7 +322,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.green : Colors.blue,
+                  color: isActive ? AivoBrand.success : Colors.blue,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: Row(
@@ -356,7 +357,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                     const SizedBox(height: 4),
                     Text(
                       comp['description'],
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: AivoBrand.gray[600]),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -394,11 +395,11 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
   Color _getRankColor(int rank) {
     switch (rank) {
       case 1:
-        return Colors.amber;
+        return AivoBrand.warning;
       case 2:
-        return Colors.grey;
+        return AivoBrand.gray;
       case 3:
-        return Colors.orange;
+        return AivoBrand.sunshine[400]!;
       default:
         return Colors.blueGrey;
     }

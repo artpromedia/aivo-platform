@@ -4,6 +4,7 @@
 /// Provides categorized access to breathing, grounding, movement, and sensory activities.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../offline/cached_activities.dart';
 import '../../../offline/offline_regulation_service.dart';
@@ -109,16 +110,16 @@ class _RegulationMenuScreenState extends ConsumerState<RegulationMenuScreen>
         avatar: Icon(
           isOnline ? Icons.cloud_done : Icons.cloud_off,
           size: 18,
-          color: isOnline ? Colors.green : Colors.orange,
+          color: isOnline ? AivoBrand.success : AivoBrand.warning,
         ),
         label: Text(
           isOnline ? 'Online' : 'Offline',
           style: TextStyle(
             fontSize: 12,
-            color: isOnline ? Colors.green : Colors.orange,
+            color: isOnline ? AivoBrand.success : AivoBrand.warning,
           ),
         ),
-        backgroundColor: (isOnline ? Colors.green : Colors.orange).withOpacity(0.1),
+        backgroundColor: (isOnline ? AivoBrand.success : AivoBrand.warning).withOpacity(0.1),
         side: BorderSide.none,
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
@@ -406,7 +407,7 @@ class _RegulationMenuScreenState extends ConsumerState<RegulationMenuScreen>
         return IconButton(
           icon: Icon(
             isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: isFavorite ? Colors.red : null,
+            color: isFavorite ? AivoBrand.error : null,
             size: 20,
           ),
           onPressed: () async {
@@ -423,9 +424,9 @@ class _RegulationMenuScreenState extends ConsumerState<RegulationMenuScreen>
 
   Widget _buildDifficultyIndicator(ActivityDifficulty difficulty) {
     final colors = {
-      ActivityDifficulty.beginner: Colors.green,
-      ActivityDifficulty.intermediate: Colors.orange,
-      ActivityDifficulty.advanced: Colors.red,
+      ActivityDifficulty.beginner: AivoBrand.success,
+      ActivityDifficulty.intermediate: AivoBrand.warning,
+      ActivityDifficulty.advanced: AivoBrand.error,
     };
 
     return Row(
@@ -440,7 +441,7 @@ class _RegulationMenuScreenState extends ConsumerState<RegulationMenuScreen>
             shape: BoxShape.circle,
             color: index <= level
                 ? colors[difficulty]
-                : Colors.grey.withOpacity(0.3),
+                : AivoBrand.gray.withOpacity(0.3),
           ),
         );
       }),
@@ -570,9 +571,9 @@ class _RegulationMenuScreenState extends ConsumerState<RegulationMenuScreen>
       case ActivityCategory.breathing:
         return Colors.blue;
       case ActivityCategory.grounding:
-        return Colors.green;
+        return AivoBrand.success;
       case ActivityCategory.movement:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ActivityCategory.sensory:
         return Colors.purple;
       case ActivityCategory.sounds:

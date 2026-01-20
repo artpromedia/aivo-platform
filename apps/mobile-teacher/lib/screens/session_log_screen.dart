@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart' hide Badge;
+import 'package:flutter_common/theme/theme.dart';
 
 // UI Constants
 const double _kLargeIconSize = 64.0;
@@ -21,10 +22,10 @@ String _formatTime(DateTime time) {
 
 /// Attendance status enum.
 enum AttendanceStatus {
-  present('Present', Icons.check_circle, Colors.green),
-  absent('Absent', Icons.cancel, Colors.red),
-  tardy('Tardy', Icons.access_time, Colors.orange),
-  unknown('Not Set', Icons.help_outline, Colors.grey);
+  present('Present', Icons.check_circle, AivoBrand.success),
+  absent('Absent', Icons.cancel, AivoBrand.error),
+  tardy('Tardy', Icons.access_time, AivoBrand.warning),
+  unknown('Not Set', Icons.help_outline, AivoBrand.gray);
 
   const AttendanceStatus(this.label, this.icon, this.color);
 
@@ -538,17 +539,17 @@ class _AttendanceTab extends ConsumerWidget {
               _AttendanceStat(
                 label: 'Present',
                 count: state.presentCount,
-                color: Colors.green,
+                color: AivoBrand.success,
               ),
               _AttendanceStat(
                 label: 'Absent',
                 count: state.absentCount,
-                color: Colors.red,
+                color: AivoBrand.error,
               ),
               _AttendanceStat(
                 label: 'Tardy',
                 count: state.tardyCount,
-                color: Colors.orange,
+                color: AivoBrand.warning,
               ),
             ],
           ),

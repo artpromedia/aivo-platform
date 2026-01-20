@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../../../models/risk_prediction.dart';
 import 'risk_level_badge.dart';
 
@@ -359,9 +360,9 @@ class _RiskFactorChip extends StatelessWidget {
   Color _colorForSeverity(RiskSeverity severity) {
     switch (severity) {
       case RiskSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
       case RiskSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case RiskSeverity.low:
         return Colors.amber;
     }
@@ -473,7 +474,7 @@ class StudentRiskDetailCard extends StatelessWidget {
                 'Protective Factors',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Colors.green,
+                  color: AivoBrand.success,
                 ),
               ),
               const SizedBox(height: 12),
@@ -677,9 +678,9 @@ class _RiskFactorRow extends StatelessWidget {
   Color _colorForSeverity(RiskSeverity severity) {
     switch (severity) {
       case RiskSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
       case RiskSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case RiskSeverity.low:
         return Colors.amber;
     }
@@ -701,10 +702,10 @@ class _ProtectiveFactorRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.shield,
             size: 16,
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -724,7 +725,7 @@ class _ProtectiveFactorRow extends StatelessWidget {
                     Text(
                       '+${(factor.contribution * 100).round()}%',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.green,
+                        color: AivoBrand.success,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

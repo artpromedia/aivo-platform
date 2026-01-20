@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../auth/auth_controller.dart';
 import '../baseline/baseline_controller.dart';
@@ -99,7 +100,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
             return AlertDialog(
               title: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green),
+                  Icon(Icons.check_circle, color: AivoBrand.success),
                   const SizedBox(width: 12),
                   Expanded(child: Text('$name Added!')),
                 ],

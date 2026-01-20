@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../engagement/models.dart';
 import '../engagement/providers.dart';
@@ -289,7 +290,7 @@ class ChildEngagementScreen extends ConsumerWidget {
           end: Alignment.bottomRight,
           colors: [
             Colors.amber.shade400,
-            Colors.orange.shade600,
+            AivoBrand.sunshine[600]!,
           ],
         ),
         boxShadow: [
@@ -596,7 +597,7 @@ class _TimelineItem extends StatelessWidget {
         break;
       case 'level_up':
         icon = Icons.arrow_upward;
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case 'streak_milestone':
         icon = Icons.local_fire_department;

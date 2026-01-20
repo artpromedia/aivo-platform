@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../accessibility/accessibility.dart';
 import '../plan/plan_controller.dart';
@@ -98,7 +99,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
           children: [
             Semantics(
               label: A11yLabels.errorIcon,
-              child: const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              child: const Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             ),
             const SizedBox(height: 16),
             Text('Failed to load plan', style: Theme.of(context).textTheme.titleLarge),
@@ -130,7 +131,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+            const Icon(Icons.check_circle_outline, size: 64, color: AivoBrand.success),
             const SizedBox(height: 16),
             Text('All done for today!', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
@@ -160,7 +161,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
           Text(
             '${plan.activities.length} activities • ~${plan.totalMinutes} minutes',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
+                  color: AivoBrand.gray[600],
                 ),
           ),
           const SizedBox(height: 16),
@@ -240,11 +241,11 @@ class _ActivityCard extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.timer_outlined, size: 14, color: Colors.grey[600]),
+                Icon(Icons.timer_outlined, size: 14, color: AivoBrand.gray[600]),
                 const SizedBox(width: 4),
                 Text('${activity.estimatedMinutes} min'),
                 const SizedBox(width: 16),
-                Icon(_getObjectTypeIcon(activity.objectType), size: 14, color: Colors.grey[600]),
+                Icon(_getObjectTypeIcon(activity.objectType), size: 14, color: AivoBrand.gray[600]),
                 const SizedBox(width: 4),
                 Text(_getObjectTypeLabel(activity.objectType)),
               ],
@@ -266,13 +267,13 @@ class _ActivityCard extends StatelessWidget {
       case 'reading_comprehension':
         return Colors.indigo;
       case 'number_sense':
-        return Colors.orange;
+        return AivoBrand.warning;
       case 'operations':
-        return Colors.red;
+        return AivoBrand.error;
       case 'problem_solving':
         return Colors.purple;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -326,13 +327,13 @@ class _DifficultyIndicator extends StatelessWidget {
         children: [
           Text(
             'Difficulty: ',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
           ),
           ...List.generate(5, (index) {
             return Icon(
               Icons.circle,
               size: 8,
-              color: index < level ? _getDifficultyColor(level) : Colors.grey[300],
+              color: index < level ? _getDifficultyColor(level) : AivoBrand.gray[300],
             );
           }),
         ],
@@ -341,9 +342,9 @@ class _DifficultyIndicator extends StatelessWidget {
   }
 
   Color _getDifficultyColor(int level) {
-    if (level <= 2) return Colors.green;
-    if (level <= 3) return Colors.orange;
-    return Colors.red;
+    if (level <= 2) return AivoBrand.success;
+    if (level <= 3) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 }
 
@@ -410,13 +411,13 @@ class _StoryRecommendationsSectionState
                     Text(
                       '${recommendations.length} available',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                        color: AivoBrand.gray[600],
                       ),
                     ),
                     const SizedBox(width: 4),
                     Icon(
                       _expanded ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.grey[600],
+                      color: AivoBrand.gray[600],
                     ),
                   ],
                 ),

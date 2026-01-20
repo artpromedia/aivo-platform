@@ -8,15 +8,16 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// DSR Request type
 enum DSRRequestType {
   export('Export My Data', Icons.download, Colors.blue),
-  delete('Delete My Data', Icons.delete_forever, Colors.red),
-  access('Access My Data', Icons.visibility, Colors.green),
-  rectify('Correct My Data', Icons.edit, Colors.orange);
+  delete('Delete My Data', Icons.delete_forever, AivoBrand.error),
+  access('Access My Data', Icons.visibility, AivoBrand.success),
+  rectify('Correct My Data', Icons.edit, AivoBrand.warning);
 
   const DSRRequestType(this.label, this.icon, this.color);
   final String label;
@@ -264,19 +265,19 @@ class _DataRightsScreenState extends ConsumerState<DataRightsScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: AivoBrand.error[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(color: AivoBrand.error[200]!),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning, color: Colors.red.shade700),
+                    Icon(Icons.warning, color: AivoBrand.error[700]),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'This action cannot be undone. You will have a 30-day grace period to cancel.',
                         style: TextStyle(
-                          color: Colors.red.shade700,
+                          color: AivoBrand.error[700],
                           fontSize: 12,
                         ),
                       ),
@@ -305,7 +306,7 @@ class _DataRightsScreenState extends ConsumerState<DataRightsScreen> {
               _submitRequest(type);
             },
             style: type == DSRRequestType.delete
-                ? FilledButton.styleFrom(backgroundColor: Colors.red)
+                ? FilledButton.styleFrom(backgroundColor: AivoBrand.error)
                 : null,
             child: const Text('Submit Request'),
           ),
@@ -548,16 +549,16 @@ class _StatusChip extends StatelessWidget {
     Color color;
     switch (status) {
       case DSRRequestStatus.pending:
-        color = Colors.orange;
+        color = AivoBrand.warning;
         break;
       case DSRRequestStatus.processing:
         color = Colors.blue;
         break;
       case DSRRequestStatus.completed:
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case DSRRequestStatus.cancelled:
-        color = Colors.grey;
+        color = AivoBrand.gray;
         break;
     }
 

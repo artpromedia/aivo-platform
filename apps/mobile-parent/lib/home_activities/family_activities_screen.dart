@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models.dart';
 import 'providers.dart';
@@ -126,14 +127,14 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
                     }).toList();
 
                     if (filteredActivities.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.search_off, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
+                            Icon(Icons.search_off, size: 64, color: AivoBrand.gray),
+                            const SizedBox(height: 16),
                             Text('No activities found',
-                                style: TextStyle(color: Colors.grey)),
+                                style: TextStyle(color: AivoBrand.gray)),
                           ],
                         ),
                       );
@@ -338,7 +339,7 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                        Icon(Icons.check_circle, size: 16, color: AivoBrand.success),
                         const SizedBox(width: 8),
                         Expanded(child: Text(material)),
                       ],
@@ -436,13 +437,13 @@ class _FamilyActivitiesScreenState extends ConsumerState<FamilyActivitiesScreen>
       case ActivityType.indoor:
         return Colors.blue;
       case ActivityType.outdoor:
-        return Colors.green;
+        return AivoBrand.success;
       case ActivityType.creative:
         return Colors.pink;
       case ActivityType.educational:
         return Colors.purple;
       case ActivityType.physical:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ActivityType.social:
         return Colors.teal;
     }

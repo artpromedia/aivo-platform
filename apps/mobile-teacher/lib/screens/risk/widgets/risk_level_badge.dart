@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../../../models/risk_prediction.dart';
 
 /// Color definitions for risk levels
@@ -145,8 +146,8 @@ class RiskScoreGauge extends StatelessWidget {
           CircularProgressIndicator(
             value: 1,
             strokeWidth: size * 0.1,
-            backgroundColor: Colors.grey.shade200,
-            valueColor: AlwaysStoppedAnimation(Colors.grey.shade200),
+            backgroundColor: AivoBrand.gray[200],
+            valueColor: AlwaysStoppedAnimation(AivoBrand.gray[200]!),
           ),
           // Progress indicator
           CircularProgressIndicator(
@@ -174,7 +175,7 @@ class RiskScoreGauge extends StatelessWidget {
                     'Risk',
                     style: TextStyle(
                       fontSize: size * 0.12,
-                      color: Colors.grey.shade600,
+                      color: AivoBrand.gray[600],
                     ),
                   ),
               ],
@@ -202,9 +203,9 @@ class RiskTrendIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, color, label) = switch (trend) {
-      RiskTrend.increasing => (Icons.trending_up, Colors.red, 'Increasing'),
-      RiskTrend.stable => (Icons.trending_flat, Colors.grey, 'Stable'),
-      RiskTrend.decreasing => (Icons.trending_down, Colors.green, 'Decreasing'),
+      RiskTrend.increasing => (Icons.trending_up, AivoBrand.error, 'Increasing'),
+      RiskTrend.stable => (Icons.trending_flat, AivoBrand.gray, 'Stable'),
+      RiskTrend.decreasing => (Icons.trending_down, AivoBrand.success, 'Decreasing'),
     };
 
     if (compact) {
@@ -274,8 +275,8 @@ class InterventionUrgencyBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, icon) = switch (urgency) {
-      InterventionUrgency.immediate => (Colors.red, Icons.priority_high),
-      InterventionUrgency.shortTerm => (Colors.orange, Icons.schedule),
+      InterventionUrgency.immediate => (AivoBrand.error, Icons.priority_high),
+      InterventionUrgency.shortTerm => (AivoBrand.warning, Icons.schedule),
       InterventionUrgency.mediumTerm => (Colors.blue, Icons.calendar_today),
     };
 
@@ -317,9 +318,9 @@ class InterventionIntensityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, bars) = switch (intensity) {
-      InterventionIntensity.light => (Colors.green, 1),
-      InterventionIntensity.moderate => (Colors.orange, 2),
-      InterventionIntensity.intensive => (Colors.red, 3),
+      InterventionIntensity.light => (AivoBrand.success, 1),
+      InterventionIntensity.moderate => (AivoBrand.warning, 2),
+      InterventionIntensity.intensive => (AivoBrand.error, 3),
     };
 
     return Container(

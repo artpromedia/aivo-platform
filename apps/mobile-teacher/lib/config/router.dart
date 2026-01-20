@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/dashboard/dashboard_screen.dart';
@@ -250,20 +251,20 @@ class _AllMeetingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('All Meetings'),
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.calendar_today, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
+            Icon(Icons.calendar_today, size: 64, color: AivoBrand.gray),
+            const SizedBox(height: 16),
+            const Text(
               'All Meetings',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Meeting list coming soon',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),
@@ -288,7 +289,7 @@ class _ActionPlanDetailScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.assignment, size: 64, color: Colors.grey),
+            Icon(Icons.assignment, size: 64, color: AivoBrand.gray),
             const SizedBox(height: 16),
             const Text(
               'Action Plan Details',
@@ -297,12 +298,12 @@ class _ActionPlanDetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Plan ID: $planId',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Full plan details coming soon',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),

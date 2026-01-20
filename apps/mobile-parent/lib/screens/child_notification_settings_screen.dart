@@ -12,6 +12,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../services/parent_notification_service.dart';
 
@@ -345,7 +346,7 @@ class _ChildNotificationSettingsScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text('Failed to load settings', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -409,10 +410,10 @@ class _ChildNotificationSettingsScreenState
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.orange.shade100,
+              color: AivoBrand.sunshine[100],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.local_fire_department, color: Colors.orange.shade700),
+            child: Icon(Icons.local_fire_department, color: AivoBrand.sunshine[700]),
           ),
           value: state.streakRemindersEnabled,
           onChanged: (value) => _updateSetting('streakRemindersEnabled', value),
@@ -424,10 +425,10 @@ class _ChildNotificationSettingsScreenState
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.green.shade100,
+              color: AivoBrand.mint[100],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.favorite, color: Colors.green.shade700),
+            child: Icon(Icons.favorite, color: AivoBrand.mint[700]),
           ),
           value: state.encouragementEnabled,
           onChanged: (value) => _updateSetting('encouragementEnabled', value),

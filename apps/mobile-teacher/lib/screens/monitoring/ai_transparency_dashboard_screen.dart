@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/ai_transparency.dart';
 import '../../providers/ai_transparency_provider.dart';
@@ -64,7 +65,7 @@ class _AITransparencyDashboardScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text(
             'Error loading AI data',
@@ -132,20 +133,20 @@ class _AITransparencyDashboardScreenState
                   Icon(
                     Icons.psychology_outlined,
                     size: 64,
-                    color: Colors.grey.shade400,
+                    color: AivoBrand.gray[400],
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No AI activity found',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey.shade600,
+                          color: AivoBrand.gray[600],
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Students\' AI interactions will appear here',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade500,
+                          color: AivoBrand.gray[500],
                         ),
                   ),
                 ],
@@ -201,7 +202,7 @@ class _AITransparencyDashboardScreenState
                   icon: Icons.person,
                   label: 'Active Now',
                   value: '${stats.activeNow}',
-                  color: stats.activeNow > 0 ? Colors.green : null,
+                  color: stats.activeNow > 0 ? AivoBrand.success : null,
                 ),
               ],
             ),
@@ -211,7 +212,7 @@ class _AITransparencyDashboardScreenState
             Text(
               'By Subject',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: AivoBrand.gray[600],
                   ),
             ),
             const SizedBox(height: 8),
@@ -247,21 +248,21 @@ class _AITransparencyDashboardScreenState
             selected: state.selectedFilter == AITransparencyFilter.activeNow,
             onSelected: () => notifier.setFilter(AITransparencyFilter.activeNow),
             icon: Icons.circle,
-            iconColor: Colors.green,
+            iconColor: AivoBrand.success,
           ),
           _FilterChip(
             label: 'Needs Review',
             selected: state.selectedFilter == AITransparencyFilter.needsReview,
             onSelected: () => notifier.setFilter(AITransparencyFilter.needsReview),
             icon: Icons.flag,
-            iconColor: Colors.orange,
+            iconColor: AivoBrand.warning,
           ),
           _FilterChip(
             label: 'Flagged',
             selected: state.selectedFilter == AITransparencyFilter.flagged,
             onSelected: () => notifier.setFilter(AITransparencyFilter.flagged),
             icon: Icons.warning,
-            iconColor: Colors.red,
+            iconColor: AivoBrand.error,
           ),
         ],
       ),
@@ -274,19 +275,19 @@ class _AITransparencyDashboardScreenState
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: AivoBrand.sunshine[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(color: AivoBrand.sunshine[200]!),
       ),
       child: Row(
         children: [
-          Icon(Icons.flag, color: Colors.orange.shade700),
+          Icon(Icons.flag, color: AivoBrand.sunshine[700]),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               '$total conversation${total > 1 ? 's' : ''} need${total == 1 ? 's' : ''} review',
               style: TextStyle(
-                color: Colors.orange.shade800,
+                color: AivoBrand.sunshine[800],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -429,7 +430,7 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray[600],
               ),
         ),
       ],
@@ -509,7 +510,7 @@ class _StudentActivityCard extends StatelessWidget {
                         width: 14,
                         height: 14,
                         decoration: BoxDecoration(
-                          color: Colors.green,
+                          color: AivoBrand.success,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
@@ -537,19 +538,19 @@ class _StudentActivityCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
+                              color: AivoBrand.sunshine[100],
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.flag, size: 12, color: Colors.orange.shade700),
+                                Icon(Icons.flag, size: 12, color: AivoBrand.sunshine[700]),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${activity.flagCount}',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.orange.shade700,
+                                    color: AivoBrand.sunshine[700],
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -582,7 +583,7 @@ class _StudentActivityCard extends StatelessWidget {
                         Text(
                           _formatTimeAgo(activity.lastActiveAt),
                           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Colors.grey.shade600,
+                                color: AivoBrand.gray[600],
                               ),
                         ),
                       ],
@@ -591,7 +592,7 @@ class _StudentActivityCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.grey),
+              const Icon(Icons.chevron_right, color: AivoBrand.gray),
             ],
           ),
         ),
@@ -622,12 +623,12 @@ class _MetricChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey.shade600),
+        Icon(icon, size: 14, color: AivoBrand.gray[600]),
         const SizedBox(width: 2),
         Text(
           value,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray[600],
               ),
         ),
       ],
@@ -671,15 +672,15 @@ class _SentimentChip extends StatelessWidget {
   _SentimentConfig _getSentimentConfig(String sentiment) {
     switch (sentiment.toLowerCase()) {
       case 'positive':
-        return _SentimentConfig('Positive', Icons.sentiment_satisfied, Colors.green);
+        return _SentimentConfig('Positive', Icons.sentiment_satisfied, AivoBrand.success);
       case 'neutral':
-        return _SentimentConfig('Neutral', Icons.sentiment_neutral, Colors.grey);
+        return _SentimentConfig('Neutral', Icons.sentiment_neutral, AivoBrand.gray);
       case 'negative':
-        return _SentimentConfig('Negative', Icons.sentiment_dissatisfied, Colors.orange);
+        return _SentimentConfig('Negative', Icons.sentiment_dissatisfied, AivoBrand.warning);
       case 'frustrated':
-        return _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, Colors.red);
+        return _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, AivoBrand.error);
       default:
-        return _SentimentConfig('Unknown', Icons.help_outline, Colors.grey);
+        return _SentimentConfig('Unknown', Icons.help_outline, AivoBrand.gray);
     }
   }
 }

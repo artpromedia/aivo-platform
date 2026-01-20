@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../onboarding/onboarding_controller.dart';
 
@@ -19,8 +20,8 @@ class _ProfileSetupStepState extends ConsumerState<ProfileSetupStep> {
   final List<_AvatarOption> _avatars = [
     _AvatarOption('avatar_1', Icons.face, Colors.blue),
     _AvatarOption('avatar_2', Icons.face_2, Colors.purple),
-    _AvatarOption('avatar_3', Icons.face_3, Colors.green),
-    _AvatarOption('avatar_4', Icons.face_4, Colors.orange),
+    _AvatarOption('avatar_3', Icons.face_3, AivoBrand.success),
+    _AvatarOption('avatar_4', Icons.face_4, AivoBrand.warning),
     _AvatarOption('avatar_5', Icons.face_5, Colors.pink),
     _AvatarOption('avatar_6', Icons.face_6, Colors.teal),
   ];

@@ -9,6 +9,7 @@ library;
 
 // dart:math is used implicitly in progress calculations
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'progress_models.dart';
@@ -240,19 +241,19 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           emoji: '🔥',
           value: '${_summary.currentStreak}',
           label: 'Day streak',
-          gradientColors: [Colors.orange.shade50, Colors.yellow.shade50],
-          borderColor: Colors.orange.shade200,
-          valueColor: Colors.orange.shade700,
-          labelColor: Colors.orange.shade600,
+          gradientColors: [AivoBrand.sunshine[50]!, Colors.yellow.shade50],
+          borderColor: AivoBrand.sunshine[200]!,
+          valueColor: AivoBrand.sunshine[700]!,
+          labelColor: AivoBrand.sunshine[600]!,
         ),
         _StatCard(
           emoji: '📚',
           value: '${_summary.lessonsCompleted}',
           label: 'Lessons completed',
-          gradientColors: [Colors.green.shade50, Colors.teal.shade50],
-          borderColor: Colors.green.shade200,
-          valueColor: Colors.green.shade700,
-          labelColor: Colors.green.shade600,
+          gradientColors: [AivoBrand.mint[50]!, Colors.teal.shade50],
+          borderColor: AivoBrand.mint[200]!,
+          valueColor: AivoBrand.mint[700]!,
+          labelColor: AivoBrand.mint[600]!,
         ),
       ],
     );

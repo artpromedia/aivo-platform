@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../notifications/notification_service.dart';
 
@@ -100,7 +101,7 @@ class _NotificationSettingsScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text('Failed to load preferences', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -680,13 +681,13 @@ class _UrgencyChannelTile extends StatelessWidget {
   Color _getUrgencyColor(NotificationUrgency urgency) {
     switch (urgency) {
       case NotificationUrgency.critical:
-        return Colors.red;
+        return AivoBrand.error;
       case NotificationUrgency.high:
-        return Colors.orange;
+        return AivoBrand.warning;
       case NotificationUrgency.medium:
         return Colors.amber;
       case NotificationUrgency.low:
-        return Colors.green;
+        return AivoBrand.success;
       case NotificationUrgency.info:
         return Colors.blue;
     }

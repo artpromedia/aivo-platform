@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../engagement/models.dart';
 import '../engagement/providers.dart';
@@ -354,7 +355,7 @@ class _InProgressBadgeCard extends StatelessWidget {
               _getIconEmoji(progress.iconKey),
               style: TextStyle(
                 fontSize: 32,
-                color: Colors.grey.withValues(alpha: 0.7),
+                color: AivoBrand.gray.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(width: 16),

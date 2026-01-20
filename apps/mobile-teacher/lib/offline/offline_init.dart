@@ -8,8 +8,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_common/flutter_common.dart' 
+import 'package:flutter_common/flutter_common.dart'
     hide ConnectionState;
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_common/offline/connectivity_service.dart' 
     show ConnectionState, ConnectivityService;
 
@@ -221,18 +222,18 @@ class OfflineStatusBanner extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          color: Colors.orange.shade100,
+          color: AivoBrand.sunshine[100],
           child: SafeArea(
             bottom: false,
             child: Row(
               children: [
-                Icon(Icons.cloud_off, color: Colors.orange.shade800, size: 20),
+                Icon(Icons.cloud_off, color: AivoBrand.sunshine[800], size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Offline mode. Attendance and notes will sync when connected.',
                     style: TextStyle(
-                      color: Colors.orange.shade900,
+                      color: AivoBrand.sunshine[900],
                       fontSize: 13,
                     ),
                   ),
@@ -265,7 +266,7 @@ class PendingSyncIndicator extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.orange,
+            color: AivoBrand.warning,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(

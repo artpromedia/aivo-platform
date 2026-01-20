@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -275,7 +276,7 @@ class _MessageBubble extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isTeacher ? Colors.blue : Colors.grey.shade200,
+          color: isTeacher ? Colors.blue : AivoBrand.gray[200],
           borderRadius: BorderRadius.circular(20).copyWith(
             bottomRight: isTeacher ? const Radius.circular(4) : null,
             bottomLeft: !isTeacher ? const Radius.circular(4) : null,
@@ -295,7 +296,7 @@ class _MessageBubble extends StatelessWidget {
               DateFormat('h:mm a').format(message.createdAt),
               style: TextStyle(
                 fontSize: 10,
-                color: isTeacher ? Colors.white70 : Colors.grey,
+                color: isTeacher ? Colors.white70 : AivoBrand.gray,
               ),
             ),
           ],
@@ -363,12 +364,12 @@ class _MessageInput extends StatelessWidget {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: AivoBrand.gray[200],
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             isImage ? Icons.image : Icons.insert_drive_file,
-                            color: Colors.grey.shade600,
+                            color: AivoBrand.gray[600],
                           ),
                         ),
                         Positioned(
@@ -379,7 +380,7 @@ class _MessageInput extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(2),
                               decoration: const BoxDecoration(
-                                color: Colors.red,
+                                color: AivoBrand.error,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(

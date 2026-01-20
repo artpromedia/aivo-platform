@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -234,7 +235,7 @@ class _HandwritingAlternativeState extends State<HandwritingAlternative> {
                 margin: const EdgeInsets.only(top: 8),
                 padding: EdgeInsets.all((12 * multiplier).toDouble()),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AivoBrand.gray.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Wrap(
@@ -347,7 +348,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isActive ? Colors.blue.shade100 : Colors.grey.shade200,
+      color: isActive ? Colors.blue.shade100 : AivoBrand.gray.shade200,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -358,14 +359,14 @@ class _ActionButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: isActive ? Colors.blue : Colors.grey.shade700),
+              Icon(icon, size: 18, color: isActive ? Colors.blue : AivoBrand.gray.shade700),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isActive ? Colors.blue : Colors.grey.shade700,
+                    color: isActive ? Colors.blue : AivoBrand.gray.shade700,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -462,7 +463,7 @@ class SymbolPicker extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
+                            color: AivoBrand.gray.shade600,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -512,7 +513,7 @@ class _SymbolButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.grey.shade200,
+      color: AivoBrand.gray.shade200,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -617,7 +618,7 @@ class MultipleChoiceSelector extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Material(
-                color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
+                color: isSelected ? Colors.blue.shade100 : AivoBrand.gray.shade100,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: () {
@@ -636,7 +637,7 @@ class MultipleChoiceSelector extends StatelessWidget {
                           height: (32 * multiplier).toDouble(),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected ? Colors.blue : Colors.grey.shade400,
+                            color: isSelected ? Colors.blue : AivoBrand.gray.shade400,
                           ),
                           child: Center(
                             child: Text(
@@ -747,7 +748,7 @@ class _SentenceBuilderState extends State<SentenceBuilder> {
                       child: Text(
                         'Tap words below to build your sentence',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: AivoBrand.gray.shade600,
                           fontSize: (14 * multiplier).toDouble(),
                         ),
                       ),

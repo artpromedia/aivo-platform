@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'social_story_models.dart';
 import 'social_story_service.dart';
@@ -116,7 +117,7 @@ class StoryRecommendationCard extends StatelessWidget {
                   Text(
                     '${story.pageCount} pages · ~${story.estimatedDuration ~/ 60} min',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
+                      color: AivoBrand.gray,
                     ),
                   ),
                 ],
@@ -141,12 +142,12 @@ class StoryRecommendationCard extends StatelessWidget {
       case SocialStoryCategory.feelingOverwhelmed:
       case SocialStoryCategory.feelingAnxious:
       case SocialStoryCategory.calmingDown:
-        return Colors.orange;
+        return AivoBrand.warning;
       case SocialStoryCategory.askingForHelp:
       case SocialStoryCategory.askingForBreak:
-        return Colors.green;
+        return AivoBrand.success;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 }
@@ -194,15 +195,15 @@ class _CategoryIcon extends StatelessWidget {
       case SocialStoryCategory.receivingFeedback:
         return (Icons.feedback, Colors.purple);
       case SocialStoryCategory.askingForHelp:
-        return (Icons.help, Colors.green);
+        return (Icons.help, AivoBrand.success);
       case SocialStoryCategory.askingForBreak:
         return (Icons.pause_circle, Colors.teal);
       case SocialStoryCategory.raisingHand:
-        return (Icons.pan_tool, Colors.green);
+        return (Icons.pan_tool, AivoBrand.success);
       case SocialStoryCategory.talkingToTeacher:
-        return (Icons.record_voice_over, Colors.green);
+        return (Icons.record_voice_over, AivoBrand.success);
       case SocialStoryCategory.feelingFrustrated:
-        return (Icons.sentiment_dissatisfied, Colors.orange);
+        return (Icons.sentiment_dissatisfied, AivoBrand.warning);
       case SocialStoryCategory.feelingOverwhelmed:
         return (Icons.whatshot, Colors.deepOrange);
       case SocialStoryCategory.feelingAnxious:
@@ -218,9 +219,9 @@ class _CategoryIcon extends StatelessWidget {
       case SocialStoryCategory.waitingTurn:
         return (Icons.hourglass_empty, Colors.brown);
       case SocialStoryCategory.usingDevice:
-        return (Icons.tablet, Colors.grey);
+        return (Icons.tablet, AivoBrand.gray);
       case SocialStoryCategory.technicalProblem:
-        return (Icons.build, Colors.grey);
+        return (Icons.build, AivoBrand.gray);
       case SocialStoryCategory.workingWithPeers:
         return (Icons.groups, Colors.teal);
       case SocialStoryCategory.sharingMaterials:
@@ -236,9 +237,9 @@ class _CategoryIcon extends StatelessWidget {
       case SocialStoryCategory.fireDrill:
       case SocialStoryCategory.lockdown:
       case SocialStoryCategory.feelingUnsafe:
-        return (Icons.warning, Colors.red);
+        return (Icons.warning, AivoBrand.error);
       default:
-        return (Icons.auto_stories, Colors.grey);
+        return (Icons.auto_stories, AivoBrand.gray);
     }
   }
 }
@@ -286,11 +287,11 @@ class _ReasonChip extends StatelessWidget {
       case RecommendationReason.transitionSupport:
         return ('For your next activity', Colors.blue, Icons.swap_horiz);
       case RecommendationReason.emotionalSupport:
-        return ('Might help right now', Colors.orange, Icons.favorite);
+        return ('Might help right now', AivoBrand.warning, Icons.favorite);
       case RecommendationReason.scheduled:
         return ('Scheduled', Colors.purple, Icons.schedule);
       case RecommendationReason.teacherAssigned:
-        return ('From your teacher', Colors.green, Icons.person);
+        return ('From your teacher', AivoBrand.success, Icons.person);
       case RecommendationReason.frequentlyHelpful:
         return ('Helped before', Colors.teal, Icons.thumb_up);
       case RecommendationReason.similarSituation:

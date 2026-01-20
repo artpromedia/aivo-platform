@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 
@@ -64,7 +65,7 @@ class _ClassMonitoringScreenState extends ConsumerState<ClassMonitoringScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text('Error loading class', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -111,13 +112,13 @@ class _ClassMonitoringScreenState extends ConsumerState<ClassMonitoringScreen> {
                 icon: Icons.psychology,
                 label: 'Focused',
                 value: '$focusedCount/${mockStudents.length}',
-                color: Colors.green,
+                color: AivoBrand.success,
               ),
               _StatChip(
                 icon: Icons.help_outline,
                 label: 'Need Help',
                 value: '$needsHelpCount',
-                color: needsHelpCount > 0 ? Colors.red : null,
+                color: needsHelpCount > 0 ? AivoBrand.error : null,
               ),
             ],
           ),
@@ -129,19 +130,19 @@ class _ClassMonitoringScreenState extends ConsumerState<ClassMonitoringScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: AivoBrand.error[50],
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.shade200),
+              border: Border.all(color: AivoBrand.error[200]!),
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning, color: Colors.red),
+                const Icon(Icons.warning, color: AivoBrand.error),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '$needsHelpCount student${needsHelpCount > 1 ? 's' : ''} may need assistance',
                     style: TextStyle(
-                      color: Colors.red.shade700,
+                      color: AivoBrand.error[700],
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -296,7 +297,7 @@ class _StudentCard extends StatelessWidget {
               const SizedBox(height: 4),
               LinearProgressIndicator(
                 value: student.progress / 100,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: AivoBrand.gray[200],
               ),
               const SizedBox(height: 2),
               Text(
@@ -313,17 +314,17 @@ class _StudentCard extends StatelessWidget {
   _StatusConfig _getStatusConfig(String status) {
     switch (status) {
       case 'focused':
-        return _StatusConfig('Focused', Icons.check_circle, Colors.green);
+        return _StatusConfig('Focused', Icons.check_circle, AivoBrand.success);
       case 'distracted':
-        return _StatusConfig('Distracted', Icons.warning, Colors.orange);
+        return _StatusConfig('Distracted', Icons.warning, AivoBrand.warning);
       case 'idle':
-        return _StatusConfig('Idle', Icons.pause_circle, Colors.grey);
+        return _StatusConfig('Idle', Icons.pause_circle, AivoBrand.gray);
       case 'break':
         return _StatusConfig('On Break', Icons.coffee, Colors.blue);
       case 'needsHelp':
-        return _StatusConfig('Needs Help', Icons.help, Colors.red);
+        return _StatusConfig('Needs Help', Icons.help, AivoBrand.error);
       default:
-        return _StatusConfig('Unknown', Icons.help_outline, Colors.grey);
+        return _StatusConfig('Unknown', Icons.help_outline, AivoBrand.gray);
     }
   }
 }
@@ -360,7 +361,7 @@ class _StudentListTile extends StatelessWidget {
                 Expanded(
                   child: LinearProgressIndicator(
                     value: student.progress / 100,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AivoBrand.gray[200],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -402,17 +403,17 @@ class _StudentListTile extends StatelessWidget {
   _StatusConfig _getStatusConfig(String status) {
     switch (status) {
       case 'focused':
-        return _StatusConfig('Focused', Icons.check_circle, Colors.green);
+        return _StatusConfig('Focused', Icons.check_circle, AivoBrand.success);
       case 'distracted':
-        return _StatusConfig('Distracted', Icons.warning, Colors.orange);
+        return _StatusConfig('Distracted', Icons.warning, AivoBrand.warning);
       case 'idle':
-        return _StatusConfig('Idle', Icons.pause_circle, Colors.grey);
+        return _StatusConfig('Idle', Icons.pause_circle, AivoBrand.gray);
       case 'break':
         return _StatusConfig('On Break', Icons.coffee, Colors.blue);
       case 'needsHelp':
-        return _StatusConfig('Needs Help', Icons.help, Colors.red);
+        return _StatusConfig('Needs Help', Icons.help, AivoBrand.error);
       default:
-        return _StatusConfig('Unknown', Icons.help_outline, Colors.grey);
+        return _StatusConfig('Unknown', Icons.help_outline, AivoBrand.gray);
     }
   }
 }

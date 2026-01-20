@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../reading_tools_models.dart';
@@ -118,19 +119,19 @@ class _VocabularyBuilderWidgetState
   Color _getMasteryColor(int level) {
     switch (level) {
       case 0:
-        return Colors.grey;
+        return AivoBrand.gray;
       case 1:
-        return Colors.red;
+        return AivoBrand.error;
       case 2:
-        return Colors.orange;
+        return AivoBrand.warning;
       case 3:
         return Colors.yellow.shade700;
       case 4:
         return Colors.lightGreen;
       case 5:
-        return Colors.green;
+        return AivoBrand.success;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -501,7 +502,7 @@ class _VocabularyBuilderWidgetState
                       // Mark as needs practice
                       _nextFlashcard();
                     },
-                    icon: const Icon(Icons.replay, color: Colors.orange),
+                    icon: Icon(Icons.replay, color: AivoBrand.warning),
                     label: const Text('Again'),
                   ),
                   const SizedBox(width: 8),
@@ -513,7 +514,7 @@ class _VocabularyBuilderWidgetState
                     icon: const Icon(Icons.check),
                     label: const Text('Got it!'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: AivoBrand.success,
                     ),
                   ),
                 ],

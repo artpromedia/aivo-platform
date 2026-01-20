@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -81,7 +82,7 @@ class _IepReportsScreenState extends ConsumerState<IepReportsScreen> {
                         child: _StatItem(
                           label: 'On Track',
                           value: '${state.goals.where((g) => g.isOnTrack).length}',
-                          color: Colors.green,
+                          color: AivoBrand.success,
                         ),
                       ),
                       Expanded(
@@ -89,17 +90,17 @@ class _IepReportsScreenState extends ConsumerState<IepReportsScreen> {
                           data: (goals) => _StatItem(
                             label: 'At Risk',
                             value: '${goals.length}',
-                            color: Colors.red,
+                            color: AivoBrand.error,
                           ),
                           loading: () => const _StatItem(
                             label: 'At Risk',
                             value: '-',
-                            color: Colors.red,
+                            color: AivoBrand.error,
                           ),
                           error: (_, __) => const _StatItem(
                             label: 'At Risk',
                             value: '?',
-                            color: Colors.red,
+                            color: AivoBrand.error,
                           ),
                         ),
                       ),
@@ -118,12 +119,12 @@ class _IepReportsScreenState extends ConsumerState<IepReportsScreen> {
             data: (goalsAtRisk) {
               if (goalsAtRisk.isEmpty) {
                 return Card(
-                  color: Colors.green.shade50,
+                  color: AivoBrand.mint[50],
                   child: const Padding(
                     padding: EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green),
+                        Icon(Icons.check_circle, color: AivoBrand.success),
                         SizedBox(width: 12),
                         Text('All goals are on track!'),
                       ],
@@ -234,7 +235,7 @@ class _GoalRiskCard extends StatelessWidget {
     final progress = goal.currentValue / goal.targetValue;
 
     return Card(
-      color: Colors.red.shade50,
+      color: AivoBrand.error[50],
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -243,7 +244,7 @@ class _GoalRiskCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.warning_amber, color: Colors.red.shade700, size: 20),
+                Icon(Icons.warning_amber, color: AivoBrand.error[700], size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -257,8 +258,8 @@ class _GoalRiskCard extends StatelessWidget {
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress.clamp(0, 1),
-              backgroundColor: Colors.red.shade100,
-              color: Colors.red,
+              backgroundColor: AivoBrand.error[100],
+              color: AivoBrand.error,
             ),
             const SizedBox(height: 4),
             Text(
@@ -330,7 +331,7 @@ class _CategoryProgressTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   LinearProgressIndicator(
                     value: progress.clamp(0, 1),
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AivoBrand.gray[200],
                     color: _progressColor(progress),
                   ),
                 ],
@@ -357,8 +358,8 @@ class _CategoryProgressTile extends StatelessWidget {
   }
 
   Color _progressColor(double progress) {
-    if (progress >= 0.8) return Colors.green;
-    if (progress >= 0.5) return Colors.orange;
-    return Colors.red;
+    if (progress >= 0.8) return AivoBrand.success;
+    if (progress >= 0.5) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 }

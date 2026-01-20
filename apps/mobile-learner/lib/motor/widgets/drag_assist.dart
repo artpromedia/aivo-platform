@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -194,15 +195,15 @@ class DragAssistOverlay extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isClose ? Colors.green : Colors.grey.shade400,
+                    color: isClose ? AivoBrand.success : AivoBrand.gray.shade400,
                     width: isClose ? 3 : 2,
                   ),
                   color: isClose
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.grey.withValues(alpha: 0.1),
+                      ? AivoBrand.success.withValues(alpha: 0.2)
+                      : AivoBrand.gray.withValues(alpha: 0.1),
                 ),
                 child: isClose
-                    ? const Icon(Icons.check, color: Colors.green, size: 24)
+                    ? const Icon(Icons.check, color: AivoBrand.success, size: 24)
                     : null,
               ),
             );
@@ -219,7 +220,7 @@ class DragAssistOverlay extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: isNearTarget
-                    ? Border.all(color: Colors.green, width: 3)
+                    ? Border.all(color: AivoBrand.success, width: 3)
                     : null,
               ),
               child: child,
@@ -291,12 +292,12 @@ class _DragAssistTargetState<T extends Object>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular((12 * multiplier).toDouble()),
                 border: _isHovering
-                    ? Border.all(color: Colors.green, width: 3)
+                    ? Border.all(color: AivoBrand.success, width: 3)
                     : null,
                 boxShadow: _isHovering
                     ? [
                         BoxShadow(
-                          color: Colors.green.withValues(alpha: 0.3),
+                          color: AivoBrand.success.withValues(alpha: 0.3),
                           blurRadius: 12,
                           spreadRadius: 2,
                         ),
@@ -348,7 +349,7 @@ class SnapGridArea extends StatelessWidget {
                 columns: columns,
                 rows: rows,
                 cellSize: cellSize,
-                color: gridColor ?? Colors.grey.shade300,
+                color: gridColor ?? AivoBrand.gray.shade300,
               ),
             ),
 

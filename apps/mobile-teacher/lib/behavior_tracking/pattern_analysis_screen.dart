@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'models.dart';
@@ -211,7 +212,7 @@ class _PatternAnalysisScreenState extends ConsumerState<PatternAnalysisScreen> {
                     const SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: entry.value / pattern.totalIncidents,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AivoBrand.gray[200],
                     ),
                   ],
                 ),
@@ -264,7 +265,7 @@ class _PatternAnalysisScreenState extends ConsumerState<PatternAnalysisScreen> {
                     const SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: entry.value / pattern.totalIncidents,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AivoBrand.gray[200],
                       color: _getSeverityColor(entry.key),
                     ),
                   ],
@@ -298,7 +299,7 @@ class _PatternAnalysisScreenState extends ConsumerState<PatternAnalysisScreen> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber, size: 20, color: Colors.orange),
+                    const Icon(Icons.warning_amber, size: 20, color: AivoBrand.warning),
                     const SizedBox(width: 12),
                     Expanded(child: Text(trigger)),
                   ],
@@ -407,12 +408,12 @@ class _PatternAnalysisScreenState extends ConsumerState<PatternAnalysisScreen> {
                     const SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: entry.value / 100,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AivoBrand.gray[200],
                       color: entry.value >= 70
-                          ? Colors.green
+                          ? AivoBrand.success
                           : entry.value >= 50
-                              ? Colors.orange
-                              : Colors.red,
+                              ? AivoBrand.warning
+                              : AivoBrand.error,
                     ),
                   ],
                 ),
@@ -496,11 +497,11 @@ class _PatternAnalysisScreenState extends ConsumerState<PatternAnalysisScreen> {
   Color _getSeverityColor(BehaviorSeverity severity) {
     switch (severity) {
       case BehaviorSeverity.low:
-        return Colors.green;
+        return AivoBrand.success;
       case BehaviorSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case BehaviorSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
       case BehaviorSeverity.crisis:
         return Colors.purple;
     }

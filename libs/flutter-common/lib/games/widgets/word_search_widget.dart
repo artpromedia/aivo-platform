@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/theme.dart';
 import '../game_models.dart';
 
 /// Word search puzzle widget with touch/drag selection
@@ -176,10 +177,10 @@ class _WordSearchWidgetState extends State<WordSearchWidget> {
       final word = _foundWords[i];
       if (word.cells.any((cell) => cell.dx.toInt() == col && cell.dy.toInt() == row)) {
         final colors = [
-          Colors.green[200],
+          AivoBrand.mint[200],
           Colors.blue[200],
           Colors.purple[200],
-          Colors.orange[200],
+          AivoBrand.sunshine[200],
           Colors.pink[200],
           Colors.teal[200],
         ];
@@ -207,13 +208,13 @@ class _WordSearchWidgetState extends State<WordSearchWidget> {
                   word.word,
                   style: TextStyle(
                     decoration: isFound ? TextDecoration.lineThrough : null,
-                    color: isFound ? Colors.grey : null,
+                    color: isFound ? AivoBrand.gray : null,
                     fontWeight: isFound ? FontWeight.normal : FontWeight.bold,
                   ),
                 ),
-                backgroundColor: isFound ? Colors.green[100] : null,
+                backgroundColor: isFound ? AivoBrand.mint[100] : null,
                 avatar: isFound
-                    ? const Icon(Icons.check, size: 16, color: Colors.green)
+                    ? Icon(Icons.check, size: 16, color: AivoBrand.success)
                     : null,
               );
             }).toList(),
@@ -263,7 +264,7 @@ class _WordSearchWidgetState extends State<WordSearchWidget> {
                                     ? Colors.yellow[200]
                                     : foundColor,
                                 border: Border.all(
-                                  color: Colors.grey[300]!,
+                                  color: AivoBrand.gray[300]!,
                                   width: 0.5,
                                 ),
                               ),
@@ -274,7 +275,7 @@ class _WordSearchWidgetState extends State<WordSearchWidget> {
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: foundColor != null
-                                        ? Colors.grey[700]
+                                        ? AivoBrand.gray[700]
                                         : Colors.black,
                                   ),
                                 ),
@@ -296,8 +297,8 @@ class _WordSearchWidgetState extends State<WordSearchWidget> {
           padding: const EdgeInsets.all(16.0),
           child: LinearProgressIndicator(
             value: _foundWords.length / widget.puzzle.words.length,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation(Colors.green),
+            backgroundColor: AivoBrand.gray[300],
+            valueColor: AlwaysStoppedAnimation(AivoBrand.success),
           ),
         ),
       ],

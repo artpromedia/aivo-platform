@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../reading_tools_models.dart';
@@ -68,7 +69,7 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
     {
       'category': 'Explain',
       'icon': Icons.school,
-      'color': Colors.green,
+      'color': AivoBrand.success,
       'starters': [
         'For example...',
         'This means that...',
@@ -79,7 +80,7 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
     {
       'category': 'Conclude',
       'icon': Icons.flag,
-      'color': Colors.red,
+      'color': AivoBrand.error,
       'starters': [
         'In conclusion...',
         'To sum up...',

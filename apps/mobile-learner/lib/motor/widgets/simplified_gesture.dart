@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -184,7 +185,7 @@ class _ZoomButton extends StatelessWidget {
             child: Icon(
               icon,
               size: size * 0.5,
-              color: onPressed != null ? Colors.black87 : Colors.grey,
+              color: onPressed != null ? Colors.black87 : AivoBrand.gray,
             ),
           ),
         ),
@@ -455,7 +456,7 @@ class _NavigationArrow extends StatelessWidget {
             child: Icon(
               icon,
               size: size * 0.6,
-              color: onPressed != null ? Colors.black87 : Colors.grey,
+              color: onPressed != null ? Colors.black87 : AivoBrand.gray,
             ),
           ),
         ),

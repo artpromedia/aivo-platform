@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Note: We use local definitions for PDCourse and Certification
@@ -601,7 +602,7 @@ class _ProfessionalDevelopmentScreenState
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.verified, color: Colors.green),
+            Icon(Icons.verified, color: AivoBrand.success),
             const SizedBox(width: 8),
             Expanded(child: Text(cert.name)),
           ],
@@ -617,7 +618,7 @@ class _ProfessionalDevelopmentScreenState
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.green),
+                border: Border.all(color: AivoBrand.success),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -712,7 +713,7 @@ class _ProfessionalDevelopmentScreenState
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: isCompleted
-                        ? Colors.green
+                        ? AivoBrand.success
                         : isCurrent
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -879,13 +880,13 @@ class _StatusChip extends StatelessWidget {
     Color color;
     switch (status) {
       case PDCourseStatus.completed:
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case PDCourseStatus.inProgress:
-        color = Colors.orange;
+        color = AivoBrand.warning;
         break;
       case PDCourseStatus.notStarted:
-        color = Colors.grey;
+        color = AivoBrand.gray;
         break;
     }
 
@@ -968,7 +969,7 @@ class _CertificateCard extends StatelessWidget {
                                 ? Icons.warning
                                 : Icons.check_circle,
                             size: 14,
-                            color: isExpiringSoon ? Colors.orange : Colors.green,
+                            color: isExpiringSoon ? AivoBrand.warning : AivoBrand.success,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -977,8 +978,8 @@ class _CertificateCard extends StatelessWidget {
                                 : 'Valid until ${_formatDate(certification.expiresDate)}',
                             style: TextStyle(
                               color: isExpiringSoon
-                                  ? Colors.orange
-                                  : Colors.green,
+                                  ? AivoBrand.warning
+                                  : AivoBrand.success,
                               fontSize: 12,
                             ),
                           ),
@@ -991,8 +992,8 @@ class _CertificateCard extends StatelessWidget {
               Icon(
                 Icons.verified,
                 color: certification.status == 'active'
-                    ? Colors.green
-                    : Colors.grey,
+                    ? AivoBrand.success
+                    : AivoBrand.gray,
               ),
             ],
           ),
@@ -1268,7 +1269,7 @@ class _CourseDetailScreen extends StatelessWidget {
                       leading: CircleAvatar(
                         radius: 16,
                         backgroundColor: isCompleted
-                            ? Colors.green
+                            ? AivoBrand.success
                             : isCurrent
                                 ? theme.colorScheme.primary
                                 : theme.colorScheme.surfaceContainerHighest,
@@ -1285,7 +1286,7 @@ class _CourseDetailScreen extends StatelessWidget {
                       ),
                       title: Text(module),
                       trailing: isCurrent
-                          ? const Icon(Icons.play_circle, color: Colors.green)
+                          ? Icon(Icons.play_circle, color: AivoBrand.success)
                           : null,
                     );
                   }),

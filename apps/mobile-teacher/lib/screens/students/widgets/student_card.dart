@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../../models/student.dart';
 
@@ -67,9 +68,9 @@ class StudentCard extends StatelessWidget {
                     ),
                   ),
                   if (student.needsAttention)
-                    const Icon(
+                    Icon(
                       Icons.warning_amber,
-                      color: Colors.orange,
+                      color: AivoBrand.warning,
                       size: 20,
                     ),
                 ],

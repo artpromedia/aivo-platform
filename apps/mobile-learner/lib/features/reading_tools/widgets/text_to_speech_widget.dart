@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -306,7 +307,7 @@ class _TextToSpeechWidgetState extends ConsumerState<TextToSpeechWidget> {
                             icon: const Icon(Icons.play_arrow),
                             label: const Text('Resume'),
                             style: FilledButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: AivoBrand.success,
                             ),
                           )
                         else
@@ -315,7 +316,7 @@ class _TextToSpeechWidgetState extends ConsumerState<TextToSpeechWidget> {
                             icon: const Icon(Icons.pause),
                             label: const Text('Pause'),
                             style: FilledButton.styleFrom(
-                              backgroundColor: Colors.orange,
+                              backgroundColor: AivoBrand.warning,
                             ),
                           ),
                         const SizedBox(width: 8),
@@ -324,7 +325,7 @@ class _TextToSpeechWidgetState extends ConsumerState<TextToSpeechWidget> {
                           icon: const Icon(Icons.stop),
                           label: const Text('Stop'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: Colors.red,
+                            backgroundColor: AivoBrand.error,
                           ),
                         ),
                       ] else

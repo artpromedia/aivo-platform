@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/focus_games/game_player.dart';
@@ -58,7 +59,7 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
       'type': 'movement',
       'duration': 120,
       'icon': '🏃',
-      'color': Colors.green,
+      'color': AivoBrand.success,
       'isRecommended': true,
     },
     {
@@ -143,14 +144,14 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: Colors.grey[600]),
+              Icon(icon, size: 18, color: AivoBrand.gray[600]),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: AivoBrand.gray[600],
                 ),
               ),
             ],
@@ -277,7 +278,7 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: AivoBrand.gray[800],
                             ),
                           ),
                         ],

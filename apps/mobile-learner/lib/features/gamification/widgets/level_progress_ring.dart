@@ -6,6 +6,7 @@ library;
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../gamification_models.dart';
 import '../../../accessibility/accessibility.dart';
 
@@ -169,7 +170,7 @@ class _LevelProgressRingState extends State<LevelProgressRing>
                     size: Size(_ringSize, _ringSize),
                     painter: _RingPainter(
                       progress: 1.0,
-                      color: Colors.grey.shade200,
+                      color: AivoBrand.gray[200]!,
                       strokeWidth: _strokeWidth,
                     ),
                   ),
@@ -215,7 +216,7 @@ class _LevelProgressRingState extends State<LevelProgressRing>
             child: Text(
               '${widget.currentXP} / ${widget.currentXP + widget.xpToNextLevel} XP',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray[600]!,
               ),
             ),
           ),

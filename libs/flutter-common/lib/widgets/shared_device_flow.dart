@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../shared_device/shared_device.dart';
+import '../theme/theme.dart';
 import 'class_code_entry_screen.dart';
 import 'roster_selection_screen.dart';
 import 'shared_pin_entry_dialog.dart';
@@ -251,7 +252,7 @@ class _DefaultSessionScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+            Icon(Icons.check_circle_outline, size: 80, color: AivoBrand.success),
             const SizedBox(height: 24),
             Text(
               'Session Active',

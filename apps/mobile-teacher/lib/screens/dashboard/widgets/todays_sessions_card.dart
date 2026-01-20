@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:intl/intl.dart';
 
 import '../../../models/models.dart';
@@ -100,7 +101,7 @@ class _SessionTile extends StatelessWidget {
           ? IconButton(
               icon: const Icon(Icons.play_arrow),
               onPressed: onStart,
-              color: Colors.green,
+              color: AivoBrand.success,
             )
           : _StatusChip(status: session.status),
     );
@@ -109,10 +110,10 @@ class _SessionTile extends StatelessWidget {
   Color get _statusColor {
     switch (session.status) {
       case SessionStatus.scheduled: return Colors.blue;
-      case SessionStatus.active: return Colors.green;
-      case SessionStatus.paused: return Colors.orange;
-      case SessionStatus.completed: return Colors.grey;
-      case SessionStatus.cancelled: return Colors.red;
+      case SessionStatus.active: return AivoBrand.success;
+      case SessionStatus.paused: return AivoBrand.warning;
+      case SessionStatus.completed: return AivoBrand.gray;
+      case SessionStatus.cancelled: return AivoBrand.error;
     }
   }
 
@@ -149,10 +150,10 @@ class _StatusChip extends StatelessWidget {
   Color get _color {
     switch (status) {
       case SessionStatus.scheduled: return Colors.blue;
-      case SessionStatus.active: return Colors.green;
-      case SessionStatus.paused: return Colors.orange;
-      case SessionStatus.completed: return Colors.grey;
-      case SessionStatus.cancelled: return Colors.red;
+      case SessionStatus.active: return AivoBrand.success;
+      case SessionStatus.paused: return AivoBrand.warning;
+      case SessionStatus.completed: return AivoBrand.gray;
+      case SessionStatus.cancelled: return AivoBrand.error;
     }
   }
 }

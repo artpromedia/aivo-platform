@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ACTIVITY MODELS
@@ -376,7 +377,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               Text(state.error!),
               const SizedBox(height: 16),
@@ -589,11 +590,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             Color? borderColor;
             if (isAnswered) {
               if (isCorrect) {
-                backgroundColor = Colors.green.withOpacity(0.2);
-                borderColor = Colors.green;
+                backgroundColor = AivoBrand.success.withOpacity(0.2);
+                borderColor = AivoBrand.success;
               } else if (isSelected && !isCorrect) {
-                backgroundColor = Colors.red.withOpacity(0.2);
-                borderColor = Colors.red;
+                backgroundColor = AivoBrand.error.withOpacity(0.2);
+                borderColor = AivoBrand.error;
               }
             }
 
@@ -653,9 +654,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         ),
                       ),
                       if (isAnswered && isCorrect)
-                        const Icon(Icons.check_circle, color: Colors.green)
+                        const Icon(Icons.check_circle, color: AivoBrand.success)
                       else if (isAnswered && isSelected && !isCorrect)
-                        const Icon(Icons.cancel, color: Colors.red),
+                        const Icon(Icons.cancel, color: AivoBrand.error),
                     ],
                   ),
                 ),
@@ -801,7 +802,7 @@ class _FeedbackCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      color: isCorrect ? Colors.green.shade50 : Colors.orange.shade50,
+      color: isCorrect ? AivoBrand.mint[50] : AivoBrand.sunshine[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -811,13 +812,13 @@ class _FeedbackCard extends StatelessWidget {
               children: [
                 Icon(
                   isCorrect ? Icons.celebration : Icons.info_outline,
-                  color: isCorrect ? Colors.green : Colors.orange,
+                  color: isCorrect ? AivoBrand.success : AivoBrand.warning,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   isCorrect ? 'Great job!' : 'Not quite right',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: isCorrect ? Colors.green.shade800 : Colors.orange.shade800,
+                    color: isCorrect ? AivoBrand.mint[800] : AivoBrand.sunshine[800],
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'social_story_models.dart';
 import 'social_story_service.dart';
@@ -595,7 +596,7 @@ class _CompletionDialogState extends State<_CompletionDialog> {
     return AlertDialog(
       title: const Row(
         children: [
-          Icon(Icons.celebration, color: Colors.orange),
+          Icon(Icons.celebration, color: AivoBrand.warning),
           SizedBox(width: 8),
           Text('Great Job!'),
         ],
@@ -704,7 +705,7 @@ class _EmotionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Theme.of(context).primaryColor : Colors.grey[200],
+          color: selected ? Theme.of(context).primaryColor : AivoBrand.gray[200],
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(

@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/offline/offline.dart' as common;
+import 'package:flutter_common/theme/theme.dart';
 
 import '../offline/offline.dart';
 import 'connectivity_banner.dart';
@@ -49,7 +50,7 @@ class OfflineIndicator extends ConsumerWidget {
   Widget _buildIndicator(BuildContext context, common.ConnectionState state) {
     final theme = Theme.of(context);
     final isOffline = state == common.ConnectionState.offline;
-    final color = isOffline ? Colors.orange : Colors.amber;
+    final color = isOffline ? AivoBrand.warning : Colors.amber;
 
     final icon = Icon(
       isOffline ? Icons.cloud_off : Icons.signal_wifi_bad,
@@ -166,7 +167,7 @@ class _FloatingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isOffline = state == common.ConnectionState.offline;
-    final color = isOffline ? Colors.orange : Colors.amber;
+    final color = isOffline ? AivoBrand.warning : Colors.amber;
 
     return Material(
       elevation: 4,
@@ -248,7 +249,7 @@ class SyncStatusBadge extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isSyncing ? Colors.blue.shade100 : Colors.grey.shade200,
+        color: isSyncing ? Colors.blue.shade100 : AivoBrand.gray.shade200,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -264,13 +265,13 @@ class SyncStatusBadge extends ConsumerWidget {
             Icon(
               pending > 0 ? Icons.sync_problem : Icons.sync,
               size: 14,
-              color: pending > 0 ? Colors.orange.shade700 : Colors.green.shade700,
+              color: pending > 0 ? AivoBrand.sunshine.shade700 : AivoBrand.mint.shade700,
             ),
           const SizedBox(width: 4),
           Text(
             isSyncing ? 'Syncing...' : (pending > 0 ? '$pending pending' : 'Synced'),
             style: theme.textTheme.labelSmall?.copyWith(
-              color: isSyncing ? Colors.blue.shade900 : Colors.grey.shade800,
+              color: isSyncing ? Colors.blue.shade900 : AivoBrand.gray.shade800,
             ),
           ),
         ],

@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'coverage_profile_models.dart';
 import 'coverage_profile_service.dart';
@@ -210,7 +211,7 @@ class CoverageSummaryCard extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
                 const SizedBox(height: 8),
                 Text('Failed to load coverage info'),
                 TextButton(

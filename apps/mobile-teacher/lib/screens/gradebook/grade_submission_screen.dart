@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -109,7 +110,7 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: AivoBrand.warning,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
@@ -354,11 +355,11 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
     final points = double.tryParse(_pointsController.text);
     if (points == null || _assignment == null) return null;
     final percent = (points / _assignment!.pointsPossible) * 100;
-    if (percent >= 90) return Colors.green;
+    if (percent >= 90) return AivoBrand.success;
     if (percent >= 80) return Colors.lightGreen;
-    if (percent >= 70) return Colors.orange;
+    if (percent >= 70) return AivoBrand.warning;
     if (percent >= 60) return Colors.deepOrange;
-    return Colors.red;
+    return AivoBrand.error;
   }
 
   void _updatePreview() {
@@ -461,9 +462,9 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
       if (ungradedSubmissions.isEmpty) {
         // No more submissions to grade
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All submissions have been graded!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('All submissions have been graded!'),
+            backgroundColor: AivoBrand.success,
           ),
         );
         context.pop();

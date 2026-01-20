@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 
 /// Download Progress Item
@@ -81,7 +82,7 @@ class DownloadProgressItem extends StatelessWidget {
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation(
                     state == DownloadState.paused
-                        ? Colors.grey
+                        ? AivoBrand.gray
                         : theme.colorScheme.primary,
                   ),
                 ),
@@ -101,7 +102,7 @@ class DownloadProgressItem extends StatelessWidget {
   Widget _buildStateIcon() {
     switch (state) {
       case DownloadState.queued:
-        return const Icon(Icons.schedule, color: Colors.grey);
+        return const Icon(Icons.schedule, color: AivoBrand.gray);
       case DownloadState.downloading:
         return const SizedBox(
           width: 24,
@@ -109,13 +110,13 @@ class DownloadProgressItem extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         );
       case DownloadState.paused:
-        return const Icon(Icons.pause_circle, color: Colors.orange);
+        return const Icon(Icons.pause_circle, color: AivoBrand.warning);
       case DownloadState.completed:
-        return const Icon(Icons.check_circle, color: Colors.green);
+        return const Icon(Icons.check_circle, color: AivoBrand.success);
       case DownloadState.failed:
-        return const Icon(Icons.error, color: Colors.red);
+        return const Icon(Icons.error, color: AivoBrand.error);
       case DownloadState.cancelled:
-        return const Icon(Icons.cancel, color: Colors.grey);
+        return const Icon(Icons.cancel, color: AivoBrand.gray);
     }
   }
 
@@ -179,7 +180,7 @@ class DownloadProgressItem extends StatelessWidget {
         );
 
       case DownloadState.completed:
-        return const Icon(Icons.download_done, color: Colors.green);
+        return const Icon(Icons.download_done, color: AivoBrand.success);
 
       default:
         return const SizedBox.shrink();
@@ -476,14 +477,14 @@ class _DownloadCompleteNotificationState
     return SlideTransition(
       position: _slideAnimation,
       child: Material(
-        color: Colors.green.shade100,
+        color: AivoBrand.mint.shade100,
         child: SafeArea(
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                const Icon(Icons.download_done, color: Colors.green),
+                const Icon(Icons.download_done, color: AivoBrand.success),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -494,14 +495,14 @@ class _DownloadCompleteNotificationState
                         'Download complete',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: Colors.green,
+                          color: AivoBrand.success,
                         ),
                       ),
                       Text(
                         widget.title,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.green.shade800,
+                          color: AivoBrand.mint.shade800,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

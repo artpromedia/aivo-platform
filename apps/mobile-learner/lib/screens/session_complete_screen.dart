@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../engagement/models.dart';
 import '../widgets/engagement_widgets.dart';
@@ -131,7 +132,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
                 Icon(
                   widget.leveledUp ? Icons.celebration : Icons.check_circle,
                   size: 80,
-                  color: widget.leveledUp ? Colors.amber : Colors.green,
+                  color: widget.leveledUp ? Colors.amber : AivoBrand.success,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -210,7 +211,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
           gradient: LinearGradient(
             colors: [
               Colors.amber.withValues(alpha: 0.3),
-              Colors.orange.withValues(alpha: 0.3),
+              AivoBrand.warning.withValues(alpha: 0.3),
             ],
           ),
           borderRadius: BorderRadius.circular(16),

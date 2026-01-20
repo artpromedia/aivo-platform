@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/theme.dart';
+
 /// Card variants.
 enum AivoCardVariant {
   elevated,
@@ -227,9 +229,9 @@ class AivoStatCard extends StatelessWidget {
                           : Icons.trending_flat,
                   size: 16,
                   color: trendPositive == true
-                      ? Colors.green
+                      ? AivoBrand.success
                       : trendPositive == false
-                          ? Colors.red
+                          ? AivoBrand.error
                           : colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
@@ -237,9 +239,9 @@ class AivoStatCard extends StatelessWidget {
                   trend!,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: trendPositive == true
-                        ? Colors.green
+                        ? AivoBrand.success
                         : trendPositive == false
-                            ? Colors.red
+                            ? AivoBrand.error
                             : colorScheme.onSurfaceVariant,
                   ),
                 ),

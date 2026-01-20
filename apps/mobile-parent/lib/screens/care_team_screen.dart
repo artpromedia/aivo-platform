@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -35,7 +36,7 @@ class CareTeamScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               Text('Failed to load care team: $error'),
               const SizedBox(height: 16),
@@ -60,20 +61,20 @@ class _CareTeamList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (members.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.group_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.group_outlined, size: 64, color: AivoBrand.gray),
+            const SizedBox(height: 16),
             Text(
               'No care team members yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: AivoBrand.gray),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Care team members will appear here',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),
@@ -175,12 +176,12 @@ class _CareTeamMemberCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.email_outlined, size: 14, color: Colors.grey),
+                    Icon(Icons.email_outlined, size: 14, color: AivoBrand.gray),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         member.contactEmail!,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: AivoBrand.gray),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -209,17 +210,17 @@ class _CareTeamMemberCard extends StatelessWidget {
       case CareTeamRole.teacher:
       case CareTeamRole.specialist:
       case CareTeamRole.aide:
-        return Colors.green;
+        return AivoBrand.success;
       case CareTeamRole.therapist:
       case CareTeamRole.counselor:
         return Colors.purple;
       case CareTeamRole.caseManager:
-        return Colors.orange;
+        return AivoBrand.warning;
       case CareTeamRole.districtAdmin:
       case CareTeamRole.administrator:
         return Colors.teal;
       case CareTeamRole.other:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -258,7 +259,7 @@ class _CareTeamMemberCard extends StatelessWidget {
                       Text(
                         member.title ?? member.roleDisplayName,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
+                              color: AivoBrand.gray,
                             ),
                       ),
                     ],
@@ -366,14 +367,14 @@ class _ContactRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey),
+        Icon(icon, size: 20, color: AivoBrand.gray),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: AivoBrand.gray),
             ),
             Text(value),
           ],

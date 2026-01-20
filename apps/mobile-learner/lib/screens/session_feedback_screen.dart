@@ -7,12 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Difficulty rating.
 enum DifficultyRating {
-  easy('Easy', '😊', Colors.green),
+  easy('Easy', '😊', AivoBrand.success),
   ok('Just Right', '🙂', Colors.blue),
-  hard('Hard', '😓', Colors.orange);
+  hard('Hard', '😓', AivoBrand.warning);
 
   const DifficultyRating(this.label, this.emoji, this.color);
 
@@ -153,7 +154,7 @@ class _SessionFeedbackScreenState extends ConsumerState<SessionFeedbackScreen> {
                 const Icon(
                   Icons.thumb_up,
                   size: 80,
-                  color: Colors.green,
+                  color: AivoBrand.success,
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -317,7 +318,7 @@ class _DifficultyButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? rating.color.withOpacity(0.2) : null,
           border: Border.all(
-            color: isSelected ? rating.color : Colors.grey.shade300,
+            color: isSelected ? rating.color : AivoBrand.gray[300]!,
             width: isSelected ? 3 : 1,
           ),
           borderRadius: BorderRadius.circular(16),
@@ -370,7 +371,7 @@ class _EmojiSelector extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? Theme.of(context).colorScheme.primaryContainer
-                  : Colors.grey.shade100,
+                  : AivoBrand.gray[100],
               borderRadius: BorderRadius.circular(12),
               border: isSelected
                   ? Border.all(

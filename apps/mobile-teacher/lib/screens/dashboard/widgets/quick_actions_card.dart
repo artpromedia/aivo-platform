@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Card with quick action buttons.
 class QuickActionsCard extends StatelessWidget {
@@ -38,7 +39,7 @@ class QuickActionsCard extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.add_circle,
                   label: 'New Session',
-                  color: Colors.green,
+                  color: AivoBrand.success,
                   onTap: onNewSession,
                 ),
                 _ActionButton(
@@ -56,7 +57,7 @@ class QuickActionsCard extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.assessment,
                   label: 'Reports',
-                  color: Colors.orange,
+                  color: AivoBrand.warning,
                   onTap: onViewReports,
                 ),
               ],

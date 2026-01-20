@@ -223,8 +223,8 @@ class _StatusChip extends StatelessWidget {
           label = 'Retest';
           icon = Icons.replay;
         case BaselineProfileStatus.finalAccepted:
-          chipColor = Colors.green.shade100;
-          textColor = Colors.green.shade800;
+          chipColor = AivoBrand.mint[100]!;
+          textColor = AivoBrand.mint[800]!;
           label = 'Accepted';
           icon = Icons.check_circle;
       }

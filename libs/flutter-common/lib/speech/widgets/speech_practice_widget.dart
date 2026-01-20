@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/theme.dart';
 import '../speech_models.dart';
 
 /// Speech practice widget with recording and feedback
@@ -173,7 +174,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
         // Progress bar
         LinearProgressIndicator(
           value: (_currentIndex + 1) / widget.words.length,
-          backgroundColor: Colors.grey[300],
+          backgroundColor: AivoBrand.gray[300],
         ),
 
         // Target sound info
@@ -211,7 +212,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
                     ),
                     Text(
                       'Word ${_currentIndex + 1} of ${widget.words.length}',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: AivoBrand.gray[600]),
                     ),
                   ],
                 ),
@@ -234,7 +235,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
                     height: 200,
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: AivoBrand.gray[100],
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -251,7 +252,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.image,
                           size: 64,
-                          color: Colors.grey,
+                          color: AivoBrand.gray,
                         ),
                       ),
                     ),
@@ -268,7 +269,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
                     '/${_currentWord.phonetic}/',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.grey[600],
+                      color: AivoBrand.gray[600],
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -301,9 +302,9 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: accuracy >= 0.8
-            ? Colors.green[100]
+            ? AivoBrand.mint[100]
             : accuracy >= 0.5
-                ? Colors.orange[100]
+                ? AivoBrand.sunshine[100]
                 : Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
       ),
@@ -325,10 +326,10 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: accuracy >= 0.8
-                  ? Colors.green[700]
+                  ? AivoBrand.mint[700]
                   : accuracy >= 0.5
-                      ? Colors.orange[700]
-                      : Colors.grey[700],
+                      ? AivoBrand.sunshine[700]
+                      : AivoBrand.gray[700],
             ),
           ),
         ],
@@ -396,14 +397,14 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _isRecording
-                ? Colors.red
+                ? AivoBrand.error
                 : _isAnalyzing
                     ? Colors.orange
                     : Theme.of(context).colorScheme.primary,
             boxShadow: [
               BoxShadow(
                 color: (_isRecording
-                    ? Colors.red
+                    ? AivoBrand.error
                     : Theme.of(context).colorScheme.primary).withOpacity(0.3),
                 blurRadius: 16,
                 spreadRadius: 4,
@@ -430,10 +431,10 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
       margin: const EdgeInsets.symmetric(horizontal: 32),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: result.isCorrect ? Colors.green[50] : Colors.orange[50],
+        color: result.isCorrect ? AivoBrand.mint[50] : AivoBrand.warning[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: result.isCorrect ? Colors.green : Colors.orange,
+          color: result.isCorrect ? Colors.green : AivoBrand.warning,
         ),
       ),
       child: Column(
@@ -443,7 +444,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
             children: [
               Icon(
                 result.isCorrect ? Icons.check_circle : Icons.info,
-                color: result.isCorrect ? Colors.green : Colors.orange,
+                color: result.isCorrect ? Colors.green : AivoBrand.warning,
               ),
               const SizedBox(width: 8),
               Text(
@@ -451,7 +452,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: result.isCorrect ? Colors.green[700] : Colors.orange[700],
+                  color: result.isCorrect ? AivoBrand.mint[700] : AivoBrand.sunshine[700],
                 ),
               ),
             ],
@@ -461,7 +462,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
             Text(
               result.feedback!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(color: AivoBrand.gray[700]),
             ),
           ],
           if (!result.isCorrect && result.issues.isNotEmpty) ...[
@@ -470,7 +471,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
               result.issues.first.suggestion ?? '',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.orange[700],
+                color: AivoBrand.sunshine[700],
                 fontStyle: FontStyle.italic,
               ),
             ),

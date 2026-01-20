@@ -6,6 +6,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../theme/theme.dart';
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONNECTIVITY STATE
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -136,8 +138,8 @@ class OfflineBanner extends ConsumerWidget {
       height: isOffline ? null : 0,
       child: Material(
         color: isOffline
-            ? Colors.grey.shade700
-            : Colors.green.shade600,
+            ? AivoBrand.gray.shade700
+            : AivoBrand.mint.shade600,
         child: SafeArea(
           bottom: false,
           child: Container(
@@ -198,8 +200,8 @@ class OfflineIndicator extends ConsumerWidget {
         isOffline ? Icons.cloud_off : Icons.cloud_done,
         size: size,
         color: isOffline
-            ? Colors.grey
-            : Colors.green,
+            ? AivoBrand.gray
+            : AivoBrand.success,
       ),
     );
   }
@@ -281,7 +283,7 @@ class SyncIndicator extends ConsumerWidget {
         return Icon(
           Icons.cloud_done,
           size: size,
-          color: Colors.green,
+          color: AivoBrand.success,
         );
       case SyncStatus.error:
         return Icon(
@@ -293,7 +295,7 @@ class SyncIndicator extends ConsumerWidget {
         return Icon(
           Icons.cloud_upload,
           size: size,
-          color: Colors.orange,
+          color: AivoBrand.warning,
         );
       case SyncStatus.pendingDownload:
         return Icon(
@@ -332,14 +334,14 @@ class SyncIndicator extends ConsumerWidget {
       case SyncStatus.syncing:
         return Colors.blue;
       case SyncStatus.synced:
-        return Colors.green;
+        return AivoBrand.success;
       case SyncStatus.error:
-        return Colors.red;
+        return AivoBrand.error;
       case SyncStatus.pendingUpload:
       case SyncStatus.pendingDownload:
-        return Colors.orange;
+        return AivoBrand.warning;
       case SyncStatus.idle:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -153,7 +154,7 @@ class _StatsSection extends StatelessWidget {
                   icon: Icons.note,
                   label: 'Pending Notes',
                   value: '${summary.pendingNotes}',
-                  color: summary.pendingNotes > 0 ? Colors.orange : Colors.grey,
+                  color: summary.pendingNotes > 0 ? AivoBrand.warning : AivoBrand.gray,
                 ),
               ),
               const SizedBox(width: 12),
@@ -162,7 +163,7 @@ class _StatsSection extends StatelessWidget {
                   icon: Icons.event,
                   label: 'Meetings',
                   value: '${summary.upcomingMeetings}',
-                  color: Colors.green,
+                  color: AivoBrand.success,
                 ),
               ),
             ],
@@ -205,7 +206,7 @@ class _StatCard extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: const TextStyle(fontSize: 12, color: AivoBrand.gray),
               textAlign: TextAlign.center,
             ),
           ],
@@ -227,7 +228,7 @@ class _MeetingsList extends StatelessWidget {
         padding: EdgeInsets.all(16),
         child: Text(
           'No upcoming meetings',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: AivoBrand.gray),
         ),
       );
     }
@@ -299,7 +300,7 @@ class _MeetingTile extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Could not open video link'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }
@@ -330,7 +331,7 @@ class _MeetingTile extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                  const Icon(Icons.calendar_today, size: 16, color: AivoBrand.gray),
                   const SizedBox(width: 8),
                   Text(_formatDateTime(meeting.scheduledAt)),
                 ],
@@ -338,7 +339,7 @@ class _MeetingTile extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.timer, size: 16, color: Colors.grey),
+                  const Icon(Icons.timer, size: 16, color: AivoBrand.gray),
                   const SizedBox(width: 8),
                   Text('${meeting.durationMinutes} minutes'),
                 ],
@@ -347,7 +348,7 @@ class _MeetingTile extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const Icon(Icons.location_on, size: 16, color: AivoBrand.gray),
                     const SizedBox(width: 8),
                     Expanded(child: Text(meeting.location!)),
                   ],
@@ -357,7 +358,7 @@ class _MeetingTile extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   meeting.description!,
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: AivoBrand.gray),
                 ),
               ],
               const SizedBox(height: 24),
@@ -411,10 +412,10 @@ class _LearnersNeedingAttention extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.15),
+                  color: AivoBrand.warning.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.flag, color: Colors.orange, size: 20),
+                child: const Icon(Icons.flag, color: AivoBrand.warning, size: 20),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -443,14 +444,14 @@ class _LearnerAttentionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Colors.orange.withValues(alpha: 0.05),
+      color: AivoBrand.warning.withValues(alpha: 0.05),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.orange.withValues(alpha: 0.15),
+          backgroundColor: AivoBrand.warning.withValues(alpha: 0.15),
           child: Text(
             learner.learnerName.isNotEmpty ? learner.learnerName[0] : '?',
             style: const TextStyle(
-              color: Colors.orange,
+              color: AivoBrand.warning,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -477,7 +478,7 @@ class _LearnerAttentionCard extends StatelessWidget {
     }
     return Text(
       reasons.join(' • '),
-      style: const TextStyle(color: Colors.orange),
+      style: const TextStyle(color: AivoBrand.warning),
     );
   }
 }
@@ -556,7 +557,7 @@ class _LearnerSummaryTile extends StatelessWidget {
                     ),
                     Text(
                       '${learner.activePlanCount} plan${learner.activePlanCount != 1 ? "s" : ""}',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: AivoBrand.gray, fontSize: 12),
                     ),
                   ],
                 ),
@@ -569,7 +570,7 @@ class _LearnerSummaryTile extends StatelessWidget {
                     _MiniStat(
                       icon: Icons.note,
                       value: learner.unreadNoteCount,
-                      color: Colors.orange,
+                      color: AivoBrand.warning,
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -577,13 +578,13 @@ class _LearnerSummaryTile extends StatelessWidget {
                     _MiniStat(
                       icon: Icons.event,
                       value: learner.upcomingMeetingCount,
-                      color: Colors.green,
+                      color: AivoBrand.success,
                     ),
                   ],
                 ],
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.grey),
+              const Icon(Icons.chevron_right, color: AivoBrand.gray),
             ],
           ),
         ),

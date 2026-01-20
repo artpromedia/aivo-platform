@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../offline/cached_activities.dart';
 import '../../../offline/offline_regulation_service.dart';
@@ -313,9 +314,9 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
       case ActivityCategory.breathing:
         return Colors.blue.shade50;
       case ActivityCategory.grounding:
-        return Colors.green.shade50;
+        return AivoBrand.mint.shade50;
       case ActivityCategory.movement:
-        return Colors.orange.shade50;
+        return AivoBrand.sunshine.shade50;
       case ActivityCategory.sensory:
         return Colors.purple.shade50;
       case ActivityCategory.sounds:
@@ -446,9 +447,9 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
       case ActivityCategory.breathing:
         return Colors.blue;
       case ActivityCategory.grounding:
-        return Colors.green;
+        return AivoBrand.success;
       case ActivityCategory.movement:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ActivityCategory.sensory:
         return Colors.purple;
       case ActivityCategory.sounds:
@@ -456,7 +457,7 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
       case ActivityCategory.counting:
         return Colors.teal;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -545,7 +546,7 @@ class _ActivityPlayerScreenState extends ConsumerState<ActivityPlayerScreen>
                 ? _getCategoryColor()
                 : isActive
                     ? _getCategoryColor().withValues(alpha: 0.7)
-                    : Colors.grey.withValues(alpha: 0.3),
+                    : AivoBrand.gray.withValues(alpha: 0.3),
           ),
         );
       }),
@@ -759,10 +760,10 @@ class _CompletionDialog extends StatelessWidget {
                 child: Icon(
                   Icons.arrow_forward,
                   color: moodChange > 0
-                      ? Colors.green
+                      ? AivoBrand.success
                       : moodChange < 0
-                          ? Colors.red
-                          : Colors.grey,
+                          ? AivoBrand.error
+                          : AivoBrand.gray,
                 ),
               ),
               Column(
@@ -781,13 +782,13 @@ class _CompletionDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: AivoBrand.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 'Mood improved by $moodChange! 💪',
                 style: TextStyle(
-                  color: Colors.green.shade700,
+                  color: AivoBrand.mint.shade700,
                   fontWeight: FontWeight.bold,
                 ),
               ),

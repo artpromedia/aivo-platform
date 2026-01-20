@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class Activity {
@@ -116,8 +117,8 @@ class ActivityList extends StatelessWidget {
         break;
       case 'assignment':
         icon = Icons.assignment_turned_in;
-        bgColor = Colors.green.withOpacity(0.1);
-        iconColor = Colors.green;
+        bgColor = AivoBrand.success.withOpacity(0.1);
+        iconColor = AivoBrand.success;
         break;
       case 'achievement':
         icon = Icons.emoji_events;
@@ -126,8 +127,8 @@ class ActivityList extends StatelessWidget {
         break;
       default:
         icon = Icons.circle;
-        bgColor = Colors.grey.withOpacity(0.1);
-        iconColor = Colors.grey;
+        bgColor = AivoBrand.gray.withOpacity(0.1);
+        iconColor = AivoBrand.gray;
     }
 
     return Container(
@@ -142,8 +143,8 @@ class ActivityList extends StatelessWidget {
   }
 
   Color _getScoreColor(int score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return AivoBrand.success;
+    if (score >= 60) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 }

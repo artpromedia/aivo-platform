@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../providers/lesson_player_provider.dart';
 
@@ -232,7 +233,7 @@ class _QuestionBlockState extends State<_QuestionBlock> {
             suffixIcon: _isCorrect != null
                 ? Icon(
                     _isCorrect! ? Icons.check_circle : Icons.cancel,
-                    color: _isCorrect! ? Colors.green : Colors.red,
+                    color: _isCorrect! ? AivoBrand.success : AivoBrand.error,
                   )
                 : null,
           ),

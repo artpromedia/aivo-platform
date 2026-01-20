@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../gamification_models.dart';
 import '../../../accessibility/accessibility.dart';
 
@@ -48,12 +49,12 @@ class StreakWidget extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.orange.shade50,
+            AivoBrand.sunshine[50]!,
             Colors.amber.shade50,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(color: AivoBrand.sunshine[200]!),
       ),
       child: Column(
         children: [
@@ -67,14 +68,14 @@ class StreakWidget extends StatelessWidget {
                 '$currentStreak',
                 style: theme.textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade700,
+                  color: AivoBrand.sunshine[700]!,
                 ),
               ),
               const SizedBox(width: 4),
               Text(
                 'day streak',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.orange.shade600,
+                  color: AivoBrand.sunshine[600]!,
                 ),
               ),
             ],
@@ -86,7 +87,7 @@ class StreakWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: completedToday ? Colors.green.shade100 : Colors.amber.shade100,
+              color: completedToday ? AivoBrand.mint[100]! : Colors.amber.shade100,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -95,7 +96,7 @@ class StreakWidget extends StatelessWidget {
                 Icon(
                   completedToday ? Icons.check_circle : Icons.access_time,
                   size: 16,
-                  color: completedToday ? Colors.green.shade700 : Colors.amber.shade700,
+                  color: completedToday ? AivoBrand.mint[700]! : Colors.amber.shade700,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -103,7 +104,7 @@ class StreakWidget extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: completedToday ? Colors.green.shade700 : Colors.amber.shade700,
+                    color: completedToday ? AivoBrand.mint[700]! : Colors.amber.shade700,
                   ),
                 ),
               ],
@@ -125,7 +126,7 @@ class StreakWidget extends StatelessWidget {
               Container(
                 width: 1,
                 height: 40,
-                color: Colors.orange.shade200,
+                color: AivoBrand.sunshine[200]!,
               ),
               _StatItem(
                 icon: Icons.ac_unit,
@@ -168,7 +169,7 @@ class _StatItem extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: AivoBrand.gray[600]!,
           ),
         ),
         Text(
@@ -264,7 +265,7 @@ class _AnimatedFlameState extends State<_AnimatedFlame>
             '🔥',
             style: TextStyle(
               fontSize: widget.size,
-              color: widget.isActive ? null : Colors.grey,
+              color: widget.isActive ? null : AivoBrand.gray,
             ),
           ),
         );
@@ -304,7 +305,7 @@ class StreakCalendar extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade500,
+                        color: AivoBrand.gray[500]!,
                       ),
                     ),
                   ))
@@ -334,19 +335,19 @@ class _CalendarDay extends StatelessWidget {
     Widget? icon;
 
     if (day.completed) {
-      backgroundColor = Colors.orange.shade400;
-      borderColor = Colors.orange.shade600;
+      backgroundColor = AivoBrand.sunshine[400]!;
+      borderColor = AivoBrand.sunshine[600]!;
       icon = const Icon(Icons.local_fire_department, color: Colors.white, size: 16);
     } else if (day.isFreezeUsed) {
       backgroundColor = Colors.blue.shade100;
       borderColor = Colors.blue.shade300;
       icon = const Icon(Icons.ac_unit, color: Colors.blue, size: 16);
     } else if (day.isToday) {
-      backgroundColor = Colors.grey.shade100;
-      borderColor = Colors.orange.shade400;
+      backgroundColor = AivoBrand.gray[100]!;
+      borderColor = AivoBrand.sunshine[400]!;
     } else {
-      backgroundColor = Colors.grey.shade100;
-      borderColor = Colors.grey.shade300;
+      backgroundColor = AivoBrand.gray[100]!;
+      borderColor = AivoBrand.gray[300]!;
     }
 
     return Container(
@@ -364,7 +365,7 @@ class _CalendarDay extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray[600]!,
               ),
             ),
       ),

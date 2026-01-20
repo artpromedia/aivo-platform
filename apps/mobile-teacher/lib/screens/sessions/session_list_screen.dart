@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -96,7 +97,7 @@ class _SessionList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.event_busy, size: 64, color: Colors.grey),
+            Icon(Icons.event_busy, size: 64, color: AivoBrand.gray),
             const SizedBox(height: 16),
             Text(emptyMessage, style: Theme.of(context).textTheme.bodyLarge),
           ],
@@ -164,11 +165,11 @@ class SessionCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.schedule, size: 16, color: Colors.grey),
+                  Icon(Icons.schedule, size: 16, color: AivoBrand.gray),
                   const SizedBox(width: 4),
                   Text(time, style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(width: 16),
-                  const Icon(Icons.people, size: 16, color: Colors.grey),
+                  Icon(Icons.people, size: 16, color: AivoBrand.gray),
                   const SizedBox(width: 4),
                   Text(
                     '${session.studentIds.length} students',
@@ -211,10 +212,10 @@ class _StatusIndicator extends StatelessWidget {
   Color get _color {
     switch (status) {
       case SessionStatus.scheduled: return Colors.blue;
-      case SessionStatus.active: return Colors.green;
-      case SessionStatus.paused: return Colors.orange;
-      case SessionStatus.completed: return Colors.grey;
-      case SessionStatus.cancelled: return Colors.red;
+      case SessionStatus.active: return AivoBrand.success;
+      case SessionStatus.paused: return AivoBrand.warning;
+      case SessionStatus.completed: return AivoBrand.gray;
+      case SessionStatus.cancelled: return AivoBrand.error;
     }
   }
 }

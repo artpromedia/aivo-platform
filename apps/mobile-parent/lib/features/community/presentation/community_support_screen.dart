@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/resource_models.dart';
@@ -668,7 +669,7 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
                       },
                       icon: Icon(
                         post.isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: post.isLiked ? Colors.red : null,
+                        color: post.isLiked ? AivoBrand.error : null,
                       ),
                       label: Text('${post.likeCount}'),
                     ),
@@ -1118,7 +1119,7 @@ class _ForumPostCard extends StatelessWidget {
                   Icon(
                     post.isLiked ? Icons.favorite : Icons.favorite_border,
                     size: 16,
-                    color: post.isLiked ? Colors.red : colorScheme.onSurfaceVariant,
+                    color: post.isLiked ? AivoBrand.error : colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
                   Text(

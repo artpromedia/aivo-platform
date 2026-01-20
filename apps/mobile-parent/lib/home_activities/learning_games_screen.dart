@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models.dart';
 import 'providers.dart';
@@ -134,13 +135,13 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
               }).toList();
 
               if (filteredGames.isEmpty) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.search_off, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No games found', style: TextStyle(color: Colors.grey)),
+                      Icon(Icons.search_off, size: 64, color: AivoBrand.gray),
+                      const SizedBox(height: 16),
+                      Text('No games found', style: TextStyle(color: AivoBrand.gray)),
                     ],
                   ),
                 );
@@ -180,7 +181,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
           value,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, color: AivoBrand.gray)),
       ],
     );
   }
@@ -239,11 +240,11 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.timer, size: 14, color: Colors.grey[600]),
+                        Icon(Icons.timer, size: 14, color: AivoBrand.gray[600]),
                         const SizedBox(width: 4),
                         Text(
                           '${game.estimatedTime} min',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                         ),
                       ],
                     ),
@@ -256,7 +257,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
                         children: [
                           Text(
                             '${progress.totalPlays} plays',
-                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            style: TextStyle(fontSize: 11, color: AivoBrand.gray),
                           ),
                           Row(
                             children: [
@@ -283,13 +284,13 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
     Color color;
     switch (difficulty) {
       case DifficultyLevel.beginner:
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case DifficultyLevel.intermediate:
-        color = Colors.orange;
+        color = AivoBrand.warning;
         break;
       case DifficultyLevel.advanced:
-        color = Colors.red;
+        color = AivoBrand.error;
         break;
       case DifficultyLevel.expert:
         color = Colors.purple;
@@ -316,11 +317,11 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
       case GameCategory.reading:
         return Colors.purple;
       case GameCategory.science:
-        return Colors.green;
+        return AivoBrand.success;
       case GameCategory.art:
         return Colors.pink;
       case GameCategory.music:
-        return Colors.orange;
+        return AivoBrand.warning;
       case GameCategory.logic:
         return Colors.indigo;
       case GameCategory.memory:
@@ -391,7 +392,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
                         const SizedBox(height: 4),
                         Text(
                           game.skillArea,
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 14, color: AivoBrand.gray[600]),
                         ),
                       ],
                     ),
@@ -423,7 +424,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.check_circle, size: 20, color: Colors.green),
+                      Icon(Icons.check_circle, size: 20, color: AivoBrand.success),
                       const SizedBox(width: 8),
                       Expanded(child: Text(objective)),
                     ],
@@ -462,7 +463,7 @@ class _LearningGamesScreenState extends ConsumerState<LearningGamesScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: AivoBrand.gray[600]),
           const SizedBox(width: 12),
           Text(
             '$label:',

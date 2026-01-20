@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -159,7 +160,7 @@ class _AssignmentListScreenState extends ConsumerState<AssignmentListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.assignment_outlined, size: 64, color: Colors.grey),
+          Icon(Icons.assignment_outlined, size: 64, color: AivoBrand.gray),
           const SizedBox(height: 16),
           Text(
             _hasActiveFilters ? 'No assignments match filters' : 'No assignments yet',
@@ -314,7 +315,7 @@ class AssignmentCard extends StatelessWidget {
                             Text(
                               dueText,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: assignment.isPastDue ? Colors.red : null,
+                                    color: assignment.isPastDue ? AivoBrand.error : null,
                                   ),
                             ),
                           ],
@@ -334,7 +335,7 @@ class AssignmentCard extends StatelessWidget {
                           margin: const EdgeInsets.only(top: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.orange,
+                            color: AivoBrand.warning,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -389,15 +390,15 @@ class AssignmentCard extends StatelessWidget {
         break;
       case AssignmentType.test:
         icon = Icons.assignment;
-        color = Colors.red;
+        color = AivoBrand.error;
         break;
       case AssignmentType.project:
         icon = Icons.folder;
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case AssignmentType.classwork:
         icon = Icons.class_;
-        color = Colors.orange;
+        color = AivoBrand.warning;
         break;
       case AssignmentType.practice:
         icon = Icons.fitness_center;
@@ -425,15 +426,15 @@ class AssignmentCard extends StatelessWidget {
 
     switch (assignment.status) {
       case AssignmentStatus.draft:
-        color = Colors.grey;
+        color = AivoBrand.gray;
         label = 'Draft';
         break;
       case AssignmentStatus.published:
-        color = Colors.green;
+        color = AivoBrand.success;
         label = 'Published';
         break;
       case AssignmentStatus.closed:
-        color = Colors.red;
+        color = AivoBrand.error;
         label = 'Closed';
         break;
       case AssignmentStatus.archived:

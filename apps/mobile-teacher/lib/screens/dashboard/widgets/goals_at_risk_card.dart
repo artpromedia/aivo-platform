@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/providers.dart';
@@ -31,7 +32,7 @@ class GoalsAtRiskCard extends ConsumerWidget {
         if (goals.isEmpty) return const SizedBox.shrink();
 
         return Card(
-          color: Colors.red.shade50,
+          color: AivoBrand.error[50],
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -39,13 +40,13 @@ class GoalsAtRiskCard extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.flag, color: Colors.red.shade700),
+                    Icon(Icons.flag, color: AivoBrand.error[700]),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'IEP Goals At Risk',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.red.shade700,
+                          color: AivoBrand.error[700],
                         ),
                       ),
                     ),
@@ -60,17 +61,17 @@ class GoalsAtRiskCard extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Text(
                   '${goals.length} goal${goals.length == 1 ? '' : 's'} require attention',
-                  style: TextStyle(color: Colors.red.shade700),
+                  style: TextStyle(color: AivoBrand.error[700]),
                 ),
               ),
               ...goals.take(3).map((goal) => ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Colors.red.shade100,
+                  backgroundColor: AivoBrand.error[100],
                   child: Text(
                     '${((goal.currentValue / goal.targetValue) * 100).round()}%',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.red.shade700,
+                      color: AivoBrand.error[700],
                     ),
                   ),
                 ),

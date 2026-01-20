@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -296,11 +297,11 @@ class _IncidentCard extends StatelessWidget {
   Color _getSeverityColor(ColorScheme colorScheme) {
     switch (incident.severity) {
       case BehaviorSeverity.low:
-        return Colors.green;
+        return AivoBrand.success;
       case BehaviorSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case BehaviorSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
       case BehaviorSeverity.crisis:
         return Colors.purple;
     }
@@ -357,7 +358,7 @@ class _IncidentDetailsSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AivoBrand.gray[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

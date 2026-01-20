@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../../../offline/cached_activities.dart';
 
 class GroundingExerciseWidget extends StatefulWidget {
@@ -333,8 +334,8 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
   Color _getColorForStep(int stepIndex) {
     final colors = [
       Colors.blue,
-      Colors.green,
-      Colors.orange,
+      AivoBrand.success,
+      AivoBrand.warning,
       Colors.purple,
       Colors.pink,
       Colors.teal,
@@ -473,20 +474,20 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.1),
+        color: AivoBrand.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+        border: Border.all(color: AivoBrand.success.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.format_quote, color: Colors.green),
+          const Icon(Icons.format_quote, color: AivoBrand.success),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               affirmation,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 fontStyle: FontStyle.italic,
-                color: Colors.green.shade700,
+                color: AivoBrand.mint.shade700,
               ),
             ),
           ),
@@ -625,7 +626,7 @@ class _FiveToOneGroundingWidgetState extends State<FiveToOneGroundingWidget> {
             return ActionChip(
               label: Text(hasResponse ? currentResponses[index] : 'Tap to add'),
               avatar: hasResponse
-                  ? const Icon(Icons.check_circle, size: 18, color: Colors.green)
+                  ? const Icon(Icons.check_circle, size: 18, color: AivoBrand.success)
                   : const Icon(Icons.add_circle_outline, size: 18),
               onPressed: hasResponse
                   ? null
@@ -678,10 +679,10 @@ class _FiveToOneGroundingWidgetState extends State<FiveToOneGroundingWidget> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
                 color: isCompleted
-                    ? Colors.green
+                    ? AivoBrand.success
                     : isActive
                         ? Colors.blue
-                        : Colors.grey.withValues(alpha: 0.3),
+                        : AivoBrand.gray.withValues(alpha: 0.3),
               ),
               child: Center(
                 child: Text(
@@ -689,7 +690,7 @@ class _FiveToOneGroundingWidgetState extends State<FiveToOneGroundingWidget> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: (isCompleted || isActive) ? Colors.white : Colors.grey,
+                    color: (isCompleted || isActive) ? Colors.white : AivoBrand.gray,
                   ),
                 ),
               ),

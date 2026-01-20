@@ -252,7 +252,7 @@ class VirtualBrainScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               const Text('Failed to load Virtual Brain data'),
               const SizedBox(height: 16),
@@ -387,8 +387,8 @@ class _SubjectSection extends StatelessWidget {
 
     final subjectColor = switch (subject.toLowerCase()) {
       'ela' || 'reading' || 'english' => Colors.blue,
-      'math' || 'mathematics' => Colors.orange,
-      'science' => Colors.green,
+      'math' || 'mathematics' => AivoBrand.warning,
+      'science' => AivoBrand.success,
       'sel' || 'social-emotional' => Colors.purple,
       _ => colorScheme.primary,
     };
@@ -470,7 +470,7 @@ class _SkillProgress extends StatelessWidget {
                     Icon(
                       skill.trend! > 0 ? Icons.trending_up : Icons.trending_down,
                       size: 16,
-                      color: skill.trend! > 0 ? Colors.green : Colors.red,
+                      color: skill.trend! > 0 ? AivoBrand.success : AivoBrand.error,
                     ),
                   ],
                 ],

@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../../models/models.dart';
 
@@ -23,7 +24,7 @@ class StudentsAttentionCard extends StatelessWidget {
     }
 
     return Card(
-      color: Colors.orange.shade50,
+      color: AivoBrand.sunshine[50],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -31,12 +32,12 @@ class StudentsAttentionCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                Icon(Icons.warning_amber, color: AivoBrand.sunshine[700]),
                 const SizedBox(width: 8),
                 Text(
                   'Students Requiring Attention',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.orange.shade700,
+                    color: AivoBrand.sunshine[700],
                   ),
                 ),
               ],
@@ -70,7 +71,7 @@ class StudentsAttentionCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   '+ ${students.length - 5} more',
-                  style: TextStyle(color: Colors.orange.shade700),
+                  style: TextStyle(color: AivoBrand.sunshine[700]),
                 ),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../core/sync/sync_engine.dart';
 import '../../core/sync/sync_models.dart';
@@ -48,14 +49,14 @@ class SyncStatusIndicator extends StatelessWidget {
             child: Icon(
               Icons.cloud_done,
               size: iconSize,
-              color: Colors.green,
+              color: AivoBrand.success,
             ),
           );
         }
         return Icon(
           Icons.cloud_done,
           size: iconSize,
-          color: Colors.green,
+          color: AivoBrand.success,
         );
 
       case SyncState.syncing:
@@ -75,7 +76,7 @@ class SyncStatusIndicator extends StatelessWidget {
           child: Icon(
             Icons.cloud_off,
             size: iconSize,
-            color: Colors.grey,
+            color: AivoBrand.gray,
           ),
         );
 
@@ -83,11 +84,11 @@ class SyncStatusIndicator extends StatelessWidget {
         return Badge(
           label: pendingCount > 0 ? Text('$pendingCount') : null,
           isLabelVisible: pendingCount > 0,
-          backgroundColor: Colors.red,
+          backgroundColor: AivoBrand.error,
           child: Icon(
             Icons.cloud_off,
             size: iconSize,
-            color: Colors.red,
+            color: AivoBrand.error,
           ),
         );
     }
@@ -102,7 +103,7 @@ class SyncStatusIndicator extends StatelessWidget {
     switch (state) {
       case SyncState.idle:
         text = pendingCount > 0 ? '$pendingCount pending' : 'Synced';
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case SyncState.syncing:
         text = 'Syncing...';
@@ -110,11 +111,11 @@ class SyncStatusIndicator extends StatelessWidget {
         break;
       case SyncState.offline:
         text = pendingCount > 0 ? 'Offline ($pendingCount pending)' : 'Offline';
-        color = Colors.grey;
+        color = AivoBrand.gray;
         break;
       case SyncState.error:
         text = 'Sync error';
-        color = Colors.red;
+        color = AivoBrand.error;
         break;
     }
 
@@ -198,8 +199,8 @@ class SyncStatusBanner extends StatelessWidget {
         break;
 
       case SyncState.offline:
-        backgroundColor = Colors.orange.shade50;
-        textColor = Colors.orange.shade900;
+        backgroundColor = AivoBrand.sunshine.shade50;
+        textColor = AivoBrand.sunshine.shade900;
         icon = Icons.cloud_off;
         message = 'You\'re offline';
         if (pendingCount > 0) {
@@ -208,8 +209,8 @@ class SyncStatusBanner extends StatelessWidget {
         break;
 
       case SyncState.error:
-        backgroundColor = Colors.red.shade50;
-        textColor = Colors.red.shade900;
+        backgroundColor = AivoBrand.error.shade50;
+        textColor = AivoBrand.error.shade900;
         icon = Icons.error_outline;
         message = 'Sync failed';
         if (onRetry != null) {
@@ -287,19 +288,19 @@ class EntitySyncStatusIcon extends StatelessWidget {
         return Icon(
           Icons.check_circle,
           size: size,
-          color: Colors.green,
+          color: AivoBrand.success,
         );
       case SyncStatus.pending:
         return Icon(
           Icons.schedule,
           size: size,
-          color: Colors.orange,
+          color: AivoBrand.warning,
         );
       case SyncStatus.error:
         return Icon(
           Icons.error,
           size: size,
-          color: Colors.red,
+          color: AivoBrand.error,
         );
     }
   }

@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -32,7 +33,7 @@ class ActionPlanDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               Text('Failed to load action plan: $error'),
               const SizedBox(height: 16),
@@ -190,15 +191,15 @@ class _TasksTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (plan.tasks.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.task_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.task_outlined, size: 64, color: AivoBrand.gray),
+            const SizedBox(height: 16),
             Text(
               'No tasks yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: AivoBrand.gray),
             ),
           ],
         ),
@@ -233,7 +234,7 @@ class _TasksTab extends StatelessWidget {
           _TaskSectionHeader(
             title: 'School',
             icon: Icons.school_outlined,
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
           ...schoolTasks.map((t) => _TaskCard(
                 learnerId: learnerId,
@@ -259,7 +260,7 @@ class _TasksTab extends StatelessWidget {
           _TaskSectionHeader(
             title: 'All Settings',
             icon: Icons.public_outlined,
-            color: Colors.orange,
+            color: AivoBrand.warning,
           ),
           ...sharedTasks.map((t) => _TaskCard(
                 learnerId: learnerId,
@@ -322,7 +323,7 @@ class _TaskCard extends ConsumerWidget {
       child: ExpansionTile(
         leading: IconButton(
           icon: const Icon(Icons.check_circle_outline),
-          color: Colors.green,
+          color: AivoBrand.success,
           onPressed: () => _markComplete(context, ref),
         ),
         title: Text(
@@ -334,18 +335,18 @@ class _TaskCard extends ConsumerWidget {
             Icon(
               Icons.schedule,
               size: 14,
-              color: Colors.grey[600],
+              color: AivoBrand.gray[600],
             ),
             const SizedBox(width: 4),
             Text(
               task.frequencyDisplayName,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
             ),
             if (task.timeOfDay != null) ...[
               const SizedBox(width: 8),
               Text(
                 '• ${task.timeOfDay}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
               ),
             ],
           ],
@@ -359,7 +360,7 @@ class _TaskCard extends ConsumerWidget {
                 if (task.description != null) ...[
                   Text(
                     task.description!,
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AivoBrand.gray),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -388,8 +389,8 @@ class _TaskCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     task.successCriteria!,
-                    style: const TextStyle(
-                      color: Colors.green,
+                    style: TextStyle(
+                      color: AivoBrand.success,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -399,11 +400,11 @@ class _TaskCard extends ConsumerWidget {
                 if (task.assignee != null)
                   Row(
                     children: [
-                      const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                      Icon(Icons.person_outline, size: 16, color: AivoBrand.gray),
                       const SizedBox(width: 4),
                       Text(
                         'Supported by: ${task.assignee!.displayName}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: AivoBrand.gray),
                       ),
                     ],
                   ),
@@ -411,11 +412,11 @@ class _TaskCard extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                    Icon(Icons.check_circle, size: 16, color: AivoBrand.success),
                     const SizedBox(width: 4),
                     Text(
                       'Completed ${task.completionCount} times',
-                      style: const TextStyle(fontSize: 12, color: Colors.green),
+                      style: TextStyle(fontSize: 12, color: AivoBrand.success),
                     ),
                   ],
                 ),
@@ -502,7 +503,7 @@ class _CompleteTaskSheetState extends ConsumerState<_CompleteTaskSheet> {
           const SizedBox(height: 8),
           Text(
             widget.task.title,
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: AivoBrand.gray),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -522,7 +523,7 @@ class _CompleteTaskSheetState extends ConsumerState<_CompleteTaskSheet> {
                   decoration: BoxDecoration(
                     color: _rating == rating
                         ? Theme.of(context).colorScheme.primary
-                        : Colors.grey[200],
+                        : AivoBrand.gray[200],
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -599,9 +600,9 @@ class _CompleteTaskSheetState extends ConsumerState<_CompleteTaskSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Task completion logged!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Task completion logged!'),
+            backgroundColor: AivoBrand.success,
           ),
         );
         // Refresh the plan
@@ -617,7 +618,7 @@ class _CompleteTaskSheetState extends ConsumerState<_CompleteTaskSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to log completion: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }
@@ -650,20 +651,20 @@ class _ActivityTab extends ConsumerWidget {
         final planNotes = notes.where((n) => n.actionPlan?.id == plan.id).toList();
 
         if (planNotes.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.note_outlined, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(Icons.note_outlined, size: 64, color: AivoBrand.gray),
+                const SizedBox(height: 16),
                 Text(
                   'No activity yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                  style: TextStyle(fontSize: 18, color: AivoBrand.gray),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Notes and updates will appear here',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AivoBrand.gray),
                 ),
               ],
             ),
@@ -719,7 +720,7 @@ class _NoteCard extends StatelessWidget {
                       ),
                       Text(
                         '${note.noteTypeDisplayName} • ${_formatDate(note.createdAt)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                       ),
                     ],
                   ),
@@ -728,12 +729,12 @@ class _NoteCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.2),
+                      color: AivoBrand.warning.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Follow-up',
-                      style: TextStyle(fontSize: 10, color: Colors.orange),
+                      style: TextStyle(fontSize: 10, color: AivoBrand.warning),
                     ),
                   ),
               ],
@@ -762,13 +763,13 @@ class _NoteCard extends StatelessWidget {
       case CareNoteType.homeUpdate:
         return Colors.indigo;
       case CareNoteType.schoolUpdate:
-        return Colors.green;
+        return AivoBrand.success;
       case CareNoteType.therapyUpdate:
         return Colors.purple;
       case CareNoteType.strategyFeedback:
-        return Colors.orange;
+        return AivoBrand.warning;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 

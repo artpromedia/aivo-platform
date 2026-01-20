@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../models.dart';
 import '../../screens/speech_therapy_screen.dart';
@@ -34,16 +35,16 @@ class VoiceRecordingsTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.mic_none, size: 64, color: Colors.grey),
+                Icon(Icons.mic_none, size: 64, color: AivoBrand.gray),
                 SizedBox(height: 16),
                 Text(
                   'No recordings yet',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(fontSize: 16, color: AivoBrand.gray),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Complete exercises to create recordings',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: AivoBrand.gray),
                 ),
               ],
             ),
@@ -161,8 +162,8 @@ class _RecordingCardState extends State<_RecordingCard> {
                     icon: Icons.check_circle_outline,
                     label: '${(recording.accuracy! * 100).toStringAsFixed(0)}% accurate',
                     color: recording.accuracy! >= 0.7
-                        ? Colors.green.shade100
-                        : Colors.orange.shade100,
+                        ? AivoBrand.mint[100]!
+                        : AivoBrand.sunshine[100]!,
                   ),
                 ],
               ],

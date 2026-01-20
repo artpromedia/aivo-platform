@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -116,7 +117,7 @@ class _CareTeamMemberCard extends StatelessWidget {
                   ),
                   Text(
                     member.title ?? member.roleDisplayName,
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: AivoBrand.gray),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -145,7 +146,7 @@ class _CareTeamMemberCard extends StatelessWidget {
               ),
             if (member.contactPhone != null)
               IconButton(
-                icon: const Icon(Icons.phone, color: Colors.green),
+                icon: const Icon(Icons.phone, color: AivoBrand.success),
                 onPressed: () => _launchPhone(member.contactPhone!),
                 tooltip: 'Call',
               ),
@@ -161,11 +162,11 @@ class _CareTeamMemberCard extends StatelessWidget {
       case CareTeamRole.guardian:
         return Colors.indigo;
       case CareTeamRole.teacher:
-        return Colors.green;
+        return AivoBrand.success;
       case CareTeamRole.therapist:
         return Colors.purple;
       case CareTeamRole.counselor:
-        return Colors.orange;
+        return AivoBrand.warning;
       case CareTeamRole.specialist:
         return Colors.teal;
       default:
@@ -210,7 +211,7 @@ class _ActionPlansTab extends ConsumerWidget {
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Icon(Icons.school, size: 20, color: Colors.green),
+                Icon(Icons.school, size: 20, color: AivoBrand.success),
                 SizedBox(width: 8),
                 Text(
                   'My School Tasks',
@@ -234,7 +235,7 @@ class _ActionPlansTab extends ConsumerWidget {
               ? const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('No school tasks assigned', style: TextStyle(color: Colors.grey)),
+                    child: Text('No school tasks assigned', style: TextStyle(color: AivoBrand.gray)),
                   ),
                 )
               : SliverList(
@@ -278,7 +279,7 @@ class _ActionPlansTab extends ConsumerWidget {
               ? const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('No action plans', style: TextStyle(color: Colors.grey)),
+                    child: Text('No action plans', style: TextStyle(color: AivoBrand.gray)),
                   ),
                 )
               : SliverList(
@@ -312,10 +313,10 @@ class _TaskCard extends ConsumerWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.15),
+            color: AivoBrand.success.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.school, color: Colors.green, size: 20),
+          child: const Icon(Icons.school, color: AivoBrand.success, size: 20),
         ),
         title: Text(task.title),
         subtitle: Text(
@@ -324,7 +325,7 @@ class _TaskCard extends ConsumerWidget {
         ),
         trailing: IconButton(
           icon: const Icon(Icons.check_circle_outline),
-          color: Colors.green,
+          color: AivoBrand.success,
           onPressed: () => _recordCompletion(context, ref),
           tooltip: 'Mark Complete',
         ),
@@ -364,7 +365,7 @@ class _TaskCard extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Completed: ${task.title}'),
-              backgroundColor: Colors.green,
+              backgroundColor: AivoBrand.success,
             ),
           );
           // Refresh the tasks list
@@ -375,7 +376,7 @@ class _TaskCard extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to record: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: AivoBrand.error,
             ),
           );
         }
@@ -398,10 +399,10 @@ class _TaskCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
+                      color: AivoBrand.success.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.school, color: Colors.green),
+                    child: const Icon(Icons.school, color: AivoBrand.success),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -417,7 +418,7 @@ class _TaskCard extends ConsumerWidget {
                         Text(
                           task.contextDisplayName,
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: AivoBrand.gray[600],
                           ),
                         ),
                       ],
@@ -429,7 +430,7 @@ class _TaskCard extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.schedule, size: 16, color: Colors.grey),
+                    const Icon(Icons.schedule, size: 16, color: AivoBrand.gray),
                     const SizedBox(width: 8),
                     Text('Time: ${task.timeOfDay}'),
                   ],
@@ -446,13 +447,13 @@ class _TaskCard extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   task.description!,
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: AivoBrand.gray),
                 ),
               ],
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                  const Icon(Icons.check_circle, size: 16, color: AivoBrand.success),
                   const SizedBox(width: 8),
                   Text('Completed ${task.completionCount} times'),
                 ],
@@ -513,7 +514,7 @@ class _ActionPlanCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   plan.description!,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(color: AivoBrand.gray, fontSize: 13),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -532,18 +533,18 @@ class _ActionPlanCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.task, size: 14, color: Colors.grey),
+                  const Icon(Icons.task, size: 14, color: AivoBrand.gray),
                   const SizedBox(width: 4),
                   Text(
                     '${plan.taskCount} tasks',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: AivoBrand.gray),
                   ),
                   const SizedBox(width: 12),
-                  const Icon(Icons.note, size: 14, color: Colors.grey),
+                  const Icon(Icons.note, size: 14, color: AivoBrand.gray),
                   const SizedBox(width: 4),
                   Text(
                     '${plan.noteCount} notes',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: AivoBrand.gray),
                   ),
                 ],
               ),
@@ -563,9 +564,9 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
-      ActionPlanStatus.draft => (Colors.grey, 'Draft'),
-      ActionPlanStatus.active => (Colors.green, 'Active'),
-      ActionPlanStatus.onHold => (Colors.orange, 'On Hold'),
+      ActionPlanStatus.draft => (AivoBrand.gray, 'Draft'),
+      ActionPlanStatus.active => (AivoBrand.success, 'Active'),
+      ActionPlanStatus.onHold => (AivoBrand.warning, 'On Hold'),
       ActionPlanStatus.completed => (Colors.blue, 'Complete'),
       ActionPlanStatus.archived => (Colors.blueGrey, 'Archived'),
     };
@@ -686,7 +687,7 @@ class _NoteCard extends ConsumerWidget {
                       ),
                       Text(
                         '${note.author.roleDisplayName} • ${_formatDate(note.createdAt)}',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: const TextStyle(fontSize: 11, color: AivoBrand.gray),
                       ),
                     ],
                   ),
@@ -725,17 +726,17 @@ class _NoteCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.15),
+                      color: AivoBrand.warning.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.flag, size: 12, color: Colors.orange[700]),
+                        Icon(Icons.flag, size: 12, color: AivoBrand.sunshine[700]),
                         const SizedBox(width: 2),
                         Text(
                           'Follow-up',
-                          style: TextStyle(fontSize: 10, color: Colors.orange[700]),
+                          style: TextStyle(fontSize: 10, color: AivoBrand.sunshine[700]),
                         ),
                       ],
                     ),
@@ -763,15 +764,15 @@ class _NoteCard extends ConsumerWidget {
   Color _getNoteTypeColor(CareNoteType type) {
     switch (type) {
       case CareNoteType.celebration:
-        return Colors.amber;
+        return AivoBrand.warning;
       case CareNoteType.question:
         return Colors.blue;
       case CareNoteType.homeUpdate:
         return Colors.indigo;
       case CareNoteType.schoolUpdate:
-        return Colors.green;
+        return AivoBrand.success;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -946,7 +947,7 @@ class _AddNoteSheetState extends ConsumerState<_AddNoteSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Note shared with care team!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AivoBrand.success,
           ),
         );
         ref.invalidate(learnerCareNotesProvider(widget.learnerId));
@@ -956,7 +957,7 @@ class _AddNoteSheetState extends ConsumerState<_AddNoteSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }
@@ -991,7 +992,7 @@ class _NoteTypeChoice extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : null,
           border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.withValues(alpha: 0.3),
+            color: isSelected ? Theme.of(context).colorScheme.primary : AivoBrand.gray.withValues(alpha: 0.3),
           ),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -1001,13 +1002,13 @@ class _NoteTypeChoice extends StatelessWidget {
             Icon(
               icon,
               size: 18,
-              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+              color: isSelected ? Theme.of(context).colorScheme.primary : AivoBrand.gray,
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+                color: isSelected ? Theme.of(context).colorScheme.primary : AivoBrand.gray,
                 fontWeight: isSelected ? FontWeight.w500 : null,
               ),
             ),
@@ -1099,12 +1100,12 @@ class _MeetingCard extends StatelessWidget {
                       ),
                       Text(
                         '${_formatTime(meeting.scheduledAt)} • ${meeting.durationMinutes}min',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(color: AivoBrand.gray, fontSize: 12),
                       ),
                       if (meeting.location != null)
                         Text(
                           meeting.location!,
-                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          style: const TextStyle(color: AivoBrand.gray, fontSize: 12),
                         ),
                     ],
                   ),
@@ -1142,7 +1143,7 @@ class _MeetingCard extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Could not open video link'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }

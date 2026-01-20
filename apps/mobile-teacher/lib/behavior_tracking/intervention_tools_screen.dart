@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -215,13 +216,13 @@ class _InterventionCard extends StatelessWidget {
       case InterventionStatus.planned:
         return Colors.blue;
       case InterventionStatus.active:
-        return Colors.green;
+        return AivoBrand.success;
       case InterventionStatus.onHold:
-        return Colors.orange;
+        return AivoBrand.warning;
       case InterventionStatus.completed:
-        return Colors.grey;
+        return AivoBrand.gray;
       case InterventionStatus.discontinued:
-        return Colors.red;
+        return AivoBrand.error;
     }
   }
 
@@ -286,7 +287,7 @@ class _InterventionDetailsSheet extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AivoBrand.gray[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

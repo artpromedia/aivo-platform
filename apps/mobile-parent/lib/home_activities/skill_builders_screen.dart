@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'models.dart';
 import 'providers.dart';
 
@@ -105,14 +106,14 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
                     }).toList();
 
                     if (filteredBuilders.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.search_off, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
+                            Icon(Icons.search_off, size: 64, color: AivoBrand.gray),
+                            const SizedBox(height: 16),
                             Text('No skill builders found',
-                                style: TextStyle(color: Colors.grey)),
+                                style: TextStyle(color: AivoBrand.gray)),
                           ],
                         ),
                       );
@@ -145,7 +146,7 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
           value,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, color: AivoBrand.gray)),
       ],
     );
   }
@@ -189,7 +190,7 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
                         ),
                         Text(
                           builder.skillCategory,
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 14, color: AivoBrand.gray[600]),
                         ),
                       ],
                     ),
@@ -210,7 +211,7 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
                   Expanded(
                     child: LinearProgressIndicator(
                       value: builder.progressPercentage / 100,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AivoBrand.gray[200],
                       minHeight: 8,
                     ),
                   ),
@@ -224,7 +225,7 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
               const SizedBox(height: 8),
               Text(
                 '${builder.completedActivities}/${builder.totalActivities} activities completed',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
               ),
             ],
           ),
@@ -298,7 +299,7 @@ class _SkillBuildersScreenState extends ConsumerState<SkillBuildersScreen> {
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: activity.completed
-                        ? Colors.green
+                        ? AivoBrand.success
                         : Theme.of(context).colorScheme.primaryContainer,
                     child: Icon(
                       activity.completed ? Icons.check : Icons.play_arrow,

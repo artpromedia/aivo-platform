@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 class SubjectProgress {
   final String subject;
@@ -72,9 +73,9 @@ class SubjectProgressChart extends StatelessWidget {
   }
 
   Color _getProgressColor(int score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return AivoBrand.success;
+    if (score >= 60) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 
   Widget _buildTrendIcon(String trend) {
@@ -84,15 +85,15 @@ class SubjectProgressChart extends StatelessWidget {
     switch (trend) {
       case 'up':
         icon = Icons.arrow_upward;
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case 'down':
         icon = Icons.arrow_downward;
-        color = Colors.red;
+        color = AivoBrand.error;
         break;
       default:
         icon = Icons.arrow_forward;
-        color = Colors.grey;
+        color = AivoBrand.gray;
     }
 
     return Icon(icon, size: 16, color: color);

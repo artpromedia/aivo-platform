@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../../../offline/cached_activities.dart';
 
 class MovementExerciseWidget extends StatefulWidget {
@@ -221,10 +222,10 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),
                 color: isCompleted
-                    ? Colors.orange
+                    ? AivoBrand.warning
                     : isActive
-                        ? Colors.orange.withValues(alpha: 0.5)
-                        : Colors.grey.withValues(alpha: 0.3),
+                        ? AivoBrand.warning.withValues(alpha: 0.5)
+                        : AivoBrand.gray.withValues(alpha: 0.3),
               ),
             ),
           );
@@ -248,9 +249,9 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
+              color: AivoBrand.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              border: Border.all(color: AivoBrand.warning.withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
@@ -266,13 +267,13 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.timer_outlined, size: 20, color: Colors.orange),
+                    const Icon(Icons.timer_outlined, size: 20, color: AivoBrand.warning),
                     const SizedBox(width: 8),
                     Text(
                       '${_stepSecondsRemaining}s',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: AivoBrand.warning,
                       ),
                     ),
                   ],
@@ -325,13 +326,13 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.orange.shade300,
-                        Colors.orange.shade600,
+                        AivoBrand.sunshine.shade300,
+                        AivoBrand.sunshine.shade600,
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.withValues(alpha: 0.3),
+                        color: AivoBrand.warning.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
@@ -406,7 +407,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
         Chip(
           avatar: const Icon(Icons.speed, size: 16),
           label: Text('Step ${_currentStepIndex + 1}/${widget.activity.steps.length}'),
-          backgroundColor: Colors.grey.withValues(alpha: 0.1),
+          backgroundColor: AivoBrand.gray.withValues(alpha: 0.1),
           side: BorderSide.none,
         ),
       ],
@@ -415,9 +416,9 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
 
   Widget _buildIntensityChip(String intensity) {
     final colors = {
-      'low': Colors.green,
-      'medium': Colors.orange,
-      'high': Colors.red,
+      'low': AivoBrand.success,
+      'medium': AivoBrand.warning,
+      'high': AivoBrand.error,
     };
     final labels = {
       'low': 'Gentle',
@@ -429,10 +430,10 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
       avatar: Icon(
         Icons.flash_on,
         size: 16,
-        color: colors[intensity] ?? Colors.orange,
+        color: colors[intensity] ?? AivoBrand.warning,
       ),
       label: Text(labels[intensity] ?? 'Moderate'),
-      backgroundColor: (colors[intensity] ?? Colors.orange).withValues(alpha: 0.1),
+      backgroundColor: (colors[intensity] ?? AivoBrand.warning).withValues(alpha: 0.1),
       side: BorderSide.none,
     );
   }
@@ -481,13 +482,13 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
+        color: AivoBrand.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: AivoBrand.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline, color: Colors.orange),
+          const Icon(Icons.lightbulb_outline, color: AivoBrand.warning),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -513,7 +514,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
               label: const Text('Start'),
               style: FilledButton.styleFrom(
                 minimumSize: const Size(140, 56),
-                backgroundColor: Colors.orange,
+                backgroundColor: AivoBrand.warning,
               ),
             ),
           if (_isRunning) ...[
@@ -533,7 +534,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
               onPressed: pause,
               icon: const Icon(Icons.pause),
               label: const Text('Pause'),
-              style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+              style: FilledButton.styleFrom(backgroundColor: AivoBrand.warning),
             ),
           ],
           if (!_isRunning && _totalSeconds > 0 && !_isCompleted)
@@ -541,7 +542,7 @@ class _MovementExerciseWidgetState extends State<MovementExerciseWidget>
               onPressed: resume,
               icon: const Icon(Icons.play_arrow),
               label: const Text('Resume'),
-              style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+              style: FilledButton.styleFrom(backgroundColor: AivoBrand.warning),
             ),
         ],
       ),

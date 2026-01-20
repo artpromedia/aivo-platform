@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -186,7 +187,7 @@ class GoalCard extends StatelessWidget {
                     children: [
                       LinearProgressIndicator(
                         value: progress.clamp(0, 1),
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: AivoBrand.gray[200],
                         color: _progressColor(progress),
                       ),
                       const SizedBox(height: 4),
@@ -224,9 +225,9 @@ class GoalCard extends StatelessWidget {
   }
 
   Color _progressColor(double progress) {
-    if (progress >= 0.8) return Colors.green;
-    if (progress >= 0.5) return Colors.orange;
-    return Colors.red;
+    if (progress >= 0.8) return AivoBrand.success;
+    if (progress >= 0.5) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 }
 
@@ -251,13 +252,13 @@ class _CategoryIcon extends StatelessWidget {
     switch (category) {
       case GoalCategory.reading: return Colors.blue;
       case GoalCategory.math: return Colors.purple;
-      case GoalCategory.writing: return Colors.green;
-      case GoalCategory.behavior: return Colors.orange;
+      case GoalCategory.writing: return AivoBrand.success;
+      case GoalCategory.behavior: return AivoBrand.warning;
       case GoalCategory.socialEmotional: return Colors.pink;
       case GoalCategory.speech: return Colors.teal;
       case GoalCategory.occupationalTherapy: return Colors.indigo;
-      case GoalCategory.physicalTherapy: return Colors.red;
-      case GoalCategory.other: return Colors.grey;
+      case GoalCategory.physicalTherapy: return AivoBrand.error;
+      case GoalCategory.other: return AivoBrand.gray;
     }
   }
 
@@ -298,12 +299,12 @@ class _StatusChip extends StatelessWidget {
 
   Color get _color {
     switch (status) {
-      case GoalStatus.notStarted: return Colors.grey;
+      case GoalStatus.notStarted: return AivoBrand.gray;
       case GoalStatus.inProgress: return Colors.blue;
-      case GoalStatus.onTrack: return Colors.green;
-      case GoalStatus.atRisk: return Colors.red;
+      case GoalStatus.onTrack: return AivoBrand.success;
+      case GoalStatus.atRisk: return AivoBrand.error;
       case GoalStatus.achieved: return Colors.teal;
-      case GoalStatus.discontinued: return Colors.grey;
+      case GoalStatus.discontinued: return AivoBrand.gray;
     }
   }
 }

@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 
@@ -42,7 +43,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: Icon(
               isOnline ? Icons.cloud_done : Icons.cloud_off,
-              color: isOnline ? Colors.green : Colors.orange,
+              color: isOnline ? AivoBrand.success : AivoBrand.warning,
             ),
             title: Text(isOnline ? 'Online' : 'Offline'),
             subtitle: syncState.hasPendingChanges
@@ -97,10 +98,10 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
               onPressed: () => _confirmLogout(context),
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+              icon: Icon(Icons.logout, color: AivoBrand.error),
+              label: Text('Sign Out', style: TextStyle(color: AivoBrand.error)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
+                side: BorderSide(color: AivoBrand.error),
               ),
             ),
           ),
@@ -155,7 +156,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Colors.grey,
+          color: AivoBrand.gray,
           letterSpacing: 1.2,
         ),
       ),

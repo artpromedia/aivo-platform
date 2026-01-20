@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Displays quick statistics in a horizontal row.
 class QuickStatsRow extends StatelessWidget {
@@ -34,7 +35,7 @@ class QuickStatsRow extends StatelessWidget {
             icon: Icons.play_circle,
             label: 'Active',
             value: '$activeSessionCount',
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
         ),
         const SizedBox(width: 12),
@@ -43,7 +44,7 @@ class QuickStatsRow extends StatelessWidget {
             icon: Icons.message,
             label: 'Unread',
             value: '$unreadMessages',
-            color: Colors.orange,
+            color: AivoBrand.warning,
           ),
         ),
       ],

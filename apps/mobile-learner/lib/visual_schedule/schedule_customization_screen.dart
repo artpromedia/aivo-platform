@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'schedule_models.dart';
 import 'schedule_provider.dart';
@@ -81,7 +82,7 @@ class _ScheduleCustomizationScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Preferences saved!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AivoBrand.success,
         ),
       );
     }
@@ -206,7 +207,7 @@ class _ScheduleCustomizationScreenState
           decoration: BoxDecoration(
             color: isSelected ? Colors.blue.shade50 : Colors.white,
             border: Border.all(
-              color: isSelected ? Colors.blue : Colors.grey.shade300,
+              color: isSelected ? Colors.blue : AivoBrand.gray.shade300,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -216,12 +217,12 @@ class _ScheduleCustomizationScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue : Colors.grey.shade100,
+                  color: isSelected ? Colors.blue : AivoBrand.gray.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
+                  color: isSelected ? Colors.white : AivoBrand.gray.shade600,
                 ),
               ),
               const SizedBox(width: 12),
@@ -240,7 +241,7 @@ class _ScheduleCustomizationScreenState
                       description,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: AivoBrand.gray.shade600,
                       ),
                     ),
                   ],
@@ -331,15 +332,15 @@ class _ScheduleCustomizationScreenState
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: AivoBrand.gray.shade200),
         ),
         child: SwitchListTile(
           title: Text(title),
           subtitle: Text(
             subtitle,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 12, color: AivoBrand.gray.shade600),
           ),
-          secondary: Icon(icon, color: Colors.grey.shade600),
+          secondary: Icon(icon, color: AivoBrand.gray.shade600),
           value: value,
           onChanged: onChanged,
         ),
@@ -375,7 +376,7 @@ class _ScheduleCustomizationScreenState
             decoration: BoxDecoration(
               color: isSelected ? Colors.blue.shade50 : Colors.white,
               border: Border.all(
-                color: isSelected ? Colors.blue : Colors.grey.shade300,
+                color: isSelected ? Colors.blue : AivoBrand.gray.shade300,
                 width: isSelected ? 2 : 1,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -385,7 +386,7 @@ class _ScheduleCustomizationScreenState
                 Container(
                   height: previewHeight,
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue : Colors.grey.shade300,
+                    color: isSelected ? Colors.blue : AivoBrand.gray.shade300,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -407,14 +408,14 @@ class _ScheduleCustomizationScreenState
 
   Widget _buildColorSchemeSelector() {
     final schemes = [
-      ('default', 'Default', [Colors.blue, Colors.green, Colors.orange]),
+      ('default', 'Default', [Colors.blue, AivoBrand.success, AivoBrand.warning]),
       ('pastel', 'Pastel', [
         Colors.blue.shade100,
-        Colors.green.shade100,
-        Colors.orange.shade100
+        AivoBrand.success.shade100,
+        AivoBrand.sunshine.shade100
       ]),
       ('high_contrast', 'High Contrast', [Colors.black, Colors.white]),
-      ('nature', 'Nature', [Colors.green, Colors.brown, Colors.teal]),
+      ('nature', 'Nature', [AivoBrand.success, Colors.brown, Colors.teal]),
       ('calm', 'Calm', [Colors.blue.shade200, Colors.purple.shade200]),
     ];
 
@@ -437,7 +438,7 @@ class _ScheduleCustomizationScreenState
                   decoration: BoxDecoration(
                     color: isSelected ? Colors.blue.shade50 : Colors.white,
                     border: Border.all(
-                      color: isSelected ? Colors.blue : Colors.grey.shade300,
+                      color: isSelected ? Colors.blue : AivoBrand.gray.shade300,
                       width: isSelected ? 2 : 1,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -455,7 +456,7 @@ class _ScheduleCustomizationScreenState
                                     color: color,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.grey.shade300,
+                                      color: AivoBrand.gray.shade300,
                                     ),
                                   ),
                                 ))
@@ -490,14 +491,14 @@ class _ScheduleCustomizationScreenState
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: AivoBrand.gray.shade200),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade600),
+                  Icon(Icons.warning_amber, color: AivoBrand.sunshine.shade600),
                   const SizedBox(width: 8),
                   const Text(
                     'Transition Warning',
@@ -510,7 +511,7 @@ class _ScheduleCustomizationScreenState
                 'Warn ${_preferences.transitionWarningMinutes} minutes before activity changes',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: AivoBrand.gray.shade600,
                 ),
               ),
               Slider(
@@ -604,7 +605,7 @@ class _ScheduleCustomizationScreenState
         icon: const Icon(Icons.restore),
         label: const Text('Reset to Defaults'),
         style: TextButton.styleFrom(
-          foregroundColor: Colors.grey.shade600,
+          foregroundColor: AivoBrand.gray.shade600,
         ),
       ),
     );

@@ -14,6 +14,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' hide ConnectionState;
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_common/offline/offline.dart' as common;
 
 import '../offline/offline.dart';
@@ -325,9 +326,9 @@ class _BannerContent extends StatelessWidget {
 
       case BannerConnectionState.offline:
         return _BannerConfig(
-          backgroundColor: Colors.orange.shade100,
-          iconColor: Colors.orange.shade800,
-          textColor: Colors.orange.shade900,
+          backgroundColor: AivoBrand.sunshine.shade100,
+          iconColor: AivoBrand.sunshine.shade800,
+          textColor: AivoBrand.sunshine.shade900,
           icon: Icons.cloud_off,
           title: 'You\'re Offline',
           subtitle: 'Your progress is saved and will sync when you reconnect.',
@@ -355,9 +356,9 @@ class _BannerContent extends StatelessWidget {
 
       case BannerConnectionState.backOnline:
         return _BannerConfig(
-          backgroundColor: Colors.green.shade100,
-          iconColor: Colors.green.shade700,
-          textColor: Colors.green.shade900,
+          backgroundColor: AivoBrand.mint.shade100,
+          iconColor: AivoBrand.mint.shade700,
+          textColor: AivoBrand.mint.shade900,
           icon: Icons.cloud_done,
           title: 'Back Online',
           subtitle: 'You\'re connected again!',
@@ -365,9 +366,9 @@ class _BannerContent extends StatelessWidget {
 
       case BannerConnectionState.error:
         return _BannerConfig(
-          backgroundColor: Colors.red.shade100,
-          iconColor: Colors.red.shade700,
-          textColor: Colors.red.shade900,
+          backgroundColor: AivoBrand.error.shade100,
+          iconColor: AivoBrand.error.shade700,
+          textColor: AivoBrand.error.shade900,
           icon: Icons.error_outline,
           title: 'Connection Error',
           subtitle: 'Tap to retry.',

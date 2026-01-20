@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/risk_prediction.dart';
 import '../../providers/risk_provider.dart';
@@ -210,10 +211,10 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red,
+              color: AivoBrand.error,
             ),
             const SizedBox(height: 16),
             Text(
@@ -275,8 +276,8 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                   value: '${state.totalNeedingAttention}',
                   icon: Icons.warning_amber,
                   color: state.totalNeedingAttention > 0
-                      ? Colors.orange
-                      : Colors.green,
+                      ? AivoBrand.warning
+                      : AivoBrand.success,
                 ),
               ),
             ],
@@ -289,7 +290,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                   title: 'Improving',
                   value: '${summary?.trendImproving ?? 0}',
                   icon: Icons.trending_up,
-                  color: Colors.green,
+                  color: AivoBrand.success,
                 ),
               ),
               const SizedBox(width: 12),
@@ -298,7 +299,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                   title: 'Worsening',
                   value: '${summary?.trendWorsening ?? 0}',
                   icon: Icons.trending_down,
-                  color: Colors.red,
+                  color: AivoBrand.error,
                 ),
               ),
             ],
@@ -468,9 +469,9 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
   Color _getWarningColor(RiskSeverity severity) {
     switch (severity) {
       case RiskSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
       case RiskSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case RiskSeverity.low:
         return Colors.blue;
     }

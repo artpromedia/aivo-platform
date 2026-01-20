@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../theme/theme.dart';
 import 'graceful_degradation.dart';
 import 'network_telemetry.dart';
 
@@ -85,15 +86,15 @@ class _NetworkStatusIndicatorState extends State<NetworkStatusIndicator>
     final level = _currentState?.level ?? DegradationLevel.none;
     switch (level) {
       case DegradationLevel.none:
-        return Colors.green;
+        return AivoBrand.success;
       case DegradationLevel.minor:
-        return Colors.lightGreen;
+        return AivoBrand.mint[400]!;
       case DegradationLevel.moderate:
-        return Colors.orange;
+        return AivoBrand.warning;
       case DegradationLevel.severe:
-        return Colors.deepOrange;
+        return AivoBrand.sunshine[600]!;
       case DegradationLevel.critical:
-        return Colors.red;
+        return AivoBrand.error;
     }
   }
 
@@ -262,30 +263,30 @@ class _NetworkStatusSheetState extends State<NetworkStatusSheet> {
               'Response Time',
               '${_report!.avgRequestLatencyMs.toInt()} ms',
               _report!.avgRequestLatencyMs < 500
-                  ? Colors.green
+                  ? AivoBrand.success
                   : _report!.avgRequestLatencyMs < 2000
-                      ? Colors.orange
-                      : Colors.red,
+                      ? AivoBrand.warning
+                      : AivoBrand.error,
             ),
             _buildMetricRow(
               context,
               'Sync Success Rate',
               '${_report!.syncSuccessRate.toStringAsFixed(0)}%',
               _report!.syncSuccessRate > 90
-                  ? Colors.green
+                  ? AivoBrand.success
                   : _report!.syncSuccessRate > 50
-                      ? Colors.orange
-                      : Colors.red,
+                      ? AivoBrand.warning
+                      : AivoBrand.error,
             ),
             _buildMetricRow(
               context,
               'Pending Changes',
               '${_report!.pendingSyncItems}',
               _report!.pendingSyncItems == 0
-                  ? Colors.green
+                  ? AivoBrand.success
                   : _report!.pendingSyncItems < 10
-                      ? Colors.orange
-                      : Colors.red,
+                      ? AivoBrand.warning
+                      : AivoBrand.error,
             ),
           ],
 
@@ -314,13 +315,13 @@ class _NetworkStatusSheetState extends State<NetworkStatusSheet> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: AivoBrand.warning.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: AivoBrand.warning.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber, color: Colors.orange),
+                  Icon(Icons.warning_amber, color: AivoBrand.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -380,9 +381,9 @@ class _NetworkStatusSheetState extends State<NetworkStatusSheet> {
     FeatureStatus status,
   ) {
     final color = switch (status) {
-      FeatureStatus.available => Colors.green,
-      FeatureStatus.degraded => Colors.orange,
-      FeatureStatus.unavailable => Colors.red,
+      FeatureStatus.available => AivoBrand.success,
+      FeatureStatus.degraded => AivoBrand.warning,
+      FeatureStatus.unavailable => AivoBrand.error,
     };
 
     final icon = switch (status) {
@@ -418,11 +419,11 @@ class _NetworkStatusSheetState extends State<NetworkStatusSheet> {
 
   Color _getHealthColor(NetworkHealthStatus? status) {
     return switch (status) {
-      NetworkHealthStatus.healthy => Colors.green,
-      NetworkHealthStatus.degraded => Colors.orange,
-      NetworkHealthStatus.unhealthy => Colors.deepOrange,
-      NetworkHealthStatus.critical => Colors.red,
-      null => Colors.grey,
+      NetworkHealthStatus.healthy => AivoBrand.success,
+      NetworkHealthStatus.degraded => AivoBrand.warning,
+      NetworkHealthStatus.unhealthy => AivoBrand.sunshine[600]!,
+      NetworkHealthStatus.critical => AivoBrand.error,
+      null => AivoBrand.gray,
     };
   }
 }
@@ -454,9 +455,9 @@ class NetworkBanner extends StatelessWidget {
         final color = switch (state.level) {
           DegradationLevel.none => Colors.transparent,
           DegradationLevel.minor => Colors.blue,
-          DegradationLevel.moderate => Colors.orange,
-          DegradationLevel.severe => Colors.deepOrange,
-          DegradationLevel.critical => Colors.red,
+          DegradationLevel.moderate => AivoBrand.warning,
+          DegradationLevel.severe => AivoBrand.sunshine[600]!,
+          DegradationLevel.critical => AivoBrand.error,
         };
 
         return MaterialBanner(

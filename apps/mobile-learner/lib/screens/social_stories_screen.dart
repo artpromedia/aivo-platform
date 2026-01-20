@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../social_stories/social_stories.dart';
 
@@ -159,7 +160,7 @@ class _RecommendationsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+            const Icon(Icons.error_outline, size: 48, color: AivoBrand.warning),
             const SizedBox(height: 16),
             Text('Unable to load recommendations'),
             TextButton(
@@ -182,7 +183,7 @@ class _RecommendationsTab extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.auto_stories, size: 64, color: Colors.grey),
+                Icon(Icons.auto_stories, size: 64, color: AivoBrand.gray),
                 SizedBox(height: 16),
                 Text('No stories available right now'),
               ],
@@ -248,7 +249,7 @@ class _CategoryTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+            const Icon(Icons.error_outline, size: 48, color: AivoBrand.warning),
             const SizedBox(height: 16),
             Text('Unable to load stories'),
           ],

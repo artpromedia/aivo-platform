@@ -124,7 +124,7 @@ class _PredictableSessionWrapperState extends ConsumerState<PredictableSessionWr
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text('Error loading session', style: Theme.of(context).textTheme.titleMedium),
             TextButton(
@@ -256,7 +256,7 @@ class _SessionProgressBar extends StatelessWidget {
     return Container(
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: AivoBrand.gray.shade200,
       ),
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
@@ -431,7 +431,7 @@ class _OutlineItemTile extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isCompleted ? Colors.green : (isCurrent ? color : Colors.grey.shade300),
+                    color: isCompleted ? AivoBrand.success : (isCurrent ? color : AivoBrand.gray.shade300),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -457,7 +457,7 @@ class _OutlineItemTile extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                                 decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                color: isCompleted ? Colors.grey : null,
+                                color: isCompleted ? AivoBrand.gray : null,
                               ),
                             ),
                           ),
@@ -465,7 +465,7 @@ class _OutlineItemTile extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.orange,
+                                color: AivoBrand.warning,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
@@ -482,7 +482,7 @@ class _OutlineItemTile extends StatelessWidget {
                       Text(
                         '${item.estimatedMinutes} min • ${item.type}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey,
+                              color: AivoBrand.gray,
                             ),
                       ),
                     ],
@@ -642,8 +642,8 @@ class _RoutineIndicatorState extends State<RoutineIndicator> {
                   height: 10,
                   decoration: BoxDecoration(
                     color: isCompleted
-                        ? Colors.green
-                        : (isCurrent ? Theme.of(context).colorScheme.primary : Colors.grey.shade300),
+                        ? AivoBrand.success
+                        : (isCurrent ? Theme.of(context).colorScheme.primary : AivoBrand.gray.shade300),
                     borderRadius: BorderRadius.circular(5),
                   ),
                 );
@@ -699,7 +699,7 @@ class _RoutineIndicatorState extends State<RoutineIndicator> {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: AivoBrand.gray.shade200,
               ),
             ),
             const SizedBox(height: 16),
@@ -843,8 +843,8 @@ class _CompactOutlineItem extends StatelessWidget {
         height: isCurrent ? 56 : 44,
         decoration: BoxDecoration(
           color: isCompleted
-              ? Colors.green
-              : (isCurrent ? Theme.of(context).colorScheme.primary : Colors.grey.shade300),
+              ? AivoBrand.success
+              : (isCurrent ? Theme.of(context).colorScheme.primary : AivoBrand.gray.shade300),
           shape: BoxShape.circle,
           border: isCurrent ? Border.all(color: Theme.of(context).colorScheme.primary, width: 3) : null,
         ),
@@ -877,7 +877,7 @@ class _CompactConnector extends StatelessWidget {
     return Container(
       width: 20,
       height: 2,
-      color: Colors.grey.shade300,
+      color: AivoBrand.gray.shade300,
       margin: const EdgeInsets.symmetric(vertical: 29),
     );
   }
@@ -912,8 +912,8 @@ class _FullOutlineItem extends StatelessWidget {
                 height: 24,
                 decoration: BoxDecoration(
                   color: isCompleted
-                      ? Colors.green
-                      : (isCurrent ? Theme.of(context).colorScheme.primary : Colors.grey.shade300),
+                      ? AivoBrand.success
+                      : (isCurrent ? Theme.of(context).colorScheme.primary : AivoBrand.gray.shade300),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -926,7 +926,7 @@ class _FullOutlineItem extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: isCompleted ? Colors.green : Colors.grey.shade300,
+                    color: isCompleted ? AivoBrand.success : AivoBrand.gray.shade300,
                   ),
                 ),
             ],
@@ -943,7 +943,7 @@ class _FullOutlineItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isCurrent
                       ? Theme.of(context).colorScheme.primaryContainer
-                      : Colors.grey.shade100,
+                      : AivoBrand.gray.shade100,
                   borderRadius: BorderRadius.circular(12),
                   border: isCurrent
                       ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
@@ -972,7 +972,7 @@ class _FullOutlineItem extends StatelessWidget {
                     if (item.isNew)
                       const Chip(
                         label: Text('NEW', style: TextStyle(fontSize: 10)),
-                        backgroundColor: Colors.orange,
+                        backgroundColor: AivoBrand.warning,
                         labelStyle: TextStyle(color: Colors.white),
                         padding: EdgeInsets.zero,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1059,7 +1059,7 @@ class ChangeWarningDialog extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                      const Icon(Icons.check_circle_outline, size: 16, color: AivoBrand.success),
                       const SizedBox(width: 8),
                       Expanded(child: Text(strategy)),
                     ],
@@ -1099,9 +1099,9 @@ class ChangeWarningDialog extends StatelessWidget {
       case ChangeSeverity.low:
         return Colors.blue;
       case ChangeSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ChangeSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
     }
   }
 }
@@ -1215,7 +1215,7 @@ class AnxietySupportButton extends ConsumerWidget {
             const SizedBox(height: 8),
             ...result.supportActions.map(
               (action) => ListTile(
-                leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+                leading: const Icon(Icons.check_circle_outline, color: AivoBrand.success),
                 title: Text(action),
                 dense: true,
               ),
@@ -1291,7 +1291,7 @@ class _AnxietyOption extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Material(
-        color: Colors.grey.shade100,
+        color: AivoBrand.gray.shade100,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,

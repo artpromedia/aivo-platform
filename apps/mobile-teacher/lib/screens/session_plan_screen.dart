@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Planned activity model.
 class PlannedActivity {
@@ -395,7 +396,7 @@ class SessionPlanScreen extends ConsumerWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AivoBrand.gray[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -475,7 +476,7 @@ class SessionPlanScreen extends ConsumerWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AivoBrand.gray[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

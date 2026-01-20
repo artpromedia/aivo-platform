@@ -5,6 +5,7 @@ library;
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../gamification_models.dart';
 
 /// Widget displaying three daily goal rings
@@ -48,7 +49,7 @@ class DailyGoalsWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: AivoBrand.gray[200]!,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -92,7 +93,7 @@ class DailyGoalsWidget extends StatelessWidget {
                 label: 'Minutes',
                 current: minutesLearned,
                 goal: dailyGoalMinutes,
-                color: Colors.green,
+                color: AivoBrand.success,
               ),
             ],
           ),
@@ -190,7 +191,7 @@ class _GoalRingState extends State<_GoalRing>
                     size: const Size(80, 80),
                     painter: _RingPainter(
                       progress: 1,
-                      color: Colors.grey.shade200,
+                      color: AivoBrand.gray[200]!,
                       strokeWidth: 8,
                     ),
                   ),
@@ -240,14 +241,14 @@ class _GoalRingState extends State<_GoalRing>
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: AivoBrand.gray[700],
           ),
         ),
         Text(
           '${widget.current}/${widget.goal}',
           style: TextStyle(
             fontSize: 11,
-            color: Colors.grey.shade500,
+            color: AivoBrand.gray[500],
           ),
         ),
       ],
@@ -318,17 +319,17 @@ class DailyGoalsCompact extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: allComplete ? Colors.green.shade50 : Colors.white,
+          color: allComplete ? AivoBrand.mint[50] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: allComplete ? Colors.green.shade300 : Colors.grey.shade200,
+            color: allComplete ? AivoBrand.mint[300]! : AivoBrand.gray[200]!,
           ),
         ),
         child: Row(
           children: [
             Icon(
               allComplete ? Icons.check_circle : Icons.flag,
-              color: allComplete ? Colors.green : Colors.blue,
+              color: allComplete ? AivoBrand.success : Colors.blue,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -339,7 +340,7 @@ class DailyGoalsCompact extends StatelessWidget {
                     allComplete ? 'Daily goals complete!' : 'Daily Goals',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: allComplete ? Colors.green.shade700 : Colors.black87,
+                      color: allComplete ? AivoBrand.mint[700] : Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -357,7 +358,7 @@ class DailyGoalsCompact extends StatelessWidget {
                       const SizedBox(width: 8),
                       _MiniProgress(
                         progress: progress.minutesProgress,
-                        color: Colors.green,
+                        color: AivoBrand.success,
                       ),
                     ],
                   ),
@@ -366,7 +367,7 @@ class DailyGoalsCompact extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: Colors.grey.shade400,
+              color: AivoBrand.gray[400],
             ),
           ],
         ),
@@ -390,7 +391,7 @@ class _MiniProgress extends StatelessWidget {
       child: Container(
         height: 4,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
+          color: AivoBrand.gray[200],
           borderRadius: BorderRadius.circular(2),
         ),
         child: FractionallySizedBox(

@@ -4,6 +4,7 @@
 /// Provides feedback about sync status and offline capabilities.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../offline/offline_manager.dart';
 import '../../../offline/offline_regulation_service.dart';
@@ -37,10 +38,10 @@ class OfflineIndicator extends ConsumerWidget {
             vertical: 6,
           ),
           decoration: BoxDecoration(
-            color: (isOnline ? Colors.green : Colors.orange).withOpacity(0.1),
+            color: (isOnline ? AivoBrand.success : AivoBrand.warning).withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: (isOnline ? Colors.green : Colors.orange).withOpacity(0.3),
+              color: (isOnline ? AivoBrand.success : AivoBrand.warning).withOpacity(0.3),
             ),
           ),
           child: Row(
@@ -49,7 +50,7 @@ class OfflineIndicator extends ConsumerWidget {
               Icon(
                 isOnline ? Icons.cloud_done : Icons.cloud_off,
                 size: iconSize,
-                color: isOnline ? Colors.green : Colors.orange,
+                color: isOnline ? AivoBrand.success : AivoBrand.warning,
               ),
               if (showLabel) ...[
                 const SizedBox(width: 6),
@@ -58,7 +59,7 @@ class OfflineIndicator extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: isOnline ? Colors.green : Colors.orange,
+                    color: isOnline ? AivoBrand.success : AivoBrand.warning,
                   ),
                 ),
               ],
@@ -98,12 +99,12 @@ class OfflineBanner extends ConsumerWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: Colors.orange.shade50,
+          color: AivoBrand.sunshine.shade50,
           child: SafeArea(
             bottom: false,
             child: Row(
               children: [
-                const Icon(Icons.cloud_off, color: Colors.orange, size: 20),
+                const Icon(Icons.cloud_off, color: AivoBrand.warning, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -114,7 +115,7 @@ class OfflineBanner extends ConsumerWidget {
                         'You\'re offline',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.orange,
+                          color: AivoBrand.warning,
                         ),
                       ),
                       if (customMessage != null)
@@ -122,7 +123,7 @@ class OfflineBanner extends ConsumerWidget {
                           customMessage!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.orange.shade700,
+                            color: AivoBrand.sunshine.shade700,
                           ),
                         )
                       else
@@ -130,7 +131,7 @@ class OfflineBanner extends ConsumerWidget {
                           'Activities still work! Changes will sync when you reconnect.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.orange.shade700,
+                            color: AivoBrand.sunshine.shade700,
                           ),
                         ),
                     ],
@@ -139,7 +140,7 @@ class OfflineBanner extends ConsumerWidget {
                 if (onRetry != null)
                   IconButton(
                     onPressed: onRetry,
-                    icon: const Icon(Icons.refresh, color: Colors.orange),
+                    icon: const Icon(Icons.refresh, color: AivoBrand.warning),
                     tooltip: 'Retry connection',
                   ),
               ],
@@ -198,13 +199,13 @@ class SyncStatusIndicator extends ConsumerWidget {
                   ),
                 ),
               ] else if (status.pendingCount > 0) ...[
-                Icon(Icons.sync_problem, size: 16, color: Colors.orange.shade700),
+                Icon(Icons.sync_problem, size: 16, color: AivoBrand.sunshine.shade700),
                 const SizedBox(width: 8),
                 Text(
                   '${status.pendingCount} pending sync',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.orange.shade700,
+                    color: AivoBrand.sunshine.shade700,
                   ),
                 ),
               ],
@@ -280,9 +281,9 @@ class _OfflineDownloadButtonState extends State<OfflineDownloadButton> {
   Widget build(BuildContext context) {
     if (_isDownloaded) {
       return Chip(
-        avatar: const Icon(Icons.check_circle, size: 18, color: Colors.green),
+        avatar: const Icon(Icons.check_circle, size: 18, color: AivoBrand.success),
         label: Text('${widget.label} available offline'),
-        backgroundColor: Colors.green.withOpacity(0.1),
+        backgroundColor: AivoBrand.success.withOpacity(0.1),
         side: BorderSide.none,
       );
     }
@@ -324,7 +325,7 @@ class _OfflineDownloadButtonState extends State<OfflineDownloadButton> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Download failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }
@@ -379,7 +380,7 @@ class SyncFloatingButton extends ConsumerWidget {
             if (syncStatus.pendingCount > 0 && isOnline) {
               return FloatingActionButton.extended(
                 onPressed: onPressed,
-                backgroundColor: Colors.orange,
+                backgroundColor: AivoBrand.warning,
                 icon: const Icon(Icons.sync),
                 label: Text('Sync ${syncStatus.pendingCount}'),
               );

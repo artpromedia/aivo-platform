@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../difficulty/difficulty_service.dart';
 
@@ -151,7 +152,7 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
           SnackBar(
             content: Text(result.message),
             backgroundColor:
-                result.success ? Colors.green : Colors.red,
+                result.success ? AivoBrand.success : AivoBrand.error,
           ),
         );
 
@@ -166,7 +167,7 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }
@@ -252,11 +253,11 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
               children: [
                 CircleAvatar(
                   backgroundColor: isIncrease
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.orange.withOpacity(0.2),
+                      ? AivoBrand.success.withOpacity(0.2)
+                      : AivoBrand.warning.withOpacity(0.2),
                   child: Icon(
                     isIncrease ? Icons.trending_up : Icons.trending_down,
-                    color: isIncrease ? Colors.green : Colors.orange,
+                    color: isIncrease ? AivoBrand.success : AivoBrand.warning,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -298,7 +299,7 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Icon(
                       Icons.arrow_forward,
-                      color: isIncrease ? Colors.green : Colors.orange,
+                      color: isIncrease ? AivoBrand.success : AivoBrand.warning,
                     ),
                   ),
                   _LevelBadge(
@@ -353,7 +354,7 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
                 'Expires in ${rec.timeRemaining.inDays} days',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: rec.timeRemaining.inDays <= 2
-                      ? Colors.orange
+                      ? AivoBrand.warning
                       : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -370,7 +371,7 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
                     child: OutlinedButton(
                       onPressed: () => _handleAction('deny'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
+                        foregroundColor: AivoBrand.error,
                       ),
                       child: const Text('Deny'),
                     ),
@@ -524,7 +525,7 @@ class _DomainLevelCardState extends ConsumerState<_DomainLevelCard> {
             SnackBar(
               content: Text(
                   '${widget.domain.displayName} set to Level $result'),
-              backgroundColor: Colors.green,
+              backgroundColor: AivoBrand.success,
             ),
           );
           ref.invalidate(difficultyLevelsProvider(widget.studentId));
@@ -535,7 +536,7 @@ class _DomainLevelCardState extends ConsumerState<_DomainLevelCard> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
+              backgroundColor: AivoBrand.error,
             ),
           );
         }
@@ -665,11 +666,11 @@ class _HistoryCard extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: isIncrease
-              ? Colors.green.withOpacity(0.2)
-              : Colors.orange.withOpacity(0.2),
+              ? AivoBrand.success.withOpacity(0.2)
+              : AivoBrand.warning.withOpacity(0.2),
           child: Icon(
             isIncrease ? Icons.arrow_upward : Icons.arrow_downward,
-            color: isIncrease ? Colors.green : Colors.orange,
+            color: isIncrease ? AivoBrand.success : AivoBrand.warning,
           ),
         ),
         title: Text(record.domainDisplayName),
@@ -688,7 +689,7 @@ class _HistoryCard extends StatelessWidget {
         trailing: record.wasEffective != null
             ? Icon(
                 record.wasEffective! ? Icons.thumb_up : Icons.thumb_down,
-                color: record.wasEffective! ? Colors.green : Colors.orange,
+                color: record.wasEffective! ? AivoBrand.success : AivoBrand.warning,
                 size: 20,
               )
             : null,

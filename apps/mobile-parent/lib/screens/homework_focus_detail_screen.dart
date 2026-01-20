@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../analytics/analytics_service.dart';
 
@@ -194,8 +195,8 @@ class _IndependenceExplanationCard extends StatelessWidget {
 
     switch (label) {
       case IndependenceLabel.needsSupport:
-        bgColor = Colors.orange.shade50;
-        textColor = Colors.orange.shade800;
+        bgColor = AivoBrand.sunshine[50]!;
+        textColor = AivoBrand.sunshine[800]!;
         explanation = 'Your child often uses hints when working through problems.';
         encouragement = 'This is completely normal! Learning takes time, and it\'s great they\'re asking for help when needed.';
         break;
@@ -206,8 +207,8 @@ class _IndependenceExplanationCard extends StatelessWidget {
         encouragement = 'They\'re making great progress! Encourage them to try problems on their own before using hints.';
         break;
       case IndependenceLabel.mostlyIndependent:
-        bgColor = Colors.green.shade50;
-        textColor = Colors.green.shade800;
+        bgColor = AivoBrand.mint[50]!;
+        textColor = AivoBrand.mint[800]!;
         explanation = 'Your child works through most problems without needing hints.';
         encouragement = 'Excellent work! They\'re developing strong problem-solving skills.';
         break;

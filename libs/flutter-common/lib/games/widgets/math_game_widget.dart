@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/theme.dart';
 import '../game_models.dart';
 
 /// Math blaster game widget
@@ -174,7 +175,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
         // Progress bar
         LinearProgressIndicator(
           value: (_currentIndex + 1) / widget.problems.length,
-          backgroundColor: Colors.grey[300],
+          backgroundColor: AivoBrand.gray[300],
         ),
 
         // Score and timer
@@ -199,7 +200,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.orange,
+                        color: AivoBrand.warning,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -218,7 +219,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _timeRemaining <= 5 ? Colors.red : Colors.blue,
+                    color: _timeRemaining <= 5 ? AivoBrand.error : Colors.blue,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -260,7 +261,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
                     'Problem ${_currentIndex + 1} of ${widget.problems.length}',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: AivoBrand.gray[600],
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -278,13 +279,13 @@ class _MathGameWidgetState extends State<MathGameWidget>
                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                     decoration: BoxDecoration(
                       color: _showResult
-                          ? (_isCorrect ? Colors.green[100] : Colors.red[100])
-                          : Colors.grey[100],
+                          ? (_isCorrect ? AivoBrand.mint[100] : AivoBrand.error[100])
+                          : AivoBrand.gray[100],
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _showResult
-                            ? (_isCorrect ? Colors.green : Colors.red)
-                            : Colors.grey[400]!,
+                            ? (_isCorrect ? AivoBrand.success : AivoBrand.error)
+                            : AivoBrand.gray[400]!,
                         width: 2,
                       ),
                     ),
@@ -293,7 +294,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: _userAnswer.isEmpty ? Colors.grey : Colors.black,
+                        color: _userAnswer.isEmpty ? AivoBrand.gray : Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -305,7 +306,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
                       children: [
                         Icon(
                           _isCorrect ? Icons.check_circle : Icons.cancel,
-                          color: _isCorrect ? Colors.green : Colors.red,
+                          color: _isCorrect ? AivoBrand.success : AivoBrand.error,
                           size: 32,
                         ),
                         const SizedBox(width: 8),
@@ -316,7 +317,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: _isCorrect ? Colors.green : Colors.red,
+                            color: _isCorrect ? AivoBrand.success : AivoBrand.error,
                           ),
                         ),
                       ],
@@ -374,7 +375,7 @@ class _MathGameWidgetState extends State<MathGameWidget>
               children: [
                 _buildActionButton(Icons.backspace, _onBackspace),
                 _buildNumberButton('0'),
-                _buildActionButton(Icons.check, () => _submitAnswer(), color: Colors.green),
+                _buildActionButton(Icons.check, () => _submitAnswer(), color: AivoBrand.success),
               ],
             ),
           ),

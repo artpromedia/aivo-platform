@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'social_story_models.dart';
 
@@ -102,7 +103,7 @@ class StoryPageWidget extends StatelessWidget {
         semanticLabel: visual.altText,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.grey[200],
+            color: AivoBrand.gray[200],
             child: const Center(
               child: Icon(Icons.image_not_supported, size: 64),
             ),
@@ -188,10 +189,10 @@ class _SentenceWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: isHighlighted
             ? (isHighContrast ? Colors.yellow : Colors.yellow.shade100)
-            : (isHighContrast ? Colors.grey[900] : Colors.white),
+            : (isHighContrast ? AivoBrand.gray[900] : Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: isHighlighted
-            ? Border.all(color: Colors.orange, width: 3)
+            ? Border.all(color: AivoBrand.warning, width: 3)
             : null,
         boxShadow: [
           BoxShadow(
@@ -344,15 +345,15 @@ class _SentenceTypeIndicator extends StatelessWidget {
       case SentenceType.perspective:
         return (Icons.psychology, Colors.purple, 'Shows how others feel');
       case SentenceType.directive:
-        return (Icons.directions, Colors.green, 'Suggests what to do');
+        return (Icons.directions, AivoBrand.success, 'Suggests what to do');
       case SentenceType.affirmative:
-        return (Icons.thumb_up, Colors.orange, 'Positive encouragement');
+        return (Icons.thumb_up, AivoBrand.warning, 'Positive encouragement');
       case SentenceType.cooperative:
         return (Icons.people, Colors.teal, 'Who can help');
       case SentenceType.control:
         return (Icons.edit, Colors.indigo, 'My own thought');
       case SentenceType.partial:
-        return (Icons.more_horiz, Colors.grey, 'Complete the thought');
+        return (Icons.more_horiz, AivoBrand.gray, 'Complete the thought');
     }
   }
 }
@@ -408,13 +409,13 @@ class _InteractionWidgetState extends State<_InteractionWidget> {
   Widget _buildEmotionCheckInteraction() {
     if (_completed) {
       return Card(
-        color: Colors.green[50],
+        color: AivoBrand.mint[50],
         child: const Padding(
           padding: EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle, color: Colors.green),
+              Icon(Icons.check_circle, color: AivoBrand.success),
               SizedBox(width: 8),
               Text('Thanks for sharing!'),
             ],
@@ -534,12 +535,12 @@ class _BreathingExerciseWidgetState extends State<_BreathingExerciseWidget>
   Widget build(BuildContext context) {
     if (_completed) {
       return Card(
-        color: Colors.green[50],
+        color: AivoBrand.mint[50],
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 48),
+              const Icon(Icons.check_circle, color: AivoBrand.success, size: 48),
               const SizedBox(height: 8),
               Text(
                 'Great job! You completed ${widget.count} breaths.',
@@ -597,7 +598,7 @@ class _BreathingExerciseWidgetState extends State<_BreathingExerciseWidget>
                       shape: BoxShape.circle,
                       color: _isInhaling
                           ? Colors.blue.shade200
-                          : Colors.green.shade200,
+                          : AivoBrand.mint[200],
                     ),
                     child: Center(
                       child: Icon(

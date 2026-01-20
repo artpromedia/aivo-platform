@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -141,8 +142,8 @@ class _LiveSessionView extends StatelessWidget {
         actions: [
           TextButton.icon(
             onPressed: onEndSession,
-            icon: const Icon(Icons.stop, color: Colors.red),
-            label: const Text('End', style: TextStyle(color: Colors.red)),
+            icon: Icon(Icons.stop, color: AivoBrand.error),
+            label: Text('End', style: TextStyle(color: AivoBrand.error)),
           ),
         ],
       ),
@@ -150,12 +151,12 @@ class _LiveSessionView extends StatelessWidget {
         children: [
           // Session timer
           Container(
-            color: Colors.green.shade50,
+            color: AivoBrand.mint[50],
             padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.timer, color: Colors.green),
+                Icon(Icons.timer, color: AivoBrand.success),
                 const SizedBox(width: 8),
                 _SessionTimer(startTime: session.startedAt),
                 const SizedBox(width: 24),
@@ -297,7 +298,7 @@ class _SessionTimer extends StatelessWidget {
               : '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
         );
       },

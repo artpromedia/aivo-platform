@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/content_models.dart';
@@ -196,9 +197,9 @@ class _ContentLibraryScreenState extends ConsumerState<ContentLibraryScreen> {
       case SubjectArea.ela:
         return Colors.purple;
       case SubjectArea.science:
-        return Colors.green;
+        return AivoBrand.success;
       case SubjectArea.socialStudies:
-        return Colors.orange;
+        return AivoBrand.warning;
       case SubjectArea.sel:
         return Colors.pink;
       case SubjectArea.art:
@@ -206,9 +207,9 @@ class _ContentLibraryScreenState extends ConsumerState<ContentLibraryScreen> {
       case SubjectArea.music:
         return Colors.indigo;
       case SubjectArea.pe:
-        return Colors.red;
+        return AivoBrand.error;
       case SubjectArea.other:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -609,7 +610,7 @@ class _ContentLibraryScreenState extends ConsumerState<ContentLibraryScreen> {
                               child: Row(
                                 children: [
                                   Icon(Icons.check_circle,
-                                      size: 16, color: Colors.green),
+                                      size: 16, color: AivoBrand.success),
                                   const SizedBox(width: 8),
                                   Text(s),
                                 ],

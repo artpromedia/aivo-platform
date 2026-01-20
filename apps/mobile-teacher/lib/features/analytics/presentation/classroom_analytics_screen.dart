@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content_library/models/content_models.dart';
@@ -248,7 +249,7 @@ class _ClassroomAnalyticsScreenState
           title: 'Completion Rate',
           value: '${((analytics.completionRate ?? 0) * 100).toStringAsFixed(0)}%',
           icon: Icons.check_circle,
-          color: Colors.green,
+          color: AivoBrand.success,
           trend: '+5%',
           trendUp: true,
         ),
@@ -256,7 +257,7 @@ class _ClassroomAnalyticsScreenState
           title: 'Engagement',
           value: '${((analytics.engagementScore ?? 0) * 100).toStringAsFixed(0)}%',
           icon: Icons.trending_up,
-          color: Colors.orange,
+          color: AivoBrand.warning,
           trend: '+2%',
           trendUp: true,
         ),
@@ -340,10 +341,10 @@ class _ClassroomAnalyticsScreenState
             ...analytics.skillMastery.entries.map((entry) {
               final mastery = entry.value;
               final color = mastery >= 0.8
-                  ? Colors.green
+                  ? AivoBrand.success
                   : mastery >= 0.6
-                      ? Colors.orange
-                      : Colors.red;
+                      ? AivoBrand.warning
+                      : AivoBrand.error;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -560,9 +561,9 @@ class _ClassroomAnalyticsScreenState
   }
 
   Color _getScoreColor(double score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return AivoBrand.success;
+    if (score >= 60) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 
   String _formatDate(DateTime date) {
@@ -678,7 +679,7 @@ class _ClassroomAnalyticsScreenState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(label, style: TextStyle(color: AivoBrand.gray)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
@@ -840,8 +841,8 @@ class _MetricCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: trendUp
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.red.withValues(alpha: 0.1),
+                        ? AivoBrand.success.withValues(alpha: 0.1)
+                        : AivoBrand.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
@@ -850,14 +851,14 @@ class _MetricCard extends StatelessWidget {
                       Icon(
                         trendUp ? Icons.trending_up : Icons.trending_down,
                         size: 12,
-                        color: trendUp ? Colors.green : Colors.red,
+                        color: trendUp ? AivoBrand.success : AivoBrand.error,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         trend,
                         style: TextStyle(
                           fontSize: 10,
-                          color: trendUp ? Colors.green : Colors.red,
+                          color: trendUp ? AivoBrand.success : AivoBrand.error,
                         ),
                       ),
                     ],

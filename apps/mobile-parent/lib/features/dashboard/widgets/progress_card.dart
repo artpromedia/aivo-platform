@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 class ProgressCard extends StatelessWidget {
   final IconData icon;
@@ -81,17 +82,17 @@ class ProgressCard extends StatelessWidget {
     switch (trend) {
       case 'up':
         trendIcon = Icons.trending_up;
-        trendColor = Colors.green;
+        trendColor = AivoBrand.success;
         trendText = 'Improving';
         break;
       case 'down':
         trendIcon = Icons.trending_down;
-        trendColor = Colors.red;
+        trendColor = AivoBrand.error;
         trendText = 'Needs attention';
         break;
       default:
         trendIcon = Icons.trending_flat;
-        trendColor = Colors.grey;
+        trendColor = AivoBrand.gray;
         trendText = 'Stable';
     }
 

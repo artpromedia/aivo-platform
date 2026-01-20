@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -85,7 +86,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text('Error loading gradebook', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -239,7 +240,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
               const SizedBox(width: 8),
               Text(
                 '${grade?.assignmentsMissing} missing',
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: AivoBrand.error),
               ),
             ],
           ],
@@ -330,18 +331,18 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
 
   Color? _getGradeColor(double? percent) {
     if (percent == null) return null;
-    if (percent >= 90) return Colors.green;
+    if (percent >= 90) return AivoBrand.success;
     if (percent >= 80) return Colors.lightGreen;
-    if (percent >= 70) return Colors.orange;
+    if (percent >= 70) return AivoBrand.warning;
     if (percent >= 60) return Colors.deepOrange;
-    return Colors.red;
+    return AivoBrand.error;
   }
 
   Color? _getGradeEntryColor(GradeEntry? grade) {
-    if (grade == null) return Colors.grey;
+    if (grade == null) return AivoBrand.gray;
     if (grade.isExcused) return Colors.blue;
-    if (grade.isMissing) return Colors.red;
-    if (grade.isLate) return Colors.orange;
+    if (grade.isMissing) return AivoBrand.error;
+    if (grade.isLate) return AivoBrand.warning;
     return null;
   }
 

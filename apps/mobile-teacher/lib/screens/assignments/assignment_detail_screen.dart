@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -108,11 +109,11 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: Colors.red),
-                  title: Text('Delete', style: TextStyle(color: Colors.red)),
+                  leading: Icon(Icons.delete, color: AivoBrand.error),
+                  title: Text('Delete', style: TextStyle(color: AivoBrand.error)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -204,10 +205,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               title: const Text('Due Date'),
               subtitle: Text(DateFormat.yMMMMEEEEd().add_jm().format(assignment.dueAt!)),
               trailing: assignment.isPastDue
-                  ? const Chip(
-                      label: Text('Past Due'),
-                      backgroundColor: Colors.red,
-                      labelStyle: TextStyle(color: Colors.white),
+                  ? Chip(
+                      label: const Text('Past Due'),
+                      backgroundColor: AivoBrand.error,
+                      labelStyle: const TextStyle(color: Colors.white),
                     )
                   : null,
             ),
@@ -247,7 +248,7 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
           ListTile(
             leading: Icon(
               assignment.allowLateSubmissions ? Icons.check_circle : Icons.cancel,
-              color: assignment.allowLateSubmissions ? Colors.green : Colors.red,
+              color: assignment.allowLateSubmissions ? AivoBrand.success : AivoBrand.error,
             ),
             title: const Text('Late Submissions'),
             subtitle: Text(
@@ -314,19 +315,19 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                         context,
                         assignment.gradedCount.toString(),
                         'Graded',
-                        Colors.green,
+                        AivoBrand.success,
                       ),
                       _buildStatColumn(
                         context,
                         assignment.ungradedCount.toString(),
                         'Ungraded',
-                        Colors.orange,
+                        AivoBrand.warning,
                       ),
                       _buildStatColumn(
                         context,
                         (assignment.studentCount - assignment.submissionCount).toString(),
                         'Missing',
-                        Colors.red,
+                        AivoBrand.error,
                       ),
                     ],
                   ),
@@ -432,15 +433,15 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
 
     switch (status) {
       case AssignmentStatus.draft:
-        color = Colors.grey;
+        color = AivoBrand.gray;
         label = 'Draft';
         break;
       case AssignmentStatus.published:
-        color = Colors.green;
+        color = AivoBrand.success;
         label = 'Published';
         break;
       case AssignmentStatus.closed:
-        color = Colors.red;
+        color = AivoBrand.error;
         label = 'Closed';
         break;
       case AssignmentStatus.archived:
@@ -556,7 +557,7 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AivoBrand.error),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -630,10 +631,10 @@ class SubmissionListTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: AivoBrand.warning.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text('Late', style: TextStyle(fontSize: 12, color: Colors.orange)),
+              child: Text('Late', style: TextStyle(fontSize: 12, color: AivoBrand.warning)),
             ),
           ],
         ],
@@ -647,13 +648,13 @@ class SubmissionListTile extends StatelessWidget {
       return const Chip(label: Text('EX'));
     }
     if (submission.status == SubmissionStatus.missing) {
-      return const Text('Missing', style: TextStyle(color: Colors.red));
+      return Text('Missing', style: TextStyle(color: AivoBrand.error));
     }
     if (submission.status == SubmissionStatus.notSubmitted) {
-      return const Text('-', style: TextStyle(color: Colors.grey));
+      return Text('-', style: TextStyle(color: AivoBrand.gray));
     }
     if (!submission.isGraded) {
-      return const Text('Ungraded', style: TextStyle(color: Colors.orange));
+      return Text('Ungraded', style: TextStyle(color: AivoBrand.warning));
     }
 
     final grade = submission.pointsEarned ?? 0;
@@ -685,17 +686,17 @@ class SubmissionListTile extends StatelessWidget {
   Color _getStatusColor() {
     switch (submission.status) {
       case SubmissionStatus.notSubmitted:
-        return Colors.grey;
+        return AivoBrand.gray;
       case SubmissionStatus.submitted:
         return Colors.blue;
       case SubmissionStatus.late:
-        return Colors.orange;
+        return AivoBrand.warning;
       case SubmissionStatus.graded:
-        return Colors.green;
+        return AivoBrand.success;
       case SubmissionStatus.returned:
         return Colors.teal;
       case SubmissionStatus.missing:
-        return Colors.red;
+        return AivoBrand.error;
       case SubmissionStatus.excused:
         return Colors.purple;
     }

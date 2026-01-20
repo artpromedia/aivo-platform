@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../models/stroke_data.dart';
 import '../services/scratch_pad_service.dart';
 import 'scratch_pad_canvas.dart';
@@ -107,7 +108,7 @@ class _ScratchPadSheetState extends State<ScratchPadSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AivoBrand.gray.shade300,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -135,7 +136,7 @@ class _ScratchPadSheetState extends State<ScratchPadSheet> {
                           widget.questionText!,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: AivoBrand.gray.shade600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -262,7 +263,7 @@ class _ScratchPadDialogState extends State<ScratchPadDialog> {
                             widget.questionText!,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade700,
+                              color: AivoBrand.gray.shade700,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -381,9 +382,9 @@ class _InlineScratchPadState extends State<InlineScratchPad>
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: AivoBrand.gray.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AivoBrand.gray.shade200),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -398,7 +399,7 @@ class _InlineScratchPadState extends State<InlineScratchPad>
                 children: [
                   Icon(
                     Icons.draw,
-                    color: _isExpanded ? Colors.blue : Colors.grey.shade600,
+                    color: _isExpanded ? Colors.blue : AivoBrand.gray.shade600,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -406,13 +407,13 @@ class _InlineScratchPadState extends State<InlineScratchPad>
                       _isExpanded ? 'Scratch Pad' : 'Show your work',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: _isExpanded ? Colors.blue : Colors.grey.shade700,
+                        color: _isExpanded ? Colors.blue : AivoBrand.gray.shade700,
                       ),
                     ),
                   ),
                   Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.grey.shade600,
+                    color: AivoBrand.gray.shade600,
                   ),
                 ],
               ),

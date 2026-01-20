@@ -3,6 +3,7 @@
 /// Reusable widget for displaying a single schedule item.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'schedule_models.dart';
 
 /// Display style for schedule items
@@ -65,13 +66,13 @@ class ScheduleItemWidget extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isCompleted || isSkipped
-              ? Colors.grey.shade100
+              ? AivoBrand.gray.shade100
               : isCurrent
                   ? color.withOpacity(0.1)
                   : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isCurrent ? color : Colors.grey.shade200,
+            color: isCurrent ? color : AivoBrand.gray.shade200,
             width: isCurrent ? 2 : 1,
           ),
           boxShadow: isCurrent
@@ -108,7 +109,7 @@ class ScheduleItemWidget extends StatelessWidget {
                           ? TextDecoration.lineThrough
                           : null,
                       color: isCompleted || isSkipped
-                          ? Colors.grey
+                          ? AivoBrand.gray
                           : Colors.black87,
                     ),
                   ),
@@ -117,25 +118,25 @@ class ScheduleItemWidget extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.access_time,
-                            size: 14, color: Colors.grey.shade600),
+                            size: 14, color: AivoBrand.gray.shade600),
                         const SizedBox(width: 4),
                         Text(
                           item.scheduledTime!,
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade600,
+                            color: AivoBrand.gray.shade600,
                           ),
                         ),
                         if (showDuration) ...[
                           const SizedBox(width: 12),
                           Icon(Icons.timer_outlined,
-                              size: 14, color: Colors.grey.shade600),
+                              size: 14, color: AivoBrand.gray.shade600),
                           const SizedBox(width: 4),
                           Text(
                             '${item.estimatedDuration} min',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey.shade600,
+                              color: AivoBrand.gray.shade600,
                             ),
                           ),
                         ],
@@ -148,7 +149,7 @@ class ScheduleItemWidget extends StatelessWidget {
                       item.notes!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: AivoBrand.gray.shade500,
                         fontStyle: FontStyle.italic,
                       ),
                       maxLines: 1,
@@ -164,7 +165,7 @@ class ScheduleItemWidget extends StatelessWidget {
               IconButton(
                 onPressed: onComplete,
                 icon: const Icon(Icons.check_circle_outline),
-                color: Colors.green,
+                color: AivoBrand.success,
                 iconSize: 32,
               ),
           ],
@@ -187,7 +188,7 @@ class ScheduleItemWidget extends StatelessWidget {
           color: isCurrent ? color.withOpacity(0.15) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isCurrent ? color : Colors.grey.shade300,
+            color: isCurrent ? color : AivoBrand.gray.shade300,
             width: isCurrent ? 2 : 1,
           ),
         ),
@@ -203,16 +204,16 @@ class ScheduleItemWidget extends StatelessWidget {
                 fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
                 decoration:
                     isCompleted || isSkipped ? TextDecoration.lineThrough : null,
-                color: isCompleted || isSkipped ? Colors.grey : Colors.black87,
+                color: isCompleted || isSkipped ? AivoBrand.gray : Colors.black87,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             if (isCompleted)
-              const Icon(Icons.check_circle, color: Colors.green, size: 20),
+              const Icon(Icons.check_circle, color: AivoBrand.success, size: 20),
             if (isSkipped)
-              const Icon(Icons.skip_next, color: Colors.orange, size: 20),
+              const Icon(Icons.skip_next, color: AivoBrand.warning, size: 20),
           ],
         ),
       ),
@@ -232,7 +233,7 @@ class ScheduleItemWidget extends StatelessWidget {
           color: isCurrent ? color.withOpacity(0.15) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isCurrent ? color : Colors.grey.shade300,
+            color: isCurrent ? color : AivoBrand.gray.shade300,
             width: isCurrent ? 3 : 1,
           ),
           boxShadow: isCurrent
@@ -263,7 +264,7 @@ class ScheduleItemWidget extends StatelessWidget {
                         fontWeight:
                             isCurrent ? FontWeight.bold : FontWeight.w500,
                         color: isCompleted || isSkipped
-                            ? Colors.grey
+                            ? AivoBrand.gray
                             : Colors.black87,
                       ),
                       textAlign: TextAlign.center,
@@ -281,7 +282,7 @@ class ScheduleItemWidget extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(
-                    color: Colors.green,
+                    color: AivoBrand.success,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, color: Colors.white, size: 14),
@@ -294,7 +295,7 @@ class ScheduleItemWidget extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(
-                    color: Colors.orange,
+                    color: AivoBrand.warning,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.skip_next,
@@ -336,7 +337,7 @@ class ScheduleItemWidget extends StatelessWidget {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: isCompleted || isSkipped ? Colors.grey : Colors.black87,
+            color: isCompleted || isSkipped ? AivoBrand.gray : Colors.black87,
           ),
           textAlign: TextAlign.center,
         ),
@@ -346,7 +347,7 @@ class ScheduleItemWidget extends StatelessWidget {
             '${item.estimatedDuration} minutes',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey.shade600,
+              color: AivoBrand.gray.shade600,
             ),
           ),
         ],
@@ -360,7 +361,7 @@ class ScheduleItemWidget extends StatelessWidget {
         width: 24,
         height: 24,
         decoration: const BoxDecoration(
-          color: Colors.green,
+          color: AivoBrand.success,
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.check, color: Colors.white, size: 16),
@@ -372,7 +373,7 @@ class ScheduleItemWidget extends StatelessWidget {
         width: 24,
         height: 24,
         decoration: const BoxDecoration(
-          color: Colors.orange,
+          color: AivoBrand.warning,
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.skip_next, color: Colors.white, size: 16),
@@ -395,7 +396,7 @@ class ScheduleItemWidget extends StatelessWidget {
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300, width: 2),
+        border: Border.all(color: AivoBrand.gray.shade300, width: 2),
         shape: BoxShape.circle,
       ),
     );
@@ -409,7 +410,7 @@ class ScheduleItemWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(effectiveSize / 4),
         child: ColorFiltered(
           colorFilter: isGrayedOut
-              ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
+              ? const ColorFilter.mode(AivoBrand.gray, BlendMode.saturation)
               : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
           child: Image.network(
             item.image!,
@@ -445,13 +446,13 @@ class ScheduleItemWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: (isGrayedOut ? Colors.grey : color).withOpacity(0.15),
+        color: (isGrayedOut ? AivoBrand.gray : color).withOpacity(0.15),
         borderRadius: BorderRadius.circular(size / 4),
       ),
       child: Icon(
         _getIconData(item.icon),
         size: size * 0.6,
-        color: isGrayedOut ? Colors.grey : color,
+        color: isGrayedOut ? AivoBrand.gray : color,
       ),
     );
   }

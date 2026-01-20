@@ -202,9 +202,9 @@ class DifficultyRecommendationCard extends ConsumerWidget {
   Color _getRecommendationColor(DifficultyRecommendation rec) {
     switch (rec) {
       case DifficultyRecommendation.harder:
-        return Colors.green;
+        return AivoBrand.success;
       case DifficultyRecommendation.easier:
-        return Colors.orange;
+        return AivoBrand.warning;
       case DifficultyRecommendation.same:
         return Colors.blue;
     }
@@ -264,9 +264,9 @@ class _OverallRecommendationChip extends StatelessWidget {
   Color _getColor() {
     switch (recommendation) {
       case DifficultyRecommendation.harder:
-        return Colors.green;
+        return AivoBrand.success;
       case DifficultyRecommendation.easier:
-        return Colors.orange;
+        return AivoBrand.warning;
       case DifficultyRecommendation.same:
         return Colors.blue;
     }

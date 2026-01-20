@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/lms_integration.dart';
 import '../../providers/lms_provider.dart';
@@ -95,12 +96,12 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: isConnected ? Colors.green.shade50 : Colors.grey.shade100,
+                    color: isConnected ? AivoBrand.mint[50] : AivoBrand.gray[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.school,
-                    color: isConnected ? Colors.green : Colors.grey,
+                    color: isConnected ? AivoBrand.success : AivoBrand.gray,
                     size: 28,
                   ),
                 ),
@@ -121,7 +122,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: isConnected ? Colors.green : Colors.grey,
+                              color: isConnected ? AivoBrand.success : AivoBrand.gray,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -129,7 +130,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
                           Text(
                             isConnected ? 'Connected' : 'Not connected',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: isConnected ? Colors.green : Colors.grey,
+                              color: isConnected ? AivoBrand.success : AivoBrand.gray,
                             ),
                           ),
                         ],
@@ -156,7 +157,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
                       icon: const Icon(Icons.link_off),
                       label: const Text('Disconnect'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
+                        foregroundColor: AivoBrand.error,
                       ),
                     )
                   : FilledButton.icon(
@@ -209,19 +210,19 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: AivoBrand.sunshine[50],
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.shade200),
+              border: Border.all(color: AivoBrand.sunshine[200]!),
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber, color: Colors.orange.shade700, size: 20),
+                Icon(Icons.warning_amber, color: AivoBrand.sunshine[700], size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Connection expires soon. Please reconnect to continue syncing.',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.orange.shade700,
+                      color: AivoBrand.sunshine[700],
                     ),
                   ),
                 ),
@@ -235,18 +236,18 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
 
   Widget _buildErrorCard(String error, ThemeData theme) {
     return Card(
-      color: Colors.red.shade50,
+      color: AivoBrand.error[50],
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red.shade700),
+            Icon(Icons.error_outline, color: AivoBrand.error[700]),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 error,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.red.shade700,
+                  color: AivoBrand.error[700],
                 ),
               ),
             ),
@@ -383,7 +384,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: result.success ? Colors.green.shade50 : Colors.red.shade50,
+        color: result.success ? AivoBrand.mint[50] : AivoBrand.error[50],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -394,14 +395,14 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
               Icon(
                 result.success ? Icons.check_circle : Icons.error,
                 size: 18,
-                color: result.success ? Colors.green : Colors.red,
+                color: result.success ? AivoBrand.success : AivoBrand.error,
               ),
               const SizedBox(width: 8),
               Text(
                 result.success ? 'Sync completed' : 'Sync failed',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: result.success ? Colors.green.shade700 : Colors.red.shade700,
+                  color: result.success ? AivoBrand.mint[700] : AivoBrand.error[700],
                 ),
               ),
             ],
@@ -533,7 +534,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
               Navigator.of(context).pop();
               ref.read(lmsConnectionProvider.notifier).disconnect();
             },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AivoBrand.error),
             child: const Text('Disconnect'),
           ),
         ],
@@ -588,7 +589,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
               Navigator.of(context).pop();
               ref.read(lmsConnectionProvider.notifier).unlinkCourse(mapping.id);
             },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AivoBrand.error),
             child: const Text('Unlink'),
           ),
         ],
@@ -606,7 +607,7 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
                 ? 'Sync completed: ${result.totalChanges} changes'
                 : 'Sync failed: ${result.errors.first}',
           ),
-          backgroundColor: result.success ? Colors.green : Colors.red,
+          backgroundColor: result.success ? AivoBrand.success : AivoBrand.error,
         ),
       );
     }
@@ -710,12 +711,12 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey),
+        Icon(icon, size: 18, color: AivoBrand.gray),
         const SizedBox(width: 8),
         Text(
           '$label:',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey,
+                color: AivoBrand.gray,
               ),
         ),
         const SizedBox(width: 8),
@@ -774,9 +775,9 @@ class _CourseCard extends StatelessWidget {
               onTap: onUnlink,
               child: Row(
                 children: [
-                  Icon(Icons.link_off, size: 20, color: Colors.red),
+                  Icon(Icons.link_off, size: 20, color: AivoBrand.error),
                   const SizedBox(width: 8),
-                  Text('Unlink', style: TextStyle(color: Colors.red)),
+                  Text('Unlink', style: TextStyle(color: AivoBrand.error)),
                 ],
               ),
             ),
@@ -917,7 +918,7 @@ class _SyncHistorySheet extends ConsumerWidget {
           height: 4,
           margin: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: AivoBrand.gray[300],
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -951,7 +952,7 @@ class _SyncHistorySheet extends ConsumerWidget {
                   return ListTile(
                     leading: Icon(
                       entry.success ? Icons.check_circle : Icons.error,
-                      color: entry.success ? Colors.green : Colors.red,
+                      color: entry.success ? AivoBrand.success : AivoBrand.error,
                     ),
                     title: Text(entry.courseName ?? 'Unknown Course'),
                     subtitle: Text(

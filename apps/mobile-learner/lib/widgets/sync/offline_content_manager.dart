@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../core/database/local_database.dart';
 import '../../core/network/connectivity_manager.dart';
@@ -138,7 +139,7 @@ class _OfflineContentManagerState extends State<OfflineContentManager>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AivoBrand.error),
             child: const Text('Delete'),
           ),
         ],
@@ -179,7 +180,7 @@ class _OfflineContentManagerState extends State<OfflineContentManager>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AivoBrand.error),
             child: const Text('Clear All'),
           ),
         ],
@@ -332,7 +333,7 @@ class _OfflineContentManagerState extends State<OfflineContentManager>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text(_errorMessage ?? 'An error occurred'),
           const SizedBox(height: 16),
@@ -577,7 +578,7 @@ class OfflineLessonCard extends StatelessWidget {
                       Text(
                         'Downloaded ${_formatDate(lesson.downloadedAt!)}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.green,
+                          color: AivoBrand.success,
                         ),
                       ),
                     ],
@@ -590,7 +591,7 @@ class OfflineLessonCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
                   onPressed: onDelete,
-                  color: Colors.red,
+                  color: AivoBrand.error,
                 )
               else
                 IconButton(

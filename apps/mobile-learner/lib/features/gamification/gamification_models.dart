@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 /// Player level configuration
 class LevelConfig {
@@ -151,9 +152,9 @@ class Achievement {
   Color get rarityColor {
     switch (rarity) {
       case AchievementRarity.common:
-        return Colors.grey;
+        return AivoBrand.gray;
       case AchievementRarity.uncommon:
-        return Colors.green;
+        return AivoBrand.success;
       case AchievementRarity.rare:
         return Colors.blue;
       case AchievementRarity.epic:
@@ -374,9 +375,9 @@ class ShopItem {
   Color get rarityColor {
     switch (rarity) {
       case ShopItemRarity.common:
-        return Colors.grey;
+        return AivoBrand.gray;
       case ShopItemRarity.uncommon:
-        return Colors.green;
+        return AivoBrand.success;
       case ShopItemRarity.rare:
         return Colors.blue;
       case ShopItemRarity.epic:

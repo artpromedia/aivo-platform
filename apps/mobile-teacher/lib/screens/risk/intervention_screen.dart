@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/risk_prediction.dart';
 import '../../providers/risk_provider.dart';
@@ -73,7 +74,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text(
               'Failed to load interventions',
@@ -104,7 +105,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: Colors.green.shade400,
+              color: AivoBrand.mint[400],
             ),
             const SizedBox(height: 16),
             Text(
@@ -272,13 +273,13 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
+        color: AivoBrand.error[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade200),
+        border: Border.all(color: AivoBrand.error[200]!),
       ),
       child: Row(
         children: [
-          Icon(Icons.priority_high, color: Colors.red.shade700),
+          Icon(Icons.priority_high, color: AivoBrand.error[700]),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -288,13 +289,13 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
                   'Immediate Action Required',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red.shade700,
+                    color: AivoBrand.error[700],
                   ),
                 ),
                 Text(
                   'This student requires urgent intervention. Please review and approve recommendations.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.red.shade600,
+                    color: AivoBrand.error[600],
                   ),
                 ),
               ],
@@ -330,7 +331,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
         ),
         children: excluded.map((e) {
           return ListTile(
-            leading: const Icon(Icons.remove_circle_outline, color: Colors.grey),
+            leading: Icon(Icons.remove_circle_outline, color: AivoBrand.gray),
             title: Text(e.name),
             subtitle: Text(
               e.reason,
@@ -454,7 +455,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${intervention.name} approved'),
-              backgroundColor: Colors.green,
+              backgroundColor: AivoBrand.success,
             ),
           );
         },
@@ -533,14 +534,14 @@ class InterventionCard extends StatelessWidget {
                 _buildMetric(
                   'Effectiveness',
                   '${intervention.effectivenessPercent}%',
-                  Colors.green,
+                  AivoBrand.success,
                   theme,
                 ),
                 const SizedBox(width: 16),
                 _buildMetric(
                   'Duration',
                   '${intervention.estimatedDurationDays}d',
-                  Colors.orange,
+                  AivoBrand.warning,
                   theme,
                 ),
               ],
@@ -750,13 +751,13 @@ class _ApproveInterventionDialogState
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                Icon(Icons.info_outline, size: 16, color: AivoBrand.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'This intervention requires parent consent.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.orange,
+                          color: AivoBrand.warning,
                         ),
                   ),
                 ),

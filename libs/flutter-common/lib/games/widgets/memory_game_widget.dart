@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/theme.dart';
 import '../game_models.dart';
 
 /// Memory game widget with flip card animation
@@ -211,7 +212,7 @@ class _MemoryGameWidgetState extends State<MemoryGameWidget> {
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
         ),
       ],
     );
@@ -321,12 +322,12 @@ class _MemoryCardWidgetState extends State<_MemoryCardWidget>
       child: Container(
         decoration: BoxDecoration(
           color: widget.card.isMatched
-              ? Colors.green[100]
+              ? AivoBrand.mint[100]
               : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: widget.card.isMatched
-                ? Colors.green
+                ? AivoBrand.success
                 : Theme.of(context).colorScheme.outline,
             width: 2,
           ),

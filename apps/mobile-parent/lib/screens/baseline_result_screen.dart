@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../baseline/baseline_controller.dart';
 
@@ -47,9 +48,9 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Results accepted! Personalized learning is ready.'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: const Text('Results accepted! Personalized learning is ready.'),
+          backgroundColor: AivoBrand.success,
         ),
       );
       context.pop();
@@ -97,7 +98,7 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.assessment_outlined, size: 64, color: Colors.grey),
+            Icon(Icons.assessment_outlined, size: 64, color: AivoBrand.gray),
             const SizedBox(height: 16),
             Text(
               'No results available',
@@ -263,17 +264,17 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
               ),
           ] else ...[
             Card(
-              color: Colors.green.shade50,
+              color: AivoBrand.mint[50],
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green.shade700),
+                    Icon(Icons.check_circle, color: AivoBrand.mint[700]),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Results accepted! ${widget.learnerName}\'s personalized learning journey is ready.',
-                        style: TextStyle(color: Colors.green.shade800),
+                        style: TextStyle(color: AivoBrand.mint[800]),
                       ),
                     ),
                   ],
@@ -370,9 +371,9 @@ class _DomainScoreBar extends StatelessWidget {
 
     Color barColor;
     if (percentage >= 0.8) {
-      barColor = Colors.green;
+      barColor = AivoBrand.success;
     } else if (percentage >= 0.6) {
-      barColor = Colors.orange;
+      barColor = AivoBrand.warning;
     } else {
       barColor = theme.colorScheme.error;
     }
@@ -461,9 +462,9 @@ class _RetestModalState extends ConsumerState<_RetestModal> {
       widget.onSuccess();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Retest requested. Your child can retake the assessment.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Retest requested. Your child can retake the assessment.'),
+            backgroundColor: AivoBrand.success,
           ),
         );
       }

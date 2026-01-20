@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'sensory_models.dart';
 import 'sensory_service.dart';
@@ -315,11 +316,11 @@ class SensoryMatchIndicator extends StatelessWidget {
   }
 
   Color _getScoreColor(int score) {
-    if (score >= 90) return Colors.green;
-    if (score >= 75) return Colors.lightGreen;
-    if (score >= 50) return Colors.orange;
-    if (score >= 30) return Colors.deepOrange;
-    return Colors.red;
+    if (score >= 90) return AivoBrand.success;
+    if (score >= 75) return AivoBrand.mint[400]!;
+    if (score >= 50) return AivoBrand.warning;
+    if (score >= 30) return AivoBrand.sunshine[600]!;
+    return AivoBrand.error;
   }
 
   IconData _getScoreIcon(int score) {
@@ -672,7 +673,7 @@ class _IncidentReportDialogState extends State<_IncidentReportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Report submitted. Thank you!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AivoBrand.success,
           ),
         );
 
@@ -684,7 +685,7 @@ class _IncidentReportDialogState extends State<_IncidentReportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to submit report: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }

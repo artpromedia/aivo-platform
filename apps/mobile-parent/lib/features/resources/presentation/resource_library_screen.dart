@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/resource_models.dart';
@@ -177,11 +178,11 @@ class _ResourceLibraryScreenState extends ConsumerState<ResourceLibraryScreen>
       case ResourceCategory.guide:
         return Colors.blue;
       case ResourceCategory.video:
-        return Colors.red;
+        return AivoBrand.error;
       case ResourceCategory.article:
-        return Colors.green;
+        return AivoBrand.success;
       case ResourceCategory.tool:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ResourceCategory.webinar:
         return Colors.purple;
     }
@@ -344,7 +345,7 @@ class _ResourceLibraryScreenState extends ConsumerState<ResourceLibraryScreen>
                                     ),
                                     margin: const EdgeInsets.only(bottom: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.green,
+                                      color: AivoBrand.success,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -532,7 +533,7 @@ class _ResourceCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green,
+                              color: AivoBrand.success,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

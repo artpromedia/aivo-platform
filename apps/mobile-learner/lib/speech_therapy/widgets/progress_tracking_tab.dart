@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../models.dart';
 import '../../screens/speech_therapy_screen.dart';
@@ -103,7 +104,7 @@ class _OverallStatsCard extends StatelessWidget {
                     icon: Icons.check_circle_outline,
                     label: 'Completed',
                     value: '${progress.exercisesCompleted}/${progress.totalExercises}',
-                    color: Colors.green,
+                    color: AivoBrand.success,
                   ),
                 ),
                 Expanded(
@@ -124,7 +125,7 @@ class _OverallStatsCard extends StatelessWidget {
                     icon: Icons.schedule,
                     label: 'Practice Time',
                     value: '${progress.practiceMinutes} min',
-                    color: Colors.orange,
+                    color: AivoBrand.warning,
                   ),
                 ),
                 Expanded(
@@ -243,7 +244,7 @@ class _StreakCard extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.red.shade400],
+                  colors: [AivoBrand.sunshine[400]!, AivoBrand.error],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -534,9 +535,9 @@ class _AssessmentItem extends StatelessWidget {
   }
 
   Color _getAccuracyColor(double accuracy) {
-    if (accuracy >= 0.8) return Colors.green;
-    if (accuracy >= 0.6) return Colors.orange;
-    return Colors.red;
+    if (accuracy >= 0.8) return AivoBrand.success;
+    if (accuracy >= 0.6) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 
   String _formatDate(DateTime date) {

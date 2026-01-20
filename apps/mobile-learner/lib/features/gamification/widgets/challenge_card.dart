@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../gamification_models.dart';
 
 /// Card displaying a single challenge
@@ -80,10 +81,10 @@ class ChallengeCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: challenge.isCompleted ? Colors.green.shade50 : Colors.white,
+          color: challenge.isCompleted ? AivoBrand.mint[50] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: challenge.isCompleted ? Colors.green.shade300 : _typeColor.withOpacity(0.3),
+            color: challenge.isCompleted ? AivoBrand.mint[300]! : _typeColor.withOpacity(0.3),
           ),
         ),
         child: Row(
@@ -98,7 +99,7 @@ class ChallengeCard extends StatelessWidget {
               ),
               child: Center(
                 child: challenge.isCompleted
-                    ? Icon(Icons.check, color: Colors.green.shade600)
+                    ? Icon(Icons.check, color: AivoBrand.mint[600])
                     : Text(challenge.icon, style: const TextStyle(fontSize: 20)),
               ),
             ),
@@ -119,9 +120,9 @@ class ChallengeCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   LinearProgressIndicator(
                     value: challenge.progress.clamp(0, 1),
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AivoBrand.gray[200],
                     valueColor: AlwaysStoppedAnimation(
-                      challenge.isCompleted ? Colors.green : _typeColor,
+                      challenge.isCompleted ? AivoBrand.success : _typeColor,
                     ),
                   ),
                 ],
@@ -154,12 +155,12 @@ class ChallengeCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: challenge.isCompleted
-                ? [Colors.green.shade50, Colors.green.shade100]
+                ? [AivoBrand.mint[50]!, AivoBrand.mint[100]!]
                 : [_typeColor.withOpacity(0.05), _typeColor.withOpacity(0.1)],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: challenge.isCompleted ? Colors.green.shade300 : _typeColor.withOpacity(0.3),
+            color: challenge.isCompleted ? AivoBrand.mint[300]! : _typeColor.withOpacity(0.3),
           ),
         ),
         child: Column(
@@ -184,15 +185,15 @@ class ChallengeCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+                Icon(Icons.access_time, size: 14, color: AivoBrand.gray[600]),
                 const SizedBox(width: 4),
                 Text(
                   _formatTimeRemaining(challenge.timeRemaining),
                   style: TextStyle(
                     fontSize: 12,
                     color: challenge.timeRemaining.inHours < 1
-                        ? Colors.red
-                        : Colors.grey.shade600,
+                        ? AivoBrand.error
+                        : AivoBrand.gray[600],
                   ),
                 ),
               ],
@@ -212,7 +213,7 @@ class ChallengeCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: challenge.isCompleted
-                        ? Icon(Icons.check_circle, color: Colors.green.shade600, size: 28)
+                        ? Icon(Icons.check_circle, color: AivoBrand.mint[600], size: 28)
                         : Text(challenge.icon, style: const TextStyle(fontSize: 24)),
                   ),
                 ),
@@ -231,7 +232,7 @@ class ChallengeCard extends StatelessWidget {
                         challenge.description,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: AivoBrand.gray[600],
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -248,7 +249,7 @@ class ChallengeCard extends StatelessWidget {
             Container(
               height: 8,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: AivoBrand.gray[200],
                 borderRadius: BorderRadius.circular(4),
               ),
               child: FractionallySizedBox(
@@ -256,7 +257,7 @@ class ChallengeCard extends StatelessWidget {
                 widthFactor: challenge.progress.clamp(0, 1),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: challenge.isCompleted ? Colors.green : _typeColor,
+                    color: challenge.isCompleted ? AivoBrand.success : _typeColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -350,7 +351,7 @@ class ChallengeList extends StatelessWidget {
               'Check back later for new challenges!',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey,
+                color: AivoBrand.gray,
               ),
             ),
           ],

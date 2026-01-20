@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/theme.dart';
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SHIMMER WIDGET
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -64,9 +66,9 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
     final isDark = theme.brightness == Brightness.dark;
     
     final baseColor = widget.baseColor ??
-        (isDark ? Colors.grey.shade800 : Colors.grey.shade300);
+        (isDark ? AivoBrand.gray.shade800 : AivoBrand.gray.shade300);
     final highlightColor = widget.highlightColor ??
-        (isDark ? Colors.grey.shade600 : Colors.grey.shade100);
+        (isDark ? AivoBrand.gray.shade600 : AivoBrand.gray.shade100);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -117,12 +119,12 @@ class SkeletonBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+        color: isDark ? AivoBrand.gray.shade800 : AivoBrand.gray.shade300,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
@@ -141,12 +143,12 @@ class SkeletonCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+        color: isDark ? AivoBrand.gray.shade800 : AivoBrand.gray.shade300,
         shape: BoxShape.circle,
       ),
     );
@@ -324,8 +326,8 @@ class SkeletonGrid extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey.shade800
-              : Colors.grey.shade300,
+              ? AivoBrand.gray.shade800
+              : AivoBrand.gray.shade300,
           borderRadius: BorderRadius.circular(12),
         ),
       ),
@@ -344,8 +346,8 @@ class SkeletonSubjectCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey.shade800
-              : Colors.grey.shade200,
+              ? AivoBrand.gray.shade800
+              : AivoBrand.gray.shade200,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -430,8 +432,8 @@ class SkeletonSessionItem extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey.shade800
-              : Colors.grey.shade200,
+              ? AivoBrand.gray.shade800
+              : AivoBrand.gray.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(

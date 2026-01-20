@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -109,7 +110,7 @@ class _AccidentalTouchFilterListenerState
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Colors.orange.withValues(alpha: 0.5),
+                    color: AivoBrand.warning.withValues(alpha: 0.5),
                     width: widget.edgeMargin,
                   ),
                 ),
@@ -130,7 +131,7 @@ class EdgeZoneVisualizer extends StatelessWidget {
   const EdgeZoneVisualizer({
     super.key,
     required this.edgeMargin,
-    this.zoneColor = Colors.orange,
+    this.zoneColor = AivoBrand.warning,
     this.showLabels = false,
   });
 
@@ -327,7 +328,7 @@ class AccidentalTouchFilterSettings extends StatelessWidget {
               Container(
                 height: 150,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AivoBrand.gray.shade300),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ClipRRect(

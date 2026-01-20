@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// IEP Document
@@ -33,9 +34,9 @@ class IEPDocument {
 
 /// IEP Status
 enum IEPStatus {
-  processing('Processing', Colors.orange),
-  active('Active', Colors.green),
-  expired('Expired', Colors.grey),
+  processing('Processing', AivoBrand.warning),
+  active('Active', AivoBrand.success),
+  expired('Expired', AivoBrand.gray),
   draft('Draft', Colors.blue);
 
   const IEPStatus(this.label, this.color);
@@ -593,9 +594,9 @@ class _IEPGoalCard extends StatelessWidget {
   final IEPGoal goal;
 
   Color _getProgressColor(int percent) {
-    if (percent >= 80) return Colors.green;
-    if (percent >= 50) return Colors.orange;
-    return Colors.red;
+    if (percent >= 80) return AivoBrand.success;
+    if (percent >= 50) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 
   @override

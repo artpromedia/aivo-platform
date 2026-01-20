@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 import 'action_plan_detail_screen.dart';
@@ -34,7 +35,7 @@ class ActionPlansScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               Text('Failed to load action plans: $error'),
               const SizedBox(height: 16),
@@ -66,21 +67,21 @@ class _ActionPlansList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (plans.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.assignment_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.assignment_outlined, size: 64, color: AivoBrand.gray),
+            const SizedBox(height: 16),
             Text(
               'No action plans yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: AivoBrand.gray),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Action plans created by the care team\nwill appear here',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),
@@ -98,7 +99,7 @@ class _ActionPlansList extends StatelessWidget {
           _SectionHeader(
             title: 'Active Plans',
             count: activePlans.length,
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
           ...activePlans.map((plan) => _ActionPlanCard(
                 learnerId: learnerId,
@@ -110,7 +111,7 @@ class _ActionPlansList extends StatelessWidget {
           _SectionHeader(
             title: 'Other Plans',
             count: otherPlans.length,
-            color: Colors.grey,
+            color: AivoBrand.gray,
           ),
           ...otherPlans.map((plan) => _ActionPlanCard(
                 learnerId: learnerId,
@@ -216,7 +217,7 @@ class _ActionPlanCard extends StatelessWidget {
                   plan.description!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AivoBrand.gray),
                 ),
               ],
               const SizedBox(height: 12),
@@ -247,9 +248,9 @@ class _ActionPlanCard extends StatelessWidget {
                   if (plan.createdBy != null)
                     Text(
                       'by ${plan.createdBy!.displayName}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: AivoBrand.gray,
                       ),
                     ),
                 ],
@@ -270,11 +271,11 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
-      ActionPlanStatus.draft => (Colors.grey, 'Draft'),
-      ActionPlanStatus.active => (Colors.green, 'Active'),
-      ActionPlanStatus.onHold => (Colors.orange, 'On Hold'),
+      ActionPlanStatus.draft => (AivoBrand.gray, 'Draft'),
+      ActionPlanStatus.active => (AivoBrand.success, 'Active'),
+      ActionPlanStatus.onHold => (AivoBrand.warning, 'On Hold'),
       ActionPlanStatus.completed => (Colors.blue, 'Completed'),
-      ActionPlanStatus.archived => (Colors.grey, 'Archived'),
+      ActionPlanStatus.archived => (AivoBrand.gray, 'Archived'),
     };
 
     return Container(
@@ -340,13 +341,13 @@ class _StatItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: Colors.grey),
+        Icon(icon, size: 16, color: AivoBrand.gray),
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: AivoBrand.gray,
           ),
         ),
       ],

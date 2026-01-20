@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 // ============================================================================
 // DATA MODELS
@@ -197,13 +198,13 @@ class _TeamDashboardState extends State<TeamDashboard>
   Color _getTypeColor() {
     switch (_team?.type) {
       case 'classroom':
-        return Colors.green;
+        return AivoBrand.success;
       case 'school':
         return Colors.blue;
       case 'cross_school':
         return Colors.purple;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -352,7 +353,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                     child: _buildStatCard(
                       'This Week',
                       _team!.weeklyXp.toString(),
-                      Colors.green,
+                      AivoBrand.success,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -375,7 +376,7 @@ class _TeamDashboardState extends State<TeamDashboard>
               TabBar(
                 controller: _tabController,
                 labelColor: Theme.of(context).primaryColor,
-                unselectedLabelColor: Colors.grey,
+                unselectedLabelColor: AivoBrand.gray,
                 indicatorColor: Theme.of(context).primaryColor,
                 tabs: const [
                   Tab(text: 'Members'),
@@ -444,7 +445,7 @@ class _TeamDashboardState extends State<TeamDashboard>
             label,
             style: TextStyle(
               fontSize: 11,
-              color: Colors.grey.shade600,
+              color: AivoBrand.gray.shade600,
             ),
           ),
         ],
@@ -470,7 +471,7 @@ class _TeamDashboardState extends State<TeamDashboard>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AivoBrand.gray.shade200),
       ),
       child: Row(
         children: [
@@ -482,9 +483,9 @@ class _TeamDashboardState extends State<TeamDashboard>
                   ? (index == 0
                       ? Colors.yellow.shade100
                       : index == 1
-                          ? Colors.grey.shade200
-                          : Colors.orange.shade100)
-                  : Colors.grey.shade100,
+                          ? AivoBrand.gray.shade200
+                          : AivoBrand.sunshine.shade100)
+                  : AivoBrand.gray.shade100,
               borderRadius: BorderRadius.circular(18),
             ),
             child: Center(
@@ -492,7 +493,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                 '${index + 1}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: index < 3 ? Colors.black : Colors.grey.shade600,
+                  color: index < 3 ? Colors.black : AivoBrand.gray.shade600,
                 ),
               ),
             ),
@@ -524,7 +525,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                   'Level ${member.level ?? 1} • +${member.weeklyContribution} this week',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: AivoBrand.gray.shade600,
                   ),
                 ),
               ],
@@ -544,7 +545,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                 'XP',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey.shade600,
+                  color: AivoBrand.gray.shade600,
                 ),
               ),
             ],
@@ -572,7 +573,7 @@ class _TeamDashboardState extends State<TeamDashboard>
             SizedBox(height: 8),
             Text(
               'Check back later!',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),
@@ -613,7 +614,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                     '⏰ ${comp.timeRemaining}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade700,
+                      color: AivoBrand.gray.shade700,
                     ),
                   ),
                 ],
@@ -629,7 +630,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                         'Team Rank',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AivoBrand.gray,
                         ),
                       ),
                       Text(
@@ -649,7 +650,7 @@ class _TeamDashboardState extends State<TeamDashboard>
                         'Score',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AivoBrand.gray,
                         ),
                       ),
                       Text(
@@ -687,7 +688,7 @@ class _TeamDashboardState extends State<TeamDashboard>
           SizedBox(height: 8),
           Text(
             'Keep contributing to unlock achievements!',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: AivoBrand.gray),
           ),
         ],
       ),

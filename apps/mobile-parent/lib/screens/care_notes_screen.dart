@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -41,7 +42,7 @@ class CareNotesScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
               const SizedBox(height: 16),
               Text('Failed to load notes: $error'),
               const SizedBox(height: 16),
@@ -143,21 +144,21 @@ class _CareNotesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (notes.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.note_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.note_outlined, size: 64, color: AivoBrand.gray),
+            const SizedBox(height: 16),
             Text(
               'No notes yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: AivoBrand.gray),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Share observations, questions, or updates\nwith the care team',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AivoBrand.gray),
             ),
           ],
         ),
@@ -187,7 +188,7 @@ class _CareNotesList extends StatelessWidget {
                 dateKey,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[600],
+                  color: AivoBrand.gray[600],
                   fontSize: 13,
                 ),
               ),
@@ -267,12 +268,12 @@ class _CareNoteCard extends ConsumerWidget {
                           children: [
                             Text(
                               note.author.roleDisplayName,
-                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '• ${_formatTime(note.createdAt)}',
-                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              style: TextStyle(fontSize: 12, color: AivoBrand.gray[600]),
                             ),
                           ],
                         ),
@@ -324,12 +325,12 @@ class _CareNoteCard extends ConsumerWidget {
                   children: note.tags.map((tag) => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: AivoBrand.gray[200],
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       '#$tag',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                      style: TextStyle(fontSize: 11, color: AivoBrand.gray[700]),
                     ),
                   )).toList(),
                 ),
@@ -342,17 +343,17 @@ class _CareNoteCard extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
+                        color: AivoBrand.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.flag, size: 12, color: Colors.orange[700]),
+                          Icon(Icons.flag, size: 12, color: AivoBrand.sunshine[700]),
                           const SizedBox(width: 2),
                           Text(
                             'Follow-up needed',
-                            style: TextStyle(fontSize: 11, color: Colors.orange[700]),
+                            style: TextStyle(fontSize: 11, color: AivoBrand.sunshine[700]),
                           ),
                         ],
                       ),
@@ -360,11 +361,11 @@ class _CareNoteCard extends ConsumerWidget {
                     const SizedBox(width: 8),
                   ],
                   if (note.isAcknowledged) ...[
-                    Icon(Icons.check_circle, size: 14, color: Colors.green[600]),
+                    Icon(Icons.check_circle, size: 14, color: AivoBrand.mint[600]),
                     const SizedBox(width: 4),
                     Text(
                       'Acknowledged',
-                      style: TextStyle(fontSize: 11, color: Colors.green[600]),
+                      style: TextStyle(fontSize: 11, color: AivoBrand.mint[600]),
                     ),
                   ],
                   const Spacer(),
@@ -397,11 +398,11 @@ class _CareNoteCard extends ConsumerWidget {
       case CareNoteType.homeUpdate:
         return Colors.indigo;
       case CareNoteType.schoolUpdate:
-        return Colors.green;
+        return AivoBrand.success;
       case CareNoteType.therapyUpdate:
         return Colors.purple;
       case CareNoteType.strategyFeedback:
-        return Colors.orange;
+        return AivoBrand.warning;
       case CareNoteType.observation:
         return Colors.teal;
       case CareNoteType.progressUpdate:
@@ -476,7 +477,7 @@ class _CareNoteCard extends ConsumerWidget {
                         ),
                         Text(
                           '${note.author.roleDisplayName} • ${note.noteTypeDisplayName}',
-                          style: const TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AivoBrand.gray),
                         ),
                       ],
                     ),
@@ -502,7 +503,7 @@ class _CareNoteCard extends ConsumerWidget {
                   runSpacing: 8,
                   children: note.tags.map((tag) => Chip(
                     label: Text('#$tag'),
-                    backgroundColor: Colors.grey[100],
+                    backgroundColor: AivoBrand.gray[100],
                   )).toList(),
                 ),
               ],
@@ -737,9 +738,9 @@ class _AddNoteSheetState extends ConsumerState<_AddNoteSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Note shared with the care team!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Note shared with the care team!'),
+            backgroundColor: AivoBrand.success,
           ),
         );
         ref.invalidate(careNotesProvider(widget.learnerId));
@@ -749,7 +750,7 @@ class _AddNoteSheetState extends ConsumerState<_AddNoteSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to share note: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AivoBrand.error,
           ),
         );
       }

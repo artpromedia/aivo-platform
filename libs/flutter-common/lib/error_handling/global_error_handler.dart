@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../theme/theme.dart';
 import 'error_reporter.dart';
 
 /// Provider for the global error handler
@@ -315,17 +316,17 @@ class AppError {
   Color get color {
     switch (category) {
       case ErrorCategory.network:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ErrorCategory.authentication:
         return Colors.purple;
       case ErrorCategory.permission:
-        return Colors.red;
+        return AivoBrand.error;
       case ErrorCategory.validation:
         return Colors.amber;
       case ErrorCategory.server:
-        return Colors.deepOrange;
+        return AivoBrand.sunshine[600]!;
       case ErrorCategory.unknown:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 }

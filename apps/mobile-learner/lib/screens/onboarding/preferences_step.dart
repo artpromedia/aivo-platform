@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../onboarding/onboarding_controller.dart';
 
@@ -19,9 +20,9 @@ class _PreferencesStepState extends ConsumerState<PreferencesStep> {
 
   final List<_SubjectOption> _subjects = [
     _SubjectOption('math', 'Math', Icons.calculate_outlined, Colors.blue),
-    _SubjectOption('reading', 'Reading', Icons.menu_book_outlined, Colors.green),
+    _SubjectOption('reading', 'Reading', Icons.menu_book_outlined, AivoBrand.success),
     _SubjectOption('writing', 'Writing', Icons.edit_note_outlined, Colors.purple),
-    _SubjectOption('science', 'Science', Icons.science_outlined, Colors.orange),
+    _SubjectOption('science', 'Science', Icons.science_outlined, AivoBrand.warning),
     _SubjectOption('social', 'Social Studies', Icons.public_outlined, Colors.teal),
     _SubjectOption('art', 'Art', Icons.palette_outlined, Colors.pink),
   ];

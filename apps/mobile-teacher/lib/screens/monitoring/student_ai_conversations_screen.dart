@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/ai_transparency.dart';
 import '../../providers/ai_transparency_provider.dart';
@@ -58,7 +59,7 @@ class _StudentAIConversationsScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text(
             'Error loading conversations',
@@ -81,19 +82,19 @@ class _StudentAIConversationsScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade400),
+          Icon(Icons.chat_bubble_outline, size: 64, color: AivoBrand.gray[400]),
           const SizedBox(height: 16),
           Text(
             'No AI conversations yet',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: AivoBrand.gray[600],
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'AI interactions will appear here',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade500,
+                  color: AivoBrand.gray[500],
                 ),
           ),
         ],
@@ -262,8 +263,8 @@ class _ConversationCard extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: conversation.flagStatus == AIFlagStatus.flagged
-                                      ? Colors.red.shade100
-                                      : Colors.orange.shade100,
+                                      ? AivoBrand.error[100]
+                                      : AivoBrand.sunshine[100],
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -273,8 +274,8 @@ class _ConversationCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: conversation.flagStatus == AIFlagStatus.flagged
-                                        ? Colors.red.shade700
-                                        : Colors.orange.shade700,
+                                        ? AivoBrand.error[700]
+                                        : AivoBrand.sunshine[700],
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -286,7 +287,7 @@ class _ConversationCard extends StatelessWidget {
                           Text(
                             conversation.topic!,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
+                                  color: AivoBrand.gray[600],
                                 ),
                           ),
                       ],
@@ -295,7 +296,7 @@ class _ConversationCard extends StatelessWidget {
                   IconButton(
                     icon: Icon(
                       conversation.isFlagged ? Icons.flag : Icons.flag_outlined,
-                      color: conversation.isFlagged ? Colors.orange : Colors.grey,
+                      color: conversation.isFlagged ? AivoBrand.warning : AivoBrand.gray,
                     ),
                     onPressed: onFlag,
                     tooltip: 'Flag for review',
@@ -351,17 +352,17 @@ class _ConversationCard extends StatelessWidget {
       case AIInteractionType.tutoring:
         return _InteractionConfig('Tutoring', Icons.school, Colors.blue);
       case AIInteractionType.homework:
-        return _InteractionConfig('Homework Help', Icons.assignment, Colors.green);
+        return _InteractionConfig('Homework Help', Icons.assignment, AivoBrand.success);
       case AIInteractionType.writing:
         return _InteractionConfig('Writing', Icons.edit_note, Colors.purple);
       case AIInteractionType.focusBreak:
         return _InteractionConfig('Focus Break', Icons.self_improvement, Colors.teal);
       case AIInteractionType.assessment:
-        return _InteractionConfig('Assessment', Icons.quiz, Colors.orange);
+        return _InteractionConfig('Assessment', Icons.quiz, AivoBrand.warning);
       case AIInteractionType.socialEmotional:
         return _InteractionConfig('SEL', Icons.favorite, Colors.pink);
       case AIInteractionType.other:
-        return _InteractionConfig('Other', Icons.chat, Colors.grey);
+        return _InteractionConfig('Other', Icons.chat, AivoBrand.gray);
     }
   }
 
@@ -413,12 +414,12 @@ class _MetadataChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey.shade600),
+        Icon(icon, size: 14, color: AivoBrand.gray[600]),
         const SizedBox(width: 4),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray[600],
               ),
         ),
       ],
@@ -462,15 +463,15 @@ class _SentimentIndicator extends StatelessWidget {
   _SentimentConfig _getSentimentConfig(String sentiment) {
     switch (sentiment.toLowerCase()) {
       case 'positive':
-        return _SentimentConfig('Positive', Icons.sentiment_satisfied, Colors.green);
+        return _SentimentConfig('Positive', Icons.sentiment_satisfied, AivoBrand.success);
       case 'neutral':
-        return _SentimentConfig('Neutral', Icons.sentiment_neutral, Colors.grey);
+        return _SentimentConfig('Neutral', Icons.sentiment_neutral, AivoBrand.gray);
       case 'negative':
-        return _SentimentConfig('Negative', Icons.sentiment_dissatisfied, Colors.orange);
+        return _SentimentConfig('Negative', Icons.sentiment_dissatisfied, AivoBrand.warning);
       case 'frustrated':
-        return _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, Colors.red);
+        return _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, AivoBrand.error);
       default:
-        return _SentimentConfig('Unknown', Icons.help_outline, Colors.grey);
+        return _SentimentConfig('Unknown', Icons.help_outline, AivoBrand.gray);
     }
   }
 }
@@ -511,7 +512,7 @@ class _ConversationDetailSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AivoBrand.gray[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -535,7 +536,7 @@ class _ConversationDetailSheet extends StatelessWidget {
                       Text(
                         '${conversation.subject ?? 'General'} - ${_formatDateTime(conversation.startedAt)}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade600,
+                              color: AivoBrand.gray[600],
                             ),
                       ),
                     ],
@@ -576,9 +577,9 @@ class _ConversationDetailSheet extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AivoBrand.gray[100],
                 border: Border(
-                  top: BorderSide(color: Colors.grey.shade300),
+                  top: BorderSide(color: AivoBrand.gray[300]!),
                 ),
               ),
               child: Column(
@@ -705,7 +706,7 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isStudent ? Colors.blue.shade100 : Colors.grey.shade200,
+                color: isStudent ? Colors.blue.shade100 : AivoBrand.gray[200],
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -724,7 +725,7 @@ class _MessageBubble extends StatelessWidget {
                   Text(
                     _formatTime(message.timestamp),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.grey.shade600,
+                          color: AivoBrand.gray[600],
                         ),
                   ),
                 ],

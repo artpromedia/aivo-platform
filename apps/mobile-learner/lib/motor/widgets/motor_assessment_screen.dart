@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -263,7 +264,7 @@ class _ProgressBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isCompleted || isCurrent
                     ? Theme.of(context).primaryColor
-                    : Colors.grey.shade300,
+                    : AivoBrand.gray.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -333,7 +334,7 @@ class _TouchPrecisionTestState extends State<_TouchPrecisionTest> {
         return GestureDetector(
           onTapDown: (details) => _handleTap(details.localPosition),
           child: Container(
-            color: Colors.grey.shade100,
+            color: AivoBrand.gray.shade100,
             child: Stack(
               children: [
                 // Instructions
@@ -468,7 +469,7 @@ class _HoldStabilityTestState extends State<_HoldStabilityTest> {
             decoration: BoxDecoration(
               color: _isHolding
                   ? Theme.of(context).primaryColor
-                  : Colors.grey.shade300,
+                  : AivoBrand.gray.shade300,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -558,9 +559,9 @@ class _DragControlTestState extends State<_DragControlTest> {
             width: _targetRadius * 2,
             height: _targetRadius * 2,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.3),
+              color: AivoBrand.success.withOpacity(0.3),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.green, width: 2),
+              border: Border.all(color: AivoBrand.success, width: 2),
             ),
             child: const Center(
               child: Text('Drop here', textAlign: TextAlign.center),

@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -121,7 +122,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
               onTap: _showStudentPicker,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: Colors.grey.shade300),
+                side: BorderSide(color: AivoBrand.gray[300]!),
               ),
             ),
             const SizedBox(height: 16),
@@ -158,7 +159,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
               onTap: _pickDateTime,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: Colors.grey.shade300),
+                side: BorderSide(color: AivoBrand.gray[300]!),
               ),
             ),
             const SizedBox(height: 16),

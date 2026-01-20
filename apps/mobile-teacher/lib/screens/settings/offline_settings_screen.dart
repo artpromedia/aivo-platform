@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 
@@ -25,14 +26,14 @@ class OfflineSettingsScreen extends ConsumerWidget {
         children: [
           // Status card
           Card(
-            color: isOnline ? Colors.green.shade50 : Colors.orange.shade50,
+            color: isOnline ? AivoBrand.mint[50] : AivoBrand.sunshine[50],
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Icon(
                     isOnline ? Icons.cloud_done : Icons.cloud_off,
-                    color: isOnline ? Colors.green : Colors.orange,
+                    color: isOnline ? AivoBrand.success : AivoBrand.warning,
                     size: 32,
                   ),
                   const SizedBox(width: 16),
@@ -105,22 +106,22 @@ class OfflineSettingsScreen extends ConsumerWidget {
           // Conflicts
           if (syncState.hasConflicts)
             Card(
-              color: Colors.orange.shade50,
+              color: AivoBrand.sunshine[50],
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
-                    leading: Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                    leading: Icon(Icons.warning_amber, color: AivoBrand.sunshine[700]),
                     title: Text(
                       'Sync Conflicts',
-                      style: TextStyle(color: Colors.orange.shade700),
+                      style: TextStyle(color: AivoBrand.sunshine[700]),
                     ),
                     trailing: Text(
                       '${syncState.conflicts.length}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange.shade700,
+                        color: AivoBrand.sunshine[700],
                       ),
                     ),
                   ),
@@ -128,7 +129,7 @@ class OfflineSettingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Text(
                       'Some changes conflict with server data. Review and resolve.',
-                      style: TextStyle(color: Colors.orange.shade700),
+                      style: TextStyle(color: AivoBrand.sunshine[700]),
                     ),
                   ),
                   ...syncState.conflicts.take(3).map((conflict) => ListTile(
@@ -228,7 +229,7 @@ class OfflineSettingsScreen extends ConsumerWidget {
                 const SnackBar(content: Text('Cache cleared')),
               );
             },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AivoBrand.error),
             child: const Text('Clear'),
           ),
         ],
@@ -249,11 +250,11 @@ class _CacheInfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.grey),
+      leading: Icon(icon, color: AivoBrand.gray),
       title: Text(title),
       trailing: Text(
         'Cached',
-        style: TextStyle(color: Colors.green.shade700),
+        style: TextStyle(color: AivoBrand.mint[700]),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'offline_api_clients.dart';
 
@@ -258,18 +259,18 @@ class OfflineStatusBanner extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          color: Colors.orange.shade100,
+          color: AivoBrand.sunshine[100],
           child: SafeArea(
             bottom: false,
             child: Row(
               children: [
-                Icon(Icons.cloud_off, color: Colors.orange.shade800, size: 20),
+                Icon(Icons.cloud_off, color: AivoBrand.sunshine[800], size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'You\'re offline. Showing cached data.',
                     style: TextStyle(
-                      color: Colors.orange.shade900,
+                      color: AivoBrand.sunshine[900],
                       fontSize: 13,
                     ),
                   ),
@@ -314,7 +315,7 @@ class LastSyncedIndicator extends StatelessWidget {
     return Text(
       'Updated $timeAgo',
       style: TextStyle(
-        color: Colors.grey.shade600,
+        color: AivoBrand.gray[600],
         fontSize: 12,
       ),
     );
@@ -337,18 +338,18 @@ class CachedDataIndicator extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: AivoBrand.gray[200],
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.cached, size: 12, color: Colors.grey.shade600),
+          Icon(Icons.cached, size: 12, color: AivoBrand.gray[600]),
           const SizedBox(width: 4),
           Text(
             'Cached',
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: AivoBrand.gray[600],
               fontSize: 11,
             ),
           ),

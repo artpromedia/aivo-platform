@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../../../models/risk_prediction.dart';
 import '../../../repositories/risk_repository.dart';
 import 'risk_level_badge.dart';
@@ -30,7 +31,7 @@ class RiskDistributionChart extends StatelessWidget {
         height: height,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: AivoBrand.gray[200],
             borderRadius: BorderRadius.circular(height / 2),
           ),
         ),
@@ -150,7 +151,7 @@ class RiskIndicator extends StatelessWidget {
         height: size,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: AivoBrand.gray[200],
             shape: BoxShape.circle,
           ),
         ),
@@ -300,7 +301,7 @@ class RiskHistoryChart extends StatelessWidget {
           child: Text(
             'No history available',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
+                  color: AivoBrand.gray,
                 ),
           ),
         ),
@@ -373,8 +374,8 @@ class _RiskHistoryPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        Colors.red.withValues(alpha: 0.2),
-        Colors.green.withValues(alpha: 0.1),
+        AivoBrand.error.withValues(alpha: 0.2),
+        AivoBrand.success.withValues(alpha: 0.1),
       ],
     );
     fillPaint.shader = gradient.createShader(
@@ -383,7 +384,7 @@ class _RiskHistoryPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
 
     // Draw line
-    paint.color = Colors.grey.shade400;
+    paint.color = AivoBrand.gray[400]!;
     canvas.drawPath(path, paint);
   }
 

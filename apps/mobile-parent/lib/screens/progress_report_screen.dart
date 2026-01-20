@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../reports/reports_service.dart';
 
@@ -127,7 +128,7 @@ class _ReportContent extends StatelessWidget {
             _SectionCard(
               icon: Icons.flag,
               title: 'Goals',
-              iconColor: Colors.green,
+              iconColor: AivoBrand.success,
               child: _GoalsSection(goals: report.goals),
             ),
             const SizedBox(height: 16),
@@ -136,7 +137,7 @@ class _ReportContent extends StatelessWidget {
             _SectionCard(
               icon: Icons.menu_book,
               title: 'Homework Helper',
-              iconColor: Colors.orange,
+              iconColor: AivoBrand.warning,
               child: _HomeworkSection(homework: report.homework),
             ),
             const SizedBox(height: 16),
@@ -317,13 +318,13 @@ class _StatusChip extends StatelessWidget {
   (Color, Color) _getColors(String status, BuildContext context) {
     switch (status) {
       case 'COMPLETED':
-        return (Colors.green.shade700, Colors.green.shade50);
+        return (AivoBrand.mint[700]!, AivoBrand.mint[50]!);
       case 'IN_PROGRESS':
         return (Colors.blue.shade700, Colors.blue.shade50);
       case 'ACTIVE':
-        return (Colors.orange.shade700, Colors.orange.shade50);
+        return (AivoBrand.sunshine[700]!, AivoBrand.sunshine[50]!);
       default:
-        return (Colors.grey.shade700, Colors.grey.shade100);
+        return (AivoBrand.gray[700]!, AivoBrand.gray[100]!);
     }
   }
 }
@@ -344,7 +345,7 @@ class _DomainItem extends StatelessWidget {
             domain.assessed ? Icons.check_circle : Icons.circle_outlined,
             size: 18,
             color: domain.assessed
-                ? Colors.green
+                ? AivoBrand.success
                 : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
@@ -447,8 +448,8 @@ class _SkillItem extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isStrength
-              ? Colors.green.withOpacity(0.05)
-              : Colors.orange.withOpacity(0.05),
+              ? AivoBrand.success.withOpacity(0.05)
+              : AivoBrand.warning.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -513,7 +514,7 @@ class _GoalsSection extends StatelessWidget {
             _CountBadge(
               count: goals.completedCount,
               label: 'Completed',
-              color: Colors.green,
+              color: AivoBrand.success,
             ),
           ],
         ),
@@ -764,12 +765,12 @@ class _IndependenceBadge extends StatelessWidget {
   (Color, IconData) _getStyle(String label) {
     switch (label) {
       case 'mostly_independent':
-        return (Colors.green, Icons.emoji_events);
+        return (AivoBrand.success, Icons.emoji_events);
       case 'building_independence':
         return (Colors.blue, Icons.trending_up);
       case 'needs_support':
       default:
-        return (Colors.orange, Icons.support);
+        return (AivoBrand.warning, Icons.support);
     }
   }
 }

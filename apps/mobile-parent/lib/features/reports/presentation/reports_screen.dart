@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -133,7 +134,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   value: '${report.activeDays}',
                   unit: _selectedPeriod == 'week' ? '/7' : '',
                   icon: Icons.calendar_today,
-                  color: Colors.green,
+                  color: AivoBrand.success,
                 ),
               ),
               const SizedBox(width: 12),
@@ -353,9 +354,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   Color _getScoreColor(int score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return AivoBrand.success;
+    if (score >= 60) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 
   void _downloadReport(String studentId, String period) {

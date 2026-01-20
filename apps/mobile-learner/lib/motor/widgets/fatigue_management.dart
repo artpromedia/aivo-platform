@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import '../motor_profile_provider.dart';
 
@@ -323,14 +324,14 @@ class _BreakSuggestions extends StatelessWidget {
               Icon(
                 suggestion['icon'] as IconData,
                 size: 20 * multiplier,
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray.shade600,
               ),
               SizedBox(width: 8 * multiplier),
               Text(
                 suggestion['text'] as String,
                 style: TextStyle(
                   fontSize: 14 * multiplier,
-                  color: Colors.grey.shade700,
+                  color: AivoBrand.gray.shade700,
                 ),
               ),
             ],
@@ -399,7 +400,7 @@ class FatigueLevelIndicator extends StatelessWidget {
                   width: width ?? 100,
                   height: 8 * multiplier,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AivoBrand.gray.shade200,
                     borderRadius: BorderRadius.circular(4 * multiplier),
                   ),
                   child: FractionallySizedBox(
@@ -422,10 +423,10 @@ class FatigueLevelIndicator extends StatelessWidget {
   }
 
   Color _getColorForLevel(double level) {
-    if (level < 0.3) return Colors.green;
+    if (level < 0.3) return AivoBrand.success;
     if (level < 0.5) return Colors.lightGreen;
-    if (level < 0.7) return Colors.orange;
-    return Colors.red;
+    if (level < 0.7) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 
   IconData _getIconForLevel(double level) {
@@ -603,7 +604,7 @@ class FatigueManagementSettings extends StatelessWidget {
                     'Session time: ${manager.totalSessionMinutes} minutes',
                     style: TextStyle(
                       fontSize: 12 * multiplier,
-                      color: Colors.grey.shade600,
+                      color: AivoBrand.gray.shade600,
                     ),
                   ),
                 ],

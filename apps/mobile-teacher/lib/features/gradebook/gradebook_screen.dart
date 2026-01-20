@@ -7,6 +7,7 @@
 /// - Filter and search functionality
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -150,7 +151,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: AivoBrand.gray[100],
         ),
         onChanged: (value) {
           setState(() => searchQuery = value);
@@ -245,8 +246,8 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
                         if (student.missingCount > 0)
                           Text(
                             '${student.missingCount} missing',
-                            style: const TextStyle(
-                              color: Colors.red,
+                            style: TextStyle(
+                              color: AivoBrand.error,
                               fontSize: 12,
                             ),
                           ),
@@ -260,9 +261,9 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${student.overallGrade.toStringAsFixed(1)}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AivoBrand.gray,
                         ),
                       ),
                     ],
@@ -285,19 +286,19 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
     String letter;
 
     if (grade >= 90) {
-      color = Colors.green;
+      color = AivoBrand.success;
       letter = 'A';
     } else if (grade >= 80) {
       color = Colors.blue;
       letter = 'B';
     } else if (grade >= 70) {
-      color = Colors.orange;
+      color = AivoBrand.warning;
       letter = 'C';
     } else if (grade >= 60) {
       color = Colors.deepOrange;
       letter = 'D';
     } else {
-      color = Colors.red;
+      color = AivoBrand.error;
       letter = 'F';
     }
 
@@ -336,9 +337,9 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
               if (grade?.feedback != null)
                 Text(
                   grade!.feedback!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: AivoBrand.gray,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -359,18 +360,18 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
               ),
             ),
             if (grade?.status == GradeStatus.late)
-              const Text(
+              Text(
                 'Late',
                 style: TextStyle(
-                  color: Colors.orange,
+                  color: AivoBrand.warning,
                   fontSize: 11,
                 ),
               ),
             if (grade?.status == GradeStatus.missing)
-              const Text(
+              Text(
                 'Missing',
                 style: TextStyle(
-                  color: Colors.red,
+                  color: AivoBrand.error,
                   fontSize: 11,
                 ),
               ),
@@ -489,7 +490,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: AivoBrand.gray[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -546,7 +547,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(content: Text(message), backgroundColor: AivoBrand.error),
     );
   }
 
@@ -828,7 +829,7 @@ class StudentGradeDetailScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            color: Colors.grey[100],
+            color: AivoBrand.gray[100],
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -896,9 +897,9 @@ class StudentGradeDetailScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: AivoBrand.gray,
           ),
         ),
       ],
@@ -906,25 +907,25 @@ class StudentGradeDetailScreen extends StatelessWidget {
   }
 
   Color _getGradeColor(Grade? grade) {
-    if (grade == null) return Colors.grey;
+    if (grade == null) return AivoBrand.gray;
     switch (grade.status) {
       case GradeStatus.graded:
         if (grade.score != null) {
-          if (grade.score! >= 90) return Colors.green;
+          if (grade.score! >= 90) return AivoBrand.success;
           if (grade.score! >= 80) return Colors.blue;
-          if (grade.score! >= 70) return Colors.orange;
-          return Colors.red;
+          if (grade.score! >= 70) return AivoBrand.warning;
+          return AivoBrand.error;
         }
-        return Colors.grey;
+        return AivoBrand.gray;
       case GradeStatus.missing:
-        return Colors.red;
+        return AivoBrand.error;
       case GradeStatus.late:
-        return Colors.orange;
+        return AivoBrand.warning;
       case GradeStatus.excused:
       case GradeStatus.exempt:
-        return Colors.grey;
+        return AivoBrand.gray;
       case GradeStatus.pending:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 

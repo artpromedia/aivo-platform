@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../engagement/models.dart';
 import '../engagement/providers.dart';
@@ -96,7 +97,7 @@ class StreakIndicator extends StatelessWidget {
     }
 
     final streakColor = streakDays >= 7
-        ? Colors.orange
+        ? AivoBrand.warning
         : streakDays >= 3
             ? Colors.amber
             : colorScheme.primary;
@@ -169,7 +170,7 @@ class ProgressRing extends StatelessWidget {
               strokeWidth: strokeWidth,
               backgroundColor: colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(
-                percent >= 1.0 ? Colors.green : colorScheme.primary,
+                percent >= 1.0 ? AivoBrand.success : colorScheme.primary,
               ),
             ),
           ),
@@ -262,7 +263,7 @@ class EngagementSummaryCard extends ConsumerWidget {
                     Text(
                       '+${profile.xpToday} XP today',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: Colors.green,
+                        color: AivoBrand.success,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -399,11 +400,11 @@ class BadgeItem extends StatelessWidget {
       case BadgeCategory.effort:
         return Colors.blue;
       case BadgeCategory.consistency:
-        return Colors.orange;
+        return AivoBrand.warning;
       case BadgeCategory.focus:
         return Colors.purple;
       case BadgeCategory.collaboration:
-        return Colors.green;
+        return AivoBrand.success;
       case BadgeCategory.growth:
         return Colors.teal;
       case BadgeCategory.milestone:

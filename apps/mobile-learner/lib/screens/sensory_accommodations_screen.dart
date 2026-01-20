@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../sensory/sensory_accommodations_service.dart';
 import '../sensory/models.dart';
 
@@ -295,9 +296,9 @@ class _SensoryBreaksTabState extends ConsumerState<SensoryBreaksTab> {
       case SensoryBreakType.breathing:
         return Colors.blue;
       case SensoryBreakType.stretching:
-        return Colors.green;
+        return AivoBrand.success;
       case SensoryBreakType.movement:
-        return Colors.orange;
+        return AivoBrand.warning;
       case SensoryBreakType.quiet:
         return Colors.purple;
       case SensoryBreakType.visual:
@@ -779,17 +780,17 @@ class _CalmingActivitiesTabState extends ConsumerState<CalmingActivitiesTab> {
   Color _getMoodColor(int mood) {
     switch (mood) {
       case 1:
-        return Colors.red;
+        return AivoBrand.error;
       case 2:
-        return Colors.orange;
+        return AivoBrand.warning;
       case 3:
         return Colors.yellow;
       case 4:
         return Colors.lightGreen;
       case 5:
-        return Colors.green;
+        return AivoBrand.success;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -922,9 +923,9 @@ class _CalmingActivitiesTabState extends ConsumerState<CalmingActivitiesTab> {
       case CalmingActivityType.sounds:
         return Colors.teal;
       case CalmingActivityType.movement:
-        return Colors.orange;
+        return AivoBrand.warning;
       case CalmingActivityType.tactile:
-        return Colors.green;
+        return AivoBrand.success;
       case CalmingActivityType.mindfulness:
         return Colors.indigo;
     }
@@ -1034,7 +1035,7 @@ class _CalmingActivityScreenState extends ConsumerState<CalmingActivityScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.check_circle, size: 80, color: Colors.green),
+          const Icon(Icons.check_circle, size: 80, color: AivoBrand.success),
           const SizedBox(height: 24),
           const Text(
             'Activity Complete!',
@@ -1106,17 +1107,17 @@ class _CalmingActivityScreenState extends ConsumerState<CalmingActivityScreen> {
   Color _getMoodColor(int mood) {
     switch (mood) {
       case 1:
-        return Colors.red;
+        return AivoBrand.error;
       case 2:
-        return Colors.orange;
+        return AivoBrand.warning;
       case 3:
         return Colors.yellow;
       case 4:
         return Colors.lightGreen;
       case 5:
-        return Colors.green;
+        return AivoBrand.success;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 

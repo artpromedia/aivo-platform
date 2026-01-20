@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -219,7 +220,7 @@ class _BehaviorReportsScreenState extends ConsumerState<BehaviorReportsScreen> {
                   child: _buildStatBox(
                     'Improvement',
                     '${summary.improvementRate.toStringAsFixed(0)}%',
-                    summary.improvementRate >= 0 ? Colors.green : Colors.red,
+                    summary.improvementRate >= 0 ? AivoBrand.success : AivoBrand.error,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -227,7 +228,7 @@ class _BehaviorReportsScreenState extends ConsumerState<BehaviorReportsScreen> {
                   child: _buildStatBox(
                     'Compliance',
                     '${summary.interventionCompliance.toStringAsFixed(0)}%',
-                    Colors.orange,
+                    AivoBrand.warning,
                   ),
                 ),
               ],
@@ -475,11 +476,11 @@ class _BehaviorReportsScreenState extends ConsumerState<BehaviorReportsScreen> {
   Color _getSeverityColor(BehaviorSeverity severity) {
     switch (severity) {
       case BehaviorSeverity.low:
-        return Colors.green;
+        return AivoBrand.success;
       case BehaviorSeverity.medium:
-        return Colors.orange;
+        return AivoBrand.warning;
       case BehaviorSeverity.high:
-        return Colors.red;
+        return AivoBrand.error;
       case BehaviorSeverity.crisis:
         return Colors.purple;
     }

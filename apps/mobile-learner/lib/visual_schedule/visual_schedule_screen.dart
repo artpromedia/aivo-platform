@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import 'schedule_models.dart';
 import 'schedule_provider.dart';
@@ -87,7 +88,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
 
     return Scaffold(
       backgroundColor:
-          preferences?.highContrast == true ? Colors.white : Colors.grey.shade50,
+          preferences?.highContrast == true ? Colors.white : AivoBrand.gray.shade50,
       appBar: _buildAppBar(preferences),
       body: Column(
         children: [
@@ -150,10 +151,10 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
             child: LinearProgressIndicator(
               value: progress.percentComplete / 100,
               minHeight: 12,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: AivoBrand.gray.shade200,
               valueColor: AlwaysStoppedAnimation(
                 progress.percentComplete == 100
-                    ? Colors.green
+                    ? AivoBrand.success
                     : Theme.of(context).primaryColor,
               ),
             ),
@@ -329,7 +330,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
           _buildFirstThenSection(
             label: 'FIRST',
             item: currentItem,
-            color: Colors.green,
+            color: AivoBrand.success,
             preferences: preferences,
             isActive: true,
           ),
@@ -365,7 +366,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
                 icon: const Icon(Icons.check),
                 label: const Text('Done with this!'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: AivoBrand.success,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -386,10 +387,10 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isActive ? color.withOpacity(0.1) : Colors.grey.shade100,
+        color: isActive ? color.withOpacity(0.1) : AivoBrand.gray.shade100,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive ? color : Colors.grey.shade300,
+          color: isActive ? color : AivoBrand.gray.shade300,
           width: 3,
         ),
       ),
@@ -400,7 +401,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: isActive ? color : Colors.grey,
+              color: isActive ? color : AivoBrand.gray,
             ),
           ),
           const SizedBox(height: 16),
@@ -417,7 +418,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
           else
             const Text(
               'All done!',
-              style: TextStyle(fontSize: 20, color: Colors.grey),
+              style: TextStyle(fontSize: 20, color: AivoBrand.gray),
             ),
         ],
       ),
@@ -456,7 +457,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
             child: _buildNowNextLaterCard(
               label: 'NOW',
               item: now,
-              color: Colors.green,
+              color: AivoBrand.success,
               preferences: preferences,
               isMain: true,
             ),
@@ -473,7 +474,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
                   child: _buildNowNextLaterCard(
                     label: 'NEXT',
                     item: next,
-                    color: Colors.orange,
+                    color: AivoBrand.warning,
                     preferences: preferences,
                     isMain: false,
                   ),
@@ -503,7 +504,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
                 icon: const Icon(Icons.check_circle),
                 label: const Text('Finished!'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: AivoBrand.success,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -621,7 +622,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: AivoBrand.success,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -635,7 +636,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
                 if (item.estimatedDuration > 0)
                   Text(
                     '${item.estimatedDuration} minutes',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(color: AivoBrand.gray.shade600),
                   ),
               ],
             ),
@@ -647,10 +648,10 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
 
   Widget _buildConnectionLine(ScheduleItemStatus status) {
     final color = status == ScheduleItemStatus.completed
-        ? Colors.green
+        ? AivoBrand.success
         : status == ScheduleItemStatus.current
             ? Theme.of(context).primaryColor
-            : Colors.grey.shade300;
+            : AivoBrand.gray.shade300;
 
     return Container(
       width: 3,
@@ -683,7 +684,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
               ),
               const SizedBox(height: 24),
               ListTile(
-                leading: const Icon(Icons.check_circle, color: Colors.green),
+                leading: const Icon(Icons.check_circle, color: AivoBrand.success),
                 title: const Text('Mark as Done'),
                 onTap: () {
                   Navigator.pop(context);
@@ -691,7 +692,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.skip_next, color: Colors.orange),
+                leading: const Icon(Icons.skip_next, color: AivoBrand.warning),
                 title: const Text('Skip This'),
                 onTap: () {
                   Navigator.pop(context);
@@ -743,7 +744,7 @@ class _VisualScheduleScreenState extends ConsumerState<VisualScheduleScreen>
             Text('${item.title} - Done!'),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AivoBrand.success,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -842,7 +843,7 @@ class _ScheduleSkeleton extends StatelessWidget {
             height: 100,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AivoBrand.gray.shade200,
               borderRadius: BorderRadius.circular(12),
             ),
           );
@@ -866,7 +867,7 @@ class _ScheduleError extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text(error),
             const SizedBox(height: 16),
@@ -889,7 +890,7 @@ class _NoScheduleView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.calendar_today, size: 80, color: Colors.grey.shade400),
+            Icon(Icons.calendar_today, size: 80, color: AivoBrand.gray.shade400),
             const SizedBox(height: 24),
             const Text(
               'No schedule for today',
@@ -898,7 +899,7 @@ class _NoScheduleView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Start a learning session to create one!',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: AivoBrand.gray.shade600),
             ),
           ],
         ),

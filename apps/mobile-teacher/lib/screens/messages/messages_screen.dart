@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../providers/providers.dart';
 import '../../models/models.dart';
@@ -76,7 +77,7 @@ class _EmptyMessages extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.message_outlined, size: 64, color: Colors.grey.shade400),
+          Icon(Icons.message_outlined, size: 64, color: AivoBrand.gray[400]),
           const SizedBox(height: 16),
           Text(
             'No messages yet',

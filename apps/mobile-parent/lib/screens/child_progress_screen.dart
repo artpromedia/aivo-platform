@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_common/theme/aivo_brand.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../analytics/analytics_controller.dart';
@@ -148,7 +148,7 @@ class _ThisWeekActivitySection extends StatelessWidget {
                 label: 'Sessions',
                 value: '${engagement.sessionsThisWeek}',
                 subtitle: engagement.sessionTrendText,
-                subtitleColor: engagement.isImproving ? Colors.green : colors.onSurfaceVariant,
+                subtitleColor: engagement.isImproving ? AivoBrand.success : colors.onSurfaceVariant,
               ),
             ),
             const SizedBox(width: 12),
@@ -168,7 +168,7 @@ class _ThisWeekActivitySection extends StatelessWidget {
         // Days active
         _MetricCard(
           icon: Icons.check_circle_outline,
-          iconColor: Colors.green,
+          iconColor: AivoBrand.success,
           label: 'Days Active',
           value: '${engagement.daysActiveInRange}',
           subtitle: '${engagement.totalSessionsInRange} total sessions in the past 4 weeks',
@@ -323,7 +323,7 @@ class _SubjectProgressCard extends StatelessWidget {
                   subject.progressText,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: subject.skillsMasteredDelta > 0
-                        ? Colors.green.shade700
+                        ? AivoBrand.mint[700]
                         : colors.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
@@ -487,7 +487,7 @@ class _StrengthsAndNeedsSection extends StatelessWidget {
           Text(
             '✨ Strengths',
             style: theme.textTheme.titleSmall?.copyWith(
-              color: Colors.green.shade700,
+              color: AivoBrand.mint[700],
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -534,9 +534,9 @@ class _StrengthNeedCard extends StatelessWidget {
     final colors = theme.colorScheme;
 
     final cardColor = isStrength
-        ? Colors.green.shade50
+        ? AivoBrand.mint[50]
         : colors.primaryContainer.withOpacity(0.3);
-    final accentColor = isStrength ? Colors.green : colors.primary;
+    final accentColor = isStrength ? AivoBrand.success : colors.primary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -663,7 +663,7 @@ class _HomeworkAndFocusSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.edit_note, color: Colors.orange, size: 24),
+                    Icon(Icons.edit_note, color: AivoBrand.warning, size: 24),
                     const SizedBox(width: 8),
                     Text(
                       'Homework Helper',

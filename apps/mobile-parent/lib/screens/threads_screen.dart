@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_common/theme/theme.dart';
 import '../messaging/models.dart';
 import '../messaging/service.dart';
 
@@ -91,7 +92,7 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+              const Icon(Icons.error_outline, size: 48, color: AivoBrand.gray),
               const SizedBox(height: 16),
               Text('Error loading messages', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -133,20 +134,20 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
           Icon(
             Icons.forum_outlined,
             size: 64,
-            color: Colors.grey.shade400,
+            color: AivoBrand.gray[400],
           ),
           const SizedBox(height: 16),
           Text(
             'No conversations yet',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: AivoBrand.gray[600],
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Start a conversation with your child\'s care team',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade500,
+                  color: AivoBrand.gray[500],
                 ),
             textAlign: TextAlign.center,
           ),
@@ -222,7 +223,7 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
               Text(
                 '${conversations.length}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
+                      color: AivoBrand.gray,
                     ),
               ),
             ],
@@ -284,7 +285,7 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: hasUnread ? Colors.black87 : Colors.grey,
+                color: hasUnread ? Colors.black87 : AivoBrand.gray,
               ),
             ),
         ],
@@ -295,7 +296,7 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: hasUnread
                         ? Theme.of(context).colorScheme.primary
-                        : Colors.grey,
+                        : AivoBrand.gray,
                     fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
                   ),
             )
@@ -324,13 +325,13 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
       case ContextType.learner:
         return Colors.blue.shade100;
       case ContextType.actionPlan:
-        return Colors.green.shade100;
+        return AivoBrand.mint[100]!;
       case ContextType.meeting:
-        return Colors.orange.shade100;
+        return AivoBrand.sunshine[100]!;
       case ContextType.goal:
         return Colors.purple.shade100;
       default:
-        return Colors.grey.shade200;
+        return AivoBrand.gray[200]!;
     }
   }
 
@@ -399,7 +400,7 @@ class _NewThreadSheetState extends ConsumerState<_NewThreadSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AivoBrand.gray[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -652,13 +653,13 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       case ContextType.learner:
         return Colors.blue;
       case ContextType.actionPlan:
-        return Colors.green;
+        return AivoBrand.success;
       case ContextType.meeting:
-        return Colors.orange;
+        return AivoBrand.warning;
       case ContextType.goal:
         return Colors.purple;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 
@@ -668,19 +669,19 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey.shade400),
+            Icon(Icons.chat_bubble_outline, size: 48, color: AivoBrand.gray[400]),
             const SizedBox(height: 16),
             Text(
               'No messages yet',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: AivoBrand.gray[600],
                   ),
             ),
             const SizedBox(height: 8),
             Text(
               'Start the conversation!',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade500,
+                    color: AivoBrand.gray[500],
                   ),
             ),
           ],
@@ -713,7 +714,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           if (!isMe && showAvatar)
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: AivoBrand.gray[200],
               child: Text(
                 message.senderName[0].toUpperCase(),
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
@@ -742,7 +743,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   decoration: BoxDecoration(
                     color: isMe
                         ? Theme.of(context).colorScheme.primary
-                        : Colors.grey.shade200,
+                        : AivoBrand.gray[200],
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -762,7 +763,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   child: Text(
                     _formatMessageTime(message.createdAt),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: AivoBrand.gray,
                           fontSize: 10,
                         ),
                   ),
@@ -822,7 +823,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AivoBrand.gray[100],
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -929,9 +930,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 },
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: Icon(Icons.camera_alt, color: Colors.white),
+                leading: CircleAvatar(
+                  backgroundColor: AivoBrand.success,
+                  child: const Icon(Icons.camera_alt, color: Colors.white),
                 ),
                 title: const Text('Take Photo'),
                 onTap: () async {
@@ -944,9 +945,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 },
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.orange,
-                  child: Icon(Icons.insert_drive_file, color: Colors.white),
+                leading: CircleAvatar(
+                  backgroundColor: AivoBrand.warning,
+                  child: const Icon(Icons.insert_drive_file, color: Colors.white),
                 ),
                 title: const Text('Document'),
                 onTap: () {
@@ -992,7 +993,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               Text(
                 widget.conversation.description!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey.shade600,
+                      color: AivoBrand.gray[600],
                     ),
               ),
             ],
@@ -1012,8 +1013,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                       ? Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.green,
+                          decoration: BoxDecoration(
+                            color: AivoBrand.success,
                             shape: BoxShape.circle,
                           ),
                         )
@@ -1073,11 +1074,11 @@ class _ThreadSearchDelegate extends SearchDelegate<Conversation?> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.search, size: 64, color: AivoBrand.gray[400]),
             const SizedBox(height: 16),
             Text(
               'Search for conversations',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: AivoBrand.gray[600]),
             ),
           ],
         ),
@@ -1096,11 +1097,11 @@ class _ThreadSearchDelegate extends SearchDelegate<Conversation?> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.search_off, size: 64, color: AivoBrand.gray[400]),
             const SizedBox(height: 16),
             Text(
               'No conversations found',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: AivoBrand.gray[600]),
             ),
           ],
         ),

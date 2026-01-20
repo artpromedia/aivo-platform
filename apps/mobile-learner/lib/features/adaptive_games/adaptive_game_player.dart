@@ -11,6 +11,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:http/http.dart' as http;
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -602,7 +603,7 @@ class _MentalMathGameState extends State<_MentalMathGame> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.local_fire_department, color: Colors.orange),
+              Icon(Icons.local_fire_department, color: AivoBrand.warning),
               const SizedBox(width: 8),
               Text(
                 '$_streak',
@@ -678,14 +679,14 @@ class _MentalMathGameState extends State<_MentalMathGame> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: _isCorrect == true
-                    ? Colors.green.withValues(alpha: 0.2)
-                    : Colors.red.withValues(alpha: 0.2),
+                    ? AivoBrand.success.withValues(alpha: 0.2)
+                    : AivoBrand.error.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 _feedback!,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: _isCorrect == true ? Colors.green : Colors.red,
+                  color: _isCorrect == true ? AivoBrand.success : AivoBrand.error,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -850,14 +851,14 @@ class _AnagramGameState extends State<_AnagramGame> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: _isCorrect == true
-                    ? Colors.green.withValues(alpha: 0.2)
-                    : Colors.red.withValues(alpha: 0.2),
+                    ? AivoBrand.success.withValues(alpha: 0.2)
+                    : AivoBrand.error.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 _feedback!,
                 style: TextStyle(
-                  color: _isCorrect == true ? Colors.green : Colors.red,
+                  color: _isCorrect == true ? AivoBrand.success : AivoBrand.error,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,

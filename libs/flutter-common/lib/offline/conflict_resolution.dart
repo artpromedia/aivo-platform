@@ -6,6 +6,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/theme.dart';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFLICT MODELS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -122,7 +124,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+          Icon(Icons.warning_amber_rounded, color: AivoBrand.sunshine[700]),
           const SizedBox(width: 8),
           const Expanded(child: Text('Sync Conflict')),
         ],
@@ -188,7 +190,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
             isSelected: _selectedResolution == ConflictResolution.acceptServer,
             onTap: () => setState(
                 () => _selectedResolution = ConflictResolution.acceptServer),
-            color: Colors.green,
+            color: AivoBrand.success,
           ),
         ),
       ],
@@ -203,7 +205,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
           'Choose which version to keep:',
           style: TextStyle(
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: AivoBrand.gray[700],
           ),
         ),
         const SizedBox(height: 8),
@@ -287,7 +289,7 @@ class _VersionCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
+            color: isSelected ? color : AivoBrand.gray[300]!,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -316,7 +318,7 @@ class _VersionCard extends StatelessWidget {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: AivoBrand.gray[600],
               ),
             ),
             const SizedBox(height: 8),
@@ -348,7 +350,7 @@ class _DataPreview extends StatelessWidget {
               '${_formatKey(entry.key)}: ${_formatValue(entry.value)}',
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey.shade700,
+                color: AivoBrand.gray[700],
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -359,7 +361,7 @@ class _DataPreview extends StatelessWidget {
             '... and ${data.length - 3} more',
             style: TextStyle(
               fontSize: 11,
-              color: Colors.grey.shade500,
+              color: AivoBrand.gray[500],
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -413,7 +415,7 @@ class ConflictListView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+            Icon(Icons.check_circle_outline, size: 64, color: AivoBrand.success),
             SizedBox(height: 16),
             Text(
               'No conflicts',
@@ -449,10 +451,10 @@ class ConflictListView extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.orange.shade50,
+      color: AivoBrand.sunshine[50],
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+          Icon(Icons.warning_amber_rounded, color: AivoBrand.sunshine[700]),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -505,10 +507,10 @@ class _ConflictListItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.orange.shade100,
+          backgroundColor: AivoBrand.sunshine[100],
           child: Icon(
             _getIconForType(conflict.entityType),
-            color: Colors.orange.shade700,
+            color: AivoBrand.sunshine[700],
           ),
         ),
         title: Text(_getTitleForType(conflict.entityType)),
@@ -579,7 +581,7 @@ class ConflictBadge extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.orange,
+          color: AivoBrand.warning,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

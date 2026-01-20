@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'models.dart';
 import 'providers.dart';
 
@@ -127,13 +128,13 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
               }).toList();
 
               if (filteredExercises.isEmpty) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.search_off, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No exercises found', style: TextStyle(color: Colors.grey)),
+                      Icon(Icons.search_off, size: 64, color: AivoBrand.gray),
+                      const SizedBox(height: 16),
+                      Text('No exercises found', style: TextStyle(color: AivoBrand.gray)),
                     ],
                   ),
                 );
@@ -187,7 +188,7 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
                                       ),
                                       Text(
                                         exercise.subject,
-                                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                                        style: TextStyle(fontSize: 14, color: AivoBrand.gray[600]),
                                       ),
                                     ],
                                   ),
@@ -205,15 +206,15 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Icon(Icons.quiz, size: 16, color: Colors.grey[600]),
+                                Icon(Icons.quiz, size: 16, color: AivoBrand.gray[600]),
                                 const SizedBox(width: 4),
                                 Text('${exercise.questionCount} questions',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                    style: TextStyle(fontSize: 12, color: AivoBrand.gray[600])),
                                 const SizedBox(width: 16),
-                                Icon(Icons.timer, size: 16, color: Colors.grey[600]),
+                                Icon(Icons.timer, size: 16, color: AivoBrand.gray[600]),
                                 const SizedBox(width: 4),
                                 Text('~${exercise.estimatedTime} min',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                    style: TextStyle(fontSize: 12, color: AivoBrand.gray[600])),
                               ],
                             ),
                             if (progress != null && progress.attemptsCount > 0) ...[
@@ -223,7 +224,7 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
                                 children: [
                                   Text(
                                     '${progress.completedCount} completed',
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    style: TextStyle(fontSize: 12, color: AivoBrand.gray),
                                   ),
                                   Row(
                                     children: [
@@ -279,13 +280,13 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
     Color color;
     switch (difficulty) {
       case DifficultyLevel.beginner:
-        color = Colors.green;
+        color = AivoBrand.success;
         break;
       case DifficultyLevel.intermediate:
-        color = Colors.orange;
+        color = AivoBrand.warning;
         break;
       case DifficultyLevel.advanced:
-        color = Colors.red;
+        color = AivoBrand.error;
         break;
       case DifficultyLevel.expert:
         color = Colors.purple;
@@ -311,11 +312,11 @@ class _PracticeExercisesScreenState extends ConsumerState<PracticeExercisesScree
       case 'reading':
         return Colors.purple;
       case 'science':
-        return Colors.green;
+        return AivoBrand.success;
       case 'writing':
-        return Colors.orange;
+        return AivoBrand.warning;
       default:
-        return Colors.grey;
+        return AivoBrand.gray;
     }
   }
 

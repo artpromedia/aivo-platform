@@ -3,6 +3,7 @@ library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/theme.dart';
 import '../writing_models.dart';
 import '../writing_service.dart';
 
@@ -277,8 +278,8 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+        color: AivoBrand.gray[100],
+        border: Border(bottom: BorderSide(color: AivoBrand.gray[300]!)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -287,7 +288,7 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
             Icons.text_fields,
             'Words',
             '${_metrics.wordCount}',
-            color: meetsMinWords && meetsMaxWords ? Colors.green : Colors.orange,
+            color: meetsMinWords && meetsMaxWords ? AivoBrand.success : AivoBrand.warning,
           ),
           _buildMetricItem(
             Icons.format_list_numbered,
@@ -312,7 +313,7 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
   Widget _buildMetricItem(IconData icon, String label, String value, {Color? color}) {
     return Column(
       children: [
-        Icon(icon, size: 16, color: color ?? Colors.grey[600]),
+        Icon(icon, size: 16, color: color ?? AivoBrand.gray[600]),
         const SizedBox(height: 2),
         Text(
           value,
@@ -324,7 +325,7 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 10, color: AivoBrand.gray[600]),
         ),
       ],
     );
@@ -411,8 +412,8 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
   Widget _buildWordBank() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(left: BorderSide(color: Colors.grey[300]!)),
+        color: AivoBrand.gray[50],
+        border: Border(left: BorderSide(color: AivoBrand.gray[300]!)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,10 +437,10 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: item.isUsed ? Colors.green[100] : Colors.white,
+                      color: item.isUsed ? AivoBrand.mint[100] : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: item.isUsed ? Colors.green : Colors.grey[300]!,
+                        color: item.isUsed ? AivoBrand.success : AivoBrand.gray[300]!,
                       ),
                     ),
                     child: Column(
@@ -448,7 +449,7 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
                         Row(
                           children: [
                             if (item.isUsed)
-                              const Icon(Icons.check, size: 14, color: Colors.green),
+                              Icon(Icons.check, size: 14, color: AivoBrand.success),
                             const SizedBox(width: 4),
                             Text(
                               item.word,
@@ -466,7 +467,7 @@ class _WritingEditorWidgetState extends State<WritingEditorWidget> {
                             item.definition!,
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey[600],
+                              color: AivoBrand.gray[600],
                             ),
                           ),
                       ],

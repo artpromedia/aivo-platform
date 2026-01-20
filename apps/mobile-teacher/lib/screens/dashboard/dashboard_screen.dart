@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -60,7 +61,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.only(right: 8),
             child: Icon(
               isOnline ? Icons.cloud_done : Icons.cloud_off,
-              color: isOnline ? Colors.green : Colors.orange,
+              color: isOnline ? AivoBrand.success : AivoBrand.warning,
             ),
           ),
           // Messages

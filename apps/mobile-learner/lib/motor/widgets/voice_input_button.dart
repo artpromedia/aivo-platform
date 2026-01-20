@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_common/theme/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -141,7 +142,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         final baseSize = 56.0 * multiplier;
         final holdEnabled = motorProfile.holdToActivateEnabled;
 
-        final activeColor = widget.activeColor ?? Colors.red;
+        final activeColor = widget.activeColor ?? AivoBrand.error;
         final inactiveColor = widget.inactiveColor ?? Theme.of(context).primaryColor;
 
         if (widget.child != null) {
@@ -162,7 +163,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AivoBrand.gray.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -229,7 +230,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
                   holdEnabled ? 'Release to stop' : 'Tap to stop',
                   style: TextStyle(
                     fontSize: (12 * multiplier).toDouble(),
-                    color: Colors.grey.shade600,
+                    color: AivoBrand.gray.shade600,
                   ),
                 ),
               ),
@@ -487,7 +488,7 @@ class _VoiceCommandListenerState extends State<VoiceCommandListener> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: AivoBrand.error,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Row(
@@ -566,7 +567,7 @@ class VoiceInputFeedback extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AivoBrand.gray.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -613,7 +614,7 @@ class _VolumeIndicator extends StatelessWidget {
           height: 20 + (index * 8).toDouble(),
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
-            color: isActive ? Colors.green : Colors.grey.shade300,
+            color: isActive ? AivoBrand.success : AivoBrand.gray.shade300,
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -684,7 +685,7 @@ class VoiceCommandsHelp extends StatelessWidget {
                     Expanded(
                       child: Text(
                         entry.value,
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(color: AivoBrand.gray.shade600),
                       ),
                     ),
                   ],

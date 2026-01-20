@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/lms_integration.dart';
 import '../../providers/lms_provider.dart';
@@ -75,7 +76,7 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: Colors.green.shade400,
+              color: AivoBrand.mint[400],
             ),
             const SizedBox(height: 16),
             Text(
@@ -199,14 +200,14 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
               child: _SummaryItem(
                 label: 'Pending',
                 value: '${state.pendingCount}',
-                color: Colors.orange,
+                color: AivoBrand.warning,
               ),
             ),
             Expanded(
               child: _SummaryItem(
                 label: 'Failed',
                 value: '${state.failedCount}',
-                color: Colors.red,
+                color: AivoBrand.error,
               ),
             ),
             Expanded(
@@ -227,14 +228,14 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: isSuccess ? Colors.green.shade50 : Colors.orange.shade50,
+      color: isSuccess ? AivoBrand.mint[50] : AivoBrand.sunshine[50],
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             Icon(
               isSuccess ? Icons.check_circle : Icons.warning,
-              color: isSuccess ? Colors.green : Colors.orange,
+              color: isSuccess ? AivoBrand.success : AivoBrand.warning,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -252,7 +253,7 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
                     Text(
                       result.errors.first.error,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.red,
+                        color: AivoBrand.error,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -347,7 +348,7 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
           content: Text(
             '${result.successful} grades synced${result.failed > 0 ? ', ${result.failed} failed' : ''}',
           ),
-          backgroundColor: result.allSuccessful ? Colors.green : Colors.orange,
+          backgroundColor: result.allSuccessful ? AivoBrand.success : AivoBrand.warning,
         ),
       );
     }
@@ -365,7 +366,7 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
           content: Text(
             '${result.successful} grades synced${result.failed > 0 ? ', ${result.failed} failed' : ''}',
           ),
-          backgroundColor: result.allSuccessful ? Colors.green : Colors.orange,
+          backgroundColor: result.allSuccessful ? AivoBrand.success : AivoBrand.warning,
         ),
       );
     }
@@ -492,10 +493,10 @@ class _GradeItem extends StatelessWidget {
   }
 
   Color _getScoreColor(double percent) {
-    if (percent >= 90) return Colors.green;
+    if (percent >= 90) return AivoBrand.success;
     if (percent >= 70) return Colors.blue;
-    if (percent >= 60) return Colors.orange;
-    return Colors.red;
+    if (percent >= 60) return AivoBrand.warning;
+    return AivoBrand.error;
   }
 }
 
@@ -508,9 +509,9 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, icon, label) = switch (status) {
-      GradeSyncStatus.pending => (Colors.orange, Icons.schedule, 'Pending'),
-      GradeSyncStatus.synced => (Colors.green, Icons.check_circle, 'Synced'),
-      GradeSyncStatus.failed => (Colors.red, Icons.error, 'Failed'),
+      GradeSyncStatus.pending => (AivoBrand.warning, Icons.schedule, 'Pending'),
+      GradeSyncStatus.synced => (AivoBrand.success, Icons.check_circle, 'Synced'),
+      GradeSyncStatus.failed => (AivoBrand.error, Icons.error, 'Failed'),
       GradeSyncStatus.retrying => (Colors.blue, Icons.refresh, 'Retrying'),
     };
 

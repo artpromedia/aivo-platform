@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/theme/theme.dart';
 
 import '../pin/pin_controller.dart';
 import '../pin/pin_state.dart';
@@ -69,7 +70,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(_error!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+                child: Text(_error!, style: const TextStyle(color: AivoBrand.error, fontWeight: FontWeight.w600)),
               ),
             const SizedBox(height: 16),
             FilledButton(

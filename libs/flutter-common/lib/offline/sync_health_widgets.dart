@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/theme.dart';
 import 'sync_scheduler.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -135,12 +136,12 @@ class LearnerSyncIndicator extends StatelessWidget {
 
   (IconData, Color) _getIconAndColor(SyncHealthStatus status, ThemeData theme) {
     return switch (status) {
-      SyncHealthStatus.healthy => (Icons.cloud_done, Colors.green),
+      SyncHealthStatus.healthy => (Icons.cloud_done, AivoBrand.success),
       SyncHealthStatus.syncing => (Icons.cloud_sync, theme.colorScheme.primary),
-      SyncHealthStatus.pending => (Icons.cloud_upload, Colors.orange),
-      SyncHealthStatus.offline => (Icons.cloud_off, Colors.grey),
-      SyncHealthStatus.failing => (Icons.cloud_off, Colors.red),
-      SyncHealthStatus.stuck => (Icons.error_outline, Colors.red),
+      SyncHealthStatus.pending => (Icons.cloud_upload, AivoBrand.warning),
+      SyncHealthStatus.offline => (Icons.cloud_off, AivoBrand.gray),
+      SyncHealthStatus.failing => (Icons.cloud_off, AivoBrand.error),
+      SyncHealthStatus.stuck => (Icons.error_outline, AivoBrand.error),
     };
   }
 }
@@ -229,7 +230,7 @@ class TeacherSyncPanel extends StatelessWidget {
                 'Pending items',
                 '${healthInfo.totalPending}',
                 icon: Icons.cloud_upload,
-                color: Colors.orange,
+                color: AivoBrand.warning,
               ),
             ],
             if (healthInfo.failedItems > 0) ...[
@@ -239,7 +240,7 @@ class TeacherSyncPanel extends StatelessWidget {
                 'Failed items',
                 '${healthInfo.failedItems}',
                 icon: Icons.error_outline,
-                color: Colors.red,
+                color: AivoBrand.error,
               ),
             ],
             if (healthInfo.stuckItems > 0) ...[
@@ -249,7 +250,7 @@ class TeacherSyncPanel extends StatelessWidget {
                 'Stuck items',
                 '${healthInfo.stuckItems}',
                 icon: Icons.warning_amber,
-                color: Colors.red,
+                color: AivoBrand.error,
                 trailing: TextButton(
                   onPressed: onResetStuck,
                   child: const Text('Reset'),
@@ -263,18 +264,18 @@ class TeacherSyncPanel extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: AivoBrand.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error, color: Colors.red, size: 20),
+                    const Icon(Icons.error, color: AivoBrand.error, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         healthInfo.lastError!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.red,
+                          color: AivoBrand.error,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -304,12 +305,12 @@ class TeacherSyncPanel extends StatelessWidget {
 
   Widget _buildStatusIcon(SyncHealthStatus status, ThemeData theme) {
     final (icon, color) = switch (status) {
-      SyncHealthStatus.healthy => (Icons.check_circle, Colors.green),
+      SyncHealthStatus.healthy => (Icons.check_circle, AivoBrand.success),
       SyncHealthStatus.syncing => (Icons.sync, theme.colorScheme.primary),
-      SyncHealthStatus.pending => (Icons.cloud_upload, Colors.orange),
-      SyncHealthStatus.offline => (Icons.cloud_off, Colors.grey),
-      SyncHealthStatus.failing => (Icons.error, Colors.red),
-      SyncHealthStatus.stuck => (Icons.warning, Colors.red),
+      SyncHealthStatus.pending => (Icons.cloud_upload, AivoBrand.warning),
+      SyncHealthStatus.offline => (Icons.cloud_off, AivoBrand.gray),
+      SyncHealthStatus.failing => (Icons.error, AivoBrand.error),
+      SyncHealthStatus.stuck => (Icons.warning, AivoBrand.error),
     };
 
     if (status == SyncHealthStatus.syncing) {
@@ -342,11 +343,11 @@ class TeacherSyncPanel extends StatelessWidget {
 
   Color _getStatusColor(SyncHealthStatus status) {
     return switch (status) {
-      SyncHealthStatus.healthy => Colors.green,
-      SyncHealthStatus.syncing => Colors.blue,
-      SyncHealthStatus.pending => Colors.orange,
-      SyncHealthStatus.offline => Colors.grey,
-      SyncHealthStatus.failing || SyncHealthStatus.stuck => Colors.red,
+      SyncHealthStatus.healthy => AivoBrand.success,
+      SyncHealthStatus.syncing => AivoBrand.info,
+      SyncHealthStatus.pending => AivoBrand.warning,
+      SyncHealthStatus.offline => AivoBrand.gray,
+      SyncHealthStatus.failing || SyncHealthStatus.stuck => AivoBrand.error,
     };
   }
 
@@ -456,7 +457,7 @@ class SyncDetailsDialog extends StatelessWidget {
                 Text(
                   healthInfo.lastError!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.red,
+                    color: AivoBrand.error,
                     fontFamily: 'monospace',
                   ),
                 ),
@@ -526,8 +527,8 @@ class OfflineBanner extends StatelessWidget {
     if (!isOffline) return const SizedBox.shrink();
 
     return MaterialBanner(
-      backgroundColor: Colors.orange.shade100,
-      leading: const Icon(Icons.cloud_off, color: Colors.orange),
+      backgroundColor: AivoBrand.sunshine[100],
+      leading: Icon(Icons.cloud_off, color: AivoBrand.warning),
       content: Text(
         message ??
             (pendingCount > 0
