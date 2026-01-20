@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 
+import { createAssessmentDataLoaders, type AssessmentDataLoaders } from './dataloaders/index.js';
 import {
   assessmentRoutes,
   questionRoutes,
@@ -11,6 +12,15 @@ import {
   securityRoutes,
 } from './routes/index.js';
 import { authMiddleware } from './middleware/auth.js';
+
+// Extend Express Request to include DataLoaders
+declare global {
+  namespace Express {
+    interface Request {
+      loaders?: AssessmentDataLoaders;
+    }
+  }
+}
 
 // CORS configuration - requires explicit origins in production
 const corsOrigins = process.env.CORS_ORIGIN
@@ -43,6 +53,16 @@ export function createApp() {
 
   // JWT authentication for all API routes
   app.use(authMiddleware);
+
+  // DataLoader initialization per request (prevents N+1 queries)
+  app.use((req, _res, next) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user as { tenantId?: string } | undefined;
+    if (user?.tenantId) {
+      req.loaders = createAssessmentDataLoaders(user.tenantId);
+    }
+    next();
+  });
 
   // API routes
   app.use('/api/v1/assessments', assessmentRoutes);

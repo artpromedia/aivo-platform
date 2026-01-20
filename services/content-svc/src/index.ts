@@ -24,6 +24,7 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
+import { createContentDataLoaders, type ContentDataLoaders } from './dataloaders/index.js';
 import { fileRoutes } from './routes/files.js';
 import { ingestionRoutes } from './routes/ingestion.js';
 import { learningObjectRoutes } from './routes/learningObjects.js';
@@ -33,6 +34,13 @@ import { reviewRoutes } from './routes/reviews.js';
 import { searchRoutes } from './routes/search.js';
 import { socialStoriesRoutes } from './routes/socialStories.js';
 import { versionRoutes } from './routes/versions.js';
+
+// Extend Fastify request type to include DataLoaders
+declare module 'fastify' {
+  interface FastifyRequest {
+    loaders: ContentDataLoaders;
+  }
+}
 
 const PORT = Number.parseInt(process.env.PORT || '4020', 10);
 
@@ -63,6 +71,15 @@ await fastify.register(cors, {
 // Rate limiting for content endpoints
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 await fastify.register(rateLimit, FastifyRateLimitPresets.content('content-svc'));
+
+// DataLoader initialization per request (prevents N+1 queries)
+fastify.addHook('preHandler', async (request) => {
+  // Extract tenant ID from JWT user if available
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = (request as any).user as { tenantId?: string; tenant_id?: string } | undefined;
+  const tenantId = user?.tenantId ?? user?.tenant_id;
+  request.loaders = createContentDataLoaders(tenantId);
+});
 
 // Health check
 fastify.get('/health', async () => ({ status: 'ok', service: 'content-svc' }));
