@@ -1,20 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import React, { useState, useCallback } from 'react';
+
 /**
  * Upload Curriculum Modal Component
  *
  * Modal for creating new curricula or uploading curriculum files.
  */
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-
+import { createCurriculum, SUBJECT_AREAS, GRADE_LEVELS } from '../../lib/curriculum-api';
 import { useAuth } from '../providers';
-import {
-  createCurriculum,
-  SUBJECT_AREAS,
-  GRADE_LEVELS,
-} from '../../lib/curriculum-api';
 
 interface UploadCurriculumModalProps {
   isOpen: boolean;
@@ -87,8 +83,22 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
         await createCurriculum(tenantId, userName, accessToken, formData);
       } else {
         // Handle file upload
-        // In production, this would upload the file and parse it
-        console.log('Uploading file:', selectedFile?.name);
+        if (!selectedFile) return;
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', selectedFile);
+        uploadFormData.append('tenantId', tenantId);
+        uploadFormData.append('userName', userName);
+
+        const response = await fetch('/api/curriculum/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: uploadFormData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Upload failed');
+        }
       }
 
       onClose();
@@ -113,18 +123,14 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
 
   if (!isOpen) return null;
 
-  const isCreateValid =
-    formData.name.trim() && formData.subjectArea && formData.gradeLevel;
+  const isCreateValid = formData.name.trim() && formData.subjectArea && formData.gradeLevel;
   const isUploadValid = selectedFile !== null;
   const isValid = activeTab === 'create' ? isCreateValid : isUploadValid;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-lg rounded-xl bg-surface shadow-xl">
@@ -136,7 +142,12 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
             className="rounded-lg p-1 text-muted hover:bg-surface-muted hover:text-text"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -145,7 +156,9 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
         <div className="border-b border-border">
           <div className="flex">
             <button
-              onClick={() => setActiveTab('create')}
+              onClick={() => {
+                setActiveTab('create');
+              }}
               className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'create'
                   ? 'border-b-2 border-primary text-primary'
@@ -155,7 +168,9 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
               Create New
             </button>
             <button
-              onClick={() => setActiveTab('upload')}
+              onClick={() => {
+                setActiveTab('upload');
+              }}
               className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'upload'
                   ? 'border-b-2 border-primary text-primary'
@@ -171,9 +186,7 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
         <form onSubmit={handleSubmit}>
           <div className="max-h-[60vh] overflow-y-auto p-4">
             {error && (
-              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {error}
-              </div>
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
             )}
 
             {activeTab === 'create' ? (
@@ -264,7 +277,9 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
                     e.preventDefault();
                     setDragOver(true);
                   }}
-                  onDragLeave={() => setDragOver(false)}
+                  onDragLeave={() => {
+                    setDragOver(false);
+                  }}
                   className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition ${
                     dragOver
                       ? 'border-primary bg-primary/5'
@@ -294,7 +309,9 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
                       </p>
                       <button
                         type="button"
-                        onClick={() => setSelectedFile(null)}
+                        onClick={() => {
+                          setSelectedFile(null);
+                        }}
                         className="mt-2 text-sm text-red-500 hover:underline"
                       >
                         Remove
@@ -330,9 +347,7 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
                           />
                         </label>
                       </p>
-                      <p className="mt-1 text-xs text-muted">
-                        Supports JSON, CSV, or Excel files
-                      </p>
+                      <p className="mt-1 text-xs text-muted">Supports JSON, CSV, or Excel files</p>
                     </>
                   )}
                 </div>
@@ -370,7 +385,11 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
               disabled={!isValid || isSubmitting}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating...' : activeTab === 'create' ? 'Create Curriculum' : 'Upload'}
+              {isSubmitting
+                ? 'Creating...'
+                : activeTab === 'create'
+                  ? 'Create Curriculum'
+                  : 'Upload'}
             </button>
           </div>
         </form>

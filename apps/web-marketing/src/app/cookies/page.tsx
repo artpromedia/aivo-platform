@@ -328,8 +328,8 @@ export default function CookiePolicy() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      // Open cookie preferences modal
-                      console.log('Open cookie preferences');
+                      // Dispatch custom event to open cookie consent modal
+                      window.dispatchEvent(new CustomEvent('openCookiePreferences'));
                     }}
                   >
                     <Settings className="w-4 h-4 mr-2" />

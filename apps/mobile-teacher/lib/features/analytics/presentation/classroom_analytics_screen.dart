@@ -201,7 +201,7 @@ class _ClassroomAnalyticsScreenState
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: DropdownButtonFormField<String>(
-          value: _selectedClassId,
+          initialValue: _selectedClassId,
           decoration: const InputDecoration(
             labelText: 'Select Class',
             border: InputBorder.none,

@@ -13,8 +13,10 @@
  */
 
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { resolveTenant } from '../../lib/tenant';
+
 import { CompliancePanel } from './components/compliance-panel';
 import { SchoolPerformanceGrid } from './components/school-performance-grid';
 
@@ -32,25 +34,116 @@ const districtMetrics = {
 };
 
 const schoolPerformance = [
-  { id: '1', name: 'Lincoln Elementary', students: 420, mastery: 82, engagement: 88, iepCompliance: 100 },
-  { id: '2', name: 'Washington Middle School', students: 680, mastery: 75, engagement: 79, iepCompliance: 95 },
-  { id: '3', name: 'Jefferson High School', students: 890, mastery: 71, engagement: 72, iepCompliance: 88 },
-  { id: '4', name: 'Roosevelt Elementary', students: 380, mastery: 85, engagement: 91, iepCompliance: 100 },
-  { id: '5', name: 'Adams Middle School', students: 520, mastery: 79, engagement: 84, iepCompliance: 92 },
+  {
+    id: '1',
+    name: 'Lincoln Elementary',
+    students: 420,
+    mastery: 82,
+    engagement: 88,
+    iepCompliance: 100,
+  },
+  {
+    id: '2',
+    name: 'Washington Middle School',
+    students: 680,
+    mastery: 75,
+    engagement: 79,
+    iepCompliance: 95,
+  },
+  {
+    id: '3',
+    name: 'Jefferson High School',
+    students: 890,
+    mastery: 71,
+    engagement: 72,
+    iepCompliance: 88,
+  },
+  {
+    id: '4',
+    name: 'Roosevelt Elementary',
+    students: 380,
+    mastery: 85,
+    engagement: 91,
+    iepCompliance: 100,
+  },
+  {
+    id: '5',
+    name: 'Adams Middle School',
+    students: 520,
+    mastery: 79,
+    engagement: 84,
+    iepCompliance: 92,
+  },
 ];
 
 const complianceItems = [
-  { id: '1', school: 'Jefferson High', item: 'IEP Review Overdue', count: 3, severity: 'high', dueDate: '2026-01-15' },
-  { id: '2', school: 'Washington Middle', item: 'Missing Progress Reports', count: 5, severity: 'medium', dueDate: '2026-01-20' },
-  { id: '3', school: 'Adams Middle', item: 'Evaluation Timeline', count: 2, severity: 'medium', dueDate: '2026-01-25' },
+  {
+    id: '1',
+    school: 'Jefferson High',
+    item: 'IEP Review Overdue',
+    count: 3,
+    severity: 'high',
+    dueDate: '2026-01-15',
+  },
+  {
+    id: '2',
+    school: 'Washington Middle',
+    item: 'Missing Progress Reports',
+    count: 5,
+    severity: 'medium',
+    dueDate: '2026-01-20',
+  },
+  {
+    id: '3',
+    school: 'Adams Middle',
+    item: 'Evaluation Timeline',
+    count: 2,
+    severity: 'medium',
+    dueDate: '2026-01-25',
+  },
 ];
 
 const recentActivity = [
-  { id: '1', type: 'iep', action: 'IEP Approved', school: 'Lincoln Elementary', user: 'Dr. Sarah Johnson', time: '10 min ago' },
-  { id: '2', type: 'user', action: 'New Teacher Added', school: 'Roosevelt Elementary', user: 'Admin', time: '1 hour ago' },
-  { id: '3', type: 'compliance', action: 'Compliance Report Generated', school: 'District-wide', user: 'System', time: '2 hours ago' },
-  { id: '4', type: 'license', action: '50 Licenses Allocated', school: 'Jefferson High', user: 'Admin', time: '3 hours ago' },
-  { id: '5', type: 'alert', action: 'Data Sync Completed', school: 'All Schools', user: 'System', time: '5 hours ago' },
+  {
+    id: '1',
+    type: 'iep',
+    action: 'IEP Approved',
+    school: 'Lincoln Elementary',
+    user: 'Dr. Sarah Johnson',
+    time: '10 min ago',
+  },
+  {
+    id: '2',
+    type: 'user',
+    action: 'New Teacher Added',
+    school: 'Roosevelt Elementary',
+    user: 'Admin',
+    time: '1 hour ago',
+  },
+  {
+    id: '3',
+    type: 'compliance',
+    action: 'Compliance Report Generated',
+    school: 'District-wide',
+    user: 'System',
+    time: '2 hours ago',
+  },
+  {
+    id: '4',
+    type: 'license',
+    action: '50 Licenses Allocated',
+    school: 'Jefferson High',
+    user: 'Admin',
+    time: '3 hours ago',
+  },
+  {
+    id: '5',
+    type: 'alert',
+    action: 'Data Sync Completed',
+    school: 'All Schools',
+    user: 'System',
+    time: '5 hours ago',
+  },
 ];
 
 const upcomingDeadlines = [
@@ -127,13 +220,18 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-gray-900">License Usage</h3>
           <span className="text-sm text-gray-500">
-            {districtMetrics.licensesUsed.toLocaleString()} / {districtMetrics.licensesTotal.toLocaleString()} seats used
+            {districtMetrics.licensesUsed.toLocaleString()} /{' '}
+            {districtMetrics.licensesTotal.toLocaleString()} seats used
           </span>
         </div>
         <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${
-              licensePercent > 90 ? 'bg-red-500' : licensePercent > 75 ? 'bg-amber-500' : 'bg-green-500'
+              licensePercent > 90
+                ? 'bg-red-500'
+                : licensePercent > 75
+                  ? 'bg-amber-500'
+                  : 'bg-green-500'
             }`}
             style={{ width: `${licensePercent}%` }}
           />
@@ -154,7 +252,7 @@ export default async function DashboardPage() {
         {/* School Performance Grid - Visual school cards */}
         <SchoolPerformanceGrid
           onSchoolClick={(schoolId) => {
-            console.log('Navigate to school:', schoolId);
+            window.location.href = `/schools/${schoolId}`;
           }}
         />
       </div>
@@ -174,43 +272,71 @@ export default async function DashboardPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">School</th>
-                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">Students</th>
-                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">Mastery</th>
-                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">Engagement</th>
-                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">IEP Compliance</th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                      School
+                    </th>
+                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">
+                      Students
+                    </th>
+                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">
+                      Mastery
+                    </th>
+                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">
+                      Engagement
+                    </th>
+                    <th className="text-center p-3 text-xs font-medium text-gray-500 uppercase">
+                      IEP Compliance
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {schoolPerformance.map((school) => (
                     <tr key={school.id} className="hover:bg-gray-50">
                       <td className="p-3">
-                        <Link href={`/schools/${school.id}`} className="font-medium text-gray-900 hover:text-indigo-600">
+                        <Link
+                          href={`/schools/${school.id}`}
+                          className="font-medium text-gray-900 hover:text-indigo-600"
+                        >
                           {school.name}
                         </Link>
                       </td>
                       <td className="p-3 text-center text-gray-600">{school.students}</td>
                       <td className="p-3 text-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                          school.mastery >= 80 ? 'bg-green-100 text-green-700' :
-                          school.mastery >= 70 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            school.mastery >= 80
+                              ? 'bg-green-100 text-green-700'
+                              : school.mastery >= 70
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
                           {school.mastery}%
                         </span>
                       </td>
                       <td className="p-3 text-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                          school.engagement >= 80 ? 'bg-green-100 text-green-700' :
-                          school.engagement >= 70 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            school.engagement >= 80
+                              ? 'bg-green-100 text-green-700'
+                              : school.engagement >= 70
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
                           {school.engagement}%
                         </span>
                       </td>
                       <td className="p-3 text-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                          school.iepCompliance >= 95 ? 'bg-green-100 text-green-700' :
-                          school.iepCompliance >= 90 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            school.iepCompliance >= 95
+                              ? 'bg-green-100 text-green-700'
+                              : school.iepCompliance >= 90
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
                           {school.iepCompliance}%
                         </span>
                       </td>
@@ -237,12 +363,16 @@ export default async function DashboardPage() {
               {complianceItems.map((item) => (
                 <div key={item.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start gap-3">
-                    <div className={`mt-1 w-2 h-2 rounded-full ${
-                      item.severity === 'high' ? 'bg-red-500' : 'bg-amber-500'
-                    }`} />
+                    <div
+                      className={`mt-1 w-2 h-2 rounded-full ${
+                        item.severity === 'high' ? 'bg-red-500' : 'bg-amber-500'
+                      }`}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900">{item.item}</p>
-                      <p className="text-sm text-gray-500">{item.school} - {item.count} items</p>
+                      <p className="text-sm text-gray-500">
+                        {item.school} - {item.count} items
+                      </p>
                       <p className="text-xs text-gray-400 mt-1">Due: {item.dueDate}</p>
                     </div>
                   </div>
@@ -250,7 +380,10 @@ export default async function DashboardPage() {
               ))}
             </div>
             <div className="p-3 border-t border-gray-200">
-              <Link href="/compliance" className="text-sm text-indigo-600 hover:underline block text-center">
+              <Link
+                href="/compliance"
+                className="text-sm text-indigo-600 hover:underline block text-center"
+              >
                 View All Compliance Items
               </Link>
             </div>
@@ -268,13 +401,19 @@ export default async function DashboardPage() {
           <div className="divide-y divide-gray-200">
             {recentActivity.map((activity) => (
               <div key={activity.id} className="p-4 flex items-start gap-3">
-                <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                  activity.type === 'iep' ? 'bg-purple-100 text-purple-600' :
-                  activity.type === 'user' ? 'bg-blue-100 text-blue-600' :
-                  activity.type === 'compliance' ? 'bg-green-100 text-green-600' :
-                  activity.type === 'license' ? 'bg-amber-100 text-amber-600' :
-                  'bg-gray-100 text-gray-600'
-                }`}>
+                <div
+                  className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                    activity.type === 'iep'
+                      ? 'bg-purple-100 text-purple-600'
+                      : activity.type === 'user'
+                        ? 'bg-blue-100 text-blue-600'
+                        : activity.type === 'compliance'
+                          ? 'bg-green-100 text-green-600'
+                          : activity.type === 'license'
+                            ? 'bg-amber-100 text-amber-600'
+                            : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
                   {activity.type === 'iep' && '📋'}
                   {activity.type === 'user' && '👤'}
                   {activity.type === 'compliance' && '✓'}
@@ -302,11 +441,15 @@ export default async function DashboardPage() {
           <div className="divide-y divide-gray-200">
             {upcomingDeadlines.map((deadline) => (
               <div key={deadline.id} className="p-4 flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  deadline.type === 'report' ? 'bg-blue-100 text-blue-600' :
-                  deadline.type === 'audit' ? 'bg-purple-100 text-purple-600' :
-                  'bg-amber-100 text-amber-600'
-                }`}>
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    deadline.type === 'report'
+                      ? 'bg-blue-100 text-blue-600'
+                      : deadline.type === 'audit'
+                        ? 'bg-purple-100 text-purple-600'
+                        : 'bg-amber-100 text-amber-600'
+                  }`}
+                >
                   {deadline.type === 'report' && '📄'}
                   {deadline.type === 'audit' && '🔍'}
                   {deadline.type === 'license' && '🔑'}
@@ -325,16 +468,56 @@ export default async function DashboardPage() {
       <div>
         <h2 className="mb-4 font-semibold text-gray-900">Quick Actions</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <QuickAction href="/schools" icon="🏫" title="Manage Schools" description="Add, edit, or remove schools" />
-          <QuickAction href="/dashboard/analytics" icon="📊" title="View Analytics" description="Cross-school performance data" />
-          <QuickAction href="/compliance" icon="✓" title="Compliance Center" description="IEP and regulatory compliance" />
-          <QuickAction href="/billing" icon="💳" title="Billing & Licenses" description="Manage subscriptions and seats" />
+          <QuickAction
+            href="/schools"
+            icon="🏫"
+            title="Manage Schools"
+            description="Add, edit, or remove schools"
+          />
+          <QuickAction
+            href="/dashboard/analytics"
+            icon="📊"
+            title="View Analytics"
+            description="Cross-school performance data"
+          />
+          <QuickAction
+            href="/compliance"
+            icon="✓"
+            title="Compliance Center"
+            description="IEP and regulatory compliance"
+          />
+          <QuickAction
+            href="/billing"
+            icon="💳"
+            title="Billing & Licenses"
+            description="Manage subscriptions and seats"
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
-          <QuickAction href="/users" icon="👥" title="User Management" description="Manage users and roles" />
-          <QuickAction href="/users/import" icon="📤" title="Bulk Import" description="Import users via CSV" />
-          <QuickAction href="/settings/sso" icon="🔐" title="SSO Settings" description="Configure single sign-on" />
-          <QuickAction href="/integrations" icon="🔗" title="Integrations" description="SIS and third-party apps" />
+          <QuickAction
+            href="/users"
+            icon="👥"
+            title="User Management"
+            description="Manage users and roles"
+          />
+          <QuickAction
+            href="/users/import"
+            icon="📤"
+            title="Bulk Import"
+            description="Import users via CSV"
+          />
+          <QuickAction
+            href="/settings/sso"
+            icon="🔐"
+            title="SSO Settings"
+            description="Configure single sign-on"
+          />
+          <QuickAction
+            href="/integrations"
+            icon="🔗"
+            title="Integrations"
+            description="SIS and third-party apps"
+          />
         </div>
       </div>
     </section>
@@ -368,7 +551,9 @@ function MetricCard({
       <div className="flex items-center justify-between">
         <span className="text-2xl">{icon}</span>
         {trend && (
-          <span className={`text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+          <span
+            className={`text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+          >
             {trend === 'up' ? '↑' : '↓'}
           </span>
         )}

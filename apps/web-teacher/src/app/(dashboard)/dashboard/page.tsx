@@ -11,9 +11,6 @@ import Link from 'next/link';
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
-import { cn } from '@/lib/utils';
-import { RealTimeMonitor } from '@/components/dashboard/real-time-monitor';
-import { SELObservationRecorder } from '@/components/dashboard/sel-observation-recorder';
 import {
   ClassSelector,
   QuickStats,
@@ -22,12 +19,12 @@ import {
   RecentActivity,
   ClassPerformanceChart,
 } from '@/components/classroom';
+import { RealTimeMonitor } from '@/components/dashboard/real-time-monitor';
+import { SELObservationRecorder } from '@/components/dashboard/sel-observation-recorder';
 import { StudentRoster } from '@/components/students';
+import { mockClasses, getClassDashboardData } from '@/lib/mock-data';
 import type { Class, DashboardData } from '@/lib/types';
-import {
-  mockClasses,
-  getClassDashboardData,
-} from '@/lib/mock-data';
+import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -75,20 +72,30 @@ export default function DashboardPage() {
     setSelectedClass(cls);
   }, []);
 
-  const handleStudentAction = useCallback((studentId: string, action: string) => {
-    console.log('Student action:', studentId, action);
-    // Handle various student actions
-    if (action === 'sel_observation') {
-      const student = selectedClass?.students.find((s) => s.learnerId === studentId);
-      if (student) {
-        setSelectedStudentForSEL({
-          id: studentId,
-          name: student.learner.name,
-        });
-        setShowSELRecorder(true);
+  const handleStudentAction = useCallback(
+    async (studentId: string, action: string) => {
+      // Handle various student actions via API
+      if (action === 'view_details') {
+        window.location.href = `/students/${studentId}`;
+        return;
       }
-    }
-  }, [selectedClass]);
+      if (action === 'send_message') {
+        window.location.href = `/messages/new?studentId=${studentId}`;
+        return;
+      }
+      if (action === 'sel_observation') {
+        const student = selectedClass?.students.find((s) => s.learnerId === studentId);
+        if (student) {
+          setSelectedStudentForSEL({
+            id: studentId,
+            name: student.learner.name,
+          });
+          setShowSELRecorder(true);
+        }
+      }
+    },
+    [selectedClass]
+  );
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -112,19 +119,13 @@ export default function DashboardPage() {
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-muted uppercase tracking-wide font-medium">
-            Welcome back
-          </p>
+          <p className="text-sm text-muted uppercase tracking-wide font-medium">Welcome back</p>
           <h1 className="text-2xl font-bold text-text">{greeting}!</h1>
           <p className="text-muted text-sm mt-1">{today}</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <ClassSelector
-            classes={classes}
-            selected={selectedClass}
-            onChange={handleClassChange}
-          />
+          <ClassSelector classes={classes} selected={selectedClass} onChange={handleClassChange} />
           <Link
             href="/assignments/new"
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
@@ -143,17 +144,43 @@ export default function DashboardPage() {
           {dashboardData.alerts.length > 0 && (
             <InterventionAlerts
               alerts={dashboardData.alerts}
-              onDismiss={(alertId) => console.log('Dismissed:', alertId)}
-              onActionTaken={(alertId, action) =>
-                console.log('Action taken:', alertId, action)
-              }
+              onDismiss={async (alertId) => {
+                await fetch(`/api/alerts/${alertId}/dismiss`, { method: 'POST' });
+                setDashboardData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        alerts: prev.alerts.filter((a) => a.id !== alertId),
+                      }
+                    : null
+                );
+              }}
+              onActionTaken={async (alertId, action) => {
+                await fetch(`/api/alerts/${alertId}/action`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action }),
+                });
+                setDashboardData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        alerts: prev.alerts.map((a) =>
+                          a.id === alertId ? { ...a, actionTaken: action } : a
+                        ),
+                      }
+                    : null
+                );
+              }}
             />
           )}
 
           {/* View Toggle */}
           <div className="flex items-center gap-2 border-b border-border">
             <button
-              onClick={() => setActiveView('overview')}
+              onClick={() => {
+                setActiveView('overview');
+              }}
               className={cn(
                 'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
                 activeView === 'overview'
@@ -164,7 +191,9 @@ export default function DashboardPage() {
               Class Overview
             </button>
             <button
-              onClick={() => setActiveView('roster')}
+              onClick={() => {
+                setActiveView('roster');
+              }}
               className={cn(
                 'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
                 activeView === 'roster'
@@ -227,10 +256,10 @@ export default function DashboardPage() {
               <div className="grid gap-6 lg:grid-cols-2">
                 <RealTimeMonitor
                   onStudentClick={(student) => {
-                    console.log('View student:', student);
+                    window.location.href = `/students/${student.id}`;
                   }}
                   onSendMessage={(studentId) => {
-                    console.log('Send message to:', studentId);
+                    window.location.href = `/messages/new?studentId=${studentId}`;
                   }}
                 />
 
@@ -247,7 +276,9 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => setShowSELRecorder(true)}
+                      onClick={() => {
+                        setShowSELRecorder(true);
+                      }}
                       className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                     >
                       + New Observation
@@ -328,7 +359,15 @@ export default function DashboardPage() {
               studentName={selectedStudentForSEL?.name || 'Select Student'}
               isOpen={showSELRecorder}
               onSubmit={async (observation) => {
-                console.log('SEL Observation submitted:', observation);
+                await fetch('/api/sel/observations', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...observation,
+                    studentId: selectedStudentForSEL?.id,
+                    classId: selectedClass?.id,
+                  }),
+                });
                 setShowSELRecorder(false);
                 setSelectedStudentForSEL(null);
               }}

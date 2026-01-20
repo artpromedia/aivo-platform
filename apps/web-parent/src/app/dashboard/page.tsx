@@ -1,8 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
 import {
   BookOpen,
   Clock,
@@ -12,25 +9,17 @@ import {
   CheckCircle,
   AlertTriangle,
   Settings,
-  Award,
   Users,
-  Flame,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Components
-import { ProgressCard } from '@/components/progress-card';
-import { SubjectProgress } from '@/components/subject-progress';
-import { ActivityFeed } from '@/components/activity-feed';
-import { TeacherNotes } from '@/components/teacher-notes';
-import { ChildSelector } from '@/components/child-selector';
-import { StreakWidget } from '@/components/streak-widget';
 import { AchievementBadges } from '@/components/achievement-badges';
+import { ActivityFeed } from '@/components/activity-feed';
+import { ChildSelector } from '@/components/child-selector';
 import { DailyUsageTracker } from '@/components/daily-usage-tracker';
-import { HomeworkHelperSection } from '@/components/homework-helper-section';
-import { MessagesPreview } from '@/components/messages-preview';
-import { DifficultyRecommendations } from '@/components/difficulty-recommendations';
-
-// Sprint 5: New Dashboard Components
 import {
   AIInsightsPanel,
   ActivityTimeline,
@@ -40,8 +29,13 @@ import {
   EnhancedChildSelector,
   type ChildData,
 } from '@/components/dashboard';
-
-// Hooks
+import { DifficultyRecommendations } from '@/components/difficulty-recommendations';
+import { HomeworkHelperSection } from '@/components/homework-helper-section';
+import { MessagesPreview } from '@/components/messages-preview';
+import { ProgressCard } from '@/components/progress-card';
+import { StreakWidget } from '@/components/streak-widget';
+import { SubjectProgress } from '@/components/subject-progress';
+import { TeacherNotes } from '@/components/teacher-notes';
 import {
   useParentProfile,
   useStudentSummary,
@@ -52,12 +46,12 @@ import {
   useRespondToRecommendation,
   useDownloadReport,
   useUpdateDailyGoal,
-  // Sprint 5: New hooks
   useAIInsights,
   useActivityTimeline,
   useMilestones,
   useWeeklyReport,
   useChildrenEnhanced,
+  useDismissInsight,
 } from '@/lib/hooks';
 import { isDevMode } from '@/lib/mock-data';
 
@@ -65,6 +59,7 @@ export default function DashboardPage() {
   const { t } = useTranslation('parent');
   const router = useRouter();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date | undefined>(undefined);
 
   // Data hooks
   const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
@@ -78,13 +73,14 @@ export default function DashboardPage() {
   const { data: aiInsights, isLoading: insightsLoading } = useAIInsights(selectedChildId);
   const { data: activityTimeline } = useActivityTimeline(selectedChildId, 15);
   const { data: milestones } = useMilestones(selectedChildId);
-  const { data: weeklyReportData } = useWeeklyReport(selectedChildId);
+  const { data: weeklyReportData } = useWeeklyReport(selectedChildId, selectedWeekStart);
   const { data: enhancedChildren } = useChildrenEnhanced();
 
   // Mutations
   const downloadReport = useDownloadReport();
   const respondToRecommendation = useRespondToRecommendation();
   const updateDailyGoal = useUpdateDailyGoal();
+  const dismissInsight = useDismissInsight();
 
   // Auto-select first child when profile loads
   useEffect(() => {
@@ -145,7 +141,9 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to load dashboard</h2>
             <p className="text-gray-500 mb-4">Please try refreshing the page or sign in again.</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                window.location.reload();
+              }}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               Refresh Page
@@ -162,33 +160,36 @@ export default function DashboardPage() {
     return null;
   };
 
-  const selectedChild = profile?.students?.find(s => s.id === selectedChildId);
+  const selectedChild = profile?.students?.find((s) => s.id === selectedChildId);
 
   // Transform enhanced children data for the new selector
-  const enhancedChildrenData: ChildData[] = enhancedChildren?.map(child => ({
-    id: child.id,
-    name: child.name,
-    firstName: child.firstName,
-    lastName: child.lastName,
-    gradeLevel: child.gradeLevel,
-    avatar: child.avatar,
-    subjects: child.subjects,
-    lastActive: child.lastActive,
-    currentStreak: child.currentStreak,
-    todayProgress: child.todayProgress,
-    status: child.status,
-  })) || profile?.students?.map(s => ({
-    id: s.id,
-    name: s.name || `${s.firstName} ${s.lastName}`,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    gradeLevel: s.grade,
-    avatar: s.avatar,
-    subjects: [],
-    lastActive: new Date().toISOString(),
-  })) || [];
+  const enhancedChildrenData: ChildData[] =
+    enhancedChildren?.map((child) => ({
+      id: child.id,
+      name: child.name,
+      firstName: child.firstName,
+      lastName: child.lastName,
+      gradeLevel: child.gradeLevel,
+      avatar: child.avatar,
+      subjects: child.subjects,
+      lastActive: child.lastActive,
+      currentStreak: child.currentStreak,
+      todayProgress: child.todayProgress,
+      status: child.status,
+    })) ||
+    profile?.students?.map((s) => ({
+      id: s.id,
+      name: s.name || `${s.firstName} ${s.lastName}`,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      gradeLevel: s.grade,
+      avatar: s.avatar,
+      subjects: [],
+      lastActive: new Date().toISOString(),
+    })) ||
+    [];
 
-  const selectedEnhancedChild = enhancedChildrenData.find(c => c.id === selectedChildId) || null;
+  const selectedEnhancedChild = enhancedChildrenData.find((c) => c.id === selectedChildId) || null;
 
   return (
     <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
@@ -201,7 +202,10 @@ export default function DashboardPage() {
             {t('dashboard.title', 'Parent Dashboard')}
           </h1>
           <p className="text-gray-600 mt-1">
-            {t('dashboard.welcome', { name: profile?.firstName, defaultValue: `Welcome back, ${profile?.firstName || 'Parent'}` })}
+            {t('dashboard.welcome', {
+              name: profile?.firstName,
+              defaultValue: `Welcome back, ${profile?.firstName || 'Parent'}`,
+            })}
           </p>
         </div>
 
@@ -209,21 +213,27 @@ export default function DashboardPage() {
           {/* Enhanced Child Selector (Sprint 5) */}
           {enhancedChildrenData.length > 0 ? (
             <EnhancedChildSelector
-              children={enhancedChildrenData}
+              students={enhancedChildrenData}
               selected={selectedEnhancedChild}
-              onChange={(child) => setSelectedChildId(child.id)}
-              onAddChild={() => router.push('/onboarding/add-child')}
+              onChange={(child) => {
+                setSelectedChildId(child.id);
+              }}
+              onAddChild={() => {
+                router.push('/onboarding/add-child');
+              }}
               showStatus={true}
               showProgress={true}
             />
           ) : (
             <ChildSelector
-              children={profile?.students?.map(s => ({
-                id: s.id,
-                name: s.name || `${s.firstName} ${s.lastName}`,
-                grade: s.grade,
-                avatar: s.avatar,
-              })) || []}
+              students={
+                profile?.students?.map((s) => ({
+                  id: s.id,
+                  name: s.name || `${s.firstName} ${s.lastName}`,
+                  grade: s.grade,
+                  avatar: s.avatar,
+                })) || []
+              }
               selectedId={selectedChildId}
               onSelect={setSelectedChildId}
             />
@@ -231,14 +241,14 @@ export default function DashboardPage() {
 
           {/* Communication Button */}
           <button
-            onClick={() => router.push('/communication')}
+            onClick={() => {
+              router.push('/communication');
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             aria-label="Communication & Progress"
           >
             <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              Communication
-            </span>
+            <span className="hidden sm:inline">Communication</span>
           </button>
 
           {/* Download Report Button */}
@@ -250,13 +260,17 @@ export default function DashboardPage() {
           >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">
-              {downloadReport.isPending ? 'Downloading...' : t('dashboard.downloadReport', 'Download Report')}
+              {downloadReport.isPending
+                ? 'Downloading...'
+                : t('dashboard.downloadReport', 'Download Report')}
             </span>
           </button>
 
           {/* Settings Button */}
           <button
-            onClick={() => router.push('/settings')}
+            onClick={() => {
+              router.push('/settings');
+            }}
             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Settings"
           >
@@ -270,7 +284,9 @@ export default function DashboardPage() {
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-3">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
-            <span className="text-gray-600">Loading {selectedChild?.name || 'student'}'s data...</span>
+            <span className="text-gray-600">
+              Loading {selectedChild?.name || 'student'}&apos;s data...
+            </span>
           </div>
         </div>
       )}
@@ -284,28 +300,36 @@ export default function DashboardPage() {
             value={summary.weeklyTimeSpent}
             unit={t('progress.minutes', 'min')}
             trend={summary.timeTrend}
-            onClick={() => router.push('/activity')}
+            onClick={() => {
+              router.push('/activity');
+            }}
           />
           <ProgressCard
             icon={<BookOpen className="w-5 h-5" />}
             label={t('progress.activeDays', 'Active Days')}
             value={summary.activeDays}
             unit="/7"
-            onClick={() => router.push('/activity')}
+            onClick={() => {
+              router.push('/activity');
+            }}
           />
           <ProgressCard
             icon={<TrendingUp className="w-5 h-5" />}
             label={t('progress.avgScore', 'Avg. Score')}
             value={`${summary.averageScore}%`}
             trend={summary.scoreTrend}
-            onClick={() => router.push('/activity')}
+            onClick={() => {
+              router.push('/activity');
+            }}
           />
           <ProgressCard
             icon={<CheckCircle className="w-5 h-5" />}
             label={t('progress.completed', 'Activities')}
             value={summary.activitiesCompleted}
             unit={t('progress.activities', 'completed')}
-            onClick={() => router.push('/activity')}
+            onClick={() => {
+              router.push('/activity');
+            }}
           />
         </div>
       )}
@@ -357,7 +381,9 @@ export default function DashboardPage() {
                   router.push('/activity');
                 }
               }}
-              onViewAll={() => router.push('/activity')}
+              onViewAll={() => {
+                router.push('/activity');
+              }}
             />
           )}
 
@@ -382,18 +408,24 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {t('dashboard.recentActivity', 'Recent Activity')}
               </h2>
-              <button 
-                onClick={() => router.push('/activity')}
+              <button
+                onClick={() => {
+                  router.push('/activity');
+                }}
                 className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
               >
                 {t('dashboard.viewAll', 'View All')}
               </button>
             </div>
             {summary?.recentActivity && summary.recentActivity.length > 0 ? (
-              <ActivityFeed 
+              <ActivityFeed
                 activities={summary.recentActivity}
-                onActivityClick={() => router.push('/activity')}
-                onViewAll={() => router.push('/activity')}
+                onActivityClick={() => {
+                  router.push('/activity');
+                }}
+                onViewAll={() => {
+                  router.push('/activity');
+                }}
               />
             ) : (
               <p className="text-gray-500 py-4 text-center">
@@ -419,12 +451,10 @@ export default function DashboardPage() {
               childName={selectedChild?.name || selectedEnhancedChild?.name}
               data={weeklyReportData}
               onWeekChange={(weekStart) => {
-                // The hook will refetch with new week
-                console.log('Week changed to:', weekStart);
+                setSelectedWeekStart(new Date(weekStart));
               }}
               onDownload={handleDownloadReport}
               onShare={() => {
-                // Could open share dialog
                 router.push(`/reports/share?childId=${selectedChildId}`);
               }}
             />
@@ -444,10 +474,11 @@ export default function DashboardPage() {
               }
             }}
             onDismiss={(insightId) => {
-              console.log('Dismiss insight:', insightId);
-              // Could call useDismissInsight mutation here
+              dismissInsight.mutate({ insightId, studentId: selectedChildId || '' });
             }}
-            onViewAllAnalysis={() => router.push(`/insights?childId=${selectedChildId}`)}
+            onViewAllAnalysis={() => {
+              router.push(`/insights?childId=${selectedChildId}`);
+            }}
           />
 
           {/* Sprint 5: Upcoming Milestones */}
@@ -457,7 +488,9 @@ export default function DashboardPage() {
               onMilestoneClick={(milestone) => {
                 router.push(`/achievements?milestone=${milestone.id}`);
               }}
-              onViewAll={() => router.push('/achievements')}
+              onViewAll={() => {
+                router.push('/achievements');
+              }}
             />
           )}
 
@@ -466,11 +499,15 @@ export default function DashboardPage() {
             <QuickActions
               childId={selectedChildId}
               childName={selectedChild?.name || selectedEnhancedChild?.name}
-              unreadMessages={messages?.filter(m => m.unread).length || 0}
+              unreadMessages={messages?.filter((m) => m.unread).length || 0}
               pendingApprovals={recommendations?.length || 0}
               onDownloadReport={handleDownloadReport}
-              onScheduleSession={() => router.push('/settings?tab=schedule')}
-              onContactTeacher={() => router.push('/messages/new')}
+              onScheduleSession={() => {
+                router.push('/settings?tab=schedule');
+              }}
+              onContactTeacher={() => {
+                router.push('/messages/new');
+              }}
             />
           )}
 
@@ -480,7 +517,9 @@ export default function DashboardPage() {
               achievements={summary.achievements}
               showLocked={true}
               maxDisplay={6}
-              onViewAll={() => router.push('/achievements')}
+              onViewAll={() => {
+                router.push('/achievements');
+              }}
             />
           )}
 
@@ -498,13 +537,18 @@ export default function DashboardPage() {
                   >
                     <div
                       className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                        assignment.dueIn <= 1 ? 'bg-red-500' : assignment.dueIn <= 3 ? 'bg-amber-500' : 'bg-green-500'
+                        assignment.dueIn <= 1
+                          ? 'bg-red-500'
+                          : assignment.dueIn <= 3
+                            ? 'bg-amber-500'
+                            : 'bg-green-500'
                       }`}
                     />
                     <div>
                       <p className="font-medium text-gray-900">{assignment.title}</p>
                       <p className="text-sm text-gray-500">
-                        {assignment.subject} - Due in {assignment.dueIn} day{assignment.dueIn !== 1 ? 's' : ''}
+                        {assignment.subject} - Due in {assignment.dueIn} day
+                        {assignment.dueIn !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </li>

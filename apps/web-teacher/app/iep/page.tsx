@@ -1,12 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, Heading, Button } from '@aivo/ui-web';
+import { useState } from 'react';
 
 // IEP Types matching the backend iep-svc
 type IEPStatus = 'draft' | 'active' | 'review_pending' | 'expired';
-type GoalStatus = 'not_started' | 'in_progress' | 'on_track' | 'at_risk' | 'mastered' | 'discontinued';
-type GoalDomain = 'Reading' | 'Writing' | 'Math' | 'Communication' | 'Social/Emotional' | 'Behavior' | 'Motor Skills' | 'Self-Help' | 'Transition';
+type GoalStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'on_track'
+  | 'at_risk'
+  | 'mastered'
+  | 'discontinued';
+type GoalDomain =
+  | 'Reading'
+  | 'Writing'
+  | 'Math'
+  | 'Communication'
+  | 'Social/Emotional'
+  | 'Behavior'
+  | 'Motor Skills'
+  | 'Self-Help'
+  | 'Transition';
 
 interface IEPGoal {
   id: string;
@@ -47,7 +62,12 @@ interface IEPStudent {
   goals: IEPGoal[];
   services: IEPService[];
   accommodations: string[];
-  complianceAlerts: { type: string; message: string; dueDate: string; severity: 'warning' | 'urgent' }[];
+  complianceAlerts: {
+    type: string;
+    message: string;
+    dueDate: string;
+    severity: 'warning' | 'urgent';
+  }[];
 }
 
 // Mock data
@@ -66,7 +86,8 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       {
         id: 'g1',
         domain: 'Reading',
-        description: 'Emma will improve reading fluency from 85 to 120 words per minute with 95% accuracy.',
+        description:
+          'Emma will improve reading fluency from 85 to 120 words per minute with 95% accuracy.',
         baseline: '85 words per minute',
         target: '120 words per minute',
         currentProgress: 102,
@@ -85,7 +106,8 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       {
         id: 'g2',
         domain: 'Writing',
-        description: 'Emma will write a 5-sentence paragraph with proper capitalization and punctuation in 4 out of 5 trials.',
+        description:
+          'Emma will write a 5-sentence paragraph with proper capitalization and punctuation in 4 out of 5 trials.',
         baseline: '2 out of 5 trials',
         target: '4 out of 5 trials',
         currentProgress: 3,
@@ -101,10 +123,33 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       },
     ],
     services: [
-      { id: 'svc1', type: 'Specialized Instruction', provider: 'Ms. Johnson', frequency: '5x/week', duration: '45 min', location: 'Resource Room', minutesDelivered: 180, minutesRequired: 225 },
-      { id: 'svc2', type: 'Speech Therapy', provider: 'Ms. Patterson', frequency: '2x/week', duration: '30 min', location: 'Speech Room', minutesDelivered: 56, minutesRequired: 60 },
+      {
+        id: 'svc1',
+        type: 'Specialized Instruction',
+        provider: 'Ms. Johnson',
+        frequency: '5x/week',
+        duration: '45 min',
+        location: 'Resource Room',
+        minutesDelivered: 180,
+        minutesRequired: 225,
+      },
+      {
+        id: 'svc2',
+        type: 'Speech Therapy',
+        provider: 'Ms. Patterson',
+        frequency: '2x/week',
+        duration: '30 min',
+        location: 'Speech Room',
+        minutesDelivered: 56,
+        minutesRequired: 60,
+      },
     ],
-    accommodations: ['Extended time (1.5x) on tests', 'Preferential seating', 'Audio books for longer texts', 'Reduced assignments (quality over quantity)'],
+    accommodations: [
+      'Extended time (1.5x) on tests',
+      'Preferential seating',
+      'Audio books for longer texts',
+      'Reduced assignments (quality over quantity)',
+    ],
     complianceAlerts: [],
   },
   {
@@ -121,7 +166,8 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       {
         id: 'g3',
         domain: 'Social/Emotional',
-        description: 'Marcus will initiate appropriate peer interactions 3 times per day across settings.',
+        description:
+          'Marcus will initiate appropriate peer interactions 3 times per day across settings.',
         baseline: '0-1 times per day',
         target: '3 times per day',
         currentProgress: 2,
@@ -138,7 +184,8 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       {
         id: 'g4',
         domain: 'Behavior',
-        description: 'Marcus will use coping strategies when frustrated, reducing outbursts from 5 per week to 1 or fewer.',
+        description:
+          'Marcus will use coping strategies when frustrated, reducing outbursts from 5 per week to 1 or fewer.',
         baseline: '5 per week',
         target: '1 or fewer per week',
         currentProgress: 3,
@@ -154,12 +201,40 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       },
     ],
     services: [
-      { id: 'svc3', type: 'Specialized Instruction', provider: 'Mr. Davis', frequency: '5x/week', duration: '60 min', location: 'Inclusion Classroom', minutesDelivered: 280, minutesRequired: 300 },
-      { id: 'svc4', type: 'Behavioral Support', provider: 'Ms. Lee', frequency: '3x/week', duration: '20 min', location: 'Various', minutesDelivered: 48, minutesRequired: 60 },
+      {
+        id: 'svc3',
+        type: 'Specialized Instruction',
+        provider: 'Mr. Davis',
+        frequency: '5x/week',
+        duration: '60 min',
+        location: 'Inclusion Classroom',
+        minutesDelivered: 280,
+        minutesRequired: 300,
+      },
+      {
+        id: 'svc4',
+        type: 'Behavioral Support',
+        provider: 'Ms. Lee',
+        frequency: '3x/week',
+        duration: '20 min',
+        location: 'Various',
+        minutesDelivered: 48,
+        minutesRequired: 60,
+      },
     ],
-    accommodations: ['Visual schedule', 'Sensory breaks', 'Advance notice of transitions', 'Quiet testing environment'],
+    accommodations: [
+      'Visual schedule',
+      'Sensory breaks',
+      'Advance notice of transitions',
+      'Quiet testing environment',
+    ],
     complianceAlerts: [
-      { type: 'Annual Review', message: 'Annual review meeting due in 9 days', dueDate: '2025-01-25', severity: 'urgent' },
+      {
+        type: 'Annual Review',
+        message: 'Annual review meeting due in 9 days',
+        dueDate: '2025-01-25',
+        severity: 'urgent',
+      },
     ],
   },
   {
@@ -176,7 +251,8 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       {
         id: 'g5',
         domain: 'Communication',
-        description: 'Sophia will produce /r/ and /r/ blends correctly in conversational speech with 80% accuracy.',
+        description:
+          'Sophia will produce /r/ and /r/ blends correctly in conversational speech with 80% accuracy.',
         baseline: '40% accuracy',
         target: '80% accuracy',
         currentProgress: 65,
@@ -192,46 +268,84 @@ const MOCK_IEP_STUDENTS: IEPStudent[] = [
       },
     ],
     services: [
-      { id: 'svc5', type: 'Speech Therapy', provider: 'Ms. Patterson', frequency: '3x/week', duration: '30 min', location: 'Speech Room', minutesDelivered: 85, minutesRequired: 90 },
+      {
+        id: 'svc5',
+        type: 'Speech Therapy',
+        provider: 'Ms. Patterson',
+        frequency: '3x/week',
+        duration: '30 min',
+        location: 'Speech Room',
+        minutesDelivered: 85,
+        minutesRequired: 90,
+      },
     ],
-    accommodations: ['Extra time to respond verbally', 'Alternative to oral presentations when requested'],
+    accommodations: [
+      'Extra time to respond verbally',
+      'Alternative to oral presentations when requested',
+    ],
     complianceAlerts: [],
   },
 ];
 
 function getStatusColor(status: GoalStatus): string {
   switch (status) {
-    case 'mastered': return 'bg-green-100 text-green-800';
-    case 'on_track': return 'bg-blue-100 text-blue-800';
-    case 'in_progress': return 'bg-yellow-100 text-yellow-800';
-    case 'at_risk': return 'bg-red-100 text-red-800';
-    case 'not_started': return 'bg-gray-100 text-gray-800';
-    case 'discontinued': return 'bg-gray-100 text-gray-500';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'mastered':
+      return 'bg-green-100 text-green-800';
+    case 'on_track':
+      return 'bg-blue-100 text-blue-800';
+    case 'in_progress':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'at_risk':
+      return 'bg-red-100 text-red-800';
+    case 'not_started':
+      return 'bg-gray-100 text-gray-800';
+    case 'discontinued':
+      return 'bg-gray-100 text-gray-500';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
 }
 
 function getIEPStatusBadge(status: IEPStatus): { color: string; label: string } {
   switch (status) {
-    case 'active': return { color: 'bg-green-100 text-green-800', label: 'Active' };
-    case 'draft': return { color: 'bg-gray-100 text-gray-800', label: 'Draft' };
-    case 'review_pending': return { color: 'bg-orange-100 text-orange-800', label: 'Review Pending' };
-    case 'expired': return { color: 'bg-red-100 text-red-800', label: 'Expired' };
-    default: return { color: 'bg-gray-100 text-gray-800', label: status };
+    case 'active':
+      return { color: 'bg-green-100 text-green-800', label: 'Active' };
+    case 'draft':
+      return { color: 'bg-gray-100 text-gray-800', label: 'Draft' };
+    case 'review_pending':
+      return { color: 'bg-orange-100 text-orange-800', label: 'Review Pending' };
+    case 'expired':
+      return { color: 'bg-red-100 text-red-800', label: 'Expired' };
+    default:
+      return { color: 'bg-gray-100 text-gray-800', label: status };
   }
 }
 
-function ProgressBar({ current, target, label }: { current: number; target: number; label?: string }) {
+function ProgressBar({
+  current,
+  target,
+  label,
+}: {
+  current: number;
+  target: number;
+  label?: string;
+}) {
   const percentage = Math.min(100, (current / target) * 100);
-  const color = percentage >= 80 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+  const color =
+    percentage >= 80 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500';
 
   return (
     <div className="w-full">
       {label && <p className="text-xs text-muted mb-1">{label}</p>}
       <div className="h-2 w-full rounded-full bg-gray-200">
-        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${percentage}%` }} />
+        <div
+          className={`h-full rounded-full ${color} transition-all`}
+          style={{ width: `${percentage}%` }}
+        />
       </div>
-      <p className="text-xs text-muted mt-1">{current} / {target} ({percentage.toFixed(0)}%)</p>
+      <p className="text-xs text-muted mt-1">
+        {current} / {target} ({percentage.toFixed(0)}%)
+      </p>
     </div>
   );
 }
@@ -244,16 +358,30 @@ export default function IEPManagerPage() {
   const [progressNote, setProgressNote] = useState('');
   const [progressValue, setProgressValue] = useState('');
 
-  const urgentAlerts = students.flatMap(s =>
-    s.complianceAlerts.filter(a => a.severity === 'urgent').map(a => ({ ...a, studentName: s.name, studentId: s.id }))
+  const urgentAlerts = students.flatMap((s) =>
+    s.complianceAlerts
+      .filter((a) => a.severity === 'urgent')
+      .map((a) => ({ ...a, studentName: s.name, studentId: s.id }))
   );
 
-  const handleRecordProgress = (goal: IEPGoal) => {
-    // In production, this would call the API
-    console.log('Recording progress:', { goal: goal.id, value: progressValue, notes: progressNote });
-    setShowProgressModal(null);
-    setProgressNote('');
-    setProgressValue('');
+  const handleRecordProgress = async (goal: IEPGoal) => {
+    try {
+      await fetch(`/api/iep/goals/${goal.id}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          value: parseFloat(progressValue),
+          notes: progressNote,
+          recordedAt: new Date().toISOString(),
+        }),
+      });
+      setShowProgressModal(null);
+      setProgressNote('');
+      setProgressValue('');
+    } catch {
+      // Error handling - could add toast notification
+      setShowProgressModal(null);
+    }
   };
 
   const renderStudentList = () => (
@@ -270,7 +398,7 @@ export default function IEPManagerPage() {
                   <li key={idx} className="text-sm text-red-700">
                     <button
                       onClick={() => {
-                        const student = students.find(s => s.id === alert.studentId);
+                        const student = students.find((s) => s.id === alert.studentId);
                         if (student) {
                           setSelectedStudent(student);
                           setView('detail');
@@ -298,47 +426,66 @@ export default function IEPManagerPage() {
         <Card className="p-4">
           <p className="text-sm text-muted">Active IEPs</p>
           <p className="text-2xl font-bold text-green-600">
-            {students.filter(s => s.iepStatus === 'active').length}
+            {students.filter((s) => s.iepStatus === 'active').length}
           </p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted">Reviews Pending</p>
           <p className="text-2xl font-bold text-orange-600">
-            {students.filter(s => s.iepStatus === 'review_pending').length}
+            {students.filter((s) => s.iepStatus === 'review_pending').length}
           </p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted">Goals At Risk</p>
           <p className="text-2xl font-bold text-red-600">
-            {students.reduce((count, s) => count + s.goals.filter(g => g.status === 'at_risk').length, 0)}
+            {students.reduce(
+              (count, s) => count + s.goals.filter((g) => g.status === 'at_risk').length,
+              0
+            )}
           </p>
         </Card>
       </div>
 
       {/* Student List */}
       <div className="space-y-4">
-        {students.map(student => {
+        {students.map((student) => {
           const statusBadge = getIEPStatusBadge(student.iepStatus);
-          const goalsOnTrack = student.goals.filter(g => g.status === 'on_track' || g.status === 'mastered').length;
+          const goalsOnTrack = student.goals.filter(
+            (g) => g.status === 'on_track' || g.status === 'mastered'
+          ).length;
           const totalGoals = student.goals.length;
 
           return (
-            <Card key={student.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setSelectedStudent(student); setView('detail'); }}>
+            <Card
+              key={student.id}
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => {
+                setSelectedStudent(student);
+                setView('detail');
+              }}
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-medium text-primary">
-                    {student.name.split(' ').map(n => n[0]).join('')}
+                    {student.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')}
                   </div>
                   <div>
                     <h3 className="font-semibold">{student.name}</h3>
-                    <p className="text-sm text-muted">{student.grade} Grade | {student.eligibilityCategory}</p>
+                    <p className="text-sm text-muted">
+                      {student.grade} Grade | {student.eligibilityCategory}
+                    </p>
                     <p className="text-xs text-muted">Case Manager: {student.caseManager}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${statusBadge.color}`}>
+                    <span
+                      className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${statusBadge.color}`}
+                    >
                       {statusBadge.label}
                     </span>
                     <p className="text-xs text-muted mt-1">
@@ -355,8 +502,11 @@ export default function IEPManagerPage() {
 
               {/* Quick Goal Status */}
               <div className="mt-4 flex gap-2 flex-wrap">
-                {student.goals.map(goal => (
-                  <span key={goal.id} className={`inline-block rounded px-2 py-1 text-xs ${getStatusColor(goal.status)}`}>
+                {student.goals.map((goal) => (
+                  <span
+                    key={goal.id}
+                    className={`inline-block rounded px-2 py-1 text-xs ${getStatusColor(goal.status)}`}
+                  >
                     {goal.domain}: {goal.status.replace('_', ' ')}
                   </span>
                 ))}
@@ -377,7 +527,13 @@ export default function IEPManagerPage() {
       <div className="space-y-6">
         {/* Back Button & Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => { setSelectedStudent(null); setView('list'); }}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setSelectedStudent(null);
+              setView('list');
+            }}
+          >
             &#8592; Back to List
           </Button>
         </div>
@@ -387,20 +543,31 @@ export default function IEPManagerPage() {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-medium text-primary">
-                {selectedStudent.name.split(' ').map(n => n[0]).join('')}
+                {selectedStudent.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')}
               </div>
               <div>
                 <h2 className="text-xl font-bold">{selectedStudent.name}</h2>
-                <p className="text-muted">{selectedStudent.grade} Grade | {selectedStudent.eligibilityCategory}</p>
+                <p className="text-muted">
+                  {selectedStudent.grade} Grade | {selectedStudent.eligibilityCategory}
+                </p>
                 <p className="text-sm text-muted">Case Manager: {selectedStudent.caseManager}</p>
               </div>
             </div>
             <div className="text-right">
-              <span className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${statusBadge.color}`}>
+              <span
+                className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${statusBadge.color}`}
+              >
                 {statusBadge.label}
               </span>
-              <p className="text-sm text-muted mt-2">Annual Review: {new Date(selectedStudent.annualReviewDate).toLocaleDateString()}</p>
-              <p className="text-sm text-muted">Next Meeting: {new Date(selectedStudent.nextMeetingDate).toLocaleDateString()}</p>
+              <p className="text-sm text-muted mt-2">
+                Annual Review: {new Date(selectedStudent.annualReviewDate).toLocaleDateString()}
+              </p>
+              <p className="text-sm text-muted">
+                Next Meeting: {new Date(selectedStudent.nextMeetingDate).toLocaleDateString()}
+              </p>
             </div>
           </div>
         </Card>
@@ -413,7 +580,9 @@ export default function IEPManagerPage() {
               {selectedStudent.complianceAlerts.map((alert, idx) => (
                 <li key={idx} className="flex items-center justify-between text-sm text-red-700">
                   <span>{alert.message}</span>
-                  <span className="font-medium">Due: {new Date(alert.dueDate).toLocaleDateString()}</span>
+                  <span className="font-medium">
+                    Due: {new Date(alert.dueDate).toLocaleDateString()}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -424,19 +593,29 @@ export default function IEPManagerPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">IEP Goals</h3>
-            <Button variant="primary" className="text-sm">+ Add Goal</Button>
+            <Button variant="primary" className="text-sm">
+              + Add Goal
+            </Button>
           </div>
           <div className="space-y-4">
-            {selectedStudent.goals.map(goal => (
+            {selectedStudent.goals.map((goal) => (
               <Card key={goal.id} className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <span className={`inline-block rounded px-2 py-1 text-xs font-medium ${getStatusColor(goal.status)} mb-2`}>
+                    <span
+                      className={`inline-block rounded px-2 py-1 text-xs font-medium ${getStatusColor(goal.status)} mb-2`}
+                    >
                       {goal.domain} - {goal.status.replace('_', ' ')}
                     </span>
                     <p className="text-sm">{goal.description}</p>
                   </div>
-                  <Button variant="ghost" className="text-sm" onClick={() => setShowProgressModal(goal)}>
+                  <Button
+                    variant="ghost"
+                    className="text-sm"
+                    onClick={() => {
+                      setShowProgressModal(goal);
+                    }}
+                  >
                     Record Progress
                   </Button>
                 </div>
@@ -446,7 +625,11 @@ export default function IEPManagerPage() {
                     <p className="text-xs text-muted mb-1">Baseline: {goal.baseline}</p>
                     <p className="text-xs text-muted">Target: {goal.target}</p>
                   </div>
-                  <ProgressBar current={goal.currentProgress} target={goal.targetProgress} label="Progress toward goal" />
+                  <ProgressBar
+                    current={goal.currentProgress}
+                    target={goal.targetProgress}
+                    label="Progress toward goal"
+                  />
                 </div>
 
                 <div className="mt-4 border-t pt-4">
@@ -460,7 +643,9 @@ export default function IEPManagerPage() {
                             className="w-full bg-primary/60 rounded-t transition-all hover:bg-primary"
                             style={{ height: `${Math.min(100, height)}%` }}
                           />
-                          <span className="text-[10px] text-muted mt-1">{new Date(entry.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                          <span className="text-[10px] text-muted mt-1">
+                            {new Date(entry.date).toLocaleDateString('en-US', { month: 'short' })}
+                          </span>
                           {entry.notes && (
                             <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-lg whitespace-nowrap">
                               {entry.notes}
@@ -473,7 +658,8 @@ export default function IEPManagerPage() {
                 </div>
 
                 <p className="text-xs text-muted mt-2">
-                  Target Date: {new Date(goal.targetDate).toLocaleDateString()} | Last Updated: {new Date(goal.lastUpdated).toLocaleDateString()}
+                  Target Date: {new Date(goal.targetDate).toLocaleDateString()} | Last Updated:{' '}
+                  {new Date(goal.lastUpdated).toLocaleDateString()}
                 </p>
               </Card>
             ))}
@@ -484,7 +670,7 @@ export default function IEPManagerPage() {
         <div>
           <h3 className="text-lg font-semibold mb-4">Related Services</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            {selectedStudent.services.map(service => (
+            {selectedStudent.services.map((service) => (
               <Card key={service.id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -535,7 +721,9 @@ export default function IEPManagerPage() {
           <Heading kicker="Special Education" className="text-headline font-semibold">
             IEP Manager
           </Heading>
-          <p className="text-muted mt-1">Track IEP goals, services, and compliance for your students</p>
+          <p className="text-muted mt-1">
+            Track IEP goals, services, and compliance for your students
+          </p>
         </div>
 
         {view === 'list' && (
@@ -566,7 +754,9 @@ export default function IEPManagerPage() {
                 <input
                   type="number"
                   value={progressValue}
-                  onChange={(e) => setProgressValue(e.target.value)}
+                  onChange={(e) => {
+                    setProgressValue(e.target.value);
+                  }}
                   className="w-full rounded-lg border border-border px-3 py-2"
                   placeholder={`Target: ${showProgressModal.targetProgress}`}
                 />
@@ -575,7 +765,9 @@ export default function IEPManagerPage() {
                 <label className="block text-sm font-medium mb-1">Notes (optional)</label>
                 <textarea
                   value={progressNote}
-                  onChange={(e) => setProgressNote(e.target.value)}
+                  onChange={(e) => {
+                    setProgressNote(e.target.value);
+                  }}
                   className="w-full rounded-lg border border-border px-3 py-2"
                   rows={3}
                   placeholder="Add any observations or notes..."
@@ -584,8 +776,17 @@ export default function IEPManagerPage() {
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-              <Button variant="ghost" onClick={() => setShowProgressModal(null)}>Cancel</Button>
-              <Button variant="primary" onClick={() => handleRecordProgress(showProgressModal)}>Save Progress</Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowProgressModal(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => handleRecordProgress(showProgressModal)}>
+                Save Progress
+              </Button>
             </div>
           </Card>
         </div>

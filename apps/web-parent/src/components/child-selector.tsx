@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, User } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface Child {
   id: string;
@@ -11,16 +11,16 @@ interface Child {
 }
 
 interface ChildSelectorProps {
-  children: Child[];
+  students: Child[];
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
 
-export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorProps) {
+export function ChildSelector({ students, selectedId, onSelect }: ChildSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedChild = children.find((c) => c.id === selectedId);
+  const selectedChild = students.find((c) => c.id === selectedId);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -30,7 +30,9 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -41,23 +43,23 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
     }
   };
 
-  if (children.length === 0) {
+  if (students.length === 0) {
     return null;
   }
 
-  if (children.length === 1) {
+  if (students.length === 1) {
     return (
       <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
-        {children[0].avatar ? (
+        {students[0].avatar ? (
           <img
-            src={children[0].avatar}
-            alt={`${children[0].name}'s avatar`}
+            src={students[0].avatar}
+            alt={`${students[0].name}'s avatar`}
             className="w-6 h-6 rounded-full"
           />
         ) : (
           <User className="w-5 h-5 text-gray-500" aria-hidden="true" />
         )}
-        <span className="font-medium text-gray-900">{children[0].name}</span>
+        <span className="font-medium text-gray-900">{students[0].name}</span>
       </div>
     );
   }
@@ -65,7 +67,9 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+        }}
         onKeyDown={handleKeyDown}
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         aria-haspopup="listbox"
@@ -81,13 +85,9 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
         ) : (
           <User className="w-5 h-5 text-gray-500" aria-hidden="true" />
         )}
-        <span className="font-medium text-gray-900">
-          {selectedChild?.name || 'Select child'}
-        </span>
+        <span className="font-medium text-gray-900">{selectedChild?.name || 'Select child'}</span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-500 transition-transform ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -96,7 +96,7 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
           role="listbox"
           className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10"
         >
-          {children.map((child) => (
+          {students.map((child) => (
             <li
               key={child.id}
               role="option"
@@ -117,15 +117,17 @@ export function ChildSelector({ children, selectedId, onSelect }: ChildSelectorP
               }`}
             >
               {child.avatar ? (
-                <img src={child.avatar} alt={`${child.name}'s avatar`} className="w-6 h-6 rounded-full" />
+                <img
+                  src={child.avatar}
+                  alt={`${child.name}'s avatar`}
+                  className="w-6 h-6 rounded-full"
+                />
               ) : (
                 <User className="w-5 h-5 text-gray-500" aria-hidden="true" />
               )}
               <div>
                 <p className="font-medium text-gray-900">{child.name}</p>
-                {child.grade && (
-                  <p className="text-xs text-gray-500">Grade {child.grade}</p>
-                )}
+                {child.grade && <p className="text-xs text-gray-500">Grade {child.grade}</p>}
               </div>
             </li>
           ))}

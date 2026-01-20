@@ -1530,7 +1530,7 @@ class _LessonEditorScreenState extends State<_LessonEditorScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<SubjectArea>(
-                    value: _selectedSubject,
+                    initialValue: _selectedSubject,
                     decoration: const InputDecoration(labelText: 'Subject'),
                     items: SubjectArea.values.map((subject) {
                       return DropdownMenuItem(
@@ -1548,7 +1548,7 @@ class _LessonEditorScreenState extends State<_LessonEditorScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<GradeLevel>(
-                    value: _selectedGrade,
+                    initialValue: _selectedGrade,
                     decoration: const InputDecoration(labelText: 'Grade Level'),
                     items: GradeLevel.values.map((grade) {
                       return DropdownMenuItem(

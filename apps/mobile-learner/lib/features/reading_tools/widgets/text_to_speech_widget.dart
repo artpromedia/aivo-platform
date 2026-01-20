@@ -374,7 +374,7 @@ class _TextToSpeechWidgetState extends ConsumerState<TextToSpeechWidget> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _settings.voiceId,
+                      initialValue: _settings.voiceId,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),

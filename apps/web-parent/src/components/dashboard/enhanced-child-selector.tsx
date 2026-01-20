@@ -1,19 +1,9 @@
 'use client';
 
-import { Fragment, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { ChevronDown, User, Plus, Check, Settings, BookOpen, Clock, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import {
-  ChevronDown,
-  User,
-  Plus,
-  Check,
-  Circle,
-  Settings,
-  BookOpen,
-  Clock,
-  Star,
-} from 'lucide-react';
+import React, { useState } from 'react';
 
 export interface ChildData {
   id: string;
@@ -33,7 +23,7 @@ export interface ChildData {
 }
 
 interface EnhancedChildSelectorProps {
-  children: ChildData[];
+  students: ChildData[];
   selected: ChildData | null;
   onChange: (child: ChildData) => void;
   onAddChild?: () => void;
@@ -55,7 +45,7 @@ const statusLabels = {
 };
 
 export function EnhancedChildSelector({
-  children,
+  students,
   selected,
   onChange,
   onAddChild,
@@ -90,7 +80,7 @@ export function EnhancedChildSelector({
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
-  if (children.length === 0) {
+  if (students.length === 0) {
     return (
       <button
         onClick={onAddChild}
@@ -102,8 +92,8 @@ export function EnhancedChildSelector({
     );
   }
 
-  if (children.length === 1 && !compact) {
-    const child = children[0];
+  if (students.length === 1 && !compact) {
+    const child = students[0];
     return (
       <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
         <div className="relative">
@@ -136,16 +126,13 @@ export function EnhancedChildSelector({
   return (
     <div className="relative">
       {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-10"
-          onClick={handleClickOutside}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 z-10" onClick={handleClickOutside} />}
 
       {/* Trigger Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+        }}
         onKeyDown={handleKeyDown}
         className="flex items-center gap-3 px-4 py-2 bg-white rounded-lg shadow-sm border-2 border-gray-200 hover:border-indigo-400 transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
         aria-haspopup="listbox"
@@ -194,9 +181,9 @@ export function EnhancedChildSelector({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20">
-          {/* Children List */}
+          {/* Students List */}
           <ul role="listbox" className="divide-y divide-gray-100">
-            {children.map((child) => (
+            {students.map((child) => (
               <li
                 key={child.id}
                 role="option"
@@ -213,9 +200,7 @@ export function EnhancedChildSelector({
                 }}
                 tabIndex={0}
                 className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                  child.id === selected?.id
-                    ? 'bg-indigo-50'
-                    : 'hover:bg-gray-50'
+                  child.id === selected?.id ? 'bg-indigo-50' : 'hover:bg-gray-50'
                 }`}
               >
                 <div className="relative flex-shrink-0">
@@ -241,9 +226,7 @@ export function EnhancedChildSelector({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-gray-900">{child.name}</span>
-                    {child.id === selected?.id && (
-                      <Check className="w-5 h-5 text-indigo-600" />
-                    )}
+                    {child.id === selected?.id && <Check className="w-5 h-5 text-indigo-600" />}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span>Grade {child.gradeLevel}</span>
