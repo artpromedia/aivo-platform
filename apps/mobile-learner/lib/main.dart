@@ -13,8 +13,11 @@ import 'baseline/baseline_controller.dart';
 import 'firebase_options.dart';
 import 'focus/focus_service.dart';
 import 'offline/offline.dart';
+import 'onboarding/onboarding.dart';
 import 'pin/pin_controller.dart';
 import 'pin/pin_state.dart';
+import 'screens/onboarding/onboarding_screen.dart';
+import 'widgets/connectivity_banner.dart';
 import 'screens/baseline_break_screen.dart';
 import 'screens/baseline_complete_screen.dart';
 import 'screens/baseline_intro_screen.dart';
@@ -50,6 +53,7 @@ const bool _enableDesignSystemGallery = bool.fromEnvironment('AIVO_DESIGN_GALLER
 final _routerProvider = Provider<GoRouter>((ref) {
   final pinState = ref.watch(pinControllerProvider);
   final baselineState = ref.watch(learnerBaselineControllerProvider);
+  final onboardingState = ref.watch(onboardingControllerProvider);
 
   return GoRouter(
     initialLocation: '/login',
@@ -58,6 +62,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (context, state) => const LearnerLoginScreen()),
       // Legacy PIN-only entry (kept for deep links and testing)
       GoRoute(path: '/pin', builder: (context, state) => const PinEntryScreen()),
+      // Onboarding flow for new learners
+      GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
       GoRoute(
         path: '/plan',
         builder: (context, state) {
@@ -233,31 +239,48 @@ final _routerProvider = Provider<GoRouter>((ref) {
 
       final authed = pinState.isAuthenticated;
       final atLogin = state.matchedLocation == '/login' || state.matchedLocation == '/pin';
+      final atOnboarding = state.matchedLocation == '/onboarding';
 
       // Not authenticated -> go to login
       if (!authed && !atLogin) return '/login';
 
-      // Authenticated at login -> check baseline status and route appropriately
-      if (authed && atLogin) {
-        // Check baseline status
-        final profile = baselineState.profile;
+      // Authenticated - check onboarding status first
+      if (authed) {
+        // Still loading onboarding state
+        if (onboardingState.isLoading) return null;
 
-        if (profile == null && !baselineState.isLoading) {
-          // No profile loaded yet - go to plan (baseline check happens there)
-          return '/plan';
+        // Onboarding not complete - redirect to onboarding
+        if (!onboardingState.isCompleted && !atOnboarding && !atLogin) {
+          return '/onboarding';
         }
 
-        // Route based on baseline status
-        switch (profile?.status) {
-          case BaselineProfileStatus.notStarted:
-            return '/baseline/intro';
-          case BaselineProfileStatus.inProgress:
-            return '/baseline/question';
-          case BaselineProfileStatus.completed:
-          case BaselineProfileStatus.finalAccepted:
-          case BaselineProfileStatus.retestAllowed:
-          case null:
+        // Onboarding complete but at onboarding screen - move forward
+        if (onboardingState.isCompleted && atOnboarding) {
+          return '/baseline/intro';
+        }
+
+        // At login and onboarding complete -> check baseline status
+        if (atLogin) {
+          // Check baseline status
+          final profile = baselineState.profile;
+
+          if (profile == null && !baselineState.isLoading) {
+            // No profile loaded yet - go to plan (baseline check happens there)
             return '/plan';
+          }
+
+          // Route based on baseline status
+          switch (profile?.status) {
+            case BaselineProfileStatus.notStarted:
+              return '/baseline/intro';
+            case BaselineProfileStatus.inProgress:
+              return '/baseline/question';
+            case BaselineProfileStatus.completed:
+            case BaselineProfileStatus.finalAccepted:
+            case BaselineProfileStatus.retestAllowed:
+            case null:
+              return '/plan';
+          }
         }
       }
 
@@ -328,6 +351,7 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
   bool _baselineChecked = false;
   bool _offlinePreloaded = false;
   bool _notificationsInitialized = false;
+  bool _onboardingInitialized = false;
 
   @override
   void initState() {
@@ -339,11 +363,20 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
         _baselineChecked = false;
         _offlinePreloaded = false;
         _notificationsInitialized = false;
+        _onboardingInitialized = false;
+        // Reset onboarding state
+        ref.read(onboardingControllerProvider.notifier).reset();
         return;
       }
 
       // On authentication, load theme, check baseline, and preload offline data
       if (next.isAuthenticated && next.learnerId != null) {
+        // Initialize onboarding check first
+        if (!_onboardingInitialized) {
+          _onboardingInitialized = true;
+          ref.read(onboardingControllerProvider.notifier).init(next.learnerId!);
+        }
+
         if (!_themeLoaded) {
           _themeLoaded = true;
           loadAndApplyLearnerTheme(ref, next.learnerId!);
@@ -398,7 +431,6 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
     final pinState = ref.watch(pinControllerProvider);
     final router = ref.watch(_routerProvider);
     final theme = ref.watch(gradeThemeProvider);
-    final connectivityState = ref.watch(connectivityStateProvider);
 
     if (pinState.status == PinStatus.loading) {
       return MaterialApp(
@@ -427,8 +459,8 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
       builder: (context, child) {
         return Column(
           children: [
-            // Show offline banner when not connected
-            OfflineStatusBanner(connectivityState: connectivityState),
+            // Enhanced connectivity banner with multiple states
+            const ConnectivityBanner(),
             Expanded(child: child ?? const SizedBox.shrink()),
           ],
         );
