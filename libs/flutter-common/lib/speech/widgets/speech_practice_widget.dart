@@ -431,7 +431,7 @@ class _SpeechPracticeWidgetState extends State<SpeechPracticeWidget>
       margin: const EdgeInsets.symmetric(horizontal: 32),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: result.isCorrect ? AivoBrand.mint[50] : AivoBrand.warning[50],
+        color: result.isCorrect ? AivoBrand.mint.shade50 : AivoBrand.warning.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: result.isCorrect ? Colors.green : AivoBrand.warning,

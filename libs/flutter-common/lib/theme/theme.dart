@@ -15,9 +15,11 @@
 /// - `aivoThemeK5`, `aivoThemeG6_8`, `aivoThemeG9_12` - Pre-built themes
 /// - Theme extensions for BuildContext
 /// - Gradient and shadow helpers
+/// - Color shade extensions (shade100, shade700, etc.)
 
 library aivo_theme;
 
 export 'aivo_brand.dart';
 export 'aivo_theme.dart';
+export 'color_extensions.dart';
 export 'theme_extensions.dart';
