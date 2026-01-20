@@ -640,7 +640,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
             ),
           ),
           TextButton(
-            onPressed: () => _navigateToContext(this.context, context),
+            onPressed: () => _navigateToContext(
+              this.context,
+              ConversationContext.fromThreadContext(context),
+            ),
             child: const Text('View'),
           ),
         ],

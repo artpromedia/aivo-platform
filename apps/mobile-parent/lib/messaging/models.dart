@@ -421,3 +421,25 @@ class ThreadTypeSummary {
     );
   }
 }
+
+/// Context for a conversation (used for navigation)
+@immutable
+class ConversationContext {
+  final ContextType type;
+  final String? entityId;
+  final String? learnerId;
+
+  const ConversationContext({
+    required this.type,
+    this.entityId,
+    this.learnerId,
+  });
+
+  factory ConversationContext.fromThreadContext(ThreadContext threadContext) {
+    return ConversationContext(
+      type: threadContext.type,
+      entityId: threadContext.contextId,
+      learnerId: threadContext.learnerId,
+    );
+  }
+}

@@ -190,6 +190,19 @@ class AssignmentsNotifier extends StateNotifier<AssignmentsState> {
     }
   }
 
+  /// Close an assignment (prevent further submissions).
+  Future<void> closeAssignment(String id) async {
+    try {
+      final updated = await _repository.closeAssignment(id);
+      state = state.copyWith(
+        assignments: state.assignments.map((a) => a.id == id ? updated : a).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
   /// Duplicate an assignment.
   Future<Assignment?> duplicateAssignment(String id) async {
     try {

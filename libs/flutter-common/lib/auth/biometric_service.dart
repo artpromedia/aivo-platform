@@ -5,6 +5,9 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+// Import BiometricType from local_auth with alias to avoid conflict with our own enum
+import 'package:local_auth/local_auth.dart' as local_auth show BiometricType;
+
 /// Biometric authentication service for AIVO mobile apps.
 ///
 /// Provides secure biometric authentication for:
@@ -160,13 +163,13 @@ class BiometricService {
     }
   }
 
-  BiometricType _mapBiometricType(BiometricType_ type) {
+  BiometricType _mapBiometricType(local_auth.BiometricType type) {
     switch (type) {
-      case BiometricType_.face:
+      case local_auth.BiometricType.face:
         return BiometricType.face;
-      case BiometricType_.fingerprint:
+      case local_auth.BiometricType.fingerprint:
         return BiometricType.fingerprint;
-      case BiometricType_.iris:
+      case local_auth.BiometricType.iris:
         return BiometricType.iris;
       default:
         return BiometricType.deviceCredential;

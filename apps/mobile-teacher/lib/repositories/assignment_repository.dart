@@ -194,6 +194,42 @@ class AssignmentRepository {
     );
   }
 
+  /// Close an assignment (prevent further submissions).
+  Future<Assignment> closeAssignment(String id) async {
+    final existing = await db.getAssignment(id);
+    if (existing == null) {
+      throw Exception('Assignment not found: $id');
+    }
+
+    final closed = existing.copyWith(
+      status: AssignmentStatus.closed,
+      updatedAt: DateTime.now(),
+    );
+
+    await db.cacheAssignments([closed]);
+
+    if (await connectivity.isOnline) {
+      try {
+        await api.post('/assignments/$id/close');
+      } catch (e) {
+        await sync.queueUpdate(
+          entityType: 'assignment',
+          entityId: id,
+          data: {'action': 'close'},
+        );
+        rethrow;
+      }
+    } else {
+      await sync.queueUpdate(
+        entityType: 'assignment',
+        entityId: id,
+        data: {'action': 'close'},
+      );
+    }
+
+    return closed;
+  }
+
   /// Duplicate an assignment.
   Future<Assignment> duplicateAssignment(String id) async {
     if (!await connectivity.isOnline) {

@@ -42,10 +42,21 @@ const fastify = Fastify({
   },
 });
 
+// Get CORS origins based on environment
+function getCorsOrigins(): string[] {
+  const corsOrigins = process.env.CORS_ORIGINS;
+  if (corsOrigins) {
+    return corsOrigins.split(',');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return [];
+  }
+  return ['http://localhost:3000', 'http://localhost:3001'];
+}
+
 // Register CORS
-const corsOrigins = process.env.CORS_ORIGINS;
 await fastify.register(cors, {
-  origin: corsOrigins ? corsOrigins.split(',') : (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+  origin: getCorsOrigins(),
   credentials: true,
 });
 
