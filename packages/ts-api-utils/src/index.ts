@@ -21,5 +21,6 @@ export * from './random.js';
 export * from './audit.js';
 export * from './service-urls.js';
 export * from './dataloader.js';
+export * from './dataloader-factory.js';
 export * from './env-validation.js';
 export * from './soft-delete.js';

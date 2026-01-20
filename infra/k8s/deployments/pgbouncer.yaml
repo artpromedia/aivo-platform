@@ -1,0 +1,490 @@
+# ============================================================================
+# PgBouncer - PostgreSQL Connection Pooler
+# ============================================================================
+#
+# Addresses P0 Issue: Deploy PgBouncer to prevent connection exhaustion at scale
+#
+# PgBouncer provides:
+# - Connection pooling to reduce database connection overhead
+# - Transaction-mode pooling for optimal connection reuse
+# - Protection against connection storms
+# - Graceful connection handling
+#
+# Default Configuration:
+# - Pool mode: transaction (recommended for most workloads)
+# - Max client connections: 1000
+# - Default pool size per database: 20
+# - Reserve pool for admin connections: 5
+#
+# ============================================================================
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-config
+  namespace: aivo-infra
+  labels:
+    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/component: database-proxy
+data:
+  pgbouncer.ini: |
+    [databases]
+    ; Primary database connections - PgBouncer will route to the appropriate backend
+    ; Format: dbname = host=HOST port=PORT dbname=DBNAME
+    aivo_auth = host=${PG_HOST} port=5432 dbname=aivo_auth
+    aivo_billing = host=${PG_HOST} port=5432 dbname=aivo_billing
+    aivo_content = host=${PG_HOST} port=5432 dbname=aivo_content
+    aivo_learner = host=${PG_HOST} port=5432 dbname=aivo_learner
+    aivo_parent = host=${PG_HOST} port=5432 dbname=aivo_parent
+    aivo_analytics = host=${PG_HOST} port=5432 dbname=aivo_analytics
+    aivo_tenant = host=${PG_HOST} port=5432 dbname=aivo_tenant
+    aivo_research = host=${PG_HOST} port=5432 dbname=aivo_research
+    aivo_collaboration = host=${PG_HOST} port=5432 dbname=aivo_collaboration
+
+    ; Wildcard for any other database - useful for tenant-specific databases
+    * = host=${PG_HOST} port=5432
+
+    [pgbouncer]
+    ; ========================================================================
+    ; Connection Pooling Settings
+    ; ========================================================================
+
+    ; Pool mode: session, transaction, or statement
+    ; transaction mode is recommended for web applications
+    pool_mode = transaction
+
+    ; Maximum number of client connections allowed
+    max_client_conn = 1000
+
+    ; Default pool size per user/database pair
+    ; Adjust based on your PostgreSQL max_connections
+    default_pool_size = 20
+
+    ; Minimum pool size - keep this many connections warm
+    min_pool_size = 5
+
+    ; Reserve connections for superusers (admin operations)
+    reserve_pool_size = 5
+    reserve_pool_timeout = 3
+
+    ; ========================================================================
+    ; Timeouts
+    ; ========================================================================
+
+    ; Server connection timeout
+    server_connect_timeout = 15
+
+    ; Retry interval for server connections
+    server_login_retry = 15
+
+    ; Close server connections that have been idle for this many seconds
+    server_idle_timeout = 600
+
+    ; Close server connections after this many seconds
+    server_lifetime = 3600
+
+    ; Query timeout (0 = disabled)
+    query_timeout = 0
+
+    ; Max time a query can wait for a server connection
+    query_wait_timeout = 120
+
+    ; Client idle timeout (0 = disabled)
+    client_idle_timeout = 0
+
+    ; ========================================================================
+    ; Logging & Monitoring
+    ; ========================================================================
+
+    ; Log all connections
+    log_connections = 1
+
+    ; Log all disconnections
+    log_disconnections = 1
+
+    ; Log pooler errors
+    log_pooler_errors = 1
+
+    ; Stats logging interval
+    stats_period = 60
+
+    ; ========================================================================
+    ; Admin Interface
+    ; ========================================================================
+
+    ; Users allowed to run admin commands
+    admin_users = pgbouncer_admin
+
+    ; Users allowed to view stats
+    stats_users = pgbouncer_stats,pgbouncer_admin
+
+    ; ========================================================================
+    ; Authentication
+    ; ========================================================================
+
+    ; Authentication method
+    auth_type = scram-sha-256
+
+    ; User list file
+    auth_file = /etc/pgbouncer/userlist.txt
+
+    ; Auth query for looking up user passwords in database
+    ; auth_query = SELECT usename, passwd FROM pg_shadow WHERE usename=$1
+
+    ; ========================================================================
+    ; Network Settings
+    ; ========================================================================
+
+    ; Listen on all interfaces
+    listen_addr = 0.0.0.0
+
+    ; PgBouncer port
+    listen_port = 6432
+
+    ; Unix socket directory
+    unix_socket_dir = /var/run/pgbouncer
+
+    ; ========================================================================
+    ; TLS Settings (Enable in production)
+    ; ========================================================================
+
+    ; Server TLS mode: disable, allow, prefer, require, verify-ca, verify-full
+    server_tls_sslmode = prefer
+
+    ; CA certificate file
+    ; server_tls_ca_file = /etc/ssl/certs/ca-certificates.crt
+
+    ; ========================================================================
+    ; Application Name Tracking
+    ; ========================================================================
+
+    ; Track application names for debugging
+    application_name_add_host = 1
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgbouncer-secrets
+  namespace: aivo-infra
+  labels:
+    app.kubernetes.io/name: pgbouncer
+type: Opaque
+stringData:
+  # User list file format: "username" "password"
+  # Password can be MD5 or SCRAM-SHA-256 hash
+  # Generate with: echo -n "md5$(echo -n 'passwordusername' | md5sum | cut -d' ' -f1)"
+  userlist.txt: |
+    ; This file should be populated via external secrets management
+    ; Format: "username" "scram-sha-256-hash-or-md5hash"
+    ; Example entries (replace with actual credentials):
+    ; "aivo_app" "SCRAM-SHA-256$iterations:..."
+    ; "pgbouncer_admin" "SCRAM-SHA-256$iterations:..."
+    ; "pgbouncer_stats" "SCRAM-SHA-256$iterations:..."
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: aivo-infra
+  labels:
+    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/component: database-proxy
+    app.kubernetes.io/part-of: aivo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgbouncer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pgbouncer
+        app.kubernetes.io/component: database-proxy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9127"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: pgbouncer
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70  # pgbouncer user
+        runAsGroup: 70
+        fsGroup: 70
+
+      containers:
+        - name: pgbouncer
+          image: bitnami/pgbouncer:1.21.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: pgbouncer
+              containerPort: 6432
+              protocol: TCP
+
+          env:
+            - name: PGBOUNCER_DATABASE
+              value: "*"
+            - name: POSTGRESQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: pg-host
+            - name: POSTGRESQL_PORT
+              value: "5432"
+            - name: PGBOUNCER_PORT
+              value: "6432"
+            - name: PGBOUNCER_POOL_MODE
+              value: "transaction"
+            - name: PGBOUNCER_MAX_CLIENT_CONN
+              value: "1000"
+            - name: PGBOUNCER_DEFAULT_POOL_SIZE
+              value: "20"
+            - name: PGBOUNCER_MIN_POOL_SIZE
+              value: "5"
+            - name: PGBOUNCER_RESERVE_POOL_SIZE
+              value: "5"
+            - name: PGBOUNCER_SERVER_IDLE_TIMEOUT
+              value: "600"
+            - name: PGBOUNCER_QUERY_WAIT_TIMEOUT
+              value: "120"
+            - name: PGBOUNCER_AUTH_TYPE
+              value: "scram-sha-256"
+            # Admin credentials
+            - name: PGBOUNCER_ADMIN_USERS
+              value: "pgbouncer_admin"
+            - name: PGBOUNCER_STATS_USERS
+              value: "pgbouncer_stats"
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          livenessProbe:
+            tcpSocket:
+              port: pgbouncer
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            tcpSocket:
+              port: pgbouncer
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /var/run/pgbouncer
+
+        # Metrics exporter sidecar for Prometheus
+        - name: pgbouncer-exporter
+          image: prometheuscommunity/pgbouncer-exporter:v0.7.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: metrics
+              containerPort: 9127
+              protocol: TCP
+
+          env:
+            - name: PGBOUNCER_EXPORTER_HOST
+              value: "localhost"
+            - name: PGBOUNCER_EXPORTER_PORT
+              value: "6432"
+            - name: PGBOUNCER_EXPORTER_USER
+              value: "pgbouncer_stats"
+            - name: PGBOUNCER_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgbouncer-secrets
+                  key: stats-password
+                  optional: true
+
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: pgbouncer-config
+              - secret:
+                  name: pgbouncer-secrets
+        - name: tmp
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: pgbouncer
+              topologyKey: kubernetes.io/hostname
+
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: pgbouncer
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: aivo-infra
+  labels:
+    app.kubernetes.io/name: pgbouncer
+spec:
+  type: ClusterIP
+  ports:
+    - name: pgbouncer
+      port: 6432
+      targetPort: pgbouncer
+      protocol: TCP
+    - name: metrics
+      port: 9127
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: pgbouncer
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pgbouncer
+  namespace: aivo-infra
+  labels:
+    app.kubernetes.io/name: pgbouncer
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pgbouncer
+  namespace: aivo-infra
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgbouncer
+
+---
+# Network Policy: Only allow connections from aivo namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgbouncer-network-policy
+  namespace: aivo-infra
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: pgbouncer
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from aivo services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: aivo
+      ports:
+        - protocol: TCP
+          port: 6432
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9127
+  egress:
+    # Allow to PostgreSQL
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: aivo-infra
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# ServiceMonitor for Prometheus Operator
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pgbouncer
+  namespace: aivo-infra
+  labels:
+    app.kubernetes.io/name: pgbouncer
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgbouncer
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - aivo-infra

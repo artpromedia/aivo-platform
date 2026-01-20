@@ -73,3 +73,6 @@ export 'error_handling/error_handling.dart' hide ErrorCategory;
 
 // Deep linking
 export 'deep_linking/deep_linking.dart';
+
+// Mock guard utility for safe mock mode
+export 'utils/mock_guard.dart';

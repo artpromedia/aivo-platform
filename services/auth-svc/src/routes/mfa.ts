@@ -18,7 +18,31 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import type { PrismaClient } from '../generated/prisma-client/index.js';
+import { createRateLimiter } from '../lib/rate-limit.js';
 import { MfaService } from '../services/mfa.service.js';
+
+/**
+ * Rate limiter for MFA challenge verification
+ * 5 attempts per 15 minutes per IP - prevents brute-force attacks on MFA codes
+ * SECURITY: This is a critical endpoint as it's publicly accessible
+ */
+const mfaChallengeRateLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  keyPrefix: 'auth:mfa-challenge',
+  message: 'Too many MFA verification attempts. Please try again later.',
+});
+
+/**
+ * Rate limiter for MFA backup code regeneration
+ * 3 attempts per hour per IP - backup codes are sensitive
+ */
+const mfaBackupCodesRateLimiter = createRateLimiter({
+  max: 3,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  keyPrefix: 'auth:mfa-backup',
+  message: 'Too many backup code requests. Please try again later.',
+});
 
 // ============================================================================
 // Types
@@ -251,10 +275,12 @@ export async function registerMfaRoutes(
 
   // --------------------------------------------------------------------------
   // POST /mfa/challenge/verify - Verify MFA challenge during login
+  // SECURITY: Rate limited to prevent brute-force attacks on 6-digit codes
   // --------------------------------------------------------------------------
   fastify.post<{ Body: MfaChallengeVerifyBody }>(
     '/mfa/challenge/verify',
     {
+      preHandler: mfaChallengeRateLimiter,
       schema: {
         description: 'Verify MFA challenge during login flow',
         tags: ['MFA'],
@@ -334,11 +360,12 @@ export async function registerMfaRoutes(
 
   // --------------------------------------------------------------------------
   // POST /mfa/backup-codes/regenerate - Generate new backup codes
+  // SECURITY: Rate limited to prevent enumeration attacks
   // --------------------------------------------------------------------------
   fastify.post<{ Body: MfaBackupCodesBody }>(
     '/mfa/backup-codes/regenerate',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, mfaBackupCodesRateLimiter],
       schema: {
         description: 'Regenerate backup codes (requires current TOTP code)',
         tags: ['MFA'],
