@@ -263,3 +263,359 @@ async function findParentForLearner(
     return null;
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IEP COMPARISON EVENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface IepComparisonReadyEvent {
+  type: 'IEP_COMPARISON_READY';
+  tenantId: string;
+  learnerId: string;
+  profileId: string;
+  comparisonId: string;
+  overallMatchScore: number;
+  timestamp: string;
+}
+
+export interface IepDecisionMadeEvent {
+  type: 'IEP_DECISION_MADE';
+  tenantId: string;
+  learnerId: string;
+  profileId: string;
+  comparisonId: string;
+  decision: string;
+  timestamp: string;
+}
+
+/**
+ * Publish event when IEP comparison is ready for review.
+ * Triggers notification to parent/teacher to review comparison results.
+ */
+export async function publishIepComparisonReady(
+  event: Omit<IepComparisonReadyEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  const fullEvent: IepComparisonReadyEvent = {
+    type: 'IEP_COMPARISON_READY',
+    ...event,
+    timestamp: new Date().toISOString(),
+  };
+
+  console.log('[EventPublisher] IEP_COMPARISON_READY event:', JSON.stringify(fullEvent));
+
+  try {
+    // Find the parent linked to this learner
+    const parentInfo = await findParentForLearner(event.tenantId, event.learnerId);
+
+    if (!parentInfo) {
+      console.log('[EventPublisher] No parent found for learner, skipping notification');
+      return;
+    }
+
+    // Get learner name
+    let learnerName = 'Your child';
+    try {
+      const learnerData = await prisma.$queryRaw<{ firstName: string }[]>`
+        SELECT "firstName" FROM "learners" WHERE id = ${event.learnerId} LIMIT 1
+      `;
+      if (learnerData?.[0]?.firstName) {
+        learnerName = learnerData[0].firstName;
+      }
+    } catch {
+      // Table might not exist in test environment
+    }
+
+    // Determine match description
+    let matchDescription: string;
+    if (event.overallMatchScore >= 0.8) {
+      matchDescription = 'strong alignment';
+    } else if (event.overallMatchScore >= 0.6) {
+      matchDescription = 'good alignment with some differences';
+    } else if (event.overallMatchScore >= 0.4) {
+      matchDescription = 'moderate alignment';
+    } else {
+      matchDescription = 'significant differences';
+    }
+
+    // Call notify-svc to send the notification
+    const notifySvcUrl = config.notifySvcUrl || 'http://localhost:4012';
+
+    const payload = {
+      tenantId: event.tenantId,
+      learnerId: event.learnerId,
+      learnerName,
+      parentId: parentInfo.parentId,
+      parentEmail: parentInfo.parentEmail,
+      parentPhone: parentInfo.parentPhone,
+      parentName: parentInfo.parentName,
+      comparisonId: event.comparisonId,
+      matchDescription,
+      overallMatchScore: event.overallMatchScore,
+    };
+
+    console.log('[EventPublisher] Sending IEP comparison notification:', JSON.stringify(payload));
+
+    const response = await fetch(`${notifySvcUrl}/iep/comparison-ready`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[EventPublisher] IEP comparison notification failed:', response.status, errorBody);
+      return;
+    }
+
+    const result = await response.json();
+    console.log('[EventPublisher] IEP comparison notification sent:', JSON.stringify(result));
+  } catch (error) {
+    console.error('[EventPublisher] Error sending IEP comparison notification:', error);
+  }
+}
+
+/**
+ * Publish event when parent/teacher makes decision on IEP comparison.
+ * Triggers downstream processing based on decision.
+ */
+export async function publishIepDecisionMade(
+  event: Omit<IepDecisionMadeEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  const fullEvent: IepDecisionMadeEvent = {
+    type: 'IEP_DECISION_MADE',
+    ...event,
+    timestamp: new Date().toISOString(),
+  };
+
+  console.log('[EventPublisher] IEP_DECISION_MADE event:', JSON.stringify(fullEvent));
+
+  try {
+    // Based on decision, trigger appropriate downstream action
+    switch (event.decision) {
+      case 'AGREE_WITH_SYSTEM':
+        // Trigger new IEP generation based on assessment
+        await triggerIepGeneration(event);
+        break;
+
+      case 'PREFER_EXISTING':
+        // Import existing IEP goals into the system
+        await triggerExistingIepImport(event);
+        break;
+
+      case 'MERGE_BOTH':
+        // Generate merged IEP with both sources
+        await triggerMergedIepGeneration(event);
+        break;
+
+      case 'REQUEST_REVIEW':
+        // Notify special education coordinator for review
+        await triggerProfessionalReview(event);
+        break;
+
+      default:
+        console.log('[EventPublisher] Unknown decision type:', event.decision);
+    }
+
+    // Notify parent of next steps
+    await notifyParentOfDecisionProcessing(event);
+  } catch (error) {
+    console.error('[EventPublisher] Error processing IEP decision:', error);
+  }
+}
+
+/**
+ * Trigger generation of new IEP based on assessment results.
+ */
+async function triggerIepGeneration(
+  event: Omit<IepDecisionMadeEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  const iepSvcUrl = config.iepSvcUrl || 'http://localhost:4016';
+
+  try {
+    const response = await fetch(`${iepSvcUrl}/ieps/generate-from-assessment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify({
+        tenantId: event.tenantId,
+        learnerId: event.learnerId,
+        profileId: event.profileId,
+        comparisonId: event.comparisonId,
+        source: 'BASELINE_ASSESSMENT',
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[EventPublisher] IEP generation failed:', response.status);
+    } else {
+      console.log('[EventPublisher] IEP generation triggered successfully');
+    }
+  } catch (error) {
+    console.error('[EventPublisher] Error triggering IEP generation:', error);
+  }
+}
+
+/**
+ * Trigger import of existing IEP goals into the system.
+ */
+async function triggerExistingIepImport(
+  event: Omit<IepDecisionMadeEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  const iepSvcUrl = config.iepSvcUrl || 'http://localhost:4016';
+
+  try {
+    const response = await fetch(`${iepSvcUrl}/ieps/import-from-document`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify({
+        tenantId: event.tenantId,
+        learnerId: event.learnerId,
+        profileId: event.profileId,
+        comparisonId: event.comparisonId,
+        source: 'UPLOADED_IEP',
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[EventPublisher] IEP import failed:', response.status);
+    } else {
+      console.log('[EventPublisher] IEP import triggered successfully');
+    }
+  } catch (error) {
+    console.error('[EventPublisher] Error triggering IEP import:', error);
+  }
+}
+
+/**
+ * Trigger generation of merged IEP combining both sources.
+ */
+async function triggerMergedIepGeneration(
+  event: Omit<IepDecisionMadeEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  const iepSvcUrl = config.iepSvcUrl || 'http://localhost:4016';
+
+  try {
+    const response = await fetch(`${iepSvcUrl}/ieps/generate-merged`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify({
+        tenantId: event.tenantId,
+        learnerId: event.learnerId,
+        profileId: event.profileId,
+        comparisonId: event.comparisonId,
+        sources: ['UPLOADED_IEP', 'BASELINE_ASSESSMENT'],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[EventPublisher] Merged IEP generation failed:', response.status);
+    } else {
+      console.log('[EventPublisher] Merged IEP generation triggered successfully');
+    }
+  } catch (error) {
+    console.error('[EventPublisher] Error triggering merged IEP generation:', error);
+  }
+}
+
+/**
+ * Trigger professional review request for the IEP comparison.
+ */
+async function triggerProfessionalReview(
+  event: Omit<IepDecisionMadeEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  const notifySvcUrl = config.notifySvcUrl || 'http://localhost:4012';
+
+  try {
+    const response = await fetch(`${notifySvcUrl}/iep/request-review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify({
+        tenantId: event.tenantId,
+        learnerId: event.learnerId,
+        profileId: event.profileId,
+        comparisonId: event.comparisonId,
+        reviewType: 'IEP_COMPARISON_DISCREPANCY',
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[EventPublisher] Review request failed:', response.status);
+    } else {
+      console.log('[EventPublisher] Professional review requested successfully');
+    }
+  } catch (error) {
+    console.error('[EventPublisher] Error requesting professional review:', error);
+  }
+}
+
+/**
+ * Notify parent that their decision is being processed.
+ */
+async function notifyParentOfDecisionProcessing(
+  event: Omit<IepDecisionMadeEvent, 'type' | 'timestamp'>
+): Promise<void> {
+  try {
+    const parentInfo = await findParentForLearner(event.tenantId, event.learnerId);
+
+    if (!parentInfo) {
+      return;
+    }
+
+    const notifySvcUrl = config.notifySvcUrl || 'http://localhost:4012';
+
+    // Get decision description
+    let decisionDescription: string;
+    switch (event.decision) {
+      case 'AGREE_WITH_SYSTEM':
+        decisionDescription = 'We are generating a new IEP based on the assessment results.';
+        break;
+      case 'PREFER_EXISTING':
+        decisionDescription = 'We are importing goals from your existing IEP.';
+        break;
+      case 'MERGE_BOTH':
+        decisionDescription = 'We are creating a comprehensive IEP combining both sources.';
+        break;
+      case 'REQUEST_REVIEW':
+        decisionDescription = 'A specialist will review the comparison and contact you.';
+        break;
+      default:
+        decisionDescription = 'Your decision has been recorded.';
+    }
+
+    const response = await fetch(`${notifySvcUrl}/iep/decision-confirmation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.serviceToken || ''}`,
+      },
+      body: JSON.stringify({
+        tenantId: event.tenantId,
+        parentId: parentInfo.parentId,
+        parentEmail: parentInfo.parentEmail,
+        parentName: parentInfo.parentName,
+        decision: event.decision,
+        decisionDescription,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[EventPublisher] Decision confirmation failed:', response.status);
+    }
+  } catch (error) {
+    console.error('[EventPublisher] Error sending decision confirmation:', error);
+  }
+}

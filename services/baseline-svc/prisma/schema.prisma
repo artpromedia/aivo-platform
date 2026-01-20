@@ -59,8 +59,9 @@ model BaselineProfile {
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
 
-  attempts     BaselineAttempt[] @relation("ProfileAttempts")
-  finalAttempt BaselineAttempt?  @relation("FinalAttempt", fields: [finalAttemptId], references: [id])
+  attempts     BaselineAttempt[]      @relation("ProfileAttempts")
+  finalAttempt BaselineAttempt?       @relation("FinalAttempt", fields: [finalAttemptId], references: [id])
+  iepDocuments BaselineIepDocument[]  // Uploaded IEP documents for comparison
 
   @@unique([tenantId, learnerId])
   @@index([tenantId, learnerId])
@@ -84,6 +85,7 @@ model BaselineAttempt {
   profileFinal    BaselineProfile?         @relation("FinalAttempt")
   items           BaselineItem[]
   skillEstimates  BaselineSkillEstimate[]
+  iepComparisons  IepComparison[]          // Comparisons with uploaded IEP documents
 
   @@unique([baselineProfileId, attemptNumber])
   @@index([baselineProfileId, attemptNumber])
@@ -140,4 +142,109 @@ model BaselineSkillEstimate {
   @@unique([baselineAttemptId, skillCode])
   @@index([baselineAttemptId, skillCode])
   @@map("baseline_skill_estimates")
+}
+
+// ── IEP Document Upload Models ──────────────────────────────────────────────
+
+enum IepDocumentStatus {
+  PENDING          // Uploaded, awaiting processing
+  PROCESSING       // OCR/AI extraction in progress
+  PROCESSED        // Successfully extracted and analyzed
+  COMPARISON_READY // Comparison with assessment complete
+  APPROVED         // Parent/teacher approved to proceed
+  REJECTED         // Document rejected or invalid
+  ERROR            // Processing error occurred
+
+  @@map("iep_document_status")
+}
+
+enum IepComparisonDecision {
+  PENDING           // Awaiting parent/teacher decision
+  AGREE_WITH_SYSTEM // Parent agrees with system assessment
+  PREFER_EXISTING   // Parent prefers existing IEP goals
+  MERGE_BOTH        // Combine goals from both sources
+  REQUEST_REVIEW    // Request professional review
+
+  @@map("iep_comparison_decision")
+}
+
+/// Uploaded IEP document linked to a baseline profile
+model BaselineIepDocument {
+  id                String            @id @default(uuid()) @db.Uuid
+  baselineProfileId String            @map("baseline_profile_id") @db.Uuid
+
+  // File information
+  fileId            String            @map("file_id") @db.Uuid
+  filename          String
+  mimeType          String            @map("mime_type")
+  fileSizeBytes     Int               @map("file_size_bytes")
+  s3Key             String            @map("s3_key")
+
+  // Processing status
+  status            IepDocumentStatus @default(PENDING)
+  processingError   String?           @map("processing_error")
+
+  // Extracted content from OCR/AI
+  extractedTextJson Json?             @map("extracted_text_json")
+  extractedGoalsJson Json?            @map("extracted_goals_json")
+  extractedAccommodationsJson Json?   @map("extracted_accommodations_json")
+  extractedServicesJson Json?         @map("extracted_services_json")
+  extractedMetadataJson Json?         @map("extracted_metadata_json")
+
+  // Upload metadata
+  uploadedByUserId  String            @map("uploaded_by_user_id") @db.Uuid
+  uploadedByRole    String            @map("uploaded_by_role") // 'parent' or 'teacher'
+  uploadNotes       String?           @map("upload_notes")
+
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  processedAt       DateTime?         @map("processed_at") @db.Timestamptz
+
+  profile     BaselineProfile      @relation(fields: [baselineProfileId], references: [id], onDelete: Cascade)
+  comparisons IepComparison[]
+
+  @@index([baselineProfileId])
+  @@index([status])
+  @@map("baseline_iep_documents")
+}
+
+/// Comparison results between uploaded IEP and system assessment
+model IepComparison {
+  id                  String               @id @default(uuid()) @db.Uuid
+  iepDocumentId       String               @map("iep_document_id") @db.Uuid
+  baselineAttemptId   String               @map("baseline_attempt_id") @db.Uuid
+
+  // Comparison analysis results (AI-generated)
+  summaryJson         Json                 @map("summary_json")
+  domainComparisonsJson Json               @map("domain_comparisons_json")
+  goalAlignmentJson   Json                 @map("goal_alignment_json")
+  discrepanciesJson   Json?                @map("discrepancies_json")
+  recommendationsJson Json?                @map("recommendations_json")
+
+  // Confidence scores
+  overallMatchScore   Decimal              @map("overall_match_score") @db.Decimal(5, 3)
+  confidenceLevel     Decimal              @map("confidence_level") @db.Decimal(5, 3)
+
+  // Parent/Teacher decision
+  decision            IepComparisonDecision @default(PENDING)
+  decisionByUserId    String?              @map("decision_by_user_id") @db.Uuid
+  decisionByRole      String?              @map("decision_by_role")
+  decisionNotes       String?              @map("decision_notes")
+  decisionAt          DateTime?            @map("decision_at") @db.Timestamptz
+
+  // New IEP generation (if approved)
+  newIepGenerated     Boolean              @default(false) @map("new_iep_generated")
+  generatedIepId      String?              @map("generated_iep_id") @db.Uuid
+
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+
+  iepDocument   BaselineIepDocument @relation(fields: [iepDocumentId], references: [id], onDelete: Cascade)
+  attempt       BaselineAttempt     @relation(fields: [baselineAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([iepDocumentId, baselineAttemptId])
+  @@index([iepDocumentId])
+  @@index([baselineAttemptId])
+  @@index([decision])
+  @@map("iep_comparisons")
 }

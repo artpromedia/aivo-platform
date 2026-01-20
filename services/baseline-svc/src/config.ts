@@ -28,6 +28,8 @@ export const config = {
   aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
   aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
   learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4015',
+  iepSvcUrl: process.env.IEP_SVC_URL || 'http://localhost:4016',
+  notifySvcUrl: process.env.NOTIFY_SVC_URL || 'http://localhost:4012',
   serviceToken: process.env.SERVICE_TOKEN || '',
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
 };

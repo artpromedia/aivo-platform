@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { baselineRoutes } from './routes/baseline.js';
+import { iepUploadRoutes } from './routes/iepUpload.js';
 
 export function buildApp(): FastifyInstance {
   const fastify = Fastify({
@@ -20,6 +21,7 @@ export function buildApp(): FastifyInstance {
 
   // Register routes
   void fastify.register(baselineRoutes);
+  void fastify.register(iepUploadRoutes); // IEP document upload and comparison routes
 
   return fastify;
 }
