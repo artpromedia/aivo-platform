@@ -18,6 +18,7 @@ import {
   Mail,
   Smartphone,
   User,
+  Users,
   ChevronRight,
   Check,
   Eye,
@@ -93,6 +94,14 @@ export default function SettingsPage() {
   };
 
   const sections = [
+    {
+      id: 'caregivers',
+      title: 'Caregivers',
+      description: 'Invite family members to monitor your child',
+      icon: Users,
+      color: 'text-teal-600 bg-teal-100',
+      href: '/settings/caregivers',
+    },
     {
       id: 'notifications',
       title: 'Notifications',
@@ -170,22 +179,26 @@ export default function SettingsPage() {
         {!activeSection ? (
           // Settings Menu
           <div className="space-y-3">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className="w-full text-left bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-200 transition-all flex items-center gap-4"
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${section.color}`}>
-                  <section.icon className="w-6 h-6" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{section.title}</h3>
-                  <p className="text-sm text-gray-500">{section.description}</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </button>
-            ))}
+            {sections.map((section) => {
+              const SectionButton = section.href ? 'a' : 'button';
+              return (
+                <SectionButton
+                  key={section.id}
+                  href={section.href}
+                  onClick={section.href ? undefined : () => setActiveSection(section.id)}
+                  className="w-full text-left bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-200 transition-all flex items-center gap-4"
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${section.color}`}>
+                    <section.icon className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">{section.title}</h3>
+                    <p className="text-sm text-gray-500">{section.description}</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </SectionButton>
+              );
+            })}
           </div>
         ) : activeSection === 'notifications' ? (
           <NotificationSettings

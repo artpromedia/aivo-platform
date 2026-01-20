@@ -47,6 +47,9 @@ model Parent {
   pushSubscriptions       PushSubscription[]
   digestLogs              DigestLog[]
   sessions                ParentSession[]
+  // Caregiver delegation relations
+  delegatedCaregiverLinks CaregiverStudentLink[]  @relation("DelegatedCaregiverLinks")
+  sentCaregiverInvites    CaregiverInvite[]       @relation("SentCaregiverInvites")
 
   @@index([email])
   @@index([status])
@@ -390,6 +393,11 @@ model Profile {
   studentNotes          TeacherNote[]           @relation("StudentNotes")
   teacherNotes          TeacherNote[]           @relation("TeacherNotes")
 
+  // Caregiver delegation relations
+  caregiverLinks        CaregiverStudentLink[]  @relation("CaregiverStudentLinks")
+  caregiverInvites      CaregiverInvite[]       @relation("CaregiverInviteStudent")
+  caregiverLimit        CaregiverLimit?         @relation("CaregiverLimitProfile")
+
   // Other relations
   enrollments           Enrollment[]
   learnerModel          LearnerModel?
@@ -557,4 +565,209 @@ model Assignment {
   @@index([classId])
   @@index([dueAt])
   @@map("assignments")
+}
+
+// ============================================================================
+// CAREGIVER DELEGATION
+// ============================================================================
+// Allows parents to delegate dashboard access to other adults (grandparents,
+// nannies, aunts/uncles, etc.) with similar viewing permissions.
+// Each license allows up to 2 additional caregivers per child.
+
+model Caregiver {
+  id                      String                  @id @default(cuid())
+  email                   String                  @unique
+  passwordHash            String
+  givenName               String
+  familyName              String
+  phone                   String?
+  photoUrl                String?
+  language                String                  @default("en")
+  timezone                String                  @default("UTC")
+  status                  String                  @default("active") // pending, active, suspended, deactivated
+  emailVerified           Boolean                 @default(false)
+  notificationPreferences Json                    @default("{}")
+  lastLoginAt             DateTime?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  // Relations
+  studentLinks            CaregiverStudentLink[]
+  invitesAccepted         CaregiverInvite[]       @relation("AcceptedCaregiverInvites")
+  notifications           CaregiverNotification[]
+  verificationTokens      CaregiverVerificationToken[]
+  passwordResetTokens     CaregiverPasswordResetToken[]
+  sessions                CaregiverSession[]
+
+  @@index([email])
+  @@index([status])
+  @@map("caregivers")
+}
+
+model CaregiverStudentLink {
+  id              String    @id @default(cuid())
+  caregiverId     String
+  studentId       String
+  relationship    String    @default("caregiver") // caregiver, grandparent, nanny, aunt_uncle, family_friend, other
+  status          String    @default("active") // active, pending, revoked
+  permissions     Json      @default("{}")
+  delegatedById   String    // Parent who delegated access
+  delegatedAt     DateTime  @default(now())
+  revokedAt       DateTime?
+  revokedById     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  caregiver       Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  student         Profile   @relation("CaregiverStudentLinks", fields: [studentId], references: [id], onDelete: Cascade)
+  delegatedBy     Parent    @relation("DelegatedCaregiverLinks", fields: [delegatedById], references: [id])
+
+  @@unique([caregiverId, studentId])
+  @@index([caregiverId])
+  @@index([studentId])
+  @@index([delegatedById])
+  @@index([status])
+  @@map("caregiver_student_links")
+}
+
+model CaregiverInvite {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  studentId       String
+  caregiverEmail  String
+  caregiverName   String?
+  relationship    String    @default("caregiver") // caregiver, grandparent, nanny, aunt_uncle, family_friend, other
+  invitedByParentId String
+  caregiverId     String?
+  status          String    @default("pending") // pending, accepted, expired, revoked
+  permissions     Json      @default("{}") // Permissions being granted
+  message         String?   // Personal message from parent
+  language        String    @default("en")
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  student         Profile   @relation("CaregiverInviteStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  invitedByParent Parent    @relation("SentCaregiverInvites", fields: [invitedByParentId], references: [id], onDelete: Cascade)
+  caregiver       Caregiver? @relation("AcceptedCaregiverInvites", fields: [caregiverId], references: [id])
+
+  @@index([code])
+  @@index([caregiverEmail])
+  @@index([studentId])
+  @@index([invitedByParentId])
+  @@index([status])
+  @@map("caregiver_invites")
+}
+
+// Maximum caregivers allowed per student per license
+model CaregiverLimit {
+  id              String    @id @default(cuid())
+  studentId       String    @unique
+  maxCaregivers   Int       @default(2) // Default limit of 2 caregivers per child
+  currentCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  student         Profile   @relation("CaregiverLimitProfile", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("caregiver_limits")
+}
+
+// Caregiver notifications
+model CaregiverNotification {
+  id          String    @id @default(cuid())
+  caregiverId String
+  type        String    // achievement, progress_update, activity_alert
+  title       String
+  body        String
+  data        Json?
+  read        Boolean   @default(false)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([caregiverId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("caregiver_notifications")
+}
+
+// Caregiver authentication tokens
+model CaregiverVerificationToken {
+  id          String    @id @default(cuid())
+  caregiverId String
+  token       String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([caregiverId])
+  @@map("caregiver_verification_tokens")
+}
+
+model CaregiverPasswordResetToken {
+  id          String    @id @default(cuid())
+  caregiverId String
+  token       String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([caregiverId])
+  @@map("caregiver_password_reset_tokens")
+}
+
+model CaregiverSession {
+  id           String    @id @default(cuid())
+  caregiverId  String
+  token        String    @unique
+  deviceInfo   Json?
+  ipAddress    String?
+  expiresAt    DateTime
+  lastActiveAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  caregiver    Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([caregiverId])
+  @@index([expiresAt])
+  @@map("caregiver_sessions")
+}
+
+// Audit log for caregiver delegation actions
+model CaregiverDelegationLog {
+  id            String    @id @default(cuid())
+  studentId     String
+  action        String    // invited, accepted, revoked, permissions_updated
+  actorId       String    // Who performed the action
+  actorType     String    // parent, caregiver, admin
+  caregiverId   String?   // Caregiver involved (null for invite creation)
+  caregiverEmail String?  // Email for invite actions
+  previousValue Json?     // Previous state (for updates)
+  newValue      Json?     // New state
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([studentId])
+  @@index([caregiverId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("caregiver_delegation_logs")
 }

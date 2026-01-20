@@ -16,6 +16,7 @@ import { ReportsController } from './pdf/reports.controller.js';
 import { OnboardingController } from './onboarding/onboarding.controller.js';
 import { HomeworkController } from './homework/homework.controller.js';
 import { LearnerController } from './learner/learner.controller.js';
+import { CaregiverController } from './caregiver/caregiver.controller.js';
 
 // Services
 import { ParentService } from './parent/parent.service.js';
@@ -28,6 +29,7 @@ import { ContentModerationService } from './moderation/content-moderation.servic
 import { PdfReportService } from './pdf/pdf-report.service.js';
 import { OnboardingService } from './onboarding/onboarding.service.js';
 import { HomeworkService } from './homework/homework.service.js';
+import { CaregiverService } from './caregiver/caregiver.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { CryptoService } from './crypto/crypto.service.js';
 import { I18nService } from './i18n/i18n.service.js';
@@ -50,6 +52,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     OnboardingController,
     HomeworkController,
     LearnerController,
+    CaregiverController,
   ],
   providers: [
     // Core services
@@ -68,12 +71,14 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     PdfReportService,
     OnboardingService,
     HomeworkService,
+    CaregiverService,
   ],
   exports: [
     ParentService,
     MessagingService,
     NotificationService,
     OnboardingService,
+    CaregiverService,
   ],
 })
 export class ParentModule implements NestModule {
@@ -107,6 +112,9 @@ export class ParentModule implements NestModule {
         // Learner routes use their own auth
         { path: 'learner/pin-login', method: RequestMethod.POST },
         { path: 'learner/baseline-status', method: RequestMethod.PATCH },
+        // Caregiver public routes (invite acceptance)
+        { path: 'caregiver/accept-invite', method: RequestMethod.POST },
+        { path: 'caregiver/invite/:code', method: RequestMethod.GET },
       )
       .forRoutes('*');
   }
