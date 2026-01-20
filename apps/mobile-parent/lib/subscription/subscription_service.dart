@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'subscription_models.dart';
@@ -24,13 +25,26 @@ const _entitlementsBaseUrl = String.fromEnvironment(
 
 const _useMock = bool.fromEnvironment('USE_SUBSCRIPTION_MOCK', defaultValue: false);
 
-/// Log warning when mock data is used in non-debug mode
-void _logMockWarning() {
-  assert(() {
-    // ignore: avoid_print
-    print('⚠️ WARNING: Subscription service is using mock data.');
-    return true;
-  }());
+/// Exception thrown when mock data is used in production.
+class SubscriptionServiceException implements Exception {
+  const SubscriptionServiceException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+/// Ensures mock data is only used in debug mode.
+/// Throws [SubscriptionServiceException] if mock is enabled in production.
+void _ensureMockAllowedOrThrow(String operation) {
+  if (!kDebugMode) {
+    throw SubscriptionServiceException(
+      'Mock data is not allowed in production. '
+      'Unable to perform $operation - Subscription API is unavailable.',
+    );
+  }
+  // Log warning in debug mode
+  debugPrint('⚠️ WARNING: Subscription service is using mock data for $operation.');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -58,7 +72,7 @@ class SubscriptionService {
   /// Get or create billing account for tenant.
   Future<BillingAccount> getBillingAccount(String tenantId) async {
     if (_useMock) {
-      _logMockWarning();
+      _ensureMockAllowedOrThrow('getBillingAccount');
       return _mockBillingAccount(tenantId);
     }
 
@@ -68,7 +82,10 @@ class SubscriptionService {
 
   /// Ensure Stripe customer exists for billing account.
   Future<String> ensureStripeCustomer(String billingAccountId) async {
-    if (_useMock) return 'cus_mock_${billingAccountId.substring(0, 8)}';
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('ensureStripeCustomer');
+      return 'cus_mock_${billingAccountId.substring(0, 8)}';
+    }
 
     final response = await _paymentsDio.post(
       '/payments/accounts/$billingAccountId/customer',
@@ -86,7 +103,10 @@ class SubscriptionService {
     String paymentMethodId, {
     bool setAsDefault = true,
   }) async {
-    if (_useMock) return _mockPaymentInstrument();
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('attachPaymentMethod');
+      return _mockPaymentInstrument();
+    }
 
     final response = await _paymentsDio.post(
       '/payments/accounts/$billingAccountId/payment-method/attach',
@@ -100,7 +120,10 @@ class SubscriptionService {
 
   /// Get default payment method for billing account.
   Future<PaymentInstrument?> getDefaultPaymentMethod(String billingAccountId) async {
-    if (_useMock) return null; // No payment method by default in mock
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('getDefaultPaymentMethod');
+      return null; // No payment method by default in mock
+    }
 
     try {
       final response = await _billingDio.get(
@@ -119,7 +142,10 @@ class SubscriptionService {
 
   /// Get subscription for billing account.
   Future<Subscription?> getSubscription(String billingAccountId) async {
-    if (_useMock) return null; // No subscription by default
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('getSubscription');
+      return null; // No subscription by default
+    }
 
     try {
       final response = await _billingDio.get(
@@ -134,7 +160,10 @@ class SubscriptionService {
 
   /// Get subscription by ID.
   Future<Subscription> getSubscriptionById(String subscriptionId) async {
-    if (_useMock) return _mockSubscription(subscriptionId);
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('getSubscriptionById');
+      return _mockSubscription(subscriptionId);
+    }
 
     final response = await _paymentsDio.get(
       '/payments/subscriptions/$subscriptionId',
@@ -146,7 +175,10 @@ class SubscriptionService {
   Future<CreateSubscriptionResponse> createSubscription(
     CreateSubscriptionRequest request,
   ) async {
-    if (_useMock) return _mockCreateSubscription(request);
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('createSubscription');
+      return _mockCreateSubscription(request);
+    }
 
     final response = await _paymentsDio.post(
       '/payments/subscriptions',
@@ -160,7 +192,10 @@ class SubscriptionService {
     String subscriptionId, {
     bool cancelImmediately = false,
   }) async {
-    if (_useMock) return;
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('cancelSubscription');
+      return;
+    }
 
     await _paymentsDio.post(
       '/payments/subscriptions/$subscriptionId/cancel',
@@ -173,7 +208,10 @@ class SubscriptionService {
     String subscriptionId,
     String moduleCode,
   ) async {
-    if (_useMock) return;
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('scheduleModuleRemoval');
+      return;
+    }
 
     await _paymentsDio.post(
       '/payments/subscriptions/$subscriptionId/modules/$moduleCode/schedule-removal',
@@ -185,7 +223,10 @@ class SubscriptionService {
     String subscriptionId,
     String moduleCode,
   ) async {
-    if (_useMock) return;
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('addModuleToSubscription');
+      return;
+    }
 
     await _paymentsDio.post(
       '/payments/subscriptions/$subscriptionId/modules/$moduleCode/add',
@@ -198,7 +239,10 @@ class SubscriptionService {
 
   /// Get available plans.
   Future<List<Plan>> getAvailablePlans() async {
-    if (_useMock) return _mockPlans();
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('getAvailablePlans');
+      return _mockPlans();
+    }
 
     final response = await _billingDio.get('/plans');
     final data = response.data as List<dynamic>;
@@ -210,7 +254,10 @@ class SubscriptionService {
 
   /// Get plan by SKU.
   Future<Plan?> getPlanBySku(String sku) async {
-    if (_useMock) return _mockPlans().where((p) => p.sku == sku).firstOrNull;
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('getPlanBySku');
+      return _mockPlans().where((p) => p.sku == sku).firstOrNull;
+    }
 
     try {
       final response = await _billingDio.get('/plans/by-sku/$sku');
@@ -227,7 +274,10 @@ class SubscriptionService {
 
   /// Get entitlements for tenant.
   Future<List<Entitlement>> getEntitlements(String tenantId) async {
-    if (_useMock) return _mockEntitlements(tenantId);
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('getEntitlements');
+      return _mockEntitlements(tenantId);
+    }
 
     final response = await _entitlementsDio.get('/entitlements/by-tenant/$tenantId');
     final data = response.data as List<dynamic>;
@@ -236,7 +286,10 @@ class SubscriptionService {
 
   /// Check if a specific module is enabled.
   Future<bool> isModuleEnabled(String tenantId, String moduleCode) async {
-    if (_useMock) return moduleCode == 'ELA' || moduleCode == 'MATH';
+    if (_useMock) {
+      _ensureMockAllowedOrThrow('isModuleEnabled');
+      return moduleCode == 'ELA' || moduleCode == 'MATH';
+    }
 
     try {
       final response = await _entitlementsDio.get(

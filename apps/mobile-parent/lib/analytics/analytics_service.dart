@@ -5,12 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const _baseUrl = String.fromEnvironment('ANALYTICS_BASE_URL', defaultValue: 'http://localhost:4030');
 const _useAnalyticsMock = bool.fromEnvironment('USE_ANALYTICS_MOCK', defaultValue: false);
 
-/// Log warning when mock data is used in non-debug mode
-void _logMockWarning() {
-  assert(() {
-    debugPrint('⚠️ WARNING: Analytics service is using mock data.');
-    return true;
-  }());
+/// Ensures mock data is only used in debug mode.
+/// Throws [AnalyticsException] if mock is enabled in production.
+void _ensureMockAllowedOrThrow(String operation) {
+  if (!kDebugMode) {
+    throw AnalyticsException(
+      'Mock data is not allowed in production. '
+      'Unable to perform $operation - Analytics API is unavailable.',
+    );
+  }
+  // Log warning in debug mode
+  debugPrint('⚠️ WARNING: Analytics service is using mock data for $operation.');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -142,7 +147,7 @@ class AnalyticsService {
     int days = 28,
   }) async {
     if (_useAnalyticsMock) {
-      _logMockWarning();
+      _ensureMockAllowedOrThrow('getHomeworkSummary');
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockHomeworkSummary(learnerId);
     }
@@ -170,6 +175,7 @@ class AnalyticsService {
     int days = 28,
   }) async {
     if (_useAnalyticsMock) {
+      _ensureMockAllowedOrThrow('getFocusSummary');
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockFocusSummary(learnerId);
     }

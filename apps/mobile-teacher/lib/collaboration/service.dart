@@ -3,6 +3,7 @@
 /// API client for teacher-focused collaboration features.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 import 'models.dart';
@@ -14,13 +15,26 @@ const _baseUrl = String.fromEnvironment(
 
 const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: false);
 
-/// Log warning when mock data is used in non-debug mode
-void _logMockWarning() {
-  assert(() {
-    // ignore: avoid_print
-    print('⚠️ WARNING: Collaboration service is using mock data.');
-    return true;
-  }());
+/// Exception thrown when mock data is used in production.
+class CollaborationServiceException implements Exception {
+  const CollaborationServiceException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+/// Ensures mock data is only used in debug mode.
+/// Throws [CollaborationServiceException] if mock is enabled in production.
+void _ensureMockAllowedOrThrow(String operation) {
+  if (!kDebugMode) {
+    throw CollaborationServiceException(
+      'Mock data is not allowed in production. '
+      'Unable to perform $operation - Collaboration API is unavailable.',
+    );
+  }
+  // Log warning in debug mode
+  debugPrint('⚠️ WARNING: Collaboration service is using mock data for $operation.');
 }
 
 /// Service for teacher collaboration APIs.
@@ -37,7 +51,7 @@ class TeacherCollaborationService {
   /// Get collaboration summary for a classroom.
   Future<ClassroomCollaborationSummary> getClassroomSummary(String classId) async {
     if (_useMock) {
-      _logMockWarning();
+      _ensureMockAllowedOrThrow('getClassroomSummary');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockClassroomSummary(classId);
     }
@@ -95,6 +109,7 @@ class TeacherCollaborationService {
   /// Get care team members for a learner.
   Future<List<CareTeamMember>> getCareTeam(String learnerId) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('getCareTeam');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockCareTeam(learnerId);
     }
@@ -139,6 +154,7 @@ class TeacherCollaborationService {
   /// Get action plans for a learner.
   Future<List<ActionPlan>> getActionPlans(String learnerId) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('getActionPlans');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockActionPlans(learnerId);
     }
@@ -154,6 +170,7 @@ class TeacherCollaborationService {
   /// Get school-context tasks for a learner.
   Future<List<ActionPlanTask>> getSchoolTasks(String learnerId) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('getSchoolTasks');
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockSchoolTasks(learnerId);
     }
@@ -233,7 +250,7 @@ class TeacherCollaborationService {
     int? rating,
   }) async {
     if (_useMock) {
-      _logMockWarning();
+      _ensureMockAllowedOrThrow('recordTaskCompletion');
       await Future.delayed(const Duration(milliseconds: 300));
       return;
     }
@@ -255,6 +272,7 @@ class TeacherCollaborationService {
   /// Get care notes for a learner.
   Future<List<CareNote>> getCareNotes(String learnerId) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('getCareNotes');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockCareNotes(learnerId);
     }
@@ -277,6 +295,7 @@ class TeacherCollaborationService {
     bool requiresFollowUp = false,
   }) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('createCareNote');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockCareNotes(learnerId).first;
     }
@@ -298,6 +317,7 @@ class TeacherCollaborationService {
   /// Acknowledge a care note.
   Future<void> acknowledgeCareNote(String learnerId, String noteId) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('acknowledgeCareNote');
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
@@ -359,6 +379,7 @@ class TeacherCollaborationService {
   /// Get upcoming meetings for teacher.
   Future<List<CareMeeting>> getUpcomingMeetings() async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('getUpcomingMeetings');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockMeetings();
     }
@@ -374,6 +395,7 @@ class TeacherCollaborationService {
   /// Get meetings for a specific learner.
   Future<List<CareMeeting>> getLearnerMeetings(String learnerId) async {
     if (_useMock) {
+      _ensureMockAllowedOrThrow('getLearnerMeetings');
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockMeetings().where((m) => m.learnerId == learnerId).toList();
     }

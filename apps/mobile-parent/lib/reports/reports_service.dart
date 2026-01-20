@@ -5,12 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const _baseUrl = String.fromEnvironment('REPORTS_BASE_URL', defaultValue: 'http://localhost:4050');
 const _useReportsMock = bool.fromEnvironment('USE_REPORTS_MOCK', defaultValue: false);
 
-/// Log warning when mock data is used in non-debug mode
-void _logMockWarning() {
-  assert(() {
-    debugPrint('⚠️ WARNING: Reports service is using mock data.');
-    return true;
-  }());
+/// Ensures mock data is only used in debug mode.
+/// Throws [ReportsException] if mock is enabled in production.
+void _ensureMockAllowedOrThrow(String operation) {
+  if (!kDebugMode) {
+    throw ReportsException(
+      'Mock data is not allowed in production. '
+      'Unable to perform $operation - Reports API is unavailable.',
+    );
+  }
+  // Log warning in debug mode
+  debugPrint('⚠️ WARNING: Reports service is using mock data for $operation.');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -292,7 +297,7 @@ class ReportsService {
     int days = 28,
   }) async {
     if (_useReportsMock) {
-      _logMockWarning();
+      _ensureMockAllowedOrThrow('getParentLearnerReport');
       await Future.delayed(const Duration(milliseconds: 600));
       return _mockParentLearnerReport(learnerId);
     }
