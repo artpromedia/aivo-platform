@@ -411,9 +411,9 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
         ..._templates.map((template) => _LessonPlanCard(
               lesson: template,
               onTap: () => _useExistingTemplate(context, template),
-              onEdit: () {},
-              onDuplicate: () {},
-              onDelete: () {},
+              onEdit: () => _editTemplate(context, template),
+              onDuplicate: () => _duplicateTemplate(template),
+              onDelete: () => _deleteTemplate(template),
               isTemplate: true,
             )),
       ],
@@ -642,6 +642,68 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
           existingLesson: template,
           isFromTemplate: true,
         ),
+      ),
+    );
+  }
+
+  void _editTemplate(BuildContext context, LessonPlan template) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _LessonEditorScreen(
+          teacherId: widget.teacherId,
+          existingLesson: template,
+        ),
+      ),
+    );
+  }
+
+  void _duplicateTemplate(LessonPlan template) {
+    setState(() {
+      _templates.add(LessonPlan(
+        id: 'tmpl${DateTime.now().millisecondsSinceEpoch}',
+        title: '${template.title} (Copy)',
+        subject: template.subject,
+        gradeLevel: template.gradeLevel,
+        duration: template.duration,
+        objectives: List.from(template.objectives),
+        standards: List.from(template.standards),
+        activities: List.from(template.activities),
+        materials: List.from(template.materials),
+        differentiations: Map.from(template.differentiations),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Template duplicated')),
+    );
+  }
+
+  void _deleteTemplate(LessonPlan template) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Template?'),
+        content: Text('Are you sure you want to delete "${template.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                _templates.removeWhere((t) => t.id == template.id);
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Template deleted')),
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

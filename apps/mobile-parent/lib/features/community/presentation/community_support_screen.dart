@@ -194,6 +194,37 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
     });
   }
 
+  void _toggleGroupMembership(SupportGroup group) {
+    final index = _supportGroups.indexWhere((g) => g.id == group.id);
+    if (index == -1) return;
+
+    final isJoining = !group.isJoined;
+
+    setState(() {
+      _supportGroups[index] = SupportGroup(
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        memberCount: isJoining ? group.memberCount + 1 : group.memberCount - 1,
+        topics: group.topics,
+        isJoined: isJoining,
+        nextMeetingAt: group.nextMeetingAt,
+      );
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isJoining
+          ? 'Joined "${group.name}"'
+          : 'Left "${group.name}"'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => _toggleGroupMembership(_supportGroups[index]),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -342,11 +373,7 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
           final group = _supportGroups[index - 1];
           return _SupportGroupCard(
             group: group,
-            onJoin: () {
-              setState(() {
-                // Toggle join status
-              });
-            },
+            onJoin: () => _toggleGroupMembership(group),
           );
         },
       ),
