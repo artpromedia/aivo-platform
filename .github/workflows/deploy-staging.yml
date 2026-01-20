@@ -133,6 +133,8 @@ jobs:
         if: success()
         uses: slackapi/slack-github-action@v1
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
               "text": "✅ Staging deployment successful",
@@ -161,14 +163,13 @@ jobs:
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Notify on failure
         if: failure()
         uses: slackapi/slack-github-action@v1
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
               "text": "❌ Staging deployment failed",
@@ -192,9 +193,6 @@ jobs:
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
   # ════════════════════════════════════════════════════════════════════════════
   # RUN MIGRATIONS
