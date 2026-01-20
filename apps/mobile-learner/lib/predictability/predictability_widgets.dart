@@ -96,8 +96,6 @@ class _PredictableSessionWrapperState extends ConsumerState<PredictableSessionWr
     HapticFeedback.lightImpact();
   }
 
-  // TODO: Wire up _updateProgress to schedule item interactions
-  // ignore: unused_element
   Future<void> _updateProgress(String itemId) async {
     if (_plan == null) return;
 
@@ -182,7 +180,8 @@ class _PredictableSessionWrapperState extends ConsumerState<PredictableSessionWr
             plan: _plan!,
             onClose: _toggleSchedule,
             onItemTap: (item) {
-              // In real implementation, this would navigate to the item
+              // Update progress when user taps on a schedule item
+              _updateProgress(item.id);
               _toggleSchedule();
             },
           ),
@@ -1228,7 +1227,8 @@ class AnxietySupportButton extends ConsumerWidget {
             TextButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                // TODO: Navigate to calming routine
+                // Navigate to calming routine
+                _showCalmingRoutine(context, result.recommendedRoutine!);
               },
               icon: const Icon(Icons.spa),
               label: const Text('Take a calming break'),
@@ -1238,6 +1238,36 @@ class AnxietySupportButton extends ConsumerWidget {
             child: const Text("I'm ready to continue"),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCalmingRoutine(BuildContext context, SessionRoutine routine) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: RoutineIndicator(
+            routine: routine,
+            onComplete: () {
+              Navigator.pop(context);
+              HapticFeedback.mediumImpact();
+            },
+            onStepComplete: (stepIndex, step) {
+              HapticFeedback.lightImpact();
+            },
+            autoAdvance: true,
+          ),
+        ),
       ),
     );
   }

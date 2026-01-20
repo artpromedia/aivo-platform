@@ -7,6 +7,7 @@
 
 import type { LearningObjectSubject, LearningObjectGradeBand } from '@prisma/client';
 
+import { config } from './config.js';
 import { prisma } from './prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -232,19 +233,137 @@ export async function searchContent(query: SearchQuery): Promise<SearchResponse>
 }
 
 /**
+ * Session event response from session-svc
+ */
+interface SessionEventResponse {
+  id: string;
+  eventType: string;
+  eventTime: string;
+  metadataJson?: Record<string, unknown> | null;
+}
+
+/**
+ * Session response from session-svc
+ */
+interface SessionResponse {
+  id: string;
+  tenantId: string;
+  learnerId: string;
+  startedAt: string;
+  endedAt?: string | null;
+  events?: SessionEventResponse[];
+}
+
+/**
  * Get LO IDs recently used by a learner (for deduplication).
- * This would query session events in a real implementation.
- * For now, returns a stub - to be integrated with session-svc.
+ * Queries session-svc for ACTIVITY_COMPLETED events within the specified time window.
+ *
+ * @param tenantId - The tenant ID
+ * @param learnerId - The learner ID
+ * @param daysPast - Number of days to look back (default: 7)
+ * @returns Array of Learning Object IDs the learner has recently completed
  */
 export async function getRecentlyUsedLOIds(
-  _tenantId: string,
-  _learnerId: string,
-  _daysPast = 7
+  tenantId: string,
+  learnerId: string,
+  daysPast = 7
 ): Promise<string[]> {
-  // TODO: Query session-svc for ACTIVITY_COMPLETED events
-  // Return LO IDs from metadataJson.learningObjectId
-  // For now, return empty array (stub)
-  return [];
+  try {
+    // Build query parameters to fetch recent sessions
+    const params = new URLSearchParams({
+      tenantId,
+      learnerId,
+      limit: '100',
+      offset: '0',
+      includeIncomplete: 'false',
+    });
+
+    // Fetch recent sessions from session-svc
+    const response = await fetch(`${config.sessionSvcUrl}/sessions?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.sessionSvcApiKey && { 'X-Internal-API-Key': config.sessionSvcApiKey }),
+      },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    if (!response.ok) {
+      console.warn(`[getRecentlyUsedLOIds] session-svc returned ${response.status}, returning empty array`);
+      return [];
+    }
+
+    const data = (await response.json()) as { items: SessionResponse[]; total: number };
+
+    // Filter sessions by date (within daysPast)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysPast);
+
+    const recentSessionIds = data.items
+      .filter((session) => new Date(session.startedAt) >= cutoffDate)
+      .map((session) => session.id);
+
+    if (recentSessionIds.length === 0) {
+      return [];
+    }
+
+    // Collect LO IDs from ACTIVITY_COMPLETED events in each session
+    const loIds = new Set<string>();
+
+    // Fetch events for each session (in parallel, but limited)
+    const batchSize = 5;
+    for (let i = 0; i < recentSessionIds.length; i += batchSize) {
+      const batch = recentSessionIds.slice(i, i + batchSize);
+
+      const eventPromises = batch.map(async (sessionId) => {
+        try {
+          const eventsResponse = await fetch(
+            `${config.sessionSvcUrl}/sessions/${sessionId}/events`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(config.sessionSvcApiKey && { 'X-Internal-API-Key': config.sessionSvcApiKey }),
+              },
+              signal: AbortSignal.timeout(5000),
+            }
+          );
+
+          if (!eventsResponse.ok) {
+            return [];
+          }
+
+          const eventsData = (await eventsResponse.json()) as { events: SessionEventResponse[] };
+          return eventsData.events || [];
+        } catch {
+          return [];
+        }
+      });
+
+      const eventResults = await Promise.all(eventPromises);
+
+      // Extract LO IDs from ACTIVITY_COMPLETED events
+      for (const events of eventResults) {
+        for (const event of events) {
+          if (event.eventType === 'ACTIVITY_COMPLETED' && event.metadataJson) {
+            const learningObjectId = event.metadataJson.learningObjectId as string | undefined;
+            const contentId = event.metadataJson.contentId as string | undefined;
+            const loId = learningObjectId || contentId;
+
+            if (loId && typeof loId === 'string') {
+              loIds.add(loId);
+            }
+          }
+        }
+      }
+    }
+
+    return Array.from(loIds);
+  } catch (error) {
+    // Log but don't fail - gracefully degrade to empty array
+    console.warn('[getRecentlyUsedLOIds] Error querying session-svc:', error);
+    return [];
+  }
 }
 
 /**

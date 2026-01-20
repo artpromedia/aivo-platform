@@ -13,41 +13,80 @@ import * as React from 'react';
 import { useState } from 'react';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useStudent } from '@/hooks/use-students';
+import { studentsApi } from '@/lib/api';
 
 export default function StudentDetailPage({ params }: { params: { studentId: string } }) {
   const router = useRouter();
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
 
-  // TODO: Replace with real API call
-  // This mock data should be replaced with: const { data: student } = useStudentQuery(params.studentId)
-  const student = {
-    id: params.studentId,
-    firstName: 'Alex',
-    lastName: 'Smith',
-    grade: 8,
-    email: 'alex.smith@students.school.edu',
-    currentGrade: 65,
-    hasIep: true,
-    classes: ['Algebra I - Period 1', 'Biology - Period 4'],
-    accommodations: ['Extended Time', 'Preferential Seating', 'Frequent Breaks'],
-  };
+  // Fetch student data using the useStudent hook
+  const { student: studentData, loading, error } = useStudent(params.studentId);
+
+  // Transform student data for display
+  const student = studentData
+    ? {
+        id: studentData.id,
+        firstName: studentData.firstName,
+        lastName: studentData.lastName,
+        grade: parseInt(studentData.gradeLevel, 10) || 0,
+        email: studentData.email,
+        currentGrade: studentData.overallGrade ?? 0,
+        hasIep: studentData.hasIep,
+        classes: studentData.classes?.map((c) => c.className) ?? [],
+        accommodations: studentData.accommodations?.map((a) => a.description) ?? [],
+      }
+    : null;
 
   const handleAddNote = async () => {
-    if (!noteText.trim()) return;
+    if (!noteText.trim() || !student) return;
 
     setIsSaving(true);
+    setNoteError(null);
     try {
-      // TODO: Replace with real API call
-      // await addStudentNote(student.id, noteText);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulated delay
+      await studentsApi.addNote(student.id, {
+        content: noteText,
+        type: 'observation',
+        isPrivate: false,
+      });
       setNoteText('');
       setIsNoteModalOpen(false);
+    } catch (err) {
+      setNoteError(err instanceof Error ? err.message : 'Failed to save note');
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent mx-auto" />
+          <p className="mt-4 text-gray-500">Loading student data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !student) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <p className="text-red-600">{error?.message ?? 'Student not found'}</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 text-sm text-primary-600 hover:underline"
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -181,6 +220,9 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
             />
+            {noteError && (
+              <p className="mt-2 text-sm text-red-600">{noteError}</p>
+            )}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"

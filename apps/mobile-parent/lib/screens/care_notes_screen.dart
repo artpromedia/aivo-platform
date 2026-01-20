@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -512,7 +514,7 @@ class _CareNoteCard extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        // TODO: Reply
+                        _replyToNote(context, note);
                       },
                       icon: const Icon(Icons.reply),
                       label: const Text('Reply'),
@@ -523,7 +525,7 @@ class _CareNoteCard extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        // TODO: Share
+                        _shareNote(note);
                       },
                       icon: const Icon(Icons.share),
                       label: const Text('Share'),
@@ -546,6 +548,45 @@ class _CareNoteCard extends ConsumerWidget {
     } catch (e) {
       debugPrint('[CareNotesScreen] Error acknowledging note: $e');
     }
+  }
+
+  void _replyToNote(BuildContext context, CareNote note) {
+    // Navigate to messages with the note author to reply
+    context.push('/messages', extra: {
+      'recipientId': note.author.userId,
+      'recipientName': note.author.displayName,
+      'contextType': 'care_note',
+      'contextId': note.id,
+    });
+  }
+
+  void _shareNote(CareNote note) {
+    final buffer = StringBuffer();
+    buffer.writeln('Care Team Note');
+    buffer.writeln('---');
+    buffer.writeln('From: ${note.author.displayName} (${note.author.roleDisplayName})');
+    buffer.writeln('Type: ${note.noteTypeDisplayName}');
+    buffer.writeln('Date: ${_formatShareDate(note.createdAt)}');
+    buffer.writeln();
+    if (note.title != null) {
+      buffer.writeln(note.title);
+      buffer.writeln();
+    }
+    buffer.writeln(note.content);
+    if (note.tags.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Tags: ${note.tags.map((t) => '#$t').join(' ')}');
+    }
+
+    Share.share(
+      buffer.toString(),
+      subject: note.title ?? 'Care Team Note from ${note.author.displayName}',
+    );
+  }
+
+  String _formatShareDate(DateTime date) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }
 

@@ -1392,3 +1392,127 @@ function mockNotifications(tenantId: string): NotificationsResponse {
     unread: 2,
   };
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENEWAL TASK TYPES & API
+// ══════════════════════════════════════════════════════════════════════════════
+
+export type RenewalTaskStatus = 'SCHEDULED' | 'DUE' | 'IN_PROGRESS' | 'COMPLETED' | 'CHURNED';
+
+export interface RenewalTask {
+  id: string;
+  contractId: string;
+  tenantId: string;
+  status: RenewalTaskStatus;
+  dueDate: string;
+  contractEndDate: string;
+  renewalQuoteId: string | null;
+  assignedTo: string | null;
+  notes: string | null;
+  activityLog: RenewalActivity[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RenewalActivity {
+  action: string;
+  by: string;
+  notes?: string;
+  timestamp: string;
+}
+
+/**
+ * Fetch renewal task for a contract.
+ */
+export async function fetchRenewalTask(
+  contractId: string,
+  accessToken?: string
+): Promise<RenewalTask | null> {
+  if (USE_MOCK) {
+    return mockRenewalTask(contractId);
+  }
+
+  const res = await fetch(`${billingSvcUrl}/contracts/${contractId}/renewal-task`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`Failed to fetch renewal task: ${res.status}`);
+  }
+
+  return res.json() as Promise<RenewalTask>;
+}
+
+/**
+ * Determine renewal status from renewal task.
+ * Returns a user-friendly status string or null if no renewal action needed.
+ */
+export function determineRenewalStatus(
+  renewalTask: RenewalTask | null,
+  daysUntilEnd: number
+): string | null {
+  // If there's a renewal task, use its status
+  if (renewalTask) {
+    switch (renewalTask.status) {
+      case 'IN_PROGRESS':
+        return 'IN_PROGRESS';
+      case 'COMPLETED':
+        return 'COMPLETED';
+      case 'CHURNED':
+        return 'CHURNED';
+      case 'DUE':
+        return 'ACTION_REQUIRED';
+      case 'SCHEDULED':
+        // Task is scheduled but not yet due
+        if (daysUntilEnd <= 90) {
+          return 'UPCOMING';
+        }
+        return null;
+      default:
+        return null;
+    }
+  }
+
+  // No renewal task exists - check if contract is approaching end
+  if (daysUntilEnd <= 30) {
+    return 'ACTION_REQUIRED';
+  } else if (daysUntilEnd <= 90) {
+    return 'UPCOMING';
+  }
+
+  return null;
+}
+
+function mockRenewalTask(contractId: string): RenewalTask {
+  const now = new Date();
+  const dueDate = new Date(now.getFullYear() + 1, 3, 1); // April 1st next year
+  const contractEndDate = new Date(now.getFullYear() + 1, 6, 31); // July 31st
+
+  return {
+    id: 'renewal_task_001',
+    contractId,
+    tenantId: 'tenant_mock',
+    status: 'IN_PROGRESS',
+    dueDate: dueDate.toISOString(),
+    contractEndDate: contractEndDate.toISOString(),
+    renewalQuoteId: 'quote_001',
+    assignedTo: null,
+    notes: null,
+    activityLog: [
+      {
+        action: 'Renewal task created',
+        by: 'SYSTEM',
+        timestamp: new Date(now.getFullYear(), 0, 1).toISOString(),
+      },
+      {
+        action: 'Renewal quote created',
+        by: 'SYSTEM',
+        timestamp: new Date(now.getFullYear(), 1, 15).toISOString(),
+      },
+    ],
+    createdAt: new Date(now.getFullYear(), 0, 1).toISOString(),
+    updatedAt: new Date(now.getFullYear(), 1, 15).toISOString(),
+  };
+}

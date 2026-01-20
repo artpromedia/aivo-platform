@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -64,7 +66,7 @@ class CollaborationDashboardScreen extends ConsumerWidget {
                     const Spacer(),
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to all meetings
+                        context.push('/collaboration/meetings');
                       },
                       child: const Text('See All'),
                     ),
@@ -260,14 +262,10 @@ class _MeetingTile extends StatelessWidget {
         trailing: meeting.videoLink != null
             ? IconButton(
                 icon: const Icon(Icons.videocam, color: Colors.blue),
-                onPressed: () {
-                  // TODO: Open video link
-                },
+                onPressed: () => _launchVideoLink(context, meeting.videoLink!),
               )
             : null,
-        onTap: () {
-          // TODO: Navigate to meeting detail
-        },
+        onTap: () => _showMeetingDetail(context, meeting),
       ),
     );
   }
@@ -276,7 +274,7 @@ class _MeetingTile extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final meetingDate = DateTime(date.year, date.month, date.day);
-    
+
     String dateStr;
     if (meetingDate == today) {
       dateStr = 'Today';
@@ -290,6 +288,109 @@ class _MeetingTile extends StatelessWidget {
     final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '$dateStr at $hour:${date.minute.toString().padLeft(2, '0')} $period';
+  }
+
+  Future<void> _launchVideoLink(BuildContext context, String videoLink) async {
+    final uri = Uri.parse(videoLink);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open video link'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showMeetingDetail(BuildContext context, CareMeeting meeting) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                meeting.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                meeting.learnerName ?? 'Student',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(_formatDateTime(meeting.scheduledAt)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.timer, size: 16, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text('${meeting.durationMinutes} minutes'),
+                ],
+              ),
+              if (meeting.location != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(meeting.location!)),
+                  ],
+                ),
+              ],
+              if (meeting.description != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  meeting.description!,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+              const SizedBox(height: 24),
+              if (meeting.videoLink != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _launchVideoLink(context, meeting.videoLink!);
+                    },
+                    icon: const Icon(Icons.videocam),
+                    label: const Text('Join Video Call'),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push(
+                      '/collaboration/learner/${meeting.learnerId}?name=${Uri.encodeComponent(meeting.learnerName ?? "Student")}',
+                    );
+                  },
+                  child: const Text('View Student Collaboration'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -358,7 +459,9 @@ class _LearnerAttentionCard extends StatelessWidget {
         subtitle: _buildReasons(),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          // TODO: Navigate to learner collaboration detail
+          context.push(
+            '/collaboration/learner/${learner.learnerId}?name=${Uri.encodeComponent(learner.learnerName)}',
+          );
         },
       ),
     );
@@ -423,7 +526,9 @@ class _LearnerSummaryTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to learner collaboration detail
+          context.push(
+            '/collaboration/learner/${learner.learnerId}?name=${Uri.encodeComponent(learner.learnerName)}',
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

@@ -7,9 +7,11 @@ import {
   fetchContractInvoices,
   fetchInvoices,
   fetchModuleEntitlements,
+  fetchRenewalTask,
   fetchSeatCommitments,
   fetchSeatUsage,
   calculateDaysUntilEnd,
+  determineRenewalStatus,
 } from '../../lib/billing-api';
 
 import { BillingHeader } from './components/billing-header';
@@ -48,15 +50,16 @@ async function BillingContent() {
   ]);
 
   // Fetch invoices and contract data if we have them
-  const [invoices, seatCommitments, contractInvoices] = await Promise.all([
+  const [invoices, seatCommitments, contractInvoices, renewalTask] = await Promise.all([
     billingAccount ? fetchInvoices(billingAccount.id, auth.accessToken) : [],
     contract ? fetchSeatCommitments(contract.id, auth.accessToken) : [],
     contract ? fetchContractInvoices(contract.id, auth.accessToken) : [],
+    contract ? fetchRenewalTask(contract.id, auth.accessToken) : null,
   ]);
 
   const daysUntilEnd = contract ? calculateDaysUntilEnd(contract.endDate) : 0;
-  // TODO: Determine renewal status from renewal tasks
-  const renewalStatus = daysUntilEnd <= 90 ? 'IN_PROGRESS' : null;
+  // Determine renewal status from renewal task data
+  const renewalStatus = determineRenewalStatus(renewalTask, daysUntilEnd);
 
   return (
     <>

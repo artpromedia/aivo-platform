@@ -13,6 +13,20 @@ import type {
   EmbeddedToolConfig,
 } from '../types/index.js';
 
+/** Content service URL for cross-service validation */
+const CONTENT_SVC_URL = process.env.CONTENT_SERVICE_URL || 'http://content-svc:4003';
+
+/** LO metadata from content-svc */
+interface LOMetadata {
+  loVersionId: string;
+  loId: string;
+  title: string;
+  subject: string;
+  gradeBands: string[];
+  status: 'DRAFT' | 'PUBLISHED' | 'DEPRECATED' | 'ARCHIVED';
+  standardAlignments: string[];
+}
+
 // ============================================================================
 // Allowed Scopes (Safety Whitelist)
 // ============================================================================
@@ -382,17 +396,148 @@ export async function validateContentPackConsistency(
     return { valid: true, warnings };
   }
 
-  // In a real implementation, we would call content-svc to get LO metadata
-  // and validate consistency. For now, we'll just return valid.
-  // TODO: Implement cross-service LO metadata validation
+  // Fetch LO metadata from content-svc for validation
+  const loVersionIds = items.map((item) => item.loVersionId);
+  const loMetadataMap = await fetchLOMetadataFromContentService(loVersionIds);
 
-  // Example checks we would do:
-  // 1. All LOs have the same subject (or consistent subjects)
-  // 2. All LOs have the same or overlapping grade bands
-  // 3. All LOs are in PUBLISHED status
-  // 4. No LOs are deprecated
+  // Skip validation if we couldn't fetch metadata (service unavailable)
+  if (loMetadataMap.size === 0 && loVersionIds.length > 0) {
+    warnings.push({
+      field: 'contentPackItems',
+      code: 'METADATA_UNAVAILABLE',
+      message: 'Could not validate LO metadata - content service unavailable',
+    });
+    return { valid: true, warnings };
+  }
 
+  // Track subjects and grade bands for consistency check
+  const subjects = new Set<string>();
+  const gradeBands = new Set<string>();
+  const invalidLOs: string[] = [];
+  const deprecatedLOs: string[] = [];
+  const unpublishedLOs: string[] = [];
+  const missingLOs: string[] = [];
+
+  for (const item of items) {
+    const metadata = loMetadataMap.get(item.loVersionId);
+
+    if (!metadata) {
+      missingLOs.push(item.loVersionId);
+      continue;
+    }
+
+    // Track subjects and grade bands
+    if (metadata.subject) {
+      subjects.add(metadata.subject);
+    }
+    for (const band of metadata.gradeBands) {
+      gradeBands.add(band);
+    }
+
+    // Check LO status
+    if (metadata.status === 'DEPRECATED') {
+      deprecatedLOs.push(metadata.title || item.loVersionId);
+    } else if (metadata.status !== 'PUBLISHED') {
+      unpublishedLOs.push(metadata.title || item.loVersionId);
+    }
+  }
+
+  // Check 1: Warn if LOs are missing from content-svc
+  if (missingLOs.length > 0) {
+    warnings.push({
+      field: 'contentPackItems',
+      code: 'MISSING_LO',
+      message: `${missingLOs.length} Learning Object(s) not found in content service`,
+    });
+  }
+
+  // Check 2: Warn about deprecated LOs
+  if (deprecatedLOs.length > 0) {
+    warnings.push({
+      field: 'contentPackItems',
+      code: 'DEPRECATED_LO',
+      message: `Content pack contains deprecated LOs: ${deprecatedLOs.slice(0, 3).join(', ')}${deprecatedLOs.length > 3 ? ` and ${deprecatedLOs.length - 3} more` : ''}`,
+    });
+  }
+
+  // Check 3: Warn about unpublished LOs
+  if (unpublishedLOs.length > 0) {
+    warnings.push({
+      field: 'contentPackItems',
+      code: 'UNPUBLISHED_LO',
+      message: `Content pack contains unpublished LOs: ${unpublishedLOs.slice(0, 3).join(', ')}${unpublishedLOs.length > 3 ? ` and ${unpublishedLOs.length - 3} more` : ''}`,
+    });
+  }
+
+  // Check 4: Warn if subjects are inconsistent (more than 2 different subjects)
+  if (subjects.size > 2) {
+    warnings.push({
+      field: 'contentPackItems',
+      code: 'INCONSISTENT_SUBJECTS',
+      message: `Content pack spans ${subjects.size} subjects (${Array.from(subjects).join(', ')}). Consider splitting into multiple packs.`,
+    });
+  }
+
+  // Check 5: Warn if grade bands don't overlap reasonably
+  const gradeBandArray = Array.from(gradeBands);
+  if (gradeBandArray.length > 3) {
+    warnings.push({
+      field: 'contentPackItems',
+      code: 'WIDE_GRADE_RANGE',
+      message: `Content pack spans ${gradeBandArray.length} grade bands. Consider targeting a narrower range.`,
+    });
+  }
+
+  // Content pack is valid even with warnings (they're advisory)
   return { valid: true, warnings };
+}
+
+/**
+ * Fetch LO metadata from content-svc for validation
+ */
+async function fetchLOMetadataFromContentService(
+  loVersionIds: string[]
+): Promise<Map<string, LOMetadata>> {
+  const metadataMap = new Map<string, LOMetadata>();
+
+  if (loVersionIds.length === 0) {
+    return metadataMap;
+  }
+
+  try {
+    const response = await fetch(
+      `${CONTENT_SVC_URL}/internal/lo-versions/batch-metadata`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': 'marketplace-svc',
+        },
+        body: JSON.stringify({ loVersionIds }),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(
+        `Content service returned ${response.status} for LO metadata batch request`
+      );
+      return metadataMap;
+    }
+
+    const data = (await response.json()) as {
+      metadata: LOMetadata[];
+    };
+
+    for (const lo of data.metadata) {
+      metadataMap.set(lo.loVersionId, lo);
+    }
+  } catch (error) {
+    console.error('Error fetching LO metadata from content-svc:', error);
+    // Return empty map on error - validation will add a warning
+  }
+
+  return metadataMap;
 }
 
 // ============================================================================

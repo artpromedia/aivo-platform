@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/models.dart';
 import '../../providers/providers.dart';
@@ -364,11 +365,37 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
     setState(() {});
   }
 
-  void _openAttachment(SubmissionAttachment attachment) {
-    // TODO: Open attachment URL
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Opening ${attachment.name}...')),
-    );
+  Future<void> _openAttachment(SubmissionAttachment attachment) async {
+    final uri = Uri.tryParse(attachment.url);
+    if (uri == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid attachment URL')),
+        );
+      }
+      return;
+    }
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cannot open ${attachment.name}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open attachment: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _saveGrade() async {
@@ -405,7 +432,61 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
   }
 
   Future<void> _saveAndNext() async {
-    await _saveGrade();
-    // TODO: Navigate to next ungraded submission
+    setState(() => _isSaving = true);
+
+    try {
+      final points = _isExcused ? null : double.tryParse(_pointsController.text);
+      final dto = GradeSubmissionDto(
+        pointsEarned: points,
+        feedback: _feedbackController.text.isEmpty ? null : _feedbackController.text,
+        isExcused: _isExcused,
+        applyLatePenalty: _applyLatePenalty,
+      );
+
+      await ref
+          .read(submissionsProvider(widget.assignmentId).notifier)
+          .gradeSubmission(widget.submissionId, dto);
+
+      if (!mounted) return;
+
+      // Find the next ungraded submission
+      final submissionsState = ref.read(submissionsProvider(widget.assignmentId));
+      final ungradedSubmissions = submissionsState.submissions
+          .where((s) =>
+              s.id != widget.submissionId &&
+              (s.status == SubmissionStatus.submitted ||
+               s.status == SubmissionStatus.late))
+          .toList();
+
+      if (ungradedSubmissions.isEmpty) {
+        // No more submissions to grade
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All submissions have been graded!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.pop();
+      } else {
+        // Navigate to next ungraded submission
+        final nextSubmission = ungradedSubmissions.first;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Grade saved. Moving to next submission...')),
+        );
+
+        // Replace current route with next submission
+        context.pushReplacement(
+          '/assignments/${widget.assignmentId}/submissions/${nextSubmission.id}/grade',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving grade: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 }

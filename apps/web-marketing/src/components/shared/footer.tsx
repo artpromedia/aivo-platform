@@ -231,8 +231,23 @@ export function Footer() {
     setSubmitStatus('idle');
 
     try {
-      // TODO: Replace with actual newsletter API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          source: 'footer',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to subscribe');
+      }
+
       setSubmitStatus('success');
       setEmail('');
     } catch {

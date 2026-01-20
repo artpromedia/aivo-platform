@@ -14,6 +14,31 @@ import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { prisma } from '../prisma.js';
 import { getRedisClient, RedisKeys } from '../redis/index.js';
+
+/** Analytics service URL for cross-service communication */
+const ANALYTICS_SVC_URL = process.env.ANALYTICS_SERVICE_URL || 'http://analytics-svc:4006';
+
+/** Analytics response structure */
+interface ClassAnalyticsResponse {
+  activeSessions: number;
+  averageProgress: number;
+  recentProgress: Array<{
+    learnerId: string;
+    progress: number;
+    timestamp: string;
+  }>;
+  topPerformers: Array<{
+    learnerId: string;
+    name: string;
+    score: number;
+  }>;
+  needsAttention: Array<{
+    learnerId: string;
+    name: string;
+    riskLevel: string;
+  }>;
+}
+
 import type {
   RoomMember,
   RoomState,
@@ -611,13 +636,130 @@ export class RoomService {
 
   /**
    * Get current analytics for a class
+   * Fetches real-time analytics from analytics-svc
    */
-  async getCurrentAnalytics(classId: string): Promise<Record<string, unknown>> {
-    // TODO: Integrate with analytics-svc via event bus
-    // For now, return mock data
+  async getCurrentAnalytics(classId: string): Promise<ClassAnalyticsResponse> {
+    const cacheKey = `analytics:class:${classId}`;
+    const redis = getRedisClient();
+    const CACHE_TTL_SECONDS = 30; // Cache for 30 seconds to reduce load on analytics-svc
+
+    try {
+      // Check cache first for performance
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.debug({ classId }, 'Returning cached analytics');
+        return JSON.parse(cached) as ClassAnalyticsResponse;
+      }
+
+      // Fetch from analytics-svc
+      const response = await fetch(
+        `${ANALYTICS_SVC_URL}/analytics/classrooms/${classId}/overview`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'realtime-svc',
+          },
+          signal: AbortSignal.timeout(5000), // 5 second timeout
+        }
+      );
+
+      if (!response.ok) {
+        logger.warn(
+          { classId, status: response.status },
+          'Analytics service returned non-OK status, using fallback data'
+        );
+        return this.getFallbackAnalytics();
+      }
+
+      const analyticsData = (await response.json()) as {
+        engagement: {
+          activeLearnersCount: number;
+          totalLearnersCount: number;
+          avgSessionsPerLearner: number;
+        };
+        learningProgress: {
+          overallAvgMastery: number;
+        };
+      };
+
+      // Fetch learner list for top performers and needs attention
+      const learnerListResponse = await fetch(
+        `${ANALYTICS_SVC_URL}/analytics/classrooms/${classId}/learner-list`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'realtime-svc',
+          },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+
+      let topPerformers: ClassAnalyticsResponse['topPerformers'] = [];
+      let needsAttention: ClassAnalyticsResponse['needsAttention'] = [];
+
+      if (learnerListResponse.ok) {
+        const learnerData = (await learnerListResponse.json()) as {
+          learners: Array<{
+            learnerId: string;
+            learnerName: string;
+            avgMasteryScore: number;
+            riskFlags: string[];
+          }>;
+        };
+
+        // Sort by mastery to get top performers
+        const sortedByMastery = [...learnerData.learners].sort(
+          (a, b) => b.avgMasteryScore - a.avgMasteryScore
+        );
+        topPerformers = sortedByMastery.slice(0, 5).map((l) => ({
+          learnerId: l.learnerId,
+          name: l.learnerName,
+          score: Math.round(l.avgMasteryScore * 100),
+        }));
+
+        // Get learners with risk flags
+        needsAttention = learnerData.learners
+          .filter((l) => l.riskFlags.length > 0)
+          .slice(0, 5)
+          .map((l) => ({
+            learnerId: l.learnerId,
+            name: l.learnerName,
+            riskLevel: l.riskFlags.includes('STRUGGLING')
+              ? 'at-risk'
+              : l.riskFlags.includes('LOW_ENGAGEMENT')
+                ? 'watch'
+                : 'on-track',
+          }));
+      }
+
+      const result: ClassAnalyticsResponse = {
+        activeSessions: analyticsData.engagement.activeLearnersCount,
+        averageProgress: Math.round(analyticsData.learningProgress.overallAvgMastery * 100),
+        recentProgress: [], // Would need separate endpoint for real-time progress events
+        topPerformers,
+        needsAttention,
+      };
+
+      // Cache the result
+      await redis.setex(cacheKey, CACHE_TTL_SECONDS, JSON.stringify(result));
+
+      logger.info({ classId }, 'Fetched analytics from analytics-svc');
+      return result;
+    } catch (error) {
+      logger.error({ err: error, classId }, 'Failed to fetch analytics from analytics-svc');
+      return this.getFallbackAnalytics();
+    }
+  }
+
+  /**
+   * Returns fallback analytics data when analytics-svc is unavailable
+   */
+  private getFallbackAnalytics(): ClassAnalyticsResponse {
     return {
-      activeSessions: 5,
-      averageProgress: 68,
+      activeSessions: 0,
+      averageProgress: 0,
       recentProgress: [],
       topPerformers: [],
       needsAttention: [],

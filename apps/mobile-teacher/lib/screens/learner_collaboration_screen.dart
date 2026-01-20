@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
@@ -238,7 +239,10 @@ class _ActionPlansTab extends ConsumerWidget {
                 )
               : SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => _TaskCard(task: tasks[index]),
+                    (context, index) => _TaskCard(
+                      task: tasks[index],
+                      learnerId: learnerId,
+                    ),
                     childCount: tasks.length,
                   ),
                 ),
@@ -291,13 +295,17 @@ class _ActionPlansTab extends ConsumerWidget {
   }
 }
 
-class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task});
+class _TaskCard extends ConsumerWidget {
+  const _TaskCard({
+    required this.task,
+    required this.learnerId,
+  });
 
   final ActionPlanTask task;
+  final String learnerId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
@@ -317,14 +325,152 @@ class _TaskCard extends StatelessWidget {
         trailing: IconButton(
           icon: const Icon(Icons.check_circle_outline),
           color: Colors.green,
-          onPressed: () {
-            // TODO: Record completion
-          },
+          onPressed: () => _recordCompletion(context, ref),
           tooltip: 'Mark Complete',
         ),
-        onTap: () {
-          // TODO: Show task detail
-        },
+        onTap: () => _showTaskDetail(context),
+      ),
+    );
+  }
+
+  Future<void> _recordCompletion(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark Complete'),
+        content: Text('Record completion of "${task.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Complete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        final service = ref.read(teacherCollaborationServiceProvider);
+        await service.recordTaskCompletion(
+          learnerId: learnerId,
+          taskId: task.id,
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Completed: ${task.title}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Refresh the tasks list
+          ref.invalidate(learnerSchoolTasksProvider(learnerId));
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to record: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _showTaskDetail(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.school, color: Colors.green),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task.title,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        Text(
+                          task.contextDisplayName,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (task.timeOfDay != null) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.schedule, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Text('Time: ${task.timeOfDay}'),
+                  ],
+                ),
+              ],
+              if (task.description != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Description',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  task.description!,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text('Completed ${task.completionCount} times'),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push('/collaboration/plans/${task.actionPlanId}');
+                  },
+                  child: const Text('View Action Plan'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -341,7 +487,7 @@ class _ActionPlanCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to plan detail
+          context.push('/collaboration/plans/${plan.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -966,9 +1112,7 @@ class _MeetingCard extends StatelessWidget {
                 if (meeting.videoLink != null)
                   IconButton(
                     icon: const Icon(Icons.videocam, color: Colors.blue),
-                    onPressed: () {
-                      // TODO: Open video link
-                    },
+                    onPressed: () => _launchVideoLink(context, meeting.videoLink!),
                   ),
               ],
             ),
@@ -987,5 +1131,21 @@ class _MeetingCard extends StatelessWidget {
     final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '$hour:${date.minute.toString().padLeft(2, '0')} $period';
+  }
+
+  Future<void> _launchVideoLink(BuildContext context, String videoLink) async {
+    final uri = Uri.parse(videoLink);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open video link'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

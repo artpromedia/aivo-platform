@@ -15,6 +15,7 @@ import {
   createSchoolInstallations,
   getGradeBandLabel,
 } from '../../../../lib/marketplace-api';
+import { fetchTenantSchools } from '../../../../lib/tenant-analytics';
 
 interface Props {
   item: MarketplaceItemDetail;
@@ -35,6 +36,7 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(false);
+  const [schoolsError, setSchoolsError] = useState<string | null>(null);
   const [enabledGradeBands, setEnabledGradeBands] = useState<string[]>(item.gradeBands);
   const [installing, setInstalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,21 +50,20 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
 
   async function loadSchools() {
     setLoadingSchools(true);
+    setSchoolsError(null);
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/tenants/${tenantId}/schools`);
-      // const data = await response.json();
-      // setSchools(data);
-
-      // Mock data for now
-      setSchools([
-        { id: '1', name: 'Lincoln Elementary', gradeBand: 'K_2' },
-        { id: '2', name: 'Washington Middle School', gradeBand: 'G6_8' },
-        { id: '3', name: 'Jefferson High School', gradeBand: 'G9_12' },
-        { id: '4', name: 'Adams Elementary', gradeBand: 'G3_5' },
-      ]);
+      const response = await fetchTenantSchools(tenantId);
+      // Transform the response to match the School interface
+      const schoolList: School[] = response.schools.map((school) => ({
+        id: school.schoolId,
+        name: school.schoolName,
+        // Map grade band based on school name heuristics if not available
+        gradeBand: undefined,
+      }));
+      setSchools(schoolList);
     } catch (err) {
       console.error('Failed to load schools:', err);
+      setSchoolsError(err instanceof Error ? err.message : 'Failed to load schools');
     } finally {
       setLoadingSchools(false);
     }
@@ -214,6 +215,18 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
                   <div className="max-h-48 overflow-y-auto p-2">
                     {loadingSchools ? (
                       <div className="py-4 text-center text-sm text-muted">Loading schools...</div>
+                    ) : schoolsError ? (
+                      <div className="py-4 text-center">
+                        <p className="text-sm text-red-600">{schoolsError}</p>
+                        <button
+                          onClick={() => void loadSchools()}
+                          className="mt-2 text-xs text-primary hover:underline"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    ) : schools.length === 0 ? (
+                      <div className="py-4 text-center text-sm text-muted">No schools found</div>
                     ) : (
                       schools.map((school) => (
                         <label

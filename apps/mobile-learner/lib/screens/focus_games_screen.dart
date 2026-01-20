@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../features/focus_games/game_player.dart';
 
 /// Focus Games Screen
 ///
@@ -291,9 +294,131 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
   }
 
   void _startActivity(Map<String, dynamic> activity) {
-    // TODO: Navigate to focus activity player
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Starting: ${activity['title']}')),
+    // Create a MiniGame from the activity data
+    final miniGame = MiniGame(
+      id: activity['id'] as String,
+      title: activity['title'] as String,
+      description: activity['description'] as String,
+      category: _mapActivityTypeToCategory(activity['type'] as String),
+      durationSeconds: activity['duration'] as int,
+      instructions: _getInstructionsForType(activity['type'] as String),
+      config: _getConfigForType(activity['type'] as String, activity['duration'] as int),
     );
+
+    // Navigate to the focus game player screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FocusGamePlayer(
+          game: miniGame,
+          onComplete: (completed, score, maxScore) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    completed
+                        ? 'Great job! You completed ${activity['title']}!'
+                        : 'Activity ended. Take a moment to relax.',
+                  ),
+                ),
+              );
+              Navigator.of(context).pop();
+            }
+          },
+          onExit: () {
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  GameCategory _mapActivityTypeToCategory(String type) {
+    switch (type) {
+      case 'breathing':
+        return GameCategory.relaxation;
+      case 'mindfulness':
+        return GameCategory.relaxation;
+      case 'movement':
+        return GameCategory.physical;
+      case 'grounding':
+        return GameCategory.cognitive;
+      default:
+        return GameCategory.relaxation;
+    }
+  }
+
+  List<String> _getInstructionsForType(String type) {
+    switch (type) {
+      case 'breathing':
+        return [
+          'Find a comfortable position',
+          'Follow the visual guide for breathing',
+          'Breathe in when the circle expands',
+          'Breathe out when the circle shrinks',
+        ];
+      case 'mindfulness':
+        return [
+          'Find a quiet, comfortable spot',
+          'Close your eyes if you feel comfortable',
+          'Focus on the guidance provided',
+          'Let go of any distracting thoughts',
+        ];
+      case 'movement':
+        return [
+          'Stand up and find some space',
+          'Follow the movement prompts',
+          'Move at your own pace',
+          'Stretch gently and safely',
+        ];
+      case 'grounding':
+        return [
+          'Take a moment to pause',
+          'Use your senses to connect with the present',
+          'Notice what you can see, hear, and feel',
+          'Stay calm and focused',
+        ];
+      default:
+        return [
+          'Follow the on-screen guidance',
+          'Take your time',
+          'Focus on feeling calm and centered',
+        ];
+    }
+  }
+
+  Map<String, dynamic> _getConfigForType(String type, int duration) {
+    switch (type) {
+      case 'breathing':
+        return {
+          'type': 'breathing',
+          'inhaleSeconds': 4,
+          'holdInSeconds': 2,
+          'exhaleSeconds': 4,
+          'holdOutSeconds': 2,
+          'cycles': duration ~/ 12, // Each cycle is ~12 seconds
+        };
+      case 'mindfulness':
+        return {
+          'type': 'focusSpot',
+          'duration': duration,
+        };
+      case 'movement':
+        return {
+          'type': 'counting',
+          'exercises': ['stretch arms', 'touch toes', 'neck rolls'],
+        };
+      case 'grounding':
+        return {
+          'type': 'counting',
+          'technique': '5-4-3-2-1',
+        };
+      default:
+        return {
+          'type': 'focusSpot',
+          'duration': duration,
+        };
+    }
   }
 }

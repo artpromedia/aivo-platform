@@ -9,7 +9,9 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { config } from '../config.js';
 import { prisma } from '../prisma.js';
+import { contentEventPublisher } from '../services/event-publisher.js';
 import { validateContent, type ValidationResult } from '../validator.js';
 import type {
   LearningObjectSubject,
@@ -336,13 +338,32 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: In production, this would trigger a background job via NATS or a job queue
-    // For now, return the job ID and the client can poll for status
+    // Trigger background job processing via NATS
+    const publishResult = await contentEventPublisher.publishFileIngestionJob({
+      jobId: job.id,
+      tenantId: userTenantId ?? null,
+      createdByUserId: user.sub,
+      fileUrl,
+      fileType,
+      mappings,
+      defaultSubject,
+      defaultGradeBand,
+      autoSubmitForReview,
+    });
+
+    if (!publishResult.success) {
+      // Log the error but don't fail the request - job is created and can be processed later
+      request.log.warn(
+        { jobId: job.id, error: publishResult.error },
+        'Failed to publish file ingestion job to NATS, job will need manual processing'
+      );
+    }
 
     return reply.status(202).send({
       jobId: job.id,
       status: 'PENDING',
       message: 'File ingestion job queued. Poll GET /ingest/jobs/:id for status.',
+      natsPublished: publishResult.success,
     });
   });
 
@@ -388,7 +409,7 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
       data: {
         tenantId: userTenantId ?? null,
         source: 'AI_DRAFT' as IngestionSource,
-        status: 'PENDING',
+        status: 'RUNNING',
         totalRows: 1,
         inputMetadata: {
           subject,
@@ -401,14 +422,79 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
           estimatedMinutes,
         },
         createdByUserId: user.sub,
+        startedAt: new Date(),
       },
     });
 
-    // TODO: In production, this would call the AI orchestrator
-    // For now, create a placeholder draft
-    
-    // Generate a simple placeholder draft based on content type
-    const placeholderContent = generatePlaceholderContent(contentType, promptSummary);
+    // Call AI orchestrator to generate content
+    let generatedContent: Record<string, unknown>;
+    let generatedTitle: string;
+    let aiGeneratedSuccessfully = false;
+
+    if (config.aiOrchestratorUrl && config.aiOrchestratorApiKey) {
+      try {
+        const aiResponse = await fetch(
+          `${config.aiOrchestratorUrl}/internal/ai/content/generate`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-internal-api-key': config.aiOrchestratorApiKey,
+            },
+            body: JSON.stringify({
+              tenantId: userTenantId,
+              agentType: 'CONTENT_GENERATOR',
+              payload: {
+                subject,
+                gradeBand,
+                contentType,
+                standards,
+                targetSkills,
+                promptSummary,
+                difficulty,
+                estimatedMinutes,
+              },
+            }),
+            signal: AbortSignal.timeout(60000), // 60 second timeout for AI generation
+          }
+        );
+
+        if (aiResponse.ok) {
+          const aiData = (await aiResponse.json()) as {
+            content: Record<string, unknown>;
+            title?: string;
+            generatedAt?: string;
+          };
+
+          generatedContent = aiData.content;
+          generatedTitle = aiData.title || `AI Draft: ${promptSummary.slice(0, 50)}`;
+          aiGeneratedSuccessfully = true;
+
+          request.log.info(
+            { jobId: job.id, contentType },
+            'AI orchestrator successfully generated content'
+          );
+        } else {
+          const errorText = await aiResponse.text().catch(() => 'Unknown error');
+          request.log.warn(
+            { jobId: job.id, status: aiResponse.status, error: errorText },
+            'AI orchestrator returned non-OK, falling back to placeholder'
+          );
+        }
+      } catch (err) {
+        request.log.warn(
+          { jobId: job.id, error: err instanceof Error ? err.message : 'Unknown error' },
+          'AI orchestrator unreachable, falling back to placeholder'
+        );
+      }
+    }
+
+    // Fall back to placeholder content if AI generation failed
+    if (!aiGeneratedSuccessfully) {
+      generatedContent = generatePlaceholderContent(contentType, promptSummary);
+      generatedTitle = `[AI Draft] ${promptSummary.slice(0, 50)}...`;
+    }
+
     const slug = `ai-draft-${Date.now()}`;
 
     try {
@@ -416,7 +502,7 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
         data: {
           tenantId: userTenantId ?? null,
           slug,
-          title: `[AI Draft] ${promptSummary.slice(0, 50)}...`,
+          title: generatedTitle,
           subject: subject as LearningObjectSubject,
           gradeBand: gradeBand as LearningObjectGradeBand,
           createdByUserId: user.sub,
@@ -429,16 +515,22 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
           versionNumber: 1,
           state: 'DRAFT',
           createdByUserId: user.sub,
-          changeSummary: 'AI-generated draft - requires human review',
-          contentJson: placeholderContent as Prisma.InputJsonValue,
+          changeSummary: aiGeneratedSuccessfully
+            ? 'AI-generated draft - requires human review'
+            : 'Placeholder draft - AI generation unavailable',
+          contentJson: generatedContent as Prisma.InputJsonValue,
           accessibilityJson: {
             requiresReading: true,
             cognitiveLoad: 'MEDIUM',
           },
           metadataJson: {
-            aiGenerated: true,
+            aiGenerated: aiGeneratedSuccessfully,
+            aiOrchestratorUsed: aiGeneratedSuccessfully,
             promptSummary,
             generatedAt: new Date().toISOString(),
+            contentType,
+            difficulty,
+            estimatedMinutes,
           },
         },
       });
@@ -449,7 +541,6 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
           status: 'SUCCEEDED',
           successCount: 1,
           createdLoIds: [lo.id],
-          startedAt: new Date(),
           completedAt: new Date(),
         },
       });
@@ -459,7 +550,10 @@ export async function ingestionRoutes(fastify: FastifyInstance) {
         status: 'SUCCEEDED',
         loId: lo.id,
         versionId: version.id,
-        message: 'AI draft created. This content requires human review before publishing.',
+        aiGeneratedSuccessfully,
+        message: aiGeneratedSuccessfully
+          ? 'AI draft created. This content requires human review before publishing.'
+          : 'Placeholder draft created (AI orchestrator unavailable). Please edit before publishing.',
         warning: 'AI-generated content must be reviewed for accuracy and appropriateness.',
       });
     } catch (err) {

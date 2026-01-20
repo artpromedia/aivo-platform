@@ -6,6 +6,39 @@ import { getAuthSession } from '../../../../lib/auth';
 
 import { LearnerAuditTimeline } from './learner-audit-timeline';
 
+// ══════════════════════════════════════════════════════════════════════════════
+// LEARNER SERVICE API
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface LearnerDto {
+  id: string;
+  tenant_id: string;
+  name: string;
+  grade?: number;
+}
+
+const LEARNER_API_URL = process.env.LEARNER_API_URL || 'http://localhost:4001';
+
+async function fetchLearnerName(learnerId: string, accessToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${LEARNER_API_URL}/api/learners/${learnerId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const learner = (await res.json()) as LearnerDto;
+    return learner.name;
+  } catch {
+    return null;
+  }
+}
+
 interface LearnerAuditPageProps {
   params: {
     learnerId: string;
@@ -30,17 +63,23 @@ export default async function LearnerAuditPage({ params }: LearnerAuditPageProps
     redirect('/learners');
   }
 
-  // Fetch initial audit data server-side
+  // Fetch initial audit data and learner name in parallel
   let initialEvents: Awaited<ReturnType<typeof getLearnerAudit>>['events'] = [];
   let total = 0;
   let learnerName = 'Learner';
 
   try {
-    const auditData = await getLearnerAudit(session, learnerId);
+    // Fetch audit data and learner name in parallel for better performance
+    const [auditData, fetchedLearnerName] = await Promise.all([
+      getLearnerAudit(session, learnerId),
+      fetchLearnerName(learnerId, session.accessToken),
+    ]);
+
     initialEvents = auditData.events;
     total = auditData.total;
-    // TODO: Fetch learner name from learner service
-    learnerName = `Learner ${learnerId.slice(0, 8)}`;
+
+    // Use fetched learner name, fallback to truncated ID if not found
+    learnerName = fetchedLearnerName ?? `Learner ${learnerId.slice(0, 8)}`;
   } catch (error) {
     console.error('Failed to fetch audit timeline:', error);
   }

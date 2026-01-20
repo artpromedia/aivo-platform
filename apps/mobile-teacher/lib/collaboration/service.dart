@@ -225,6 +225,29 @@ class TeacherCollaborationService {
     ];
   }
 
+  /// Record a task completion.
+  Future<void> recordTaskCompletion({
+    required String learnerId,
+    required String taskId,
+    String? notes,
+    int? rating,
+  }) async {
+    if (_useMock) {
+      _logMockWarning();
+      await Future.delayed(const Duration(milliseconds: 300));
+      return;
+    }
+
+    await _apiClient.post(
+      '$_baseUrl/api/v1/learners/$learnerId/tasks/$taskId/completions',
+      data: {
+        'completedAt': DateTime.now().toIso8601String(),
+        if (notes != null) 'notes': notes,
+        if (rating != null) 'rating': rating,
+      },
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // CARE NOTES
   // ═══════════════════════════════════════════════════════════════════════════

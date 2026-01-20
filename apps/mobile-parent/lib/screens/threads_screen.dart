@@ -4,6 +4,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../messaging/models.dart';
 import '../messaging/service.dart';
 
@@ -67,7 +69,13 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen>
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              // TODO: Implement search
+              showSearch(
+                context: context,
+                delegate: _ThreadSearchDelegate(
+                  ref.read(conversationsProvider).valueOrNull ?? [],
+                  onSelect: (conversation) => _openConversation(conversation),
+                ),
+              );
             },
           ),
         ],
@@ -631,9 +639,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              // TODO: Navigate to context (action plan, meeting, etc.)
-            },
+            onPressed: () => _navigateToContext(this.context, context),
             child: const Text('View'),
           ),
         ],
@@ -803,9 +809,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.attach_file),
-              onPressed: () {
-                // TODO: Implement attachment
-              },
+              onPressed: () => _showAttachmentOptions(),
             ),
             Expanded(
               child: TextField(
@@ -873,6 +877,100 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     }
   }
 
+  void _navigateToContext(BuildContext context, ConversationContext conversationContext) {
+    switch (conversationContext.type) {
+      case ContextType.actionPlan:
+        if (conversationContext.entityId != null) {
+          context.push('/action-plans/${conversationContext.entityId}');
+        }
+      case ContextType.meeting:
+        if (conversationContext.entityId != null) {
+          context.push('/meetings/${conversationContext.entityId}');
+        }
+      case ContextType.learner:
+        if (conversationContext.learnerId != null) {
+          context.push('/learners/${conversationContext.learnerId}');
+        }
+      case ContextType.goal:
+        if (conversationContext.entityId != null) {
+          context.push('/goals/${conversationContext.entityId}');
+        }
+      default:
+        // No navigation for other types
+        break;
+    }
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Icon(Icons.photo_library, color: Colors.white),
+                ),
+                title: const Text('Photo Library'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final picker = ImagePicker();
+                  final image = await picker.pickImage(source: ImageSource.gallery);
+                  if (image != null) {
+                    _handleAttachment(image.path, 'image');
+                  }
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.camera_alt, color: Colors.white),
+                ),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final picker = ImagePicker();
+                  final image = await picker.pickImage(source: ImageSource.camera);
+                  if (image != null) {
+                    _handleAttachment(image.path, 'image');
+                  }
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.orange,
+                  child: Icon(Icons.insert_drive_file, color: Colors.white),
+                ),
+                title: const Text('Document'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  // Document picker would go here
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Document picker coming soon')),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleAttachment(String filePath, String type) {
+    // In a real app, this would upload the file and send it as a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Attachment selected: $type')),
+    );
+  }
+
   void _showConversationInfo(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -926,6 +1024,132 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Search delegate for finding conversations
+class _ThreadSearchDelegate extends SearchDelegate<Conversation?> {
+  _ThreadSearchDelegate(this.conversations, {required this.onSelect});
+
+  final List<Conversation> conversations;
+  final void Function(Conversation) onSelect;
+
+  @override
+  String get searchFieldLabel => 'Search conversations...';
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () => query = '',
+        ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  Widget _buildSearchResults(BuildContext context) {
+    if (query.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search, size: 64, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'Search for conversations',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final results = conversations.where((conv) {
+      final searchLower = query.toLowerCase();
+      return conv.name.toLowerCase().contains(searchLower) ||
+          (conv.lastMessagePreview?.toLowerCase().contains(searchLower) ?? false) ||
+          (conv.context?.learnerName?.toLowerCase().contains(searchLower) ?? false);
+    }).toList();
+
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'No conversations found',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final conv = results[index];
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Colors.blue.shade100,
+            child: Text(
+              conv.context?.type.icon ?? '💬',
+              style: const TextStyle(fontSize: 18),
+            ),
+          ),
+          title: Text(conv.name),
+          subtitle: conv.lastMessagePreview != null
+              ? Text(
+                  conv.lastMessagePreview!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : null,
+          trailing: conv.unreadCount > 0
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${conv.unreadCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : null,
+          onTap: () {
+            close(context, conv);
+            onSelect(conv);
+          },
+        );
+      },
     );
   }
 }

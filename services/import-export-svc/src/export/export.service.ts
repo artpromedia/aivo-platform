@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuidv4 } from 'uuid';
+import { metrics } from '@aivo/ts-observability';
 
 import { SCORMExporter } from './exporters/scorm.exporter';
 import { QTIExporter } from './exporters/qti.exporter';
@@ -224,9 +225,9 @@ export class ExportService {
       });
 
       const duration = Date.now() - startTime;
-      // TODO: Add metrics service
-      // metrics.histogram('export.duration', duration, { format });
-      // metrics.increment('export.completed', { format });
+      // Track export completion metrics
+      metrics.events.processingDuration.observe({ event_type: `export.${format}` }, duration / 1000);
+      metrics.events.processedTotal.inc({ event_type: 'export.completed', event_source: format });
 
       this.logger.log(`Export completed jobId=${jobId} format=${format} fileSize=${result.fileSize} duration=${duration}ms`);
 
@@ -251,8 +252,8 @@ export class ExportService {
         },
       });
 
-      // TODO: Add metrics service
-      // metrics.increment('export.failed', { format });
+      // Track export failure metrics
+      metrics.events.failedTotal.inc({ event_type: 'export.failed', event_source: format, error_type: (error as Error).name || 'unknown' });
 
       this.eventEmitter.emit('export.failed', {
         jobId,

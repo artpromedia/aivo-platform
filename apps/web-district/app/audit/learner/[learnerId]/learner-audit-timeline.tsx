@@ -93,6 +93,8 @@ interface LearnerAuditTimelineProps {
 // COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
 
+const PAGE_SIZE = 50;
+
 export function LearnerAuditTimeline({
   learnerId,
   learnerName,
@@ -102,27 +104,37 @@ export function LearnerAuditTimeline({
 }: LearnerAuditTimelineProps) {
   const [events, setEvents] = useState<AuditEventSummary[]>(initialEvents);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(total);
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | 'all'>('7d');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Load more events when filter changes
+  // Build query params helper
+  const buildQueryParams = (offset = 0): URLSearchParams => {
+    const params = new URLSearchParams();
+    if (entityTypeFilter) params.set('entityType', entityTypeFilter);
+
+    if (dateRange === '7d') {
+      const { fromDate } = getLast7DaysRange();
+      params.set('fromDate', fromDate);
+    } else if (dateRange === '30d') {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      params.set('fromDate', thirtyDaysAgo.toISOString());
+    }
+
+    params.set('limit', String(PAGE_SIZE));
+    params.set('offset', String(offset));
+
+    return params;
+  };
+
+  // Fetch events with new filters (resets list)
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (entityTypeFilter) params.set('entityType', entityTypeFilter);
-
-        if (dateRange === '7d') {
-          const { fromDate } = getLast7DaysRange();
-          params.set('fromDate', fromDate);
-        } else if (dateRange === '30d') {
-          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-          params.set('fromDate', thirtyDaysAgo.toISOString());
-        }
-
-        params.set('limit', '50');
+        const params = buildQueryParams(0);
 
         const response = await fetch(
           `/api/audit/learner/${learnerId}?${params.toString()}`,
@@ -136,6 +148,7 @@ export function LearnerAuditTimeline({
         if (response.ok) {
           const data = await response.json();
           setEvents(data.events);
+          setTotalCount(data.total);
         }
       } catch {
         // Keep existing events on error
@@ -149,6 +162,36 @@ export function LearnerAuditTimeline({
       fetchEvents();
     }
   }, [entityTypeFilter, dateRange, learnerId, accessToken]);
+
+  // Load more events (pagination)
+  const loadMoreEvents = async () => {
+    if (loadingMore || events.length >= totalCount) return;
+
+    setLoadingMore(true);
+    try {
+      const params = buildQueryParams(events.length);
+
+      const response = await fetch(
+        `/api/audit/learner/${learnerId}?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Append new events to existing list
+        setEvents((prev) => [...prev, ...data.events]);
+        setTotalCount(data.total);
+      }
+    } catch {
+      // Keep existing events on error
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -199,7 +242,7 @@ export function LearnerAuditTimeline({
 
         {/* Results count */}
         <span className="text-sm text-slate-500 ml-auto">
-          {events.length} of {total} events
+          {events.length} of {totalCount} events
         </span>
       </div>
 
@@ -331,15 +374,21 @@ export function LearnerAuditTimeline({
       </div>
 
       {/* Load more */}
-      {events.length < total && (
+      {events.length < totalCount && (
         <div className="text-center">
           <button
-            onClick={() => {
-              // TODO: Implement pagination
-            }}
-            className="px-4 py-2 text-sm text-indigo-600 hover:text-indigo-800"
+            onClick={() => void loadMoreEvents()}
+            disabled={loadingMore}
+            className="px-4 py-2 text-sm text-indigo-600 hover:text-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Load more events
+            {loadingMore ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600" />
+                Loading...
+              </span>
+            ) : (
+              `Load more events (${totalCount - events.length} remaining)`
+            )}
           </button>
         </div>
       )}

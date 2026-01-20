@@ -13,6 +13,8 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { prisma } from '../prisma.js';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -78,29 +80,117 @@ export const collaborationAnalyticsRoutes: FastifyPluginAsync = async (fastify) 
   fastify.get(
     '/collaboration/care-teams/summary',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof learnerFilterSchema> }>) => {
-      // Validate user and query for future use when real data is available
-      getUser(request);
-      learnerFilterSchema.parse(request.query);
+      const user = getUser(request);
+      const { classId } = learnerFilterSchema.parse(request.query);
 
-      // TODO: Query from fact tables when available
-      // For now, return mock aggregated data
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+      // Build base filter for tenant
+      const tenantFilter = { tenantId: user.tenantId };
+      const classFilter = classId ? { classId } : {};
+
+      // Query distinct learners with active sessions (proxy for care teams)
+      const [
+        totalLearners,
+        learnersWithRecentActivity,
+        currentPeriodContacts,
+        previousPeriodContacts,
+        contactsByType,
+      ] = await Promise.all([
+        // Total learners (care teams) in tenant/class
+        prisma.session.groupBy({
+          by: ['learnerId'],
+          where: { ...tenantFilter },
+          _count: true,
+        }),
+        // Learners with activity in last 30 days
+        prisma.session.groupBy({
+          by: ['learnerId'],
+          where: {
+            ...tenantFilter,
+            startedAt: { gte: thirtyDaysAgo },
+          },
+          _count: true,
+        }),
+        // Teacher contacts in current period (last 30 days)
+        prisma.teacherContactLog.count({
+          where: {
+            ...tenantFilter,
+            ...classFilter,
+            contactDate: { gte: thirtyDaysAgo },
+          },
+        }),
+        // Teacher contacts in previous period (30-60 days ago)
+        prisma.teacherContactLog.count({
+          where: {
+            ...tenantFilter,
+            ...classFilter,
+            contactDate: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+          },
+        }),
+        // Contacts grouped by type for role distribution
+        prisma.teacherContactLog.groupBy({
+          by: ['contactType'],
+          where: {
+            ...tenantFilter,
+            ...classFilter,
+            contactDate: { gte: thirtyDaysAgo },
+          },
+          _count: true,
+        }),
+      ]);
+
+      const totalCareTeams = totalLearners.length;
+      const activeTeams = learnersWithRecentActivity.length;
+
+      // Calculate engagement rate based on active learners
+      const engagementRate = totalCareTeams > 0 ? activeTeams / totalCareTeams : 0;
+
+      // Calculate period comparison
+      const changePercent =
+        previousPeriodContacts > 0
+          ? ((currentPeriodContacts - previousPeriodContacts) / previousPeriodContacts) * 100
+          : currentPeriodContacts > 0
+            ? 100
+            : 0;
+
+      // Build role distribution from contact types
+      const roleDistribution: Record<string, number> = {
+        parents: 0,
+        teachers: 0,
+        counselors: 0,
+        specialists: 0,
+        other: 0,
+      };
+
+      for (const contact of contactsByType) {
+        const type = contact.contactType.toLowerCase();
+        if (type.includes('parent')) {
+          roleDistribution.parents += contact._count;
+        } else if (type.includes('teacher')) {
+          roleDistribution.teachers += contact._count;
+        } else if (type.includes('counsel')) {
+          roleDistribution.counselors += contact._count;
+        } else if (type.includes('special')) {
+          roleDistribution.specialists += contact._count;
+        } else {
+          roleDistribution.other += contact._count;
+        }
+      }
+
       return {
-        totalCareTeams: 45,
-        averageTeamSize: 3.2,
-        activeTeams: 42,
-        teamsWithRecentActivity: 38,
-        roleDistribution: {
-          parents: 78,
-          teachers: 45,
-          counselors: 12,
-          specialists: 8,
-          other: 5,
-        },
-        engagementRate: 0.84,
+        totalCareTeams,
+        averageTeamSize: totalCareTeams > 0 ? Math.round((Object.values(roleDistribution).reduce((a, b) => a + b, 0) / totalCareTeams) * 10) / 10 : 0,
+        activeTeams,
+        teamsWithRecentActivity: activeTeams,
+        roleDistribution,
+        engagementRate: Math.round(engagementRate * 100) / 100,
         periodComparison: {
-          current: 42,
-          previous: 38,
-          changePercent: 10.5,
+          current: currentPeriodContacts,
+          previous: previousPeriodContacts,
+          changePercent: Math.round(changePercent * 10) / 10,
         },
       };
     }
@@ -118,7 +208,7 @@ export const collaborationAnalyticsRoutes: FastifyPluginAsync = async (fastify) 
         Querystring: z.infer<typeof dateRangeSchema>;
       }>
     ) => {
-      getUser(request);
+      const user = getUser(request);
       const { learnerId } = request.params;
       const { from, to } = dateRangeSchema.parse(request.query);
 
@@ -126,30 +216,176 @@ export const collaborationAnalyticsRoutes: FastifyPluginAsync = async (fastify) 
         ? { from: parseDate(from), to: parseDate(to) }
         : getDefaultDateRange();
 
-      // TODO: Query from fact tables when available
+      // Query care team engagement data for this learner
+      const [
+        contactLogs,
+        sessionActivity,
+        weeklyActivity,
+      ] = await Promise.all([
+        // Get teacher/caregiver contact logs for this learner
+        prisma.teacherContactLog.findMany({
+          where: {
+            tenantId: user.tenantId,
+            learnerId,
+            contactDate: {
+              gte: dateRange.from,
+              lte: dateRange.to,
+            },
+          },
+          orderBy: { contactDate: 'desc' },
+        }),
+        // Get session activity for this learner
+        prisma.session.findMany({
+          where: {
+            tenantId: user.tenantId,
+            learnerId,
+            startedAt: {
+              gte: dateRange.from,
+              lte: dateRange.to,
+            },
+          },
+          select: {
+            id: true,
+            startedAt: true,
+            origin: true,
+          },
+        }),
+        // Get weekly aggregated activity
+        prisma.session.groupBy({
+          by: ['learnerId'],
+          where: {
+            tenantId: user.tenantId,
+            learnerId,
+            startedAt: {
+              gte: dateRange.from,
+              lte: dateRange.to,
+            },
+          },
+          _count: true,
+        }),
+      ]);
+
+      // Aggregate contact logs by type to build member counts
+      const memberCounts: Record<string, { count: number; activeCount: number }> = {
+        Parent: { count: 0, activeCount: 0 },
+        Teacher: { count: 0, activeCount: 0 },
+        Counselor: { count: 0, activeCount: 0 },
+      };
+
+      const uniqueContacts = new Set<string>();
+      const recentContacts = new Set<string>();
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      for (const log of contactLogs) {
+        const type = log.contactType;
+        const key = `${type}:${log.teacherId}`;
+        uniqueContacts.add(key);
+
+        if (new Date(log.contactDate) >= sevenDaysAgo) {
+          recentContacts.add(key);
+        }
+
+        // Categorize by role
+        if (type.toLowerCase().includes('parent')) {
+          memberCounts.Parent.count = (memberCounts.Parent.count || 0) + 1;
+        } else if (type.toLowerCase().includes('counsel')) {
+          memberCounts.Counselor.count = (memberCounts.Counselor.count || 0) + 1;
+        } else {
+          memberCounts.Teacher.count = (memberCounts.Teacher.count || 0) + 1;
+        }
+      }
+
+      // Calculate active counts (contacted in last 7 days)
+      for (const key of recentContacts) {
+        const [type] = key.split(':');
+        if (type?.toLowerCase().includes('parent')) {
+          memberCounts.Parent.activeCount++;
+        } else if (type?.toLowerCase().includes('counsel')) {
+          memberCounts.Counselor.activeCount++;
+        } else {
+          memberCounts.Teacher.activeCount++;
+        }
+      }
+
+      // Build members array
+      const members = Object.entries(memberCounts)
+        .filter(([_, data]) => data.count > 0)
+        .map(([role, data]) => ({
+          role,
+          count: data.count,
+          activeCount: data.activeCount,
+        }));
+
+      // Calculate engagement metrics
+      const messagesExchanged = contactLogs.filter(
+        (l) => l.contactMethod.toLowerCase().includes('message') || l.contactMethod.toLowerCase().includes('email')
+      ).length;
+      const meetingsHeld = contactLogs.filter(
+        (l) => l.contactMethod.toLowerCase().includes('meeting') || l.contactMethod.toLowerCase().includes('call')
+      ).length;
+      const notesShared = contactLogs.filter((l) => l.notes && l.notes.length > 0).length;
+
+      // Calculate average response time (simplified: use average time between contacts)
+      let avgResponseTimeHours = 0;
+      if (contactLogs.length > 1) {
+        const sortedLogs = [...contactLogs].sort(
+          (a, b) => new Date(a.contactDate).getTime() - new Date(b.contactDate).getTime()
+        );
+        let totalHours = 0;
+        for (let i = 1; i < sortedLogs.length; i++) {
+          const diff = new Date(sortedLogs[i]!.contactDate).getTime() - new Date(sortedLogs[i - 1]!.contactDate).getTime();
+          totalHours += diff / (1000 * 60 * 60);
+        }
+        avgResponseTimeHours = Math.round((totalHours / (sortedLogs.length - 1)) * 10) / 10;
+      }
+
+      // Build activity timeline (group by week)
+      const activityByWeek = new Map<string, { messages: number; notes: number; meetings: number }>();
+
+      for (const log of contactLogs) {
+        const date = new Date(log.contactDate);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay()); // Start of week (Sunday)
+        const weekKey = weekStart.toISOString().split('T')[0]!;
+
+        if (!activityByWeek.has(weekKey)) {
+          activityByWeek.set(weekKey, { messages: 0, notes: 0, meetings: 0 });
+        }
+
+        const week = activityByWeek.get(weekKey)!;
+        if (log.contactMethod.toLowerCase().includes('message') || log.contactMethod.toLowerCase().includes('email')) {
+          week.messages++;
+        }
+        if (log.notes && log.notes.length > 0) {
+          week.notes++;
+        }
+        if (log.contactMethod.toLowerCase().includes('meeting') || log.contactMethod.toLowerCase().includes('call')) {
+          week.meetings++;
+        }
+      }
+
+      const activityTimeline = Array.from(activityByWeek.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, activity]) => ({
+          date,
+          ...activity,
+        }));
+
       return {
         learnerId,
         dateRange: {
           from: dateRange.from.toISOString(),
           to: dateRange.to.toISOString(),
         },
-        teamSize: 4,
-        members: [
-          { role: 'Parent', count: 2, activeCount: 2 },
-          { role: 'Teacher', count: 1, activeCount: 1 },
-          { role: 'Counselor', count: 1, activeCount: 1 },
-        ],
+        teamSize: uniqueContacts.size,
+        members,
         engagement: {
-          messagesExchanged: 24,
-          meetingsHeld: 3,
-          notesShared: 12,
-          avgResponseTimeHours: 4.2,
+          messagesExchanged,
+          meetingsHeld,
+          notesShared,
+          avgResponseTimeHours,
         },
-        activityTimeline: [
-          { date: '2024-12-01', messages: 4, notes: 2, meetings: 0 },
-          { date: '2024-12-08', messages: 6, notes: 3, meetings: 1 },
-          { date: '2024-12-14', messages: 8, notes: 4, meetings: 1 },
-        ],
+        activityTimeline,
       };
     }
   );

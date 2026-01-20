@@ -89,8 +89,24 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/homework/input',
         builder: (context, state) {
-          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
-          return HomeworkTextInputScreen(learnerId: learnerId);
+          // Handle both String (learnerId only) and Map (learnerId + imagePath) extra data
+          String learnerId;
+          String? imagePath;
+
+          if (state.extra is String) {
+            learnerId = state.extra as String;
+          } else if (state.extra is Map<String, dynamic>) {
+            final extra = state.extra as Map<String, dynamic>;
+            learnerId = extra['learnerId'] as String? ?? pinState.learnerId ?? '';
+            imagePath = extra['imagePath'] as String?;
+          } else {
+            learnerId = pinState.learnerId ?? '';
+          }
+
+          return HomeworkTextInputScreen(
+            learnerId: learnerId,
+            imagePath: imagePath,
+          );
         },
       ),
       GoRoute(

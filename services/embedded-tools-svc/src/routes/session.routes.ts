@@ -566,6 +566,9 @@ async function refreshSessionToken(
     return reply.status(403).send({ error: 'Maximum token refresh count exceeded' });
   }
 
+  // Fetch tool configuration to get vendor slug for audience
+  const toolConfig = await fetchToolConfig(session.tenantId, session.installationId);
+
   // Generate new token
   await initializeSigningKey();
   const newToken = await generateToolLaunchToken({
@@ -577,7 +580,7 @@ async function refreshSessionToken(
     learnerId: session.learnerId ?? undefined,
     classroomId: session.classroomId ?? undefined,
     scopes: session.grantedScopes as ToolScope[],
-    audience: 'tool', // TODO: Get from tool config
+    audience: toolConfig.vendorSlug,
     expirySeconds: config.defaultTokenExpiryMin * 60,
   });
 

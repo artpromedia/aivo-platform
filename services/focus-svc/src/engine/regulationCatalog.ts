@@ -18,6 +18,7 @@ import type {
   RegulationRecommendation,
   FocusLossReason,
 } from '../types/telemetry.js';
+import { config } from '../config.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ACTIVITY DEFINITIONS
@@ -347,9 +348,24 @@ function toRecommendation(activity: ActivityDefinition): RegulationRecommendatio
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * FUTURE: Get AI-generated recommendation.
+ * AI-generated recommendation interface from ai-orchestrator
+ */
+interface AiOrchestratorResponse {
+  success: boolean;
+  data?: {
+    activityType: RegulationActivityType;
+    title: string;
+    description: string;
+    estimatedDurationSeconds: number;
+    instructions: string[];
+  };
+  error?: string;
+}
+
+/**
+ * Get AI-generated recommendation from ai-orchestrator FOCUS agent.
  *
- * This would call the ai-orchestrator FOCUS agent to generate
+ * This calls the ai-orchestrator FOCUS agent to generate
  * a personalized regulation activity based on:
  * - Learner profile (from Virtual Brain)
  * - Current emotional state
@@ -357,22 +373,65 @@ function toRecommendation(activity: ActivityDefinition): RegulationRecommendatio
  * - Time of day
  * - Previous regulation activity effectiveness
  *
- * For MVP, we use the static catalog above.
+ * Falls back to null if AI service is unavailable, allowing
+ * the caller to use the static catalog instead.
  */
 export async function getAiRecommendation(
-  _context: RecommendationContext
+  context: RecommendationContext
 ): Promise<RegulationRecommendation | null> {
-  // TODO: Implement AI integration
-  // const response = await aiOrchestratorClient.callFocusAgent({
-  //   agentType: 'FOCUS',
-  //   payload: {
-  //     gradeBand: context.gradeBand,
-  //     mood: context.mood,
-  //     focusLossReasons: context.focusLossReasons,
-  //     requestType: 'regulation_activity',
-  //   },
-  // });
-  // return parseAiResponse(response);
+  // Skip AI integration in development if not configured
+  if (!config.aiOrchestratorUrl || config.isDev && !config.aiOrchestratorApiKey) {
+    return null;
+  }
 
-  return null; // Fall back to static catalog
+  try {
+    const requestBody = {
+      agentType: 'FOCUS',
+      payload: {
+        gradeBand: context.gradeBand,
+        mood: context.mood,
+        focusLossReasons: context.focusLossReasons,
+        requestType: 'regulation_activity',
+      },
+    };
+
+    const response = await fetch(`${config.aiOrchestratorUrl}/api/v1/agents/focus/recommend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.aiOrchestratorApiKey && {
+          'Authorization': `Bearer ${config.aiOrchestratorApiKey}`,
+        }),
+        'X-Service-Name': 'focus-svc',
+      },
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+
+    if (!response.ok) {
+      console.warn(`AI orchestrator returned ${response.status}: ${response.statusText}`);
+      return null;
+    }
+
+    const result: AiOrchestratorResponse = await response.json();
+
+    if (!result.success || !result.data) {
+      console.warn('AI orchestrator returned unsuccessful response:', result.error);
+      return null;
+    }
+
+    // Return AI-generated recommendation with source marked as 'ai'
+    return {
+      activityType: result.data.activityType,
+      title: result.data.title,
+      description: result.data.description,
+      estimatedDurationSeconds: result.data.estimatedDurationSeconds,
+      instructions: result.data.instructions,
+      source: 'ai',
+    };
+  } catch (error) {
+    // Log error but don't throw - allow fallback to static catalog
+    console.warn('Failed to get AI recommendation, falling back to static catalog:', error);
+    return null;
+  }
 }

@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../providers/providers.dart';
@@ -21,12 +23,133 @@ class ConversationScreen extends ConsumerStatefulWidget {
 class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _imagePicker = ImagePicker();
+
+  List<XFile> _pendingAttachments = [];
+  bool _isUploadingAttachment = false;
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Pick photo from gallery
+  Future<void> _pickPhoto() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null && mounted) {
+        setState(() {
+          _pendingAttachments.add(image);
+        });
+        _showAttachmentPreview(image);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
+  /// Capture photo using camera
+  Future<void> _captureFromCamera() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null && mounted) {
+        setState(() {
+          _pendingAttachments.add(image);
+        });
+        _showAttachmentPreview(image);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to capture image: $e')),
+        );
+      }
+    }
+  }
+
+  /// Pick document using file picker
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'rtf'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty && mounted) {
+        final file = result.files.first;
+        if (file.path != null) {
+          final xFile = XFile(file.path!);
+          setState(() {
+            _pendingAttachments.add(xFile);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Document attached: ${file.name}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick document: $e')),
+        );
+      }
+    }
+  }
+
+  /// Show preview of selected attachment
+  void _showAttachmentPreview(XFile file) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.attachment, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Attached: ${file.name}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _pendingAttachments.remove(file);
+                });
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Remove a pending attachment
+  void _removeAttachment(XFile file) {
+    setState(() {
+      _pendingAttachments.remove(file);
+    });
   }
 
   @override
@@ -56,6 +179,11 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           _MessageInput(
             controller: _messageController,
             onSend: _sendMessage,
+            onPickPhoto: _pickPhoto,
+            onCaptureCamera: _captureFromCamera,
+            onPickDocument: _pickDocument,
+            pendingAttachments: _pendingAttachments,
+            onRemoveAttachment: _removeAttachment,
           ),
         ],
       ),
@@ -181,10 +309,20 @@ class _MessageInput extends StatelessWidget {
   const _MessageInput({
     required this.controller,
     required this.onSend,
+    required this.onPickPhoto,
+    required this.onCaptureCamera,
+    required this.onPickDocument,
+    required this.pendingAttachments,
+    required this.onRemoveAttachment,
   });
 
   final TextEditingController controller;
   final VoidCallback onSend;
+  final VoidCallback onPickPhoto;
+  final VoidCallback onCaptureCamera;
+  final VoidCallback onPickDocument;
+  final List<XFile> pendingAttachments;
+  final void Function(XFile) onRemoveAttachment;
 
   @override
   Widget build(BuildContext context) {
@@ -201,73 +339,131 @@ class _MessageInput extends StatelessWidget {
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.attach_file),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) => SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+            // Show pending attachments
+            if (pendingAttachments.isNotEmpty)
+              SizedBox(
+                height: 60,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  itemCount: pendingAttachments.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final file = pendingAttachments[index];
+                    final isImage = file.name.toLowerCase().endsWith('.jpg') ||
+                        file.name.toLowerCase().endsWith('.jpeg') ||
+                        file.name.toLowerCase().endsWith('.png') ||
+                        file.name.toLowerCase().endsWith('.gif');
+                    return Stack(
                       children: [
-                        ListTile(
-                          leading: const Icon(Icons.photo_library),
-                          title: const Text('Photo Library'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            // TODO: Implement photo picker
-                          },
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isImage ? Icons.image : Icons.insert_drive_file,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
-                        ListTile(
-                          leading: const Icon(Icons.camera_alt),
-                          title: const Text('Camera'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            // TODO: Implement camera capture
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.insert_drive_file),
-                          title: const Text('Document'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            // TODO: Implement document picker
-                          },
+                        Positioned(
+                          top: -4,
+                          right: -4,
+                          child: GestureDetector(
+                            onTap: () => onRemoveAttachment(file),
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
+                    );
+                  },
+                ),
+              ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (sheetContext) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.photo_library),
+                              title: const Text('Photo Library'),
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                onPickPhoto();
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.camera_alt),
+                              title: const Text('Camera'),
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                onCaptureCamera();
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.insert_drive_file),
+                              title: const Text('Document'),
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                onPickDocument();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Type a message...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => onSend(),
                   ),
                 ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: Colors.blue,
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                onPressed: onSend,
-              ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                    onPressed: onSend,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

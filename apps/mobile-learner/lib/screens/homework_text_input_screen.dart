@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +11,14 @@ import '../homework/homework_service.dart';
 /// Screen for entering/pasting homework problem text.
 /// Includes subject selection and validation before starting the helper.
 class HomeworkTextInputScreen extends ConsumerStatefulWidget {
-  const HomeworkTextInputScreen({super.key, required this.learnerId});
+  const HomeworkTextInputScreen({
+    super.key,
+    required this.learnerId,
+    this.imagePath,
+  });
 
   final String learnerId;
+  final String? imagePath;
 
   @override
   ConsumerState<HomeworkTextInputScreen> createState() => _HomeworkTextInputScreenState();
@@ -89,9 +96,70 @@ class _HomeworkTextInputScreenState extends ConsumerState<HomeworkTextInputScree
 
               const SizedBox(height: 24),
 
+              // Show image preview if one was captured
+              if (widget.imagePath != null) ...[
+                Text(
+                  'Your homework photo:',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    children: [
+                      Image.file(
+                        File(widget.imagePath!),
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Photo added',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You can also add more details below:',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Problem text input
               Text(
-                'Type or paste your question:',
+                widget.imagePath != null
+                    ? 'Add any extra details (optional):'
+                    : 'Type or paste your question:',
                 style: theme.textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
@@ -174,6 +242,10 @@ class _HomeworkTextInputScreenState extends ConsumerState<HomeworkTextInputScree
         fillColor: theme.colorScheme.surfaceContainerLowest,
       ),
       validator: (value) {
+        // If image is provided, text is optional
+        if (widget.imagePath != null) {
+          return null;
+        }
         if (value == null || value.trim().isEmpty) {
           return 'Please enter your homework question';
         }

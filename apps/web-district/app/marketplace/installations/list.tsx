@@ -15,6 +15,8 @@ import {
   listInstallations,
   disableInstallation,
   enableInstallation,
+  approveInstallation,
+  revokeInstallation,
   getItemTypeLabel,
   getInstallationStatusLabel,
   getInstallationStatusColor,
@@ -69,6 +71,32 @@ export function InstallationsList() {
       }
     } catch (err) {
       console.error('Failed to toggle status:', err);
+    }
+  }
+
+  async function handleApprove(installation: MarketplaceInstallation) {
+    if (!tenantId) return;
+
+    try {
+      await approveInstallation(tenantId, installation.id);
+      setInstallations((prev) =>
+        prev.map((i) => (i.id === installation.id ? { ...i, status: 'ACTIVE' } : i))
+      );
+    } catch (err) {
+      console.error('Failed to approve installation:', err);
+    }
+  }
+
+  async function handleRevoke(installation: MarketplaceInstallation) {
+    if (!tenantId) return;
+
+    try {
+      await revokeInstallation(tenantId, installation.id);
+      // Remove from list since it's revoked
+      setInstallations((prev) => prev.filter((i) => i.id !== installation.id));
+      setTotal((prev) => prev - 1);
+    } catch (err) {
+      console.error('Failed to revoke installation:', err);
     }
   }
 
@@ -128,6 +156,8 @@ export function InstallationsList() {
             key={installation.id}
             installation={installation}
             onToggleStatus={() => handleToggleStatus(installation)}
+            onApprove={() => handleApprove(installation)}
+            onRevoke={() => handleRevoke(installation)}
           />
         ))}
       </div>
@@ -138,11 +168,37 @@ export function InstallationsList() {
 function InstallationCard({
   installation,
   onToggleStatus,
+  onApprove,
+  onRevoke,
 }: {
   installation: MarketplaceInstallation;
   onToggleStatus: () => void;
+  onApprove: () => void;
+  onRevoke: () => void;
 }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
+  const [isRevoking, setIsRevoking] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+
+  async function handleApprove() {
+    setIsApproving(true);
+    try {
+      await onApprove();
+    } finally {
+      setIsApproving(false);
+    }
+  }
+
+  async function handleRevoke() {
+    setIsRevoking(true);
+    try {
+      await onRevoke();
+      setShowRevokeConfirm(false);
+    } finally {
+      setIsRevoking(false);
+    }
+  }
 
   const statusColor = getInstallationStatusColor(installation.status);
   const statusStyles: Record<string, string> = {
@@ -261,9 +317,10 @@ function InstallationCard({
                 <button
                   onClick={() => {
                     setShowMenu(false);
-                    // TODO: Implement approve action
+                    void handleApprove();
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-surface-muted"
+                  disabled={isApproving}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-surface-muted disabled:opacity-50"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -273,7 +330,7 @@ function InstallationCard({
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Approve
+                  {isApproving ? 'Approving...' : 'Approve'}
                 </button>
               )}
 
@@ -332,7 +389,7 @@ function InstallationCard({
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  // TODO: Implement revoke action with confirmation
+                  setShowRevokeConfirm(true);
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-surface-muted"
               >
@@ -350,6 +407,61 @@ function InstallationCard({
           </>
         )}
       </div>
+
+      {/* Revoke Confirmation Modal */}
+      {showRevokeConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50"
+            onClick={() => setShowRevokeConfirm(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-xl">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                  <svg
+                    className="h-5 w-5 text-red-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Revoke Installation</h3>
+                  <p className="text-sm text-muted">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-muted">
+                Are you sure you want to revoke <strong>{installation.marketplaceItem.title}</strong>?
+                This will permanently remove access for all users in your district.
+              </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowRevokeConfirm(false)}
+                  disabled={isRevoking}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleRevoke()}
+                  disabled={isRevoking}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isRevoking ? 'Revoking...' : 'Revoke Installation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

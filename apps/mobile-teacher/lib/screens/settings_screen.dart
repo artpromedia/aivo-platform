@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../main.dart';
+import '../providers/settings_provider.dart';
 
 class TeacherSettingsScreen extends ConsumerWidget {
   const TeacherSettingsScreen({super.key});
@@ -17,6 +18,29 @@ class TeacherSettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final authState = ref.watch(teacherAuthProvider);
+    final settingsState = ref.watch(teacherSettingsProvider);
+
+    // Listen for errors and show snackbar
+    ref.listen<TeacherSettingsState>(
+      teacherSettingsProvider,
+      (previous, next) {
+        if (next.error != null && previous?.error != next.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.error!),
+              backgroundColor: colorScheme.error,
+              action: SnackBarAction(
+                label: 'Dismiss',
+                textColor: colorScheme.onError,
+                onPressed: () {
+                  ref.read(teacherSettingsProvider.notifier).clearError();
+                },
+              ),
+            ),
+          );
+        }
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -83,10 +107,14 @@ class TeacherSettingsScreen extends ConsumerWidget {
                 title: 'Push Notifications',
                 subtitle: 'Receive alerts for important updates',
                 trailing: Switch(
-                  value: true, // TODO: Connect to actual preference
-                  onChanged: (value) {
-                    // TODO: Save preference
-                  },
+                  value: settingsState.pushNotificationsEnabled,
+                  onChanged: settingsState.isLoading
+                      ? null
+                      : (value) {
+                          ref
+                              .read(teacherSettingsProvider.notifier)
+                              .setPushNotificationsEnabled(value);
+                        },
                 ),
               ),
               _SettingsTile(
@@ -94,10 +122,14 @@ class TeacherSettingsScreen extends ConsumerWidget {
                 title: 'Student Alerts',
                 subtitle: 'Get notified when students need attention',
                 trailing: Switch(
-                  value: true, // TODO: Connect to actual preference
-                  onChanged: (value) {
-                    // TODO: Save preference
-                  },
+                  value: settingsState.studentAlertsEnabled,
+                  onChanged: settingsState.isLoading
+                      ? null
+                      : (value) {
+                          ref
+                              .read(teacherSettingsProvider.notifier)
+                              .setStudentAlertsEnabled(value);
+                        },
                 ),
               ),
             ],
@@ -118,10 +150,14 @@ class TeacherSettingsScreen extends ConsumerWidget {
                 title: 'Dark Mode',
                 subtitle: 'Use dark theme',
                 trailing: Switch(
-                  value: false, // TODO: Connect to actual theme
-                  onChanged: (value) {
-                    // TODO: Save preference
-                  },
+                  value: settingsState.darkModeEnabled,
+                  onChanged: settingsState.isLoading
+                      ? null
+                      : (value) {
+                          ref
+                              .read(teacherSettingsProvider.notifier)
+                              .setDarkModeEnabled(value);
+                        },
                 ),
               ),
             ],

@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -190,9 +192,7 @@ class _CareTeamMemberCard extends StatelessWidget {
         trailing: member.contactPhone != null
             ? IconButton(
                 icon: const Icon(Icons.phone_outlined),
-                onPressed: () {
-                  // TODO: Launch phone dialer
-                },
+                onPressed: () => _launchPhone(member.contactPhone!),
               )
             : null,
         isThreeLine: member.contactEmail != null,
@@ -295,8 +295,8 @@ class _CareTeamMemberCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: member.contactEmail != null
                         ? () {
-                            // TODO: Launch email
                             Navigator.pop(context);
+                            _launchEmail(member.contactEmail!);
                           }
                         : null,
                     icon: const Icon(Icons.email_outlined),
@@ -308,7 +308,7 @@ class _CareTeamMemberCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      // TODO: Navigate to messaging
+                      _navigateToMessaging(context, member);
                     },
                     icon: const Icon(Icons.message_outlined),
                     label: const Text('Message'),
@@ -329,6 +329,25 @@ class _CareTeamMemberCard extends StatelessWidget {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Future<void> _launchPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final uri = Uri(scheme: 'mailto', path: email);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  void _navigateToMessaging(BuildContext context, CareTeamMember member) {
+    // Navigate to messages with the member's user ID to start/open a conversation
+    context.push('/messages', extra: {'recipientId': member.userId, 'recipientName': member.displayName});
   }
 }
 

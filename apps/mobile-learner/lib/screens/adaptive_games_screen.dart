@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../features/adaptive_games/adaptive_game_player.dart';
 
 /// Adaptive Games Screen
 ///
@@ -299,9 +302,125 @@ class _AdaptiveGamesScreenState extends ConsumerState<AdaptiveGamesScreen> {
   }
 
   void _launchGame(String gameId) {
-    // TODO: Navigate to game player screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Launching game: $gameId')),
+    // Find the game data
+    final game = _games.firstWhere(
+      (g) => g['id'] == gameId,
+      orElse: () => <String, dynamic>{},
     );
+
+    if (game.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Game not found')),
+      );
+      return;
+    }
+
+    // Create a GeneratedGame from the game data
+    final generatedGame = GeneratedGame(
+      id: game['id'] as String,
+      gameType: game['type'] as String,
+      title: game['title'] as String,
+      description: game['description'] as String,
+      instructions: _getInstructionsForGameType(game['type'] as String),
+      difficulty: game['difficulty'] as String,
+      estimatedDuration: 180, // 3 minutes default
+      parameters: {'subject': game['subject']},
+      gameData: _getGameDataForType(game['type'] as String),
+      scoring: GameScoring(maxPoints: 100, timeBonus: true),
+    );
+
+    // Navigate to the game player screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AdaptiveGamePlayer(
+          game: generatedGame,
+          learnerId: widget.learnerId,
+          onComplete: (results) {
+            // Show completion feedback
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Great job! You scored ${results['score']} points!',
+                  ),
+                ),
+              );
+              Navigator.of(context).pop();
+            }
+          },
+          onExit: () {
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  List<String> _getInstructionsForGameType(String type) {
+    switch (type) {
+      case 'memory':
+        return [
+          'Match pairs of cards by tapping them',
+          'Remember where each card is located',
+          'Find all pairs to complete the game',
+        ];
+      case 'pattern':
+        return [
+          'Look at the pattern sequence',
+          'Figure out what comes next',
+          'Select the correct answer',
+        ];
+      case 'sorting':
+        return [
+          'Read each word carefully',
+          'Drag and drop into the correct category',
+          'Sort all items to complete the game',
+        ];
+      case 'matching':
+        return [
+          'Read each item on the left',
+          'Find its match on the right',
+          'Connect all matching pairs',
+        ];
+      case 'sequencing':
+        return [
+          'Read the story events',
+          'Arrange them in the correct order',
+          'Use logic to figure out the sequence',
+        ];
+      default:
+        return [
+          'Follow the on-screen instructions',
+          'Take your time to think',
+          'Have fun learning!',
+        ];
+    }
+  }
+
+  Map<String, dynamic> _getGameDataForType(String type) {
+    switch (type) {
+      case 'memory':
+        return {
+          'cardPairs': 4,
+          'theme': 'shapes',
+        };
+      case 'pattern':
+        return {
+          'patterns': [
+            {'sequence': [1, 2, 3, 4], 'answer': 5},
+            {'sequence': [2, 4, 6, 8], 'answer': 10},
+          ],
+        };
+      default:
+        return {
+          'problems': [
+            {'question': '5 + 3 = ?', 'answer': 8},
+            {'question': '7 + 2 = ?', 'answer': 9},
+            {'question': '4 + 6 = ?', 'answer': 10},
+          ],
+        };
+    }
   }
 }

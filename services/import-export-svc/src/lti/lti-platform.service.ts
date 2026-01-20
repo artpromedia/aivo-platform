@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignJWT, importPKCS8 } from 'jose';
 import { v4 as uuidv4 } from 'uuid';
+import { metrics } from '@aivo/ts-observability';
 import {
   LTIToolConfig,
   LTILineItem,
@@ -274,8 +275,13 @@ export class LTIPlatformService {
       },
     });
 
-    // TODO: Add metrics service
-    // metrics.increment('lti.platform.launch', { tool: tool.name });
+    // Track LTI platform launch metrics
+    metrics.events.publishedTotal.inc({
+      event_type: 'lti.platform.launch',
+      event_source: 'lti-platform',
+    });
+
+    this.logger.log(`LTI platform launch completed toolId=${toolId} toolName=${tool.name} userId=${params.userId}`);
 
     return token;
   }

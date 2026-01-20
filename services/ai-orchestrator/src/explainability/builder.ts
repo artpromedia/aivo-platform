@@ -20,6 +20,9 @@ import type {
 } from '@aivo/ts-types';
 import type { Pool } from 'pg';
 
+import { getLLMOrchestrator } from '../providers/llm-orchestrator.js';
+import type { LLMMessage } from '../providers/llm-provider.interface.js';
+
 // ════════════════════════════════════════════════════════════════════════════
 // Configuration
 // ════════════════════════════════════════════════════════════════════════════
@@ -248,28 +251,34 @@ export class ExplanationBuilder {
     // Use deterministic fallback
     const fallbackSummary = this.generateFallbackSummary(input, reasons);
 
-    // TODO: If config.enableAiSummaries is true and fallback is insufficient,
-    // call AI to generate a parent-friendly summary:
-    //
-    // const aiSummary = await this.generateAiSummary({
-    //   sourceType: input.sourceType,
-    //   actionType: input.actionType,
-    //   reasons,
-    //   inputs: input.inputs,
-    //   constraints: {
-    //     maxLength: 200,
-    //     tone: 'supportive',
-    //     noJudgments: true,
-    //     noDiagnoses: true,
-    //   }
-    // });
-    //
-    // The AI prompt would be structured like:
-    // "Generate a brief, parent-friendly explanation for why we {action}.
-    //  Context: {reasons as bullet points}
-    //  Inputs: {key metrics}
-    //  Requirements: Use encouraging language. No medical/educational diagnoses.
-    //  Keep it under 200 characters."
+    // If AI summaries are enabled, try to generate a more nuanced explanation
+    if (this.config.enableAiSummaries) {
+      try {
+        const aiSummary = await this.generateAiSummary({
+          sourceType: input.sourceType,
+          actionType: input.actionType,
+          reasons,
+          inputs: input.inputs,
+          constraints: {
+            maxLength: 200,
+            tone: 'supportive',
+            noJudgments: true,
+            noDiagnoses: true,
+          },
+        });
+
+        if (aiSummary) {
+          return {
+            summaryText: aiSummary,
+            detailsJson,
+            aiGenerated: true,
+          };
+        }
+      } catch (err) {
+        // Log AI failure but fall back to deterministic summary
+        console.error('[ExplanationBuilder] AI summary generation failed, using fallback:', err);
+      }
+    }
 
     return {
       summaryText: fallbackSummary,
@@ -492,6 +501,97 @@ export class ExplanationBuilder {
 
     // Construct a neutral, parent-friendly summary
     return `We ${action} ${primaryReason}.`;
+  }
+
+  /**
+   * Generate an AI-powered summary using the LLM orchestrator.
+   * Returns null if AI generation fails or produces unsuitable content.
+   */
+  private async generateAiSummary(params: {
+    sourceType: ExplanationSourceType;
+    actionType: ExplanationActionType;
+    reasons: ExplanationReason[];
+    inputs: Record<string, unknown>;
+    constraints: {
+      maxLength: number;
+      tone: string;
+      noJudgments: boolean;
+      noDiagnoses: boolean;
+    };
+  }): Promise<string | null> {
+    const { sourceType, actionType, reasons, inputs, constraints } = params;
+
+    // Build context for the AI prompt
+    const reasonBullets = reasons
+      .slice(0, 3) // Limit to top 3 reasons
+      .map((r) => `- ${r.description}`)
+      .join('\n');
+
+    const inputContext = Object.entries(inputs)
+      .filter(([_, v]) => v !== undefined && v !== null)
+      .slice(0, 5) // Limit to 5 key inputs
+      .map(([k, v]) => `${k}: ${String(v)}`)
+      .join(', ');
+
+    const actionDescription = ACTION_FALLBACKS[actionType] ?? 'made this decision';
+
+    const systemPrompt = `You are an assistant that generates brief, parent-friendly explanations for a children's educational platform.
+
+Requirements:
+- Use encouraging, ${constraints.tone} language
+- Keep the explanation under ${constraints.maxLength} characters
+- Do NOT include any medical or educational diagnoses
+- Do NOT make judgments about the child's abilities
+- Focus on what we did and why it helps the child's learning journey
+- Write in first person plural ("We selected..." not "The system selected...")
+- Be warm and reassuring`;
+
+    const userPrompt = `Generate a brief, parent-friendly explanation for why we ${actionDescription}.
+
+Context (reasons for this decision):
+${reasonBullets}
+
+Relevant information: ${inputContext || 'general learning progress'}
+
+Source: ${sourceType.toLowerCase().replace(/_/g, ' ')}
+
+Remember: Keep it under ${constraints.maxLength} characters, be encouraging, and avoid any clinical or judgmental language.`;
+
+    const messages: LLMMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
+
+    try {
+      const orchestrator = getLLMOrchestrator();
+      const result = await orchestrator.complete(messages, {
+        maxTokens: 100, // Keep responses short
+        temperature: 0.7, // Some creativity but not too much
+      });
+
+      const summary = result.content.trim();
+
+      // Validate the response
+      if (!summary || summary.length === 0) {
+        return null;
+      }
+
+      // Enforce max length constraint
+      if (summary.length > constraints.maxLength) {
+        // Try to truncate at a sentence boundary
+        const truncated = summary.substring(0, constraints.maxLength);
+        const lastPeriod = truncated.lastIndexOf('.');
+        if (lastPeriod > constraints.maxLength * 0.5) {
+          return truncated.substring(0, lastPeriod + 1);
+        }
+        return truncated + '...';
+      }
+
+      return summary;
+    } catch (error) {
+      console.error('[ExplanationBuilder] LLM call failed:', error);
+      return null;
+    }
   }
 
   /**

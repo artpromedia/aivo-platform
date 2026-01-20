@@ -72,6 +72,8 @@ export default function NewExportPage() {
     warning?: string;
   } | null>(null);
 
+  const [creatingFromTemplate, setCreatingFromTemplate] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -113,6 +115,44 @@ export default function NewExportPage() {
   const updateField = <K extends keyof ExportForm>(field: K, value: ExportForm[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setPreview(null); // Clear preview on change
+  };
+
+  const handleCreateFromTemplate = async (template: DatasetTemplate) => {
+    setCreatingFromTemplate(template.id);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/research/dataset-definitions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          projectId,
+          name: `${template.name} (from template)`,
+          description: template.description,
+          baseTable: template.baseTable,
+          templateId: template.id,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create dataset from template');
+      }
+
+      const result = await res.json();
+      const newDataset = result.data as DatasetDefinition;
+
+      // Add new dataset to list and select it
+      setDatasets((prev) => [...prev, newDataset]);
+      updateField('datasetDefinitionId', newDataset.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create dataset from template');
+    } finally {
+      setCreatingFromTemplate(null);
+    }
   };
 
   const handlePreview = async () => {
@@ -228,12 +268,16 @@ export default function NewExportPage() {
                   <button
                     key={template.id}
                     type="button"
-                    className="text-left p-3 border rounded-lg hover:border-primary hover:bg-primary/5 transition"
-                    onClick={() => {
-                      // TODO: Create dataset from template
-                    }}
+                    className="text-left p-3 border rounded-lg hover:border-primary hover:bg-primary/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={creatingFromTemplate !== null}
+                    onClick={() => void handleCreateFromTemplate(template)}
                   >
-                    <div className="font-medium text-sm">{template.name}</div>
+                    <div className="font-medium text-sm flex items-center gap-2">
+                      {template.name}
+                      {creatingFromTemplate === template.id && (
+                        <span className="animate-spin text-xs">...</span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted">{template.description}</div>
                   </button>
                 ))}

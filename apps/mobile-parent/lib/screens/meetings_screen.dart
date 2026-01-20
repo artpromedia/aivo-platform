@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../collaboration/models.dart';
 import '../collaboration/service.dart';
 
@@ -363,9 +364,7 @@ class _MeetingCard extends ConsumerWidget {
                   children: [
                     if (meeting.videoLink != null)
                       TextButton.icon(
-                        onPressed: () {
-                          // TODO: Open video link
-                        },
+                        onPressed: () => _openVideoLink(meeting.videoLink!),
                         icon: const Icon(Icons.videocam, size: 18),
                         label: const Text('Join'),
                         style: TextButton.styleFrom(
@@ -374,9 +373,7 @@ class _MeetingCard extends ConsumerWidget {
                         ),
                       ),
                     TextButton.icon(
-                      onPressed: () {
-                        // TODO: Add to calendar
-                      },
+                      onPressed: () => _addToCalendar(meeting),
                       icon: const Icon(Icons.calendar_today, size: 18),
                       label: const Text('Add to Calendar'),
                       style: TextButton.styleFrom(
@@ -523,9 +520,7 @@ class _MeetingCard extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   trailing: IconButton(
                     icon: const Icon(Icons.open_in_new),
-                    onPressed: () {
-                      // TODO: Open link
-                    },
+                    onPressed: () => _openVideoLink(meeting.videoLink!),
                   ),
                 ),
               // Description
@@ -587,6 +582,38 @@ class _MeetingCard extends ConsumerWidget {
     final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     final months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Future<void> _openVideoLink(String videoLink) async {
+    final uri = Uri.parse(videoLink);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _addToCalendar(CareMeeting meeting) async {
+    // Create a calendar event URL (Google Calendar format)
+    final startTime = meeting.scheduledAt.toUtc();
+    final endTime = startTime.add(Duration(minutes: meeting.durationMinutes));
+
+    // Format dates for Google Calendar (YYYYMMDDTHHMMSSZ)
+    String formatDateTime(DateTime dt) {
+      return '${dt.year}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}'
+          'T${dt.hour.toString().padLeft(2, '0')}${dt.minute.toString().padLeft(2, '0')}00Z';
+    }
+
+    final uri = Uri.https('calendar.google.com', '/calendar/render', {
+      'action': 'TEMPLATE',
+      'text': meeting.title,
+      'dates': '${formatDateTime(startTime)}/${formatDateTime(endTime)}',
+      if (meeting.description != null) 'details': meeting.description!,
+      if (meeting.location != null) 'location': meeting.location!,
+      if (meeting.videoLink != null) 'location': meeting.videoLink!,
+    });
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
 

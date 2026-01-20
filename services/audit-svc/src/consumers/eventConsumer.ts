@@ -310,14 +310,80 @@ export async function handleEvent(
         [auditLog.id]
       );
 
-      // TODO: Send webhook notification if configured
+      // Send webhook notification if configured
       if (policy.alertWebhookUrl) {
-        // Send webhook notification
-        console.log(`Would send webhook to ${policy.alertWebhookUrl}`);
+        sendWebhookNotification(policy.alertWebhookUrl, {
+          tenantId,
+          eventType,
+          category: mapping.category,
+          severity: mapping.severity,
+          description: mapping.description(payload),
+          auditLogId: auditLog.id,
+          timestamp: new Date().toISOString(),
+          payload,
+        }).catch((webhookError) => {
+          // Log webhook failure but don't fail the main audit flow
+          console.error(`Failed to send webhook notification to ${policy.alertWebhookUrl}:`, webhookError);
+        });
       }
     }
   } catch (error) {
     console.error(`Failed to process audit event ${eventType}:`, error);
     throw error;
+  }
+}
+
+/**
+ * Webhook notification payload structure.
+ */
+interface WebhookPayload {
+  tenantId: string;
+  eventType: string;
+  category: AuditCategory;
+  severity: AuditSeverity;
+  description: string;
+  auditLogId: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+}
+
+/**
+ * Send a webhook notification to the configured URL.
+ * Uses a timeout to prevent hanging on slow endpoints.
+ */
+async function sendWebhookNotification(
+  webhookUrl: string,
+  payload: WebhookPayload
+): Promise<void> {
+  const WEBHOOK_TIMEOUT_MS = 10000; // 10 second timeout
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'AIVO-AuditService/1.0',
+        'X-AIVO-Event-Type': payload.eventType,
+        'X-AIVO-Tenant-Id': payload.tenantId,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Webhook returned status ${response.status}: ${response.statusText}`);
+    }
+
+    console.log(`Webhook notification sent successfully to ${webhookUrl} for event ${payload.eventType}`);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Webhook request to ${webhookUrl} timed out after ${WEBHOOK_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

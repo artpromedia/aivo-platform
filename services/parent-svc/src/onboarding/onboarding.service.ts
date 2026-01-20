@@ -34,10 +34,12 @@ const DEFAULT_CURRICULUM: CurriculumInfo = {
 export class OnboardingService {
   private readonly tenantServiceUrl: string;
   private readonly notifySvcUrl: string;
+  private readonly learnerModelSvcUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
     this.tenantServiceUrl = process.env.TENANT_SERVICE_URL || 'http://tenant-svc:3000';
     this.notifySvcUrl = process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4012';
+    this.learnerModelSvcUrl = process.env.LEARNER_MODEL_SERVICE_URL || 'http://learner-model-svc:4008';
   }
 
   /**
@@ -355,12 +357,65 @@ export class OnboardingService {
       },
     });
 
-    // TODO: Call learner-model-svc to update Virtual Brain curriculum
-    // This would be done via a message queue or direct API call
+    // Call learner-model-svc to update Virtual Brain curriculum alignment
+    await this.updateLearnerModelCurriculum(
+      learnerId,
+      locationResult.curriculum.curriculumStandards,
+      location.stateCode || locationResult.district?.stateCode
+    );
 
     return {
       curriculumStandards: locationResult.curriculum.curriculumStandards,
       district: locationResult.district,
     };
+  }
+
+  /**
+   * Update the learner's Virtual Brain curriculum alignment in learner-model-svc
+   * This ensures the adaptive learning model uses the correct curriculum standards
+   */
+  private async updateLearnerModelCurriculum(
+    learnerId: string,
+    curriculumStandards: string[],
+    stateCode?: string | null
+  ): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.learnerModelSvcUrl}/learners/${learnerId}/curriculum`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'parent-svc',
+          },
+          body: JSON.stringify({
+            curriculumStandards,
+            stateCode: stateCode || undefined,
+            updatedAt: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        logger.warn('Failed to update learner model curriculum', {
+          learnerId,
+          status: response.status,
+          error: errorBody,
+        });
+        // Don't throw - this is a non-critical operation that shouldn't block the main flow
+      } else {
+        logger.info('Learner model curriculum updated successfully', {
+          learnerId,
+          curriculumStandards,
+        });
+      }
+    } catch (error) {
+      // Log but don't throw - curriculum sync can be retried later
+      logger.error('Error calling learner-model-svc to update curriculum', {
+        learnerId,
+        error,
+      });
+    }
   }
 }

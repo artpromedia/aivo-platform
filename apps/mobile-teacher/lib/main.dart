@@ -450,6 +450,8 @@ class TeacherApp extends ConsumerWidget {
       );
     }
 
+    final darkTheme = ref.watch(teacherDarkThemeProvider);
+
     return MediaQuery(
       // Apply text scale factor from accessibility settings (RE-AUDIT-004)
       data: MediaQuery.of(context).copyWith(
@@ -458,7 +460,8 @@ class TeacherApp extends ConsumerWidget {
       child: MaterialApp.router(
         title: 'Aivo Teacher',
         theme: theme,
-        darkTheme: theme, // TODO: Add dark theme support
+        darkTheme: darkTheme,
+        themeMode: ThemeMode.system, // Automatically switch based on system settings
         routerConfig: router,
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [

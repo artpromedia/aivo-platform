@@ -29,6 +29,8 @@ import '../features/content_library/presentation/content_library_screen.dart';
 import '../features/lesson_planning/presentation/lesson_planning_screen.dart';
 import '../features/analytics/presentation/classroom_analytics_screen.dart';
 import '../features/professional_development/presentation/pd_screen.dart';
+import '../screens/collaboration_dashboard_screen.dart';
+import '../screens/learner_collaboration_screen.dart';
 
 /// Application router.
 final GoRouter appRouter = GoRouter(
@@ -204,6 +206,31 @@ final GoRouter appRouter = GoRouter(
         return ProfessionalDevelopmentScreen(teacherId: teacherId);
       },
     ),
+
+    // Collaboration
+    GoRoute(
+      path: '/collaboration/:classId',
+      builder: (context, state) => CollaborationDashboardScreen(
+        classId: state.pathParameters['classId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/collaboration/meetings',
+      builder: (context, state) => const _AllMeetingsScreen(),
+    ),
+    GoRoute(
+      path: '/collaboration/learner/:learnerId',
+      builder: (context, state) => LearnerCollaborationScreen(
+        learnerId: state.pathParameters['learnerId']!,
+        learnerName: state.uri.queryParameters['name'] ?? 'Student',
+      ),
+    ),
+    GoRoute(
+      path: '/collaboration/plans/:planId',
+      builder: (context, state) => _ActionPlanDetailScreen(
+        planId: state.pathParameters['planId']!,
+      ),
+    ),
   ],
   errorBuilder: (context, state) => Scaffold(
     appBar: AppBar(title: const Text('Error')),
@@ -212,3 +239,74 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
+
+/// Placeholder screen for all meetings list.
+class _AllMeetingsScreen extends StatelessWidget {
+  const _AllMeetingsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('All Meetings'),
+      ),
+      body: const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_today, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'All Meetings',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Meeting list coming soon',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Placeholder screen for action plan detail.
+class _ActionPlanDetailScreen extends StatelessWidget {
+  const _ActionPlanDetailScreen({required this.planId});
+
+  final String planId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Action Plan'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.assignment, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              'Action Plan Details',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Plan ID: $planId',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Full plan details coming soon',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { createRemoteJWKSet, jwtVerify, SignJWT, importPKCS8 } from 'jose';
 import { v4 as uuidv4 } from 'uuid';
+import { metrics } from '@aivo/ts-observability';
 import {
   LTIPlatformConfig,
   LTILaunchRequest,
@@ -160,8 +161,8 @@ export class LTIProviderService {
       },
     });
 
-    // TODO: Add metrics tracking when metrics service is available
-    // metrics.increment('lti.launch.success', { platform: platform.name });
+    // Track LTI launch success metrics
+    metrics.events.publishedTotal.inc({ event_type: 'lti.launch.success', event_source: 'lti-provider' });
     this.logger.log('LTI launch successful', { sessionId, userId: launchData.user?.sub });
 
     return { launchData, sessionId };

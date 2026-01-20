@@ -231,14 +231,31 @@ export class CoverageProfileRepository {
    * Used for district admin aggregate view.
    */
   async getParentSubscriptionsForTenant(
-    _tenantId: string,
-    _schoolId?: string | null
+    tenantId: string,
+    schoolId?: string | null
   ): Promise<ParentSubscriptionData[]> {
     const now = new Date();
 
-    // Get learners in this tenant (via subscription items with tenant-linked learners)
-    // This is a simplified query - in production, you'd join with learner service
-    // TODO: Filter by tenantId when learner-tenant mapping is available
+    // First, get learner IDs that belong to this tenant via license assignments
+    const tenantLearnerAssignments = await this.prisma.licenseAssignment.findMany({
+      where: {
+        tenantId,
+        status: 'ACTIVE',
+        ...(schoolId ? { schoolId } : {}),
+      },
+      select: {
+        learnerId: true,
+      },
+    });
+
+    const tenantLearnerIds = tenantLearnerAssignments.map((a) => a.learnerId);
+
+    // If no learners in tenant, return empty array
+    if (tenantLearnerIds.length === 0) {
+      return [];
+    }
+
+    // Get subscriptions that are linked to learners in this tenant
     const subscriptions = await prisma.subscription.findMany({
       where: {
         status: { in: ['ACTIVE', 'IN_TRIAL'] },
@@ -246,6 +263,24 @@ export class CoverageProfileRepository {
         billingAccount: {
           accountType: 'PARENT_CONSUMER',
         },
+        // Filter subscriptions by learners in this tenant
+        OR: [
+          // Subscriptions linked via subscriptionItems
+          {
+            subscriptionItems: {
+              some: {
+                learnerId: { in: tenantLearnerIds },
+              },
+            },
+          },
+          // Subscriptions linked via metadata (for backwards compatibility)
+          {
+            metadataJson: {
+              path: ['linkedLearnerId'],
+              array_contains: tenantLearnerIds,
+            },
+          },
+        ],
       },
       include: {
         billingAccount: {
@@ -262,6 +297,9 @@ export class CoverageProfileRepository {
           },
         },
         subscriptionItems: {
+          where: {
+            learnerId: { in: tenantLearnerIds },
+          },
           select: {
             learnerId: true,
             sku: true,
