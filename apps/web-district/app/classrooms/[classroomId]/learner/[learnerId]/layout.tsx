@@ -41,14 +41,19 @@ async function fetchLearner(learnerId: string): Promise<LearnerDto | null> {
     );
     if (!res.ok) return null;
     return res.json() as Promise<LearnerDto>;
-  } catch {
-    // Return mock data in development
-    return {
-      id: learnerId,
-      tenant_id: 'tenant-1',
-      name: 'Jordan Rivers',
-      grade: 4,
-    };
+  } catch (error) {
+    // Only return mock data in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[LearnerProfile] API unavailable, using mock data');
+      return {
+        id: learnerId,
+        tenant_id: 'tenant-1',
+        name: 'Jordan Rivers',
+        grade: 4,
+      };
+    }
+    console.error('[LearnerProfile] Failed to fetch learner:', error);
+    return null;
   }
 }
 
@@ -72,8 +77,13 @@ async function loadGoals(learnerId: string): Promise<Goal[]> {
   try {
     const res = await fetchGoals(learnerId);
     return res.data;
-  } catch {
-    return mockGoals(learnerId);
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[LearnerProfile] Goals API unavailable, using mock data');
+      return mockGoals(learnerId);
+    }
+    console.error('[LearnerProfile] Failed to fetch goals:', error);
+    return [];
   }
 }
 
@@ -81,8 +91,13 @@ async function loadSessionPlans(learnerId: string): Promise<SessionPlan[]> {
   try {
     const res = await fetchSessionPlans(learnerId);
     return res.data;
-  } catch {
-    return mockSessionPlans(learnerId);
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[LearnerProfile] Session plans API unavailable, using mock data');
+      return mockSessionPlans(learnerId);
+    }
+    console.error('[LearnerProfile] Failed to fetch session plans:', error);
+    return [];
   }
 }
 
@@ -90,8 +105,13 @@ async function loadProgressNotes(learnerId: string): Promise<ProgressNote[]> {
   try {
     const res = await fetchProgressNotes(learnerId);
     return res.data;
-  } catch {
-    return mockProgressNotes(learnerId);
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[LearnerProfile] Progress notes API unavailable, using mock data');
+      return mockProgressNotes(learnerId);
+    }
+    console.error('[LearnerProfile] Failed to fetch progress notes:', error);
+    return [];
   }
 }
 

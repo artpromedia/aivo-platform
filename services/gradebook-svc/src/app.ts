@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import gradebookRoutes from './routes/gradebook.routes.js';
 import assessmentRoutes from './routes/assessment.routes.js';
 import { config } from './config.js';
+import { authMiddleware } from './middleware/auth.js';
 
 export function createApp() {
   const app = express();
@@ -30,10 +31,13 @@ export function createApp() {
     next();
   });
 
-  // Health check
+  // Health check (unauthenticated)
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'gradebook-svc' });
   });
+
+  // JWT authentication for all API routes
+  app.use(authMiddleware);
 
   // API routes
   app.use('/api/v1/gradebook', gradebookRoutes);

@@ -7,7 +7,14 @@ import type { NextResponse } from 'next/server';
 const ACCESS_COOKIE = 'aivo_access_token';
 const REFRESH_COOKIE = 'aivo_refresh_token';
 
-const authSvcUrl = process.env.AUTH_SVC_URL ?? 'http://localhost:4001';
+// Auth service URL - required in production
+const authSvcUrl = (() => {
+  const url = process.env.AUTH_SVC_URL;
+  if (!url && process.env.NODE_ENV === 'production') {
+    throw new Error('AUTH_SVC_URL environment variable is required in production');
+  }
+  return url ?? 'http://localhost:4001';
+})();
 const authPublicKey = process.env.AUTH_PUBLIC_KEY;
 
 let publicKeyPromise: Promise<KeyLike> | null = null;

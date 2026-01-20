@@ -1,5 +1,11 @@
 import 'dotenv/config';
 
+// JWT secret is required in production
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
+
 export const config = {
   port: Number.parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '0.0.0.0',
@@ -14,7 +20,7 @@ export const config = {
   },
 
   auth: {
-    jwtSecret: process.env.JWT_SECRET || 'development-secret',
+    jwtSecret: jwtSecret ?? 'dev-only-not-for-production',
     jwtIssuer: process.env.JWT_ISSUER || 'aivo-platform',
   },
 

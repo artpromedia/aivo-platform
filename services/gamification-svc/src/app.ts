@@ -2,8 +2,6 @@
  * Gamification Service - Express App
  */
 
- 
-
 import cors from 'cors';
 import type { Request, Response, NextFunction, Application } from 'express';
 import express from 'express';
@@ -20,6 +18,7 @@ import {
   competitionRoutes,
   internalRoutes,
 } from './routes/index.js';
+import { authMiddleware } from './middleware/auth.js';
 
 const app: Application = express();
 
@@ -49,7 +48,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 // ============================================================================
-// HEALTH CHECK
+// HEALTH CHECK (unauthenticated)
 // ============================================================================
 
 app.get('/health', (_req: Request, res: Response) => {
@@ -69,6 +68,12 @@ app.get('/ready', async (_req: Request, res: Response) => {
     res.status(503).json({ status: 'not ready' });
   }
 });
+
+// ============================================================================
+// JWT AUTHENTICATION
+// ============================================================================
+
+app.use(authMiddleware);
 
 // ============================================================================
 // API ROUTES

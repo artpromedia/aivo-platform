@@ -1,5 +1,5 @@
 /**
- * Service Configuration
+ * Gamification Service Configuration
  */
 
 // JWT secret is required in production
@@ -9,23 +9,15 @@ if (!jwtSecret && process.env.NODE_ENV === 'production') {
 }
 
 export const config = {
-  port: process.env.PORT ?? '3030',
+  port: process.env.PORT ?? '3032',
   nodeEnv: process.env.NODE_ENV ?? 'development',
   databaseUrl: process.env.DATABASE_URL ?? '',
+  redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
   natsUrl: process.env.NATS_URL ?? 'nats://localhost:4222',
-  corsOrigin: process.env.CORS_ORIGIN ?? '*',
   jwtSecret: jwtSecret ?? 'dev-only-not-for-production',
 
-  // Gradebook settings
-  defaultGradingScale: 'PERCENTAGE' as const,
-  defaultCalculationType: 'WEIGHTED_CATEGORIES' as const,
-  maxGradeHistoryEntries: 100,
-
-  // Assessment settings
-  maxQuestionsPerAssessment: 100,
-  maxQuestionBankSize: 10000,
-  defaultTimeLimit: 60, // minutes
-
-  // Export settings
-  maxExportRows: 5000,
+  // Gamification settings
+  maxLeaderboardSize: 100,
+  streakGracePeriodHours: 24,
+  maxDailyPoints: 1000,
 };

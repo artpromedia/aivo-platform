@@ -13,10 +13,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-secret-change-in-production',
-        signOptions: { expiresIn: '1h' },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+        const nodeEnv = configService.get<string>('NODE_ENV');
+        if (!jwtSecret && nodeEnv === 'production') {
+          throw new Error('JWT_SECRET environment variable is required in production');
+        }
+        return {
+          secret: jwtSecret ?? 'dev-only-not-for-production',
+          signOptions: { expiresIn: '1h' },
+        };
+      },
     }),
   ],
   providers: [],

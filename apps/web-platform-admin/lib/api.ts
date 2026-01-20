@@ -29,8 +29,18 @@ import type {
 // CONFIG
 // ══════════════════════════════════════════════════════════════════════════════
 
-const TENANT_SVC_URL = process.env.TENANT_SVC_URL ?? 'http://localhost:4002';
-const AI_ORCHESTRATOR_URL = process.env.AI_ORCHESTRATOR_URL ?? 'http://localhost:4010';
+// Service URLs - required in production
+function requireEnvInProduction(varName: string, devDefault: string): string {
+  const value = process.env[varName];
+  if (value) return value;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`${varName} environment variable is required in production`);
+  }
+  return devDefault;
+}
+
+const TENANT_SVC_URL = requireEnvInProduction('TENANT_SVC_URL', 'http://localhost:4002');
+const AI_ORCHESTRATOR_URL = requireEnvInProduction('AI_ORCHESTRATOR_URL', 'http://localhost:4010');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // GENERIC FETCH

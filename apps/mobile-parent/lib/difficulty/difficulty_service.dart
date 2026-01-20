@@ -6,7 +6,7 @@ const _baseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:3010',
 );
 
-const _useMock = bool.fromEnvironment('USE_DIFFICULTY_MOCK', defaultValue: true);
+const _useMock = bool.fromEnvironment('USE_DIFFICULTY_MOCK', defaultValue: false);
 
 /// Skill domain enum
 enum SkillDomain {

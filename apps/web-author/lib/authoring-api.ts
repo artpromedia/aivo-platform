@@ -281,9 +281,14 @@ export async function listSkills(params?: {
   try {
     const result = await apiFetch<{ skills: Skill[] }>(LEARNER_MODEL_SVC_URL, path);
     return result.skills;
-  } catch {
-    // Return mock data if skills API is not available
-    return getMockSkills(params?.subject, params?.gradeBand);
+  } catch (error) {
+    // Only return mock data in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[AuthoringAPI] Skills API unavailable, using mock data');
+      return getMockSkills(params?.subject, params?.gradeBand);
+    }
+    console.error('[AuthoringAPI] Failed to fetch skills:', error);
+    throw error;
   }
 }
 
@@ -376,6 +381,12 @@ export interface Standard {
 }
 
 export async function searchStandards(query: string): Promise<Standard[]> {
+  // Standards API only available in development until standards service is deployed
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('[AuthoringAPI] Standards service not available in production');
+    return [];
+  }
+
   // Mock standards data - in production, this would call a standards service
   const mockStandards: Standard[] = [
     {

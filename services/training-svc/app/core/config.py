@@ -2,8 +2,19 @@
 Configuration settings for Training Service.
 """
 
+import os
 from typing import List
 from pydantic_settings import BaseSettings
+
+
+def _require_env_in_production(var_name: str, default: str) -> str:
+    """Require environment variable in production, allow default in development."""
+    value = os.getenv(var_name)
+    if value:
+        return value
+    if os.getenv("NODE_ENV") == "production" or os.getenv("ENVIRONMENT") == "production":
+        raise ValueError(f"{var_name} environment variable is required in production")
+    return default
 
 
 class Settings(BaseSettings):
@@ -24,11 +35,15 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: List[str] = ["*"]
 
-    # Database
-    DATABASE_URL: str = "postgresql://user:pass@localhost:5432/training"
+    # Database - required in production
+    DATABASE_URL: str = _require_env_in_production(
+        "DATABASE_URL", "postgresql://user:pass@localhost:5432/training"
+    )
 
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/1"
+    # Redis - required in production
+    REDIS_URL: str = _require_env_in_production(
+        "REDIS_URL", "redis://localhost:6379/1"
+    )
 
     # AI Providers
     OPENAI_API_KEY: str = ""

@@ -2,7 +2,16 @@ import { SignJWT } from 'jose';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret-key-for-testing');
+// This endpoint is only for development - block in production
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('dev-login endpoint is not available in production');
+}
+
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecret);
 
 const ROLE_MAP: Record<string, string[]> = {
   author: ['CURRICULUM_AUTHOR'],

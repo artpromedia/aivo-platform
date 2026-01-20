@@ -9,7 +9,14 @@
 // CONFIG
 // ══════════════════════════════════════════════════════════════════════════════
 
-const ANALYTICS_SVC_URL = process.env.ANALYTICS_SVC_URL ?? 'http://localhost:4020';
+// Service URL - required in production
+const ANALYTICS_SVC_URL = (() => {
+  const url = process.env.ANALYTICS_SVC_URL;
+  if (!url && process.env.NODE_ENV === 'production') {
+    throw new Error('ANALYTICS_SVC_URL environment variable is required in production');
+  }
+  return url ?? 'http://localhost:4020';
+})();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

@@ -203,9 +203,14 @@ export function useDashboard(options: UseDashboardOptions = {}): UseDashboardRet
       const summary = await analyticsApi.getDashboardSummary();
       setData(summary);
     } catch (err) {
-      console.warn('[Dashboard] API unavailable, using mock data:', err);
-      // Use mock data as fallback during development
-      setData(MOCK_DATA);
+      // Only use mock data in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Dashboard] API unavailable, using mock data:', err);
+        setData(MOCK_DATA);
+      } else {
+        console.error('[Dashboard] Failed to fetch dashboard data:', err);
+        setError(err as Error);
+      }
     } finally {
       setIsLoading(false);
     }

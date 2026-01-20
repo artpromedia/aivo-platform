@@ -10,6 +10,7 @@ import {
   analyticsRoutes,
   securityRoutes,
 } from './routes/index.js';
+import { authMiddleware } from './middleware/auth.js';
 
 // CORS configuration - requires explicit origins in production
 const corsOrigins = process.env.CORS_ORIGIN
@@ -35,10 +36,13 @@ export function createApp() {
     next();
   });
 
-  // Health check
+  // Health check (unauthenticated)
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'assessment-svc' });
   });
+
+  // JWT authentication for all API routes
+  app.use(authMiddleware);
 
   // API routes
   app.use('/api/v1/assessments', assessmentRoutes);

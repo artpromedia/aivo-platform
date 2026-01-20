@@ -6,7 +6,14 @@
  * Server-side only (uses internal service URLs).
  */
 
-const BILLING_SVC_URL = process.env.BILLING_SVC_URL ?? 'http://localhost:4005';
+// Service URL - required in production
+const BILLING_SVC_URL = (() => {
+  const url = process.env.BILLING_SVC_URL;
+  if (!url && process.env.NODE_ENV === 'production') {
+    throw new Error('BILLING_SVC_URL environment variable is required in production');
+  }
+  return url ?? 'http://localhost:4005';
+})();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -141,7 +148,11 @@ export async function fetchAllAlerts(
   // TODO: Replace with real API call when endpoint is ready
   // return apiFetch<SeatUsageAlert[]>(`/admin/seat-usage/alerts?${params}`, { accessToken });
 
-  // Mock data for development
+  // Only use mock data in development
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('[BillingAPI] Seat usage alerts API not yet available');
+    return [];
+  }
   return getMockAlerts().filter((a) => !status || a.status === status);
 }
 
@@ -154,7 +165,11 @@ export async function fetchAllTenantUsageSummaries(
   // TODO: Replace with real API call when endpoint is ready
   // return apiFetch<TenantSeatUsageSummary[]>('/admin/seat-usage/summaries', { accessToken });
 
-  // Mock data for development
+  // Only use mock data in development
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('[BillingAPI] Seat usage summaries API not yet available');
+    return [];
+  }
   return getMockTenantSummaries();
 }
 
@@ -165,7 +180,19 @@ export async function fetchPlatformMetrics(accessToken?: string): Promise<Platfo
   // TODO: Replace with real API call when endpoint is ready
   // return apiFetch<PlatformUsageMetrics>('/admin/seat-usage/metrics', { accessToken });
 
-  // Mock data for development
+  // Only use mock data in development
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('[BillingAPI] Platform metrics API not yet available');
+    return {
+      totalTenants: 0,
+      tenantsWithAlerts: 0,
+      totalSeatsCommitted: 0,
+      totalSeatsAllocated: 0,
+      overallUtilization: 0,
+      alertsByStatus: { open: 0, acknowledged: 0, resolved: 0 },
+      alertsByThreshold: { warning80: 0, atLimit100: 0, overage110: 0 },
+    };
+  }
   return getMockPlatformMetrics();
 }
 
