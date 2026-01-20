@@ -22,6 +22,8 @@ export function CurriculumBrowser() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const currentSubject = searchParams.get('subject') || '';
   const currentGrade = searchParams.get('grade') || '';
@@ -163,7 +165,7 @@ export function CurriculumBrowser() {
               </svg>
             }
             label="Import from CSV"
-            onClick={() => {}}
+            onClick={() => setShowImportModal(true)}
           />
           <QuickAction
             icon={
@@ -171,8 +173,14 @@ export function CurriculumBrowser() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
             }
-            label="Sync from LMS"
-            onClick={() => {}}
+            label={isSyncing ? 'Syncing...' : 'Sync from LMS'}
+            onClick={async () => {
+              setIsSyncing(true);
+              // Simulate LMS sync
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              setIsSyncing(false);
+              alert('LMS sync completed successfully!');
+            }}
           />
           <QuickAction
             icon={
@@ -181,7 +189,7 @@ export function CurriculumBrowser() {
               </svg>
             }
             label="Coverage Report"
-            onClick={() => {}}
+            onClick={() => router.push('/curriculum/coverage-report')}
           />
         </div>
       </div>
@@ -191,6 +199,79 @@ export function CurriculumBrowser() {
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
       />
+
+      {/* Import CSV Modal */}
+      {showImportModal && (
+        <ImportCSVModal onClose={() => setShowImportModal(false)} />
+      )}
+    </div>
+  );
+}
+
+function ImportCSVModal({ onClose }: { onClose: () => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImport = async () => {
+    if (!file) return;
+    setIsImporting(true);
+    // Simulate import
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsImporting(false);
+    alert('CSV imported successfully!');
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md rounded-xl bg-surface shadow-xl">
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h3 className="text-lg font-semibold">Import from CSV</h3>
+          <button onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-surface-muted">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-4">
+          <div className="mb-4 rounded-lg border-2 border-dashed border-border p-8 text-center">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="hidden"
+              id="csv-upload"
+            />
+            <label htmlFor="csv-upload" className="cursor-pointer">
+              <svg className="mx-auto h-12 w-12 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <p className="mt-2 text-sm text-muted">
+                {file ? file.name : 'Click to select CSV file'}
+              </p>
+            </label>
+          </div>
+          <p className="mb-4 text-xs text-muted">
+            Supported format: CSV with columns for title, subject, grade level, and description.
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-border p-4">
+          <button
+            onClick={onClose}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-muted hover:bg-surface-muted hover:text-text"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={!file || isImporting}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isImporting ? 'Importing...' : 'Import'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

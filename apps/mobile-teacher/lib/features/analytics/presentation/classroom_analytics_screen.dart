@@ -403,7 +403,7 @@ class _ClassroomAnalyticsScreenState
                   ],
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => _viewAllAssignments(context),
                   child: const Text('View All'),
                 ),
               ],
@@ -430,7 +430,7 @@ class _ClassroomAnalyticsScreenState
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.chevron_right),
-                  onPressed: () {},
+                  onPressed: () => _viewAssignmentDetails(context, assignment),
                 ),
               );
             }),
@@ -464,7 +464,7 @@ class _ClassroomAnalyticsScreenState
                   ],
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => _viewAllStudents(context),
                   child: const Text('View All'),
                 ),
               ],
@@ -572,6 +572,178 @@ class _ClassroomAnalyticsScreenState
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     return '${date.month}/${date.day}';
+  }
+
+  void _viewAllAssignments(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'All Assignments',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: _analytics!.recentAssignments.length,
+                  itemBuilder: (context, index) {
+                    final assignment = _analytics!.recentAssignments[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: _getScoreColor(assignment.averageScore)
+                            .withValues(alpha: 0.2),
+                        child: Text(
+                          '${assignment.averageScore.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: _getScoreColor(assignment.averageScore),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      title: Text(assignment.name),
+                      subtitle: Text(
+                        '${assignment.completed}/${assignment.total} completed • ${_formatDate(assignment.dueDate)}',
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _viewAssignmentDetails(context, assignment);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _viewAssignmentDetails(BuildContext context, AssignmentStats assignment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(assignment.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('Average Score', '${assignment.averageScore.toStringAsFixed(1)}%'),
+            _buildDetailRow('Completed', '${assignment.completed}/${assignment.total} students'),
+            _buildDetailRow('Completion Rate', '${((assignment.completed / assignment.total) * 100).toStringAsFixed(0)}%'),
+            _buildDetailRow('Due Date', _formatDate(assignment.dueDate)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Opening ${assignment.name} details...')),
+              );
+            },
+            child: const Text('View Full Report'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  void _viewAllStudents(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'All Students',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: _analytics!.studentPerformance.length,
+                  itemBuilder: (context, index) {
+                    final student = _analytics!.studentPerformance[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(student.name.substring(0, 1)),
+                      ),
+                      title: Text(student.name),
+                      subtitle: Text(
+                        'Score: ${student.averageScore.toStringAsFixed(0)}% • Completion: ${(student.completionRate * 100).toStringAsFixed(0)}%',
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Opening ${student.name}\'s profile...')),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _exportReport() {

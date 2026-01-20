@@ -493,7 +493,12 @@ class _IEPUploadScreenState extends ConsumerState<IEPUploadScreen> {
 
                       // Actions
                       FilledButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Downloading ${document.fileName}...')),
+                          );
+                        },
                         icon: const Icon(Icons.download),
                         label: const Text('Download Document'),
                         style: FilledButton.styleFrom(
@@ -502,7 +507,10 @@ class _IEPUploadScreenState extends ConsumerState<IEPUploadScreen> {
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showShareWithTeacherDialog(context, document);
+                        },
                         icon: const Icon(Icons.share),
                         label: const Text('Share with Teacher'),
                         style: OutlinedButton.styleFrom(
@@ -523,6 +531,54 @@ class _IEPUploadScreenState extends ConsumerState<IEPUploadScreen> {
   void _compareDocuments(IEPDocument document) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Opening IEP comparison view...')),
+    );
+  }
+
+  void _showShareWithTeacherDialog(BuildContext context, IEPDocument document) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Share with Teacher'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Share "${document.fileName}" with your child\'s teacher?'),
+            const SizedBox(height: 16),
+            const TextField(
+              decoration: InputDecoration(
+                labelText: 'Teacher\'s Email (optional)',
+                hintText: 'teacher@school.edu',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const TextField(
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Message (optional)',
+                hintText: 'Add a note for the teacher...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('IEP shared with teacher successfully')),
+              );
+            },
+            child: const Text('Share'),
+          ),
+        ],
+      ),
     );
   }
 

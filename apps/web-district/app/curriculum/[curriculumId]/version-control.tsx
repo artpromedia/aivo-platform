@@ -22,6 +22,7 @@ export function VersionControl({ curriculumId }: VersionControlProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<CurriculumVersion | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   useEffect(() => {
     async function loadVersions() {
@@ -155,7 +156,7 @@ export function VersionControl({ curriculumId }: VersionControlProps) {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => {}}
+                onClick={() => setShowCompareModal(true)}
                 className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface-muted"
               >
                 Compare
@@ -178,6 +179,15 @@ export function VersionControl({ curriculumId }: VersionControlProps) {
         <CreateVersionModal
           onSubmit={handleCreateVersion}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {/* Compare Version Modal */}
+      {showCompareModal && selectedVersion && (
+        <CompareVersionModal
+          currentVersion={selectedVersion}
+          versions={versions}
+          onClose={() => setShowCompareModal(false)}
         />
       )}
     </div>
@@ -342,6 +352,104 @@ function CreateVersionModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function CompareVersionModal({
+  currentVersion,
+  versions,
+  onClose,
+}: {
+  currentVersion: CurriculumVersion;
+  versions: CurriculumVersion[];
+  onClose: () => void;
+}) {
+  const [compareWith, setCompareWith] = useState<string>('');
+  const otherVersions = versions.filter(v => v.id !== currentVersion.id);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl rounded-xl bg-surface shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h3 className="text-lg font-semibold">Compare Versions</h3>
+          <button onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-surface-muted">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          <div className="mb-4 grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Base Version</label>
+              <div className="rounded-lg border border-border bg-surface-muted p-3">
+                <p className="font-medium">v{currentVersion.versionNumber}</p>
+                <p className="text-sm text-muted">{currentVersion.changeLog}</p>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Compare With</label>
+              <select
+                value={compareWith}
+                onChange={(e) => setCompareWith(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">Select a version</option>
+                {otherVersions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    v{v.versionNumber} - {v.changeLog.substring(0, 30)}...
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {compareWith && (
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="mb-3 font-medium">Comparison Summary</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                  <span className="text-muted">3 lessons added</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                  <span className="text-muted">5 lessons modified</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  <span className="text-muted">1 lesson removed</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 border-t border-border p-4">
+          <button
+            onClick={onClose}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-muted hover:bg-surface-muted hover:text-text"
+          >
+            Close
+          </button>
+          <button
+            disabled={!compareWith}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => {
+              alert(`Opening detailed comparison between v${currentVersion.versionNumber} and selected version...`);
+              onClose();
+            }}
+          >
+            View Full Comparison
+          </button>
+        </div>
       </div>
     </div>
   );

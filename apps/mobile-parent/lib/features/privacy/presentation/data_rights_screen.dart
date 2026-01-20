@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// DSR Request type
 enum DSRRequestType {
@@ -223,7 +224,7 @@ class _DataRightsScreenState extends ConsumerState<DataRightsScreen> {
                       title: const Text('Privacy Policy'),
                       subtitle: const Text('Learn how we protect your data'),
                       trailing: const Icon(Icons.open_in_new),
-                      onTap: () {},
+                      onTap: () => _openPrivacyPolicy(context),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -233,7 +234,7 @@ class _DataRightsScreenState extends ConsumerState<DataRightsScreen> {
                       title: const Text('Contact Privacy Team'),
                       subtitle: const Text('privacy@aivo.education'),
                       trailing: const Icon(Icons.email),
-                      onTap: () {},
+                      onTap: () => _contactPrivacyTeam(context),
                     ),
                   ),
                 ],
@@ -332,7 +333,12 @@ class _DataRightsScreenState extends ConsumerState<DataRightsScreen> {
         content: Text('${type.label} request submitted. We\'ll email you with updates.'),
         action: SnackBarAction(
           label: 'View Status',
-          onPressed: () {},
+          onPressed: () {
+            // Scroll to show the requests list is already visible in the UI
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Your requests are shown below.')),
+            );
+          },
         ),
       ),
     );
@@ -355,6 +361,52 @@ class _DataRightsScreenState extends ConsumerState<DataRightsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Starting download...')),
     );
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final Uri url = Uri.parse('https://aivo.education/privacy');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open privacy policy')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open privacy policy')),
+        );
+      }
+    }
+  }
+
+  Future<void> _contactPrivacyTeam(BuildContext context) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'privacy@aivo.education',
+      query: 'subject=Privacy Inquiry',
+    );
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open email client')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open email client')),
+        );
+      }
+    }
   }
 }
 

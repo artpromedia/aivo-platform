@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content_library/models/content_models.dart';
@@ -48,6 +49,7 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
   final List<LessonPlan> _lessonPlans = [];
   final List<LessonPlan> _templates = [];
   bool _isLoading = true;
+  int _weekOffset = 0;
 
   @override
   void initState() {
@@ -467,7 +469,7 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
   Widget _buildWeekHeader(BuildContext context) {
     final theme = Theme.of(context);
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)).add(Duration(days: _weekOffset * 7));
     final endOfWeek = startOfWeek.add(const Duration(days: 4));
 
     return Card(
@@ -478,7 +480,11 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  _weekOffset--;
+                });
+              },
             ),
             Expanded(
               child: Column(
@@ -501,7 +507,11 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
             ),
             IconButton(
               icon: const Icon(Icons.chevron_right),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  _weekOffset++;
+                });
+              },
             ),
           ],
         ),
@@ -1068,13 +1078,23 @@ class _AIAssistantSheetState extends State<_AIAssistantSheet> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               TextButton.icon(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: _generatedContent!));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Content copied to clipboard')),
+                                  );
+                                },
                                 icon: const Icon(Icons.copy),
                                 label: const Text('Copy'),
                               ),
                               const SizedBox(width: 8),
                               FilledButton.icon(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.pop(context, _generatedContent);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Content added to lesson plan')),
+                                  );
+                                },
                                 icon: const Icon(Icons.add),
                                 label: const Text('Use'),
                               ),
@@ -1175,11 +1195,11 @@ class _LessonDetailScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () {},
+            onPressed: () => _shareLesson(context),
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {},
+            onPressed: () => _editLesson(context),
           ),
         ],
       ),
@@ -1316,6 +1336,72 @@ class _LessonDetailScreen extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  void _shareLesson(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Share "${lesson.title}"',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Share with Colleague'),
+              subtitle: const Text('Send to another teacher'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Opening colleague picker...')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.link),
+              title: const Text('Copy Link'),
+              subtitle: const Text('Share via link'),
+              onTap: () {
+                Navigator.pop(context);
+                Clipboard.setData(ClipboardData(text: 'https://aivo.app/lessons/${lesson.id}'));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Link copied to clipboard')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('Export as PDF'),
+              subtitle: const Text('Download lesson plan'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Generating PDF...')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editLesson(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _LessonEditorScreen(
+          teacherId: 'current_user', // Would be passed from context in real app
+          existingLesson: lesson,
+        ),
       ),
     );
   }

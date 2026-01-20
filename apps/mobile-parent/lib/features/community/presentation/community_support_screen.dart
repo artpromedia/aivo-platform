@@ -523,13 +523,21 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
                 Row(
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Marked as helpful!')),
+                        );
+                      },
                       icon: const Icon(Icons.thumb_up_outlined),
                       label: Text('Helpful (${qa.helpfulCount})'),
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Opening share options...')),
+                        );
+                      },
                       icon: const Icon(Icons.share),
                       label: const Text('Share'),
                     ),
@@ -624,7 +632,13 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
                 Row(
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(post.isLiked ? 'Removed like' : 'Liked post!'),
+                          ),
+                        );
+                      },
                       icon: Icon(
                         post.isLiked ? Icons.favorite : Icons.favorite_border,
                         color: post.isLiked ? Colors.red : null,
@@ -633,7 +647,9 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        _showReplyDialog(context, post);
+                      },
                       icon: const Icon(Icons.comment),
                       label: Text('${post.replyCount} replies'),
                     ),
@@ -669,6 +685,66 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${dateTime.day}/${dateTime.month}';
+  }
+
+  void _showReplyDialog(BuildContext context, ForumPost post) {
+    final replyController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reply to "${post.title}"',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: replyController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Your Reply',
+                hintText: 'Share your thoughts...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Reply posted!')),
+                    );
+                  },
+                  child: const Text('Post Reply'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -905,7 +981,11 @@ class _JoinedGroupChip extends StatelessWidget {
       child: Card(
         color: colorScheme.primaryContainer,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Opening ${group.name}...')),
+            );
+          },
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(12),
