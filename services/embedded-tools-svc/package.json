@@ -17,8 +17,10 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
+    "@aivo/ts-api-utils": "workspace:*",
     "@fastify/cors": "^8.5.0",
     "@fastify/helmet": "^11.1.1",
+    "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^6.9.0",
     "fastify": "^4.29.1",
     "fastify-plugin": "^5.0.1",

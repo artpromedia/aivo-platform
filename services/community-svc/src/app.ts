@@ -4,6 +4,8 @@
  */
 
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import {
@@ -25,6 +27,11 @@ export async function buildApp(): Promise<FastifyInstance> {
           : undefined,
     },
   });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // RATE LIMITING
+  // ════════════════════════════════════════════════════════════════════════════
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('community-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // CORS (for development)

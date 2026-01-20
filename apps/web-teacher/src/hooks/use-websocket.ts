@@ -66,7 +66,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
 
     const token = getToken();
     if (!token) {
-      console.warn('[WebSocket] Cannot connect: no auth token');
       return;
     }
 
@@ -98,13 +97,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
       setStatus('disconnected');
     });
 
-    socket.on('connect_error', (error) => {
-      console.error('[WebSocket] Connection error:', error);
+    socket.on('connect_error', () => {
       setStatus('error');
     });
 
-    socket.on('error', (error) => {
-      console.error('[WebSocket] Error:', error);
+    socket.on('error', () => {
+      // Error handled by status update
     });
 
     // Re-emit events to registered handlers

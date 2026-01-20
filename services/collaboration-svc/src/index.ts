@@ -9,7 +9,9 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import { config } from 'dotenv';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { careTeamRoutes } from './routes/care-team.js';
 import { actionPlanRoutes } from './routes/action-plans.js';
@@ -49,6 +51,9 @@ await fastify.register(cors, {
 await fastify.register(helmet, {
   contentSecurityPolicy: false,
 });
+
+// Rate limiting
+await fastify.register(rateLimit, FastifyRateLimitPresets.publicApi('collaboration-svc'));
 
 // Health check endpoint
 fastify.get('/health', async () => {

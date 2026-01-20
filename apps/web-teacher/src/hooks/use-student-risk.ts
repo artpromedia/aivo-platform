@@ -379,8 +379,8 @@ export function useClassroomRisk(options: UseClassroomRiskOptions = {}): UseClas
           }
           return next;
         });
-      } catch (err) {
-        console.error('Failed to fetch student predictions:', err);
+      } catch {
+        // Fetch failed silently
       }
     },
     [onHighRiskStudent]

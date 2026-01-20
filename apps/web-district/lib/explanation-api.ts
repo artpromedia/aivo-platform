@@ -141,8 +141,7 @@ export async function getExplanationsByEntity(
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch explanations:', error);
+  } catch {
     return {
       explanations: [createFallbackExplanation(entityType, entityId)],
       hasFallback: true,
@@ -189,8 +188,7 @@ export async function getRecentExplanations(
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch recent explanations:', error);
+  } catch {
     return null;
   }
 }
@@ -219,8 +217,7 @@ export async function getExplanationById(
 
     const data = await response.json();
     return data.explanation;
-  } catch (error) {
-    console.error('Failed to fetch explanation:', error);
+  } catch {
     return null;
   }
 }

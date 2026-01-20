@@ -2,6 +2,8 @@
  * AIVO Model Registry Service - Application Setup
  */
 
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
@@ -10,8 +12,11 @@ import { registerVersionRoutes } from './routes/versions.js';
 import { registerArtifactRoutes } from './routes/artifacts.js';
 import { registerDeploymentRoutes } from './routes/deployments.js';
 
-export function createApp() {
+export async function createApp() {
   const app = Fastify({ logger: true });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('model-registry-svc'));
 
   // Health check
   app.get('/health', async (_request, reply) => {

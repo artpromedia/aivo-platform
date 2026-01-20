@@ -7,7 +7,9 @@
 
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { prisma } from './prisma.js';
@@ -66,6 +68,9 @@ await server.register(helmet, {
   crossOriginEmbedderPolicy: false, // Allow embedding
   crossOriginOpenerPolicy: false,
 });
+
+// Rate limiting
+await server.register(rateLimit, FastifyRateLimitPresets.internalApi('embedded-tools-svc'));
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Routes

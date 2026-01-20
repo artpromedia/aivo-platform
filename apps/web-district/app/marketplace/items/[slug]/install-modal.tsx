@@ -62,7 +62,6 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
       }));
       setSchools(schoolList);
     } catch (err) {
-      console.error('Failed to load schools:', err);
       setSchoolsError(err instanceof Error ? err.message : 'Failed to load schools');
     } finally {
       setLoadingSchools(false);

@@ -58,7 +58,6 @@ export function useSubscription() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock subscription data');
           return getMockSubscription();
         }
         throw error;
@@ -81,7 +80,6 @@ export function usePlans() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock plans data');
           return getMockPlans();
         }
         throw error;
@@ -104,7 +102,6 @@ export function usePaymentMethods() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock payment methods data');
           return getMockPaymentMethods();
         }
         throw error;
@@ -128,7 +125,6 @@ export function useInvoices(limit?: number) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock invoices data');
           const invoices = getMockInvoices();
           return limit ? invoices.slice(0, limit) : invoices;
         }
@@ -152,7 +148,6 @@ export function useBillingDetails() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock billing details data');
           return getMockBillingDetails();
         }
         throw error;
@@ -177,7 +172,6 @@ export function usePlanChangePreview(newPlanId: string | null) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock plan preview data');
           return getMockPlanChangePreview('plan-premium', newPlanId);
         }
         throw error;

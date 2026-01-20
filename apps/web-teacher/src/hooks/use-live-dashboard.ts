@@ -101,8 +101,8 @@ export function useLiveDashboard(options: UseLiveDashboardOptions): UseLiveDashb
         });
 
         setIsSubscribed(true);
-      } catch (error) {
-        console.error('[LiveDashboard] Failed to subscribe:', error);
+      } catch {
+        // Subscription failed silently
       }
     };
 

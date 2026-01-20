@@ -80,8 +80,8 @@ export default async function LearnerAuditPage({ params }: LearnerAuditPageProps
 
     // Use fetched learner name, fallback to truncated ID if not found
     learnerName = fetchedLearnerName ?? `Learner ${learnerId.slice(0, 8)}`;
-  } catch (error) {
-    console.error('Failed to fetch audit timeline:', error);
+  } catch {
+    // Error handled by returning empty initial events
   }
 
   return (

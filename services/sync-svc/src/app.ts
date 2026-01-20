@@ -1,3 +1,5 @@
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import Fastify from 'fastify';
 import { config } from './config.js';
 import { syncRoutes } from './routes/sync-routes.js';
@@ -9,6 +11,9 @@ export async function buildApp() {
       level: process.env.NODE_ENV === 'test' ? 'error' : 'info',
     },
   });
+
+  // Rate limiting
+  await fastify.register(rateLimit, FastifyRateLimitPresets.dataIngestion('sync-svc'));
 
   // Register auth middleware
   await fastify.register(authMiddleware);

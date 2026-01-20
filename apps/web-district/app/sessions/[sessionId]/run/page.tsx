@@ -148,8 +148,8 @@ export default function RunSessionPage() {
           metadataJson: { itemId },
         });
       }
-    } catch (e) {
-      console.error('Failed to send activity event:', e);
+    } catch {
+      // Activity event send failed, continue without blocking
     }
   }, [sessionId]);
 
@@ -599,8 +599,8 @@ function QuickNoteModal({
       });
       
       onClose();
-    } catch (e) {
-      console.error('Failed to save note:', e);
+    } catch {
+      // Note save failed, modal will close without feedback
     } finally {
       setIsSubmitting(false);
     }

@@ -3,6 +3,8 @@
  */
 
 import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import Fastify from 'fastify';
 
 import type { ExtendedPrismaClient } from '../prisma-types.js';
@@ -17,11 +19,14 @@ export async function createServer() {
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL || 'info',
-      transport: process.env.NODE_ENV === 'development' 
+      transport: process.env.NODE_ENV === 'development'
         ? { target: 'pino-pretty' }
         : undefined,
     },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.dataIngestion('sis-sync-svc'));
 
   // Initialize scheduler
   const scheduler = new SyncScheduler(prisma, {

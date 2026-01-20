@@ -49,8 +49,8 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
       const parsed = parseCsv(text);
       setParsedData(parsed);
       setStep('preview');
-    } catch (error) {
-      console.error('Error parsing CSV:', error);
+    } catch {
+      // CSV parsing failed, user will see no data
     } finally {
       setIsLoading(false);
     }

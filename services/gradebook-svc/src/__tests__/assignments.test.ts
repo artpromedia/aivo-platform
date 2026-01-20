@@ -13,6 +13,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 
+// Mock @aivo/ts-api-utils before importing app
+vi.mock('@aivo/ts-api-utils', () => ({
+  createExpressRateLimiter: vi.fn(() => (_req: any, _res: any, next: any) => next()),
+  RateLimitPresets: {
+    API_GENERAL: { windowMs: 60000, max: 100 },
+  },
+}));
+
 // Mock Prisma client
 const mockPrismaClient = {
   gradebookConfig: {

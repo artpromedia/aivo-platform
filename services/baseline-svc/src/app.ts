@@ -6,12 +6,15 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { baselineRoutes } from './routes/baseline.js';
 import { iepUploadRoutes } from './routes/iepUpload.js';
 
-export function buildApp(): FastifyInstance {
+export async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? 'info',
     },
   });
+
+  // Rate limiting
+  await fastify.register(rateLimit, FastifyRateLimitPresets.internalApi('baseline-svc'));
 
   // Health check (no auth required)
   fastify.get('/health', async () => {

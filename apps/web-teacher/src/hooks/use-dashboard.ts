@@ -202,8 +202,7 @@ export function useDashboard(options: UseDashboardOptions = {}): UseDashboardRet
     try {
       const summary = await analyticsApi.getDashboardSummary();
       setData(summary);
-    } catch (err) {
-      console.warn('[Dashboard] API unavailable, using mock data:', err);
+    } catch {
       // Use mock data as fallback during development
       setData(MOCK_DATA);
     } finally {
