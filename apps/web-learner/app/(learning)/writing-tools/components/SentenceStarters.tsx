@@ -44,7 +44,7 @@ export function SentenceStarters({ learnerId }: Readonly<SentenceStartersProps>)
       const data = await getStarterCategories();
       setCategories(data);
       if (data.length > 0) {
-        setSelectedCategory(data[0].id);
+        setSelectedCategory(data[0].id ?? data[0].category);
       }
     } catch (err) {
       setError('Failed to load categories');
@@ -75,7 +75,7 @@ export function SentenceStarters({ learnerId }: Readonly<SentenceStartersProps>)
 
   async function handleCopyStarter(starter: SentenceStarter) {
     try {
-      await navigator.clipboard.writeText(starter.text);
+      await navigator.clipboard.writeText(starter.text ?? starter.starters[0] ?? '');
       setCopiedId(starter.id);
       setTimeout(() => setCopiedId(null), 2000);
 
@@ -123,15 +123,15 @@ export function SentenceStarters({ learnerId }: Readonly<SentenceStartersProps>)
         <div className="flex gap-2 overflow-x-auto pb-2">
           {categories.map((category) => (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
+              key={category.id ?? category.category}
+              onClick={() => setSelectedCategory(category.id ?? category.category)}
               className={`px-4 py-2 rounded-t-md font-medium text-sm whitespace-nowrap transition-colors ${
-                selectedCategory === category.id
+                selectedCategory === (category.id ?? category.category)
                   ? 'bg-indigo-600 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              {category.name}
+              {category.name ?? category.category}
             </button>
           ))}
         </div>
@@ -163,18 +163,20 @@ export function SentenceStarters({ learnerId }: Readonly<SentenceStartersProps>)
             >
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
-                  <p className="text-base mb-2">{starter.text}</p>
+                  <p className="text-base mb-2">{starter.text ?? starter.starters[0]}</p>
                   <div className="flex gap-2 items-center">
                     <span className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded">
-                      {starter.purpose}
+                      {starter.purpose ?? starter.subcategory}
                     </span>
+                    {starter.gradeLevel && (
                     <span className="text-xs text-slate-500">
                       {starter.gradeLevel}
                     </span>
+                    )}
                   </div>
-                  {starter.example && (
+                  {(starter.example ?? starter.examples?.[0]) && (
                     <p className="text-sm text-slate-600 mt-2 italic">
-                      Example: {starter.example}
+                      Example: {starter.example ?? starter.examples?.[0]}
                     </p>
                   )}
                 </div>

@@ -137,6 +137,7 @@ export function WordPrediction({ learnerId }: Readonly<WordPredictionProps>) {
         duration,
         wordsTyped: words.length,
         suggestionsAccepted: acceptedSuggestionsRef.current,
+        timeSavedSeconds: Math.floor(acceptedSuggestionsRef.current * 2), // Estimate 2 seconds saved per suggestion
       });
     } catch (error) {
       console.error('Failed to save session:', error);
@@ -272,15 +273,15 @@ export function WordPrediction({ learnerId }: Readonly<WordPredictionProps>) {
           {/* Minimum Confidence */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Minimum Confidence: {Math.round(settings.minConfidence * 100)}%
+              Minimum Confidence: {Math.round((settings.minConfidence ?? 0.5) * 100)}%
             </label>
             <input
               type="range"
               min="0.3"
               max="0.9"
               step="0.1"
-              value={settings.minConfidence}
-              onChange={(e) => updateSetting('minConfidence', Number.parseFloat(e.target.value))}
+              value={settings.minConfidence ?? 0.5}
+              onChange={(e) => updateSetting('minConfidence' as keyof typeof settings, Number.parseFloat(e.target.value))}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
             <p className="text-xs text-slate-500 mt-1">
@@ -293,8 +294,8 @@ export function WordPrediction({ learnerId }: Readonly<WordPredictionProps>) {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.useContext}
-                onChange={(e) => updateSetting('useContext', e.target.checked)}
+                checked={settings.useContext ?? false}
+                onChange={(e) => updateSetting('useContext' as keyof typeof settings, e.target.checked)}
                 className="rounded text-indigo-600 focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-sm text-slate-700">Use context for better predictions</span>
@@ -302,8 +303,8 @@ export function WordPrediction({ learnerId }: Readonly<WordPredictionProps>) {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.learnFromUser}
-                onChange={(e) => updateSetting('learnFromUser', e.target.checked)}
+                checked={settings.learnFromUser ?? false}
+                onChange={(e) => updateSetting('learnFromUser' as keyof typeof settings, e.target.checked)}
                 className="rounded text-indigo-600 focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-sm text-slate-700">Learn from my writing style</span>
@@ -311,8 +312,8 @@ export function WordPrediction({ learnerId }: Readonly<WordPredictionProps>) {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.suggestPunctuation}
-                onChange={(e) => updateSetting('suggestPunctuation', e.target.checked)}
+                checked={settings.suggestPunctuation ?? false}
+                onChange={(e) => updateSetting('suggestPunctuation' as keyof typeof settings, e.target.checked)}
                 className="rounded text-indigo-600 focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-sm text-slate-700">Suggest punctuation</span>

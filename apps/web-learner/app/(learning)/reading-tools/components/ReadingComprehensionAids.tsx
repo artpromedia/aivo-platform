@@ -212,15 +212,16 @@ export function ReadingComprehensionAids({ learnerId }: Readonly<ReadingComprehe
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
                   <span className="text-4xl">
                     {(() => {
-                      if (results.score >= 80) return '🎉';
-                      if (results.score >= 60) return '👍';
+                      const score = results.score ?? 0;
+                      if (score >= 80) return '🎉';
+                      if (score >= 60) return '👍';
                       return '💪';
                     })()}
                   </span>
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Practice Complete!</h2>
                 <p className="text-lg text-slate-600">
-                  Score: {results.score}% ({results.correctAnswers}/{results.totalQuestions})
+                  Score: {results.score ?? 0}% ({results.correctAnswers}/{results.totalQuestions ?? results.questionsAnswered})
                 </p>
               </div>
 

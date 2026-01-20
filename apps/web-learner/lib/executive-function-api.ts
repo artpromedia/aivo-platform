@@ -436,6 +436,20 @@ export async function addItemToFolder(
   return response.json();
 }
 
+export async function deleteItem(itemId: string): Promise<void> {
+  const response = await fetch(`${EXEC_FUNC_API_BASE}/items/${itemId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete item');
+}
+
+export async function deleteFolder(folderId: string): Promise<void> {
+  const response = await fetch(`${EXEC_FUNC_API_BASE}/folders/${folderId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete folder');
+}
+
 // ===== EF Profile APIs =====
 
 export async function getEFProfile(learnerId: string): Promise<EFProfile | null> {

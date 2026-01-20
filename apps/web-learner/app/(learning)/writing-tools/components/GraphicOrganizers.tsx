@@ -175,7 +175,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Connections</label>
-          {(content.connections || []).map((conn, idx) => (
+          {(content.connections || []).map((conn: string, idx: number) => (
             <div key={idx} className="flex gap-2 mb-2">
               <input
                 type="text"
@@ -190,7 +190,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               />
               <button
                 onClick={() => {
-                  const newConnections = (content.connections || []).filter((_, i) => i !== idx);
+                  const newConnections = (content.connections || []).filter((_: string, i: number) => i !== idx);
                   setContent({ ...content, connections: newConnections });
                 }}
                 className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
@@ -287,7 +287,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Steps/Events</label>
-          {(content.steps || []).map((step, idx) => (
+          {(content.steps || []).map((step: string, idx: number) => (
             <div key={idx} className="flex gap-2 mb-2">
               <span className="px-3 py-2 bg-slate-100 rounded-md font-medium">{idx + 1}</span>
               <input
@@ -303,7 +303,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               />
               <button
                 onClick={() => {
-                  const newSteps = (content.steps || []).filter((_, i) => i !== idx);
+                  const newSteps = (content.steps || []).filter((_: string, i: number) => i !== idx);
                   setContent({ ...content, steps: newSteps });
                 }}
                 className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
@@ -521,7 +521,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Main Points</label>
-          {(content.points || []).map((point, idx) => (
+          {(content.points || []).map((point: { main: string; supporting: string[] }, idx: number) => (
             <div key={idx} className="mb-4 p-3 border border-slate-200 rounded-md">
               <div className="flex gap-2 mb-2">
                 <input
@@ -537,7 +537,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
                 />
                 <button
                   onClick={() => {
-                    const newPoints = (content.points || []).filter((_, i) => i !== idx);
+                    const newPoints = (content.points || []).filter((_: { main: string; supporting: string[] }, i: number) => i !== idx);
                     setContent({ ...content, points: newPoints });
                   }}
                   className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
@@ -606,7 +606,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
                     {organizers.find((o) => o.id === saved.organizerId)?.name}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {new Date(saved.lastModified).toLocaleDateString()}
+                    {new Date(saved.lastModified ?? saved.updatedAt).toLocaleDateString()}
                   </p>
                 </button>
               ))}

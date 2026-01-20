@@ -241,9 +241,9 @@ class SyncStatusBadge extends ConsumerWidget {
     );
   }
 
-  Widget _buildBadge(BuildContext context, SyncStatusInfo status, int pending) {
+  Widget _buildBadge(BuildContext context, common.SyncStatusInfo status, int pending) {
     final theme = Theme.of(context);
-    final isSyncing = status.state == SyncState.syncing;
+    final isSyncing = status.state == common.SyncState.syncing;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -54,6 +54,11 @@ export interface PredictionSettings {
   contextWords: number;
   learningMode: boolean;
   domains: string[];
+  maxSuggestions?: number;
+  minConfidence?: number;
+  useContext?: boolean;
+  learnFromUser?: boolean;
+  suggestPunctuation?: boolean;
 }
 
 export interface TypingSession {
@@ -63,6 +68,8 @@ export interface TypingSession {
   wordsTyped: number;
   suggestionsAccepted: number;
   timeSavedSeconds: number;
+  text?: string;
+  duration?: number;
 }
 
 // Reading Comprehension Types
@@ -74,6 +81,9 @@ export interface ComprehensionStrategy {
   description: string;
   steps: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
+  icon?: string;
+  category?: string;
+  example?: string;
 }
 
 export interface ComprehensionQuestion {
@@ -85,6 +95,7 @@ export interface ComprehensionQuestion {
   correctAnswer: string;
   explanation: string;
   difficulty: number;
+  passage?: string;
 }
 
 export interface ComprehensionResult {
@@ -96,6 +107,9 @@ export interface ComprehensionResult {
   correctAnswers: number;
   timeSpent: number;
   strategiesUsed: string[];
+  score?: number;
+  totalQuestions?: number;
+  feedback?: string;
 }
 
 // Vocabulary Types
@@ -132,12 +146,21 @@ export interface VocabularyProgress {
   newWords: number;
   weeklyGoal: number;
   currentStreak: number;
+  overallAccuracy?: number;
+  recentActivity?: Array<{
+    listName: string;
+    date: string;
+    score: number;
+    correctAnswers: number;
+    totalQuestions: number;
+  }>;
 }
 
 export interface FlashcardResult {
   wordId: string;
   correct: boolean;
-  timeSpent: number;
+  timeSpent?: number;
+  timestamp?: string;
 }
 
 // Text-to-Speech APIs
@@ -176,14 +199,18 @@ export async function saveReadingSession(session: Omit<ReadingSession, 'id'>): P
 // Word Prediction APIs
 
 export async function getWordSuggestions(
-  learnerId: string,
-  context: string,
-  currentWord: string
+  contextOrLearnerId: string,
+  currentWordOrCount?: string | number,
+  currentWord?: string
 ): Promise<WordSuggestion[]> {
+  // Support both old (learnerId, context, currentWord) and new (text, maxSuggestions) signatures
+  const body = typeof currentWordOrCount === 'number'
+    ? { text: contextOrLearnerId, maxSuggestions: currentWordOrCount }
+    : { learnerId: contextOrLearnerId, context: currentWordOrCount, currentWord };
   const response = await fetch(`${READING_API_BASE}/prediction/suggest`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ learnerId, context, currentWord }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error('Failed to get suggestions');
   return response.json();
@@ -221,14 +248,17 @@ export async function getComprehensionStrategies(): Promise<ComprehensionStrateg
   return response.json();
 }
 
-export async function getComprehensionQuestions(contentId: string): Promise<ComprehensionQuestion[]> {
-  const response = await fetch(`${READING_API_BASE}/comprehension/questions/${contentId}`);
+export async function getComprehensionQuestions(contentId?: string): Promise<ComprehensionQuestion[]> {
+  const url = contentId 
+    ? `${READING_API_BASE}/comprehension/questions/${contentId}`
+    : `${READING_API_BASE}/comprehension/questions`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch questions');
   return response.json();
 }
 
 export async function submitComprehensionResult(
-  result: Omit<ComprehensionResult, 'id'>
+  result: Partial<ComprehensionResult> & { learnerId: string; questionIds?: string[]; answers?: string[]; timestamp?: string }
 ): Promise<ComprehensionResult> {
   const response = await fetch(`${READING_API_BASE}/comprehension/results`, {
     method: 'POST',
@@ -248,24 +278,26 @@ export async function getVocabularyLists(learnerId: string): Promise<VocabularyL
 }
 
 export async function createVocabularyList(
-  list: Omit<VocabularyList, 'id' | 'createdAt' | 'masteryLevel'>
+  list: Omit<VocabularyList, 'id' | 'createdAt' | 'masteryLevel' | 'words'> & { words?: VocabularyWord[] }
 ): Promise<VocabularyList> {
   const response = await fetch(`${READING_API_BASE}/vocabulary/lists`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(list),
+    body: JSON.stringify({ ...list, words: list.words || [] }),
   });
   if (!response.ok) throw new Error('Failed to create list');
   return response.json();
 }
 
-export async function addWordToList(listId: string, word: VocabularyWord): Promise<void> {
+export async function addWordToList(listId: string, word: string | VocabularyWord): Promise<VocabularyList> {
+  const body = typeof word === 'string' ? { wordId: word } : word;
   const response = await fetch(`${READING_API_BASE}/vocabulary/lists/${listId}/words`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(word),
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error('Failed to add word');
+  return response.json();
 }
 
 export async function searchWords(query: string): Promise<VocabularyWord[]> {
@@ -281,14 +313,17 @@ export async function getVocabularyProgress(learnerId: string): Promise<Vocabula
 }
 
 export async function submitFlashcardResults(
-  learnerId: string,
-  listId: string,
-  results: FlashcardResult[]
+  learnerIdOrData: string | { learnerId: string; listId: string; results: FlashcardResult[]; timestamp?: string },
+  listId?: string,
+  results?: FlashcardResult[]
 ): Promise<void> {
+  const body = typeof learnerIdOrData === 'string'
+    ? { learnerId: learnerIdOrData, listId, results }
+    : learnerIdOrData;
   const response = await fetch(`${READING_API_BASE}/vocabulary/flashcards/results`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ learnerId, listId, results }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error('Failed to submit results');
 }

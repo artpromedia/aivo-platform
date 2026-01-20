@@ -471,7 +471,7 @@ export function VocabularyBuilder({ learnerId }: Readonly<VocabularyBuilderProps
                   </div>
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6">
                     <div className="text-3xl font-bold text-purple-900">
-                      {Math.round(progress.overallAccuracy * 100)}%
+                      {Math.round((progress.overallAccuracy ?? 0) * 100)}%
                     </div>
                     <div className="text-sm text-purple-700 mt-1">Overall Accuracy</div>
                   </div>
@@ -481,7 +481,7 @@ export function VocabularyBuilder({ learnerId }: Readonly<VocabularyBuilderProps
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900 mb-3">Recent Activity</h3>
                     <div className="space-y-2">
-                      {progress.recentActivity.map((activity, index) => (
+                      {progress.recentActivity.map((activity: { listName: string; date: string; score: number; correctAnswers: number; totalQuestions: number }, index: number) => (
                         <div key={`${activity.listName}-${activity.date}-${index}`} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                           <div>
                             <div className="font-medium text-slate-900">{activity.listName}</div>

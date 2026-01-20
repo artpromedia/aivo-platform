@@ -25,8 +25,9 @@ export interface GraphicOrganizer {
 
 export interface OrganizerContent {
   organizerId: string;
-  content: Record<string, any>; // Flexible content for different organizer types
-  timestamp: string;
+  title?: string;
+  createdAt?: string;
+  [key: string]: any; // Allow any organizer-specific content fields
 }
 
 export interface SavedOrganizer {
@@ -34,7 +35,8 @@ export interface SavedOrganizer {
   learnerId: string;
   organizerId: string;
   name: string;
-  content: Record<string, any>;
+  content: OrganizerContent;
+  lastModified?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,12 +51,20 @@ export interface SentenceStarter {
   subcategory: string;
   starters: string[];
   examples: string[];
+  text?: string; // Individual starter text when fetched individually
+  purpose?: string;
+  name?: string;
+  gradeLevel?: string;
+  example?: string; // Single example (alias for backward compatibility)
 }
 
 export interface StarterCategory {
+  id?: string;
   category: string;
+  name?: string;
   subcategories: string[];
   description: string;
+  starters?: string[]; // When fetched with starters
 }
 
 export interface StarterUsage {
@@ -76,21 +86,34 @@ export interface GrammarCheck {
   suggestions: string[];
 }
 
+export interface GrammarSuggestion {
+  replacement: string;
+  explanation?: string;
+}
+
 export interface GrammarIssue {
+  id?: string;
   type: 'spelling' | 'grammar' | 'punctuation' | 'style' | 'clarity';
   message: string;
   position: {
     start: number;
     end: number;
   };
-  suggestions: string[];
+  suggestions: (string | GrammarSuggestion)[];
   severity: 'error' | 'warning' | 'info';
   explanation?: string;
+  category?: string;
+  line?: number;
+  column?: number;
+  context?: string;
+  replacement?: string;
+  ruleId?: string;
 }
 
 export interface GrammarRule {
   id: string;
   name: string;
+  title?: string;
   category: string;
   description: string;
   examples: {
@@ -106,6 +129,7 @@ export interface GrammarTip {
   category: string;
   tip: string;
   examples: string[];
+  content?: string;
 }
 
 // ============================================================================
@@ -167,14 +191,23 @@ export async function getGraphicOrganizers(): Promise<GraphicOrganizer[]> {
  */
 export async function saveOrganizerContent(
   learnerId: string,
-  organizerId: string,
-  name: string,
-  content: Record<string, any>
+  contentOrOrganizerId: OrganizerContent | string,
+  name?: string,
+  content?: Record<string, any>
 ): Promise<SavedOrganizer> {
+  // Support both old (learnerId, organizerId, name, content) and new (learnerId, OrganizerContent) signatures
+  const body = typeof contentOrOrganizerId === 'string'
+    ? { learnerId, organizerId: contentOrOrganizerId, name, content }
+    : { 
+        learnerId, 
+        organizerId: contentOrOrganizerId.organizerId, 
+        name: contentOrOrganizerId.title || 'Untitled',
+        content: contentOrOrganizerId 
+      };
   const response = await fetch(`${API_BASE_URL}/organizers/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ learnerId, organizerId, name, content }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error('Failed to save organizer');
   return response.json();
@@ -190,17 +223,23 @@ export async function getSavedOrganizers(learnerId: string): Promise<SavedOrgani
 }
 
 /**
- * Export organizer to text format
+ * Export organizer to text/pdf/image format
  */
-export async function exportOrganizer(organizerId: string, content: Record<string, any>): Promise<string> {
+export async function exportOrganizer(
+  learnerId: string,
+  contentOrOrganizerId: OrganizerContent | string,
+  format?: 'pdf' | 'image' | 'text'
+): Promise<Blob> {
+  const body = typeof contentOrOrganizerId === 'string'
+    ? { learnerId, organizerId: contentOrOrganizerId, format: format || 'text' }
+    : { learnerId, organizerId: contentOrOrganizerId.organizerId, content: contentOrOrganizerId, format: format || 'text' };
   const response = await fetch(`${API_BASE_URL}/organizers/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ organizerId, content }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error('Failed to export organizer');
-  const data = await response.json();
-  return data.text;
+  return response.blob();
 }
 
 // ============================================================================
@@ -235,11 +274,17 @@ export async function getSentenceStarters(
 /**
  * Log sentence starter usage
  */
-export async function logStarterUsage(usage: StarterUsage): Promise<void> {
+export async function logStarterUsage(
+  usageOrLearnerId: StarterUsage | string,
+  starterId?: string
+): Promise<void> {
+  const body = typeof usageOrLearnerId === 'string'
+    ? { learnerId: usageOrLearnerId, starterId }
+    : usageOrLearnerId;
   const response = await fetch(`${API_BASE_URL}/starters/usage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(usage),
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error('Failed to log usage');
 }
@@ -247,10 +292,21 @@ export async function logStarterUsage(usage: StarterUsage): Promise<void> {
 /**
  * Get random sentence starters
  */
-export async function getRandomStarters(count: number = 5): Promise<string[]> {
+export async function getRandomStarters(count: number = 5): Promise<SentenceStarter[]> {
   const response = await fetch(`${API_BASE_URL}/starters/random?count=${count}`);
   if (!response.ok) throw new Error('Failed to fetch random starters');
   const data = await response.json();
+  // Handle both array of strings and array of objects
+  if (Array.isArray(data.starters) && typeof data.starters[0] === 'string') {
+    return data.starters.map((text: string, index: number) => ({
+      id: `random-${index}`,
+      text,
+      category: 'random',
+      subcategory: '',
+      starters: [text],
+      examples: [],
+    }));
+  }
   return data.starters;
 }
 
@@ -303,12 +359,25 @@ export async function getGrammarTips(): Promise<GrammarTip[]> {
  */
 export async function applyGrammarSuggestion(
   text: string,
-  issue: GrammarIssue,
+  issueOrId: GrammarIssue | string,
   suggestionIndex: number
-): Promise<string> {
+): Promise<{ correctedText: string }> {
+  // If issueOrId is a string (issueId), fetch the issue first or use the suggestion directly
+  if (typeof issueOrId === 'string') {
+    // For now, return the original text; actual implementation would fetch the issue
+    const response = await fetch(`${API_BASE_URL}/grammar/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, issueId: issueOrId, suggestionIndex }),
+    });
+    if (!response.ok) throw new Error('Failed to apply suggestion');
+    return response.json();
+  }
+  
+  const issue = issueOrId;
   const before = text.substring(0, issue.position.start);
   const after = text.substring(issue.position.end);
-  return before + issue.suggestions[suggestionIndex] + after;
+  return { correctedText: before + issue.suggestions[suggestionIndex] + after };
 }
 
 // ============================================================================

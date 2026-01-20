@@ -238,29 +238,33 @@ export function GrammarHelp() {
                           <div>
                             <p className="text-sm font-medium mb-2">Suggestions:</p>
                             <div className="space-y-2">
-                              {issue.suggestions.map((suggestion, idx) => (
+                              {issue.suggestions.map((suggestion, idx) => {
+                                const suggestionObj = typeof suggestion === 'string' 
+                                  ? { replacement: suggestion } 
+                                  : suggestion;
+                                return (
                                 <div
                                   key={idx}
                                   className="flex justify-between items-start p-2 bg-white rounded border border-slate-200"
                                 >
                                   <div className="flex-1">
                                     <p className="text-sm font-medium text-green-700">
-                                      {suggestion.replacement}
+                                      {suggestionObj.replacement}
                                     </p>
-                                    {suggestion.explanation && (
+                                    {suggestionObj.explanation && (
                                       <p className="text-xs text-slate-600 mt-1">
-                                        {suggestion.explanation}
+                                        {suggestionObj.explanation}
                                       </p>
                                     )}
                                   </div>
                                   <button
-                                    onClick={() => handleApplySuggestion(issue.id, idx)}
+                                    onClick={() => handleApplySuggestion(issue.id ?? '', idx)}
                                     className="ml-2 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
                                   >
                                     Apply
                                   </button>
                                 </div>
-                              ))}
+                              );})}
                             </div>
                           </div>
                         )}
