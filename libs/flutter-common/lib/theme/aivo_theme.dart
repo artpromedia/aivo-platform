@@ -578,6 +578,299 @@ ThemeData themeForBand(AivoGradeBand band) {
 // consumed here to avoid manual duplication.
 
 // ══════════════════════════════════════════════════════════════════════════════
+// DARK THEME COLORS
+// Addresses P1 Issue: Dark theme support for mobile
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Dark theme color palette for all grade bands
+class _AivoDarkColors {
+  const _AivoDarkColors({
+    required this.primary,
+    required this.secondary,
+    required this.accent,
+    required this.background,
+    required this.surface,
+    required this.surfaceMuted,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.error,
+  });
+
+  final Color primary;
+  final Color secondary;
+  final Color accent;
+  final Color background;
+  final Color surface;
+  final Color surfaceMuted;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color error;
+}
+
+/// K-5 Dark: Playful purple tones
+const _k5DarkColors = _AivoDarkColors(
+  primary: Color(0xFFA78BFA), // Lighter purple for dark mode
+  secondary: Color(0xFFC4B5FD),
+  accent: Color(0xFFFBBF24), // Amber
+  background: Color(0xFF0F0D15), // Deep purple-black
+  surface: Color(0xFF1A1625), // Dark purple surface
+  surfaceMuted: Color(0xFF251F33), // Lighter purple surface
+  textPrimary: Color(0xFFF8F7FC), // Off-white with purple tint
+  textSecondary: Color(0xFFA1A1AA),
+  error: Color(0xFFF87171),
+);
+
+/// G6-8 Dark: Modern teal tones
+const _g6_8DarkColors = _AivoDarkColors(
+  primary: Color(0xFF22D3EE), // Light teal
+  secondary: Color(0xFF67E8F9),
+  accent: Color(0xFF34D399), // Mint
+  background: Color(0xFF0A1014), // Deep teal-black
+  surface: Color(0xFF111A1F), // Dark teal surface
+  surfaceMuted: Color(0xFF1A262D), // Lighter teal surface
+  textPrimary: Color(0xFFF0FDFA), // Off-white with teal tint
+  textSecondary: Color(0xFF9CA3AF),
+  error: Color(0xFFF87171),
+);
+
+/// G9-12 Dark: Professional navy tones
+const _g9_12DarkColors = _AivoDarkColors(
+  primary: Color(0xFF8B8BFF), // Light purple-blue
+  secondary: Color(0xFFA5A5FF),
+  accent: Color(0xFFA78BFA), // Purple
+  background: Color(0xFF09090B), // Near black
+  surface: Color(0xFF18181B), // Dark gray
+  surfaceMuted: Color(0xFF27272A), // Medium gray
+  textPrimary: Color(0xFFFAFAFA),
+  textSecondary: Color(0xFFA1A1AA),
+  error: Color(0xFFEF4444),
+);
+
+ThemeData _buildDarkTheme({
+  required _AivoDarkColors colors,
+  required _AivoTypography type,
+}) {
+  final textTheme = _buildTextTheme(type).apply(
+    bodyColor: colors.textPrimary,
+    displayColor: colors.textPrimary,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    colorScheme: ColorScheme.dark(
+      primary: colors.primary,
+      onPrimary: Colors.black,
+      primaryContainer: colors.primary.withOpacity(0.15),
+      onPrimaryContainer: colors.primary,
+      secondary: colors.secondary,
+      onSecondary: Colors.black,
+      secondaryContainer: colors.secondary.withOpacity(0.15),
+      onSecondaryContainer: colors.secondary,
+      tertiary: colors.accent,
+      onTertiary: Colors.black,
+      error: colors.error,
+      onError: Colors.black,
+      errorContainer: colors.error.withOpacity(0.15),
+      onErrorContainer: colors.error,
+      surface: colors.surface,
+      onSurface: colors.textPrimary,
+      surfaceContainerHighest: colors.surfaceMuted,
+      onSurfaceVariant: colors.textSecondary,
+      outline: colors.textSecondary.withOpacity(0.5),
+    ),
+    scaffoldBackgroundColor: colors.background,
+    textTheme: textTheme,
+
+    // AppBar
+    appBarTheme: AppBarTheme(
+      backgroundColor: colors.surface,
+      foregroundColor: colors.textPrimary,
+      centerTitle: true,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+    ),
+
+    // Cards
+    cardTheme: CardThemeData(
+      color: colors.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colors.surfaceMuted),
+      ),
+      surfaceTintColor: Colors.transparent,
+    ),
+
+    // Elevated Buttons (Primary)
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colors.primary,
+        foregroundColor: Colors.black,
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        elevation: 0,
+      ),
+    ),
+
+    // Filled Buttons (CTA)
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: colors.secondary,
+        foregroundColor: Colors.black,
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      ),
+    ),
+
+    // Outlined Buttons
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: colors.primary,
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(color: colors.surfaceMuted, width: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      ),
+    ),
+
+    // Text Buttons
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: colors.primary,
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      ),
+    ),
+
+    // Chips
+    chipTheme: ChipThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: colors.surfaceMuted,
+      selectedColor: colors.primary.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: colors.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
+      secondaryLabelStyle: TextStyle(
+        color: colors.textPrimary,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+
+    // Input Decoration
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: colors.surfaceMuted,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colors.surfaceMuted),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colors.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+
+    // Bottom Navigation
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: colors.surface,
+      selectedItemColor: colors.primary,
+      unselectedItemColor: colors.textSecondary,
+      type: BottomNavigationBarType.fixed,
+      elevation: 0,
+    ),
+
+    // Floating Action Button
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: colors.secondary,
+      foregroundColor: Colors.black,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+
+    // Divider
+    dividerTheme: DividerThemeData(
+      color: colors.surfaceMuted,
+      thickness: 1,
+    ),
+
+    // Progress Indicator
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: colors.primary,
+      linearTrackColor: colors.primary.withOpacity(0.2),
+    ),
+
+    // Switch
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colors.primary;
+        }
+        return colors.textSecondary;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colors.primary.withOpacity(0.5);
+        }
+        return colors.surfaceMuted;
+      }),
+    ),
+
+    // Extensions
+    extensions: [
+      AivoColors(
+        primary: colors.primary,
+        secondary: colors.secondary,
+        accent: colors.accent,
+        background: colors.background,
+        surface: colors.surface,
+        surfaceVariant: colors.surfaceMuted,
+        textPrimary: colors.textPrimary,
+        textSecondary: colors.textSecondary,
+        error: colors.error,
+        success: const Color(0xFF34D399), // Mint for dark mode
+        warning: const Color(0xFFFBBF24), // Amber for dark mode
+        info: const Color(0xFF38BDF8), // Sky for dark mode
+        outline: colors.surfaceMuted,
+        coral: const Color(0xFFFF8585),
+        mint: const Color(0xFF34D399),
+        sunshine: const Color(0xFFFBBF24),
+        sky: const Color(0xFF38BDF8),
+      ),
+    ],
+  );
+}
+
+// Dark themes for each grade band
+final ThemeData aivoThemeK5Dark = _buildDarkTheme(colors: _k5DarkColors, type: _k5Type);
+final ThemeData aivoThemeG6_8Dark = _buildDarkTheme(colors: _g6_8DarkColors, type: _g6_8Type);
+final ThemeData aivoThemeG9_12Dark = _buildDarkTheme(colors: _g9_12DarkColors, type: _g9_12Type);
+
+ThemeData darkThemeForBand(AivoGradeBand band) {
+  switch (band) {
+    case AivoGradeBand.k5:
+      return aivoThemeK5Dark;
+    case AivoGradeBand.g6_8:
+      return aivoThemeG6_8Dark;
+    case AivoGradeBand.g9_12:
+      return aivoThemeG9_12Dark;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // THEME EXTENSION
 // ══════════════════════════════════════════════════════════════════════════════
 

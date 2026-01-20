@@ -1,0 +1,36 @@
+# Internationalization configuration for mobile-learner app
+#
+# Addresses P1 Issue: Learner app missing i18n
+#
+# To add a new language:
+# 1. Create a new ARB file: lib/l10n/app_<locale>.arb
+# 2. Run: flutter gen-l10n
+#
+# Usage in code:
+# ```dart
+# import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+#
+# // In widget build method:
+# final l10n = AppLocalizations.of(context)!;
+# Text(l10n.welcomeBack('Alex'));
+# ```
+
+# ARB file template
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+
+# Output location for generated files
+output-localization-file: app_localizations.dart
+output-dir: lib/l10n/generated
+
+# Output class name
+output-class: AppLocalizations
+
+# Supported locales
+synthetic-package: false
+
+# Make localizations nullable (returns null if locale not supported)
+nullable-getter: false
+
+# Generate a list of supported locales
+untranslated-messages-file: lib/l10n/untranslated_messages.txt

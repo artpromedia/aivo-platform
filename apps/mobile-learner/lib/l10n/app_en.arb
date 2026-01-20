@@ -1,0 +1,281 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2026-01-20",
+
+  "appTitle": "Aivo Learner",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+
+  "welcomeBack": "Welcome back, {name}!",
+  "@welcomeBack": {
+    "description": "Welcome message with learner's name",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Alex"
+      }
+    }
+  },
+
+  "todaysPlan": "Today's Plan",
+  "@todaysPlan": {
+    "description": "Title for today's learning plan"
+  },
+
+  "activitiesRemaining": "{count, plural, =0{All done!} =1{1 activity remaining} other{{count} activities remaining}}",
+  "@activitiesRemaining": {
+    "description": "Number of activities remaining today",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+
+  "startLearning": "Start Learning",
+  "@startLearning": {
+    "description": "Button to start learning session"
+  },
+
+  "continueLearning": "Continue Learning",
+  "@continueLearning": {
+    "description": "Button to continue learning session"
+  },
+
+  "sessionComplete": "Session Complete!",
+  "@sessionComplete": {
+    "description": "Title when session is finished"
+  },
+
+  "greatJob": "Great job!",
+  "@greatJob": {
+    "description": "Congratulatory message"
+  },
+
+  "xpEarned": "+{amount} XP",
+  "@xpEarned": {
+    "description": "XP points earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "coinsEarned": "+{amount} coins",
+  "@coinsEarned": {
+    "description": "Coins earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "streakDays": "{count, plural, =1{1 day streak} other{{count} day streak}}",
+  "@streakDays": {
+    "description": "Learning streak in days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "progress": "Progress",
+  "@progress": {
+    "description": "Progress section title"
+  },
+
+  "goals": "Goals",
+  "@goals": {
+    "description": "Goals section title"
+  },
+
+  "rewards": "Rewards",
+  "@rewards": {
+    "description": "Rewards section title"
+  },
+
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings section title"
+  },
+
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile section title"
+  },
+
+  "focusMode": "Focus Mode",
+  "@focusMode": {
+    "description": "Focus mode feature"
+  },
+
+  "needABreak": "Need a break?",
+  "@needABreak": {
+    "description": "Question for break suggestion"
+  },
+
+  "takeBreak": "Take a Break",
+  "@takeBreak": {
+    "description": "Button to take a break"
+  },
+
+  "skipBreak": "Keep Going",
+  "@skipBreak": {
+    "description": "Button to skip break"
+  },
+
+  "homeworkHelp": "Homework Help",
+  "@homeworkHelp": {
+    "description": "Homework helper feature"
+  },
+
+  "scanProblem": "Scan Problem",
+  "@scanProblem": {
+    "description": "Button to scan homework problem"
+  },
+
+  "typeProblem": "Type Problem",
+  "@typeProblem": {
+    "description": "Button to type homework problem"
+  },
+
+  "brainTraining": "Brain Training",
+  "@brainTraining": {
+    "description": "Brain training games section"
+  },
+
+  "playGames": "Play Games",
+  "@playGames": {
+    "description": "Button to play educational games"
+  },
+
+  "offline": "Offline",
+  "@offline": {
+    "description": "Offline mode indicator"
+  },
+
+  "offlineMessage": "You're offline. Some features may not be available.",
+  "@offlineMessage": {
+    "description": "Message shown when offline"
+  },
+
+  "syncing": "Syncing...",
+  "@syncing": {
+    "description": "Syncing status message"
+  },
+
+  "syncComplete": "Sync complete",
+  "@syncComplete": {
+    "description": "Sync completed message"
+  },
+
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": {
+    "description": "Generic error message"
+  },
+
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+
+  "done": "Done",
+  "@done": {
+    "description": "Done button text"
+  },
+
+  "next": "Next",
+  "@next": {
+    "description": "Next button text"
+  },
+
+  "back": "Back",
+  "@back": {
+    "description": "Back button text"
+  },
+
+  "submit": "Submit",
+  "@submit": {
+    "description": "Submit button text"
+  },
+
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading indicator text"
+  },
+
+  "minutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@minutes": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "accuracyPercent": "{percent}% accuracy",
+  "@accuracyPercent": {
+    "description": "Accuracy percentage",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+
+  "subject_math": "Math",
+  "@subject_math": {
+    "description": "Math subject name"
+  },
+
+  "subject_ela": "English",
+  "@subject_ela": {
+    "description": "English Language Arts subject name"
+  },
+
+  "subject_science": "Science",
+  "@subject_science": {
+    "description": "Science subject name"
+  },
+
+  "subject_socialStudies": "Social Studies",
+  "@subject_socialStudies": {
+    "description": "Social Studies subject name"
+  },
+
+  "accessibilitySettings": "Accessibility Settings",
+  "@accessibilitySettings": {
+    "description": "Accessibility settings title"
+  },
+
+  "textSize": "Text Size",
+  "@textSize": {
+    "description": "Text size setting"
+  },
+
+  "highContrast": "High Contrast",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+
+  "readAloud": "Read Aloud",
+  "@readAloud": {
+    "description": "Read aloud / TTS setting"
+  },
+
+  "reducedMotion": "Reduced Motion",
+  "@reducedMotion": {
+    "description": "Reduced motion setting"
+  }
+}
