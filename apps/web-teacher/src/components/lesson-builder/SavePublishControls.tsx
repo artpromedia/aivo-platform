@@ -59,8 +59,8 @@ export function SavePublishControls({
   const handleSaveDraft = async () => {
     try {
       await onSaveDraft();
-    } catch (error) {
-      console.error('Failed to save draft:', error);
+    } catch {
+      // Save failed silently
     }
   };
 

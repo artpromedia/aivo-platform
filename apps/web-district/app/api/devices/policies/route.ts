@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
         Vary: 'Authorization',
       },
     });
-  } catch (error) {
-    console.error('Error fetching policies:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -66,8 +65,7 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error('Error creating policy:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -19,8 +19,8 @@ vi.mock('@aivo/ts-api-utils', () => ({
   },
 }));
 
-// Mock Prisma client
-const mockPrismaClient = {
+// Create mock Prisma client with vi.hoisted to ensure it's available for the mock factory
+const mockPrismaClient = vi.hoisted(() => ({
   gradebookConfig: {
     findUnique: vi.fn(),
     upsert: vi.fn(),
@@ -49,8 +49,8 @@ const mockPrismaClient = {
     create: vi.fn(),
     findMany: vi.fn(),
   },
-  $transaction: vi.fn((operations) => Promise.all(operations)),
-};
+  $transaction: vi.fn((operations: any) => Promise.all(operations)),
+}));
 
 vi.mock('../generated/prisma-client/index.js', () => ({
   PrismaClient: vi.fn().mockImplementation(() => mockPrismaClient),

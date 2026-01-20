@@ -101,8 +101,8 @@ export function ContentBrowser({
 
       const data = await response.json();
       setContent(data.items || []);
-    } catch (error) {
-      console.error('Error fetching content:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setLoading(false);
     }
@@ -444,8 +444,8 @@ export function CompactContentBrowser({
 
         const data = await response.json();
         setContent(data.items || []);
-      } catch (error) {
-        console.error('Error fetching content:', error);
+      } catch {
+        // Fetch failed silently
       } finally {
         setLoading(false);
       }

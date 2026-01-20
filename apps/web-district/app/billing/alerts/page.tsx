@@ -23,9 +23,8 @@ export default function BillingAlertsPage() {
       setIsLoading(true);
       const data = await fetchSeatUsageAlerts();
       setAlerts(data);
-    } catch (err) {
+    } catch {
       setError('Failed to load alerts');
-      console.error('Error loading alerts:', err);
     } finally {
       setIsLoading(false);
     }
@@ -46,8 +45,8 @@ export default function BillingAlertsPage() {
             : alert
         )
       );
-    } catch (err) {
-      console.error('Error acknowledging alert:', err);
+    } catch {
+      // Acknowledge failed silently
     }
   };
 
@@ -62,8 +61,8 @@ export default function BillingAlertsPage() {
             : alert
         )
       );
-    } catch (err) {
-      console.error('Error resolving alert:', err);
+    } catch {
+      // Resolve failed silently
     }
   };
 

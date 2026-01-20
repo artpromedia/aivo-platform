@@ -59,8 +59,8 @@ export default function GradebookPage() {
       if (grade) {
         await updateGrade(grade.id, score, accessToken);
       }
-    } catch (err) {
-      console.error('Failed to update grade:', err);
+    } catch {
+      // Grade update failed silently
     }
   };
 

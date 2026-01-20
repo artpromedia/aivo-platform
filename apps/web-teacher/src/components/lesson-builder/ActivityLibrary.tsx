@@ -259,8 +259,7 @@ export function ActivityLibrary({
       }
 
       setActivities(filtered);
-    } catch (error) {
-      console.error('Failed to load activities:', error);
+    } catch {
       setActivities([]);
     } finally {
       setIsLoading(false);

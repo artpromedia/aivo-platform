@@ -42,8 +42,7 @@ export default function ClassroomAnalyticsPage() {
 
         setHomeworkData(homework);
         setFocusData(focus);
-      } catch (err) {
-        console.error('Failed to load classroom analytics:', err);
+      } catch {
         setError('Failed to load analytics data. Please try again.');
       } finally {
         setLoading(false);

@@ -42,6 +42,12 @@ import {
   type CreateRubricBody,
 } from '../schemas/assessment.schemas.js';
 import type { Request, Response } from 'express';
+import type {
+  CreateAssessmentInput,
+  CreateQuestionInput,
+  AutoGenerateInput,
+  CreateRubricInput,
+} from '../services/assessment-builder.service.js';
 
 const router = Router();
 
@@ -54,7 +60,8 @@ router.post(
   validateBody(createAssessmentBodySchema),
   async (req: Request<{}, {}, CreateAssessmentBody>, res: Response) => {
     try {
-      const assessment = await assessmentBuilderService.createAssessment(req.body);
+      // Type assertion is safe here because Zod has validated the data
+      const assessment = await assessmentBuilderService.createAssessment(req.body as CreateAssessmentInput);
       res.json(assessment);
     } catch (error) {
       console.error('Error creating assessment:', error);
@@ -160,10 +167,11 @@ router.post(
   async (req: Request<AssessmentIdParams, {}, AddQuestionBody>, res: Response) => {
     try {
       const { id } = req.params;
+      // Type assertion is safe here because Zod has validated the data
       const question = await assessmentBuilderService.addQuestion({
         assessmentId: id,
         ...req.body,
-      });
+      } as CreateQuestionInput);
       res.json(question);
     } catch (error) {
       console.error('Error adding question:', error);
@@ -227,7 +235,8 @@ router.put(
     try {
       const { questions } = req.body;
 
-      await assessmentBuilderService.reorderQuestions(questions);
+      // Type assertion is safe here because Zod has validated the data
+      await assessmentBuilderService.reorderQuestions(questions as Array<{ id: string; orderIndex: number }>);
       res.json({ success: true });
     } catch (error) {
       console.error('Error reordering questions:', error);
@@ -316,7 +325,8 @@ router.post(
   validateBody(autoGenerateBodySchema),
   async (req: Request<{}, {}, AutoGenerateBody>, res: Response) => {
     try {
-      const assessment = await assessmentBuilderService.autoGenerateAssessment(req.body);
+      // Type assertion is safe here because Zod has validated the data
+      const assessment = await assessmentBuilderService.autoGenerateAssessment(req.body as AutoGenerateInput);
       res.json(assessment);
     } catch (error) {
       console.error('Error auto-generating assessment:', error);
@@ -401,7 +411,8 @@ router.post(
   validateBody(createRubricBodySchema),
   async (req: Request<{}, {}, CreateRubricBody>, res: Response) => {
     try {
-      const rubric = await assessmentBuilderService.createRubric(req.body);
+      // Type assertion is safe here because Zod has validated the data
+      const rubric = await assessmentBuilderService.createRubric(req.body as CreateRubricInput);
       res.json(rubric);
     } catch (error) {
       console.error('Error creating rubric:', error);

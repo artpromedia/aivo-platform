@@ -30,8 +30,7 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching pool devices:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -70,8 +69,7 @@ export async function POST(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error adding devices to pool:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -110,8 +108,7 @@ export async function DELETE(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error removing devices from pool:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

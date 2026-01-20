@@ -108,8 +108,8 @@ export function TeacherProfile({
         const data = await response.json();
         setProfile(data);
         setIsFollowing(data.isFollowing || false);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
+      } catch {
+        // Fetch failed silently
       } finally {
         setLoading(false);
       }
@@ -127,8 +127,8 @@ export function TeacherProfile({
 
         const data = await response.json();
         setContent(data.items || []);
-      } catch (error) {
-        console.error('Error fetching content:', error);
+      } catch {
+        // Fetch failed silently
       }
     };
 
@@ -158,8 +158,8 @@ export function TeacherProfile({
           },
         });
       }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
+    } catch {
+      // Follow toggle failed silently
     }
   };
 

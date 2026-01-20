@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Managing seats', changes);
       const mockSub = getMockSubscription();
 
       // Simulate seat changes
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Seats management error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

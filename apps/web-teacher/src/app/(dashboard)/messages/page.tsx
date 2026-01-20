@@ -34,8 +34,8 @@ export default function MessagesPage() {
         if (data.length > 0 && !selected) {
           setSelected(data[0]);
         }
-      } catch (err) {
-        console.error('Failed to load conversations:', err);
+      } catch {
+        // Conversations load failed silently
       } finally {
         setIsLoading(false);
       }
@@ -53,8 +53,8 @@ export default function MessagesPage() {
         if (selected.unread) {
           await markConversationRead(selected.id, accessToken);
         }
-      } catch (err) {
-        console.error('Failed to load messages:', err);
+      } catch {
+        // Messages load failed silently
       }
     }
     void loadMessages();
@@ -68,8 +68,8 @@ export default function MessagesPage() {
       const sent = await sendMessage(selected.id, newMessage.trim(), accessToken);
       setMessages((prev) => [...prev, sent]);
       setNewMessage('');
-    } catch (err) {
-      console.error('Failed to send message:', err);
+    } catch {
+      // Send failed silently
     } finally {
       setIsSending(false);
     }

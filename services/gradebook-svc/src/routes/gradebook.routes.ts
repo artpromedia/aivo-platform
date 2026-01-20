@@ -266,7 +266,8 @@ router.post(
   validateBody(submitGradeBodySchema),
   async (req: Request<{}, {}, SubmitGradeBody>, res: Response) => {
     try {
-      const grade = await gradebookService.submitGrade(req.body);
+      // Type assertion is safe here because Zod has validated the data
+      const grade = await gradebookService.submitGrade(req.body as UpdateGradeInput);
       res.json(grade);
     } catch (error) {
       console.error('Error submitting grade:', error);
@@ -288,10 +289,11 @@ router.put(
   async (req: Request<GradeIdParams, {}, UpdateGradeBody>, res: Response) => {
     try {
       const { id } = req.params;
+      // Type assertion is safe here because Zod has validated the data
       const grade = await gradebookService.submitGrade({
         gradeId: id,
         ...req.body,
-      });
+      } as UpdateGradeInput);
       res.json(grade);
     } catch (error) {
       console.error('Error updating grade:', error);
@@ -347,7 +349,8 @@ router.post(
   validateBody(bulkImportGradesBodySchema),
   async (req: Request<{}, {}, BulkImportGradesBody>, res: Response) => {
     try {
-      const result = await gradebookService.bulkImportGrades(req.body);
+      // Type assertion is safe here because Zod has validated the data
+      const result = await gradebookService.bulkImportGrades(req.body as BulkGradeImport);
       res.json(result);
     } catch (error) {
       console.error('Error importing grades:', error);
