@@ -1,0 +1,18 @@
+# Test dependencies for Grading Engine Service
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+
+# HTTP client for API testing
+httpx>=0.26.0
+
+# Mocking utilities
+pytest-mock>=3.12.0
+
+# Async testing support
+anyio>=4.2.0
+
+# Include base requirements
+-r requirements.txt

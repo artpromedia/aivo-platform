@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@aivo/ts-rbac": "workspace:*",
     "@aivo/ts-shared": "workspace:*",
     "@aws-sdk/client-s3": "^3.600.0",

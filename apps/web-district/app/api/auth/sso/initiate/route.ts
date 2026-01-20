@@ -86,8 +86,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       redirectUrl: ssoUrl.toString(),
     });
-  } catch (error) {
-    console.error('Error initiating SSO:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to initiate SSO' },
       { status: 500 }

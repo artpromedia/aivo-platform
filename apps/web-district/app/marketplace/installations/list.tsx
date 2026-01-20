@@ -69,8 +69,8 @@ export function InstallationsList() {
           prev.map((i) => (i.id === installation.id ? { ...i, status: 'ACTIVE' } : i))
         );
       }
-    } catch (err) {
-      console.error('Failed to toggle status:', err);
+    } catch {
+      // Toggle failed silently
     }
   }
 
@@ -82,8 +82,8 @@ export function InstallationsList() {
       setInstallations((prev) =>
         prev.map((i) => (i.id === installation.id ? { ...i, status: 'ACTIVE' } : i))
       );
-    } catch (err) {
-      console.error('Failed to approve installation:', err);
+    } catch {
+      // Approval failed silently
     }
   }
 
@@ -95,8 +95,8 @@ export function InstallationsList() {
       // Remove from list since it's revoked
       setInstallations((prev) => prev.filter((i) => i.id !== installation.id));
       setTotal((prev) => prev - 1);
-    } catch (err) {
-      console.error('Failed to revoke installation:', err);
+    } catch {
+      // Revoke failed silently
     }
   }
 

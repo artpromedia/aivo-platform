@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       // Tenant not found or auth service error - return empty list
-      console.warn(`Failed to fetch SSO providers for tenant ${tenantSlug}: ${response.status}`);
       return NextResponse.json({ providers: [] });
     }
 
@@ -128,8 +127,7 @@ export async function GET(request: NextRequest) {
       providers,
       tenantSlug,
     });
-  } catch (error) {
-    console.error('Error fetching SSO providers:', error);
+  } catch {
     return NextResponse.json({ providers: [] });
   }
 }

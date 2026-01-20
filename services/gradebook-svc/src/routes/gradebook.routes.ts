@@ -34,6 +34,7 @@ import {
   type BulkImportGradesBody,
 } from '../schemas/gradebook.schemas.js';
 import type { Request, Response } from 'express';
+import type { CreateAssignmentInput, UpdateGradeInput, BulkGradeImport } from '../services/gradebook.service.js';
 
 const router = Router();
 
@@ -143,7 +144,8 @@ router.put(
     try {
       const { categories } = req.body;
 
-      await gradebookService.updateCategoryWeights(categories);
+      // Type assertion is safe here because Zod has validated the data
+      await gradebookService.updateCategoryWeights(categories as Array<{ id: string; weight: number }>);
       res.json({ success: true });
     } catch (error) {
       console.error('Error updating category weights:', error);
@@ -161,7 +163,8 @@ router.post(
   validateBody(createAssignmentBodySchema),
   async (req: Request<{}, {}, CreateAssignmentBody>, res: Response) => {
     try {
-      const assignment = await gradebookService.createAssignment(req.body);
+      // Type assertion is safe here because Zod has validated the data
+      const assignment = await gradebookService.createAssignment(req.body as CreateAssignmentInput);
       res.json(assignment);
     } catch (error) {
       console.error('Error creating assignment:', error);
