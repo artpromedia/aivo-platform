@@ -6,6 +6,8 @@
 
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import {
@@ -76,6 +78,12 @@ export async function buildApp(): Promise<FastifyInstance> {
       ...(config.nodeEnv !== 'production' && { stack: error.stack }),
     });
   });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // RATE LIMITING
+  // ════════════════════════════════════════════════════════════════════════════
+
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('goal-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // REGISTER ROUTES

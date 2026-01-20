@@ -11,6 +11,8 @@
  */
 
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { AlertRulesEngine } from './engine/alert-rules.js';
@@ -47,6 +49,9 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
           : undefined,
     },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.messaging('realtime-svc'));
 
   // Initialize HTTP auth middleware
   await httpAuthMiddleware.initialize();

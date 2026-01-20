@@ -1,4 +1,6 @@
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerAuthRoutes } from './routes/auth.js';
@@ -8,6 +10,9 @@ import { registerSsoRoutes } from './routes/sso.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
+
+  // Rate limiting - strict limits for auth endpoints to prevent brute force
+  void app.register(rateLimit, FastifyRateLimitPresets.authService('auth-svc'));
 
   // Register form body parser for SAML POST binding
   app.addContentTypeParser(

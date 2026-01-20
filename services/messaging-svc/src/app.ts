@@ -3,6 +3,8 @@
  */
 
 import Fastify, { FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { registerConversationRoutes, registerMessageRoutes, registerThreadRoutes } from './routes/index.js';
@@ -17,6 +19,9 @@ export async function buildApp(): Promise<FastifyInstance> {
           : { target: 'pino-pretty', options: { colorize: true } },
     },
   });
+
+  // Rate limiting for messaging endpoints
+  await app.register(rateLimit, FastifyRateLimitPresets.messaging('messaging-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // HEALTH CHECK

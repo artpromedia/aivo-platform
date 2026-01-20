@@ -3,6 +3,8 @@
  */
 
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
@@ -15,6 +17,9 @@ export async function buildApp() {
       level: config.logLevel,
     },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('writing-pad-svc'));
 
   // Global error handler
   app.setErrorHandler(async (error, request, reply) => {

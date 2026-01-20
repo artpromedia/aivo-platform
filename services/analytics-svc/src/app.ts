@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
@@ -44,6 +46,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // JWT auth for all other routes
   await app.register(authMiddleware);
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.analytics('analytics-svc'));
 
   // Register analytics routes under /analytics prefix
   await app.register(learnerAnalyticsRoutes, { prefix: '/analytics' });

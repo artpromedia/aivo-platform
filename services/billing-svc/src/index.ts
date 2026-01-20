@@ -3,6 +3,8 @@
  */
 
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { billingEventPublisher } from './events/billing.publisher.js';
@@ -27,6 +29,9 @@ async function main() {
           level: process.env.LOG_LEVEL || 'info',
         },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.billing('billing-svc'));
 
   // Health check endpoint
   app.get('/health', async () => ({ status: 'ok', service: 'billing-svc' }));

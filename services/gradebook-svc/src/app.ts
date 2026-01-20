@@ -5,6 +5,7 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import { createExpressRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils';
 
 import gradebookRoutes from './routes/gradebook.routes.js';
 import assessmentRoutes from './routes/assessment.routes.js';
@@ -19,6 +20,9 @@ export function createApp() {
     origin: config.corsOrigin,
     credentials: true
   }));
+
+  // Rate limiting
+  app.use(createExpressRateLimiter(RateLimitPresets.API_GENERAL));
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));

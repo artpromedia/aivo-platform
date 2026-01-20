@@ -3,7 +3,9 @@
  */
 
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { closeConnections, checkDatabaseHealth } from './db.js';
 import {
@@ -36,9 +38,12 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // CORS
   await app.register(cors, {
-    origin: true,
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('experimentation-svc'));
 
   // Health check endpoints
   app.get('/health', async () => ({ status: 'ok', service: 'experimentation-svc' }));

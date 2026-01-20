@@ -8,7 +8,9 @@
 
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { natsPublisher } from './events/index.js';
@@ -48,6 +50,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(helmet, {
     contentSecurityPolicy: config.nodeEnv === 'production',
   });
+
+  // Rate limiting for profile endpoints
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('profile-svc'));
 
   // ────────────────────────────────────────────────────────────────────────────
   // Initialize NATS for event publishing

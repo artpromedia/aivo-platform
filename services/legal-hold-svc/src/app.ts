@@ -4,7 +4,9 @@
 
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { authenticate } from './middleware/auth.js';
@@ -35,6 +37,9 @@ export function createApp() {
   });
 
   app.register(helmet, { contentSecurityPolicy: false });
+
+  // Rate limiting
+  app.register(rateLimit, FastifyRateLimitPresets.internalApi('legal-hold-svc'));
 
   // Health check
   app.get('/health', async () => ({

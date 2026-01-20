@@ -5,8 +5,10 @@
  */
 
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import 'dotenv/config';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
 import { activitiesRoutes } from './routes/activities.js';
@@ -28,7 +30,13 @@ async function main() {
     logger: { level: config.logLevel },
   });
 
-  await app.register(cors, { origin: true, credentials: true });
+  await app.register(cors, {
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
+  });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('professional-dev-svc'));
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'professional-dev-svc' }));

@@ -27,7 +27,10 @@ async function main() {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await app.register(cors as any, { origin: true, credentials: true });
+  await app.register(cors as any, {
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
+  });
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'executive-function-svc' }));

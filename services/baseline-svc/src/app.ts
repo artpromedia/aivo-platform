@@ -1,4 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { baselineRoutes } from './routes/baseline.js';

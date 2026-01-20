@@ -1,6 +1,8 @@
 import { authMiddleware } from '@aivo/ts-rbac';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import type { Pool } from 'pg';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { createPool } from './db.js';
@@ -11,6 +13,9 @@ import { startGracePeriodScheduler, stopGracePeriodScheduler } from './scheduler
 export function createApp(options: { pool?: Pool; logger?: boolean; enableScheduler?: boolean } = {}) {
   const app = Fastify({ logger: options.logger ?? true });
   const pool = options.pool ?? createPool();
+
+  // Rate limiting
+  app.register(rateLimit, FastifyRateLimitPresets.internalApi('dsr-svc'));
 
   // Health check endpoint (no auth required)
   app.get('/health', async () => ({ status: 'ok', service: 'dsr-svc' }));

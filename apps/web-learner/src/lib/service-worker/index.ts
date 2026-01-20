@@ -4,7 +4,6 @@
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) {
-    console.warn('Service workers are not supported');
     return null;
   }
 
@@ -42,10 +41,8 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       });
     });
 
-    console.log('Service Worker registered:', registration.scope);
     return registration;
-  } catch (error) {
-    console.error('Service Worker registration failed:', error);
+  } catch {
     return null;
   }
 }

@@ -3,6 +3,8 @@
  */
 
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerFrameworkRoutes } from './routes/frameworks.js';
@@ -11,6 +13,9 @@ import { registerDashboardRoutes } from './routes/dashboard.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
+
+  // Rate limiting
+  void app.register(rateLimit, FastifyRateLimitPresets.internalApi('compliance-svc'));
 
   // Health check
   app.get('/health', async (_request, reply) => {

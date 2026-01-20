@@ -20,7 +20,9 @@
  */
 
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { fileRoutes } from './routes/files.js';
 import { ingestionRoutes } from './routes/ingestion.js';
@@ -42,8 +44,12 @@ const fastify = Fastify({
 
 // Register CORS
 await fastify.register(cors, {
-  origin: process.env.CORS_ORIGIN ?? true,
+  origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+  credentials: true,
 });
+
+// Rate limiting for content endpoints
+await fastify.register(rateLimit, FastifyRateLimitPresets.content('content-svc'));
 
 // Health check
 fastify.get('/health', async () => ({ status: 'ok', service: 'content-svc' }));

@@ -29,7 +29,10 @@ async function main() {
     logger: { level: config.logLevel },
   });
 
-  await app.register(cors, { origin: true, credentials: true });
+  await app.register(cors, {
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
+  });
   await app.register(multipart, {
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for audio files
   });

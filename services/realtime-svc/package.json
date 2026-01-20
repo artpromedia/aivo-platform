@@ -18,8 +18,10 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:*",
     "@aivo/ts-observability": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@aivo/ts-resilience": "workspace:*",
     "@aivo/ts-types": "workspace:*",
     "@prisma/client": "^5.22.0",

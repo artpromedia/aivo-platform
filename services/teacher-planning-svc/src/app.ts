@@ -1,5 +1,7 @@
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { registerGoalRoutes } from './routes/goals.js';
@@ -12,6 +14,9 @@ export function createApp() {
 
   // Global error handler
   app.setErrorHandler(errorHandler);
+
+  // Rate limiting
+  app.register(rateLimit, FastifyRateLimitPresets.publicApi('teacher-planning-svc'));
 
   // Health check (no auth required)
   app.register(registerHealthRoutes);

@@ -16,6 +16,8 @@
   "dependencies": {
     "@aivo/events": "workspace:*",
     "@aivo/rate-limiter": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@aivo/ts-observability": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
     "@aws-sdk/client-ses": "^3.700.0",
