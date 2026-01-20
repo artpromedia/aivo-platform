@@ -332,6 +332,7 @@ export function LessonGenerator({
           <FormField label="Learning Objectives" hint="What should students learn?">
             <div className="space-y-2">
               {formData.objectives.map((objective, index) => (
+                // eslint-disable-next-line react/no-array-index-key
                 <div key={index} className="flex gap-2">
                   <input
                     type="text"
