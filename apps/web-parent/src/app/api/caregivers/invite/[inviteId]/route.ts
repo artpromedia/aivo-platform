@@ -17,7 +17,6 @@ export async function POST(
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Resending mock caregiver invite:', inviteId);
       return NextResponse.json({
         success: true,
         message: 'Invitation resent successfully',
@@ -44,7 +43,6 @@ export async function POST(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Caregiver invite resend error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }
@@ -67,7 +65,6 @@ export async function DELETE(
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Cancelling mock caregiver invite:', inviteId);
       return NextResponse.json({
         success: true,
         message: 'Invitation cancelled successfully',
@@ -93,7 +90,6 @@ export async function DELETE(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Caregiver invite cancel error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

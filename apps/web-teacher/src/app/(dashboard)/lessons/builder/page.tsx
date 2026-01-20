@@ -87,8 +87,8 @@ export default function LessonBuilderPage() {
       // Mock loading for now
       await new Promise((resolve) => setTimeout(resolve, 500));
       // setLesson(response);
-    } catch (error) {
-      console.error('Failed to load lesson:', error);
+    } catch {
+      // Load failed silently
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +170,6 @@ export default function LessonBuilderPage() {
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Failed to save draft:', error);
       throw error;
     } finally {
       setIsSaving(false);
@@ -196,7 +195,6 @@ export default function LessonBuilderPage() {
       // Navigate to lessons list after publishing
       router.push('/lessons');
     } catch (error) {
-      console.error('Failed to publish:', error);
       throw error;
     } finally {
       setIsPublishing(false);

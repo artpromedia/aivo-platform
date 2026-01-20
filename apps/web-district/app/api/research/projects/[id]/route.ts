@@ -24,8 +24,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error('Research project fetch error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch project' },
       { status: 500 }
@@ -50,8 +49,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error('Research project update error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to update project' },
       { status: 500 }

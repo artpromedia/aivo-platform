@@ -22,7 +22,6 @@ export async function DELETE(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Revoking mock caregiver access');
       return NextResponse.json({
         success: true,
         message: 'Caregiver access revoked successfully',
@@ -49,7 +48,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Caregiver access revoke error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

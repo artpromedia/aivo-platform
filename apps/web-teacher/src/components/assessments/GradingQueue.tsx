@@ -327,8 +327,8 @@ export function GradingQueue({
     try {
       await onGrade(currentItem.response.id, score, feedback);
       handleNext();
-    } catch (error) {
-      console.error('Failed to save grade:', error);
+    } catch {
+      // Grade save failed silently
     } finally {
       setIsSaving(false);
     }
@@ -343,8 +343,8 @@ export function GradingQueue({
       setShowFlagDialog(false);
       setFlagReason('');
       handleNext();
-    } catch (error) {
-      console.error('Failed to flag response:', error);
+    } catch {
+      // Flag operation failed silently
     } finally {
       setIsSaving(false);
     }
@@ -356,8 +356,8 @@ export function GradingQueue({
     setIsSaving(true);
     try {
       await onUnflag(currentItem.response.id);
-    } catch (error) {
-      console.error('Failed to unflag response:', error);
+    } catch {
+      // Unflag operation failed silently
     } finally {
       setIsSaving(false);
     }

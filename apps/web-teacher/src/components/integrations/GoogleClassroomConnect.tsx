@@ -95,7 +95,6 @@ export function GoogleClassroomConnect({
       onConnectionChange?.(connectionStatus.connected);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch connection status');
-      console.error('Failed to fetch Google Classroom status:', err);
     } finally {
       setLoading(false);
     }

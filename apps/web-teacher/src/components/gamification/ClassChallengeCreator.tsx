@@ -135,8 +135,8 @@ export function ClassChallengeCreator({
     try {
       await onCreate(formData as CreateChallengeData);
       onClose();
-    } catch (error) {
-      console.error('Failed to create challenge:', error);
+    } catch {
+      // Challenge creation failed silently
     } finally {
       setIsCreating(false);
     }

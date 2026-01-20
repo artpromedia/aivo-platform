@@ -37,8 +37,6 @@ export async function POST(request: NextRequest) {
         createdAt: new Date().toISOString(),
       };
 
-      console.log('[DEV] Mock learner created:', mockLearner);
-
       return NextResponse.json({
         learner: mockLearner,
         message: 'Learner registered successfully',
@@ -61,7 +59,6 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Learner registration error:', error);
     return NextResponse.json(
       { message: 'An error occurred during learner registration' },
       { status: 500 }

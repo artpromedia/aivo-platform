@@ -163,8 +163,7 @@ export function useAssessmentBuilder({ assessmentId, tenantId }: UseAssessmentBu
         isLoading: false,
         isDirty: false,
       }));
-    } catch (error) {
-      console.error('Failed to load assessment:', error);
+    } catch {
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -206,8 +205,7 @@ export function useAssessmentBuilder({ assessmentId, tenantId }: UseAssessmentBu
         isSaving: false,
         isDirty: false,
       }));
-    } catch (error) {
-      console.error('Failed to save assessment:', error);
+    } catch {
       setState(prev => ({
         ...prev,
         isSaving: false,
