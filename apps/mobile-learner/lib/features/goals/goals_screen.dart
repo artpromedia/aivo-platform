@@ -787,8 +787,8 @@ class _CompletedGoalCard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.green.shade100,
-              child: const Icon(Icons.check, color: Colors.green),
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(Icons.check, color: color),
             ),
             const SizedBox(width: 12),
             Expanded(

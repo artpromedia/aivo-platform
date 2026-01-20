@@ -70,7 +70,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
       assignments = gradebook.assignments.map((a) => Assignment(
         id: a.id,
         title: a.title,
-        maxPoints: a.pointsPossible.toDouble() ?? 100.0,
+        maxPoints: a.pointsPossible.toDouble(),
         dueDate: a.dueAt,
       )).toList();
     });
@@ -550,7 +550,8 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
     );
   }
 
-  // Mock data
+  // Mock data for testing/development - kept for future use
+  // ignore: unused_element
   List<Student> _getMockStudents() {
     return [
       Student(
@@ -578,10 +579,11 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
     ];
   }
 
+  // ignore: unused_element
   List<Assignment> _getMockAssignments() {
     return [
-      Assignment(id: '1', title: 'Quiz 1', totalPoints: 100),
-      Assignment(id: '2', title: 'Homework 1', totalPoints: 50),
+      Assignment(id: '1', title: 'Quiz 1', maxPoints: 100),
+      Assignment(id: '2', title: 'Homework 1', maxPoints: 50),
     ];
   }
 }
@@ -919,6 +921,7 @@ class StudentGradeDetailScreen extends StatelessWidget {
       case GradeStatus.late:
         return Colors.orange;
       case GradeStatus.excused:
+      case GradeStatus.exempt:
         return Colors.grey;
       case GradeStatus.pending:
         return Colors.grey;
@@ -936,6 +939,8 @@ class StudentGradeDetailScreen extends StatelessWidget {
         return 'Late';
       case GradeStatus.excused:
         return 'Excused';
+      case GradeStatus.exempt:
+        return 'Exempt';
       case GradeStatus.pending:
         return 'Pending';
     }

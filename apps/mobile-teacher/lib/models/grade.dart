@@ -536,6 +536,7 @@ class GradebookStudent {
     this.overallGrade,
     this.hasIep = false,
     this.has504 = false,
+    this.grades = const [],
   });
 
   final String id;
@@ -545,6 +546,7 @@ class GradebookStudent {
   final StudentGrade? overallGrade;
   final bool hasIep;
   final bool has504;
+  final List<GradebookGrade> grades;
 
   factory GradebookStudent.fromJson(Map<String, dynamic> json) {
     return GradebookStudent(
@@ -557,6 +559,10 @@ class GradebookStudent {
           : null,
       hasIep: json['hasIep'] as bool? ?? false,
       has504: json['has504'] as bool? ?? false,
+      grades: (json['grades'] as List<dynamic>?)
+              ?.map((e) => GradebookGrade.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -569,6 +575,59 @@ class GradebookStudent {
       'overallGrade': overallGrade?.toJson(),
       'hasIep': hasIep,
       'has504': has504,
+      'grades': grades.map((g) => g.toJson()).toList(),
+    };
+  }
+}
+
+/// Individual grade entry in the gradebook for a student's assignment.
+@immutable
+class GradebookGrade {
+  const GradebookGrade({
+    required this.assignmentId,
+    this.pointsEarned,
+    this.pointsPossible,
+    this.isExcused = false,
+    this.isMissing = false,
+    this.isLate = false,
+    this.feedback,
+    this.gradedAt,
+  });
+
+  final String assignmentId;
+  final double? pointsEarned;
+  final double? pointsPossible;
+  final bool isExcused;
+  final bool isMissing;
+  final bool isLate;
+  final String? feedback;
+  final DateTime? gradedAt;
+
+  factory GradebookGrade.fromJson(Map<String, dynamic> json) {
+    return GradebookGrade(
+      assignmentId: json['assignmentId'] as String,
+      pointsEarned: (json['pointsEarned'] as num?)?.toDouble(),
+      pointsPossible: (json['pointsPossible'] as num?)?.toDouble(),
+      isExcused: json['isExcused'] as bool? ?? false,
+      isMissing: json['isMissing'] as bool? ?? false,
+      isLate: json['isLate'] as bool? ?? false,
+      feedback: json['feedback'] as String?,
+      gradedAt: json['gradedAt'] != null
+          ? DateTime.tryParse(json['gradedAt'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'assignmentId': assignmentId,
+      'pointsEarned': pointsEarned,
+      'pointsPossible': pointsPossible,
+      'isExcused': isExcused,
+      'isMissing': isMissing,
+      'isLate': isLate,
+      'feedback': feedback,
+      'gradedAt': gradedAt?.toIso8601String(),
     };
   }
 }

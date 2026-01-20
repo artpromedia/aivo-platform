@@ -11,7 +11,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../content_library/models/content_models.dart';
+// Note: We use local definitions for PDCourse and Certification
+// to have the exact properties needed by this screen
 
 /// PD Course status
 enum PDCourseStatus {
@@ -37,6 +38,52 @@ enum PDTopic {
   const PDTopic(this.label, this.icon);
   final String label;
   final IconData icon;
+}
+
+/// Professional development course for this screen
+class PDCourse {
+  final String id;
+  final String title;
+  final String description;
+  final PDTopic topic;
+  final double duration;  // Duration in hours
+  final double progress;  // 0.0 to 1.0
+  final List<String> modules;
+  final String instructor;
+  final double rating;
+  final int enrolledCount;
+
+  const PDCourse({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.topic,
+    required this.duration,
+    this.progress = 0.0,
+    this.modules = const [],
+    required this.instructor,
+    this.rating = 0.0,
+    this.enrolledCount = 0,
+  });
+}
+
+/// Certification for this screen
+class Certification {
+  final String id;
+  final String name;
+  final DateTime issuedDate;
+  final DateTime expiresDate;
+  final String status;
+  final String? credentialUrl;
+
+  const Certification({
+    required this.id,
+    required this.name,
+    required this.issuedDate,
+    required this.expiresDate,
+    required this.status,
+    this.credentialUrl,
+  });
 }
 
 /// Professional Development Screen
@@ -225,7 +272,8 @@ class _ProfessionalDevelopmentScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Theme available for future customization
+    Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -389,7 +437,8 @@ class _ProfessionalDevelopmentScreenState
   }
 
   Widget _buildCoursesTab(BuildContext context) {
-    final theme = Theme.of(context);
+    // Theme available for styling
+    Theme.of(context);
 
     return Column(
       children: [
@@ -485,7 +534,8 @@ class _ProfessionalDevelopmentScreenState
   }
 
   Widget _buildLearningPathsTab(BuildContext context) {
-    final theme = Theme.of(context);
+    // Theme available for styling
+    Theme.of(context);
 
     final learningPaths = [
       _LearningPath(

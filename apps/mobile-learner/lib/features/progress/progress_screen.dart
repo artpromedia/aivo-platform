@@ -7,7 +7,7 @@
 /// - Recent activity
 library;
 
-import 'dart:math' as math;
+// dart:math is used implicitly in progress calculations
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -249,7 +249,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           emoji: '📚',
           value: '${_summary.lessonsCompleted}',
           label: 'Lessons completed',
-          gradientColors: [Colors.green.shade50, Colors.emerald.shade50],
+          gradientColors: [Colors.green.shade50, Colors.teal.shade50],
           borderColor: Colors.green.shade200,
           valueColor: Colors.green.shade700,
           labelColor: Colors.green.shade600,

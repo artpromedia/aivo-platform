@@ -21,7 +21,11 @@ enum SubjectArea {
   ela('ELA', 'ela'),
   science('Science', 'science'),
   socialStudies('Social Studies', 'social_studies'),
-  sel('SEL', 'sel');
+  sel('SEL', 'sel'),
+  art('Art', 'art'),
+  music('Music', 'music'),
+  pe('PE', 'pe'),
+  other('Other', 'other');
 
   const SubjectArea(this.label, this.value);
   final String label;
@@ -38,7 +42,11 @@ enum GradeLevel {
   g5('5th', '5'),
   g6('6th', '6'),
   g7('7th', '7'),
-  g8('8th', '8');
+  g8('8th', '8'),
+  // Aliases used by lesson_planning_screen.dart
+  grade3('3rd', '3'),
+  grade4('4th', '4'),
+  allGrades('All Grades', 'all');
 
   const GradeLevel(this.label, this.value);
   final String label;
@@ -126,22 +134,34 @@ class LessonPlan {
   final DateTime createdAt;
   final DateTime? scheduledFor;
   final LessonPlanStatus status;
+  
+  // Additional properties used by lesson_planning_screen.dart
+  final GradeLevel? gradeLevel;
+  final int? duration;  // Duration in minutes as int
+  final List<String> objectives;
+  final Map<String, String> differentiations;
+  final DateTime? updatedAt;
 
-  const LessonPlan({
+  LessonPlan({
     required this.id,
     required this.title,
-    required this.objective,
+    this.objective = '',
     required this.subject,
-    required this.gradeLevels,
-    required this.durationMinutes,
+    this.gradeLevels = const [],
+    this.durationMinutes = 0,
     this.activities = const [],
     this.materials = const [],
     this.standards = const [],
     this.notes,
-    required this.createdAt,
+    DateTime? createdAt,
     this.scheduledFor,
     this.status = LessonPlanStatus.draft,
-  });
+    this.gradeLevel,
+    this.duration,
+    this.objectives = const [],
+    this.differentiations = const {},
+    this.updatedAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 }
 
 /// Lesson plan status
@@ -162,16 +182,22 @@ class LessonActivity {
   final String title;
   final String description;
   final int durationMinutes;
-  final ActivityPhase phase;
+  final ActivityPhase? phase;
   final ContentItem? linkedContent;
+  
+  // Additional properties used by lesson_planning_screen.dart
+  final int? duration;
+  final String? type;
 
   const LessonActivity({
     required this.id,
     required this.title,
     required this.description,
-    required this.durationMinutes,
-    required this.phase,
+    this.durationMinutes = 0,
+    this.phase,
     this.linkedContent,
+    this.duration,
+    this.type,
   });
 }
 
@@ -200,6 +226,15 @@ class ClassroomAnalytics {
   final int assignmentsGraded;
   final List<SubjectMetric> subjectMetrics;
   final List<WeeklyProgress> weeklyProgress;
+  
+  // Additional analytics properties used by screens
+  final double? averageScore;
+  final double? completionRate;
+  final double? engagementScore;
+  final Map<String, double> skillMastery;
+  final List<AssignmentStats> recentAssignments;
+  final List<StudentPerformance> studentPerformance;
+  final List<int> weeklyTrends;
 
   const ClassroomAnalytics({
     required this.classId,
@@ -212,6 +247,47 @@ class ClassroomAnalytics {
     required this.assignmentsGraded,
     this.subjectMetrics = const [],
     this.weeklyProgress = const [],
+    this.averageScore,
+    this.completionRate,
+    this.engagementScore,
+    this.skillMastery = const {},
+    this.recentAssignments = const [],
+    this.studentPerformance = const [],
+    this.weeklyTrends = const [],
+  });
+}
+
+/// Assignment statistics for analytics
+class AssignmentStats {
+  final String name;
+  final DateTime dueDate;
+  final double averageScore;
+  final int completed;
+  final int total;
+
+  const AssignmentStats({
+    required this.name,
+    required this.dueDate,
+    required this.averageScore,
+    required this.completed,
+    required this.total,
+  });
+}
+
+/// Student performance data for analytics
+class StudentPerformance {
+  final String id;
+  final String name;
+  final double averageScore;
+  final double completionRate;
+  final double engagementScore;
+
+  const StudentPerformance({
+    required this.id,
+    required this.name,
+    required this.averageScore,
+    required this.completionRate,
+    required this.engagementScore,
   });
 }
 
@@ -260,20 +336,52 @@ class PDCourse {
   final List<String> topics;
   final PDCourseStatus status;
   final String? certificateUrl;
+  
+  // Additional properties used by pd_screen.dart
+  final PDTopic? topic;
+  final double? duration;  // Duration in hours as double
+  final double progress;   // Progress as 0.0 to 1.0
+  final List<String> modules;
+  final String? instructor;
+  final double? rating;
+  final int? enrolledCount;
 
   const PDCourse({
     required this.id,
     required this.title,
     required this.description,
     this.thumbnailUrl,
-    required this.durationHours,
+    this.durationHours = 0,
     this.progressPercent = 0,
     this.isRequired = false,
     this.dueDate,
     this.topics = const [],
     this.status = PDCourseStatus.notStarted,
     this.certificateUrl,
+    this.topic,
+    this.duration,
+    this.progress = 0.0,
+    this.modules = const [],
+    this.instructor,
+    this.rating,
+    this.enrolledCount,
   });
+}
+
+/// PD Topic categories
+enum PDTopic {
+  instruction('Instructional Strategies', 0xe80c), // Icons.school code point
+  technology('Technology Integration', 0xe30a), // Icons.computer
+  sel('Social-Emotional Learning', 0xe87d), // Icons.favorite
+  assessment('Assessment & Data', 0xe8e5), // Icons.analytics
+  differentiation('Differentiation', 0xe429), // Icons.tune
+  classroom('Classroom Management', 0xe420), // Icons.meeting_room
+  specialEd('Special Education', 0xe84e), // Icons.accessibility
+  leadership('Teacher Leadership', 0xe80d); // Icons.leaderboard
+
+  const PDTopic(this.label, this.iconCodePoint);
+  final String label;
+  final int iconCodePoint;
 }
 
 /// PD Course status
@@ -295,13 +403,23 @@ class Certification {
   final DateTime earnedAt;
   final DateTime? expiresAt;
   final String? certificateUrl;
+  
+  // Additional properties used by pd_screen.dart
+  final DateTime? issuedDate;
+  final DateTime? expiresDate;
+  final String? status;
+  final String? credentialUrl;
 
-  const Certification({
+  Certification({
     required this.id,
     required this.name,
-    required this.issuedBy,
-    required this.earnedAt,
+    this.issuedBy = '',
+    DateTime? earnedAt,
     this.expiresAt,
     this.certificateUrl,
-  });
+    this.issuedDate,
+    this.expiresDate,
+    this.status,
+    this.credentialUrl,
+  }) : earnedAt = earnedAt ?? issuedDate ?? DateTime.now();
 }

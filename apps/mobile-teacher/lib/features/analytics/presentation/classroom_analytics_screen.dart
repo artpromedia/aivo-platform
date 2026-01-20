@@ -75,6 +75,11 @@ class _ClassroomAnalyticsScreenState
       classId: _selectedClassId!,
       className: _classes.firstWhere((c) => c.id == _selectedClassId).name,
       totalStudents: 24,
+      activeStudents: 22,
+      averageEngagement: 0.85,
+      averageMastery: 0.78,
+      lessonsCompleted: 45,
+      assignmentsGraded: 120,
       averageScore: 82.5,
       completionRate: 0.78,
       engagementScore: 0.85,
@@ -87,35 +92,35 @@ class _ClassroomAnalyticsScreenState
         'Word Problems': 0.72,
       },
       recentAssignments: [
-        _AssignmentStats(
-          'Fraction Basics Quiz',
-          DateTime.now().subtract(const Duration(days: 1)),
-          78.5,
-          22,
-          24,
+        AssignmentStats(
+          name: 'Fraction Basics Quiz',
+          dueDate: DateTime.now().subtract(const Duration(days: 1)),
+          averageScore: 78.5,
+          completed: 22,
+          total: 24,
         ),
-        _AssignmentStats(
-          'Division Practice',
-          DateTime.now().subtract(const Duration(days: 3)),
-          85.2,
-          24,
-          24,
+        AssignmentStats(
+          name: 'Division Practice',
+          dueDate: DateTime.now().subtract(const Duration(days: 3)),
+          averageScore: 85.2,
+          completed: 24,
+          total: 24,
         ),
-        _AssignmentStats(
-          'Multiplication Review',
-          DateTime.now().subtract(const Duration(days: 5)),
-          88.0,
-          23,
-          24,
+        AssignmentStats(
+          name: 'Multiplication Review',
+          dueDate: DateTime.now().subtract(const Duration(days: 5)),
+          averageScore: 88.0,
+          completed: 23,
+          total: 24,
         ),
       ],
       studentPerformance: [
-        _StudentPerformance('student1', 'Alice Johnson', 95.0, 1.0, 0.95),
-        _StudentPerformance('student2', 'Bob Smith', 88.0, 0.95, 0.88),
-        _StudentPerformance('student3', 'Carol Davis', 85.0, 0.92, 0.82),
-        _StudentPerformance('student4', 'David Brown', 78.0, 0.85, 0.75),
-        _StudentPerformance('student5', 'Emma Wilson', 72.0, 0.78, 0.70),
-        _StudentPerformance('student6', 'Frank Miller', 65.0, 0.70, 0.60),
+        StudentPerformance(id: 'student1', name: 'Alice Johnson', averageScore: 95.0, completionRate: 1.0, engagementScore: 0.95),
+        StudentPerformance(id: 'student2', name: 'Bob Smith', averageScore: 88.0, completionRate: 0.95, engagementScore: 0.88),
+        StudentPerformance(id: 'student3', name: 'Carol Davis', averageScore: 85.0, completionRate: 0.92, engagementScore: 0.82),
+        StudentPerformance(id: 'student4', name: 'David Brown', averageScore: 78.0, completionRate: 0.85, engagementScore: 0.75),
+        StudentPerformance(id: 'student5', name: 'Emma Wilson', averageScore: 72.0, completionRate: 0.78, engagementScore: 0.70),
+        StudentPerformance(id: 'student6', name: 'Frank Miller', averageScore: 65.0, completionRate: 0.70, engagementScore: 0.60),
       ],
       weeklyTrends: [65, 70, 72, 78, 82, 85, 82],
     );
@@ -123,7 +128,8 @@ class _ClassroomAnalyticsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Theme available for future styling customization
+    Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -188,7 +194,8 @@ class _ClassroomAnalyticsScreenState
   }
 
   Widget _buildClassSelector(BuildContext context) {
-    final theme = Theme.of(context);
+    // Theme available for styling
+    Theme.of(context);
 
     return Card(
       child: Padding(
@@ -231,7 +238,7 @@ class _ClassroomAnalyticsScreenState
       children: [
         _MetricCard(
           title: 'Average Score',
-          value: '${analytics.averageScore.toStringAsFixed(1)}%',
+          value: '${(analytics.averageScore ?? 0).toStringAsFixed(1)}%',
           icon: Icons.score,
           color: theme.colorScheme.primary,
           trend: '+3.2%',
@@ -239,7 +246,7 @@ class _ClassroomAnalyticsScreenState
         ),
         _MetricCard(
           title: 'Completion Rate',
-          value: '${(analytics.completionRate * 100).toStringAsFixed(0)}%',
+          value: '${((analytics.completionRate ?? 0) * 100).toStringAsFixed(0)}%',
           icon: Icons.check_circle,
           color: Colors.green,
           trend: '+5%',
@@ -247,7 +254,7 @@ class _ClassroomAnalyticsScreenState
         ),
         _MetricCard(
           title: 'Engagement',
-          value: '${(analytics.engagementScore * 100).toStringAsFixed(0)}%',
+          value: '${((analytics.engagementScore ?? 0) * 100).toStringAsFixed(0)}%',
           icon: Icons.trending_up,
           color: Colors.orange,
           trend: '+2%',
@@ -797,36 +804,4 @@ class _ClassOption {
   final int studentCount;
 
   _ClassOption(this.id, this.name, this.studentCount);
-}
-
-class _AssignmentStats {
-  final String name;
-  final DateTime dueDate;
-  final double averageScore;
-  final int completed;
-  final int total;
-
-  _AssignmentStats(
-    this.name,
-    this.dueDate,
-    this.averageScore,
-    this.completed,
-    this.total,
-  );
-}
-
-class _StudentPerformance {
-  final String id;
-  final String name;
-  final double averageScore;
-  final double completionRate;
-  final double engagementScore;
-
-  _StudentPerformance(
-    this.id,
-    this.name,
-    this.averageScore,
-    this.completionRate,
-    this.engagementScore,
-  );
 }

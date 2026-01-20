@@ -250,6 +250,23 @@ class OfflineStorage {
         .toList();
   }
 
+  /// Get unsynced usage entries with their keys for targeted syncing
+  Future<Map<String, Map<String, dynamic>>> getUnsyncedUsageWithKeys() async {
+    _ensureInitialized();
+    return Map.fromEntries(
+      _usageCache.entries.where((e) => e.value['synced'] != true),
+    );
+  }
+
+  /// Mark all currently unsynced usage as synced
+  Future<void> markAllUsageSynced() async {
+    _ensureInitialized();
+    for (final key in _usageCache.keys) {
+      _usageCache[key]!['synced'] = true;
+    }
+    await _saveUsageCache();
+  }
+
   Future<void> markUsageSynced(String key) async {
     _ensureInitialized();
     if (_usageCache.containsKey(key)) {

@@ -13,7 +13,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide apiClientProvider, ConnectionStatus;
+import 'package:flutter_common/realtime/websocket_client.dart';
 
 import '../../providers/core_providers.dart';
 
@@ -176,9 +177,15 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
     super.dispose();
   }
   
+  // Cached auth token for WebSocket
+  String _cachedAuthToken = '';
+  
   /// Initialize WebSocket connection
   Future<void> _initializeWebSocket() async {
     final apiClient = ref.read(apiClientProvider);
+    
+    // Pre-fetch the token for synchronous access
+    _cachedAuthToken = await apiClient.getAccessToken() ?? '';
     
     _wsClient = WebSocketClient(
       config: const WebSocketConfig(
@@ -187,7 +194,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
         reconnectDelay: Duration(seconds: 2),
         maxReconnectAttempts: 10,
       ),
-      getAuthToken: () => apiClient.accessToken ?? '',
+      getAuthToken: () => _cachedAuthToken,
     );
     
     // Subscribe to connection status

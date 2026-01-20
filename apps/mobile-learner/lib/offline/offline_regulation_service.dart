@@ -247,8 +247,10 @@ class OfflineRegulationService {
     }
 
     try {
-      final unsynced = await _storage.getUnsyncedUsage();
-      for (final usage in unsynced) {
+      final unsyncedWithKeys = await _storage.getUnsyncedUsageWithKeys();
+      for (final entry in unsyncedWithKeys.entries) {
+        final key = entry.key;
+        final usage = entry.value;
         // Send to server API
         await _eventApiClient.sendRegulationEvent(
           learnerId: usage['learnerId'] as String,
@@ -262,9 +264,9 @@ class OfflineRegulationService {
           },
         );
         debugPrint('Synced usage: ${usage['activityId']}');
+        // Mark this entry as synced
+        await _storage.markUsageSynced(key);
       }
-      // Mark as synced in storage
-      await _storage.markUsageSynced();
     } catch (e) {
       debugPrint('Failed to sync usage data: $e');
     }

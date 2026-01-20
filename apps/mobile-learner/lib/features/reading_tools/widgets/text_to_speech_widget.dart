@@ -139,7 +139,6 @@ class _TextToSpeechWidgetState extends ConsumerState<TextToSpeechWidget> {
 
     _flutterTts.setProgressHandler((text, start, end, word) {
       if (_settings.highlightText) {
-        final words = _textController.text.split(RegExp(r'\s+'));
         final textBefore = _textController.text.substring(0, start);
         final wordIndex = textBefore.split(RegExp(r'\s+')).length - 1;
         setState(() => _currentWordIndex = wordIndex);

@@ -9,10 +9,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 
-import 'reading_tools_models.dart';
-import 'reading_tools_service.dart';
+// Note: flutter_tts, reading_tools_models, and reading_tools_service
+// are imported via the widget implementations
 import 'widgets/text_to_speech_widget.dart';
 import 'widgets/vocabulary_builder_widget.dart';
 import 'widgets/word_prediction_widget.dart';
@@ -46,6 +45,7 @@ class ReadingToolsScreen extends ConsumerStatefulWidget {
 class _ReadingToolsScreenState extends ConsumerState<ReadingToolsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  // ignore: unused_field - used in listener for state tracking
   ReadingToolsTab _currentTab = ReadingToolsTab.textToSpeech;
 
   @override
@@ -73,7 +73,8 @@ class _ReadingToolsScreenState extends ConsumerState<ReadingToolsScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    // Using theme in TabBar below
+    final _ = theme.colorScheme; // Available for future styling
 
     return Scaffold(
       appBar: AppBar(

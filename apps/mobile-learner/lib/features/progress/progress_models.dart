@@ -205,12 +205,12 @@ class LearningGoal {
 
 /// Goal type
 enum GoalType {
-  lessons('Lessons', Icons.bookOutlined),
-  minutes('Minutes', Icons.timerOutlined),
-  xp('XP', Icons.starOutlined),
-  streak('Streak', Icons.localFireDepartmentOutlined),
-  subject('Subject', Icons.schoolOutlined),
-  custom('Custom', Icons.flagOutlined);
+  lessons('Lessons', GoalIcons.bookOutlined),
+  minutes('Minutes', GoalIcons.timerOutlined),
+  xp('XP', GoalIcons.starOutlined),
+  streak('Streak', GoalIcons.localFireDepartmentOutlined),
+  subject('Subject', GoalIcons.schoolOutlined),
+  custom('Custom', GoalIcons.flagOutlined);
 
   const GoalType(this.label, this.iconName);
   final String label;
@@ -246,8 +246,8 @@ class GoalObjective {
   }
 }
 
-// Helper for icon lookup (can't use Icons directly in enum)
-class Icons {
+// Helper for icon lookup (renamed from Icons to avoid Flutter conflict)
+class GoalIcons {
   static const bookOutlined = 'book_outlined';
   static const timerOutlined = 'timer_outlined';
   static const starOutlined = 'star_outlined';

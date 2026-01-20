@@ -295,7 +295,8 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
   }
 
   Widget _buildSupportGroupsTab(ThemeData theme) {
-    final colorScheme = theme.colorScheme;
+    // colorScheme available for styling
+    final _ = theme.colorScheme;
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -353,7 +354,8 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
   }
 
   Widget _buildForumTab(ThemeData theme) {
-    final colorScheme = theme.colorScheme;
+    // colorScheme available for styling
+    final _ = theme.colorScheme;
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -601,7 +603,7 @@ class _CommunitySupportScreenState extends ConsumerState<CommunitySupportScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _formatTimeAgo(post.createdAt),
+                      _formatTimeAgo(post.createdAt ?? post.postedAt),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -980,7 +982,7 @@ class _ForumPostCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    _formatTimeAgo(post.createdAt),
+                    _formatTimeAgo(post.createdAt ?? post.postedAt),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

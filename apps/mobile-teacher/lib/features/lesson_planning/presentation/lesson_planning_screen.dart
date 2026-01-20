@@ -278,7 +278,8 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    // colorScheme available for future styling
+    final _ = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -743,7 +744,7 @@ class _LessonPlanCard extends StatelessWidget {
                           style: theme.textTheme.titleMedium,
                         ),
                         Text(
-                          '${lesson.subject.name.toUpperCase()} • ${lesson.gradeLevel.label} • ${lesson.duration} min',
+                          '${lesson.subject.name.toUpperCase()} • ${lesson.gradeLevel?.label ?? "All"} • ${lesson.duration ?? lesson.durationMinutes} min',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.outline,
                           ),
@@ -1196,11 +1197,11 @@ class _LessonDetailScreen extends StatelessWidget {
                     children: [
                       Chip(label: Text(lesson.subject.name.toUpperCase())),
                       const SizedBox(width: 8),
-                      Chip(label: Text(lesson.gradeLevel.label)),
+                      Chip(label: Text(lesson.gradeLevel?.label ?? 'All')),
                       const SizedBox(width: 8),
                       Chip(
                         avatar: const Icon(Icons.timer, size: 16),
-                        label: Text('${lesson.duration} min'),
+                        label: Text('${lesson.duration ?? lesson.durationMinutes} min'),
                       ),
                     ],
                   ),
@@ -1258,11 +1259,11 @@ class _LessonDetailScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: CircleAvatar(
-                    child: Text('${activity.duration}m'),
+                    child: Text('${activity.duration ?? 0}m'),
                   ),
                   title: Text(activity.title),
                   subtitle: Text(activity.description),
-                  trailing: Chip(label: Text(activity.type)),
+                  trailing: Chip(label: Text(activity.type ?? 'Activity')),
                 ),
               );
             }).toList(),
@@ -1395,8 +1396,8 @@ class _LessonEditorScreenState extends State<_LessonEditorScreen> {
       final lesson = widget.existingLesson!;
       _titleController.text = widget.isFromTemplate ? '' : lesson.title;
       _selectedSubject = lesson.subject;
-      _selectedGrade = lesson.gradeLevel;
-      _duration = lesson.duration;
+      _selectedGrade = lesson.gradeLevel ?? GradeLevel.grade3;
+      _duration = lesson.duration ?? lesson.durationMinutes;
       _objectives.addAll(lesson.objectives);
       _activities.addAll(lesson.activities);
     }

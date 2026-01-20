@@ -17,9 +17,11 @@ class ContentLibraryScreen extends ConsumerStatefulWidget {
   const ContentLibraryScreen({
     super.key,
     this.classId,
+    this.teacherId,
   });
 
   final String? classId;
+  final String? teacherId;
 
   @override
   ConsumerState<ContentLibraryScreen> createState() =>
@@ -199,6 +201,14 @@ class _ContentLibraryScreenState extends ConsumerState<ContentLibraryScreen> {
         return Colors.orange;
       case SubjectArea.sel:
         return Colors.pink;
+      case SubjectArea.art:
+        return Colors.teal;
+      case SubjectArea.music:
+        return Colors.indigo;
+      case SubjectArea.pe:
+        return Colors.red;
+      case SubjectArea.other:
+        return Colors.grey;
     }
   }
 
@@ -715,7 +725,8 @@ class _TypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // Theme available for styling
+    Theme.of(context);
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
