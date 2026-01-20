@@ -480,10 +480,50 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     }
   }
 
+  Future<void> _closeAssignment(Assignment assignment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Close Assignment'),
+        content: const Text(
+          'Are you sure you want to close this assignment? '
+          'Students will no longer be able to submit work.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(assignmentsProvider.notifier).closeAssignment(assignment.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Assignment closed')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to close assignment: $e')),
+          );
+        }
+      }
+    }
+  }
+
   void _handleMenuAction(String action, Assignment assignment) {
     switch (action) {
       case 'close':
-        // TODO: Implement close assignment
+        _closeAssignment(assignment);
         break;
       case 'duplicate':
         _duplicateAssignment(assignment);

@@ -206,6 +206,9 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
   }
 
   Widget _buildHeader(InterventionPlan plan, ThemeData theme) {
+    final state = ref.watch(studentRiskProvider);
+    final riskScore = state.prediction?.riskScore ?? 0.75;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
@@ -214,7 +217,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
           child: Row(
             children: [
               RiskScoreGauge(
-                score: 0.75, // TODO: Get from prediction
+                score: riskScore,
                 level: plan.riskLevel,
                 size: 60,
                 showLabel: false,

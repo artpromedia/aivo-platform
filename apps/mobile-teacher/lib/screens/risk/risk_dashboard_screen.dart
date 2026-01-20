@@ -27,6 +27,14 @@ class RiskDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
+  // Section keys for scroll navigation
+  final _sectionKeys = <String, GlobalKey>{
+    'critical': GlobalKey(),
+    'atRisk': GlobalKey(),
+    'watch': GlobalKey(),
+    'warnings': GlobalKey(),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -98,6 +106,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                             criticalStudents.length,
                             RiskLevel.critical,
                             theme,
+                            sectionKey: _sectionKeys['critical'],
                           ),
                         ),
                         SliverList(
@@ -125,6 +134,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                             state.earlyWarningReport!.atRiskStudents.length,
                             RiskLevel.atRisk,
                             theme,
+                            sectionKey: _sectionKeys['atRisk'],
                           ),
                         ),
                         SliverList(
@@ -153,6 +163,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                             state.earlyWarningReport!.watchStudents.length,
                             RiskLevel.watch,
                             theme,
+                            sectionKey: _sectionKeys['watch'],
                           ),
                         ),
                         SliverList(
@@ -374,9 +385,11 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
     String title,
     int count,
     RiskLevel level,
-    ThemeData theme,
-  ) {
+    ThemeData theme, {
+    Key? sectionKey,
+  }) {
     return Padding(
+      key: sectionKey,
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Row(
         children: [
@@ -479,7 +492,15 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
   }
 
   void _scrollToSection(String section) {
-    // TODO: Implement scroll to section
+    final key = _sectionKeys[section];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: 0.0, // Align to top
+      );
+    }
   }
 
   void _navigateToStudent(String studentId) {

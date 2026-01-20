@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/providers.dart';
+
 /// Learner detail model.
 class LearnerDetail {
   const LearnerDetail({
@@ -341,58 +343,11 @@ class LearnerDetailScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Add Observation',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'for $learnerName',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: contentController,
-                  decoration: const InputDecoration(
-                    labelText: 'Observation',
-                    hintText: 'What did you observe?',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  autofocus: true,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () {
-                    if (contentController.text.isNotEmpty) {
-                      // TODO: Save observation via API
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Observation saved')),
-                      );
-                    }
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            ),
-          ),
-        ),
+      builder: (sheetContext) => _AddObservationSheet(
+        learnerId: learnerId,
+        learnerName: learnerName,
+        contentController: contentController,
+        ref: ref,
       ),
     );
   }
@@ -689,5 +644,125 @@ class _ObservationCard extends StatelessWidget {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     return '${date.month}/${date.day}';
+  }
+}
+
+/// Bottom sheet widget for adding observations with loading state.
+class _AddObservationSheet extends StatefulWidget {
+  const _AddObservationSheet({
+    required this.learnerId,
+    required this.learnerName,
+    required this.contentController,
+    required this.ref,
+  });
+
+  final String learnerId;
+  final String learnerName;
+  final TextEditingController contentController;
+  final WidgetRef ref;
+
+  @override
+  State<_AddObservationSheet> createState() => _AddObservationSheetState();
+}
+
+class _AddObservationSheetState extends State<_AddObservationSheet> {
+  bool _isLoading = false;
+  String? _error;
+
+  Future<void> _saveObservation() async {
+    if (widget.contentController.text.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final api = widget.ref.read(apiClientProvider);
+      await api.post(
+        '/api/teacher/learners/${widget.learnerId}/observations',
+        data: {
+          'content': widget.contentController.text,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Observation saved')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Failed to save observation. Please try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Add Observation',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'for ${widget.learnerName}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: widget.contentController,
+                decoration: const InputDecoration(
+                  labelText: 'Observation',
+                  hintText: 'What did you observe?',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                autofocus: true,
+                enabled: !_isLoading,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _isLoading ? null : _saveObservation,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
