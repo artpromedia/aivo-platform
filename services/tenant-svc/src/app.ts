@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import type { Redis as RedisType } from 'ioredis';
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerClassroomRoutes } from './routes/classrooms.js';
 import { registerDistrictLookupRoutes } from './routes/district-lookup.js';
@@ -27,6 +29,9 @@ try {
 
 export function createApp() {
   const app = Fastify({ logger: true });
+
+  // Rate limiting for tenant management service
+  app.register(rateLimit, FastifyRateLimitPresets.internalApi('tenant-svc'));
 
   // Register tenant resolver plugin (optional - depends on Redis config)
   app.register(tenantResolverPlugin, {

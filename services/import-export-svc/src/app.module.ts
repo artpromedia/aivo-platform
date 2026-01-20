@@ -8,6 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 // Feature modules
 import { ImportModule } from './import/import.module';
@@ -57,6 +59,20 @@ import * as Joi from 'joi';
       }),
     }),
 
+    // Rate limiting - 100 requests per minute for import/export operations
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // 1 minute
+        limit: 100,
+      },
+      {
+        name: 'file-operations',
+        ttl: 600000, // 10 minutes
+        limit: 20, // Lower limit for expensive file operations
+      },
+    ]),
+
     // Event handling
     EventEmitterModule.forRoot({
       wildcard: true,
@@ -81,6 +97,13 @@ import * as Joi from 'joi';
     LTIModule,
     XAPIModule,
     SCORMModule,
+  ],
+  providers: [
+    // Enable rate limiting globally
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

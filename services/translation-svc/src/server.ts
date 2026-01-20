@@ -7,6 +7,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger as honoLogger } from 'hono/logger';
 
+import { createHonoRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils';
 import { logger } from './logger.js';
 import { translationRoutes } from './routes/translations';
 
@@ -22,6 +23,9 @@ const corsOrigins = process.env.CORS_ORIGIN
 // Middleware
 app.use('*', honoLogger());
 app.use('*', cors({ origin: corsOrigins, credentials: true }));
+
+// Rate limiting for translation API
+app.use('*', createHonoRateLimiter(RateLimitPresets.API_GENERAL));
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', service: 'translation-svc' }));

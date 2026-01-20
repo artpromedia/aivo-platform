@@ -320,6 +320,76 @@ export function createExpressRateLimiter(options: RateLimitOptions) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// HONO MIDDLEWARE FACTORY
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface HonoContext {
+  req: {
+    header: (name: string) => string | undefined;
+  };
+  header: (name: string, value: string) => void;
+  json: (data: unknown, status?: number) => Response;
+}
+
+/**
+ * Create a rate limiting middleware for Hono
+ */
+export function createHonoRateLimiter(options: RateLimitOptions) {
+  const {
+    max,
+    windowMs,
+    keyPrefix = 'ratelimit',
+    message = 'Too many requests, please try again later.',
+    skip,
+  } = options;
+
+  // Start cleanup on first use
+  startCleanup();
+
+  return async function honoRateLimitMiddleware(
+    c: HonoContext,
+    next: () => Promise<void>
+  ): Promise<Response | void> {
+    // Skip if skip function returns true
+    if (skip?.(c)) {
+      return next();
+    }
+
+    // Extract IP from Hono request headers
+    const identifier =
+      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+      c.req.header('x-real-ip') ||
+      'unknown';
+    const key = `${keyPrefix}:${identifier}`;
+
+    // Check current state
+    const result = checkRateLimit(key, max, windowMs);
+
+    // Set rate limit headers
+    c.header('X-RateLimit-Limit', String(max));
+    c.header('X-RateLimit-Remaining', String(result.info.remaining));
+    c.header('X-RateLimit-Reset', String(Math.ceil(result.info.resetAt / 1000)));
+
+    // Record this request
+    recordRequest(key, windowMs);
+
+    if (!result.allowed) {
+      c.header('Retry-After', String(result.info.retryAfter));
+      return c.json(
+        {
+          error: 'Too Many Requests',
+          message,
+          retryAfter: result.info.retryAfter,
+        },
+        429
+      );
+    }
+
+    return next();
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // PRESETS FOR COMMON USE CASES
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -471,6 +541,7 @@ export function getRateLimitInfo(
 export const RateLimit = {
   create: createRateLimiter,
   createExpress: createExpressRateLimiter,
+  createHono: createHonoRateLimiter,
   createComposite: createCompositeRateLimiter,
   check: checkRateLimit,
   record: recordRequest,

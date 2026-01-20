@@ -1,7 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
+
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { authenticate } from './middleware/auth.js';
 import routes from './routes/index.js';
 
@@ -13,6 +16,10 @@ export function createApp() {
   });
   app.register(helmet);
   app.register(sensible);
+  
+  // Rate limiting for AI/ML training service (expensive operations)
+  app.register(rateLimit, FastifyRateLimitPresets.aiService('model-trainer-svc'));
+  
   app.get('/health', async () => ({ status: 'healthy', service: 'model-trainer-svc' }));
   app.register(async (protectedApp) => {
     protectedApp.addHook('preHandler', authenticate);

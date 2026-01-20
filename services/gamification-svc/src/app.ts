@@ -7,6 +7,7 @@ import type { Request, Response, NextFunction, Application } from 'express';
 import express from 'express';
 import helmet from 'helmet';
 
+import { createExpressRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils';
 import {
   gamificationRoutes,
   achievementRoutes,
@@ -40,6 +41,9 @@ const corsOrigins = process.env.CORS_ORIGIN
 app.use(helmet());
 app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json());
+
+// Rate limiting for gamification API
+app.use(createExpressRateLimiter(RateLimitPresets.API_GENERAL));
 
 // Request logging
 app.use((req: Request, _res: Response, next: NextFunction) => {

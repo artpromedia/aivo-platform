@@ -1,9 +1,11 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import Fastify from 'fastify';
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { config } from './config.js';
 import { authenticate } from './middleware/auth.js';
 import routes from './routes/index.js';
@@ -17,6 +19,10 @@ export function createApp() {
   app.register(helmet);
   app.register(sensible);
   app.register(multipart, { limits: { fileSize: config.maxFileSize } });
+  
+  // Rate limiting for ingestion service (high throughput)
+  app.register(rateLimit, FastifyRateLimitPresets.dataIngestion('coursework-ingest-svc'));
+  
   app.get('/health', async () => ({ status: 'healthy', service: 'coursework-ingest-svc' }));
   app.register(async (protectedApp) => {
     protectedApp.addHook('preHandler', authenticate);

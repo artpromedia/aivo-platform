@@ -34,6 +34,7 @@
     "@nestjs/schedule": "^4.0.0",
     "@nestjs/swagger": "^8.1.0",
     "@nestjs/terminus": "^11.0.0",
+    "@nestjs/throttler": "^6.4.0",
     "@nestjs/websockets": "^10.4.15",
     "@prisma/client": "^6.1.0",
     "adm-zip": "^0.5.16",
