@@ -4,7 +4,8 @@
  * GET, PATCH, DELETE operations for a single user
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 const USER_SVC_URL = process.env.USER_SVC_URL || 'http://user-svc:3000';
 
@@ -31,8 +32,7 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching user:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
   }
 }
@@ -77,8 +77,7 @@ export async function PATCH(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error updating user:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }
@@ -104,8 +103,7 @@ export async function DELETE(
     }
 
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error('Error deleting user:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 }

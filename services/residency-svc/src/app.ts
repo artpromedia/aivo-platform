@@ -7,7 +7,10 @@ import routes from './routes/index.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
-  app.register(cors, { origin: true });
+  app.register(cors, {
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
+  });
   app.register(helmet);
   app.register(sensible);
   app.get('/health', async () => ({ status: 'healthy', service: 'residency-svc' }));

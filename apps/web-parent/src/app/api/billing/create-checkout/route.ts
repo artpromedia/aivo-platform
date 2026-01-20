@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * POST /api/billing/create-checkout
@@ -22,7 +23,6 @@ export async function POST(request: NextRequest) {
 
     if (isDev) {
       // Return mock checkout session in development
-      console.log('[DEV] Creating mock checkout session', { planId, billingPeriod, couponCode });
       return NextResponse.json({
         sessionId: `cs_test_${Math.random().toString(36).substr(2, 24)}`,
         url: 'https://checkout.stripe.com/test',
@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Checkout creation error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

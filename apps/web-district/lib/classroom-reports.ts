@@ -17,10 +17,6 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NOD
 const MOCK_REQUESTED = process.env.NEXT_PUBLIC_USE_REPORTS_MOCK === 'true';
 const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
 
-// Warn if mock mode is requested in production (but don't enable it)
-if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
-  console.warn('[Classroom Reports API] USE_MOCK ignored in production - using real API');
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -94,7 +90,7 @@ export async function fetchClassroomSummary(
   days = 28
 ): Promise<ClassroomSummaryReport> {
   // Mock mode for development
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   if (USE_MOCK) {
     return mockClassroomSummary(classroomId, days);
   }

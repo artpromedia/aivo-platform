@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { useWebSocket } from './use-websocket';
 
 /**
@@ -177,7 +178,6 @@ export function useClassroomMonitor(
         );
       }
     } catch (err) {
-      console.error('[ClassroomMonitor] Error fetching initial state:', err);
       setError(err as Error);
     } finally {
       setIsLoading(false);
@@ -198,7 +198,6 @@ export function useClassroomMonitor(
         // Fetch initial state
         await fetchInitialState();
       } catch (err) {
-        console.error('[ClassroomMonitor] Failed to join monitor room:', err);
         setError(err as Error);
       }
     };
@@ -336,8 +335,8 @@ export function useClassroomMonitor(
 
         // Notify server via WebSocket
         await emit('alert:acknowledge', { alertId });
-      } catch (err) {
-        console.error('[ClassroomMonitor] Failed to acknowledge alert:', err);
+      } catch {
+        // Acknowledgment failed silently
       }
     },
     [emit]
@@ -373,7 +372,7 @@ export function useClassroomMonitor(
       } catch (err) {
         // Keep error logging for debugging failed interventions
         if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
+           
           console.error('[ClassroomMonitor] Failed to send intervention:', err);
         }
         throw err;

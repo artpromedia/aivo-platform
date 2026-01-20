@@ -6,17 +6,19 @@
  * for supporting learners with their families and educators.
  */
 
-import Fastify from 'fastify';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import { config } from 'dotenv';
+import Fastify from 'fastify';
 
-import { careTeamRoutes } from './routes/care-team.js';
-import { actionPlanRoutes } from './routes/action-plans.js';
-import { actionPlanTaskRoutes } from './routes/action-plan-tasks.js';
-import { careNoteRoutes } from './routes/care-notes.js';
-import { careMeetingRoutes } from './routes/meetings.js';
 import { prisma } from './db/prisma.js';
+import { actionPlanTaskRoutes } from './routes/action-plan-tasks.js';
+import { actionPlanRoutes } from './routes/action-plans.js';
+import { careNoteRoutes } from './routes/care-notes.js';
+import { careTeamRoutes } from './routes/care-team.js';
+import { careMeetingRoutes } from './routes/meetings.js';
 
 // Load environment variables
 config();
@@ -49,6 +51,9 @@ await fastify.register(cors, {
 await fastify.register(helmet, {
   contentSecurityPolicy: false,
 });
+
+// Rate limiting
+await fastify.register(rateLimit, FastifyRateLimitPresets.publicApi('collaboration-svc'));
 
 // Health check endpoint
 fastify.get('/health', async () => {

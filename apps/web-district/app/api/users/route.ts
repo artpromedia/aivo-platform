@@ -4,7 +4,8 @@
  * CRUD operations for district user management
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 const USER_SVC_URL = process.env.USER_SVC_URL || 'http://user-svc:3000';
 
@@ -54,8 +55,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching users:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
@@ -95,8 +95,7 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error('Error creating user:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
   }
 }

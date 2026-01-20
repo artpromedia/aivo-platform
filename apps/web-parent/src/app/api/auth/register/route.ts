@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * Mock Registration API Route
@@ -38,8 +39,6 @@ export async function POST(request: NextRequest) {
       const mockAccessToken = `mock_access_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       const mockRefreshToken = `mock_refresh_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      console.log('[DEV] Mock registration successful:', { email, role });
-
       return NextResponse.json({
         user: mockUser,
         accessToken: mockAccessToken,
@@ -59,7 +58,6 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Registration error:', error);
     return NextResponse.json(
       { message: 'An error occurred during registration' },
       { status: 500 }

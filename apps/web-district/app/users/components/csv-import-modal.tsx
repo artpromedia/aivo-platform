@@ -7,6 +7,7 @@
 'use client';
 
 import * as React from 'react';
+
 import type { User } from '../page';
 
 interface CsvImportModalProps {
@@ -49,8 +50,8 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
       const parsed = parseCsv(text);
       setParsedData(parsed);
       setStep('preview');
-    } catch (error) {
-      console.error('Error parsing CSV:', error);
+    } catch {
+      // CSV parsing failed, user will see no data
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +160,7 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
                   e.preventDefault();
                   setIsDragging(true);
                 }}
-                onDragLeave={() => setIsDragging(false)}
+                onDragLeave={() => { setIsDragging(false); }}
                 onDrop={handleDrop}
                 className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 ${
                   isDragging

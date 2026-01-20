@@ -2,6 +2,8 @@
  * Billing Service - Entry Point
  */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
@@ -27,6 +29,9 @@ async function main() {
           level: process.env.LOG_LEVEL || 'info',
         },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.billing('billing-svc'));
 
   // Health check endpoint
   app.get('/health', async () => ({ status: 'ok', service: 'billing-svc' }));

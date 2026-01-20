@@ -1,3 +1,5 @@
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
@@ -23,6 +25,9 @@ export async function buildApp() {
       error: error.message || 'Internal Server Error',
     });
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('focus-svc'));
 
   // Health check routes (no auth required)
   await app.register(registerHealthRoutes);

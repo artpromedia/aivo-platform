@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+
 import { getMockSubscription } from '@/lib/mock-data';
 
 /**
@@ -11,7 +13,6 @@ export async function GET(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Returning mock subscription');
       return NextResponse.json(getMockSubscription());
     }
 
@@ -27,7 +28,6 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Subscription fetch error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }
@@ -46,7 +46,6 @@ export async function PUT(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Updating mock subscription', body);
       const mockSub = getMockSubscription();
       return NextResponse.json({ ...mockSub, ...body });
     }
@@ -64,7 +63,6 @@ export async function PUT(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Subscription update error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }
@@ -82,7 +80,6 @@ export async function DELETE(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Canceling mock subscription');
       const mockSub = getMockSubscription();
       mockSub.cancelAtPeriodEnd = true;
       mockSub.canceledAt = new Date().toISOString();
@@ -101,7 +98,6 @@ export async function DELETE(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Subscription cancel error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

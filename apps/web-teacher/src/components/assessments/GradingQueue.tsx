@@ -12,54 +12,6 @@
  * - Progress tracking
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
-import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   ChevronLeft,
   ChevronRight,
@@ -80,9 +32,59 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import type { Question, Rubric, RubricCriterion, RubricLevel } from './types';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
 
 // ============================================================================
 // TYPES
@@ -219,7 +221,7 @@ function RubricGrader({
                     type="radio"
                     name={`criterion-${criterion.id}`}
                     checked={getSelectedLevel(criterion.id) === level.id}
-                    onChange={() => handleCriterionChange(criterion.id, level.id)}
+                    onChange={() => { handleCriterionChange(criterion.id, level.id); }}
                     className="mt-1"
                   />
                   <div className="flex-1 min-w-0">
@@ -327,8 +329,8 @@ export function GradingQueue({
     try {
       await onGrade(currentItem.response.id, score, feedback);
       handleNext();
-    } catch (error) {
-      console.error('Failed to save grade:', error);
+    } catch {
+      // Grade save failed silently
     } finally {
       setIsSaving(false);
     }
@@ -343,8 +345,8 @@ export function GradingQueue({
       setShowFlagDialog(false);
       setFlagReason('');
       handleNext();
-    } catch (error) {
-      console.error('Failed to flag response:', error);
+    } catch {
+      // Flag operation failed silently
     } finally {
       setIsSaving(false);
     }
@@ -356,8 +358,8 @@ export function GradingQueue({
     setIsSaving(true);
     try {
       await onUnflag(currentItem.response.id);
-    } catch (error) {
-      console.error('Failed to unflag response:', error);
+    } catch {
+      // Unflag operation failed silently
     } finally {
       setIsSaving(false);
     }
@@ -433,11 +435,11 @@ export function GradingQueue({
             <Input
               placeholder="Search students..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => { setSearchQuery(e.target.value); }}
               className="pl-9"
             />
           </div>
-          <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
+          <Select value={filter} onValueChange={(v: any) => { setFilter(v); }}>
             <SelectTrigger className="w-40">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue />
@@ -460,7 +462,7 @@ export function GradingQueue({
               {filteredItems.map((item, idx) => (
                 <button
                   key={item.response.id}
-                  onClick={() => setCurrentIndex(idx)}
+                  onClick={() => { setCurrentIndex(idx); }}
                   className={cn(
                     'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors',
                     'hover:bg-muted',
@@ -615,7 +617,7 @@ export function GradingQueue({
                             <div className="flex items-center gap-4">
                               <Slider
                                 value={[score]}
-                                onValueChange={([v]) => setScore(v)}
+                                onValueChange={([v]) => { setScore(v); }}
                                 max={currentItem.question.points}
                                 step={0.5}
                                 className="flex-1"
@@ -623,7 +625,7 @@ export function GradingQueue({
                               <Input
                                 type="number"
                                 value={score}
-                                onChange={e => setScore(Math.min(currentItem.question.points, Math.max(0, parseFloat(e.target.value) || 0)))}
+                                onChange={e => { setScore(Math.min(currentItem.question.points, Math.max(0, parseFloat(e.target.value) || 0))); }}
                                 className="w-20"
                                 min={0}
                                 max={currentItem.question.points}
@@ -639,7 +641,7 @@ export function GradingQueue({
                                 key={pct}
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setScore(Math.round(currentItem.question.points * pct * 2) / 2)}
+                                onClick={() => { setScore(Math.round(currentItem.question.points * pct * 2) / 2); }}
                                 className={cn(
                                   score === Math.round(currentItem.question.points * pct * 2) / 2 && 'bg-muted'
                                 )}
@@ -660,7 +662,7 @@ export function GradingQueue({
                       <Textarea
                         id="feedback"
                         value={feedback}
-                        onChange={e => setFeedback(e.target.value)}
+                        onChange={e => { setFeedback(e.target.value); }}
                         placeholder="Provide feedback to the student..."
                         rows={4}
                       />
@@ -690,12 +692,12 @@ export function GradingQueue({
                             </DialogHeader>
                             <Textarea
                               value={flagReason}
-                              onChange={e => setFlagReason(e.target.value)}
+                              onChange={e => { setFlagReason(e.target.value); }}
                               placeholder="Reason for flagging..."
                               rows={3}
                             />
                             <DialogFooter>
-                              <Button variant="outline" onClick={() => setShowFlagDialog(false)}>
+                              <Button variant="outline" onClick={() => { setShowFlagDialog(false); }}>
                                 Cancel
                               </Button>
                               <Button onClick={handleFlag} disabled={!flagReason || isSaving}>

@@ -2,14 +2,15 @@
  * Express Application Setup
  */
 
+import { createExpressRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 
-import gradebookRoutes from './routes/gradebook.routes.js';
-import assessmentRoutes from './routes/assessment.routes.js';
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
+import assessmentRoutes from './routes/assessment.routes.js';
+import gradebookRoutes from './routes/gradebook.routes.js';
 
 export function createApp() {
   const app = express();
@@ -20,6 +21,9 @@ export function createApp() {
     origin: config.corsOrigin,
     credentials: true
   }));
+
+  // Rate limiting
+  app.use(createExpressRateLimiter(RateLimitPresets.API_GENERAL));
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));

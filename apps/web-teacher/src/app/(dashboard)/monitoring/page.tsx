@@ -75,8 +75,8 @@ export default function MonitoringPage() {
       // Refresh sessions to update help status
       const data = await fetchActiveSessions(undefined, accessToken);
       setSessions(data);
-    } catch (err) {
-      console.error('Failed to acknowledge help request:', err);
+    } catch {
+      // Help request acknowledgment failed silently
     }
   };
 

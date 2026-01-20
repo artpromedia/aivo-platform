@@ -42,7 +42,9 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { registerAuthHook } from './auth.js';
@@ -65,8 +67,12 @@ async function main() {
 
   // Register CORS
   await fastify.register(cors as any, {
-    origin: process.env.CORS_ORIGIN ?? true,
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
   });
+
+  // Rate limiting
+  await fastify.register(rateLimit, FastifyRateLimitPresets.content('content-authoring-svc'));
 
   // Register auth hook
   registerAuthHook(fastify);

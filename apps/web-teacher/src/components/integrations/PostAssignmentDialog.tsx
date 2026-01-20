@@ -115,9 +115,8 @@ export function PostAssignmentDialog({
       setLoadingCourses(true);
       const courseList = await googleClassroomApi.getCourses();
       setCourses(courseList.filter((c) => c.courseState === 'ACTIVE'));
-    } catch (err: any) {
+    } catch {
       setError('Failed to load courses. Please try again.');
-      console.error('Failed to fetch courses:', err);
     } finally {
       setLoadingCourses(false);
     }

@@ -108,8 +108,8 @@ export function TeacherProfile({
         const data = await response.json();
         setProfile(data);
         setIsFollowing(data.isFollowing || false);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
+      } catch {
+        // Fetch failed silently
       } finally {
         setLoading(false);
       }
@@ -127,8 +127,8 @@ export function TeacherProfile({
 
         const data = await response.json();
         setContent(data.items || []);
-      } catch (error) {
-        console.error('Error fetching content:', error);
+      } catch {
+        // Fetch failed silently
       }
     };
 
@@ -158,8 +158,8 @@ export function TeacherProfile({
           },
         });
       }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
+    } catch {
+      // Follow toggle failed silently
     }
   };
 
@@ -321,7 +321,7 @@ export function TeacherProfile({
         <div className="border-b border-gray-200">
           <nav className="flex gap-8 px-6" aria-label="Tabs">
             <button
-              onClick={() => setActiveTab('content')}
+              onClick={() => { setActiveTab('content'); }}
               className={cn(
                 'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeTab === 'content'
@@ -332,7 +332,7 @@ export function TeacherProfile({
               Shared Content ({profile.stats.sharedContentCount})
             </button>
             <button
-              onClick={() => setActiveTab('followers')}
+              onClick={() => { setActiveTab('followers'); }}
               className={cn(
                 'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeTab === 'followers'
@@ -343,7 +343,7 @@ export function TeacherProfile({
               Followers ({profile.stats.followerCount})
             </button>
             <button
-              onClick={() => setActiveTab('following')}
+              onClick={() => { setActiveTab('following'); }}
               className={cn(
                 'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeTab === 'following'

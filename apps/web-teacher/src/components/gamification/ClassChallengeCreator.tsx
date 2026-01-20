@@ -4,9 +4,9 @@
  * Modal for teachers to create custom class challenges
  */
 
-import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Target, Calendar, Star, Coins, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface ClassChallengeCreatorProps {
   classId: string;
@@ -135,8 +135,8 @@ export function ClassChallengeCreator({
     try {
       await onCreate(formData as CreateChallengeData);
       onClose();
-    } catch (error) {
-      console.error('Failed to create challenge:', error);
+    } catch {
+      // Challenge creation failed silently
     } finally {
       setIsCreating(false);
     }
@@ -183,7 +183,7 @@ export function ClassChallengeCreator({
                 {PRESET_CHALLENGES.map((preset, index) => (
                   <button
                     key={index}
-                    onClick={() => handlePresetSelect(preset)}
+                    onClick={() => { handlePresetSelect(preset); }}
                     className="w-full p-4 border border-gray-200 dark:border-gray-700 rounded-xl text-left hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                   >
                     <div className="flex items-center gap-3">
@@ -201,7 +201,7 @@ export function ClassChallengeCreator({
                 ))}
 
                 <button
-                  onClick={() => setStep('custom')}
+                  onClick={() => { setStep('custom'); }}
                   className="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors"
                 >
                   Create Custom Challenge
@@ -218,7 +218,7 @@ export function ClassChallengeCreator({
                   <input
                     type="text"
                     value={formData.title || ''}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, title: e.target.value }); }}
                     className={`
                       w-full px-3 py-2 border rounded-lg
                       ${errors.title ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}
@@ -238,7 +238,7 @@ export function ClassChallengeCreator({
                   </label>
                   <textarea
                     value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, description: e.target.value }); }}
                     rows={2}
                     className={`
                       w-full px-3 py-2 border rounded-lg
@@ -261,7 +261,7 @@ export function ClassChallengeCreator({
                     {TARGET_TYPES.map((type) => (
                       <button
                         key={type.id}
-                        onClick={() => setFormData({ ...formData, targetType: type.id })}
+                        onClick={() => { setFormData({ ...formData, targetType: type.id }); }}
                         className={`
                           p-3 border rounded-lg text-left flex items-center gap-2
                           ${formData.targetType === type.id
@@ -285,7 +285,7 @@ export function ClassChallengeCreator({
                   <input
                     type="number"
                     value={formData.targetValue || ''}
-                    onChange={(e) => setFormData({ ...formData, targetValue: Number(e.target.value) })}
+                    onChange={(e) => { setFormData({ ...formData, targetValue: Number(e.target.value) }); }}
                     min={1}
                     className={`
                       w-full px-3 py-2 border rounded-lg
@@ -304,7 +304,7 @@ export function ClassChallengeCreator({
                     <input
                       type="date"
                       value={formData.startDate || ''}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      onChange={(e) => { setFormData({ ...formData, startDate: e.target.value }); }}
                       className={`
                         w-full px-3 py-2 border rounded-lg
                         ${errors.startDate ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}
@@ -319,7 +319,7 @@ export function ClassChallengeCreator({
                     <input
                       type="date"
                       value={formData.endDate || ''}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      onChange={(e) => { setFormData({ ...formData, endDate: e.target.value }); }}
                       className={`
                         w-full px-3 py-2 border rounded-lg
                         ${errors.endDate ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}
@@ -342,7 +342,7 @@ export function ClassChallengeCreator({
                     <input
                       type="number"
                       value={formData.rewardXP || ''}
-                      onChange={(e) => setFormData({ ...formData, rewardXP: Number(e.target.value) })}
+                      onChange={(e) => { setFormData({ ...formData, rewardXP: Number(e.target.value) }); }}
                       min={0}
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
                     />
@@ -355,7 +355,7 @@ export function ClassChallengeCreator({
                     <input
                       type="number"
                       value={formData.rewardCoins || ''}
-                      onChange={(e) => setFormData({ ...formData, rewardCoins: Number(e.target.value) })}
+                      onChange={(e) => { setFormData({ ...formData, rewardCoins: Number(e.target.value) }); }}
                       min={0}
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
                     />
@@ -365,7 +365,7 @@ export function ClassChallengeCreator({
                 {/* Actions */}
                 <div className="flex gap-3 pt-4">
                   <button
-                    onClick={() => setStep('preset')}
+                    onClick={() => { setStep('preset'); }}
                     className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     Back

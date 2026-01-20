@@ -5,6 +5,8 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
 
@@ -60,6 +62,9 @@ export async function createServer(config: ServerConfig): Promise<{
       level: process.env.LOG_LEVEL || 'info',
     },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('integration-svc'));
 
   // Register routes
   await registerRoutes(app, {

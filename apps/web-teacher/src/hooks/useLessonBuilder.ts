@@ -197,8 +197,7 @@ export function useLessonBuilder(lessonId?: string) {
       if (!response.ok) throw new Error('Failed to save lesson');
 
       setState((prev) => ({ ...prev, saving: false }));
-    } catch (error) {
-      console.error('Auto-save error:', error);
+    } catch {
       setState((prev) => ({ ...prev, saving: false }));
     }
   }, [state.lesson, state.blocks]);
@@ -265,8 +264,8 @@ export function useLessonBuilder(lessonId?: string) {
 
         addToHistory(newBlocks, newBlock.id);
         triggerAutoSave();
-      } catch (error) {
-        console.error('Failed to add block:', error);
+      } catch {
+        // Block addition failed silently
       }
     },
     [state.lesson, state.blocks, addToHistory, triggerAutoSave]
@@ -295,8 +294,7 @@ export function useLessonBuilder(lessonId?: string) {
 
         addToHistory(newBlocks, state.selectedBlockId);
         triggerAutoSave();
-      } catch (error) {
-        console.error('Failed to update block:', error);
+      } catch {
         // Revert on error
         setState((prev) => ({ ...prev, blocks: state.blocks }));
       }
@@ -328,8 +326,7 @@ export function useLessonBuilder(lessonId?: string) {
 
         addToHistory(newBlocks, state.selectedBlockId === blockId ? null : state.selectedBlockId);
         triggerAutoSave();
-      } catch (error) {
-        console.error('Failed to delete block:', error);
+      } catch {
         // Revert on error
         setState((prev) => ({ ...prev, blocks: state.blocks }));
       }

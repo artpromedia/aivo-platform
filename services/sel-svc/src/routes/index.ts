@@ -4,6 +4,40 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import * as selService from '../services/selService.js';
+import {
+  // Profile schemas
+  profileIdParamsSchema,
+  listProfilesQuerySchema,
+  createProfileSchema,
+  updateProfileSchema,
+  // Check-in schemas
+  getCheckInsQuerySchema,
+  moodTrendsQuerySchema,
+  createCheckInSchema,
+  // Assessment schemas
+  assessmentIdParamsSchema,
+  createAssessmentSchema,
+  submitResponseSchema,
+  // Intervention schemas
+  interventionIdParamsSchema,
+  createInterventionSchema,
+  logSessionSchema,
+  // Alert schemas
+  alertIdParamsSchema,
+  getAlertsQuerySchema,
+  resolveAlertSchema,
+  // Activity schemas
+  listActivitiesQuerySchema,
+  recordCompletionSchema,
+} from '../schemas/index.js';
+
+// Helper function to send validation errors
+function sendValidationError(reply: FastifyReply, error: { issues: unknown[] }) {
+  return reply.status(400).send({
+    error: 'Validation Error',
+    details: error.issues,
+  });
+}
 
 export default async function routes(fastify: FastifyInstance): Promise<void> {
   // Dashboard
@@ -12,121 +46,269 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
     return reply.send(await selService.getDashboard(tenantId));
   });
 
-  // Student Profiles
+  // ══════════════════════════════════════════════════════════════════════════════
+  // STUDENT PROFILES
+  // ══════════════════════════════════════════════════════════════════════════════
+
   fastify.get('/profiles', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    return reply.send(await selService.listStudentProfiles(tenantId, req.query));
+    const queryResult = listProfilesQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return sendValidationError(reply, queryResult.error);
+    }
+    return reply.send(await selService.listStudentProfiles(tenantId, queryResult.data));
   });
 
   fastify.post('/profiles', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const profile = await selService.createStudentProfile(tenantId, req.body);
+    const bodyResult = createProfileSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const profile = await selService.createStudentProfile(tenantId, bodyResult.data);
     return reply.status(201).send(profile);
   });
 
   fastify.get('/profiles/:profileId', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const { profileId } = req.params as { profileId: string };
-    const profile = await selService.getStudentProfile(tenantId, profileId);
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const profile = await selService.getStudentProfile(tenantId, paramsResult.data.profileId);
     if (!profile) return reply.status(404).send({ error: 'Profile not found' });
     return reply.send(profile);
   });
 
   fastify.put('/profiles/:profileId', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const { profileId } = req.params as { profileId: string };
-    const profile = await selService.updateStudentProfile(tenantId, profileId, req.body);
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = updateProfileSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const profile = await selService.updateStudentProfile(
+      tenantId,
+      paramsResult.data.profileId,
+      bodyResult.data
+    );
     return reply.send(profile);
   });
 
-  // Check-ins
+  // ══════════════════════════════════════════════════════════════════════════════
+  // CHECK-INS
+  // ══════════════════════════════════════════════════════════════════════════════
+
   fastify.get('/profiles/:profileId/check-ins', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const { profileId } = req.params as { profileId: string };
-    return reply.send(await selService.getCheckIns(tenantId, profileId, req.query));
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const queryResult = getCheckInsQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return sendValidationError(reply, queryResult.error);
+    }
+    return reply.send(
+      await selService.getCheckIns(tenantId, paramsResult.data.profileId, queryResult.data)
+    );
   });
 
   fastify.post('/profiles/:profileId/check-ins', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const { profileId } = req.params as { profileId: string };
-    const checkIn = await selService.createCheckIn(tenantId, profileId, req.body);
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = createCheckInSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const checkIn = await selService.createCheckIn(
+      tenantId,
+      paramsResult.data.profileId,
+      bodyResult.data
+    );
     return reply.status(201).send(checkIn);
   });
 
   fastify.get('/profiles/:profileId/mood-trends', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const { profileId } = req.params as { profileId: string };
-    const { days } = req.query as { days?: string };
-    return reply.send(await selService.getMoodTrends(tenantId, profileId, days ? Number.parseInt(days) : 30));
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const queryResult = moodTrendsQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return sendValidationError(reply, queryResult.error);
+    }
+    return reply.send(
+      await selService.getMoodTrends(tenantId, paramsResult.data.profileId, queryResult.data.days)
+    );
   });
 
-  // Assessments
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ASSESSMENTS
+  // ══════════════════════════════════════════════════════════════════════════════
+
   fastify.post('/profiles/:profileId/assessments', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    const { profileId } = req.params as { profileId: string };
-    const assessment = await selService.createAssessment(tenantId, profileId, req.body);
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = createAssessmentSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const assessment = await selService.createAssessment(
+      tenantId,
+      paramsResult.data.profileId,
+      bodyResult.data
+    );
     return reply.status(201).send(assessment);
   });
 
   fastify.post('/assessments/:assessmentId/responses', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { assessmentId } = req.params as { assessmentId: string };
-    const { itemNumber, response, responseTime } = req.body as any;
-    const result = await selService.submitAssessmentResponse(assessmentId, itemNumber, response, responseTime);
+    const paramsResult = assessmentIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = submitResponseSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const { itemNumber, response, responseTime } = bodyResult.data;
+    const result = await selService.submitAssessmentResponse(
+      paramsResult.data.assessmentId,
+      itemNumber,
+      response,
+      responseTime
+    );
     return reply.send(result);
   });
 
   fastify.post('/assessments/:assessmentId/complete', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { assessmentId } = req.params as { assessmentId: string };
-    const assessment = await selService.completeAssessment(assessmentId);
+    const paramsResult = assessmentIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const assessment = await selService.completeAssessment(paramsResult.data.assessmentId);
     return reply.send(assessment);
   });
 
-  // Activities
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ACTIVITIES
+  // ══════════════════════════════════════════════════════════════════════════════
+
   fastify.get('/activities', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    return reply.send(await selService.listActivities(tenantId, req.query));
+    const queryResult = listActivitiesQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return sendValidationError(reply, queryResult.error);
+    }
+    return reply.send(await selService.listActivities(tenantId, queryResult.data));
   });
 
   fastify.post('/profiles/:profileId/activity-completions', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { profileId } = req.params as { profileId: string };
-    const { activityId, ...input } = req.body as any;
-    const completion = await selService.recordActivityCompletion(profileId, activityId, input);
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = recordCompletionSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const { activityId, ...input } = bodyResult.data;
+    const completion = await selService.recordActivityCompletion(
+      paramsResult.data.profileId,
+      activityId,
+      input
+    );
     return reply.status(201).send(completion);
   });
 
-  // Interventions
+  // ══════════════════════════════════════════════════════════════════════════════
+  // INTERVENTIONS
+  // ══════════════════════════════════════════════════════════════════════════════
+
   fastify.post('/profiles/:profileId/interventions', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
     const userId = (req as any).userId;
-    const { profileId } = req.params as { profileId: string };
-    const intervention = await selService.createIntervention(tenantId, profileId, userId, req.body);
+    const paramsResult = profileIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = createInterventionSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const intervention = await selService.createIntervention(
+      tenantId,
+      paramsResult.data.profileId,
+      userId,
+      bodyResult.data
+    );
     return reply.status(201).send(intervention);
   });
 
   fastify.post('/interventions/:interventionId/logs', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { interventionId } = req.params as { interventionId: string };
-    const log = await selService.logInterventionSession(interventionId, req.body);
+    const paramsResult = interventionIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = logSessionSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const log = await selService.logInterventionSession(
+      paramsResult.data.interventionId,
+      bodyResult.data
+    );
     return reply.status(201).send(log);
   });
 
-  // Alerts
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ALERTS
+  // ══════════════════════════════════════════════════════════════════════════════
+
   fastify.get('/alerts', async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = (req as any).tenantId;
-    return reply.send(await selService.getAlerts(tenantId, req.query));
+    const queryResult = getAlertsQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return sendValidationError(reply, queryResult.error);
+    }
+    return reply.send(await selService.getAlerts(tenantId, queryResult.data));
   });
 
   fastify.post('/alerts/:alertId/acknowledge', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req as any).userId;
-    const { alertId } = req.params as { alertId: string };
-    const alert = await selService.acknowledgeAlert(alertId, userId);
+    const paramsResult = alertIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const alert = await selService.acknowledgeAlert(paramsResult.data.alertId, userId);
     return reply.send(alert);
   });
 
   fastify.post('/alerts/:alertId/resolve', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req as any).userId;
-    const { alertId } = req.params as { alertId: string };
-    const { resolution } = req.body as { resolution: string };
-    const alert = await selService.resolveAlert(alertId, userId, resolution);
+    const paramsResult = alertIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const bodyResult = resolveAlertSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return sendValidationError(reply, bodyResult.error);
+    }
+    const alert = await selService.resolveAlert(
+      paramsResult.data.alertId,
+      userId,
+      bodyResult.data.resolution
+    );
     return reply.send(alert);
   });
 }

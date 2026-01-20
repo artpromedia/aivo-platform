@@ -75,8 +75,8 @@ export default function CommunityPage() {
       // Refresh posts
       const postsData = await fetchPosts(accessToken, { category: selectedCategory ?? undefined });
       setPosts(postsData);
-    } catch (err) {
-      console.error('Failed to like post:', err);
+    } catch {
+      // Like failed silently
     }
   };
 

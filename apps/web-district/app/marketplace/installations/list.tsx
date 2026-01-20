@@ -69,8 +69,8 @@ export function InstallationsList() {
           prev.map((i) => (i.id === installation.id ? { ...i, status: 'ACTIVE' } : i))
         );
       }
-    } catch (err) {
-      console.error('Failed to toggle status:', err);
+    } catch {
+      // Toggle failed silently
     }
   }
 
@@ -82,8 +82,8 @@ export function InstallationsList() {
       setInstallations((prev) =>
         prev.map((i) => (i.id === installation.id ? { ...i, status: 'ACTIVE' } : i))
       );
-    } catch (err) {
-      console.error('Failed to approve installation:', err);
+    } catch {
+      // Approval failed silently
     }
   }
 
@@ -95,8 +95,8 @@ export function InstallationsList() {
       // Remove from list since it's revoked
       setInstallations((prev) => prev.filter((i) => i.id !== installation.id));
       setTotal((prev) => prev - 1);
-    } catch (err) {
-      console.error('Failed to revoke installation:', err);
+    } catch {
+      // Revoke failed silently
     }
   }
 
@@ -413,7 +413,7 @@ function InstallationCard({
         <>
           <div
             className="fixed inset-0 z-40 bg-black/50"
-            onClick={() => setShowRevokeConfirm(false)}
+            onClick={() => { setShowRevokeConfirm(false); }}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-xl">
@@ -444,7 +444,7 @@ function InstallationCard({
               </p>
               <div className="mt-6 flex justify-end gap-3">
                 <button
-                  onClick={() => setShowRevokeConfirm(false)}
+                  onClick={() => { setShowRevokeConfirm(false); }}
                   disabled={isRevoking}
                   className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted disabled:opacity-50"
                 >

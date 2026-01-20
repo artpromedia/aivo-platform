@@ -11,7 +11,6 @@
  * - Click to add activity to lesson
  */
 
-import * as React from 'react';
 import {
   Video,
   Gamepad2,
@@ -24,11 +23,12 @@ import {
   Clock,
   GraduationCap,
 } from 'lucide-react';
+import * as React from 'react';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 // ════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -259,8 +259,7 @@ export function ActivityLibrary({
       }
 
       setActivities(filtered);
-    } catch (error) {
-      console.error('Failed to load activities:', error);
+    } catch {
       setActivities([]);
     } finally {
       setIsLoading(false);
@@ -293,7 +292,7 @@ export function ActivityLibrary({
           type="text"
           placeholder="Search activities..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); }}
           className="pl-9"
         />
       </div>
@@ -303,7 +302,7 @@ export function ActivityLibrary({
         <Button
           variant={typeFilter === 'all' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setTypeFilter('all')}
+          onClick={() => { setTypeFilter('all'); }}
           className="h-7 text-xs"
         >
           All
@@ -315,7 +314,7 @@ export function ActivityLibrary({
               key={type.id}
               variant={typeFilter === type.id ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTypeFilter(type.id)}
+              onClick={() => { setTypeFilter(type.id); }}
               className="h-7 gap-1 text-xs"
             >
               <Icon className="h-3 w-3" />
@@ -342,7 +341,7 @@ export function ActivityLibrary({
                 key={activity.id}
                 activity={activity}
                 typeConfig={getActivityTypeConfig(activity.type)}
-                onClick={() => onSelect(activity)}
+                onClick={() => { onSelect(activity); }}
               />
             ))
           )}

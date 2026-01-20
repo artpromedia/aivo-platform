@@ -8,6 +8,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { api } from './api';
 import {
   isDevMode,
@@ -70,7 +71,6 @@ export function useParentProfile() {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock parent profile data');
           return getMockParentProfile();
         }
         throw error;
@@ -98,7 +98,6 @@ export function useStudentSummary(studentId: string | null) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock student summary data');
           return getMockStudentSummary(studentId);
         }
         throw error;
@@ -127,7 +126,6 @@ export function useWeeklySummary(studentId: string | null) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock weekly summary data');
           return getMockWeeklySummary(studentId);
         }
         throw error;
@@ -156,7 +154,6 @@ export function useHomeworkSessions(studentId: string | null) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock homework sessions data');
           return getMockHomeworkSessions(studentId);
         }
         throw error;
@@ -181,7 +178,6 @@ export function useMessages() {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock messages data');
           return getMockMessages();
         }
         throw error;
@@ -211,7 +207,6 @@ export function useDifficultyRecommendations(studentId: string | null) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock difficulty recommendations data');
           return getMockDifficultyRecommendations(studentId);
         }
         throw error;
@@ -342,7 +337,6 @@ export function useAIInsights(studentId: string | null) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock AI insights data');
           return getMockAIInsights(studentId);
         }
         throw error;
@@ -374,7 +368,6 @@ export function useActivityTimeline(studentId: string | null, limit?: number) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock activity timeline data');
           const activities = getMockActivityTimeline(studentId);
           return limit ? activities.slice(0, limit) : activities;
         }
@@ -406,7 +399,6 @@ export function useMilestones(studentId: string | null) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock milestones data');
           return getMockMilestones(studentId);
         }
         throw error;
@@ -440,7 +432,6 @@ export function useWeeklyReport(studentId: string | null, weekStart?: Date) {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock weekly report data');
           return getMockWeeklyReport(studentId);
         }
         throw error;
@@ -465,7 +456,6 @@ export function useChildrenEnhanced() {
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock enhanced children data');
           return getMockChildrenEnhanced();
         }
         throw error;
@@ -676,7 +666,6 @@ export function useConversations(includeArchived = false) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock conversations data');
           return [];
         }
         throw error;
@@ -704,7 +693,6 @@ export function useConversationMessages(conversationId: string | null) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock messages data');
           return { messages: [], conversation: {} as Conversation };
         }
         throw error;
@@ -801,7 +789,6 @@ export function useParentalControls(childId: string | null) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock parental controls data');
           return {
             screenTime: {
               dailyLimit: 120,
@@ -943,7 +930,6 @@ export function useProgressReport(
       } catch (error) {
         // In development, fall back to mock data if API fails
         if (isDevMode()) {
-          console.warn('[DEV] Using mock progress report data');
           return getMockProgressReport(studentId, dateRange);
         }
         throw error;

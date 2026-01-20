@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+
+import { FocusTab } from '@/components/analytics/FocusTab';
+import { HomeworkTab } from '@/components/analytics/HomeworkTab';
 import {
   type ClassroomHomeworkUsage,
   type ClassroomFocusPatterns,
   fetchClassroomHomeworkUsage,
   fetchClassroomFocusPatterns,
 } from '@/lib/classroom-analytics';
-import { HomeworkTab } from '@/components/analytics/HomeworkTab';
-import { FocusTab } from '@/components/analytics/FocusTab';
 
 type TabId = 'homework' | 'focus';
 
@@ -42,8 +43,7 @@ export default function ClassroomAnalyticsPage() {
 
         setHomeworkData(homework);
         setFocusData(focus);
-      } catch (err) {
-        console.error('Failed to load classroom analytics:', err);
+      } catch {
         setError('Failed to load analytics data. Please try again.');
       } finally {
         setLoading(false);
@@ -90,14 +90,14 @@ export default function ClassroomAnalyticsPage() {
               label="Homework Helper"
               icon="📚"
               active={activeTab === 'homework'}
-              onClick={() => setActiveTab('homework')}
+              onClick={() => { setActiveTab('homework'); }}
             />
             <TabButton
               id="focus"
               label="Focus & Regulation"
               icon="🧘"
               active={activeTab === 'focus'}
-              onClick={() => setActiveTab('focus')}
+              onClick={() => { setActiveTab('focus'); }}
             />
           </div>
         </div>
@@ -189,7 +189,7 @@ function ErrorState({ message }: { message: string }) {
       <div className="text-red-600 text-lg mb-2">⚠️ {message}</div>
       <button
         className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-        onClick={() => window.location.reload()}
+        onClick={() => { window.location.reload(); }}
       >
         Retry
       </button>

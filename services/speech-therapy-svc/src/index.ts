@@ -6,8 +6,10 @@
 
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import 'dotenv/config';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { connectDatabase, disconnectDatabase, prisma } from './db.js';
 import { gamificationRoutes } from './routes/gamification.js';
@@ -29,10 +31,16 @@ async function main() {
     logger: { level: config.logLevel },
   });
 
-  await app.register(cors, { origin: true, credentials: true });
+  await app.register(cors, {
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
+  });
   await app.register(multipart, {
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for audio files
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('speech-therapy-svc'));
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'speech-therapy-svc' }));

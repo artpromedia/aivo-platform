@@ -9,7 +9,8 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
@@ -66,13 +67,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
 
     const token = getToken();
     if (!token) {
-      console.warn('[WebSocket] Cannot connect: no auth token');
       return;
     }
 
     setStatus('connecting');
 
-    const socket = io(`${REALTIME_URL}`, {
+    const socket = io(REALTIME_URL, {
       path: '/socket.io',
       auth: { token },
       transports: ['websocket', 'polling'],
@@ -84,7 +84,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
 
     socket.on('connect', () => {
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.debug('[WebSocket] Connected');
       }
       setStatus('connected');
@@ -92,26 +92,25 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
 
     socket.on('disconnect', (reason) => {
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.debug('[WebSocket] Disconnected:', reason);
       }
       setStatus('disconnected');
     });
 
-    socket.on('connect_error', (error) => {
-      console.error('[WebSocket] Connection error:', error);
+    socket.on('connect_error', () => {
       setStatus('error');
     });
 
-    socket.on('error', (error) => {
-      console.error('[WebSocket] Error:', error);
+    socket.on('error', () => {
+      // Error handled by status update
     });
 
     // Re-emit events to registered handlers
     socket.onAny((event, ...args) => {
       const handlers = handlersRef.current.get(event);
       if (handlers) {
-        handlers.forEach((handler) => handler(...args));
+        handlers.forEach((handler) => { handler(...args); });
       }
     });
 

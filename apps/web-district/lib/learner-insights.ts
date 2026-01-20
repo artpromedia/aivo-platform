@@ -221,8 +221,7 @@ export async function fetchBaselineProfile(
       } as BaselineProfileView;
     }
     return parsed;
-  } catch (err) {
-    console.warn('Falling back to mock baseline profile', err);
+  } catch {
     return mockBaselineProfile(learnerId);
   }
 }
@@ -252,8 +251,7 @@ export async function fetchVirtualBrainSummary(
       parsed.gradeBand = gradeToBand(null);
     }
     return parsed;
-  } catch (err) {
-    console.warn('Falling back to mock virtual brain', err);
+  } catch {
     return mockVirtualBrain(learnerId);
   }
 }

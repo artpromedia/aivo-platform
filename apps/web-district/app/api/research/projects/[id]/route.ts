@@ -4,7 +4,8 @@
  * Proxies requests to the research-svc microservice.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 const RESEARCH_SVC_URL = process.env.RESEARCH_SVC_URL || 'http://localhost:4020';
 
@@ -24,8 +25,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error('Research project fetch error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch project' },
       { status: 500 }
@@ -50,8 +50,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error('Research project update error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to update project' },
       { status: 500 }

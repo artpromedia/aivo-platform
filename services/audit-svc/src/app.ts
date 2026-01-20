@@ -4,17 +4,22 @@
  * Fastify application configuration and route registration.
  */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { registerAlertRoutes } from './routes/alert.js';
 import { registerAuditRoutes } from './routes/audit.js';
 import { registerExportRoutes } from './routes/export.js';
-import { registerPolicyRoutes } from './routes/policy.js';
-import { registerAlertRoutes } from './routes/alert.js';
 import { registerIngestRoutes } from './routes/ingest.js';
+import { registerPolicyRoutes } from './routes/policy.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
+
+  // Rate limiting
+  void app.register(rateLimit, FastifyRateLimitPresets.internalApi('audit-svc'));
 
   // Health check endpoint
   app.get('/health', async (_request, reply) => {

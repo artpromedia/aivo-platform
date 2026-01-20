@@ -101,8 +101,8 @@ export function ContentBrowser({
 
       const data = await response.json();
       setContent(data.items || []);
-    } catch (error) {
-      console.error('Error fetching content:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setLoading(false);
     }
@@ -123,13 +123,13 @@ export function ContentBrowser({
             placeholder="Search content..."
             value={filters.searchQuery || ''}
             onChange={(e) =>
-              setFilters((prev) => ({ ...prev, searchQuery: e.target.value }))
+              { setFilters((prev) => ({ ...prev, searchQuery: e.target.value })); }
             }
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
         <button
-          onClick={() => setShowFilters(!showFilters)}
+          onClick={() => { setShowFilters(!showFilters); }}
           className={cn(
             'px-4 py-2 border rounded-lg flex items-center gap-2 transition-colors',
             showFilters
@@ -154,7 +154,7 @@ export function ContentBrowser({
               <select
                 value={filters.subject || ''}
                 onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, subject: e.target.value || undefined }))
+                  { setFilters((prev) => ({ ...prev, subject: e.target.value || undefined })); }
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
@@ -176,7 +176,7 @@ export function ContentBrowser({
               <select
                 value={filters.gradeBand || ''}
                 onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, gradeBand: e.target.value || undefined }))
+                  { setFilters((prev) => ({ ...prev, gradeBand: e.target.value || undefined })); }
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
@@ -196,10 +196,10 @@ export function ContentBrowser({
               <select
                 value={filters.minRating || ''}
                 onChange={(e) =>
-                  setFilters((prev) => ({
+                  { setFilters((prev) => ({
                     ...prev,
                     minRating: e.target.value ? Number(e.target.value) : undefined,
-                  }))
+                  })); }
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
@@ -224,10 +224,10 @@ export function ContentBrowser({
                 <button
                   key={option.value}
                   onClick={() =>
-                    setFilters((prev) => ({
+                    { setFilters((prev) => ({
                       ...prev,
                       sortBy: option.value as FilterState['sortBy'],
-                    }))
+                    })); }
                   }
                   className={cn(
                     'px-3 py-1.5 text-sm rounded-md transition-colors',
@@ -319,7 +319,7 @@ function ContentCard({ content, onSelect, onFork, onDownload }: ContentCardProps
           </div>
         </div>
         <button
-          onClick={() => setIsSaved(!isSaved)}
+          onClick={() => { setIsSaved(!isSaved); }}
           className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label={isSaved ? 'Unsave' : 'Save'}
         >
@@ -444,8 +444,8 @@ export function CompactContentBrowser({
 
         const data = await response.json();
         setContent(data.items || []);
-      } catch (error) {
-        console.error('Error fetching content:', error);
+      } catch {
+        // Fetch failed silently
       } finally {
         setLoading(false);
       }
@@ -467,7 +467,7 @@ export function CompactContentBrowser({
       {content.map((item) => (
         <button
           key={item.id}
-          onClick={() => onSelectContent(item)}
+          onClick={() => { onSelectContent(item); }}
           className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-start justify-between gap-2">

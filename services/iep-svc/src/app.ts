@@ -2,8 +2,10 @@
  * AIVO IEP Service - Fastify Application
  */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import Fastify from 'fastify';
 
@@ -14,9 +16,13 @@ export function createApp() {
   const app = Fastify({ logger: true });
 
   // Plugins
-  app.register(cors, { origin: true });
+  app.register(cors, {
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+    credentials: true,
+  });
   app.register(helmet);
   app.register(sensible);
+  app.register(rateLimit, FastifyRateLimitPresets.publicApi('iep-svc'));
 
   // Health check
   app.get('/health', async () => ({ status: 'healthy', service: 'iep-svc' }));

@@ -7,6 +7,8 @@
 
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
@@ -15,7 +17,7 @@ import { parentReportRoutes } from './routes/parentReport.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const isDevelopment = config.nodeEnv !== 'production';
-  
+
   const app = Fastify({
     logger: isDevelopment
       ? {
@@ -24,6 +26,9 @@ export async function buildApp(): Promise<FastifyInstance> {
         }
       : { level: 'info' },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('reports-svc'));
 
   // Health check (unauthenticated)
   app.get('/health', async () => ({ status: 'ok', service: 'reports-svc' }));

@@ -11,7 +11,6 @@
  * - Auto-save indicator
  */
 
-import * as React from 'react';
 import {
   Save,
   Send,
@@ -20,9 +19,10 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
+import * as React from 'react';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 // ════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -59,8 +59,8 @@ export function SavePublishControls({
   const handleSaveDraft = async () => {
     try {
       await onSaveDraft();
-    } catch (error) {
-      console.error('Failed to save draft:', error);
+    } catch {
+      // Save failed silently
     }
   };
 
@@ -176,7 +176,7 @@ export function SavePublishControls({
         </div>
       ) : (
         <Button
-          onClick={() => setShowPublishConfirm(true)}
+          onClick={() => { setShowPublishConfirm(true); }}
           disabled={!canPublish || isPublishing}
           className="w-full justify-start bg-primary hover:bg-primary/90"
         >

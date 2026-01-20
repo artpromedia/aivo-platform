@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 const PARENT_SERVICE_URL = process.env.PARENT_SERVICE_URL || 'http://parent-svc:4000';
 
@@ -17,7 +18,6 @@ export async function GET(
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      console.log('[DEV] Returning mock caregiver limit for student:', studentId);
       return NextResponse.json({
         studentId,
         maxCaregivers: 2,
@@ -46,7 +46,6 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Caregiver limit fetch error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

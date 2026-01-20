@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+
 import {
   getMockSubscription,
   getMockPlans,
@@ -19,7 +21,6 @@ export async function GET(request: NextRequest) {
 
     if (isDev) {
       // Return mock data in development
-      console.log('[DEV] Returning mock billing data');
       return NextResponse.json({
         subscription: getMockSubscription(),
         plans: getMockPlans(),
@@ -50,7 +51,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Billing fetch error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

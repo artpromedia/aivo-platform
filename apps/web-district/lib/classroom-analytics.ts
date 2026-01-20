@@ -16,10 +16,6 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NOD
 const MOCK_REQUESTED = process.env.NEXT_PUBLIC_USE_ANALYTICS_MOCK === 'true';
 const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
 
-// Warn if mock mode is requested in production (but don't enable it)
-if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
-  console.warn('[Classroom Analytics API] USE_MOCK ignored in production - using real API');
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -168,7 +164,7 @@ export function getIndependenceLabelColor(label: IndependenceLabel): string {
 // MOCK DATA
 // ══════════════════════════════════════════════════════════════════════════════
 
-export function mockClassroomHomeworkUsage(classroomId: string, days: number = 28): ClassroomHomeworkUsage {
+export function mockClassroomHomeworkUsage(classroomId: string, days = 28): ClassroomHomeworkUsage {
   const mockLearners: LearnerHomeworkUsage[] = [
     { learnerId: 'l1', learnerName: 'Alex Johnson', homeworkSessionsPerWeek: 3.5, avgStepsPerHomework: 4.2, independenceScore: 0.75, independenceLabel: 'mostly_independent', totalHomeworkSessions: 14 },
     { learnerId: 'l2', learnerName: 'Sam Williams', homeworkSessionsPerWeek: 2.0, avgStepsPerHomework: 3.8, independenceScore: 0.45, independenceLabel: 'building_independence', totalHomeworkSessions: 8 },
@@ -200,7 +196,7 @@ export function mockClassroomHomeworkUsage(classroomId: string, days: number = 2
   };
 }
 
-export function mockClassroomFocusPatterns(classroomId: string, days: number = 28): ClassroomFocusPatterns {
+export function mockClassroomFocusPatterns(classroomId: string, days = 28): ClassroomFocusPatterns {
   const mockLearners: LearnerFocusData[] = [
     { learnerId: 'l1', learnerName: 'Alex Johnson', totalSessions: 12, avgBreaksPerSession: 0.8, avgSessionDurationMinutes: 18, sessionsWithFocusLoss: 3 },
     { learnerId: 'l2', learnerName: 'Sam Williams', totalSessions: 8, avgBreaksPerSession: 1.5, avgSessionDurationMinutes: 22, sessionsWithFocusLoss: 5 },

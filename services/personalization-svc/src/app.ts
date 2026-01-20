@@ -6,8 +6,10 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
- 
+
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 
@@ -45,6 +47,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     origin: process.env.NODE_ENV === 'production' ? false : true,
     credentials: true,
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('personalization-svc'));
 
   // Health check
   app.get('/health', async () => ({

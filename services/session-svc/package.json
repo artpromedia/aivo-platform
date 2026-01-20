@@ -16,6 +16,8 @@
   "dependencies": {
     "@aivo/billing-access": "workspace:*",
     "@aivo/events": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@aivo/ts-rbac": "workspace:*",
     "@prisma/client": "^5.22.0",
     "dotenv": "^16.4.5",

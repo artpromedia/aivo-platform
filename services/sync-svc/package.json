@@ -15,6 +15,8 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@aivo/ts-rbac": "workspace:*",
     "@aivo/ts-resilience": "workspace:*",
     "@aivo/ts-observability": "workspace:*",

@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { useWebSocket } from './use-websocket';
 
 export interface UserPresence {
@@ -162,8 +163,8 @@ export function usePresence(options: UsePresenceOptions = {}): UsePresenceReturn
       });
 
       setPresence(new Map(response.presences.map((p) => [p.userId, p])));
-    } catch (error) {
-      console.error('[Presence] Failed to sync:', error);
+    } catch {
+      // Sync failed silently
     }
   }, [isConnected, roomId, emit]);
 

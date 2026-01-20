@@ -8,18 +8,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { api } from './api';
-import {
-  isDevMode,
-  getMockSubscription,
-  getMockPlans,
-  getMockPaymentMethods,
-  getMockInvoices,
-  getMockBillingDetails,
-  getMockPlanChangePreview,
-  getMockCoupon,
-  getMockAvailableChildren,
-} from './mock-data';
 import type {
   Subscription,
   Plan,
@@ -33,6 +23,17 @@ import type {
   SeatChangeRequest,
   BillingPeriod,
 } from './billing-types';
+import {
+  isDevMode,
+  getMockSubscription,
+  getMockPlans,
+  getMockPaymentMethods,
+  getMockInvoices,
+  getMockBillingDetails,
+  getMockPlanChangePreview,
+  getMockCoupon,
+  getMockAvailableChildren,
+} from './mock-data';
 
 // Query keys for cache management
 export const billingQueryKeys = {
@@ -58,7 +59,6 @@ export function useSubscription() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock subscription data');
           return getMockSubscription();
         }
         throw error;
@@ -81,7 +81,6 @@ export function usePlans() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock plans data');
           return getMockPlans();
         }
         throw error;
@@ -104,7 +103,6 @@ export function usePaymentMethods() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock payment methods data');
           return getMockPaymentMethods();
         }
         throw error;
@@ -128,7 +126,6 @@ export function useInvoices(limit?: number) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock invoices data');
           const invoices = getMockInvoices();
           return limit ? invoices.slice(0, limit) : invoices;
         }
@@ -152,7 +149,6 @@ export function useBillingDetails() {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock billing details data');
           return getMockBillingDetails();
         }
         throw error;
@@ -177,7 +173,6 @@ export function usePlanChangePreview(newPlanId: string | null) {
         return data;
       } catch (error) {
         if (isDevMode()) {
-          console.warn('[DEV] Using mock plan preview data');
           return getMockPlanChangePreview('plan-premium', newPlanId);
         }
         throw error;

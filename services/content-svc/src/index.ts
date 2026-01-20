@@ -19,7 +19,9 @@
  * - Pre-signed URL management for content delivery
  */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { fileRoutes } from './routes/files.js';
@@ -32,18 +34,24 @@ import { searchRoutes } from './routes/search.js';
 import { socialStoriesRoutes } from './routes/socialStories.js';
 import { versionRoutes } from './routes/versions.js';
 
-const PORT = Number.parseInt(process.env.PORT ?? '4020', 10);
+const PORT = Number.parseInt(process.env.PORT || '4020', 10);
 
 const fastify = Fastify({
   logger: {
-    level: process.env.LOG_LEVEL ?? 'info',
+    level: process.env.LOG_LEVEL || 'info',
   },
 });
 
 // Register CORS
+const corsOrigins = process.env.CORS_ORIGINS;
 await fastify.register(cors, {
-  origin: process.env.CORS_ORIGIN ?? true,
+  origin: corsOrigins ? corsOrigins.split(',') : (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+  credentials: true,
 });
+
+// Rate limiting for content endpoints
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+await fastify.register(rateLimit, FastifyRateLimitPresets.content('content-svc'));
 
 // Health check
 fastify.get('/health', async () => ({ status: 'ok', service: 'content-svc' }));

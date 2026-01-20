@@ -218,7 +218,7 @@ export function createRateLimiter(options: RateLimitOptions) {
     reply: FastifyReply
   ): Promise<void> {
     // Skip if skip function returns true
-    if (skip && skip(request)) {
+    if (skip?.(request)) {
       return;
     }
 
@@ -286,7 +286,7 @@ export function createExpressRateLimiter(options: RateLimitOptions) {
     next: (err?: Error) => void
   ): void {
     // Skip if skip function returns true
-    if (skip && skip(req)) {
+    if (skip?.(req)) {
       next();
       return;
     }
@@ -441,7 +441,7 @@ export const RateLimitPresets = {
  * Create a composite rate limiter that applies multiple limits
  */
 export function createCompositeRateLimiter(
-  limiters: Array<ReturnType<typeof createRateLimiter>>
+  limiters: ReturnType<typeof createRateLimiter>[]
 ) {
   return async function compositeMiddleware(
     request: FastifyRequest,
@@ -481,4 +481,293 @@ export const RateLimit = {
     stop: stopRateLimitCleanup,
     clearStore: clearRateLimitStore,
   },
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FASTIFY RATE LIMIT PLUGIN CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Service type presets for @fastify/rate-limit configuration.
+ * Use these with the getFastifyRateLimitConfig() helper.
+ */
+export type ServiceRateLimitType =
+  | 'public-api'
+  | 'internal-api'
+  | 'auth-service'
+  | 'ai-service'
+  | 'data-ingestion'
+  | 'messaging'
+  | 'analytics'
+  | 'search'
+  | 'content'
+  | 'billing';
+
+/**
+ * Configuration for @fastify/rate-limit plugin.
+ * Compatible with @fastify/rate-limit@^9.x
+ */
+export interface FastifyRateLimitConfig {
+  global: boolean;
+  max: number;
+  timeWindow: string;
+  keyGenerator: (request: unknown) => string;
+  errorResponseBuilder: (
+    request: unknown,
+    context: { after: string; max: number; ttl: number }
+  ) => Record<string, unknown>;
+  allowList: (request: unknown) => boolean;
+}
+
+/**
+ * Service type configurations for rate limiting
+ */
+const SERVICE_RATE_LIMIT_CONFIGS: Record<
+  ServiceRateLimitType,
+  { max: number; timeWindow: string; message: string }
+> = {
+  'public-api': {
+    max: 100,
+    timeWindow: '1 minute',
+    message: 'Rate limit exceeded. Please try again later.',
+  },
+  'internal-api': {
+    max: 500,
+    timeWindow: '1 minute',
+    message: 'Internal rate limit exceeded.',
+  },
+  'auth-service': {
+    max: 20,
+    timeWindow: '1 minute',
+    message: 'Too many authentication requests. Please try again later.',
+  },
+  'ai-service': {
+    max: 30,
+    timeWindow: '1 minute',
+    message: 'AI request rate limit exceeded. Please wait before making more AI requests.',
+  },
+  'data-ingestion': {
+    max: 500,
+    timeWindow: '1 minute',
+    message: 'Data ingestion rate limit exceeded.',
+  },
+  messaging: {
+    max: 60,
+    timeWindow: '1 minute',
+    message: 'Messaging rate limit exceeded. Please slow down.',
+  },
+  analytics: {
+    max: 200,
+    timeWindow: '1 minute',
+    message: 'Analytics rate limit exceeded.',
+  },
+  search: {
+    max: 60,
+    timeWindow: '1 minute',
+    message: 'Search rate limit exceeded. Please slow down.',
+  },
+  content: {
+    max: 100,
+    timeWindow: '1 minute',
+    message: 'Content rate limit exceeded.',
+  },
+  billing: {
+    max: 50,
+    timeWindow: '1 minute',
+    message: 'Billing rate limit exceeded. Please try again later.',
+  },
+};
+
+/**
+ * Standard key generator for Fastify rate limiting.
+ * Uses tenant + user for rate limiting, falls back to IP.
+ */
+export function createStandardKeyGenerator(prefix: string) {
+  return (request: unknown): string => {
+    const req = request as {
+      tenantId?: string;
+      userId?: string;
+      user?: { id?: string; tenantId?: string };
+      headers?: Record<string, string | string[] | undefined>;
+      ip?: string;
+    };
+
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? req.headers?.['x-tenant-id'];
+    const userId = req.userId ?? req.user?.id ?? req.headers?.['x-user-id'];
+
+    if (tenantId && userId) return `${prefix}:${tenantId}:${userId}`;
+    if (tenantId) return `${prefix}:${tenantId}`;
+    if (userId) return `${prefix}:user:${userId}`;
+
+    // Fall back to IP
+    const forwardedFor = req.headers?.['x-forwarded-for'];
+    const ip =
+      typeof forwardedFor === 'string'
+        ? forwardedFor.split(',')[0]?.trim()
+        : Array.isArray(forwardedFor)
+          ? forwardedFor[0]
+          : req.ip;
+
+    return `${prefix}:ip:${ip ?? 'unknown'}`;
+  };
+}
+
+/**
+ * Standard error response builder for Fastify rate limiting.
+ */
+export function createStandardErrorBuilder(customMessage?: string) {
+  return (
+    _request: unknown,
+    context: { after: string; max: number; ttl: number }
+  ): Record<string, unknown> => ({
+    error: 'Too Many Requests',
+    message: customMessage ?? 'Rate limit exceeded. Please try again later.',
+    retryAfter: context.after,
+    limit: context.max,
+  });
+}
+
+/**
+ * Standard allow list for Fastify rate limiting.
+ * Skips health checks and internal endpoints.
+ */
+export function createStandardAllowList(additionalPaths: string[] = []) {
+  const skipPaths = new Set([
+    '/health',
+    '/ready',
+    '/healthz',
+    '/readyz',
+    '/livez',
+    '/metrics',
+    ...additionalPaths,
+  ]);
+
+  return (request: unknown): boolean => {
+    const req = request as { url?: string; headers?: Record<string, string | string[] | undefined> };
+    const url = req.url?.split('?')[0] ?? '';
+
+    // Skip health/ready endpoints
+    if (skipPaths.has(url)) return true;
+
+    // Skip internal endpoints
+    if (url.startsWith('/internal/')) return true;
+
+    // Skip requests with internal header
+    if (req.headers?.['x-internal'] === 'true') return true;
+
+    return false;
+  };
+}
+
+export interface FastifyRateLimitOptions {
+  /** Service type preset */
+  serviceType: ServiceRateLimitType;
+  /** Service name for key prefix */
+  serviceName: string;
+  /** Override max requests (optional) */
+  max?: number;
+  /** Override time window (optional) */
+  timeWindow?: string;
+  /** Override error message (optional) */
+  message?: string;
+  /** Additional paths to skip rate limiting */
+  additionalSkipPaths?: string[];
+  /** Custom key generator (optional) */
+  keyGenerator?: (request: unknown) => string;
+  /** Whether to apply globally (default: true) */
+  global?: boolean;
+}
+
+/**
+ * Get a complete @fastify/rate-limit configuration for a service.
+ *
+ * @example
+ * ```typescript
+ * import rateLimit from '@fastify/rate-limit';
+ * import { getFastifyRateLimitConfig } from '@aivo/ts-api-utils';
+ *
+ * // Simple usage with preset
+ * await app.register(rateLimit, getFastifyRateLimitConfig({
+ *   serviceType: 'public-api',
+ *   serviceName: 'my-service',
+ * }));
+ *
+ * // With overrides
+ * await app.register(rateLimit, getFastifyRateLimitConfig({
+ *   serviceType: 'ai-service',
+ *   serviceName: 'ai-orchestrator',
+ *   max: 20,
+ *   message: 'Custom message',
+ * }));
+ * ```
+ */
+export function getFastifyRateLimitConfig(
+  options: FastifyRateLimitOptions
+): FastifyRateLimitConfig {
+  const {
+    serviceType,
+    serviceName,
+    max,
+    timeWindow,
+    message,
+    additionalSkipPaths = [],
+    keyGenerator,
+    global = true,
+  } = options;
+
+  const preset = SERVICE_RATE_LIMIT_CONFIGS[serviceType];
+
+  return {
+    global,
+    max: max ?? preset.max,
+    timeWindow: timeWindow ?? preset.timeWindow,
+    keyGenerator: keyGenerator ?? createStandardKeyGenerator(serviceName),
+    errorResponseBuilder: createStandardErrorBuilder(message ?? preset.message),
+    allowList: createStandardAllowList(additionalSkipPaths),
+  };
+}
+
+/**
+ * Quick helper to get rate limit config for common service types.
+ */
+export const FastifyRateLimitPresets = {
+  /** Public-facing API service: 100 req/min */
+  publicApi: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'public-api', serviceName, ...overrides }),
+
+  /** Internal API service: 500 req/min */
+  internalApi: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'internal-api', serviceName, ...overrides }),
+
+  /** Auth service: 20 req/min (strict) */
+  authService: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'auth-service', serviceName, ...overrides }),
+
+  /** AI/ML service: 30 req/min (expensive operations) */
+  aiService: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'ai-service', serviceName, ...overrides }),
+
+  /** High-throughput data ingestion: 500 req/min */
+  dataIngestion: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'data-ingestion', serviceName, ...overrides }),
+
+  /** Messaging service: 60 req/min */
+  messaging: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'messaging', serviceName, ...overrides }),
+
+  /** Analytics service: 200 req/min */
+  analytics: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'analytics', serviceName, ...overrides }),
+
+  /** Search service: 60 req/min */
+  search: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'search', serviceName, ...overrides }),
+
+  /** Content service: 100 req/min */
+  content: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'content', serviceName, ...overrides }),
+
+  /** Billing service: 50 req/min */
+  billing: (serviceName: string, overrides?: Partial<FastifyRateLimitOptions>) =>
+    getFastifyRateLimitConfig({ serviceType: 'billing', serviceName, ...overrides }),
 };

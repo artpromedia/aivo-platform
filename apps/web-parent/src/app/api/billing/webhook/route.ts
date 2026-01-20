@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * POST /api/billing/webhook
@@ -21,8 +22,7 @@ export async function POST(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-      // In development, just log the webhook
-      console.log('[DEV] Received Stripe webhook');
+      // In development, skip webhook processing
       return NextResponse.json({ received: true });
     }
 
@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Webhook processing error:', errorData);
       return NextResponse.json(
         { error: { code: 'WEBHOOK_FAILED', message: 'Failed to process webhook' } },
         { status: response.status }
@@ -48,7 +46,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

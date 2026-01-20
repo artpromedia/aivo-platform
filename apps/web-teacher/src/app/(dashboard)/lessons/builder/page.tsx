@@ -13,12 +13,11 @@
  * - Preview and publish controls
  */
 
-import * as React from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import * as React from 'react';
 
-import { Button } from '@/components/ui/button';
 import {
   LessonEditor,
   ActivityLibrary,
@@ -31,6 +30,7 @@ import {
   type ActivityTemplate,
   type Resource,
 } from '@/components/lesson-builder';
+import { Button } from '@/components/ui/button';
 
 // ════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -87,8 +87,8 @@ export default function LessonBuilderPage() {
       // Mock loading for now
       await new Promise((resolve) => setTimeout(resolve, 500));
       // setLesson(response);
-    } catch (error) {
-      console.error('Failed to load lesson:', error);
+    } catch {
+      // Load failed silently
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +170,6 @@ export default function LessonBuilderPage() {
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Failed to save draft:', error);
       throw error;
     } finally {
       setIsSaving(false);
@@ -196,7 +195,6 @@ export default function LessonBuilderPage() {
       // Navigate to lessons list after publishing
       router.push('/lessons');
     } catch (error) {
-      console.error('Failed to publish:', error);
       throw error;
     } finally {
       setIsPublishing(false);
@@ -272,7 +270,7 @@ export default function LessonBuilderPage() {
           <div className="space-y-6 p-6">
             <StandardsSelector
               selected={lesson.standards}
-              onChange={(standards) => setLesson((prev) => ({ ...prev, standards }))}
+              onChange={(standards) => { setLesson((prev) => ({ ...prev, standards })); }}
               subjectFilter={lesson.subject}
               gradeLevelFilter={lesson.gradeLevel}
             />
@@ -297,7 +295,7 @@ export default function LessonBuilderPage() {
               <SavePublishControls
                 onSaveDraft={saveDraft}
                 onPublish={publish}
-                onPreview={() => setShowPreview(true)}
+                onPreview={() => { setShowPreview(true); }}
                 isSaving={isSaving}
                 isPublishing={isPublishing}
                 lastSaved={lastSaved}
@@ -311,7 +309,7 @@ export default function LessonBuilderPage() {
 
       {/* Preview Modal */}
       {showPreview && (
-        <PreviewPane lesson={lesson} onClose={() => setShowPreview(false)} />
+        <PreviewPane lesson={lesson} onClose={() => { setShowPreview(false); }} />
       )}
     </div>
   );

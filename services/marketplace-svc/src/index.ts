@@ -8,8 +8,10 @@
  * - Tenant/school/classroom installations
  */
 
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { config } from './config.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { adminRoutes } from './routes/admin.routes.js';
@@ -31,6 +33,9 @@ async function main() {
           level: process.env.LOG_LEVEL ?? 'info',
         },
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('marketplace-svc'));
 
   // Health check endpoints
   app.get('/health', async () => ({ status: 'ok', service: 'marketplace-svc' }));

@@ -1,3 +1,5 @@
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { prismaPlugin } from './plugins/prisma.js';
@@ -9,6 +11,9 @@ export async function buildApp() {
   const app = Fastify({
     logger: true,
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('device-mgmt-svc'));
 
   // Register plugins
   await app.register(prismaPlugin);

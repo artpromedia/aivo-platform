@@ -5,8 +5,10 @@
  * with COPPA/FERPA-compliant sandboxing and session management.
  */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
@@ -66,6 +68,9 @@ await server.register(helmet, {
   crossOriginEmbedderPolicy: false, // Allow embedding
   crossOriginOpenerPolicy: false,
 });
+
+// Rate limiting
+await server.register(rateLimit, FastifyRateLimitPresets.internalApi('embedded-tools-svc'));
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Routes

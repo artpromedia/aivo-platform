@@ -1,4 +1,6 @@
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
@@ -17,9 +19,12 @@ export async function buildApp() {
 
   // CORS
   await app.register(cors, {
-    origin: true,
+    origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.content('game-library-svc'));
 
   // Global error handler
   app.setErrorHandler(async (error, request, reply) => {

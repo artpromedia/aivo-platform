@@ -17,10 +17,6 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NOD
 const MOCK_REQUESTED = process.env.NEXT_PUBLIC_USE_ANALYTICS_MOCK === 'true';
 const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
 
-// Warn if mock mode is requested in production (but don't enable it)
-if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
-  console.warn('[Tenant Analytics API] USE_MOCK ignored in production - using real API');
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

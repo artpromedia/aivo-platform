@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+
 import type {
   Assessment,
   Question,
@@ -163,8 +164,7 @@ export function useAssessmentBuilder({ assessmentId, tenantId }: UseAssessmentBu
         isLoading: false,
         isDirty: false,
       }));
-    } catch (error) {
-      console.error('Failed to load assessment:', error);
+    } catch {
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -206,8 +206,7 @@ export function useAssessmentBuilder({ assessmentId, tenantId }: UseAssessmentBu
         isSaving: false,
         isDirty: false,
       }));
-    } catch (error) {
-      console.error('Failed to save assessment:', error);
+    } catch {
       setState(prev => ({
         ...prev,
         isSaving: false,
@@ -425,12 +424,12 @@ export function useAssessmentBuilder({ assessmentId, tenantId }: UseAssessmentBu
 
     // Assessment-level validation
     if (!state.assessment.name?.trim()) {
-      errors['assessment'] = ['Assessment name is required'];
+      errors.assessment = ['Assessment name is required'];
       allErrors.push('Assessment name is required');
     }
 
     if (state.assessment.questions.length === 0) {
-      errors['assessment'] = [...(errors['assessment'] ?? []), 'At least one question is required'];
+      errors.assessment = [...(errors.assessment ?? []), 'At least one question is required'];
       allErrors.push('At least one question is required');
     }
 

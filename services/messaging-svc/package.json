@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^6.8.2",
     "fastify": "^4.28.1",
     "pino": "^9.6.0",

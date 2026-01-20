@@ -14,7 +14,9 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@aivo/ts-api-utils": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
+    "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^5.22.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",

@@ -2,6 +2,8 @@
  * Fastify app builder for engagement-svc
  */
 
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
 
@@ -26,6 +28,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: loggerOptions,
   });
+
+  // Rate limiting
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('engagement-svc'));
 
   // Health check (unauthenticated)
   app.get('/health', async () => ({ status: 'ok', service: 'engagement-svc', version: '0.1.0' }));

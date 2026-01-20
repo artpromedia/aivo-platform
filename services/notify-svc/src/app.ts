@@ -5,6 +5,8 @@
 
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import {
   initializePushService,
@@ -115,6 +117,12 @@ export async function buildApp(): Promise<FastifyInstance> {
       ...(config.nodeEnv !== 'production' && { stack: error.stack }),
     });
   });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // RATE LIMITING
+  // ════════════════════════════════════════════════════════════════════════════
+
+  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('notify-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // REGISTER ROUTES

@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { useWebSocket } from './use-websocket';
 
 export interface LiveSessionUpdate {
@@ -101,8 +102,8 @@ export function useLiveDashboard(options: UseLiveDashboardOptions): UseLiveDashb
         });
 
         setIsSubscribed(true);
-      } catch (error) {
-        console.error('[LiveDashboard] Failed to subscribe:', error);
+      } catch {
+        // Subscription failed silently
       }
     };
 
@@ -143,9 +144,9 @@ export function useLiveDashboard(options: UseLiveDashboardOptions): UseLiveDashb
       });
     };
 
-    const unsubActivity = on('session:activity', (data) => handleSessionUpdate(data));
-    const unsubProgress = on('session:progress', (data) => handleSessionUpdate(data));
-    const unsubComplete = on('session:complete', (data) => handleSessionUpdate(data, true));
+    const unsubActivity = on('session:activity', (data) => { handleSessionUpdate(data); });
+    const unsubProgress = on('session:progress', (data) => { handleSessionUpdate(data); });
+    const unsubComplete = on('session:complete', (data) => { handleSessionUpdate(data, true); });
 
     return () => {
       unsubActivity();

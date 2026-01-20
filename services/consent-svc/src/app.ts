@@ -1,4 +1,6 @@
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { authMiddleware } from '@aivo/ts-rbac';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import type { Pool } from 'pg';
 
@@ -10,6 +12,9 @@ import { registerPrivacyRoutes } from './routes/privacy.js';
 export function createApp(options: { pool?: Pool; logger?: boolean } = {}) {
   const app = Fastify({ logger: options.logger ?? true });
   const pool = options.pool ?? createPool();
+
+  // Rate limiting
+  void app.register(rateLimit, FastifyRateLimitPresets.publicApi('consent-svc'));
 
   const auth = authMiddleware({ publicKey: config.jwtPublicKey });
   app.addHook('preHandler', async (request, reply) => {

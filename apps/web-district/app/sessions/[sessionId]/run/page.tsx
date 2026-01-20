@@ -1,17 +1,10 @@
 'use client';
 
+import { Card, Badge, Button, Heading } from '@aivo/ui-web';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Badge, Button, Heading } from '@aivo/ui-web';
 
-import {
-  fetchSessionPlanDetail,
-  createProgressNote,
-  type SessionPlanDetail,
-  type SessionPlanItem,
-  type Goal,
-  type ProgressRating,
-} from '@/lib/teacher-planning-api';
+import { cn } from '@/lib/cn';
 import {
   fetchSession,
   addSessionEvent,
@@ -20,7 +13,14 @@ import {
   type ActivityProgress,
   type SessionMetadata,
 } from '@/lib/session-api';
-import { cn } from '@/lib/cn';
+import {
+  fetchSessionPlanDetail,
+  createProgressNote,
+  type SessionPlanDetail,
+  type SessionPlanItem,
+  type Goal,
+  type ProgressRating,
+} from '@/lib/teacher-planning-api';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -60,7 +60,7 @@ export default function RunSessionPage() {
         setSession(sessionData);
 
         // Extract session plan ID from metadata
-        const metadata = sessionData.metadataJson as SessionMetadata | null;
+        const metadata = sessionData.metadataJson;
         const planId = metadata?.sessionPlanId;
 
         if (planId) {
@@ -107,7 +107,7 @@ export default function RunSessionPage() {
       setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); };
   }, [session]);
 
   const updateActivityState = useCallback(async (
@@ -148,8 +148,8 @@ export default function RunSessionPage() {
           metadataJson: { itemId },
         });
       }
-    } catch (e) {
-      console.error('Failed to send activity event:', e);
+    } catch {
+      // Activity event send failed, continue without blocking
     }
   }, [sessionId]);
 
@@ -229,7 +229,7 @@ export default function RunSessionPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-error">{error || 'Session not found'}</p>
-        <Button onClick={() => router.back()}>Go Back</Button>
+        <Button onClick={() => { router.back(); }}>Go Back</Button>
       </div>
     );
   }
@@ -274,7 +274,7 @@ export default function RunSessionPage() {
             {/* Actions */}
             <Button
               variant="secondary"
-              onClick={() => setShowNoteModal(true)}
+              onClick={() => { setShowNoteModal(true); }}
             >
               <NoteIcon className="w-4 h-4 mr-1" />
               Add Note
@@ -308,7 +308,7 @@ export default function RunSessionPage() {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setCurrentItemIndex(index)}
+                      onClick={() => { setCurrentItemIndex(index); }}
                       className={cn(
                         'w-full p-4 text-left transition-colors',
                         isActive ? 'bg-primary/5' : 'hover:bg-surface',
@@ -340,12 +340,12 @@ export default function RunSessionPage() {
               index={currentItemIndex}
               total={items.length}
               state={activityStates.get(items[currentItemIndex]?.id ?? '')}
-              goal={items[currentItemIndex]?.goalId ? (plan.goals[items[currentItemIndex].goalId!] ?? null) : null}
-              onStart={() => handleStartActivity(currentItemIndex)}
-              onComplete={() => handleCompleteActivity(currentItemIndex)}
-              onSkip={() => handleSkipActivity(currentItemIndex)}
-              onPrevious={() => setCurrentItemIndex(Math.max(0, currentItemIndex - 1))}
-              onNext={() => setCurrentItemIndex(Math.min(items.length - 1, currentItemIndex + 1))}
+              goal={items[currentItemIndex]?.goalId ? (plan.goals[items[currentItemIndex].goalId] ?? null) : null}
+              onStart={() => { handleStartActivity(currentItemIndex); }}
+              onComplete={() => { handleCompleteActivity(currentItemIndex); }}
+              onSkip={() => { handleSkipActivity(currentItemIndex); }}
+              onPrevious={() => { setCurrentItemIndex(Math.max(0, currentItemIndex - 1)); }}
+              onNext={() => { setCurrentItemIndex(Math.min(items.length - 1, currentItemIndex + 1)); }}
             />
           </section>
         </div>
@@ -359,7 +359,7 @@ export default function RunSessionPage() {
           sessionPlanId={plan.id}
           items={items}
           goals={plan.goals}
-          onClose={() => setShowNoteModal(false)}
+          onClose={() => { setShowNoteModal(false); }}
         />
       )}
     </div>
@@ -599,8 +599,8 @@ function QuickNoteModal({
       });
       
       onClose();
-    } catch (e) {
-      console.error('Failed to save note:', e);
+    } catch {
+      // Note save failed, modal will close without feedback
     } finally {
       setIsSubmitting(false);
     }
@@ -623,7 +623,7 @@ function QuickNoteModal({
               <label className="block text-sm font-medium mb-1">Note</label>
               <textarea
                 value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
+                onChange={(e) => { setNoteText(e.target.value); }}
                 placeholder="What did you observe?"
                 rows={4}
                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -635,7 +635,7 @@ function QuickNoteModal({
                 <label className="block text-sm font-medium mb-1">Related Goal (optional)</label>
                 <select
                   value={selectedGoalId}
-                  onChange={(e) => setSelectedGoalId(e.target.value)}
+                  onChange={(e) => { setSelectedGoalId(e.target.value); }}
                   className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">No specific goal</option>
@@ -655,7 +655,7 @@ function QuickNoteModal({
                 {([0, 1, 2, 3, 4] as ProgressRating[]).map((r) => (
                   <button
                     key={r}
-                    onClick={() => setRating(rating === r ? null : r)}
+                    onClick={() => { setRating(rating === r ? null : r); }}
                     className={cn(
                       'w-10 h-10 rounded-full border-2 transition-colors',
                       rating === r
