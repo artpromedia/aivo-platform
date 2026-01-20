@@ -87,8 +87,22 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
         await createCurriculum(tenantId, userName, accessToken, formData);
       } else {
         // Handle file upload
-        // In production, this would upload the file and parse it
-        console.log('Uploading file:', selectedFile?.name);
+        if (!selectedFile) return;
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', selectedFile);
+        uploadFormData.append('tenantId', tenantId);
+        uploadFormData.append('userName', userName);
+
+        const response = await fetch('/api/curriculum/upload', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+          body: uploadFormData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Upload failed');
+        }
       }
 
       onClose();

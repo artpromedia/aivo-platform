@@ -248,12 +248,24 @@ export default function IEPManagerPage() {
     s.complianceAlerts.filter(a => a.severity === 'urgent').map(a => ({ ...a, studentName: s.name, studentId: s.id }))
   );
 
-  const handleRecordProgress = (goal: IEPGoal) => {
-    // In production, this would call the API
-    console.log('Recording progress:', { goal: goal.id, value: progressValue, notes: progressNote });
-    setShowProgressModal(null);
-    setProgressNote('');
-    setProgressValue('');
+  const handleRecordProgress = async (goal: IEPGoal) => {
+    try {
+      await fetch(`/api/iep/goals/${goal.id}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          value: parseFloat(progressValue),
+          notes: progressNote,
+          recordedAt: new Date().toISOString(),
+        })
+      });
+      setShowProgressModal(null);
+      setProgressNote('');
+      setProgressValue('');
+    } catch {
+      // Error handling - could add toast notification
+      setShowProgressModal(null);
+    }
   };
 
   const renderStudentList = () => (

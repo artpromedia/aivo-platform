@@ -58,6 +58,7 @@ import {
   useMilestones,
   useWeeklyReport,
   useChildrenEnhanced,
+  useDismissInsight,
 } from '@/lib/hooks';
 import { isDevMode } from '@/lib/mock-data';
 
@@ -65,6 +66,7 @@ export default function DashboardPage() {
   const { t } = useTranslation('parent');
   const router = useRouter();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date | undefined>(undefined);
 
   // Data hooks
   const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
@@ -78,13 +80,14 @@ export default function DashboardPage() {
   const { data: aiInsights, isLoading: insightsLoading } = useAIInsights(selectedChildId);
   const { data: activityTimeline } = useActivityTimeline(selectedChildId, 15);
   const { data: milestones } = useMilestones(selectedChildId);
-  const { data: weeklyReportData } = useWeeklyReport(selectedChildId);
+  const { data: weeklyReportData } = useWeeklyReport(selectedChildId, selectedWeekStart);
   const { data: enhancedChildren } = useChildrenEnhanced();
 
   // Mutations
   const downloadReport = useDownloadReport();
   const respondToRecommendation = useRespondToRecommendation();
   const updateDailyGoal = useUpdateDailyGoal();
+  const dismissInsight = useDismissInsight();
 
   // Auto-select first child when profile loads
   useEffect(() => {
@@ -419,12 +422,10 @@ export default function DashboardPage() {
               childName={selectedChild?.name || selectedEnhancedChild?.name}
               data={weeklyReportData}
               onWeekChange={(weekStart) => {
-                // The hook will refetch with new week
-                console.log('Week changed to:', weekStart);
+                setSelectedWeekStart(new Date(weekStart));
               }}
               onDownload={handleDownloadReport}
               onShare={() => {
-                // Could open share dialog
                 router.push(`/reports/share?childId=${selectedChildId}`);
               }}
             />
@@ -444,8 +445,7 @@ export default function DashboardPage() {
               }
             }}
             onDismiss={(insightId) => {
-              console.log('Dismiss insight:', insightId);
-              // Could call useDismissInsight mutation here
+              dismissInsight.mutate({ insightId, studentId: selectedChildId || '' });
             }}
             onViewAllAnalysis={() => router.push(`/insights?childId=${selectedChildId}`)}
           />

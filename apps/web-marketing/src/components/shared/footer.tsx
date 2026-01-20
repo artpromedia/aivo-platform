@@ -476,8 +476,8 @@ export function Footer() {
               </Link>
               <button
                 onClick={() => {
-                  // Open cookie preferences modal
-                  console.log('Open cookie preferences');
+                  // Dispatch custom event to open cookie consent modal
+                  window.dispatchEvent(new CustomEvent('openCookiePreferences'));
                 }}
                 className="hover:text-theme-primary-600 transition-colors"
               >

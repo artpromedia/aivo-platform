@@ -13,6 +13,7 @@
  */
 
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { resolveTenant } from '../../lib/tenant';
 import { CompliancePanel } from './components/compliance-panel';
@@ -154,7 +155,7 @@ export default async function DashboardPage() {
         {/* School Performance Grid - Visual school cards */}
         <SchoolPerformanceGrid
           onSchoolClick={(schoolId) => {
-            console.log('Navigate to school:', schoolId);
+            window.location.href = `/schools/${schoolId}`;
           }}
         />
       </div>

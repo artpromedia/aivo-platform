@@ -9,17 +9,88 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Download, Calendar, RefreshCw } from 'lucide-react';
 import { CrossSchoolAnalytics } from '../components/cross-school-analytics';
 import { ResourceAllocation } from '../components/resource-allocation';
 import { ComplianceReports } from '../components/compliance-reports';
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState<'performance' | 'resources' | 'compliance'>('performance');
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isExporting, setIsExporting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [analyticsKey, setAnalyticsKey] = useState(0);
+
+  const handleRefreshAnalytics = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await fetch('/api/district/analytics/refresh', { method: 'POST' });
+      setAnalyticsKey(prev => prev + 1);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  const handleExportAnalytics = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch(`/api/district/analytics/export?range=${dateRange}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analytics-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } finally {
+      setIsExporting(false);
+    }
+  }, [dateRange]);
+
+  const handleAllocateResource = useCallback(async (schoolId: string, type: string, amount: number) => {
+    await fetch('/api/district/resources/allocate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schoolId, type, amount })
+    });
+  }, []);
+
+  const handleApproveRequest = useCallback(async (requestId: string) => {
+    await fetch(`/api/district/resources/requests/${requestId}/approve`, { method: 'POST' });
+  }, []);
+
+  const handleDenyRequest = useCallback(async (requestId: string) => {
+    await fetch(`/api/district/resources/requests/${requestId}/deny`, { method: 'POST' });
+  }, []);
+
+  const handleGenerateReport = useCallback(async (type: string) => {
+    const response = await fetch(`/api/district/reports/generate?type=${type}`, { method: 'POST' });
+    const { reportId } = await response.json();
+    router.push(`/reports/${reportId}`);
+  }, [router]);
+
+  const handleViewReport = useCallback((reportId: string) => {
+    router.push(`/reports/${reportId}`);
+  }, [router]);
+
+  const handleDownloadReport = useCallback(async (reportId: string) => {
+    const response = await fetch(`/api/district/reports/${reportId}/download`);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report-${reportId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+  }, []);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -99,25 +170,26 @@ export default function AnalyticsPage() {
       {/* Content */}
       {activeSection === 'performance' && (
         <CrossSchoolAnalytics
+          key={analyticsKey}
           data={null}
-          onRefresh={() => console.log('Refreshing analytics...')}
-          onExport={() => console.log('Exporting analytics...')}
+          onRefresh={handleRefreshAnalytics}
+          onExport={handleExportAnalytics}
         />
       )}
 
       {activeSection === 'resources' && (
         <ResourceAllocation
-          onAllocate={(schoolId, type, amount) => console.log('Allocating:', { schoolId, type, amount })}
-          onApproveRequest={(id) => console.log('Approving request:', id)}
-          onDenyRequest={(id) => console.log('Denying request:', id)}
+          onAllocate={handleAllocateResource}
+          onApproveRequest={handleApproveRequest}
+          onDenyRequest={handleDenyRequest}
         />
       )}
 
       {activeSection === 'compliance' && (
         <ComplianceReports
-          onGenerateReport={(type) => console.log('Generating report:', type)}
-          onViewReport={(id) => console.log('Viewing report:', id)}
-          onDownloadReport={(id) => console.log('Downloading report:', id)}
+          onGenerateReport={handleGenerateReport}
+          onViewReport={handleViewReport}
+          onDownloadReport={handleDownloadReport}
         />
       )}
     </section>

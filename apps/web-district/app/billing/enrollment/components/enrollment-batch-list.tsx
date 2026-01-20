@@ -103,9 +103,17 @@ export function EnrollmentBatchList() {
     );
   };
 
-  const downloadReport = (batchId: string) => {
-    // Download CSV report
-    console.log('Downloading report for batch:', batchId);
+  const downloadReport = async (batchId: string) => {
+    const response = await fetch(`/api/billing/enrollment/batches/${batchId}/report`);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `enrollment-batch-${batchId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
   };
 
   return (

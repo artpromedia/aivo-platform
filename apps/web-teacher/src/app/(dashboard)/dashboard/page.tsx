@@ -75,9 +75,16 @@ export default function DashboardPage() {
     setSelectedClass(cls);
   }, []);
 
-  const handleStudentAction = useCallback((studentId: string, action: string) => {
-    console.log('Student action:', studentId, action);
-    // Handle various student actions
+  const handleStudentAction = useCallback(async (studentId: string, action: string) => {
+    // Handle various student actions via API
+    if (action === 'view_details') {
+      window.location.href = `/students/${studentId}`;
+      return;
+    }
+    if (action === 'send_message') {
+      window.location.href = `/messages/new?studentId=${studentId}`;
+      return;
+    }
     if (action === 'sel_observation') {
       const student = selectedClass?.students.find((s) => s.learnerId === studentId);
       if (student) {
@@ -143,10 +150,26 @@ export default function DashboardPage() {
           {dashboardData.alerts.length > 0 && (
             <InterventionAlerts
               alerts={dashboardData.alerts}
-              onDismiss={(alertId) => console.log('Dismissed:', alertId)}
-              onActionTaken={(alertId, action) =>
-                console.log('Action taken:', alertId, action)
-              }
+              onDismiss={async (alertId) => {
+                await fetch(`/api/alerts/${alertId}/dismiss`, { method: 'POST' });
+                setDashboardData(prev => prev ? {
+                  ...prev,
+                  alerts: prev.alerts.filter(a => a.id !== alertId)
+                } : null);
+              }}
+              onActionTaken={async (alertId, action) => {
+                await fetch(`/api/alerts/${alertId}/action`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action })
+                });
+                setDashboardData(prev => prev ? {
+                  ...prev,
+                  alerts: prev.alerts.map(a =>
+                    a.id === alertId ? { ...a, actionTaken: action } : a
+                  )
+                } : null);
+              }}
             />
           )}
 
@@ -227,10 +250,10 @@ export default function DashboardPage() {
               <div className="grid gap-6 lg:grid-cols-2">
                 <RealTimeMonitor
                   onStudentClick={(student) => {
-                    console.log('View student:', student);
+                    window.location.href = `/students/${student.id}`;
                   }}
                   onSendMessage={(studentId) => {
-                    console.log('Send message to:', studentId);
+                    window.location.href = `/messages/new?studentId=${studentId}`;
                   }}
                 />
 
@@ -328,7 +351,15 @@ export default function DashboardPage() {
               studentName={selectedStudentForSEL?.name || 'Select Student'}
               isOpen={showSELRecorder}
               onSubmit={async (observation) => {
-                console.log('SEL Observation submitted:', observation);
+                await fetch('/api/sel/observations', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...observation,
+                    studentId: selectedStudentForSEL?.id,
+                    classId: selectedClass?.id,
+                  })
+                });
                 setShowSELRecorder(false);
                 setSelectedStudentForSEL(null);
               }}
