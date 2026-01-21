@@ -17,7 +17,15 @@ import { enterpriseProvisioningService } from '../services/enterprise-provisioni
 // Customer Schemas
 const CreateCustomerSchema = z.object({
   name: z.string().min(1).max(255),
-  type: z.enum(['DISTRICT', 'CHARTER_NETWORK', 'PRIVATE_SCHOOL', 'NONPROFIT', 'GOVERNMENT', 'RESELLER', 'OTHER']),
+  type: z.enum([
+    'DISTRICT',
+    'CHARTER_NETWORK',
+    'PRIVATE_SCHOOL',
+    'NONPROFIT',
+    'GOVERNMENT',
+    'RESELLER',
+    'OTHER',
+  ]),
   primaryContactName: z.string().min(1).max(255),
   primaryContactEmail: z.string().email(),
   primaryContactPhone: z.string().optional(),
@@ -53,8 +61,14 @@ const CreateDealSchema = z.object({
   seats: z.number().int().min(1),
   pricePerSeatCents: z.number().int().min(0),
   termMonths: z.number().int().min(1).max(60).default(12),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  expectedCloseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  expectedCloseDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   probability: z.number().int().min(0).max(100).optional(),
   discountPercent: z.number().min(0).max(100).optional(),
   discountReason: z.string().optional(),
@@ -64,7 +78,19 @@ const CreateDealSchema = z.object({
 });
 
 const UpdateDealSchema = CreateDealSchema.partial().extend({
-  status: z.enum(['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'CONTRACT_SENT', 'WON_PENDING', 'WON_ACTIVE', 'LOST', 'CHURNED']).optional(),
+  status: z
+    .enum([
+      'LEAD',
+      'QUALIFIED',
+      'PROPOSAL',
+      'NEGOTIATION',
+      'CONTRACT_SENT',
+      'WON_PENDING',
+      'WON_ACTIVE',
+      'LOST',
+      'CHURNED',
+    ])
+    .optional(),
   lostReason: z.string().optional(),
 });
 
@@ -94,9 +120,22 @@ const ProvisionBatchSchema = z.object({
 
 // Query Schemas
 const ListCustomersQuerySchema = z.object({
-  type: z.enum(['DISTRICT', 'CHARTER_NETWORK', 'PRIVATE_SCHOOL', 'NONPROFIT', 'GOVERNMENT', 'RESELLER', 'OTHER']).optional(),
+  type: z
+    .enum([
+      'DISTRICT',
+      'CHARTER_NETWORK',
+      'PRIVATE_SCHOOL',
+      'NONPROFIT',
+      'GOVERNMENT',
+      'RESELLER',
+      'OTHER',
+    ])
+    .optional(),
   salesRepId: z.string().uuid().optional(),
-  isActive: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   search: z.string().optional(),
   limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).default('50'),
   offset: z.string().transform(Number).pipe(z.number().int().min(0)).default('0'),
@@ -105,7 +144,19 @@ const ListCustomersQuerySchema = z.object({
 const ListDealsQuerySchema = z.object({
   customerId: z.string().uuid().optional(),
   ownerId: z.string().uuid().optional(),
-  status: z.enum(['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'CONTRACT_SENT', 'WON_PENDING', 'WON_ACTIVE', 'LOST', 'CHURNED']).optional(),
+  status: z
+    .enum([
+      'LEAD',
+      'QUALIFIED',
+      'PROPOSAL',
+      'NEGOTIATION',
+      'CONTRACT_SENT',
+      'WON_PENDING',
+      'WON_ACTIVE',
+      'LOST',
+      'CHURNED',
+    ])
+    .optional(),
   type: z.enum(['NEW_BUSINESS', 'EXPANSION', 'RENEWAL', 'UPSELL']).optional(),
   minValue: z.string().transform(Number).pipe(z.number().int().min(0)).optional(),
   maxValue: z.string().transform(Number).pipe(z.number().int().min(0)).optional(),
@@ -149,7 +200,7 @@ function getContext(request: FastifyRequest): RequestContext {
 
 // Check if user has sales/admin role (placeholder - integrate with auth)
 function requireSalesRole(_ctx: RequestContext): void {
-  // TODO: Integrate with actual role checking from auth service
+  // [PLACEHOLDER] Integrate with actual role checking from auth service
   // For now, we trust the x-user-id header for sales operations
 }
 
@@ -283,31 +334,36 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
    * Add a contact to a customer
    * Requires: Sales role
    */
-  app.post('/enterprise/customers/:id/contacts', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.post(
+    '/enterprise/customers/:id/contacts',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string };
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid customer ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid customer ID format',
+        });
+      }
+
+      const body: Omit<AddContactInput, 'customerId'> = AddContactSchema.omit({
+        customerId: true,
+      }).parse(request.body);
+
+      const contact = await enterpriseProvisioningService.addContact({
+        customerId: id,
+        ...body,
+      } as AddContactInput);
+
+      return reply.status(201).send({
+        success: true,
+        contact,
       });
     }
-
-    const body: Omit<AddContactInput, 'customerId'> = AddContactSchema.omit({ customerId: true }).parse(request.body);
-
-    const contact = await enterpriseProvisioningService.addContact({
-      customerId: id,
-      ...body,
-    } as AddContactInput);
-
-    return reply.status(201).send({
-      success: true,
-      contact,
-    });
-  });
+  );
 
   // ───────────────────────────────────────────────────────────────────────────
   // DEAL MANAGEMENT
@@ -436,57 +492,68 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
    * Add an activity to a deal
    * Requires: Sales role
    */
-  app.post('/enterprise/deals/:id/activities', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.post(
+    '/enterprise/deals/:id/activities',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string };
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid deal ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid deal ID format',
+        });
+      }
+
+      const body: Omit<AddDealActivityInput, 'dealId'> = AddDealActivitySchema.omit({
+        dealId: true,
+      }).parse(request.body);
+
+      const activity = await enterpriseProvisioningService.addDealActivity(
+        {
+          dealId: id,
+          ...body,
+        } as AddDealActivityInput,
+        ctx.userId
+      );
+
+      return reply.status(201).send({
+        success: true,
+        activity,
       });
     }
-
-    const body: Omit<AddDealActivityInput, 'dealId'> = AddDealActivitySchema.omit({ dealId: true }).parse(request.body);
-
-    const activity = await enterpriseProvisioningService.addDealActivity({
-      dealId: id,
-      ...body,
-    } as AddDealActivityInput, ctx.userId);
-
-    return reply.status(201).send({
-      success: true,
-      activity,
-    });
-  });
+  );
 
   /**
    * GET /enterprise/deals/:id/activities
    * Get activities for a deal
    * Requires: Sales role
    */
-  app.get('/enterprise/deals/:id/activities', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.get(
+    '/enterprise/deals/:id/activities',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string };
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid deal ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid deal ID format',
+        });
+      }
+
+      const activities = await enterpriseProvisioningService.getDealActivities(id);
+
+      return reply.send({
+        success: true,
+        activities,
       });
     }
-
-    const activities = await enterpriseProvisioningService.getDealActivities(id);
-
-    return reply.send({
-      success: true,
-      activities,
-    });
-  });
+  );
 
   /**
    * POST /enterprise/deals/:id/win
@@ -565,195 +632,215 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
    * Create and start a bulk provisioning batch
    * Requires: Sales role
    */
-  app.post('/enterprise/provisioning/batches', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.post(
+    '/enterprise/provisioning/batches',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const body: ProvisionBatchInput = ProvisionBatchSchema.parse(request.body);
+      const body: ProvisionBatchInput = ProvisionBatchSchema.parse(request.body);
 
-    const batch = await enterpriseProvisioningService.createProvisioningBatch(
-      body,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent,
-    );
+      const batch = await enterpriseProvisioningService.createProvisioningBatch(
+        body,
+        ctx.userId,
+        ctx.ipAddress,
+        ctx.userAgent
+      );
 
-    return reply.status(201).send({
-      success: true,
-      batch,
-      message: `Provisioning batch created. ${body.licenseCount} licenses will be generated.`,
-    });
-  });
+      return reply.status(201).send({
+        success: true,
+        batch,
+        message: `Provisioning batch created. ${body.licenseCount} licenses will be generated.`,
+      });
+    }
+  );
 
   /**
    * GET /enterprise/provisioning/batches
    * List provisioning batches
    * Requires: Sales role
    */
-  app.get('/enterprise/provisioning/batches', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.get(
+    '/enterprise/provisioning/batches',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const query = ListBatchesQuerySchema.parse(request.query);
+      const query = ListBatchesQuerySchema.parse(request.query);
 
-    const result = await enterpriseProvisioningService.listProvisioningBatches({
-      dealId: query.dealId,
-      status: query.status,
-      limit: query.limit,
-      offset: query.offset,
-    });
+      const result = await enterpriseProvisioningService.listProvisioningBatches({
+        dealId: query.dealId,
+        status: query.status,
+        limit: query.limit,
+        offset: query.offset,
+      });
 
-    return reply.send({
-      success: true,
-      batches: result.batches,
-      total: result.total,
-      limit: query.limit,
-      offset: query.offset,
-    });
-  });
+      return reply.send({
+        success: true,
+        batches: result.batches,
+        total: result.total,
+        limit: query.limit,
+        offset: query.offset,
+      });
+    }
+  );
 
   /**
    * GET /enterprise/provisioning/batches/:id
    * Get a specific provisioning batch with licenses
    * Requires: Sales role
    */
-  app.get('/enterprise/provisioning/batches/:id', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.get(
+    '/enterprise/provisioning/batches/:id',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string };
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid batch ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid batch ID format',
+        });
+      }
+
+      const batch = await enterpriseProvisioningService.getProvisioningBatch(id);
+
+      if (!batch) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Provisioning batch not found',
+        });
+      }
+
+      return reply.send({
+        success: true,
+        batch,
       });
     }
-
-    const batch = await enterpriseProvisioningService.getProvisioningBatch(id);
-
-    if (!batch) {
-      return reply.status(404).send({
-        success: false,
-        error: 'Provisioning batch not found',
-      });
-    }
-
-    return reply.send({
-      success: true,
-      batch,
-    });
-  });
+  );
 
   /**
    * POST /enterprise/provisioning/batches/:id/execute
    * Execute a pending provisioning batch
    * Requires: Sales role
    */
-  app.post('/enterprise/provisioning/batches/:id/execute', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.post(
+    '/enterprise/provisioning/batches/:id/execute',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string };
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid batch ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid batch ID format',
+        });
+      }
+
+      const result = await enterpriseProvisioningService.executeProvisioningBatch(
+        id,
+        ctx.userId,
+        ctx.ipAddress,
+        ctx.userAgent
+      );
+
+      if (!result.success) {
+        return reply.status(400).send({
+          success: false,
+          error: result.error,
+        });
+      }
+
+      return reply.send({
+        success: true,
+        batch: result.batch,
+        licensesCreated: result.licensesCreated,
+        message: `Successfully provisioned ${result.licensesCreated} licenses.`,
       });
     }
-
-    const result = await enterpriseProvisioningService.executeProvisioningBatch(
-      id,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent,
-    );
-
-    if (!result.success) {
-      return reply.status(400).send({
-        success: false,
-        error: result.error,
-      });
-    }
-
-    return reply.send({
-      success: true,
-      batch: result.batch,
-      licensesCreated: result.licensesCreated,
-      message: `Successfully provisioned ${result.licensesCreated} licenses.`,
-    });
-  });
+  );
 
   /**
    * GET /enterprise/provisioning/batches/:id/licenses
    * Get all licenses for a provisioning batch
    * Requires: Sales role
    */
-  app.get('/enterprise/provisioning/batches/:id/licenses', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.get(
+    '/enterprise/provisioning/batches/:id/licenses',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string };
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid batch ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid batch ID format',
+        });
+      }
+
+      const result = await enterpriseProvisioningService.getBatchLicenses(id);
+
+      return reply.send({
+        success: true,
+        licenses: result.licenses,
+        total: result.total,
       });
     }
-
-    const result = await enterpriseProvisioningService.getBatchLicenses(id);
-
-    return reply.send({
-      success: true,
-      licenses: result.licenses,
-      total: result.total,
-    });
-  });
+  );
 
   /**
    * POST /enterprise/provisioning/batches/:id/export
    * Export licenses from a batch (CSV format)
    * Requires: Sales role
    */
-  app.post('/enterprise/provisioning/batches/:id/export', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.post(
+    '/enterprise/provisioning/batches/:id/export',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const { id } = request.params as { id: string };
-    const { format } = z.object({ 
-      format: z.enum(['csv', 'json']).default('csv') 
-    }).parse(request.body || {});
+      const { id } = request.params as { id: string };
+      const { format } = z
+        .object({
+          format: z.enum(['csv', 'json']).default('csv'),
+        })
+        .parse(request.body || {});
 
-    if (!z.string().uuid().safeParse(id).success) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid batch ID format',
+      if (!z.string().uuid().safeParse(id).success) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid batch ID format',
+        });
+      }
+
+      const result = await enterpriseProvisioningService.exportBatchLicenses(id, format);
+
+      if (!result.success) {
+        return reply.status(400).send({
+          success: false,
+          error: result.error,
+        });
+      }
+
+      if (format === 'csv') {
+        return reply
+          .header('Content-Type', 'text/csv')
+          .header('Content-Disposition', `attachment; filename="licenses-${id}.csv"`)
+          .send(result.data);
+      }
+
+      return reply.send({
+        success: true,
+        data: result.data,
       });
     }
-
-    const result = await enterpriseProvisioningService.exportBatchLicenses(id, format);
-
-    if (!result.success) {
-      return reply.status(400).send({
-        success: false,
-        error: result.error,
-      });
-    }
-
-    if (format === 'csv') {
-      return reply
-        .header('Content-Type', 'text/csv')
-        .header('Content-Disposition', `attachment; filename="licenses-${id}.csv"`)
-        .send(result.data);
-    }
-
-    return reply.send({
-      success: true,
-      data: result.data,
-    });
-  });
+  );
 
   // ───────────────────────────────────────────────────────────────────────────
   // ANALYTICS & REPORTING
@@ -764,17 +851,20 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
    * Get sales pipeline analytics
    * Requires: Sales role
    */
-  app.get('/enterprise/analytics/pipeline', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
-    requireSalesRole(ctx);
+  app.get(
+    '/enterprise/analytics/pipeline',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
+      requireSalesRole(ctx);
 
-    const analytics = await enterpriseProvisioningService.getPipelineAnalytics(ctx.userId);
+      const analytics = await enterpriseProvisioningService.getPipelineAnalytics(ctx.userId);
 
-    return reply.send({
-      success: true,
-      analytics,
-    });
-  });
+      return reply.send({
+        success: true,
+        analytics,
+      });
+    }
+  );
 
   /**
    * GET /enterprise/analytics/revenue
@@ -785,14 +875,22 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
     const ctx = getContext(request);
     requireSalesRole(ctx);
 
-    const query = z.object({
-      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-      endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    }).parse(request.query);
+    const query = z
+      .object({
+        startDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+        endDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+      })
+      .parse(request.query);
 
     const analytics = await enterpriseProvisioningService.getRevenueAnalytics(
       query.startDate,
-      query.endDate,
+      query.endDate
     );
 
     return reply.send({

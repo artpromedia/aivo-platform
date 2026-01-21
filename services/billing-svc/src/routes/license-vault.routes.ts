@@ -127,7 +127,7 @@ function getContext(request: FastifyRequest): RequestContext {
 
 // Check if user has admin/sales role (placeholder - integrate with auth)
 function requireAdminRole(_ctx: RequestContext): void {
-  // TODO: Integrate with actual role checking from auth service
+  // [PLACEHOLDER] Integrate with actual role checking from auth service
   // For now, we trust the x-user-id header for admin operations
 }
 
@@ -165,7 +165,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       },
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.status(201).send({
@@ -206,7 +206,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       },
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.status(201).send({
@@ -295,7 +295,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       body.licenseKey,
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.send({
@@ -329,7 +329,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       body.licenseId,
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.send({
@@ -355,7 +355,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       body.reason ?? 'Suspended by admin',
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.send({
@@ -381,7 +381,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       body.reason,
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.send({
@@ -406,7 +406,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       body.licenseId,
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.send({
@@ -441,7 +441,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       },
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.status(201).send({
@@ -493,7 +493,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       ctx.userId,
       body.targetTenantId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     if (!result.success) {
@@ -531,7 +531,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       body.reason,
       ctx.userId,
       ctx.ipAddress,
-      ctx.userAgent,
+      ctx.userAgent
     );
 
     return reply.send({

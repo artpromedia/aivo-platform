@@ -11,4 +11,6 @@ export * from './internal-billing.routes.js';
 export * from './license-vault.routes.js';
 export * from './marketplace-billing.routes.js';
 export * from './parent-billing.routes.js';
+export * from './pilot.routes.js';
+export * from './trial.routes.js';
 export * from './webhook.routes.js';
