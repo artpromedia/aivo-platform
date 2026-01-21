@@ -763,28 +763,204 @@ class ABTestingService:
         
         return config
     
-    # Database helpers (placeholders)
-    
+    # Database methods for experiment management
+
     async def _store_experiment(self, config: ExperimentConfig) -> None:
-        """Store experiment configuration"""
-        pass
-    
+        """Store experiment configuration in database"""
+        if not self.db:
+            logger.warning("Database not configured - experiment stored in memory only")
+            self._active_experiments[config.experiment_id] = config
+            return
+
+        try:
+            self.db.execute(
+                """
+                INSERT INTO ab_experiments (
+                    id, name, description, tenant_id, target_risk_levels,
+                    target_grade_bands, variants, assignment_strategy,
+                    stratification_keys, primary_metric, secondary_metrics,
+                    start_date, end_date, min_sample_size, significance_level,
+                    power, minimum_detectable_effect, guardrail_metrics,
+                    max_guardrail_delta, requires_consent, consent_type,
+                    status, created_at, created_by
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
+                """,
+                (
+                    config.experiment_id,
+                    config.name,
+                    config.description,
+                    config.tenant_id,
+                    json.dumps(config.target_risk_levels),
+                    json.dumps(config.target_grade_bands),
+                    json.dumps([{
+                        'name': v.name,
+                        'weight': v.weight,
+                        'intervention_id': v.intervention_id,
+                        'config': v.config,
+                    } for v in config.variants]),
+                    config.assignment_strategy.value,
+                    json.dumps(config.stratification_keys),
+                    config.primary_metric,
+                    json.dumps(config.secondary_metrics),
+                    config.start_date,
+                    config.end_date,
+                    config.min_sample_size,
+                    config.significance_level,
+                    config.power,
+                    config.minimum_detectable_effect,
+                    json.dumps(config.guardrail_metrics),
+                    config.max_guardrail_delta,
+                    config.requires_consent,
+                    config.consent_type,
+                    config.status.value,
+                    config.created_at,
+                    config.created_by,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing experiment: {e}")
+            raise
+
     async def _get_experiment(self, experiment_id: str) -> ExperimentConfig:
-        """Get experiment by ID"""
-        raise NotImplementedError()
-    
+        """Get experiment by ID from database"""
+        # Check in-memory cache first
+        if experiment_id in self._active_experiments:
+            return self._active_experiments[experiment_id]
+
+        if not self.db:
+            raise ValueError(f"Experiment not found: {experiment_id}")
+
+        try:
+            results = self.db.execute(
+                """
+                SELECT id, name, description, tenant_id, target_risk_levels,
+                       target_grade_bands, variants, assignment_strategy,
+                       stratification_keys, primary_metric, secondary_metrics,
+                       start_date, end_date, min_sample_size, significance_level,
+                       power, minimum_detectable_effect, guardrail_metrics,
+                       max_guardrail_delta, requires_consent, consent_type,
+                       status, created_at, created_by
+                FROM ab_experiments
+                WHERE id = %s
+                """,
+                (experiment_id,)
+            )
+
+            if not results:
+                raise ValueError(f"Experiment not found: {experiment_id}")
+
+            row = results[0]
+            variants_data = json.loads(row['variants']) if isinstance(row['variants'], str) else row['variants']
+
+            config = ExperimentConfig(
+                experiment_id=row['id'],
+                name=row['name'],
+                description=row['description'],
+                tenant_id=row['tenant_id'],
+                target_risk_levels=json.loads(row['target_risk_levels']) if isinstance(row['target_risk_levels'], str) else row['target_risk_levels'],
+                target_grade_bands=json.loads(row['target_grade_bands']) if isinstance(row['target_grade_bands'], str) else row['target_grade_bands'],
+                variants=[
+                    ExperimentVariant(
+                        name=v['name'],
+                        weight=v['weight'],
+                        intervention_id=v.get('intervention_id'),
+                        config=v.get('config', {}),
+                    )
+                    for v in variants_data
+                ],
+                assignment_strategy=AssignmentStrategy(row['assignment_strategy']),
+                stratification_keys=json.loads(row['stratification_keys']) if isinstance(row['stratification_keys'], str) else row['stratification_keys'],
+                primary_metric=row['primary_metric'],
+                secondary_metrics=json.loads(row['secondary_metrics']) if isinstance(row['secondary_metrics'], str) else row['secondary_metrics'],
+                start_date=row.get('start_date'),
+                end_date=row.get('end_date'),
+                min_sample_size=row['min_sample_size'],
+                significance_level=row['significance_level'],
+                power=row['power'],
+                minimum_detectable_effect=row['minimum_detectable_effect'],
+                guardrail_metrics=json.loads(row['guardrail_metrics']) if isinstance(row['guardrail_metrics'], str) else row['guardrail_metrics'],
+                max_guardrail_delta=row['max_guardrail_delta'],
+                requires_consent=row['requires_consent'],
+                consent_type=row['consent_type'],
+                status=ExperimentStatus(row['status']),
+                created_at=row['created_at'],
+                created_by=row.get('created_by'),
+            )
+
+            return config
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting experiment: {e}")
+            raise ValueError(f"Failed to retrieve experiment: {e}")
+
     async def _update_experiment(self, config: ExperimentConfig) -> None:
-        """Update experiment"""
-        pass
-    
+        """Update experiment in database"""
+        # Update in-memory cache
+        if config.status == ExperimentStatus.ACTIVE:
+            self._active_experiments[config.experiment_id] = config
+        elif config.experiment_id in self._active_experiments:
+            del self._active_experiments[config.experiment_id]
+
+        if not self.db:
+            return
+
+        try:
+            self.db.execute(
+                """
+                UPDATE ab_experiments
+                SET status = %s,
+                    start_date = %s,
+                    end_date = %s,
+                    variants = %s
+                WHERE id = %s
+                """,
+                (
+                    config.status.value,
+                    config.start_date,
+                    config.end_date,
+                    json.dumps([{
+                        'name': v.name,
+                        'weight': v.weight,
+                        'intervention_id': v.intervention_id,
+                        'config': v.config,
+                        'participants': v.participants,
+                        'conversions': v.conversions,
+                        'total_value': v.total_value,
+                    } for v in config.variants]),
+                    config.experiment_id,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error updating experiment: {e}")
+            raise
+
     def _get_assignment(
         self,
-        experiment_id: str,  # noqa: ARG002
-        student_id: str,  # noqa: ARG002
+        experiment_id: str,
+        student_id: str,
     ) -> Optional[dict]:
-        """Get existing assignment"""
-        return None
-    
+        """Get existing assignment for a student"""
+        if not self.db:
+            return None
+
+        try:
+            results = self.db.execute(
+                """
+                SELECT experiment_id, student_id, variant_name, assigned_at
+                FROM ab_assignments
+                WHERE experiment_id = %s AND student_id = %s
+                """,
+                (experiment_id, student_id)
+            )
+            return results[0] if results else None
+        except Exception as e:
+            logger.error(f"Error getting assignment: {e}")
+            return None
+
     async def _store_assignment(
         self,
         experiment_id: str,
@@ -792,9 +968,31 @@ class ABTestingService:
         variant_name: str,
         stratification_data: Optional[dict],
     ) -> None:
-        """Store variant assignment"""
-        pass
-    
+        """Store variant assignment in database"""
+        if not self.db:
+            logger.warning("Database not configured - assignment not persisted")
+            return
+
+        try:
+            self.db.execute(
+                """
+                INSERT INTO ab_assignments (
+                    experiment_id, student_id, variant_name,
+                    stratification_data, assigned_at
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (experiment_id, student_id) DO NOTHING
+                """,
+                (
+                    experiment_id,
+                    student_id,
+                    variant_name,
+                    json.dumps(stratification_data) if stratification_data else None,
+                    datetime.now(timezone.utc),
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing assignment: {e}")
+
     async def _store_outcome(
         self,
         experiment_id: str,
@@ -803,16 +1001,103 @@ class ABTestingService:
         value: float,
         timestamp: datetime,
     ) -> None:
-        """Store outcome metric"""
-        pass
-    
+        """Store outcome metric in database"""
+        if not self.db:
+            logger.warning("Database not configured - outcome not stored")
+            return
+
+        try:
+            # Get the student's variant
+            assignment = self._get_assignment(experiment_id, student_id)
+            variant_name = assignment['variant_name'] if assignment else 'unknown'
+
+            self.db.execute(
+                """
+                INSERT INTO ab_outcomes (
+                    experiment_id, student_id, variant_name,
+                    metric_name, value, recorded_at
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    experiment_id,
+                    student_id,
+                    variant_name,
+                    metric_name,
+                    value,
+                    timestamp,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing outcome: {e}")
+
     def _get_experiment_outcomes(
         self,
-        experiment_id: str,  # noqa: ARG002
+        experiment_id: str,
     ) -> list[dict]:
         """Get all outcomes for experiment"""
-        return []
-    
+        if not self.db:
+            return []
+
+        try:
+            results = self.db.execute(
+                """
+                SELECT experiment_id, student_id, variant_name,
+                       metric_name, value, recorded_at
+                FROM ab_outcomes
+                WHERE experiment_id = %s
+                ORDER BY recorded_at
+                """,
+                (experiment_id,)
+            )
+            return [
+                {
+                    'experiment_id': r['experiment_id'],
+                    'student_id': r['student_id'],
+                    'variant_name': r['variant_name'],
+                    'metric_name': r['metric_name'],
+                    'value': r['value'],
+                    'recorded_at': r['recorded_at'],
+                }
+                for r in results
+            ] if results else []
+        except Exception as e:
+            logger.error(f"Error getting outcomes: {e}")
+            return []
+
     async def _store_results(self, results: ExperimentResults) -> None:
-        """Store analysis results"""
-        pass
+        """Store analysis results in database"""
+        if not self.db:
+            logger.info(f"Results for {results.experiment_id}: {results.recommendation}")
+            return
+
+        try:
+            self.db.execute(
+                """
+                INSERT INTO ab_results (
+                    experiment_id, generated_at, total_participants,
+                    participants_by_variant, primary_metric_name,
+                    primary_metric_by_variant, p_value, confidence_interval,
+                    effect_size, is_significant, secondary_metrics,
+                    guardrail_status, recommendation, confidence, warnings
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    results.experiment_id,
+                    results.generated_at,
+                    results.total_participants,
+                    json.dumps(results.participants_by_variant),
+                    results.primary_metric_name,
+                    json.dumps(results.primary_metric_by_variant),
+                    results.p_value,
+                    json.dumps(results.confidence_interval),
+                    results.effect_size,
+                    results.is_significant,
+                    json.dumps(results.secondary_metrics),
+                    json.dumps(results.guardrail_status),
+                    results.recommendation,
+                    results.confidence,
+                    json.dumps(results.warnings),
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing results: {e}")

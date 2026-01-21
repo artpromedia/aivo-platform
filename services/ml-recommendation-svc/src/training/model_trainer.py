@@ -574,15 +574,42 @@ class RiskModelTrainer:
 class TrainingDataPreparer:
     """
     Prepares training data from historical student records.
-    
+
     Creates labeled dataset where:
     - y=1: Student fell significantly behind within 30 days
     - y=0: Student maintained or improved performance
     """
-    
+
+    # Feature names for model training
+    FEATURE_NAMES = [
+        # Academic features
+        "avg_assignment_score",
+        "assignment_completion_rate",
+        "days_since_last_activity",
+        "avg_time_on_task_minutes",
+        "assignments_overdue_count",
+        "grade_trend_30d",
+        # Engagement features
+        "login_frequency_7d",
+        "session_count_30d",
+        "avg_session_duration_minutes",
+        "content_interactions_7d",
+        # Behavioral features
+        "help_requests_7d",
+        "retry_attempts_avg",
+        "time_to_first_interaction_minutes",
+        # Social features
+        "peer_collaboration_count",
+        "teacher_interactions_7d",
+        # Historical features
+        "previous_interventions_count",
+        "days_enrolled",
+        "mastery_level_avg",
+    ]
+
     def __init__(self, db_connection: Any):
         self.db = db_connection
-    
+
     async def prepare_training_data(
         self,
         tenant_id: str,
@@ -592,20 +619,359 @@ class TrainingDataPreparer:
     ) -> tuple[np.ndarray, np.ndarray, list[str], dict[str, np.ndarray]]:
         """
         Prepare training data from historical records.
-        
+
         Returns:
             X: Feature matrix
             y: Binary labels (1 = became at-risk)
             feature_names: List of feature names
             demographic_data: Dict mapping demographic attribute to array
         """
-        # This would query the database for historical student data
-        # For each student at each point in time, we compute:
-        # 1. Features as of that date
-        # 2. Outcome: did they fall behind in the next N days?
-        
-        # Placeholder - actual implementation would query Prisma
-        raise NotImplementedError(
-            "Training data preparation requires database implementation. "
-            "See docs/ai/training-pipeline.md for details."
-        )
+        if not self.db:
+            raise ValueError(
+                "Database connection required for training data preparation. "
+                "Initialize TrainingDataPreparer with a valid database connection."
+            )
+
+        logger.info(f"Preparing training data for tenant {tenant_id} from {start_date} to {end_date}")
+
+        # Get all students for the tenant
+        students = await self._get_students(tenant_id)
+        if not students:
+            raise ValueError(f"No students found for tenant {tenant_id}")
+
+        logger.info(f"Found {len(students)} students for training data")
+
+        # Collect feature vectors and labels
+        feature_rows = []
+        labels = []
+        demographics = {"grade_band": [], "school_id": [], "program_type": []}
+
+        # Generate training samples at weekly intervals
+        current_date = start_date
+        sample_count = 0
+
+        while current_date < end_date - timedelta(days=outcome_window_days):
+            for student in students:
+                # Check if student was enrolled at this date
+                if student.get('enrolled_at') and student['enrolled_at'] > current_date:
+                    continue
+
+                # Extract features as of current_date
+                features = await self._extract_features(
+                    student['id'], tenant_id, current_date
+                )
+                if features is None:
+                    continue
+
+                # Determine outcome (did student become at-risk within window?)
+                outcome = await self._determine_outcome(
+                    student['id'], tenant_id, current_date, outcome_window_days
+                )
+                if outcome is None:
+                    continue
+
+                feature_rows.append(features)
+                labels.append(outcome)
+
+                # Collect demographic data for fairness analysis
+                demographics["grade_band"].append(student.get('grade_band', 'unknown'))
+                demographics["school_id"].append(student.get('school_id', 'unknown'))
+                demographics["program_type"].append(student.get('program_type', 'general'))
+
+                sample_count += 1
+
+            # Move to next week
+            current_date += timedelta(days=7)
+
+        if sample_count == 0:
+            raise ValueError("No valid training samples could be generated")
+
+        logger.info(f"Generated {sample_count} training samples")
+
+        # Convert to numpy arrays
+        X = np.array(feature_rows, dtype=np.float32)
+        y = np.array(labels, dtype=np.int32)
+        demographic_arrays = {
+            k: np.array(v) for k, v in demographics.items()
+        }
+
+        return X, y, self.FEATURE_NAMES, demographic_arrays
+
+    async def _get_students(self, tenant_id: str) -> list[dict]:
+        """Get all students for a tenant"""
+        try:
+            results = self.db.execute(
+                """
+                SELECT s.id, s.grade_band, s.school_id, s.program_type,
+                       s.enrolled_at
+                FROM students s
+                WHERE s.tenant_id = %s
+                AND s.is_active = true
+                """,
+                (tenant_id,)
+            )
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Error fetching students: {e}")
+            return []
+
+    async def _extract_features(
+        self,
+        student_id: str,
+        tenant_id: str,
+        as_of_date: datetime,
+    ) -> Optional[list[float]]:
+        """Extract feature vector for a student at a point in time"""
+        try:
+            # Query aggregated metrics as of the given date
+            result = self.db.execute(
+                """
+                WITH student_metrics AS (
+                    SELECT
+                        -- Academic features
+                        COALESCE(AVG(a.score), 0) as avg_assignment_score,
+                        COALESCE(
+                            SUM(CASE WHEN a.submitted_at IS NOT NULL THEN 1 ELSE 0 END)::float /
+                            NULLIF(COUNT(a.id), 0), 0
+                        ) as assignment_completion_rate,
+                        COALESCE(
+                            EXTRACT(EPOCH FROM (%s - MAX(al.timestamp))) / 86400, 30
+                        ) as days_since_last_activity,
+                        COALESCE(AVG(al.duration_seconds) / 60.0, 0) as avg_time_on_task_minutes,
+                        COALESCE(
+                            SUM(CASE WHEN a.due_date < %s AND a.submitted_at IS NULL THEN 1 ELSE 0 END), 0
+                        ) as assignments_overdue_count,
+                        -- Engagement features
+                        COALESCE(
+                            SUM(CASE WHEN al.timestamp > %s - INTERVAL '7 days' THEN 1 ELSE 0 END), 0
+                        ) as login_frequency_7d,
+                        COALESCE(
+                            COUNT(DISTINCT DATE(al.timestamp)) FILTER (
+                                WHERE al.timestamp > %s - INTERVAL '30 days'
+                            ), 0
+                        ) as session_count_30d,
+                        COALESCE(AVG(s.duration_seconds) / 60.0, 0) as avg_session_duration_minutes,
+                        COALESCE(
+                            SUM(CASE WHEN ci.timestamp > %s - INTERVAL '7 days' THEN 1 ELSE 0 END), 0
+                        ) as content_interactions_7d,
+                        -- Behavioral features
+                        COALESCE(
+                            SUM(CASE WHEN hr.timestamp > %s - INTERVAL '7 days' THEN 1 ELSE 0 END), 0
+                        ) as help_requests_7d,
+                        COALESCE(AVG(a.attempt_count), 1) as retry_attempts_avg,
+                        -- Historical features
+                        COALESCE(
+                            (SELECT COUNT(*) FROM interventions i WHERE i.student_id = st.id), 0
+                        ) as previous_interventions_count,
+                        COALESCE(
+                            EXTRACT(EPOCH FROM (%s - st.enrolled_at)) / 86400, 0
+                        ) as days_enrolled,
+                        COALESCE(AVG(m.level), 0) as mastery_level_avg
+                    FROM students st
+                    LEFT JOIN assignments a ON a.student_id = st.id AND a.created_at <= %s
+                    LEFT JOIN activity_logs al ON al.student_id = st.id AND al.timestamp <= %s
+                    LEFT JOIN sessions s ON s.student_id = st.id AND s.started_at <= %s
+                    LEFT JOIN content_interactions ci ON ci.student_id = st.id AND ci.timestamp <= %s
+                    LEFT JOIN help_requests hr ON hr.student_id = st.id AND hr.timestamp <= %s
+                    LEFT JOIN mastery_records m ON m.student_id = st.id AND m.recorded_at <= %s
+                    WHERE st.id = %s AND st.tenant_id = %s
+                    GROUP BY st.id, st.enrolled_at
+                )
+                SELECT * FROM student_metrics
+                """,
+                (
+                    as_of_date, as_of_date, as_of_date, as_of_date, as_of_date,
+                    as_of_date, as_of_date, as_of_date, as_of_date, as_of_date,
+                    as_of_date, as_of_date, student_id, tenant_id
+                )
+            )
+
+            if not result:
+                return None
+
+            row = result[0]
+
+            # Calculate grade trend (requires separate query)
+            grade_trend = await self._calculate_grade_trend(student_id, as_of_date)
+
+            # Calculate additional metrics
+            time_to_first_interaction = await self._get_time_to_first_interaction(student_id, as_of_date)
+            peer_collaboration = await self._get_peer_collaboration_count(student_id, as_of_date)
+            teacher_interactions = await self._get_teacher_interactions(student_id, as_of_date)
+
+            # Build feature vector in the same order as FEATURE_NAMES
+            features = [
+                float(row.get('avg_assignment_score', 0)),
+                float(row.get('assignment_completion_rate', 0)),
+                float(row.get('days_since_last_activity', 30)),
+                float(row.get('avg_time_on_task_minutes', 0)),
+                float(row.get('assignments_overdue_count', 0)),
+                float(grade_trend),
+                float(row.get('login_frequency_7d', 0)),
+                float(row.get('session_count_30d', 0)),
+                float(row.get('avg_session_duration_minutes', 0)),
+                float(row.get('content_interactions_7d', 0)),
+                float(row.get('help_requests_7d', 0)),
+                float(row.get('retry_attempts_avg', 1)),
+                float(time_to_first_interaction),
+                float(peer_collaboration),
+                float(teacher_interactions),
+                float(row.get('previous_interventions_count', 0)),
+                float(row.get('days_enrolled', 0)),
+                float(row.get('mastery_level_avg', 0)),
+            ]
+
+            return features
+        except Exception as e:
+            logger.error(f"Error extracting features for student {student_id}: {e}")
+            return None
+
+    async def _determine_outcome(
+        self,
+        student_id: str,
+        tenant_id: str,
+        as_of_date: datetime,
+        window_days: int,
+    ) -> Optional[int]:
+        """Determine if student became at-risk within the outcome window"""
+        try:
+            window_end = as_of_date + timedelta(days=window_days)
+
+            # Check for significant decline indicators
+            result = self.db.execute(
+                """
+                SELECT
+                    -- Check if intervention was started
+                    EXISTS(
+                        SELECT 1 FROM interventions i
+                        WHERE i.student_id = %s
+                        AND i.started_at BETWEEN %s AND %s
+                    ) as intervention_started,
+                    -- Check for significant grade decline
+                    (
+                        SELECT AVG(score) FROM assignments
+                        WHERE student_id = %s AND submitted_at BETWEEN %s AND %s
+                    ) as future_avg_score,
+                    (
+                        SELECT AVG(score) FROM assignments
+                        WHERE student_id = %s AND submitted_at BETWEEN %s - INTERVAL '30 days' AND %s
+                    ) as past_avg_score,
+                    -- Check for disengagement
+                    (
+                        SELECT COUNT(*) FROM activity_logs
+                        WHERE student_id = %s AND timestamp BETWEEN %s AND %s
+                    ) as future_activity_count
+                """,
+                (
+                    student_id, as_of_date, window_end,
+                    student_id, as_of_date, window_end,
+                    student_id, as_of_date, as_of_date,
+                    student_id, as_of_date, window_end,
+                )
+            )
+
+            if not result:
+                return None
+
+            row = result[0]
+
+            # Label as at-risk (1) if any of these conditions:
+            # 1. An intervention was started
+            if row.get('intervention_started'):
+                return 1
+
+            # 2. Significant grade decline (>15%)
+            future_score = row.get('future_avg_score')
+            past_score = row.get('past_avg_score')
+            if future_score and past_score and past_score > 0:
+                decline = (past_score - future_score) / past_score
+                if decline > 0.15:
+                    return 1
+
+            # 3. Complete disengagement (no activity in window)
+            if row.get('future_activity_count', 0) == 0:
+                return 1
+
+            return 0
+        except Exception as e:
+            logger.error(f"Error determining outcome for student {student_id}: {e}")
+            return None
+
+    async def _calculate_grade_trend(self, student_id: str, as_of_date: datetime) -> float:
+        """Calculate grade trend over last 30 days"""
+        try:
+            result = self.db.execute(
+                """
+                WITH weekly_scores AS (
+                    SELECT
+                        DATE_TRUNC('week', submitted_at) as week,
+                        AVG(score) as avg_score
+                    FROM assignments
+                    WHERE student_id = %s
+                    AND submitted_at BETWEEN %s - INTERVAL '30 days' AND %s
+                    GROUP BY DATE_TRUNC('week', submitted_at)
+                    ORDER BY week
+                )
+                SELECT
+                    COALESCE(
+                        REGR_SLOPE(avg_score, EXTRACT(EPOCH FROM week)),
+                        0
+                    ) * 604800 as weekly_trend  -- Convert to weekly change
+                FROM weekly_scores
+                """,
+                (student_id, as_of_date, as_of_date)
+            )
+            return float(result[0]['weekly_trend']) if result and result[0]['weekly_trend'] else 0.0
+        except Exception:
+            return 0.0
+
+    async def _get_time_to_first_interaction(self, student_id: str, as_of_date: datetime) -> float:
+        """Get average time to first interaction in sessions (minutes)"""
+        try:
+            result = self.db.execute(
+                """
+                SELECT AVG(
+                    EXTRACT(EPOCH FROM (first_interaction_at - started_at)) / 60
+                ) as avg_time
+                FROM sessions
+                WHERE student_id = %s
+                AND started_at BETWEEN %s - INTERVAL '30 days' AND %s
+                AND first_interaction_at IS NOT NULL
+                """,
+                (student_id, as_of_date, as_of_date)
+            )
+            return float(result[0]['avg_time']) if result and result[0]['avg_time'] else 5.0
+        except Exception:
+            return 5.0
+
+    async def _get_peer_collaboration_count(self, student_id: str, as_of_date: datetime) -> int:
+        """Get peer collaboration interactions in last 30 days"""
+        try:
+            result = self.db.execute(
+                """
+                SELECT COUNT(*) as count
+                FROM peer_interactions
+                WHERE student_id = %s
+                AND timestamp BETWEEN %s - INTERVAL '30 days' AND %s
+                """,
+                (student_id, as_of_date, as_of_date)
+            )
+            return int(result[0]['count']) if result else 0
+        except Exception:
+            return 0
+
+    async def _get_teacher_interactions(self, student_id: str, as_of_date: datetime) -> int:
+        """Get teacher interactions in last 7 days"""
+        try:
+            result = self.db.execute(
+                """
+                SELECT COUNT(*) as count
+                FROM teacher_student_interactions
+                WHERE student_id = %s
+                AND timestamp BETWEEN %s - INTERVAL '7 days' AND %s
+                """,
+                (student_id, as_of_date, as_of_date)
+            )
+            return int(result[0]['count']) if result else 0
+        except Exception:
+            return 0

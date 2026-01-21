@@ -102,8 +102,15 @@ async function listLegalHolds(
     }
 
     return res.json();
-  } catch {
-    // Return mock data in development
+  } catch (error) {
+    // Only use mock data in development - never in production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[LegalHolds] Failed to fetch legal holds:', error);
+      throw new Error('Failed to load legal holds. Please try again later.');
+    }
+
+    // Development fallback with warning
+    console.warn('[LegalHolds] Using mock data - legal-hold-svc not available');
     return { data: MOCK_LEGAL_HOLDS, total: MOCK_LEGAL_HOLDS.length };
   }
 }

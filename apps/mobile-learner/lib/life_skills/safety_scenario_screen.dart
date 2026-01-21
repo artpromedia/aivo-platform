@@ -35,7 +35,8 @@ class _SafetyScenarioScreenState extends State<SafetyScenarioScreen>
   DecisionOutcome? _outcome;
   AIGuidance? _coaching;
   late AnimationController _resultController;
-  
+  late Stopwatch _responseTimer;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +44,8 @@ class _SafetyScenarioScreenState extends State<SafetyScenarioScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    // Start timer when screen loads to measure response time
+    _responseTimer = Stopwatch()..start();
   }
 
   @override
@@ -56,13 +59,17 @@ class _SafetyScenarioScreenState extends State<SafetyScenarioScreen>
 
     setState(() => _isLoading = true);
 
+    // Stop the timer and get the elapsed time
+    _responseTimer.stop();
+    final responseTimeMs = _responseTimer.elapsedMilliseconds;
+
     try {
       final result = await widget.service.recordSafetyAttempt(
         tenantId: widget.tenantId,
         learnerId: widget.learnerId,
         scenarioId: widget.scenario.id,
         choiceId: _selectedChoice!.id,
-        responseTimeMs: 5000, // TODO: Measure actual time
+        responseTimeMs: responseTimeMs,
       );
 
       final attempt = result['attempt'] as Map<String, dynamic>;
@@ -96,6 +103,9 @@ class _SafetyScenarioScreenState extends State<SafetyScenarioScreen>
       _coaching = null;
     });
     _resultController.reset();
+    // Reset and restart the timer for retry attempts
+    _responseTimer.reset();
+    _responseTimer.start();
   }
 
   @override

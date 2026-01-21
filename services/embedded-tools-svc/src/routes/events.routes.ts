@@ -221,8 +221,10 @@ async function recordEvent(
     data: { lastActivityAt: new Date() },
   });
 
-  // 8. TODO: Forward to analytics pipeline
-  // This would typically be an async job or message queue publish
+  // 8. Forward to analytics pipeline (async - don't await)
+  forwardToAnalytics(event, session, request.log).catch((err) => {
+    request.log.error({ err, eventId: event.id }, 'Failed to forward event to analytics');
+  });
 
   request.log.info(
     { eventId: event.id, sessionId: data.sessionId, eventType: data.eventType },
@@ -233,6 +235,65 @@ async function recordEvent(
     eventId: event.id,
     processed: true,
   };
+}
+
+/**
+ * Forward event to analytics pipeline
+ * Uses HTTP POST to analytics service (could be replaced with message queue)
+ */
+async function forwardToAnalytics(
+  event: { id: string; eventType: string; eventTimestamp: Date; payloadJson: unknown; scoreValue: number | null },
+  session: { tenantId: string; learnerId: string; toolId: string },
+  log: FastifyRequest['log']
+): Promise<void> {
+  const analyticsUrl = process.env.ANALYTICS_SVC_URL || 'http://localhost:4040';
+  const analyticsEnabled = process.env.ANALYTICS_FORWARDING_ENABLED !== 'false';
+
+  if (!analyticsEnabled) {
+    log.debug({ eventId: event.id }, 'Analytics forwarding disabled');
+    return;
+  }
+
+  try {
+    const analyticsPayload = {
+      source: 'embedded-tools-svc',
+      eventId: event.id,
+      eventType: event.eventType,
+      timestamp: event.eventTimestamp.toISOString(),
+      tenantId: session.tenantId,
+      learnerId: session.learnerId,
+      toolId: session.toolId,
+      payload: event.payloadJson,
+      score: event.scoreValue,
+    };
+
+    const response = await fetch(`${analyticsUrl}/api/v1/events/ingest`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Service': 'embedded-tools-svc',
+      },
+      body: JSON.stringify(analyticsPayload),
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+
+    if (!response.ok) {
+      log.warn(
+        { eventId: event.id, status: response.status },
+        'Analytics service returned non-OK status'
+      );
+    } else {
+      // Mark event as processed
+      await prisma.sessionEvent.update({
+        where: { id: event.id },
+        data: { isProcessed: true },
+      });
+      log.debug({ eventId: event.id }, 'Event forwarded to analytics');
+    }
+  } catch (err) {
+    log.warn({ err, eventId: event.id }, 'Failed to forward to analytics - will retry later');
+    // Event stays with isProcessed=false for retry by background job
+  }
 }
 
 /**

@@ -614,65 +614,287 @@ class FERPAComplianceService:
             ),
         }
     
-    # Helper methods (placeholders - implement with actual DB)
-    
+    # Database methods for consent management
+
     def _check_relationship(
         self,
-        _user_id: str,
-        _student_id: str,
+        user_id: str,
+        student_id: str,
     ) -> bool:
         """Check if user has educational relationship with student"""
-        # Query enrollments, class assignments, etc.
-        return True  # Placeholder
-    
+        if not self.db:
+            logger.warning("Database not configured - allowing access (development mode)")
+            return True
+
+        try:
+            # Check if user is teacher/staff for the student's classes
+            result = self.db.execute(
+                """
+                SELECT COUNT(*) as cnt FROM (
+                    SELECT 1 FROM class_enrollments ce
+                    JOIN class_assignments ca ON ce.class_id = ca.class_id
+                    WHERE ce.student_id = %s AND ca.staff_id = %s
+                    UNION
+                    SELECT 1 FROM student_counselors
+                    WHERE student_id = %s AND counselor_id = %s
+                    UNION
+                    SELECT 1 FROM school_staff ss
+                    JOIN students s ON ss.school_id = s.school_id
+                    WHERE s.id = %s AND ss.staff_id = %s
+                    AND ss.role IN ('administrator', 'principal', 'intervention_specialist')
+                ) relationships
+                """,
+                (student_id, user_id, student_id, user_id, student_id, user_id)
+            )
+            return result and result[0]['cnt'] > 0
+        except Exception as e:
+            logger.error(f"Error checking relationship: {e}")
+            return False
+
     def _check_consent(
         self,
-        _student_id: str,
-        _consent_type: ConsentType,
-        _data_types: list[str],
+        student_id: str,
+        consent_type: ConsentType,
+        data_types: list[str],
     ) -> bool:
         """Check if consent exists for data access"""
-        return True  # Placeholder
-    
+        if not self.db:
+            logger.warning("Database not configured - assuming consent (development mode)")
+            return True
+
+        try:
+            result = self.db.execute(
+                """
+                SELECT id, scope, expires_at FROM ferpa_consents
+                WHERE student_id = %s
+                AND consent_type = %s
+                AND status = 'granted'
+                AND (expires_at IS NULL OR expires_at > NOW())
+                """,
+                (student_id, consent_type.value)
+            )
+
+            if not result:
+                return False
+
+            # Check if consent scope covers requested data types
+            consent = result[0]
+            scope = consent.get('scope', {})
+            allowed_types = scope.get('data_types', [])
+
+            # If scope is empty, allow all
+            if not allowed_types:
+                return True
+
+            return all(dt in allowed_types for dt in data_types)
+        except Exception as e:
+            logger.error(f"Error checking consent: {e}")
+            return False
+
     def _check_disclosure_log_access(
         self,
-        _student_id: str,
-        _requestor_id: str,
+        student_id: str,
+        requestor_id: str,
     ) -> bool:
         """Check if requestor can access disclosure log"""
-        return True  # Placeholder
-    
+        if not self.db:
+            return True
+
+        try:
+            # Check if requestor is parent/guardian or the student (if 18+)
+            result = self.db.execute(
+                """
+                SELECT COUNT(*) as cnt FROM (
+                    SELECT 1 FROM student_guardians
+                    WHERE student_id = %s AND guardian_id = %s AND is_active = true
+                    UNION
+                    SELECT 1 FROM students
+                    WHERE id = %s AND user_id = %s
+                    AND date_of_birth <= NOW() - INTERVAL '18 years'
+                ) authorized
+                """,
+                (student_id, requestor_id, student_id, requestor_id)
+            )
+            return result and result[0]['cnt'] > 0
+        except Exception as e:
+            logger.error(f"Error checking disclosure log access: {e}")
+            return False
+
     def _check_record_access_rights(
         self,
-        _student_id: str,
-        _requestor_id: str,
+        student_id: str,
+        requestor_id: str,
     ) -> bool:
         """Check if requestor has rights to access records"""
-        return True  # Placeholder
-    
+        return self._check_disclosure_log_access(student_id, requestor_id)
+
     async def _store_disclosure(self, record: DisclosureRecord) -> None:
-        """Store disclosure record"""
-        pass
-    
+        """Store disclosure record in database"""
+        if not self.db:
+            logger.warning("Database not configured - disclosure not stored")
+            return
+
+        try:
+            self.db.execute(
+                """
+                INSERT INTO ferpa_disclosures (
+                    id, student_id, disclosed_to, disclosed_by,
+                    disclosure_reason, data_disclosed, purpose,
+                    timestamp, consent_id
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    record.disclosure_id,
+                    record.student_id,
+                    record.disclosed_to,
+                    record.disclosed_by,
+                    record.disclosure_reason.value,
+                    json.dumps(record.data_disclosed),
+                    record.purpose,
+                    record.timestamp,
+                    record.consent_id,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing disclosure: {e}")
+            raise
+
     def _get_disclosures(
         self,
-        _student_id: str,
+        student_id: str,
     ) -> list[DisclosureRecord]:
         """Get all disclosures for a student"""
-        return []
-    
+        if not self.db:
+            return []
+
+        try:
+            results = self.db.execute(
+                """
+                SELECT id, student_id, disclosed_to, disclosed_by,
+                       disclosure_reason, data_disclosed, purpose,
+                       timestamp, consent_id
+                FROM ferpa_disclosures
+                WHERE student_id = %s
+                ORDER BY timestamp DESC
+                """,
+                (student_id,)
+            )
+
+            return [
+                DisclosureRecord(
+                    disclosure_id=row['id'],
+                    student_id=row['student_id'],
+                    disclosed_to=row['disclosed_to'],
+                    disclosed_by=row['disclosed_by'],
+                    disclosure_reason=DisclosureReason(row['disclosure_reason']),
+                    data_disclosed=json.loads(row['data_disclosed']) if isinstance(row['data_disclosed'], str) else row['data_disclosed'],
+                    purpose=row['purpose'],
+                    timestamp=row['timestamp'],
+                    consent_id=row['consent_id'],
+                )
+                for row in results
+            ]
+        except Exception as e:
+            logger.error(f"Error getting disclosures: {e}")
+            return []
+
     async def _store_consent(self, record: ConsentRecord) -> None:
-        """Store consent record"""
-        pass
-    
+        """Store consent record in database"""
+        if not self.db:
+            logger.warning("Database not configured - consent not stored")
+            return
+
+        try:
+            self.db.execute(
+                """
+                INSERT INTO ferpa_consents (
+                    id, student_id, guardian_id, consent_type,
+                    status, scope, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    record.consent_id,
+                    record.student_id,
+                    record.guardian_id,
+                    record.consent_type.value,
+                    record.status.value,
+                    json.dumps(record.scope),
+                    record.created_at,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing consent: {e}")
+            raise
+
     async def _get_consent(self, consent_id: str) -> ConsentRecord:
-        """Get consent record"""
-        raise NotImplementedError()
-    
+        """Get consent record from database"""
+        if not self.db:
+            raise ValueError("Database not configured")
+
+        try:
+            results = self.db.execute(
+                """
+                SELECT id, student_id, guardian_id, consent_type,
+                       status, granted_at, expires_at, scope,
+                       withdrawn_at, created_at
+                FROM ferpa_consents
+                WHERE id = %s
+                """,
+                (consent_id,)
+            )
+
+            if not results:
+                raise ValueError(f"Consent record not found: {consent_id}")
+
+            row = results[0]
+            return ConsentRecord(
+                consent_id=row['id'],
+                student_id=row['student_id'],
+                guardian_id=row['guardian_id'],
+                consent_type=ConsentType(row['consent_type']),
+                status=ConsentStatus(row['status']),
+                granted_at=row.get('granted_at'),
+                expires_at=row.get('expires_at'),
+                scope=json.loads(row['scope']) if isinstance(row['scope'], str) else (row['scope'] or {}),
+                withdrawn_at=row.get('withdrawn_at'),
+                created_at=row.get('created_at', datetime.now(timezone.utc)),
+            )
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting consent: {e}")
+            raise ValueError(f"Failed to retrieve consent: {e}")
+
     async def _update_consent(self, record: ConsentRecord) -> None:
-        """Update consent record"""
-        pass
-    
+        """Update consent record in database"""
+        if not self.db:
+            logger.warning("Database not configured - consent not updated")
+            return
+
+        try:
+            self.db.execute(
+                """
+                UPDATE ferpa_consents
+                SET status = %s,
+                    granted_at = %s,
+                    expires_at = %s,
+                    withdrawn_at = %s,
+                    scope = %s
+                WHERE id = %s
+                """,
+                (
+                    record.status.value,
+                    record.granted_at,
+                    record.expires_at,
+                    record.withdrawn_at,
+                    json.dumps(record.scope),
+                    record.consent_id,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error updating consent: {e}")
+            raise
+
     async def _notify_consent_request(
         self,
         guardian_id: str,
@@ -680,19 +902,104 @@ class FERPAComplianceService:
         consent_type: ConsentType,
         purpose: str,
     ) -> None:
-        """Send consent request notification"""
-        pass
-    
+        """Send consent request notification to guardian"""
+        # This would integrate with the notification service
+        logger.info(
+            f"Consent request notification: guardian={guardian_id}, "
+            f"student={student_id}, type={consent_type.value}, purpose={purpose}"
+        )
+        # In production, this would call the notification service
+        # await notification_client.send_consent_request(...)
+
     def _compile_student_records(
         self,
-        _student_id: str,
+        student_id: str,
     ) -> dict:
         """Compile all education records for student"""
-        return {}
-    
+        if not self.db:
+            return {"error": "Database not configured"}
+
+        try:
+            records = {}
+
+            # Get student basic info
+            student = self.db.execute(
+                "SELECT id, name, grade, school_id FROM students WHERE id = %s",
+                (student_id,)
+            )
+            if student:
+                records['student_info'] = student[0]
+
+            # Get academic records
+            academic = self.db.execute(
+                """
+                SELECT subject, grade, semester, school_year
+                FROM academic_records
+                WHERE student_id = %s
+                ORDER BY school_year DESC, semester DESC
+                """,
+                (student_id,)
+            )
+            records['academic_records'] = academic or []
+
+            # Get attendance records
+            attendance = self.db.execute(
+                """
+                SELECT date, status, excused
+                FROM attendance_records
+                WHERE student_id = %s
+                ORDER BY date DESC
+                LIMIT 100
+                """,
+                (student_id,)
+            )
+            records['attendance'] = attendance or []
+
+            # Get intervention records (de-identified risk scores)
+            interventions = self.db.execute(
+                """
+                SELECT intervention_type, start_date, end_date, status
+                FROM interventions
+                WHERE student_id = %s
+                ORDER BY start_date DESC
+                """,
+                (student_id,)
+            )
+            records['interventions'] = interventions or []
+
+            return records
+        except Exception as e:
+            logger.error(f"Error compiling student records: {e}")
+            return {"error": str(e)}
+
     async def _store_amendment_request(self, request: dict) -> None:
-        """Store amendment request"""
-        pass
+        """Store amendment request in database"""
+        if not self.db:
+            logger.warning("Database not configured - amendment request not stored")
+            return
+
+        try:
+            self.db.execute(
+                """
+                INSERT INTO ferpa_amendment_requests (
+                    id, student_id, requestor_id, record_type,
+                    requested_change, reason, status, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    request['request_id'],
+                    request['student_id'],
+                    request['requestor_id'],
+                    request['record_type'],
+                    request['requested_change'],
+                    request['reason'],
+                    request['status'],
+                    request['created_at'],
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error storing amendment request: {e}")
+            raise
     
     def _log_denied_access(
         self,

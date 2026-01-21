@@ -360,22 +360,75 @@ export const learningBreakRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /learning-breaks/history/:learnerId
    *
    * Get recent learning break history for a learner.
+   * Retrieves data from session events via the session service.
    */
   fastify.get('/learning-breaks/history/:learnerId', async (request: FastifyRequest, reply) => {
     const params = request.params as { learnerId: string };
-    const query = request.query as { limit?: string };
-    const _limit = Number.parseInt(query.limit || '10', 10);
+    const query = request.query as { limit?: string; days?: string };
+    const limit = Math.min(Number.parseInt(query.limit || '10', 10), 50);
+    const days = Number.parseInt(query.days || '30', 10);
 
-    // In production, this would query the database using _limit
-    // For now, return placeholder data
-    return reply.status(200).send({
-      learnerId: params.learnerId,
-      recentBreaks: [],
-      totalBreaks: 0,
-      averageAccuracy: null,
-      favoriteGameType: null,
-      message: 'History tracking available in production deployment',
-    });
+    try {
+      // Query session events for learning break completions
+      const events = await sessionServiceClient.getEvents({
+        learnerId: params.learnerId,
+        eventType: 'LEARNING_BREAK_COMPLETED',
+        limit,
+        sinceDate: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+      // Transform events to break history format
+      const recentBreaks = events.map((event: { payload: Record<string, unknown>; timestamp: string }) => ({
+        gameType: event.payload.gameType as string,
+        score: event.payload.score as number | undefined,
+        accuracy: event.payload.accuracy as number | undefined,
+        completed: event.payload.completed as boolean,
+        durationSeconds: event.payload.durationSeconds as number | undefined,
+        completedAt: event.payload.completedAt as string || event.timestamp,
+      }));
+
+      // Calculate aggregate statistics
+      const completedBreaks = recentBreaks.filter((b: { completed: boolean }) => b.completed);
+      const accuracies = completedBreaks
+        .map((b: { accuracy?: number }) => b.accuracy)
+        .filter((a: number | undefined): a is number => a !== undefined);
+
+      const averageAccuracy =
+        accuracies.length > 0
+          ? Math.round(accuracies.reduce((sum: number, a: number) => sum + a, 0) / accuracies.length)
+          : null;
+
+      // Find favorite game type
+      const gameTypeCounts: Record<string, number> = {};
+      for (const b of completedBreaks) {
+        const gt = (b as { gameType: string }).gameType;
+        gameTypeCounts[gt] = (gameTypeCounts[gt] || 0) + 1;
+      }
+      const favoriteGameType =
+        Object.keys(gameTypeCounts).length > 0
+          ? Object.entries(gameTypeCounts).sort((a, b) => b[1] - a[1])[0][0]
+          : null;
+
+      return reply.status(200).send({
+        learnerId: params.learnerId,
+        recentBreaks,
+        totalBreaks: recentBreaks.length,
+        completedCount: completedBreaks.length,
+        averageAccuracy,
+        favoriteGameType,
+      });
+    } catch (err) {
+      request.log.error({ err, learnerId: params.learnerId }, 'Failed to fetch learning break history');
+      // Return empty result on error
+      return reply.status(200).send({
+        learnerId: params.learnerId,
+        recentBreaks: [],
+        totalBreaks: 0,
+        averageAccuracy: null,
+        favoriteGameType: null,
+        error: 'Could not retrieve history',
+      });
+    }
   });
 };
 

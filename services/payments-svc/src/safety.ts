@@ -224,22 +224,114 @@ export async function checkEntitlementsHealth(
   tenantId: string,
   log: FastifyBaseLogger
 ): Promise<EntitlementHealthCheck> {
-  // This is a placeholder - actual implementation depends on entitlements-svc API
-  // In production, this would:
-  // 1. Get active subscriptions for tenant from billing DB
-  // 2. Get expected modules from subscription plans
-  // 3. Get actual entitlements from entitlements-svc
-  // 4. Compare and report mismatches
+  const db: DbClient = getDbClient();
 
   log.debug({ tenantId }, 'Checking entitlements health');
 
-  return {
-    tenantId,
-    activeSubscriptions: 0,
-    expectedModules: [],
-    actualModules: [],
-    isMismatched: false,
-  };
+  try {
+    // 1. Get active subscriptions for tenant from billing DB
+    const subscriptions = await db.getActiveSubscriptionsForTenant(tenantId);
+    const activeSubscriptionCount = subscriptions.length;
+
+    // 2. Get expected modules from subscription plans
+    const expectedModules: string[] = [];
+    for (const sub of subscriptions) {
+      const planModules = await db.getModulesForPlan(sub.planId);
+      for (const mod of planModules) {
+        if (!expectedModules.includes(mod)) {
+          expectedModules.push(mod);
+        }
+      }
+    }
+
+    // 3. Get actual entitlements from entitlements-svc
+    const entitlementsSvcUrl = process.env.ENTITLEMENTS_SVC_URL || 'http://localhost:4080';
+    let actualModules: string[] = [];
+
+    try {
+      const response = await fetch(
+        `${entitlementsSvcUrl}/api/v1/tenants/${tenantId}/entitlements`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Service': 'payments-svc',
+          },
+          signal: AbortSignal.timeout(5000), // 5 second timeout
+        }
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as { modules?: string[] };
+        actualModules = data.modules || [];
+      } else {
+        log.warn(
+          { tenantId, status: response.status },
+          'Failed to fetch entitlements from entitlements-svc'
+        );
+      }
+    } catch (fetchError) {
+      log.warn(
+        { tenantId, error: fetchError instanceof Error ? fetchError.message : String(fetchError) },
+        'Error connecting to entitlements-svc'
+      );
+    }
+
+    // 4. Compare and report mismatches
+    const missingModules = expectedModules.filter((m) => !actualModules.includes(m));
+    const extraModules = actualModules.filter((m) => !expectedModules.includes(m));
+    const isMismatched = missingModules.length > 0 || extraModules.length > 0;
+
+    let mismatchDetails: string | undefined;
+    if (isMismatched) {
+      const details: string[] = [];
+      if (missingModules.length > 0) {
+        details.push(`Missing modules: ${missingModules.join(', ')}`);
+      }
+      if (extraModules.length > 0) {
+        details.push(`Extra modules: ${extraModules.join(', ')}`);
+      }
+      mismatchDetails = details.join('; ');
+
+      log.warn(
+        {
+          tenantId,
+          missingModules,
+          extraModules,
+          activeSubscriptionCount,
+        },
+        'Entitlement mismatch detected'
+      );
+
+      metrics.recordEntitlementMismatch(tenantId);
+    }
+
+    return {
+      tenantId,
+      activeSubscriptions: activeSubscriptionCount,
+      expectedModules,
+      actualModules,
+      isMismatched,
+      mismatchDetails,
+    };
+  } catch (error) {
+    log.error(
+      {
+        tenantId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'Error checking entitlements health'
+    );
+
+    // Return degraded response indicating we couldn't check
+    return {
+      tenantId,
+      activeSubscriptions: -1, // Indicates error state
+      expectedModules: [],
+      actualModules: [],
+      isMismatched: true,
+      mismatchDetails: `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
 }
 
 /**
@@ -251,22 +343,61 @@ export async function checkEntitlementsHealth(
 export async function runGlobalHealthCheck(
   log: FastifyBaseLogger
 ): Promise<EntitlementHealthCheck[]> {
+  const db: DbClient = getDbClient();
+
   log.info('Running global entitlements health check');
 
-  // This would:
-  // 1. Get all tenants with active subscriptions
-  // 2. Run health check for each
-  // 3. Return list of mismatches
+  try {
+    // 1. Get all tenants with active subscriptions
+    const tenants = await db.getTenantsWithActiveSubscriptions();
 
-  const mismatches: EntitlementHealthCheck[] = [];
+    log.info({ tenantCount: tenants.length }, 'Found tenants with active subscriptions');
 
-  // Update mismatch metric
-  // This would be set based on actual mismatches found
-  // metrics.registry.set(metrics.entitlementsMismatchTotal, { tenant_type: 'all' }, mismatches.length);
+    // 2. Run health check for each tenant
+    const results: EntitlementHealthCheck[] = [];
+    const mismatches: EntitlementHealthCheck[] = [];
 
-  log.info({ mismatchCount: mismatches.length }, 'Global health check complete');
+    // Process in batches to avoid overwhelming the system
+    const batchSize = 10;
+    for (let i = 0; i < tenants.length; i += batchSize) {
+      const batch = tenants.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map((tenant) => checkEntitlementsHealth(tenant.id, log))
+      );
 
-  return mismatches;
+      for (const result of batchResults) {
+        results.push(result);
+        if (result.isMismatched) {
+          mismatches.push(result);
+        }
+      }
+
+      // Small delay between batches to avoid rate limiting
+      if (i + batchSize < tenants.length) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    // 3. Update metrics
+    metrics.recordGlobalHealthCheck(tenants.length, mismatches.length);
+
+    log.info(
+      {
+        totalTenants: tenants.length,
+        mismatchCount: mismatches.length,
+        mismatchTenants: mismatches.map((m) => m.tenantId),
+      },
+      'Global health check complete'
+    );
+
+    return mismatches;
+  } catch (error) {
+    log.error(
+      { error: error instanceof Error ? error.message : String(error) },
+      'Global health check failed'
+    );
+    throw error;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

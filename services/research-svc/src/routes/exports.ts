@@ -208,6 +208,8 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
   app.get('/exports/:id/preview', async (request, reply) => {
     const user = request.user as { sub: string; tenantId: string };
     const { id } = request.params as { id: string };
+    const query = request.query as { limit?: string };
+    const previewLimit = Math.min(Number(query.limit) || 100, 500);
 
     const job = await getExportJob(id, user.tenantId);
 
@@ -219,14 +221,31 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(400).send({ error: 'Export not ready for preview', status: job.status });
     }
 
-    // In production, read first 100 rows from S3
-    // For now, return placeholder
-    return reply.send({
-      columns: ['learner_id_pseudo', 'date_key', 'session_count', 'total_minutes'],
-      rows: [],
-      totalRows: job.rowCount,
-      previewRows: 0,
-    });
+    if (!job.storagePath) {
+      return reply.status(400).send({ error: 'Export file not available' });
+    }
+
+    try {
+      const s3Service = getS3Service();
+      const preview = await s3Service.getExportPreview(job.storagePath, job.format, previewLimit);
+
+      return reply.send({
+        columns: preview.columns,
+        rows: preview.rows,
+        totalRows: job.rowCount ?? preview.rows.length,
+        previewRows: preview.rows.length,
+        format: job.format,
+      });
+    } catch (error) {
+      if (error instanceof S3ServiceError) {
+        request.log.error({ error, jobId: id }, 'Failed to fetch export preview from S3');
+        return reply.status(500).send({
+          error: 'Failed to fetch preview',
+          code: error.code,
+        });
+      }
+      throw error;
+    }
   });
 };
 

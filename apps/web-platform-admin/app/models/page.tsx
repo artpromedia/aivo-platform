@@ -128,8 +128,15 @@ export default async function ModelsPage() {
   try {
     const result = await listModelCards(auth.accessToken);
     modelCards = result.modelCards;
-  } catch {
-    // Fallback to mock data in development
+  } catch (error) {
+    // Only use mock data in development - never in production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[Models] Failed to fetch model cards:', error);
+      throw new Error('Failed to load model cards. Please try again later.');
+    }
+
+    // Development fallback with warning
+    console.warn('[Models] Using mock data - API not available');
     modelCards = MOCK_MODEL_CARDS;
   }
 

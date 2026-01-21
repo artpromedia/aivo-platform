@@ -46,8 +46,15 @@ export default async function TenantsPage() {
   try {
     const result = await listTenants(auth.accessToken);
     tenants = result.data;
-  } catch {
-    // Fallback to mock data in development
+  } catch (error) {
+    // Only use mock data in development - never in production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[Tenants] Failed to fetch tenants:', error);
+      throw new Error('Failed to load tenants. Please try again later.');
+    }
+
+    // Development fallback with warning
+    console.warn('[Tenants] Using mock data - API not available');
     tenants = MOCK_TENANTS;
   }
 

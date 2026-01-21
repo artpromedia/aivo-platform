@@ -5,6 +5,7 @@
  */
 
 import { config } from '../config.js';
+import { TextractClient, DetectDocumentTextCommand, AnalyzeDocumentCommand } from '@aws-sdk/client-textract';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -588,30 +589,38 @@ export class OCRService {
     return 'image/jpeg'; // Default
   }
 
-  private async signedAWSRequest(
-    endpoint: string,
-    action: string,
-    body: any,
+  /**
+   * Execute AWS Textract request using AWS SDK v3
+   */
+  private async executeTextractRequest(
+    action: 'DetectDocumentText' | 'AnalyzeDocument',
+    imageBytes: Buffer,
     credentials: { accessKeyId: string; secretAccessKey: string; region: string }
   ): Promise<any> {
-    // In production, use @aws-sdk/client-textract
-    // This is a placeholder that would need AWS Signature V4 signing
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-amz-json-1.1',
-        'X-Amz-Target': `Textract.${action}`,
-        // AWS Signature headers would go here
+    const textractClient = new TextractClient({
+      region: credentials.region,
+      credentials: {
+        accessKeyId: credentials.accessKeyId,
+        secretAccessKey: credentials.secretAccessKey,
       },
-      body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      throw new Error(`AWS Textract error: ${response.statusText}`);
-    }
+    const documentInput = {
+      Document: {
+        Bytes: imageBytes,
+      },
+    };
 
-    return response.json();
+    if (action === 'DetectDocumentText') {
+      const command = new DetectDocumentTextCommand(documentInput);
+      return textractClient.send(command);
+    } else {
+      const command = new AnalyzeDocumentCommand({
+        ...documentInput,
+        FeatureTypes: ['TABLES', 'FORMS'],
+      });
+      return textractClient.send(command);
+    }
   }
 }
 

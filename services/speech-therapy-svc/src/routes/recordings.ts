@@ -4,11 +4,22 @@
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { prisma } from '../db.js';
 import { SpeechTherapyService } from '../services/speech.service.js';
+import { logger } from '../logger.js';
 
 const service = new SpeechTherapyService(prisma);
+
+// Initialize S3 client for audio storage
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+});
+
+const RECORDINGS_BUCKET = process.env.RECORDINGS_S3_BUCKET || 'aivo-speech-recordings';
+const CDN_BASE_URL = process.env.RECORDINGS_CDN_URL || `https://${RECORDINGS_BUCKET}.s3.amazonaws.com`;
 
 const saveRecordingSchema = z.object({
   sessionId: z.string().uuid(),
@@ -51,10 +62,6 @@ export const recordingsRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: 'No file uploaded' });
     }
 
-    // In production, upload to S3/GCS and get URL
-    // For now, return placeholder
-    const audioUrl = `https://storage.example.com/recordings/${Date.now()}-${data.filename}`;
-
     // Get metadata from fields
     const fields = data.fields as Record<string, any>;
     const sessionId = fields.sessionId?.value;
@@ -66,15 +73,54 @@ export const recordingsRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: 'sessionId is required' });
     }
 
-    const recording = await service.saveRecording(user.tenantId, {
-      sessionId,
-      activityId,
-      audioUrl,
-      durationSec,
-      targetPhrase,
-    });
+    // Upload to S3
+    const recordingId = randomUUID();
+    const fileExtension = data.filename?.split('.').pop() || 'wav';
+    const s3Key = `recordings/${user.tenantId}/${sessionId}/${recordingId}.${fileExtension}`;
 
-    return reply.code(201).send(recording);
+    try {
+      // Read file buffer
+      const fileBuffer = await data.toBuffer();
+
+      // Determine content type
+      const contentType = data.mimetype || 'audio/wav';
+
+      // Upload to S3
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: RECORDINGS_BUCKET,
+          Key: s3Key,
+          Body: fileBuffer,
+          ContentType: contentType,
+          Metadata: {
+            tenantId: user.tenantId,
+            sessionId,
+            ...(activityId && { activityId }),
+            uploadedBy: user.sub,
+          },
+        })
+      );
+
+      const audioUrl = `${CDN_BASE_URL}/${s3Key}`;
+
+      logger.info(
+        { tenantId: user.tenantId, sessionId, recordingId, s3Key },
+        'Recording uploaded to S3'
+      );
+
+      const recording = await service.saveRecording(user.tenantId, {
+        sessionId,
+        activityId,
+        audioUrl,
+        durationSec,
+        targetPhrase,
+      });
+
+      return reply.code(201).send(recording);
+    } catch (error) {
+      logger.error({ error, tenantId: user.tenantId, sessionId }, 'Failed to upload recording');
+      return reply.code(500).send({ error: 'Failed to upload recording' });
+    }
   });
 
   // Analyze a recording

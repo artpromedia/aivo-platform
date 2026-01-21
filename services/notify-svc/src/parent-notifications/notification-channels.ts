@@ -12,6 +12,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import type { PrismaClient } from '@prisma/client';
+import type { App as FirebaseApp } from 'firebase-admin/app';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';
+import { createLogger } from '@aivo/ts-api-utils';
+
+const logger = createLogger('notification-channels');
 
 import {
   DeliveryChannel,
@@ -57,19 +63,53 @@ interface NotificationChannel {
 }
 
 /**
- * Push notification channel
+ * Push notification channel using Firebase Cloud Messaging (FCM)
  */
 export class PushChannel implements NotificationChannel {
   name = DeliveryChannel.PUSH;
+  private firebaseApp: FirebaseApp | null = null;
 
   constructor(
     private prisma: PrismaClient,
     private config: {
-      fcmServerKey?: string;
-      apnsKeyId?: string;
-      apnsTeamId?: string;
+      fcmServiceAccountPath?: string;
+      fcmServiceAccountJson?: string;
     }
-  ) {}
+  ) {
+    this.initializeFirebase();
+  }
+
+  private initializeFirebase(): void {
+    try {
+      // Check if Firebase is already initialized
+      const existingApps = getApps();
+      if (existingApps.length > 0) {
+        this.firebaseApp = existingApps[0];
+        return;
+      }
+
+      // Initialize Firebase with service account
+      if (this.config.fcmServiceAccountJson) {
+        const serviceAccount = JSON.parse(this.config.fcmServiceAccountJson);
+        this.firebaseApp = initializeApp({
+          credential: cert(serviceAccount),
+        });
+      } else if (this.config.fcmServiceAccountPath) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const serviceAccount = require(this.config.fcmServiceAccountPath);
+        this.firebaseApp = initializeApp({
+          credential: cert(serviceAccount),
+        });
+      } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        // Firebase will auto-detect credentials from environment
+        this.firebaseApp = initializeApp();
+      } else {
+        logger.warn('Firebase credentials not configured - push notifications will fail');
+      }
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to initialize Firebase');
+    }
+  }
 
   async send(parentId: string, content: NotificationContent): Promise<DeliveryResult> {
     try {
@@ -104,8 +144,6 @@ export class PushChannel implements NotificationChannel {
         channelId: this.getAndroidChannelId(content.urgency),
       };
 
-      // In production, this would send via FCM/APNs
-      // For now, we'll simulate the send
       const messageId = await this.sendPushNotification(
         tokens.map((t) => t.token),
         payload
@@ -118,6 +156,7 @@ export class PushChannel implements NotificationChannel {
         timestamp: new Date(),
       };
     } catch (error) {
+      logger.error({ err: error, parentId }, 'Failed to send push notification');
       return {
         success: false,
         channel: DeliveryChannel.PUSH,
@@ -144,23 +183,87 @@ export class PushChannel implements NotificationChannel {
     tokens: string[],
     payload: PushNotificationPayload
   ): Promise<string> {
-    // Placeholder for actual FCM/APNs implementation
-    // In production, integrate with Firebase Admin SDK or APNs
-    console.log('Sending push notification:', { tokens: tokens.length, payload });
+    if (!this.firebaseApp) {
+      throw new Error('Firebase not initialized - check FCM configuration');
+    }
 
-    // Simulate message ID
-    return `push_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const messaging = getMessaging(this.firebaseApp);
+
+    // Build FCM multicast message
+    const message: MulticastMessage = {
+      tokens,
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: payload.data,
+      android: {
+        notification: {
+          channelId: payload.channelId,
+          sound: payload.sound,
+          priority: payload.data?.urgency === 'critical' ? 'max' : 'high',
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: payload.sound,
+            badge: payload.badge,
+          },
+        },
+      },
+    };
+
+    const response = await messaging.sendEachForMulticast(message);
+
+    // Handle failed tokens
+    if (response.failureCount > 0) {
+      const failedTokens: string[] = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          failedTokens.push(tokens[idx]);
+          const errorCode = resp.error?.code;
+          // Mark invalid tokens as inactive
+          if (
+            errorCode === 'messaging/invalid-registration-token' ||
+            errorCode === 'messaging/registration-token-not-registered'
+          ) {
+            this.prisma.deviceToken
+              .updateMany({
+                where: { token: tokens[idx] },
+                data: { active: false },
+              })
+              .catch((err) => {
+                logger.warn({ err, token: tokens[idx] }, 'Failed to deactivate invalid token');
+              });
+          }
+        }
+      });
+      logger.warn(
+        { failedCount: response.failureCount, successCount: response.successCount },
+        'Some push notifications failed'
+      );
+    }
+
+    logger.info(
+      { successCount: response.successCount, failureCount: response.failureCount },
+      'Push notifications sent via FCM'
+    );
+
+    return `fcm_batch_${Date.now()}_${response.successCount}ok_${response.failureCount}fail`;
   }
 }
 
 /**
- * Email notification channel
+ * Email notification channel using SendGrid or SMTP
  */
 export class EmailChannel implements NotificationChannel {
   name = DeliveryChannel.EMAIL;
+  private sendgridApiKey?: string;
 
   constructor(
     private config: {
+      sendgridApiKey?: string;
       smtpHost?: string;
       smtpPort?: number;
       smtpUser?: string;
@@ -168,7 +271,13 @@ export class EmailChannel implements NotificationChannel {
       fromAddress?: string;
       fromName?: string;
     }
-  ) {}
+  ) {
+    this.sendgridApiKey = config.sendgridApiKey || process.env.SENDGRID_API_KEY;
+
+    if (!this.sendgridApiKey && !config.smtpHost) {
+      logger.warn('Email channel not configured - set SENDGRID_API_KEY or SMTP settings');
+    }
+  }
 
   async send(parentId: string, content: NotificationContent): Promise<DeliveryResult> {
     try {
@@ -189,7 +298,6 @@ export class EmailChannel implements NotificationChannel {
         html: this.buildEmailHtml(content),
       };
 
-      // In production, this would send via SMTP or email service
       const messageId = await this.sendEmail(payload);
 
       return {
@@ -199,6 +307,7 @@ export class EmailChannel implements NotificationChannel {
         timestamp: new Date(),
       };
     } catch (error) {
+      logger.error({ err: error, parentId }, 'Failed to send email notification');
       return {
         success: false,
         channel: DeliveryChannel.EMAIL,
@@ -251,20 +360,92 @@ export class EmailChannel implements NotificationChannel {
   }
 
   private async sendEmail(payload: EmailPayload): Promise<string> {
-    // Placeholder for actual email sending implementation
-    // In production, integrate with SendGrid, SES, or SMTP
-    console.log('Sending email:', { to: payload.to, subject: payload.subject });
+    if (this.sendgridApiKey) {
+      return this.sendViaSendGrid(payload);
+    } else if (this.config.smtpHost) {
+      return this.sendViaSmtp(payload);
+    } else {
+      throw new Error('Email channel not configured - set SENDGRID_API_KEY or SMTP settings');
+    }
+  }
 
-    // Simulate message ID
-    return `email_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  private async sendViaSendGrid(payload: EmailPayload): Promise<string> {
+    const fromAddress = this.config.fromAddress || process.env.EMAIL_FROM_ADDRESS || 'notifications@aivolearning.com';
+    const fromName = this.config.fromName || process.env.EMAIL_FROM_NAME || 'Aivo Learning';
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.sendgridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: payload.to }],
+            subject: payload.subject,
+          },
+        ],
+        from: {
+          email: fromAddress,
+          name: fromName,
+        },
+        content: [
+          { type: 'text/plain', value: payload.text },
+          { type: 'text/html', value: payload.html },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`SendGrid API error: ${response.status} - ${errorText}`);
+    }
+
+    // SendGrid returns message ID in headers
+    const messageId = response.headers.get('x-message-id') || `sg_${Date.now()}`;
+    logger.info({ to: payload.to, messageId }, 'Email sent via SendGrid');
+    return messageId;
+  }
+
+  private async sendViaSmtp(payload: EmailPayload): Promise<string> {
+    // Dynamic import for nodemailer to avoid loading it if not needed
+    const nodemailer = await import('nodemailer');
+
+    const transporter = nodemailer.createTransport({
+      host: this.config.smtpHost,
+      port: this.config.smtpPort || 587,
+      secure: this.config.smtpPort === 465,
+      auth: this.config.smtpUser ? {
+        user: this.config.smtpUser,
+        pass: this.config.smtpPass,
+      } : undefined,
+    });
+
+    const fromAddress = this.config.fromAddress || process.env.EMAIL_FROM_ADDRESS || 'notifications@aivolearning.com';
+    const fromName = this.config.fromName || process.env.EMAIL_FROM_NAME || 'Aivo Learning';
+
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromAddress}>`,
+      to: payload.to,
+      subject: payload.subject,
+      text: payload.text,
+      html: payload.html,
+    });
+
+    logger.info({ to: payload.to, messageId: info.messageId }, 'Email sent via SMTP');
+    return info.messageId;
   }
 }
 
 /**
- * SMS notification channel
+ * SMS notification channel using Twilio
  */
 export class SMSChannel implements NotificationChannel {
   name = DeliveryChannel.SMS;
+  private accountSid?: string;
+  private authToken?: string;
+  private fromNumber?: string;
 
   constructor(
     private config: {
@@ -272,7 +453,15 @@ export class SMSChannel implements NotificationChannel {
       twilioAuthToken?: string;
       twilioFromNumber?: string;
     }
-  ) {}
+  ) {
+    this.accountSid = config.twilioAccountSid || process.env.TWILIO_ACCOUNT_SID;
+    this.authToken = config.twilioAuthToken || process.env.TWILIO_AUTH_TOKEN;
+    this.fromNumber = config.twilioFromNumber || process.env.TWILIO_FROM_NUMBER;
+
+    if (!this.accountSid || !this.authToken || !this.fromNumber) {
+      logger.warn('Twilio SMS not configured - set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER');
+    }
+  }
 
   async send(parentId: string, content: NotificationContent): Promise<DeliveryResult> {
     try {
@@ -294,7 +483,6 @@ export class SMSChannel implements NotificationChannel {
         body,
       };
 
-      // In production, this would send via Twilio or similar
       const messageId = await this.sendSMS(payload);
 
       return {
@@ -304,6 +492,7 @@ export class SMSChannel implements NotificationChannel {
         timestamp: new Date(),
       };
     } catch (error) {
+      logger.error({ err: error, parentId }, 'Failed to send SMS notification');
       return {
         success: false,
         channel: DeliveryChannel.SMS,
@@ -330,12 +519,39 @@ export class SMSChannel implements NotificationChannel {
   }
 
   private async sendSMS(payload: SMSPayload): Promise<string> {
-    // Placeholder for actual SMS sending implementation
-    // In production, integrate with Twilio
-    console.log('Sending SMS:', { to: payload.to, body: payload.body });
+    if (!this.accountSid || !this.authToken || !this.fromNumber) {
+      throw new Error('Twilio SMS not configured - set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER');
+    }
 
-    // Simulate message ID
-    return `sms_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Use Twilio REST API directly to avoid heavy SDK dependency
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/Messages.json`;
+    const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+
+    const formData = new URLSearchParams({
+      To: payload.to,
+      From: this.fromNumber,
+      Body: payload.body,
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        `Twilio API error: ${response.status} - ${(errorData as { message?: string }).message || 'Unknown error'}`
+      );
+    }
+
+    const result = (await response.json()) as { sid: string; status: string };
+    logger.info({ to: payload.to, sid: result.sid, status: result.status }, 'SMS sent via Twilio');
+    return result.sid;
   }
 }
 
@@ -418,8 +634,9 @@ export class ChannelManager {
    * Initialize all channels with configuration
    */
   initialize(config: {
-    push?: { fcmServerKey?: string; apnsKeyId?: string; apnsTeamId?: string };
+    push?: { fcmServiceAccountPath?: string; fcmServiceAccountJson?: string };
     email?: {
+      sendgridApiKey?: string;
       smtpHost?: string;
       smtpPort?: number;
       smtpUser?: string;

@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:video_player/video_player.dart';
 import 'life_skills_models.dart';
 import 'life_skills_service.dart';
 import 'widgets/widgets.dart';
@@ -488,46 +489,253 @@ class StepMediaPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Implement actual video player (video_player package)
-    // For now, show thumbnail with play button
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: thumbnailUrl != null
-              ? Image.network(
-                  thumbnailUrl!,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: 250,
-                  errorBuilder: (_, __, ___) => const StepPlaceholder(),
-                )
-              : Container(
-                  height: 250,
-                  color: Colors.black87,
-                  child: const Center(
-                    child: Icon(Icons.video_library, size: 64, color: Colors.white54),
-                  ),
-                ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.black54,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.play_arrow, size: 48, color: Colors.white),
-            onPressed: () {
-              // TODO: Launch video player
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Video player not yet implemented')),
-              );
-            },
-          ),
-        ),
-      ],
+    return _VideoPlayerWidget(
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl,
     );
+  }
+}
+
+/// Internal stateful video player widget with full playback support
+class _VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+  final String? thumbnailUrl;
+
+  const _VideoPlayerWidget({
+    required this.videoUrl,
+    this.thumbnailUrl,
+  });
+
+  @override
+  State<_VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _isPlaying = false;
+  bool _showControls = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideoPlayer();
+  }
+
+  Future<void> _initializeVideoPlayer() async {
+    try {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      await _controller!.initialize();
+      _controller!.addListener(_onVideoStateChanged);
+      if (mounted) {
+        setState(() => _isInitialized = true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _hasError = true);
+      }
+    }
+  }
+
+  void _onVideoStateChanged() {
+    if (mounted && _controller != null) {
+      setState(() {
+        _isPlaying = _controller!.value.isPlaying;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_onVideoStateChanged);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null) return;
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _controller != null && _controller!.value.isPlaying) {
+          setState(() => _showControls = false);
+        }
+      });
+    }
+  }
+
+  void _toggleControls() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls && _controller != null && _controller!.value.isPlaying) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && _controller != null && _controller!.value.isPlaying) {
+          setState(() => _showControls = false);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return _buildErrorState();
+    }
+    if (!_isInitialized || _controller == null) {
+      return _buildLoadingState();
+    }
+    return GestureDetector(
+      onTap: _toggleControls,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 250,
+          color: Colors.black,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio > 0
+                    ? _controller!.value.aspectRatio
+                    : 16 / 9,
+                child: VideoPlayer(_controller!),
+              ),
+              if (_showControls) ...[
+                _buildPlayPauseButton(),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildProgressBar(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 250,
+        color: Colors.black87,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (widget.thumbnailUrl != null)
+              Image.network(
+                widget.thumbnailUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 250,
+                errorBuilder: (_, __, ___) => const SizedBox(),
+              ),
+            const CircularProgressIndicator(color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 250,
+        color: Colors.black87,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.white54),
+              const SizedBox(height: 8),
+              const Text(
+                'Unable to load video',
+                style: TextStyle(color: Colors.white54),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() => _hasError = false);
+                  _initializeVideoPlayer();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlayPauseButton() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black54,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        iconSize: 48,
+        icon: Icon(
+          _isPlaying ? Icons.pause : Icons.play_arrow,
+          color: Colors.white,
+        ),
+        onPressed: _togglePlayPause,
+      ),
+    );
+  }
+
+  Widget _buildProgressBar() {
+    final position = _controller!.value.position;
+    final duration = _controller!.value.duration;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [Colors.black54, Colors.transparent],
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            _formatDuration(position),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          Expanded(
+            child: Slider(
+              value: duration.inMilliseconds > 0
+                  ? position.inMilliseconds.toDouble().clamp(0, duration.inMilliseconds.toDouble())
+                  : 0,
+              min: 0,
+              max: duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1,
+              onChanged: (value) {
+                _controller!.seekTo(Duration(milliseconds: value.toInt()));
+              },
+              activeColor: Colors.white,
+              inactiveColor: Colors.white24,
+            ),
+          ),
+          Text(
+            _formatDuration(duration),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 }
 

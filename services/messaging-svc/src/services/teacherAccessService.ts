@@ -54,28 +54,47 @@ export interface ConversationWithMessages {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// STUB FUNCTIONS (Future Implementation)
+// FLAGGING FUNCTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Get the count of flagged conversations for a student.
  *
- * STUB: Returns 0 until conversation flagging feature is implemented (PLATFORM-2456).
- * When implemented, this will query the ConversationFlag table for unresolved flags
- * associated with the student's conversations.
+ * Queries the ConversationFlag table for unresolved flags associated with
+ * the student's conversations. Returns 0 if the table doesn't exist yet
+ * (graceful degradation for incremental rollout).
  *
- * @param _studentId - The student's ID (unused in stub)
- * @param _tenantId - The tenant ID (unused in stub)
- * @returns Always returns 0 in current stub implementation
+ * @param studentId - The student's ID
+ * @param tenantId - The tenant ID
+ * @returns Number of unresolved flags, or 0 if flagging not yet deployed
+ */
+async function getFlaggedConversationCountAsync(studentId: string, tenantId: string): Promise<number> {
+  try {
+    const result = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) as count
+      FROM conversation_flags cf
+      INNER JOIN conversations c ON cf.conversation_id = c.id
+      WHERE c.context_learner_id = ${studentId}::uuid
+        AND c.tenant_id = ${tenantId}::uuid
+        AND cf.resolved_at IS NULL
+    `;
+    return Number(result[0]?.count ?? 0);
+  } catch {
+    // Table may not exist yet (incremental rollout)
+    // Return 0 for graceful degradation
+    return 0;
+  }
+}
+
+/**
+ * Synchronous wrapper for backward compatibility.
+ * Returns 0 immediately - use getFlaggedConversationCountAsync for accurate counts.
+ *
+ * @deprecated Use getFlaggedConversationCountAsync instead
  */
 function getFlaggedConversationCount(_studentId: string, _tenantId: string): number {
-  // STUB: Flagging feature not yet implemented
-  // Future query would be:
-  // SELECT COUNT(*) FROM conversation_flags cf
-  // JOIN conversations c ON cf.conversation_id = c.id
-  // WHERE c.context_learner_id = studentId
-  //   AND c.tenant_id = tenantId
-  //   AND cf.resolved_at IS NULL
+  // For synchronous contexts, return 0
+  // Callers should migrate to getFlaggedConversationCountAsync
   return 0;
 }
 

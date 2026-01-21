@@ -907,18 +907,6 @@ export class SpeechTherapyService {
     } activities were completed. Continue practicing at home for best results!`;
   }
 
-  private analyzePhonemesPlaceholder(phrase: string): PhonemeResult[] {
-    // Placeholder - in production, use actual phoneme analysis
-    const words = phrase.split(' ');
-    return words.map((word, i) => ({
-      phoneme: word[0]?.toLowerCase() || '',
-      expected: word,
-      actual: word,
-      isCorrect: Math.random() > 0.2,
-      position: i === 0 ? 'initial' : i === words.length - 1 ? 'final' : 'medial',
-    }));
-  }
-
   private calculateAvgSessionAccuracy(sessions: any[]): number {
     const sessionsWithActivities = sessions.filter(
       (s) => s.activities?.some((a: any) => a.accuracy !== null)

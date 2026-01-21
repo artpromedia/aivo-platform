@@ -3,8 +3,23 @@ import { createVerifier } from 'fast-jwt';
 import fs from 'fs';
 import { config } from '../config.js';
 
-let jwtVerifier: any = null;
-try { jwtVerifier = createVerifier({ key: fs.readFileSync(config.jwtPublicKeyPath, 'utf-8'), algorithms: ['RS256'] }); } catch {}
+let jwtVerifier: ReturnType<typeof createVerifier> | null = null;
+
+// Initialize JWT verifier with proper error handling
+try {
+  if (config.jwtPublicKeyPath && fs.existsSync(config.jwtPublicKeyPath)) {
+    jwtVerifier = createVerifier({
+      key: fs.readFileSync(config.jwtPublicKeyPath, 'utf-8'),
+      algorithms: ['RS256'],
+    });
+    console.info('[Auth] JWT verifier initialized successfully');
+  } else {
+    console.warn(`[Auth] JWT public key not found at ${config.jwtPublicKeyPath}. JWT auth will be disabled.`);
+  }
+} catch (error) {
+  console.error('[Auth] Failed to initialize JWT verifier:', error instanceof Error ? error.message : error);
+  console.warn('[Auth] JWT authentication will not be available. Use API key auth instead.');
+}
 
 export async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const apiKey = request.headers['x-api-key'] as string;

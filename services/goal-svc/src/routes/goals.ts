@@ -11,7 +11,6 @@ import {
   UpdateGoalSchema,
   CreateObjectiveSchema,
   UpdateObjectiveSchema,
-  // GoalFiltersSchema - TODO: implement filtering when needed
 } from '../schemas/goal.schemas.js';
 import * as goalService from '../services/goalService.js';
 
@@ -74,6 +73,17 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
   /**
    * GET /goals
    * List goals with filters
+   *
+   * Supported filters:
+   * - learnerId: Filter by learner
+   * - status: Filter by goal status (active, completed, archived)
+   * - domain: Filter by domain (ELA, MATH, etc.)
+   * - category: Filter by category
+   * - createdAfter: Filter goals created after date (ISO 8601)
+   * - createdBefore: Filter goals created before date (ISO 8601)
+   * - targetDateAfter: Filter by target date range
+   * - targetDateBefore: Filter by target date range
+   * - search: Text search in goal title/description
    */
   fastify.get(
     '/goals',
@@ -83,6 +93,12 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
           learnerId?: string;
           status?: string;
           domain?: string;
+          category?: string;
+          createdAfter?: string;
+          createdBefore?: string;
+          targetDateAfter?: string;
+          targetDateBefore?: string;
+          search?: string;
           page?: string;
           pageSize?: string;
         };
@@ -90,7 +106,19 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
       reply: FastifyReply
     ) => {
       const ctx = getTenantContext(request);
-      const { learnerId, status, domain, page, pageSize } = request.query;
+      const {
+        learnerId,
+        status,
+        domain,
+        category,
+        createdAfter,
+        createdBefore,
+        targetDateAfter,
+        targetDateBefore,
+        search,
+        page,
+        pageSize,
+      } = request.query;
 
       const result = await goalService.listGoals(
         {
@@ -98,6 +126,12 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
           learnerId,
           status: status as any,
           domain: domain as any,
+          category,
+          createdAfter: createdAfter ? new Date(createdAfter) : undefined,
+          createdBefore: createdBefore ? new Date(createdBefore) : undefined,
+          targetDateAfter: targetDateAfter ? new Date(targetDateAfter) : undefined,
+          targetDateBefore: targetDateBefore ? new Date(targetDateBefore) : undefined,
+          search,
         },
         {
           page: page ? Number.parseInt(page, 10) : 1,
