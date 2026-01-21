@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, import/no-unresolved */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
 'use client';
 
 import Link from 'next/link';
@@ -180,6 +180,12 @@ export default function BillingDashboardPage() {
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             🔐 License Vault
+          </Link>
+          <Link
+            href="/billing/pilots"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            🚀 Pilots
           </Link>
           <Link
             href="/billing/enterprise"
