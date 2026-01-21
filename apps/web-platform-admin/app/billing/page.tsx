@@ -176,6 +176,18 @@ export default function BillingDashboardPage() {
         </div>
         <div className="flex gap-2">
           <Link
+            href="/billing/vault"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            🔐 License Vault
+          </Link>
+          <Link
+            href="/billing/enterprise"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            🏢 Enterprise Sales
+          </Link>
+          <Link
             href="/billing/finops"
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >

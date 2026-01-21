@@ -97,6 +97,72 @@ enum InvoiceStatus {
   UNCOLLECTIBLE // Payment failed, written off
 }
 
+/// License type for vault-issued licenses
+enum VaultLicenseType {
+  SEAT           // Standard seat-based license
+  ENTERPRISE     // Enterprise bulk license
+  TRIAL          // Trial/evaluation license
+  PROMOTIONAL    // Promotional/marketing license
+  NFR            // Not-for-resale (partner/demo)
+}
+
+/// License status in the vault
+enum VaultLicenseStatus {
+  ISSUED         // Issued but not yet activated
+  ACTIVE         // Active and in use
+  SUSPENDED      // Temporarily suspended
+  REVOKED        // Permanently revoked
+  EXPIRED        // Past expiration date
+}
+
+/// Code type for redemption/activation codes
+enum VaultCodeType {
+  REDEMPTION     // General redemption code
+  ACTIVATION     // License activation code
+  ACCESS         // Access code for specific features
+  PIN            // Numeric PIN for learner access
+}
+
+/// Code status
+enum VaultCodeStatus {
+  VALID          // Can be used
+  REDEEMED       // Already used (max redemptions reached)
+  EXPIRED        // Past expiration date
+  REVOKED        // Manually revoked
+}
+
+/// Enterprise deal status
+enum EnterpriseDealStatus {
+  LEAD           // Initial contact/lead
+  QUALIFIED      // Qualified opportunity
+  PROPOSAL       // Proposal sent
+  NEGOTIATION    // In negotiation
+  CONTRACT_SENT  // Contract sent for signature
+  WON_PENDING    // Deal won, pending setup
+  WON_ACTIVE     // Deal won and active
+  LOST           // Deal lost
+  CHURNED        // Customer churned
+}
+
+/// Enterprise deal type
+enum EnterpriseDealType {
+  NEW_BUSINESS   // New customer
+  EXPANSION      // Expansion of existing customer
+  RENEWAL        // Renewal of existing contract
+  UPSELL         // Upsell additional products
+}
+
+/// Enterprise customer type
+enum EnterpriseCustomerType {
+  DISTRICT       // School district
+  CHARTER_NETWORK // Charter school network
+  PRIVATE_SCHOOL // Private school
+  NONPROFIT      // Non-profit organization
+  GOVERNMENT     // Government agency
+  RESELLER       // Channel partner/reseller
+  OTHER          // Other enterprise type
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // BILLING ACCOUNTS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2304,4 +2370,530 @@ model VendorPayout {
   @@index([periodStart, periodEnd])
   @@index([status, createdAt(sort: Desc)])
   @@map("vendor_payouts")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRYPTO LICENSE VAULT
+// Secure storage, issuance, and verification of licenses, PINs, and codes
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Vault-managed license with cryptographic security
+model VaultLicense {
+  /// Unique license identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Tenant this license belongs to
+  tenantId            String              @map("tenant_id") @db.Uuid
+
+  /// License type
+  type                VaultLicenseType
+
+  /// Number of seats authorized
+  seats               Int                 @default(1)
+
+  /// Number of seats currently in use
+  seatsUsed           Int                 @default(0) @map("seats_used")
+
+  /// Current license status
+  status              VaultLicenseStatus  @default(ISSUED)
+
+  /// JSON array of enabled feature flags
+  featuresJson        Json?               @map("features_json")
+
+  /// HMAC-SHA256 hash of the license key (for verification without decryption)
+  licenseKeyHash      String              @unique @map("license_key_hash")
+
+  /// AES-256-GCM encrypted license key data (IV + ciphertext + auth tag)
+  encryptedKeyData    String              @map("encrypted_key_data")
+
+  /// Reference to enterprise deal (if issued via enterprise provisioning)
+  enterpriseDealId    String?             @map("enterprise_deal_id") @db.Uuid
+
+  /// Reference to contract (if part of a contract)
+  contractId          String?             @map("contract_id") @db.Uuid
+
+  /// When the license was issued
+  issuedAt            DateTime            @default(now()) @map("issued_at") @db.Timestamptz
+
+  /// When the license expires (null = perpetual)
+  expiresAt           DateTime?           @map("expires_at") @db.Timestamptz
+
+  /// When the license was first activated
+  activatedAt         DateTime?           @map("activated_at") @db.Timestamptz
+
+  /// When the license was suspended (if suspended)
+  suspendedAt         DateTime?           @map("suspended_at") @db.Timestamptz
+
+  /// Reason for suspension
+  suspendReason       String?             @map("suspend_reason")
+
+  /// When the license was revoked (if revoked)
+  revokedAt           DateTime?           @map("revoked_at") @db.Timestamptz
+
+  /// Reason for revocation
+  revokeReason        String?             @map("revoke_reason")
+
+  /// User ID who issued the license
+  issuedBy            String              @map("issued_by") @db.Uuid
+
+  /// Optional notes about this license
+  notes               String?
+
+  /// Additional metadata as JSON
+  metadataJson        Json?               @map("metadata_json")
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  codes               VaultCode[]
+  auditLogs           VaultAuditLog[]
+  enterpriseDeal      EnterpriseDeal?     @relation(fields: [enterpriseDealId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([type, status])
+  @@index([enterpriseDealId])
+  @@index([contractId])
+  @@index([expiresAt])
+  @@index([issuedAt(sort: Desc)])
+  @@map("vault_licenses")
+}
+
+/// Redemption/activation codes associated with licenses
+model VaultCode {
+  /// Unique code identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the parent license
+  licenseId           String              @map("license_id") @db.Uuid
+
+  /// Type of code
+  codeType            VaultCodeType       @map("code_type")
+
+  /// HMAC-SHA256 hash of the code (for lookup)
+  codeHash            String              @unique @map("code_hash")
+
+  /// AES-256-GCM encrypted code value
+  encryptedCode       String              @map("encrypted_code")
+
+  /// Current code status
+  status              VaultCodeStatus     @default(VALID)
+
+  /// Maximum number of times this code can be redeemed (null = unlimited)
+  maxRedemptions      Int?                @map("max_redemptions")
+
+  /// Number of times this code has been redeemed
+  redemptionCount     Int                 @default(0) @map("redemption_count")
+
+  /// When the code expires (null = never)
+  expiresAt           DateTime?           @map("expires_at") @db.Timestamptz
+
+  /// When the code was last redeemed
+  lastRedeemedAt      DateTime?           @map("last_redeemed_at") @db.Timestamptz
+
+  /// User who last redeemed the code
+  lastRedeemedBy      String?             @map("last_redeemed_by") @db.Uuid
+
+  /// When the code was revoked
+  revokedAt           DateTime?           @map("revoked_at") @db.Timestamptz
+
+  /// User who revoked the code
+  revokedBy           String?             @map("revoked_by") @db.Uuid
+
+  /// Reason for revocation
+  revokeReason        String?             @map("revoke_reason")
+
+  /// User who created this code
+  createdBy           String              @map("created_by") @db.Uuid
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  license             VaultLicense        @relation(fields: [licenseId], references: [id])
+  redemptions         VaultCodeRedemption[]
+  auditLogs           VaultAuditLog[]
+
+  @@index([licenseId, codeType])
+  @@index([status, expiresAt])
+  @@index([codeType, status])
+  @@map("vault_codes")
+}
+
+/// Record of code redemptions
+model VaultCodeRedemption {
+  /// Unique redemption identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the redeemed code
+  codeId              String              @map("code_id") @db.Uuid
+
+  /// Reference to the license (denormalized for query performance)
+  licenseId           String              @map("license_id") @db.Uuid
+
+  /// User who redeemed the code
+  redeemedBy          String              @map("redeemed_by") @db.Uuid
+
+  /// Target tenant for the redemption (if applicable)
+  targetTenantId      String?             @map("target_tenant_id") @db.Uuid
+
+  /// When the redemption occurred
+  redeemedAt          DateTime            @default(now()) @map("redeemed_at") @db.Timestamptz
+
+  /// IP address of the redemption request
+  ipAddress           String?             @map("ip_address")
+
+  /// User agent of the redemption request
+  userAgent           String?             @map("user_agent")
+
+  /// Additional redemption metadata
+  metadataJson        Json?               @map("metadata_json")
+
+  // Relations
+  code                VaultCode           @relation(fields: [codeId], references: [id])
+
+  @@index([codeId, redeemedAt(sort: Desc)])
+  @@index([redeemedBy])
+  @@index([targetTenantId])
+  @@map("vault_code_redemptions")
+}
+
+/// Complete audit log for all vault operations
+model VaultAuditLog {
+  /// Unique audit log identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the license (if applicable)
+  licenseId           String?             @map("license_id") @db.Uuid
+
+  /// Reference to the code (if applicable)
+  codeId              String?             @map("code_id") @db.Uuid
+
+  /// Action performed (e.g., LICENSE_ISSUED, CODE_REDEEMED, LICENSE_REVOKED)
+  action              String
+
+  /// User who performed the action
+  performedBy         String              @map("performed_by") @db.Uuid
+
+  /// Additional details as JSON
+  detailsJson         Json?               @map("details_json")
+
+  /// IP address of the request
+  ipAddress           String?             @map("ip_address")
+
+  /// User agent of the request
+  userAgent           String?             @map("user_agent")
+
+  /// When the action occurred
+  timestamp           DateTime            @default(now()) @db.Timestamptz
+
+  // Relations
+  license             VaultLicense?       @relation(fields: [licenseId], references: [id])
+  code                VaultCode?          @relation(fields: [codeId], references: [id])
+
+  @@index([licenseId, timestamp(sort: Desc)])
+  @@index([codeId, timestamp(sort: Desc)])
+  @@index([action, timestamp(sort: Desc)])
+  @@index([performedBy, timestamp(sort: Desc)])
+  @@map("vault_audit_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENTERPRISE SALES & PROVISIONING
+// Sales team tools for bulk license provisioning to districts and enterprises
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Enterprise customer organization
+model EnterpriseCustomer {
+  /// Unique customer identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Customer organization name
+  name                String
+
+  /// Customer type
+  type                EnterpriseCustomerType
+
+  /// Primary contact name
+  primaryContactName  String              @map("primary_contact_name")
+
+  /// Primary contact email
+  primaryContactEmail String              @map("primary_contact_email")
+
+  /// Primary contact phone
+  primaryContactPhone String?             @map("primary_contact_phone")
+
+  /// Billing contact email (if different)
+  billingContactEmail String?             @map("billing_contact_email")
+
+  /// Street address
+  addressLine1        String?             @map("address_line_1")
+  addressLine2        String?             @map("address_line_2")
+  city                String?
+  state               String?
+  postalCode          String?             @map("postal_code")
+  country             String?             @default("US")
+
+  /// Website URL
+  website             String?
+
+  /// Tax ID / EIN
+  taxId               String?             @map("tax_id")
+
+  /// Notes about this customer
+  notes               String?
+
+  /// Associated tenant ID (if already onboarded)
+  tenantId            String?             @map("tenant_id") @db.Uuid
+
+  /// Sales rep assigned to this customer
+  salesRepId          String?             @map("sales_rep_id") @db.Uuid
+
+  /// Is this customer active?
+  isActive            Boolean             @default(true) @map("is_active")
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  deals               EnterpriseDeal[]
+  contacts            EnterpriseContact[]
+
+  @@index([type, isActive])
+  @@index([salesRepId])
+  @@index([tenantId])
+  @@index([name])
+  @@map("enterprise_customers")
+}
+
+/// Additional contacts for enterprise customers
+model EnterpriseContact {
+  /// Unique contact identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the customer
+  customerId          String              @map("customer_id") @db.Uuid
+
+  /// Contact name
+  name                String
+
+  /// Contact email
+  email               String
+
+  /// Contact phone
+  phone               String?
+
+  /// Contact role/title
+  title               String?
+
+  /// Is this a primary contact?
+  isPrimary           Boolean             @default(false) @map("is_primary")
+
+  /// Is this contact active?
+  isActive            Boolean             @default(true) @map("is_active")
+
+  /// Notes about this contact
+  notes               String?
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  customer            EnterpriseCustomer  @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, isPrimary])
+  @@index([email])
+  @@map("enterprise_contacts")
+}
+
+/// Enterprise sales deal/opportunity
+model EnterpriseDeal {
+  /// Unique deal identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the customer
+  customerId          String              @map("customer_id") @db.Uuid
+
+  /// Deal name/title
+  name                String
+
+  /// Deal type
+  type                EnterpriseDealType
+
+  /// Deal status
+  status              EnterpriseDealStatus @default(LEAD)
+
+  /// Number of seats being quoted
+  seats               Int
+
+  /// Price per seat (in cents)
+  pricePerSeatCents   Int                 @map("price_per_seat_cents")
+
+  /// Total deal value (in cents)
+  totalValueCents     Int                 @map("total_value_cents")
+
+  /// Annual recurring revenue (in cents)
+  arrCents            Int                 @map("arr_cents")
+
+  /// Contract term in months
+  termMonths          Int                 @default(12) @map("term_months")
+
+  /// Start date of the contract
+  startDate           DateTime?           @map("start_date") @db.Date
+
+  /// End date of the contract
+  endDate             DateTime?           @map("end_date") @db.Date
+
+  /// Expected close date
+  expectedCloseDate   DateTime?           @map("expected_close_date") @db.Date
+
+  /// Actual close date
+  actualCloseDate     DateTime?           @map("actual_close_date") @db.Date
+
+  /// Win probability (0-100)
+  probability         Int?
+
+  /// Discount percentage applied
+  discountPercent     Float?              @map("discount_percent")
+
+  /// Reason for discount
+  discountReason      String?             @map("discount_reason")
+
+  /// Products/features included (JSON array)
+  productsJson        Json?               @map("products_json")
+
+  /// Notes and comments
+  notes               String?
+
+  /// Sales rep who owns this deal
+  ownerId             String              @map("owner_id") @db.Uuid
+
+  /// When the deal was qualified
+  qualifiedAt         DateTime?           @map("qualified_at") @db.Timestamptz
+
+  /// When the proposal was sent
+  proposalSentAt      DateTime?           @map("proposal_sent_at") @db.Timestamptz
+
+  /// When the deal was won
+  wonAt               DateTime?           @map("won_at") @db.Timestamptz
+
+  /// When the deal was lost
+  lostAt              DateTime?           @map("lost_at") @db.Timestamptz
+
+  /// Reason for loss (if lost)
+  lostReason          String?             @map("lost_reason")
+
+  /// Reference to the contract (if generated)
+  contractId          String?             @map("contract_id") @db.Uuid
+
+  /// CRM external ID (e.g., Salesforce opportunity ID)
+  externalCrmId       String?             @map("external_crm_id")
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  customer            EnterpriseCustomer  @relation(fields: [customerId], references: [id])
+  licenses            VaultLicense[]
+  provisioningBatches EnterpriseProvisioningBatch[]
+  activities          EnterpriseDealActivity[]
+
+  @@index([customerId, status])
+  @@index([ownerId, status])
+  @@index([status, expectedCloseDate])
+  @@index([externalCrmId])
+  @@map("enterprise_deals")
+}
+
+/// Activity log for enterprise deals
+model EnterpriseDealActivity {
+  /// Unique activity identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the deal
+  dealId              String              @map("deal_id") @db.Uuid
+
+  /// Activity type (e.g., NOTE, CALL, EMAIL, MEETING, STATUS_CHANGE)
+  activityType        String              @map("activity_type")
+
+  /// Activity description
+  description         String
+
+  /// Previous status (for status changes)
+  previousStatus      EnterpriseDealStatus? @map("previous_status")
+
+  /// New status (for status changes)
+  newStatus           EnterpriseDealStatus? @map("new_status")
+
+  /// User who performed this activity
+  performedBy         String              @map("performed_by") @db.Uuid
+
+  /// When the activity occurred
+  occurredAt          DateTime            @default(now()) @map("occurred_at") @db.Timestamptz
+
+  // Relations
+  deal                EnterpriseDeal      @relation(fields: [dealId], references: [id])
+
+  @@index([dealId, occurredAt(sort: Desc)])
+  @@index([performedBy])
+  @@map("enterprise_deal_activities")
+}
+
+/// Batch provisioning record for enterprise licenses
+model EnterpriseProvisioningBatch {
+  /// Unique batch identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the deal
+  dealId              String              @map("deal_id") @db.Uuid
+
+  /// Batch name/description
+  name                String
+
+  /// Number of licenses to provision
+  licenseCount        Int                 @map("license_count")
+
+  /// Number of licenses successfully provisioned
+  provisionedCount    Int                 @default(0) @map("provisioned_count")
+
+  /// Number of licenses that failed to provision
+  failedCount         Int                 @default(0) @map("failed_count")
+
+  /// License type to provision
+  licenseType         VaultLicenseType    @default(ENTERPRISE) @map("license_type")
+
+  /// Seats per license
+  seatsPerLicense     Int                 @default(1) @map("seats_per_license")
+
+  /// License duration in days (null = perpetual)
+  durationDays        Int?                @map("duration_days")
+
+  /// Features to include (JSON array)
+  featuresJson        Json?               @map("features_json")
+
+  /// Batch status
+  status              String              @default("PENDING")
+
+  /// Error message (if failed)
+  errorMessage        String?             @map("error_message")
+
+  /// User who initiated the batch
+  initiatedBy         String              @map("initiated_by") @db.Uuid
+
+  /// When provisioning started
+  startedAt           DateTime?           @map("started_at") @db.Timestamptz
+
+  /// When provisioning completed
+  completedAt         DateTime?           @map("completed_at") @db.Timestamptz
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  deal                EnterpriseDeal      @relation(fields: [dealId], references: [id])
+
+  @@index([dealId, status])
+  @@index([initiatedBy])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("enterprise_provisioning_batches")
 }
