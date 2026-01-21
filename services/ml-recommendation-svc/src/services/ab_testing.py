@@ -675,13 +675,7 @@ class ABTestingService:
             metric_by_variant, _ = self._calculate_metrics_by_variant(by_variant, metric)
             result[metric] = metric_by_variant
         return result
-            is_significant=is_significant,
-            effect_size=effect_size,
-            guardrail_status=guardrail_status,
-            sample_sizes=participants_by_variant,
-            min_sample=config.min_sample_size,
-        )
-        
+
     def _generate_recommendation(
         self,
         is_significant: bool,

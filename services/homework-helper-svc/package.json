@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@aivo/ts-rbac": "workspace:*",
+    "@aws-sdk/client-textract": "^3.600.0",
     "@fastify/multipart": "^8.3.0",
     "@prisma/client": "^5.22.0",
     "dotenv": "^16.4.5",
