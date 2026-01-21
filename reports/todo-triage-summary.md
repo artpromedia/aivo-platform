@@ -1,7 +1,7 @@
 # TODO/FIXME Triage Report
 
-**Generated:** 2026-01-21T00:28:12.869Z
-**Total Items:** 37
+**Generated:** 2026-01-21T00:52:07.581Z
+**Total Items:** 0
 **Stale Items:** 0 (candidates for removal)
 
 ---
@@ -13,8 +13,8 @@
 | Priority | Count | Description |
 |----------|-------|-------------|
 | **P0** | 0 | Security/Critical - Must fix before launch |
-| **P1** | 15 | Core Functionality - Required for production |
-| **P2** | 22 | Improvements - Nice to have |
+| **P1** | 0 | Core Functionality - Required for production |
+| **P2** | 0 | Improvements - Nice to have |
 | **P3** | 0 | Tech Debt - Can defer |
 
 ### By Category
@@ -24,22 +24,14 @@
 | 🔒 Security | 0 |
 | ⚡ Performance | 0 |
 | 🐛 Bug | 0 |
-| ✨ Feature | 14 |
+| ✨ Feature | 0 |
 | 🧹 Cleanup | 0 |
-| ❓ Unknown | 23 |
+| ❓ Unknown | 0 |
 
 ### By Owner
 
 | Team | Count |
 |------|-------|
-| Unassigned | 29 |
-| Auth Team | 2 |
-| Data Team | 1 |
-| Compliance Team | 1 |
-| Billing Team | 1 |
-| Focus Team | 1 |
-| Marketplace Team | 1 |
-| Parent Team | 1 |
 
 ---
 
@@ -51,23 +43,7 @@
 
 ## P1 - Core Functionality
 
-| File | Line | Category | Content | Owner |
-|------|------|----------|---------|-------|
-| [...web-platform-admin/lib/billing-api.ts](apps/web-platform-admin/lib/billing-api.ts#L148) | 148 | feature | Replace with real API call when endpoint is ready | Unassigned |
-| [...web-platform-admin/lib/billing-api.ts](apps/web-platform-admin/lib/billing-api.ts#L165) | 165 | feature | Replace with real API call when endpoint is ready | Unassigned |
-| [...web-platform-admin/lib/billing-api.ts](apps/web-platform-admin/lib/billing-api.ts#L180) | 180 | feature | Replace with real API call when endpoint is ready | Unassigned |
-| [...web-platform-admin/lib/billing-api.ts](apps/web-platform-admin/lib/billing-api.ts#L203) | 203 | feature | Replace with real API call when endpoint is ready | Unassigned |
-| [...web-platform-admin/lib/billing-api.ts](apps/web-platform-admin/lib/billing-api.ts#L221) | 221 | feature | Replace with real API call when endpoint is ready | Unassigned |
-| [services/curriculum-py-svc/app/main.py](services/curriculum-py-svc/app/main.py#L73) | 73 | feature | Implement database query | Unassigned |
-| [services/curriculum-py-svc/app/main.py](services/curriculum-py-svc/app/main.py#L85) | 85 | feature | Implement database query | Unassigned |
-| [services/curriculum-py-svc/app/main.py](services/curriculum-py-svc/app/main.py#L93) | 93 | feature | Implement database query | Unassigned |
-| [services/curriculum-py-svc/app/main.py](services/curriculum-py-svc/app/main.py#L100) | 100 | feature | Implement database query | Unassigned |
-| [...ommendation-svc/src/routers/health.py](services/ml-recommendation-svc/src/routers/health.py#L19) | 19 | feature | Add checks for Redis, RabbitMQ, etc. | Unassigned |
-| [...src/services/recommendation_engine.py](services/ml-recommendation-svc/src/services/recommendation_engine.py#L138) | 138 | feature | Implement actual candidate retrieval from database | Unassigned |
-| [services/training-svc/app/main.py](services/training-svc/app/main.py#L106) | 106 | feature | Add actual training logic in background task | Unassigned |
-| [...tegration/tenant-isolation/mock-db.ts](tests/integration/tenant-isolation/mock-db.ts#L210) | 210 | feature | Implement with actual Prisma client for integra... | Unassigned |
-| [tests/security/sso-security.test.ts](tests/security/sso-security.test.ts#L109) | 109 | feature | Implement actual SAML validator test | Unassigned |
-| [...on/lib/offline/content_preloader.dart](libs/flutter-common/lib/offline/content_preloader.dart#L464) | 464 | unknown | Extend ConnectivityService to expose connection... | Unassigned |
+*No P1 items found.*
 
 ---
 

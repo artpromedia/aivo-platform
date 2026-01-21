@@ -204,10 +204,202 @@ export function createMockDatabaseClient(): TestDatabaseClient {
 
 /**
  * Create a Prisma-based database client for integration tests.
- * This should be implemented when running against a real database.
+ * Wraps a PrismaClient instance with the TestDatabaseClient interface.
+ * 
+ * @param prisma - The PrismaClient instance to wrap
+ * @returns TestDatabaseClient implementation using Prisma
  */
-export function createPrismaDatabaseClient(/* prisma: PrismaClient */): TestDatabaseClient {
-  // TODO: Implement with actual Prisma client for integration tests
-  // This would wrap the Prisma client with the TestDatabaseClient interface
-  throw new Error('Prisma client implementation not yet available. Use createMockDatabaseClient for unit tests.');
+export function createPrismaDatabaseClient(prisma: {
+  tenant: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  user: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
+    findMany: (args: { where: { tenantId: string } }) => Promise<Record<string, unknown>[]>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  learner: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
+    findMany: (args: { where: { tenantId: string } }) => Promise<Record<string, unknown>[]>;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  session: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
+    findMany: (args: { where: { tenantId: string } }) => Promise<Record<string, unknown>[]>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  recommendation: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
+    findMany: (args: { where: { tenantId: string } }) => Promise<Record<string, unknown>[]>;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  messageThread: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
+    findMany: (args: { where: { tenantId: string } }) => Promise<Record<string, unknown>[]>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  virtualBrain: {
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
+    findMany: (args: { where: { tenantId: string } }) => Promise<Record<string, unknown>[]>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
+  };
+  $disconnect: () => Promise<void>;
+}): TestDatabaseClient {
+  return {
+    // Tenant operations
+    async createTenant(data) {
+      const result = await prisma.tenant.create({
+        data: { ...data, createdAt: new Date() },
+      });
+      return result as unknown as TestTenant;
+    },
+
+    async deleteTenant(id) {
+      await prisma.tenant.delete({ where: { id } });
+    },
+
+    // User operations
+    async createUser(data) {
+      const result = await prisma.user.create({ data });
+      return result as unknown as Omit<TestUser, 'jwt'>;
+    },
+
+    async findUserById(id) {
+      const result = await prisma.user.findUnique({ where: { id } });
+      return result as unknown as Omit<TestUser, 'jwt'> | null;
+    },
+
+    async findUsersByTenantId(tenantId) {
+      const results = await prisma.user.findMany({ where: { tenantId } });
+      return results as unknown as Omit<TestUser, 'jwt'>[];
+    },
+
+    async deleteUser(id) {
+      await prisma.user.delete({ where: { id } });
+    },
+
+    // Learner operations
+    async createLearner(data) {
+      const result = await prisma.learner.create({ data });
+      return result as unknown as TestLearner;
+    },
+
+    async findLearnerById(id) {
+      const result = await prisma.learner.findUnique({ where: { id } });
+      return result as unknown as TestLearner | null;
+    },
+
+    async findLearnersByTenantId(tenantId) {
+      const results = await prisma.learner.findMany({ where: { tenantId } });
+      return results as unknown as TestLearner[];
+    },
+
+    async updateLearner(id, data) {
+      const result = await prisma.learner.update({ where: { id }, data });
+      return result as unknown as TestLearner;
+    },
+
+    async deleteLearner(id) {
+      await prisma.learner.delete({ where: { id } });
+    },
+
+    // Session operations
+    async createSession(data) {
+      const result = await prisma.session.create({ data });
+      return result as unknown as TestSession;
+    },
+
+    async findSessionById(id) {
+      const result = await prisma.session.findUnique({ where: { id } });
+      return result as unknown as TestSession | null;
+    },
+
+    async findSessionsByTenantId(tenantId) {
+      const results = await prisma.session.findMany({ where: { tenantId } });
+      return results as unknown as TestSession[];
+    },
+
+    async deleteSession(id) {
+      await prisma.session.delete({ where: { id } });
+    },
+
+    // Recommendation operations
+    async createRecommendation(data) {
+      const result = await prisma.recommendation.create({ data });
+      return result as unknown as TestRecommendation;
+    },
+
+    async findRecommendationById(id) {
+      const result = await prisma.recommendation.findUnique({ where: { id } });
+      return result as unknown as TestRecommendation | null;
+    },
+
+    async findRecommendationsByTenantId(tenantId) {
+      const results = await prisma.recommendation.findMany({ where: { tenantId } });
+      return results as unknown as TestRecommendation[];
+    },
+
+    async updateRecommendation(id, data) {
+      const result = await prisma.recommendation.update({ where: { id }, data });
+      return result as unknown as TestRecommendation;
+    },
+
+    async deleteRecommendation(id) {
+      await prisma.recommendation.delete({ where: { id } });
+    },
+
+    // Message thread operations
+    async createMessageThread(data) {
+      const result = await prisma.messageThread.create({ data });
+      return result as unknown as TestMessageThread;
+    },
+
+    async findMessageThreadById(id) {
+      const result = await prisma.messageThread.findUnique({ where: { id } });
+      return result as unknown as TestMessageThread | null;
+    },
+
+    async findMessageThreadsByTenantId(tenantId) {
+      const results = await prisma.messageThread.findMany({ where: { tenantId } });
+      return results as unknown as TestMessageThread[];
+    },
+
+    async deleteMessageThread(id) {
+      await prisma.messageThread.delete({ where: { id } });
+    },
+
+    // Virtual Brain operations
+    async createVirtualBrain(data) {
+      const result = await prisma.virtualBrain.create({ data });
+      return result as unknown as TestVirtualBrain;
+    },
+
+    async findVirtualBrainById(id) {
+      const result = await prisma.virtualBrain.findUnique({ where: { id } });
+      return result as unknown as TestVirtualBrain | null;
+    },
+
+    async findVirtualBrainsByTenantId(tenantId) {
+      const results = await prisma.virtualBrain.findMany({ where: { tenantId } });
+      return results as unknown as TestVirtualBrain[];
+    },
+
+    async deleteVirtualBrain(id) {
+      await prisma.virtualBrain.delete({ where: { id } });
+    },
+
+    // Cleanup
+    async disconnect() {
+      await prisma.$disconnect();
+    },
+  };
 }

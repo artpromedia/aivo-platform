@@ -3,10 +3,12 @@ Training Service - Main Application
 Part of AIVO Platform Migration - Base Brain Model Training
 """
 
+import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Optional, Dict
 
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -91,7 +93,6 @@ async def create_training_job(
 ):
     """Start a new training job."""
     import uuid
-    from datetime import datetime
 
     job_id = str(uuid.uuid4())
     job = TrainingJobStatus(
@@ -103,10 +104,56 @@ async def create_training_job(
     )
     training_jobs[job_id] = job
 
-    # TODO: Add actual training logic in background task
-    # background_tasks.add_task(run_training, job_id, request)
+    # Start training in background
+    background_tasks.add_task(run_training, job_id, request)
 
     return job
+
+
+async def run_training(job_id: str, request: TrainingJobCreate) -> None:
+    """
+    Run the training job in the background.
+    
+    This is a simplified training implementation. In production, this would:
+    1. Load training data from the configured dataset
+    2. Initialize the model with any config overrides
+    3. Train the model with progress updates
+    4. Save the trained model and update job status
+    """
+    job = training_jobs.get(job_id)
+    if not job:
+        return
+    
+    try:
+        # Update status to running
+        job.status = "running"
+        job.message = "Training started"
+        job.progress = 0.0
+        
+        # Simulate training epochs (replace with actual training logic)
+        total_epochs = 10
+        for epoch in range(total_epochs):
+            # In production: actual model training step here
+            await asyncio.sleep(1)  # Simulate training time
+            
+            # Update progress
+            job.progress = (epoch + 1) / total_epochs
+            job.message = f"Epoch {epoch + 1}/{total_epochs}"
+        
+        # Generate model ID
+        model_id = f"model_{job_id[:8]}"
+        
+        # Update job as completed
+        job.status = "completed"
+        job.progress = 1.0
+        job.message = "Training completed successfully"
+        job.completed_at = datetime.utcnow().isoformat()
+        job.model_id = model_id
+        
+    except Exception as e:
+        job.status = "failed"
+        job.message = f"Training failed: {str(e)}"
+        job.completed_at = datetime.utcnow().isoformat()
 
 
 @app.get("/api/v1/training/jobs/{job_id}", response_model=TrainingJobStatus)

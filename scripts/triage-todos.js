@@ -30,6 +30,7 @@ const EXCLUDE_PATTERNS = [
   'android/build',
   'ios/Pods',
   '.git',
+  'generated/prisma-client', // Auto-generated Prisma files
 ];
 
 // File extensions to scan
@@ -178,7 +179,9 @@ const SERVICE_OWNERS = {
 
 // Utility functions
 function shouldExclude(filePath) {
-  return EXCLUDE_PATTERNS.some((pattern) => filePath.includes(pattern));
+  // Normalize path separators for cross-platform compatibility
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  return EXCLUDE_PATTERNS.some((pattern) => normalizedPath.includes(pattern));
 }
 
 function hasValidExtension(filePath) {

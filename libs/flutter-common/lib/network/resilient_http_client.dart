@@ -381,6 +381,7 @@ class ResilientHttpClient {
   ResilientHttpClient({
     required this.baseUrl,
     this.tenantId,
+    this.appVersion,
     this.defaultHeaders = const {},
     http.Client? innerClient,
     this.enableLogging = kDebugMode,
@@ -388,6 +389,7 @@ class ResilientHttpClient {
 
   final String baseUrl;
   final String? tenantId;
+  final String? appVersion;
   final Map<String, String> defaultHeaders;
   final http.Client _innerClient;
   final bool enableLogging;
@@ -620,7 +622,7 @@ class ResilientHttpClient {
       ...defaultHeaders,
       if (tenantId != null) 'X-Tenant-Id': tenantId!,
       'X-Correlation-Id': correlationId,
-      'X-Client-Version': '1.0.0', // TODO: Get from package info
+      if (appVersion != null) 'X-Client-Version': appVersion!,
       'Accept': 'application/json',
       'Accept-Encoding': 'gzip, deflate, br',
       ...?headers,

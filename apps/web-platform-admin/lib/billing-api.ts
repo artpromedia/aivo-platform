@@ -145,15 +145,16 @@ export async function fetchAllAlerts(
   const params = new URLSearchParams();
   if (status) params.set('status', status);
 
-  // TODO: Replace with real API call when endpoint is ready
-  // return apiFetch<SeatUsageAlert[]>(`/admin/seat-usage/alerts?${params}`, { accessToken });
-
-  // Only use mock data in development
-  if (process.env.NODE_ENV !== 'development') {
-    console.warn('[BillingAPI] Seat usage alerts API not yet available');
-    return [];
+  try {
+    return await apiFetch<SeatUsageAlert[]>(`/admin/seat-usage/alerts?${params}`, { accessToken });
+  } catch (error) {
+    // Fallback to mock data in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[BillingAPI] Falling back to mock alerts:', error);
+      return getMockAlerts().filter((a) => !status || a.status === status);
+    }
+    throw error;
   }
-  return getMockAlerts().filter((a) => !status || a.status === status);
 }
 
 /**
@@ -162,52 +163,42 @@ export async function fetchAllAlerts(
 export async function fetchAllTenantUsageSummaries(
   accessToken?: string
 ): Promise<TenantSeatUsageSummary[]> {
-  // TODO: Replace with real API call when endpoint is ready
-  // return apiFetch<TenantSeatUsageSummary[]>('/admin/seat-usage/summaries', { accessToken });
-
-  // Only use mock data in development
-  if (process.env.NODE_ENV !== 'development') {
-    console.warn('[BillingAPI] Seat usage summaries API not yet available');
-    return [];
+  try {
+    return await apiFetch<TenantSeatUsageSummary[]>('/admin/seat-usage/summaries', { accessToken });
+  } catch (error) {
+    // Fallback to mock data in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[BillingAPI] Falling back to mock summaries:', error);
+      return getMockTenantSummaries();
+    }
+    throw error;
   }
-  return getMockTenantSummaries();
 }
 
 /**
  * Fetch platform-wide usage metrics
  */
 export async function fetchPlatformMetrics(accessToken?: string): Promise<PlatformUsageMetrics> {
-  // TODO: Replace with real API call when endpoint is ready
-  // return apiFetch<PlatformUsageMetrics>('/admin/seat-usage/metrics', { accessToken });
-
-  // Only use mock data in development
-  if (process.env.NODE_ENV !== 'development') {
-    console.warn('[BillingAPI] Platform metrics API not yet available');
-    return {
-      totalTenants: 0,
-      tenantsWithAlerts: 0,
-      totalSeatsCommitted: 0,
-      totalSeatsAllocated: 0,
-      overallUtilization: 0,
-      alertsByStatus: { open: 0, acknowledged: 0, resolved: 0 },
-      alertsByThreshold: { warning80: 0, atLimit100: 0, overage110: 0 },
-    };
+  try {
+    return await apiFetch<PlatformUsageMetrics>('/admin/seat-usage/metrics', { accessToken });
+  } catch (error) {
+    // Fallback to mock data in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[BillingAPI] Falling back to mock metrics:', error);
+      return getMockPlatformMetrics();
+    }
+    throw error;
   }
-  return getMockPlatformMetrics();
 }
 
 /**
  * Acknowledge an alert (admin action)
  */
 export async function acknowledgeAlert(alertId: string, accessToken?: string): Promise<void> {
-  // TODO: Replace with real API call when endpoint is ready
-  // return apiFetch<void>(`/admin/seat-usage/alerts/${alertId}/acknowledge`, {
-  //   method: 'POST',
-  //   accessToken,
-  // });
-
-  // Mock implementation
-  console.log(`Acknowledging alert ${alertId}`);
+  await apiFetch<void>(`/admin/seat-usage/alerts/${alertId}/acknowledge`, {
+    method: 'POST',
+    accessToken,
+  });
 }
 
 /**
@@ -218,15 +209,11 @@ export async function resolveAlert(
   resolution: string,
   accessToken?: string
 ): Promise<void> {
-  // TODO: Replace with real API call when endpoint is ready
-  // return apiFetch<void>(`/admin/seat-usage/alerts/${alertId}/resolve`, {
-  //   method: 'POST',
-  //   body: JSON.stringify({ resolution }),
-  //   accessToken,
-  // });
-
-  // Mock implementation
-  console.log(`Resolving alert ${alertId}: ${resolution}`);
+  await apiFetch<void>(`/admin/seat-usage/alerts/${alertId}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ resolution }),
+    accessToken,
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

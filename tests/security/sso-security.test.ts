@@ -7,8 +7,46 @@
  * @module tests/security/sso-security.test
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createHash, randomBytes } from 'crypto';
+import { describe, it, expect } from 'vitest';
+import { randomBytes } from 'node:crypto';
+import { SamlService } from '../../services/auth-svc/src/lib/sso/saml.js';
+import type { SamlIdpConfig } from '../../services/auth-svc/src/lib/sso/types.js';
+
+// =============================================================================
+// SAML Service Setup
+// =============================================================================
+
+const samlService = new SamlService({
+  spEntityId: 'https://app.aivolearning.com',
+  baseUrl: 'https://app.aivolearning.com',
+  clockSkewSeconds: 300,
+});
+
+// Mock IdP configuration for testing
+const testIdpConfig: SamlIdpConfig = {
+  id: 'test-idp',
+  tenantId: 'test-tenant',
+  issuer: 'https://idp.example.com',
+  ssoUrl: 'https://idp.example.com/sso',
+  x509Certificate: `-----BEGIN CERTIFICATE-----
+MIICpDCCAYwCCQDU+pQ4P2xSHTANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls
+b2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAUMRIwEAYD
+VQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC0
+test-certificate-for-testing-purposes-only
+-----END CERTIFICATE-----`,
+  attributeMapping: {
+    email: 'email',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    role: 'role',
+  },
+  roleMapping: {
+    'admin': 'ADMIN',
+    'teacher': 'TEACHER',
+    'parent': 'PARENT',
+    'student': 'LEARNER',
+  },
+};
 
 // =============================================================================
 // Test Utilities
@@ -97,17 +135,15 @@ describe('SAML Security', () => {
   describe('Signature Validation', () => {
     it('should REJECT SAML responses without signatures', async () => {
       const unsignedResponse = createMockSAMLResponse({ signed: false });
+      const base64Response = Buffer.from(unsignedResponse).toString('base64');
 
-      // This should fail - unsigned SAML responses must be rejected
-      // const result = await samlValidator.validate(unsignedResponse);
-      // expect(result.valid).toBe(false);
-      // expect(result.error).toContain('signature');
+      // Validate using actual SAML service
+      const result = await samlService.validateResponse(base64Response, testIdpConfig);
 
-      // For now, document the expected behavior
+      // Should reject unsigned responses
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('INVALID_SIGNATURE');
       expect(unsignedResponse).not.toContain('<ds:Signature');
-      
-      // TODO: Implement actual SAML validator test
-      console.warn('SECURITY TEST: Verify SAML validator rejects unsigned responses');
     });
 
     it('should REJECT SAML responses with invalid signatures', async () => {
@@ -118,14 +154,14 @@ describe('SAML Security', () => {
         'user@example.com',
         'attacker@evil.com'
       );
+      const base64Response = Buffer.from(tamperedResponse).toString('base64');
 
-      // This should fail - signature should not match tampered content
-      // const result = await samlValidator.validate(tamperedResponse);
-      // expect(result.valid).toBe(false);
-      // expect(result.error).toContain('signature');
+      // Validate using actual SAML service
+      const result = await samlService.validateResponse(base64Response, testIdpConfig);
 
-      expect(tamperedResponse).toContain('attacker@evil.com');
-      console.warn('SECURITY TEST: Verify SAML validator rejects tampered responses');
+      // Should reject tampered responses (signature won't match)
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('INVALID_SIGNATURE');
     });
 
     it('should REJECT signature wrapping attacks', async () => {
@@ -134,20 +170,25 @@ describe('SAML Security', () => {
 
       // Signature wrapping: signature covers original, but assertion is replaced
       const wrappingAttack = `
-        <samlp:Response>
-          <ds:Signature>
+        <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol">
+          <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
             <ds:Reference URI="#${originalId}"><!-- Points to original --></ds:Reference>
           </ds:Signature>
-          <saml:Assertion ID="${maliciousId}"><!-- Malicious, unsigned --></saml:Assertion>
-          <saml:Assertion ID="${originalId}"><!-- Original, signed but ignored --></saml:Assertion>
+          <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="${maliciousId}">
+            <saml:Issuer>https://evil.com</saml:Issuer>
+          </saml:Assertion>
+          <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="${originalId}">
+            <saml:Issuer>https://idp.example.com</saml:Issuer>
+          </saml:Assertion>
         </samlp:Response>
       `;
+      const base64Response = Buffer.from(wrappingAttack).toString('base64');
+
+      // Validate using actual SAML service
+      const result = await samlService.validateResponse(base64Response, testIdpConfig);
 
       // Validator should reject this
-      // const result = await samlValidator.validate(wrappingAttack);
-      // expect(result.valid).toBe(false);
-
-      console.warn('SECURITY TEST: Verify SAML validator detects signature wrapping');
+      expect(result.success).toBe(false);
     });
   });
 

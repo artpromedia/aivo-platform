@@ -21,6 +21,7 @@ from src.models import (
     RecommendedItem,
     SkillMastery,
 )
+from src.services.content_client import ContentServiceClient
 from src.services.feature_store import FeatureStore
 
 logger = structlog.get_logger()
@@ -36,9 +37,15 @@ class RecommendationEngine:
     4. Multi-Armed Bandit - Exploration vs exploitation
     """
 
-    def __init__(self, feature_store: FeatureStore, settings: Settings) -> None:
+    def __init__(
+        self,
+        feature_store: FeatureStore,
+        settings: Settings,
+        content_client: ContentServiceClient | None = None,
+    ) -> None:
         self.feature_store = feature_store
         self.settings = settings
+        self.content_client = content_client or ContentServiceClient(settings)
         
         # Model weights
         self.collaborative_weight = settings.collaborative_weight
@@ -132,18 +139,56 @@ class RecommendationEngine:
         """
         Get candidate items for recommendation.
         
-        In production, this would query from database/search index.
-        For now, returns mock candidates.
+        Fetches activities from the content service, filtered by domain,
+        difficulty range, and learner context.
         """
-        # TODO: Implement actual candidate retrieval from database
-        # This would typically:
-        # 1. Query content service for available activities
-        # 2. Filter by domain, difficulty, prerequisites
-        # 3. Apply business rules (e.g., not recently seen)
+        # Calculate target difficulty based on learner's skill masteries
+        avg_mastery = 0.5
+        if request.skill_masteries:
+            avg_mastery = sum(s.mastery_level for s in request.skill_masteries) / len(
+                request.skill_masteries
+            )
         
-        candidates: list[dict[str, Any]] = []
+        # Set difficulty range based on mastery (zone of proximal development)
+        min_difficulty = max(0.0, avg_mastery - 0.2)
+        max_difficulty = min(1.0, avg_mastery + 0.3)
         
-        # Generate mock candidates for demonstration
+        # Extract skill IDs from learner context
+        skill_ids = None
+        if request.skill_masteries:
+            # Focus on skills with lower mastery for improvement
+            low_mastery_skills = [
+                s.skill_id for s in request.skill_masteries if s.mastery_level < 0.7
+            ]
+            if low_mastery_skills:
+                skill_ids = low_mastery_skills[:10]  # Limit to top 10 skills
+        
+        # Fetch from content service
+        candidates = await self.content_client.get_activities(
+            domain=request.domain_filter,
+            skill_ids=skill_ids,
+            difficulty_min=min_difficulty,
+            difficulty_max=max_difficulty,
+            limit=100,
+            exclude_ids=request.exclude_ids,
+        )
+        
+        # If content service returns results, use them
+        if candidates:
+            logger.debug(
+                "Fetched candidates from content service",
+                count=len(candidates),
+                domain=request.domain_filter,
+            )
+            return candidates
+        
+        # Fallback: Generate mock candidates for development/testing only
+        logger.warning(
+            "Content service returned no candidates, using mock data",
+            domain=request.domain_filter,
+        )
+        
+        mock_candidates: list[dict[str, Any]] = []
         domains = ["MATH", "ELA", "SCIENCE"]
         domain_filter = request.domain_filter
         
@@ -154,7 +199,7 @@ class RecommendationEngine:
                 
             difficulty = 0.3 + (i % 10) * 0.07
             
-            candidates.append({
+            mock_candidates.append({
                 "id": f"activity_{i:03d}",
                 "type": "activity",
                 "domain": domain,
@@ -166,7 +211,7 @@ class RecommendationEngine:
                 },
             })
         
-        return candidates
+        return mock_candidates
 
     async def _compute_scores(
         self,

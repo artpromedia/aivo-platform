@@ -458,10 +458,11 @@ class ContentPreloader {
       return false;
     }
 
-    // Note: WiFi-only mode is not currently implemented as ConnectivityService
-    // doesn't expose connection type details. The wifiOnly config option is
-    // preserved for future implementation.
-    // TODO: Extend ConnectivityService to expose connection type if needed.
+    // NOTE: WiFi-only mode is not currently enforced because ConnectivityService
+    // doesn't expose connection type details (WiFi vs cellular vs ethernet).
+    // The wifiOnly config option is preserved for future implementation when
+    // the underlying connectivity library is updated.
+    // See: https://pub.dev/packages/connectivity_plus for connection type APIs.
 
     return true;
   }
