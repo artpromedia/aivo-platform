@@ -74,6 +74,86 @@ enum SensitivityLevel {
   @@map("sensitivity_level")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// FUNCTIONING LEVEL & SENSORY ACCESSIBILITY ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Functioning level for assessment routing
+/// Based on AAIDD (American Association on Intellectual and Developmental Disabilities) classifications
+enum FunctioningLevel {
+  TYPICAL               // Standard developmental level
+  MILD                  // Mild support needs (IQ 50-70 range indicators)
+  MODERATE              // Moderate support needs (IQ 35-50 range indicators)
+  SEVERE                // Severe support needs (IQ 20-35 range indicators)
+  PROFOUND              // Profound support needs (IQ <20 range indicators)
+  
+  @@map("functioning_level")
+}
+
+/// Assessment mode based on functioning level and sensory needs
+enum AssessmentMode {
+  STANDARD              // Full baseline assessment
+  MODIFIED              // Reduced items, simplified UI, extended time
+  SUPPORTED             // Picture-based, touch-only, AAC-compatible
+  OBSERVATIONAL         // Parent/teacher records responses (non-interactive)
+  SENSORY_ADAPTED       // Adapted for blind/deaf/deafblind
+  
+  @@map("assessment_mode")
+}
+
+/// Type of sensory impairment
+enum SensoryImpairmentType {
+  NONE                  // No sensory impairment
+  BLIND                 // Total vision loss
+  LOW_VISION            // Partial vision loss
+  DEAF                  // Total hearing loss
+  HARD_OF_HEARING       // Partial hearing loss
+  DEAFBLIND             // Combined vision and hearing loss
+  
+  @@map("sensory_impairment_type")
+}
+
+/// Preferred input method for learners with motor or cognitive differences
+enum InputMethod {
+  STANDARD              // Mouse, keyboard, touch (typical)
+  LARGE_TOUCH           // Enlarged touch targets (2x)
+  SWITCH_SINGLE         // Single switch scanning
+  SWITCH_DUAL           // Two switch scanning
+  EYE_GAZE              // Eye tracking input
+  VOICE_CONTROL         // Voice/speech input
+  PARTNER_ASSISTED      // Parent/aide enters responses
+  HEAD_TRACKING         // Head movement input
+  
+  @@map("input_method")
+}
+
+/// Communication modality preference
+enum CommunicationModality {
+  VERBAL                // Spoken language
+  WRITTEN               // Written/typed language
+  SIGN_LANGUAGE         // ASL, BSL, etc.
+  PICTURE_SYMBOLS       // PECS, Boardmaker, etc.
+  AAC_DEVICE            // Speech generating device
+  GESTURES              // Pointing, gestures
+  COMBINATION           // Multiple modalities
+  
+  @@map("communication_modality")
+}
+
+/// AAC (Augmentative and Alternative Communication) system type
+enum AACSystemType {
+  NONE                  // No AAC system
+  PECS                  // Picture Exchange Communication System
+  PROLOQUO2GO           // iOS AAC app
+  LAMP                  // Language Acquisition through Motor Planning
+  TOUCHCHAT             // TouchChat AAC app
+  SNAP_CORE             // Snap + Core First
+  BOARDMAKER            // Boardmaker symbols
+  CUSTOM                // Custom/other system
+  
+  @@map("aac_system_type")
+}
+
 /// Font preference for accessibility
 enum FontPreference {
   SYSTEM_DEFAULT
@@ -461,4 +541,254 @@ model LearnerAiSettingsLog {
   @@index([tenantId, learnerId])
   @@index([changedAt])
   @@map("learner_ai_settings_logs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FUNCTIONING LEVEL & ACCESSIBILITY PROFILES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Learner's functioning level profile for assessment routing.
+/// Determined from parent assessment responses and/or IEP documentation.
+model LearnerFunctioningProfile {
+  id                        String            @id @default(uuid()) @db.Uuid
+  tenantId                  String            @map("tenant_id") @db.Uuid
+  learnerId                 String            @map("learner_id") @db.Uuid
+  
+  // ── Functioning Level ───────────────────────────────────────────────────────
+  /// Overall functioning level
+  functioningLevel          FunctioningLevel  @default(TYPICAL) @map("functioning_level")
+  
+  /// Recommended assessment mode based on profile
+  recommendedAssessmentMode AssessmentMode    @default(STANDARD) @map("recommended_assessment_mode")
+  
+  /// Parent's selected assessment mode (may differ from recommended)
+  selectedAssessmentMode    AssessmentMode?   @map("selected_assessment_mode")
+  
+  /// Whether parent has confirmed the assessment mode
+  assessmentModeConfirmed   Boolean           @default(false) @map("assessment_mode_confirmed")
+  
+  // ── Cognitive Profile ───────────────────────────────────────────────────────
+  /// Cognitive indicators from parent assessment
+  cognitiveIndicatorsJson   Json              @default("{}") @map("cognitive_indicators_json")
+  // Shape: {
+  //   canFollowMultiStepInstructions: boolean,
+  //   canRecognizeSymbols: boolean,
+  //   canMatchPictures: boolean,
+  //   canUsePointingToRespond: boolean,
+  //   understandsCauseEffect: boolean,
+  //   canSequenceEvents: boolean,
+  //   estimatedMentalAgeMonths: number | null,
+  //   adaptiveBehaviorLevel: 'age_appropriate' | 'mild_delay' | 'moderate_delay' | 'significant_delay'
+  // }
+  
+  // ── Daily Living Skills ─────────────────────────────────────────────────────
+  /// Daily living skill levels for functional assessment
+  dailyLivingSkillsJson     Json              @default("{}") @map("daily_living_skills_json")
+  // Shape: {
+  //   selfCare: 0-5 scale,
+  //   communication: 0-5 scale,
+  //   socialSkills: 0-5 scale,
+  //   homeSkills: 0-5 scale,
+  //   communitySkills: 0-5 scale,
+  //   healthSafety: 0-5 scale
+  // }
+  
+  // ── Support Needs ───────────────────────────────────────────────────────────
+  /// Level of support needed during assessment
+  supportNeedsJson          Json              @default("{}") @map("support_needs_json")
+  // Shape: {
+  //   needsPhysicalPrompting: boolean,
+  //   needsVerbalPrompting: boolean,
+  //   needsModelingDemonstration: boolean,
+  //   needsHandOverHand: boolean,
+  //   needsConstantSupervision: boolean,
+  //   maxQuestionsBeforeBreak: number,
+  //   preferredBreakActivityType: string
+  // }
+  
+  // ── IEP/Documentation ───────────────────────────────────────────────────────
+  /// Whether there is IEP documentation on file
+  hasIepDocumentation       Boolean           @default(false) @map("has_iep_documentation")
+  
+  /// IEP-specified functioning level if available
+  iepFunctioningLevel       FunctioningLevel? @map("iep_functioning_level")
+  
+  /// Notes from IEP or professional evaluation
+  professionalNotes         String?           @map("professional_notes")
+  
+  // ── Algorithm Scores ────────────────────────────────────────────────────────
+  /// Computed score from parent assessment (0-100)
+  parentAssessmentScore     Float?            @map("parent_assessment_score")
+  
+  /// Confidence in the functioning level determination
+  confidenceScore           Float?            @map("confidence_score")
+  
+  // ── Audit ───────────────────────────────────────────────────────────────────
+  createdAt                 DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  createdByUserId           String            @map("created_by_user_id") @db.Uuid
+  updatedByUserId           String?           @map("updated_by_user_id") @db.Uuid
+  
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@index([functioningLevel])
+  @@index([recommendedAssessmentMode])
+  @@map("learner_functioning_profiles")
+}
+
+/// Sensory accessibility profile for blind/deaf/deafblind learners.
+/// Stores detailed preferences for sensory accommodations.
+model LearnerSensoryProfile {
+  id                        String                  @id @default(uuid()) @db.Uuid
+  tenantId                  String                  @map("tenant_id") @db.Uuid
+  learnerId                 String                  @map("learner_id") @db.Uuid
+  
+  // ── Primary Sensory Status ──────────────────────────────────────────────────
+  /// Primary sensory impairment type
+  sensoryImpairmentType     SensoryImpairmentType   @default(NONE) @map("sensory_impairment_type")
+  
+  // ── Vision Details ──────────────────────────────────────────────────────────
+  /// Vision-related accommodations
+  visionProfileJson         Json                    @default("{}") @map("vision_profile_json")
+  // Shape: {
+  //   useScreenReader: boolean,
+  //   screenReaderType: 'NVDA' | 'JAWS' | 'VoiceOver' | 'TalkBack' | 'other',
+  //   useBrailleDisplay: boolean,
+  //   brailleGrade: 1 | 2,
+  //   useMagnification: boolean,
+  //   magnificationLevel: number (1.5-10x),
+  //   preferAudioDescriptions: boolean,
+  //   preferHapticFeedback: boolean,
+  //   lightSensitivity: 'LOW' | 'MEDIUM' | 'HIGH',
+  //   colorBlindType: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia'
+  // }
+  
+  // ── Hearing Details ─────────────────────────────────────────────────────────
+  /// Hearing-related accommodations
+  hearingProfileJson        Json                    @default("{}") @map("hearing_profile_json")
+  // Shape: {
+  //   useSignLanguage: boolean,
+  //   signLanguageType: 'ASL' | 'BSL' | 'Auslan' | 'other',
+  //   useCaptions: boolean,
+  //   captionStyle: 'standard' | 'simplified' | 'detailed',
+  //   useHearingAid: boolean,
+  //   useCochlearImplant: boolean,
+  //   preferVisualAlerts: boolean,
+  //   preferHapticAlerts: boolean,
+  //   canHearSomeSounds: boolean,
+  //   hearingFrequencyRange: { low: number, high: number } | null
+  // }
+  
+  // ── Communication Preferences ───────────────────────────────────────────────
+  /// Primary communication modality
+  primaryCommunication      CommunicationModality   @default(VERBAL) @map("primary_communication")
+  
+  /// Secondary communication modality
+  secondaryCommunication    CommunicationModality?  @map("secondary_communication")
+  
+  // ── AAC Settings ────────────────────────────────────────────────────────────
+  /// AAC system in use
+  aacSystemType             AACSystemType           @default(NONE) @map("aac_system_type")
+  
+  /// AAC-specific settings
+  aacSettingsJson           Json                    @default("{}") @map("aac_settings_json")
+  // Shape: {
+  //   symbolSetPreference: string,
+  //   symbolSize: 'small' | 'medium' | 'large' | 'extra_large',
+  //   gridSize: { rows: number, columns: number },
+  //   useCoreFringe: boolean,
+  //   voiceOutputEnabled: boolean,
+  //   customVocabularyImported: boolean
+  // }
+  
+  // ── Input Method ────────────────────────────────────────────────────────────
+  /// Preferred input method
+  preferredInputMethod      InputMethod             @default(STANDARD) @map("preferred_input_method")
+  
+  /// Alternative input method
+  alternativeInputMethod    InputMethod?            @map("alternative_input_method")
+  
+  /// Input-specific settings
+  inputSettingsJson         Json                    @default("{}") @map("input_settings_json")
+  // Shape: {
+  //   touchTargetMultiplier: number (1-3),
+  //   dwellTimeMs: number (for eye gaze/switch),
+  //   scanSpeedMs: number (for switch scanning),
+  //   autoScanEnabled: boolean,
+  //   scanPattern: 'row_column' | 'linear' | 'group',
+  //   switchActivationType: 'press' | 'release' | 'hold',
+  //   voiceCommandLanguage: string
+  // }
+  
+  // ── Content Transformations ─────────────────────────────────────────────────
+  /// Required content transformations
+  contentTransformationsJson Json                   @default("{}") @map("content_transformations_json")
+  // Shape: {
+  //   requiresAudioDescriptions: boolean,
+  //   requiresSignLanguageVideos: boolean,
+  //   requiresCaptions: boolean,
+  //   requiresSimplifiedLanguage: boolean,
+  //   requiresPictureSymbols: boolean,
+  //   requiresTactileGraphics: boolean,
+  //   maxReadingLevel: number | null,
+  //   preferredContentFormat: 'text' | 'audio' | 'video' | 'interactive'
+  // }
+  
+  // ── Audit ───────────────────────────────────────────────────────────────────
+  createdAt                 DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+  createdByUserId           String                  @map("created_by_user_id") @db.Uuid
+  updatedByUserId           String?                 @map("updated_by_user_id") @db.Uuid
+  
+  @@unique([tenantId, learnerId])
+  @@index([tenantId, learnerId])
+  @@index([sensoryImpairmentType])
+  @@index([primaryCommunication])
+  @@index([preferredInputMethod])
+  @@map("learner_sensory_profiles")
+}
+
+/// Assessment mode routing decision log.
+/// Records how the system determined the appropriate assessment mode.
+model AssessmentModeDecision {
+  id                        String            @id @default(uuid()) @db.Uuid
+  tenantId                  String            @map("tenant_id") @db.Uuid
+  learnerId                 String            @map("learner_id") @db.Uuid
+  
+  // ── Decision Details ────────────────────────────────────────────────────────
+  /// Input factors used in decision
+  inputFactorsJson          Json              @map("input_factors_json")
+  // Shape: {
+  //   parentAssessmentResponses: Record<string, any>,
+  //   functioningLevelIndicators: string[],
+  //   sensoryImpairmentIndicators: string[],
+  //   iepRecommendations: string[],
+  //   previousAssessmentHistory: any[]
+  // }
+  
+  /// Algorithm-recommended assessment mode
+  algorithmRecommendation   AssessmentMode    @map("algorithm_recommendation")
+  
+  /// Confidence in the recommendation (0-1)
+  recommendationConfidence  Float             @map("recommendation_confidence")
+  
+  /// Reasoning explanation for the recommendation
+  reasoningExplanation      String            @map("reasoning_explanation")
+  
+  /// Final selected mode (may differ from algorithm)
+  finalSelectedMode         AssessmentMode    @map("final_selected_mode")
+  
+  /// Who overrode the recommendation (if applicable)
+  overriddenByUserId        String?           @map("overridden_by_user_id") @db.Uuid
+  
+  /// Override reason (if applicable)
+  overrideReason            String?           @map("override_reason")
+  
+  // ── Audit ───────────────────────────────────────────────────────────────────
+  decidedAt                 DateTime          @default(now()) @map("decided_at") @db.Timestamptz
+  
+  @@index([tenantId, learnerId])
+  @@index([algorithmRecommendation])
+  @@index([decidedAt])
+  @@map("assessment_mode_decisions")
 }
