@@ -43,6 +43,9 @@ interface DbClient {
     planSku: string
   ): Promise<Subscription | null>;
   updateSubscription(id: string, data: UpdateSubscriptionData): Promise<Subscription>;
+  getActiveSubscriptionsForTenant(tenantId: string): Promise<Subscription[]>;
+  getModulesForPlan(planId: string): Promise<string[]>;
+  getTenantsWithActiveSubscriptions(): Promise<{ id: string }[]>;
 
   // Billing Instruments
   createBillingInstrument(data: CreateBillingInstrumentData): Promise<BillingInstrument>;
@@ -58,6 +61,11 @@ interface DbClient {
   // Payment Events
   createPaymentEvent(data: CreatePaymentEventData): Promise<PaymentEvent>;
   getPaymentEventByProviderId(providerEventId: string): Promise<PaymentEvent | null>;
+
+  // Health Check Methods
+  getActiveSubscriptionsForTenant(tenantId: string): Promise<Subscription[]>;
+  getModulesForPlan(planId: string): Promise<string[]>;
+  getTenantsWithActiveSubscriptions(): Promise<{ id: string }[]>;
 }
 
 interface CreateSubscriptionData {
@@ -281,6 +289,33 @@ class HttpDbClient implements DbClient {
       return null;
     }
   }
+
+  async getActiveSubscriptionsForTenant(tenantId: string): Promise<Subscription[]> {
+    try {
+      return await this.fetch<Subscription[]>(
+        `/internal/subscriptions/active-for-tenant/${tenantId}`
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  async getModulesForPlan(planId: string): Promise<string[]> {
+    try {
+      const plan = await this.fetch<Plan>(`/internal/plans/${planId}`);
+      return (plan.metadataJson as { modules?: string[] } | null)?.modules ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  async getTenantsWithActiveSubscriptions(): Promise<{ id: string }[]> {
+    try {
+      return await this.fetch<{ id: string }[]>('/internal/tenants/with-active-subscriptions');
+    } catch {
+      return [];
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -496,6 +531,52 @@ class InMemoryDbClient implements DbClient {
 
   async getPaymentEventByProviderId(providerEventId: string): Promise<PaymentEvent | null> {
     return this.paymentEventsByProviderId.get(providerEventId) ?? null;
+  }
+
+  async getActiveSubscriptionsForTenant(tenantId: string): Promise<Subscription[]> {
+    const activeStatuses: SubscriptionStatus[] = [
+      SubscriptionStatus.ACTIVE,
+      SubscriptionStatus.IN_TRIAL,
+      SubscriptionStatus.PAST_DUE,
+    ];
+    const activeSubscriptions: Subscription[] = [];
+    
+    for (const subscription of this.subscriptions.values()) {
+      // Get the billing account to check if it belongs to this tenant
+      const account = this.billingAccounts.get(subscription.billingAccountId);
+      if (
+        account?.tenantId === tenantId &&
+        activeStatuses.includes(subscription.status)
+      ) {
+        activeSubscriptions.push(subscription);
+      }
+    }
+    return activeSubscriptions;
+  }
+
+  async getModulesForPlan(planId: string): Promise<string[]> {
+    const plan = this.plans.get(planId);
+    if (!plan) return [];
+    return (plan.metadataJson as { modules?: string[] } | null)?.modules ?? [];
+  }
+
+  async getTenantsWithActiveSubscriptions(): Promise<{ id: string }[]> {
+    const activeStatuses: SubscriptionStatus[] = [
+      SubscriptionStatus.ACTIVE,
+      SubscriptionStatus.IN_TRIAL,
+      SubscriptionStatus.PAST_DUE,
+    ];
+    const tenantIds = new Set<string>();
+    
+    for (const subscription of this.subscriptions.values()) {
+      if (activeStatuses.includes(subscription.status)) {
+        const account = this.billingAccounts.get(subscription.billingAccountId);
+        if (account?.tenantId) {
+          tenantIds.add(account.tenantId);
+        }
+      }
+    }
+    return Array.from(tenantIds).map((id) => ({ id }));
   }
 
   // Helper method for tests to get all payment events for a billing account

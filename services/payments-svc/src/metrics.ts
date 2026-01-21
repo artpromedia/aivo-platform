@@ -276,6 +276,24 @@ export const entitlementsMismatchTotal = registry.createGauge(
   ['tenant_type']
 );
 
+/**
+ * Counter for entitlement mismatches by tenant
+ */
+export const entitlementMismatchEvents = registry.createCounter(
+  'billing_entitlement_mismatch_events_total',
+  'Total entitlement mismatch events detected',
+  ['tenant_id']
+);
+
+/**
+ * Gauge for global health check results
+ */
+export const globalHealthCheckTotal = registry.createGauge(
+  'billing_global_health_check_total',
+  'Results of global health check',
+  ['metric']
+);
+
 // ══════════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -391,6 +409,27 @@ export function recordDunningAction(action: string, tenantType: string): void {
 }
 
 /**
+ * Record an entitlement mismatch for a specific tenant
+ */
+export function recordEntitlementMismatch(tenantId: string): void {
+  registry.increment(entitlementMismatchEvents, { tenant_id: tenantId });
+}
+
+/**
+ * Record global health check results
+ */
+export function recordGlobalHealthCheck(totalTenants: number, mismatchCount: number): void {
+  registry.set(globalHealthCheckTotal, { metric: 'total_tenants' }, totalTenants);
+  registry.set(globalHealthCheckTotal, { metric: 'mismatch_count' }, mismatchCount);
+  registry.set(globalHealthCheckTotal, { metric: 'healthy_count' }, totalTenants - mismatchCount);
+  registry.set(
+    globalHealthCheckTotal,
+    { metric: 'health_percentage' },
+    totalTenants > 0 ? Math.round(((totalTenants - mismatchCount) / totalTenants) * 100) : 100
+  );
+}
+
+/**
  * Reset all metrics (for testing only)
  */
 export function resetMetrics(): void {
@@ -411,6 +450,8 @@ export function resetMetrics(): void {
     paymentMethodsAttachedTotal,
     entitlementsSyncTotal,
     entitlementsMismatchTotal,
+    entitlementMismatchEvents,
+    globalHealthCheckTotal,
   ]) {
     metric.values.clear();
   }

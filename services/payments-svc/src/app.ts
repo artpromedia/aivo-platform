@@ -49,7 +49,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Enable raw body for Stripe webhook signature verification
-  await app.register(rawBody, {
+  await app.register(rawBody as unknown as Parameters<typeof app.register>[0], {
     field: 'rawBody',
     global: false,
     encoding: 'utf8',

@@ -14,7 +14,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import type { FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyPluginCallback, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
 // Extend Fastify types
@@ -104,10 +104,13 @@ const correlationIdPlugin: FastifyPluginCallback<CorrelationIdOptions> = (fastif
   done();
 };
 
-export const correlationIdMiddleware = fp(correlationIdPlugin, {
-  name: 'correlation-id',
-  fastify: '4.x',
-});
+export const correlationIdMiddleware: ReturnType<typeof fp<CorrelationIdOptions>> = fp(
+  correlationIdPlugin as unknown as FastifyPluginAsync<CorrelationIdOptions>,
+  {
+    name: 'correlation-id',
+    fastify: '4.x',
+  }
+);
 
 /**
  * Create headers object with correlation ID for outgoing requests
