@@ -14,6 +14,7 @@
  * - Production environment validation
  */
 
+// Mock mode utilities - contains primary env validation functions
 export * from './mock-mode.js';
 export * from './rate-limit.js';
 export * from './logger.js';
@@ -21,6 +22,24 @@ export * from './random.js';
 export * from './audit.js';
 export * from './service-urls.js';
 export * from './dataloader.js';
-export * from './dataloader-factory.js';
-export * from './env-validation.js';
+
+// DataLoader factory - exclude duplicate exports already in dataloader.js
+export {
+  DataLoaderFactory,
+  type PrismaLike,
+  type BaseEntity,
+} from './dataloader-factory.js';
+
+// Env validation - only export items not already in mock-mode.js
+export {
+  type EnvValidationConfig,
+  type ValidationResult,
+  COMMON_PRODUCTION_VARS,
+  validateNoLocalhostInProduction,
+  validateSecretNotDefault,
+  validateProductionConfig,
+  assertProductionConfig,
+  EnvValidation,
+} from './env-validation.js';
+
 export * from './soft-delete.js';

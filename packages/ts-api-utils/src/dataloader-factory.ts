@@ -42,8 +42,8 @@ import {
   createDataLoader,
   createIdLoader,
   createRelationLoader,
-  DataLoader,
-  DataLoaderOptions,
+  type DataLoader,
+  type DataLoaderOptions,
   LRUCache,
   TTLCache,
 } from './dataloader.js';
@@ -100,18 +100,21 @@ export function createPrismaLoader<T extends BaseEntity>(
   prismaModel: { findMany: (args: { where: { id: { in: string[] } } }) => Promise<T[]> },
   options?: DataLoaderOptions<string, T>
 ): DataLoader<string, T> {
+  const loaderOptions: DataLoaderOptions<string, T> = {
+    name: options?.name ?? 'PrismaLoader',
+    cache: options?.cache ?? true,
+    maxBatchSize: options?.maxBatchSize ?? 100,
+  };
+  if (options?.cacheMap) {
+    loaderOptions.cacheMap = options.cacheMap;
+  }
   return createIdLoader(
     async (ids: string[]) => {
       return prismaModel.findMany({
         where: { id: { in: ids } },
       });
     },
-    {
-      name: options?.name ?? 'PrismaLoader',
-      cache: options?.cache ?? true,
-      maxBatchSize: options?.maxBatchSize ?? 100,
-      cacheMap: options?.cacheMap,
-    }
+    loaderOptions
   );
 }
 
@@ -192,15 +195,20 @@ export interface DataLoaderConfig {
  * ```
  */
 export class DataLoaderFactory<TLoaders extends Record<string, DataLoader<unknown, unknown>>> {
-  private factories = new Map<keyof TLoaders, () => TLoaders[keyof TLoaders]>();
-  private config: DataLoaderConfig;
+  private readonly factories = new Map<keyof TLoaders, () => TLoaders[keyof TLoaders]>();
+  private readonly config: DataLoaderConfig;
 
   constructor(config: DataLoaderConfig = {}) {
     this.config = {
-      lruCacheSize: config.lruCacheSize,
-      ttlMs: config.ttlMs,
       maxBatchSize: config.maxBatchSize ?? 100,
     };
+    // Only set optional properties if they have values
+    if (config.lruCacheSize !== undefined) {
+      this.config.lruCacheSize = config.lruCacheSize;
+    }
+    if (config.ttlMs !== undefined) {
+      this.config.ttlMs = config.ttlMs;
+    }
   }
 
   /**
@@ -218,7 +226,7 @@ export class DataLoaderFactory<TLoaders extends Record<string, DataLoader<unknow
     const loaders: Partial<TLoaders> = {};
 
     for (const [name, factory] of this.factories) {
-      loaders[name as keyof TLoaders] = factory();
+      loaders[name] = factory();
     }
 
     return loaders as TLoaders;
@@ -229,10 +237,10 @@ export class DataLoaderFactory<TLoaders extends Record<string, DataLoader<unknow
    */
   getCacheFactory<K, V>(): (() => LRUCache<K, V> | TTLCache<K, V>) | undefined {
     if (this.config.lruCacheSize) {
-      return () => new LRUCache<K, V>(this.config.lruCacheSize!);
+      return () => new LRUCache<K, V>(this.config.lruCacheSize);
     }
     if (this.config.ttlMs) {
-      return () => new TTLCache<K, V>(this.config.ttlMs!);
+      return () => new TTLCache<K, V>(this.config.ttlMs);
     }
     return undefined;
   }
@@ -288,6 +296,15 @@ export function createCommonDataLoaders(
 
   // User loader
   if (prisma.user) {
+    const userLoaderOptions: DataLoaderOptions<string, UserEntity> = {
+      name: 'UserByIdLoader',
+      maxBatchSize: config.maxBatchSize ?? 100,
+    };
+    if (config.lruCacheSize) {
+      userLoaderOptions.cacheMap = new LRUCache(config.lruCacheSize);
+    } else if (config.ttlMs) {
+      userLoaderOptions.cacheMap = new TTLCache(config.ttlMs);
+    }
     loaders.userById = createDataLoader<string, UserEntity>(
       async (ids) => {
         const whereClause: any = { id: { in: ids } };
@@ -297,39 +314,32 @@ export function createCommonDataLoaders(
         const userMap = new Map(users.map((u) => [u.id, u]));
         return ids.map((id) => userMap.get(id) ?? null);
       },
-      {
-        name: 'UserByIdLoader',
-        maxBatchSize: config.maxBatchSize ?? 100,
-        cacheMap: config.lruCacheSize
-          ? new LRUCache(config.lruCacheSize)
-          : config.ttlMs
-            ? new TTLCache(config.ttlMs)
-            : undefined,
-      }
+      userLoaderOptions
     );
   }
 
   // Student/Learner loader
   const studentModel = prisma.student ?? prisma.learner;
   if (studentModel) {
+    const studentLoaderOptions: DataLoaderOptions<string, StudentEntity> = {
+      name: 'StudentByIdLoader',
+      maxBatchSize: config.maxBatchSize ?? 100,
+    };
+    if (config.lruCacheSize) {
+      studentLoaderOptions.cacheMap = new LRUCache(config.lruCacheSize);
+    } else if (config.ttlMs) {
+      studentLoaderOptions.cacheMap = new TTLCache(config.ttlMs);
+    }
     loaders.studentById = createDataLoader<string, StudentEntity>(
       async (ids) => {
         const whereClause: any = { id: { in: ids } };
         if (tenantId) whereClause.tenantId = tenantId;
 
-        const students = await studentModel!.findMany({ where: whereClause });
+        const students = await studentModel.findMany({ where: whereClause });
         const studentMap = new Map(students.map((s) => [s.id, s]));
         return ids.map((id) => studentMap.get(id) ?? null);
       },
-      {
-        name: 'StudentByIdLoader',
-        maxBatchSize: config.maxBatchSize ?? 100,
-        cacheMap: config.lruCacheSize
-          ? new LRUCache(config.lruCacheSize)
-          : config.ttlMs
-            ? new TTLCache(config.ttlMs)
-            : undefined,
-      }
+      studentLoaderOptions
     );
   }
 
@@ -337,16 +347,24 @@ export function createCommonDataLoaders(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// FASTIFY INTEGRATION
+// FASTIFY INTEGRATION TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Fastify plugin declaration for TypeScript
+ * Interface for Fastify request with DataLoaders
+ * Use module augmentation in your service if using Fastify:
+ *
+ * @example
+ * ```typescript
+ * declare module 'fastify' {
+ *   interface FastifyRequest {
+ *     loaders?: Partial<CommonDataLoaders>;
+ *   }
+ * }
+ * ```
  */
-declare module 'fastify' {
-  interface FastifyRequest {
-    loaders?: Partial<CommonDataLoaders>;
-  }
+export interface FastifyRequestWithLoaders {
+  loaders?: Partial<CommonDataLoaders>;
 }
 
 /**
@@ -395,8 +413,8 @@ export {
   createDataLoader,
   createIdLoader,
   createRelationLoader,
-  DataLoader,
-  DataLoaderOptions,
   LRUCache,
   TTLCache,
 } from './dataloader.js';
+
+export type { DataLoader, DataLoaderOptions } from './dataloader.js';

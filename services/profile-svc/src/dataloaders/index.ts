@@ -12,6 +12,7 @@ import {
   createRelationLoader,
   type DataLoader,
 } from '@aivo/ts-api-utils';
+
 import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -36,52 +37,81 @@ export interface ProfileDataLoaders {
 interface LearnerProfileEntity {
   id: string;
   tenantId: string;
-  userId: string;
-  externalLmsId: string | null;
-  displayName: string;
-  origin: string;
-  sensitivityLevel: string;
-  accommodationsJson: object | null;
+  learnerId: string;
+  createdByUserId: string;
+  updatedByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  profileVersion: number;
+  summary: string | null;
+  learningStyleJson: unknown;
+  sensoryProfileJson: unknown;
+  communicationPreferencesJson: unknown;
+  interactionConstraintsJson: unknown;
+  uiAccessibilityJson: unknown;
+  origin: string;
 }
 
 interface AccommodationEntity {
   id: string;
-  learnerProfileId: string;
+  tenantId: string;
+  learnerId: string;
+  profileId: string | null;
   category: string;
-  name: string;
-  isEnabled: boolean;
+  description: string;
+  appliesToDomains: string[];
   source: string;
+  sourceReference: string | null;
+  priority: string;
   validFrom: Date | null;
   validUntil: Date | null;
+  isActive: boolean;
+  requiresAcknowledgement: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface GoalLinkEntity {
   id: string;
-  learnerProfileId: string;
-  goalId: string;
-  goalType: string;
-  isPrimary: boolean;
+  tenantId: string;
+  learnerId: string;
+  profileId: string | null;
+  createdByUserId: string;
   createdAt: Date;
+  updatedAt: Date;
+  goalId: string;
+  notes: string | null;
 }
 
 interface IepDocRefEntity {
   id: string;
-  learnerProfileId: string;
-  documentUrl: string;
-  documentName: string;
-  uploadedAt: Date;
+  tenantId: string;
+  learnerId: string;
+  description: string | null;
+  fileUrl: string;
   accessScope: string;
+  fileName: string | null;
+  fileSizeBytes: number | null;
+  uploadedAt: Date;
+  uploadedByUserId: string;
+  expiresAt: Date | null;
+  archivedAt: Date | null;
+  archivedByUserId: string | null;
+  deletedAt: Date | null;
+  deletedByUserId: string | null;
 }
 
 interface ChangeLogEntity {
   id: string;
-  learnerProfileId: string;
-  changedBy: string;
-  changeType: string;
-  changedFields: object;
-  createdAt: Date;
+  tenantId: string;
+  learnerId: string;
+  profileId: string;
+  version: number;
+  changedFields: string[];
+  previousValuesJson: unknown;
+  changedByUserId: string;
+  changedByRole: string;
+  changedAt: Date;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -132,17 +162,17 @@ export function createProfileDataLoaders(tenantId: string): ProfileDataLoaders {
      * Load learner profiles by user ID with tenant scoping
      */
     learnerProfileByUserId: createIdLoader<string, LearnerProfileEntity>(
-      async (userIds: string[]) => {
+      async (learnerIds: string[]) => {
         const profiles = await prisma.learnerProfile.findMany({
           where: {
-            userId: { in: userIds },
+            learnerId: { in: learnerIds },
             tenantId,
           },
         });
 
-        // Map results by userId for correct ordering
-        const profileMap = new Map(profiles.map((p) => [p.userId, p]));
-        return userIds.map((userId) => profileMap.get(userId) ?? null);
+        // Map results by learnerId for correct ordering
+        const profileMap = new Map(profiles.map((p) => [p.learnerId, p]));
+        return learnerIds.map((learnerId) => profileMap.get(learnerId) ?? null) as unknown as LearnerProfileEntity[];
       },
       { name: 'LearnerProfileByUserIdLoader' }
     ),
@@ -153,10 +183,10 @@ export function createProfileDataLoaders(tenantId: string): ProfileDataLoaders {
     accommodationsByProfileId: createRelationLoader<AccommodationEntity>(
       async (profileIds: string[]) => {
         return prisma.learnerAccommodation.findMany({
-          where: { learnerProfileId: { in: profileIds } },
-        }) as Promise<AccommodationEntity[]>;
+          where: { profileId: { in: profileIds } },
+        }) as unknown as Promise<AccommodationEntity[]>;
       },
-      (acc) => acc.learnerProfileId,
+      (acc) => acc.profileId ?? '',
       { name: 'AccommodationsByProfileLoader' }
     ),
 
@@ -166,24 +196,25 @@ export function createProfileDataLoaders(tenantId: string): ProfileDataLoaders {
     goalLinksByProfileId: createRelationLoader<GoalLinkEntity>(
       async (profileIds: string[]) => {
         return prisma.learnerGoalLink.findMany({
-          where: { learnerProfileId: { in: profileIds } },
-        }) as Promise<GoalLinkEntity[]>;
+          where: { profileId: { in: profileIds } },
+        }) as unknown as Promise<GoalLinkEntity[]>;
       },
-      (link) => link.learnerProfileId,
+      (link) => link.profileId ?? '',
       { name: 'GoalLinksByProfileLoader' }
     ),
 
     /**
-     * Load IEP document references for profiles (one-to-many relation)
+     * Load IEP document references for learners (one-to-many relation)
+     * Note: IEP docs are linked by learnerId, not profileId
      */
     iepDocsByProfileId: createRelationLoader<IepDocRefEntity>(
-      async (profileIds: string[]) => {
+      async (learnerIds: string[]) => {
         return prisma.iepDocumentRef.findMany({
-          where: { learnerProfileId: { in: profileIds } },
+          where: { learnerId: { in: learnerIds } },
           orderBy: { uploadedAt: 'desc' },
-        }) as Promise<IepDocRefEntity[]>;
+        }) as unknown as Promise<IepDocRefEntity[]>;
       },
-      (doc) => doc.learnerProfileId,
+      (doc) => doc.learnerId,
       { name: 'IepDocsByProfileLoader' }
     ),
 
@@ -193,15 +224,15 @@ export function createProfileDataLoaders(tenantId: string): ProfileDataLoaders {
     changeLogsByProfileId: createRelationLoader<ChangeLogEntity>(
       async (profileIds: string[]) => {
         return prisma.profileChangeLog.findMany({
-          where: { learnerProfileId: { in: profileIds } },
-          orderBy: { createdAt: 'desc' },
+          where: { profileId: { in: profileIds } },
+          orderBy: { changedAt: 'desc' },
           take: 100, // Limit to avoid huge result sets
-        }) as Promise<ChangeLogEntity[]>;
+        }) as unknown as Promise<ChangeLogEntity[]>;
       },
-      (log) => log.learnerProfileId,
+      (log) => log.profileId,
       { name: 'ChangeLogsByProfileLoader' }
     ),
   };
 }
 
-export type { DataLoader };
+export type { DataLoader } from '@aivo/ts-api-utils';

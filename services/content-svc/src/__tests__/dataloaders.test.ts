@@ -102,7 +102,7 @@ describe('ContentDataLoaders', () => {
         { id: 'v-3', learningObjectId: 'lo-2', versionNumber: 1, state: 'PUBLISHED' },
       ];
 
-      (prisma.version.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockVersions);
+      (prisma.learningObjectVersion.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockVersions);
 
       const loaders = createContentDataLoaders('tenant-123');
 
@@ -111,13 +111,13 @@ describe('ContentDataLoaders', () => {
         loaders.versionsByLearningObjectId.load('lo-2'),
       ]);
 
-      expect(prisma.version.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.learningObjectVersion.findMany).toHaveBeenCalledTimes(1);
       expect(versions1).toHaveLength(2);
       expect(versions2).toHaveLength(1);
     });
 
     it('should return empty array for learning objects without versions', async () => {
-      (prisma.version.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (prisma.learningObjectVersion.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const loaders = createContentDataLoaders('tenant-123');
       const versions = await loaders.versionsByLearningObjectId.load('lo-no-versions');

@@ -5,7 +5,7 @@ Part of AIVO Platform Migration - Base Brain Model Training
 
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException
@@ -100,7 +100,7 @@ async def create_training_job(
         status="queued",
         progress=0.0,
         message="Training job queued",
-        started_at=datetime.utcnow().isoformat(),
+        started_at=datetime.now(tz=timezone.utc).isoformat(),
     )
     training_jobs[job_id] = job
 
@@ -147,13 +147,13 @@ async def run_training(job_id: str, request: TrainingJobCreate) -> None:
         job.status = "completed"
         job.progress = 1.0
         job.message = "Training completed successfully"
-        job.completed_at = datetime.utcnow().isoformat()
+        job.completed_at = datetime.now(tz=timezone.utc).isoformat()
         job.model_id = model_id
         
     except Exception as e:
         job.status = "failed"
         job.message = f"Training failed: {str(e)}"
-        job.completed_at = datetime.utcnow().isoformat()
+        job.completed_at = datetime.now(tz=timezone.utc).isoformat()
 
 
 @app.get("/api/v1/training/jobs/{job_id}", response_model=TrainingJobStatus)

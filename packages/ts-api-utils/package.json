@@ -1,0 +1,35 @@
+{
+  "name": "@aivo/ts-api-utils",
+  "version": "1.0.0",
+  "description": "TypeScript API utilities for Aivo services",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dataloader": "^2.2.3",
+    "pino": "^9.6.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.4",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}

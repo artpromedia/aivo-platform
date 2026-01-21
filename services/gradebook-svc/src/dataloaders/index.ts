@@ -13,77 +13,97 @@ import {
   type DataLoader,
 } from '@aivo/ts-api-utils';
 
-// Note: This service uses Express, so we import prisma differently
-// Import path will depend on actual prisma setup
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TYPES
+// TYPES - Based on actual Prisma schema models
 // ══════════════════════════════════════════════════════════════════════════════
 
 export interface GradebookDataLoaders {
-  /** Load grade entries by ID */
-  gradeEntryById: DataLoader<string, GradeEntryEntity>;
-  /** Load grades by learner ID (returns array) */
-  gradesByLearnerId: DataLoader<string, GradeEntryEntity[]>;
+  /** Load grade by ID */
+  gradeById: DataLoader<string, GradeEntity>;
+  /** Load grades by student ID (returns array) */
+  gradesByStudentId: DataLoader<string, GradeEntity[]>;
   /** Load grades by assignment ID (returns array) */
-  gradesByAssignmentId: DataLoader<string, GradeEntryEntity[]>;
-  /** Load gradebook by class ID */
-  gradebookByClassId: DataLoader<string, GradebookEntity>;
-  /** Load categories by gradebook ID (returns array) */
-  categoriesByGradebookId: DataLoader<string, CategoryEntity[]>;
-  /** Load final grades by learner ID (returns array) */
-  finalGradesByLearnerId: DataLoader<string, FinalGradeEntity[]>;
+  gradesByAssignmentId: DataLoader<string, GradeEntity[]>;
+  /** Load gradebook config by classroom ID */
+  gradebookConfigByClassroomId: DataLoader<string, GradebookConfigEntity>;
+  /** Load categories by gradebook config ID (returns array) */
+  categoriesByGradebookConfigId: DataLoader<string, CategoryEntity[]>;
+  /** Load assignments by gradebook config ID (returns array) */
+  assignmentsByGradebookConfigId: DataLoader<string, AssignmentEntity[]>;
 }
 
-interface GradeEntryEntity {
+interface GradeEntity {
   id: string;
-  tenantId: string;
-  learnerId: string;
   assignmentId: string;
-  classId: string;
-  categoryId: string | null;
-  pointsEarned: number | null;
-  pointsPossible: number;
+  studentId: string;
+  tenantId: string;
+  score: number | null;
+  maxPoints: number;
   percentage: number | null;
   letterGrade: string | null;
-  isExcused: boolean;
-  isMissing: boolean;
+  status: string;
+  submittedAt: Date | null;
   gradedAt: Date | null;
   gradedBy: string | null;
+  isLate: boolean;
+  latePenalty: number | null;
+  isOverride: boolean;
+  overrideReason: string | null;
+  originalScore: number | null;
+  feedback: string | null;
+  privateNotes: string | null;
+  rubricScores: unknown;
   createdAt: Date;
   updatedAt: Date;
 }
 
-interface GradebookEntity {
+interface GradebookConfigEntity {
   id: string;
   tenantId: string;
-  classId: string;
-  gradingPeriodId: string | null;
-  gradingScale: object;
-  settings: object;
+  classroomId: string;
+  teacherId: string;
+  gradingScale: string;
+  calculationType: string;
+  dropLowestScores: number;
+  allowLateSubmissions: boolean;
+  latePenaltyPercent: number | null;
+  extraCreditEnabled: boolean;
+  showStudentGrades: boolean;
+  showClassAverage: boolean;
+  roundGrades: boolean;
+  letterGradeScale: unknown;
   createdAt: Date;
   updatedAt: Date;
 }
 
 interface CategoryEntity {
   id: string;
-  gradebookId: string;
+  gradebookConfigId: string;
   name: string;
   weight: number;
+  color: string | null;
   dropLowest: number;
-  isDefault: boolean;
   orderIndex: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface FinalGradeEntity {
+interface AssignmentEntity {
   id: string;
-  learnerId: string;
-  classId: string;
-  gradingPeriodId: string;
-  percentage: number;
-  letterGrade: string;
-  calculatedAt: Date;
+  tenantId: string;
+  gradebookConfigId: string;
+  categoryId: string | null;
+  title: string;
+  description: string | null;
+  type: string;
+  status: string;
+  totalPoints: number;
+  extraCredit: boolean;
+  assignedDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -121,100 +141,100 @@ export function createGradebookDataLoaders(
 ): GradebookDataLoaders {
   return {
     /**
-     * Load grade entries by ID with tenant scoping
+     * Load grade by ID with tenant scoping
      */
-    gradeEntryById: createIdLoader<string, GradeEntryEntity>(
+    gradeById: createIdLoader<string, GradeEntity>(
       async (ids: string[]) => {
-        return prisma.gradeEntry.findMany({
+        return prisma.grade.findMany({
           where: {
             id: { in: ids },
             tenantId,
           },
-        }) as Promise<GradeEntryEntity[]>;
+        }) as unknown as Promise<GradeEntity[]>;
       },
-      { name: 'GradeEntryByIdLoader' }
+      { name: 'GradeByIdLoader' }
     ),
 
     /**
-     * Load all grades for a learner (one-to-many)
+     * Load all grades for a student (one-to-many)
      */
-    gradesByLearnerId: createRelationLoader<GradeEntryEntity>(
-      async (learnerIds: string[]) => {
-        return prisma.gradeEntry.findMany({
+    gradesByStudentId: createRelationLoader<GradeEntity>(
+      async (studentIds: string[]) => {
+        return prisma.grade.findMany({
           where: {
-            learnerId: { in: learnerIds },
+            studentId: { in: studentIds },
             tenantId,
           },
           orderBy: { createdAt: 'desc' },
-        }) as Promise<GradeEntryEntity[]>;
+        }) as unknown as Promise<GradeEntity[]>;
       },
-      (grade) => grade.learnerId,
-      { name: 'GradesByLearnerLoader' }
+      (grade) => grade.studentId,
+      { name: 'GradesByStudentLoader' }
     ),
 
     /**
      * Load all grades for an assignment (one-to-many)
      */
-    gradesByAssignmentId: createRelationLoader<GradeEntryEntity>(
+    gradesByAssignmentId: createRelationLoader<GradeEntity>(
       async (assignmentIds: string[]) => {
-        return prisma.gradeEntry.findMany({
+        return prisma.grade.findMany({
           where: {
             assignmentId: { in: assignmentIds },
             tenantId,
           },
-        }) as Promise<GradeEntryEntity[]>;
+        }) as unknown as Promise<GradeEntity[]>;
       },
       (grade) => grade.assignmentId,
       { name: 'GradesByAssignmentLoader' }
     ),
 
     /**
-     * Load gradebook by class ID
+     * Load gradebook config by classroom ID
      */
-    gradebookByClassId: createIdLoader<string, GradebookEntity>(
-      async (classIds: string[]) => {
-        const gradebooks = await prisma.gradebook.findMany({
+    gradebookConfigByClassroomId: createIdLoader<string, GradebookConfigEntity>(
+      async (classroomIds: string[]) => {
+        const configs = await prisma.gradebookConfig.findMany({
           where: {
-            classId: { in: classIds },
+            classroomId: { in: classroomIds },
             tenantId,
           },
         });
 
-        // Map results by classId for correct ordering
-        const gradebookMap = new Map(gradebooks.map((g) => [g.classId, g]));
-        return classIds.map((classId) => gradebookMap.get(classId) ?? null);
+        // Map results by classroomId for correct ordering
+        const configMap = new Map(configs.map((c) => [c.classroomId, c]));
+        return classroomIds.map((id) => configMap.get(id) ?? null) as GradebookConfigEntity[];
       },
-      { name: 'GradebookByClassLoader' }
+      { name: 'GradebookConfigByClassroomLoader' }
     ),
 
     /**
-     * Load categories for gradebooks (one-to-many)
+     * Load categories for gradebook configs (one-to-many)
      */
-    categoriesByGradebookId: createRelationLoader<CategoryEntity>(
-      async (gradebookIds: string[]) => {
+    categoriesByGradebookConfigId: createRelationLoader<CategoryEntity>(
+      async (configIds: string[]) => {
         return prisma.gradeCategory.findMany({
-          where: { gradebookId: { in: gradebookIds } },
+          where: { gradebookConfigId: { in: configIds } },
           orderBy: { orderIndex: 'asc' },
-        }) as Promise<CategoryEntity[]>;
+        }) as unknown as Promise<CategoryEntity[]>;
       },
-      (cat) => cat.gradebookId,
-      { name: 'CategoriesByGradebookLoader' }
+      (cat) => cat.gradebookConfigId,
+      { name: 'CategoriesByGradebookConfigLoader' }
     ),
 
     /**
-     * Load final grades for learners (one-to-many)
+     * Load assignments for gradebook configs (one-to-many)
      */
-    finalGradesByLearnerId: createRelationLoader<FinalGradeEntity>(
-      async (learnerIds: string[]) => {
-        return prisma.finalGrade.findMany({
-          where: { learnerId: { in: learnerIds } },
-          orderBy: { calculatedAt: 'desc' },
-        }) as Promise<FinalGradeEntity[]>;
+    assignmentsByGradebookConfigId: createRelationLoader<AssignmentEntity>(
+      async (configIds: string[]) => {
+        return prisma.assignment.findMany({
+          where: { gradebookConfigId: { in: configIds } },
+          orderBy: { assignedDate: 'desc' },
+        }) as unknown as Promise<AssignmentEntity[]>;
       },
-      (grade) => grade.learnerId,
-      { name: 'FinalGradesByLearnerLoader' }
+      (assignment) => assignment.gradebookConfigId,
+      { name: 'AssignmentsByGradebookConfigLoader' }
     ),
   };
 }
 
-export type { DataLoader };
+export type { DataLoader } from '@aivo/ts-api-utils';

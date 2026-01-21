@@ -154,24 +154,39 @@ export function recordRequest(key: string, windowMs: number): void {
 // DEFAULT KEY EXTRACTOR
 // ══════════════════════════════════════════════════════════════════════════════
 
+/** Header value type for request headers */
+type HeaderValue = string | string[] | undefined;
+
+/** Request object shape for key extraction */
+interface KeyExtractorRequest {
+  ip?: string;
+  headers?: Record<string, HeaderValue>;
+  socket?: { remoteAddress?: string };
+  connection?: { remoteAddress?: string };
+}
+
+/**
+ * Extract IP from X-Forwarded-For header
+ */
+function extractForwardedIp(forwardedFor: HeaderValue): string | undefined {
+  if (typeof forwardedFor === 'string') {
+    return forwardedFor.split(',')[0]?.trim();
+  }
+  if (Array.isArray(forwardedFor)) {
+    return forwardedFor[0];
+  }
+  return undefined;
+}
+
 /**
  * Default key extractor that works with Fastify and Express requests
  */
 export function defaultKeyExtractor(request: unknown): string {
-  const req = request as {
-    ip?: string;
-    headers?: Record<string, string | string[] | undefined>;
-    socket?: { remoteAddress?: string };
-    connection?: { remoteAddress?: string };
-  };
+  const req = request as KeyExtractorRequest;
 
   // Try various methods to get IP
   const forwardedFor = req.headers?.['x-forwarded-for'];
-  const forwarded = typeof forwardedFor === 'string'
-    ? forwardedFor.split(',')[0]?.trim()
-    : Array.isArray(forwardedFor)
-      ? forwardedFor[0]
-      : undefined;
+  const forwarded = extractForwardedIp(forwardedFor);
 
   return (
     req.ip ||
@@ -188,7 +203,7 @@ export function defaultKeyExtractor(request: unknown): string {
 
 interface FastifyRequest {
   ip?: string;
-  headers?: Record<string, string | string[] | undefined>;
+  headers?: Record<string, HeaderValue>;
 }
 
 interface FastifyReply {
@@ -229,16 +244,16 @@ export function createRateLimiter(options: RateLimitOptions) {
     const result = checkRateLimit(key, max, windowMs);
 
     // Set rate limit headers
-    void reply.header('X-RateLimit-Limit', max);
-    void reply.header('X-RateLimit-Remaining', result.info.remaining);
-    void reply.header('X-RateLimit-Reset', Math.ceil(result.info.resetAt / 1000));
+    reply.header('X-RateLimit-Limit', max);
+    reply.header('X-RateLimit-Remaining', result.info.remaining);
+    reply.header('X-RateLimit-Reset', Math.ceil(result.info.resetAt / 1000));
 
     // Record this request
     recordRequest(key, windowMs);
 
     if (!result.allowed) {
-      void reply.header('Retry-After', result.info.retryAfter);
-      void reply.status(429).send({
+      reply.header('Retry-After', result.info.retryAfter);
+      reply.status(429).send({
         error: 'Too Many Requests',
         message,
         retryAfter: result.info.retryAfter,
@@ -659,7 +674,7 @@ export function createStandardKeyGenerator(prefix: string) {
       tenantId?: string;
       userId?: string;
       user?: { id?: string; tenantId?: string };
-      headers?: Record<string, string | string[] | undefined>;
+      headers?: Record<string, HeaderValue>;
       ip?: string;
     };
 
@@ -672,12 +687,7 @@ export function createStandardKeyGenerator(prefix: string) {
 
     // Fall back to IP
     const forwardedFor = req.headers?.['x-forwarded-for'];
-    const ip =
-      typeof forwardedFor === 'string'
-        ? forwardedFor.split(',')[0]?.trim()
-        : Array.isArray(forwardedFor)
-          ? forwardedFor[0]
-          : req.ip;
+    const ip = extractForwardedIp(forwardedFor) ?? req.ip;
 
     return `${prefix}:ip:${ip ?? 'unknown'}`;
   };

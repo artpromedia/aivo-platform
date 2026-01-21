@@ -12,6 +12,7 @@ import {
   createRelationLoader,
   type DataLoader,
 } from '@aivo/ts-api-utils';
+
 import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -36,28 +37,43 @@ export interface NotificationDataLoaders {
 interface NotificationEntity {
   id: string;
   tenantId: string;
-  userId: string;
+  recipientId: string;
   type: string;
   title: string;
   body: string;
+  imageUrl: string | null;
+  actionUrl: string | null;
+  actionData: unknown;
   priority: string;
-  data: object | null;
+  expiresAt: Date | null;
+  groupKey: string | null;
+  collapseKey: string | null;
+  sourceType: string | null;
+  sourceId: string | null;
   isRead: boolean;
   readAt: Date | null;
+  isDismissed: boolean;
+  dismissedAt: Date | null;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 interface PreferenceEntity {
   id: string;
-  userId: string;
   tenantId: string;
-  emailEnabled: boolean;
-  pushEnabled: boolean;
-  smsEnabled: boolean;
+  userId: string;
   inAppEnabled: boolean;
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  typePreferences: unknown;
   quietHoursStart: string | null;
   quietHoursEnd: string | null;
-  preferences: object;
+  quietHoursTimezone: string | null;
+  digestEnabled: boolean;
+  digestFrequency: string | null;
+  digestTime: string | null;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -84,12 +100,19 @@ interface DeliveryLogEntity {
 interface TemplateEntity {
   id: string;
   tenantId: string | null;
-  name: string;
+  templateKey: string;
   type: string;
-  subject: string | null;
-  body: string;
-  variables: object | null;
+  channel: string;
+  locale: string;
+  titleTemplate: string;
+  bodyTemplate: string;
+  imageUrlTemplate: string | null;
+  actionUrlTemplate: string | null;
+  emailSubject: string | null;
+  emailHtmlTemplate: string | null;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -131,26 +154,26 @@ export function createNotificationDataLoaders(tenantId: string): NotificationDat
             id: { in: ids },
             tenantId,
           },
-        }) as Promise<NotificationEntity[]>;
+        }) as unknown as Promise<NotificationEntity[]>;
       },
       { name: 'NotificationByIdLoader' }
     ),
 
     /**
-     * Load notifications for users (one-to-many)
+     * Load notifications for users (one-to-many by recipientId)
      */
     notificationsByUserId: createRelationLoader<NotificationEntity>(
-      async (userIds: string[]) => {
+      async (recipientIds: string[]) => {
         return prisma.notification.findMany({
           where: {
-            userId: { in: userIds },
+            recipientId: { in: recipientIds },
             tenantId,
           },
           orderBy: { createdAt: 'desc' },
           take: 100, // Limit to avoid huge result sets
-        }) as Promise<NotificationEntity[]>;
+        }) as unknown as Promise<NotificationEntity[]>;
       },
-      (notification) => notification.userId,
+      (notification) => notification.recipientId,
       { name: 'NotificationsByUserLoader' }
     ),
 
@@ -168,7 +191,7 @@ export function createNotificationDataLoaders(tenantId: string): NotificationDat
 
         // Map by userId for correct ordering
         const prefMap = new Map(prefs.map((p) => [p.userId, p]));
-        return userIds.map((userId) => prefMap.get(userId) ?? null);
+        return userIds.map((userId) => prefMap.get(userId) ?? null) as unknown as PreferenceEntity[];
       },
       { name: 'PreferencesByUserLoader' }
     ),
@@ -183,7 +206,7 @@ export function createNotificationDataLoaders(tenantId: string): NotificationDat
             userId: { in: userIds },
             isActive: true,
           },
-        }) as Promise<DeviceTokenEntity[]>;
+        }) as unknown as Promise<DeviceTokenEntity[]>;
       },
       (token) => token.userId,
       { name: 'DeviceTokensByUserLoader' }
@@ -197,7 +220,7 @@ export function createNotificationDataLoaders(tenantId: string): NotificationDat
         return prisma.deliveryLog.findMany({
           where: { notificationId: { in: notificationIds } },
           orderBy: { attemptedAt: 'desc' },
-        }) as Promise<DeliveryLogEntity[]>;
+        }) as unknown as Promise<DeliveryLogEntity[]>;
       },
       (log) => log.notificationId,
       { name: 'DeliveryLogsByNotificationLoader' }
@@ -213,11 +236,11 @@ export function createNotificationDataLoaders(tenantId: string): NotificationDat
             id: { in: ids },
             OR: [{ tenantId }, { tenantId: null }],
           },
-        }) as Promise<TemplateEntity[]>;
+        }) as unknown as Promise<TemplateEntity[]>;
       },
       { name: 'TemplateByIdLoader' }
     ),
   };
 }
 
-export type { DataLoader };
+export type { DataLoader } from '@aivo/ts-api-utils';

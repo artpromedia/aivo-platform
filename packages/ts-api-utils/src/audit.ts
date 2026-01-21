@@ -306,20 +306,28 @@ export function createAuditLogger(config: AuditLoggerConfig) {
       timestamp: new Date().toISOString(),
       serviceName,
       severity: input.severity ?? determineSeverity(input.action),
-      details: redactSensitiveData(input.details, redactFields),
-      previousState: redactSensitiveData(input.previousState, redactFields),
-      newState: redactSensitiveData(input.newState, redactFields),
       tags: [...defaultTags, ...(input.tags ?? [])],
     };
 
+    // Redact sensitive data from optional properties
+    if (input.details !== undefined) {
+      entry.details = redactSensitiveData(input.details, redactFields)!;
+    }
+    if (input.previousState !== undefined) {
+      entry.previousState = redactSensitiveData(input.previousState, redactFields)!;
+    }
+    if (input.newState !== undefined) {
+      entry.newState = redactSensitiveData(input.newState, redactFields)!;
+    }
+
     // Output to console if enabled
     if (consoleOutput) {
-      const logMethod =
-        entry.severity === 'CRITICAL'
-          ? console.error
-          : entry.severity === 'WARNING'
-            ? console.warn
-            : console.info;
+      const getLogMethod = (): typeof console.info => {
+        if (entry.severity === 'CRITICAL') return console.error;
+        if (entry.severity === 'WARNING') return console.warn;
+        return console.info;
+      };
+      const logMethod = getLogMethod();
 
       logMethod(JSON.stringify({
         audit: true,

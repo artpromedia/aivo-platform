@@ -12,6 +12,7 @@ import {
   createRelationLoader,
   type DataLoader,
 } from '@aivo/ts-api-utils';
+
 import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -27,10 +28,6 @@ export interface ContentDataLoaders {
   tagsByLearningObjectId: DataLoader<string, TagEntity[]>;
   /** Load published version by learning object ID */
   publishedVersionByLearningObjectId: DataLoader<string, VersionEntity>;
-  /** Load files by version ID (returns array) */
-  filesByVersionId: DataLoader<string, FileEntity[]>;
-  /** Load lessons by module ID (returns array) */
-  lessonsByModuleId: DataLoader<string, LessonEntity[]>;
 }
 
 interface LearningObjectEntity {
@@ -59,21 +56,6 @@ interface TagEntity {
   id: string;
   learningObjectId: string;
   tag: string;
-}
-
-interface FileEntity {
-  id: string;
-  versionId: string;
-  filename: string;
-  mimeType: string;
-  sizeBytes: number;
-}
-
-interface LessonEntity {
-  id: string;
-  moduleId: string;
-  title: string;
-  orderIndex: number;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -126,7 +108,7 @@ export function createContentDataLoaders(tenantId?: string): ContentDataLoaders 
      */
     versionsByLearningObjectId: createRelationLoader<VersionEntity>(
       async (learningObjectIds: string[]) => {
-        return prisma.version.findMany({
+        return prisma.learningObjectVersion.findMany({
           where: { learningObjectId: { in: learningObjectIds } },
           orderBy: { versionNumber: 'desc' },
         }) as Promise<VersionEntity[]>;
@@ -153,7 +135,7 @@ export function createContentDataLoaders(tenantId?: string): ContentDataLoaders 
      */
     publishedVersionByLearningObjectId: createIdLoader<string, VersionEntity>(
       async (learningObjectIds: string[]) => {
-        const versions = await prisma.version.findMany({
+        const versions = await prisma.learningObjectVersion.findMany({
           where: {
             learningObjectId: { in: learningObjectIds },
             state: 'PUBLISHED',
@@ -173,34 +155,7 @@ export function createContentDataLoaders(tenantId?: string): ContentDataLoaders 
       },
       { name: 'PublishedVersionByLearningObjectLoader' }
     ),
-
-    /**
-     * Load files by version ID (one-to-many relation)
-     */
-    filesByVersionId: createRelationLoader<FileEntity>(
-      async (versionIds: string[]) => {
-        return prisma.file.findMany({
-          where: { versionId: { in: versionIds } },
-        }) as Promise<FileEntity[]>;
-      },
-      (file) => file.versionId,
-      { name: 'FilesByVersionLoader' }
-    ),
-
-    /**
-     * Load lessons by module ID (one-to-many relation)
-     */
-    lessonsByModuleId: createRelationLoader<LessonEntity>(
-      async (moduleIds: string[]) => {
-        return prisma.lesson.findMany({
-          where: { moduleId: { in: moduleIds } },
-          orderBy: { orderIndex: 'asc' },
-        }) as Promise<LessonEntity[]>;
-      },
-      (lesson) => lesson.moduleId,
-      { name: 'LessonsByModuleLoader' }
-    ),
   };
 }
 
-export type { DataLoader };
+export type { DataLoader } from '@aivo/ts-api-utils';

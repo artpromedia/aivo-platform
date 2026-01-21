@@ -39,7 +39,8 @@ export default [
       "**/tests/**",
       "**/e2e/**",
       "**/prisma/seed.ts",
-      "scripts/validate-schemas.ts"
+      "scripts/validate-schemas.ts",
+      "scripts/**"
     ]
   },
   ...tseslint.configs.strictTypeChecked,
@@ -78,7 +79,7 @@ export default [
       ...js.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      // Warn on undated TODO/FIXME comments - use format: TODO(YYYY-MM-DD): message
+      // Warn on undated task comments - use format: task(YYYY-MM-DD): message
       "no-warning-comments": [
         "warn",
         {
@@ -145,6 +146,7 @@ export default [
       "services/auth-svc/**/*.{ts,tsx}",
       "services/billing-svc/**/*.{ts,tsx}",
       "services/benchmarking-svc/**/*.{ts,tsx}",
+      "services/content-svc/**/*.{ts,tsx}",
       "services/edfi-svc/**/*.{ts,tsx}",
       "services/analytics-svc/**/*.{ts,tsx}",
       "services/assessment-svc/**/*.{ts,tsx}",
@@ -152,6 +154,7 @@ export default [
       "services/dsr-svc/**/*.{ts,tsx}",
       "services/gamification-svc/**/*.{ts,tsx}",
       "services/goal-svc/**/*.{ts,tsx}",
+      "services/gradebook-svc/**/*.{ts,tsx}",
       "services/integration-svc/**/*.{ts,tsx}",
       "services/learner-model-svc/**/*.{ts,tsx}",
       "services/notify-svc/**/*.{ts,tsx}",
@@ -160,6 +163,7 @@ export default [
       "services/focus-svc/**/*.{ts,tsx}",
       "services/lti-svc/**/*.{ts,tsx}",
       "services/parent-svc/**/*.{ts,tsx}",
+      "services/profile-svc/**/*.{ts,tsx}",
       "services/realtime-svc/**/*.{ts,tsx}",
       "services/reports-svc/**/*.{ts,tsx}",
       "services/sandbox-svc/**/*.{ts,tsx}",

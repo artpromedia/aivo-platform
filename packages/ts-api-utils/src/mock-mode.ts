@@ -60,9 +60,9 @@ interface MockModeConfig {
  */
 export function isMockEnabled(config: MockModeConfig): boolean {
   const envVar = config.envVar ?? 'USE_MOCK';
-  const envValue = typeof window !== 'undefined'
-    ? (window as any).__ENV__?.[envVar] ?? process.env[envVar]
-    : process.env[envVar];
+  const envValue = globalThis.window === undefined
+    ? process.env[envVar]
+    : (globalThis as Record<string, unknown>).__ENV__?.[envVar as keyof object] ?? process.env[envVar];
 
   const mockRequested = envValue === 'true';
 
@@ -116,10 +116,13 @@ interface MockFallbackOptions<T> {
  * NEVER returns mock data in production unless the feature is explicitly configured.
  */
 export async function withMockFallback<T>(options: MockFallbackOptions<T>): Promise<T> {
-  const mockEnabled = isMockEnabled({
+  const mockConfig: MockModeConfig = {
     feature: options.feature,
-    envVar: options.envVar,
-  });
+  };
+  if (options.envVar !== undefined) {
+    mockConfig.envVar = options.envVar;
+  }
+  const mockEnabled = isMockEnabled(mockConfig);
 
   if (mockEnabled) {
     // Add artificial delay to simulate network latency (development only)
@@ -187,8 +190,8 @@ export function clearMockUsageMetrics(): void {
  * Allows centralized control of mock behavior.
  */
 class MockRegistry {
-  private mocks = new Map<string, () => unknown>();
-  private enabled = new Set<string>();
+  private readonly mocks = new Map<string, () => unknown>();
+  private readonly enabled = new Set<string>();
 
   /**
    * Register a mock implementation for a feature
@@ -312,7 +315,7 @@ export function getEnvInt(name: string, fallback: number): number {
   const value = process.env[name];
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);
-  return isNaN(parsed) ? fallback : parsed;
+  return Number.isNaN(parsed) ? fallback : parsed;
 }
 
 /**

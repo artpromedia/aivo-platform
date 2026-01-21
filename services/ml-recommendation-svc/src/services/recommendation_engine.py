@@ -294,8 +294,6 @@ class RecommendationEngine:
         - Skill relevance
         - Neurodiverse accommodations
         """
-        score = 0.5
-        
         # Difficulty matching
         difficulty = candidate.get("difficulty", 0.5)
         
@@ -395,7 +393,7 @@ class RecommendationEngine:
             return self.ucb_c
         
         pulls = stats["pulls"]
-        mean_reward = stats["mean_reward"]
+        # Note: mean_reward available in stats["mean_reward"] for future use
         
         # UCB formula: mean + c * sqrt(ln(total) / pulls)
         # Approximate total with pulls * 10 for now
@@ -431,12 +429,17 @@ class RecommendationEngine:
 
     def _compute_confidence(
         self,
-        learner_id: str,
-        candidate: dict[str, Any],
+        _learner_id: str,
+        _candidate: dict[str, Any],
         skill_masteries: list[SkillMastery],
     ) -> float:
         """
         Compute confidence in the recommendation.
+        
+        Args:
+            _learner_id: Learner ID (reserved for future personalization)
+            _candidate: Candidate item (reserved for future content-based confidence)
+            skill_masteries: Skill mastery data for the learner
         """
         confidence = 0.5
         
@@ -450,10 +453,14 @@ class RecommendationEngine:
     def _generate_reason(
         self,
         scores: dict[str, float],
-        candidate: dict[str, Any],
+        _candidate: dict[str, Any],
     ) -> str:
         """
         Generate human-readable reason for recommendation.
+        
+        Args:
+            scores: Component scores for the recommendation
+            _candidate: Candidate item (reserved for future content-based reasons)
         """
         reasons = []
         

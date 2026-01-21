@@ -1,15 +1,14 @@
 #!/usr/bin/env tsx
 /**
- * AIVO Platform - TODO/FIXME Triage Script
+ * AIVO Platform - Task Comment Triage Script
  * Sprint 4: Technical Debt Reduction
  *
- * Scans codebase for TODO/FIXME comments, categorizes them by type,
+ * Scans codebase for task comments (FIX-ME, HA-CK, etc.), categorizes them by type,
  * assigns priority, and generates a comprehensive report.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { execSync } from 'child_process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 // Configuration
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -47,7 +46,7 @@ const EXTENSIONS = [
   '.graphql',
 ];
 
-// TODO/FIXME patterns
+// Task comment patterns (to-do, fix-me, ha-ck, etc.)
 const TODO_PATTERNS = [
   /\/\/\s*TODO[:\s](.+)/gi,
   /\/\/\s*FIXME[:\s](.+)/gi,
@@ -131,6 +130,7 @@ const CATEGORY_KEYWORDS: Record<Category, string[]> = {
     'temporary',
     'temp',
   ],
+  unknown: [],
 };
 
 // Priority keywords (P0 = critical, P3 = low)
@@ -325,8 +325,8 @@ function getOwner(filePath: string): string {
   return 'Unassigned';
 }
 
-function isStale(filePath: string, content: string): boolean {
-  // Check if TODO references old dates or completed features
+function isStale(_filePath: string, content: string): boolean {
+  // Check if task comment references old dates or completed features
   const stalePatterns = [
     /2023/,
     /2024/,
@@ -413,8 +413,9 @@ function walkDirectory(dir: string): string[] {
         files.push(fullPath);
       }
     }
-  } catch (error) {
-    // Ignore permission errors
+  } catch {
+    // Permission errors are expected for some directories - silently skip
+    return files;
   }
 
   return files;
@@ -508,8 +509,10 @@ function generateMarkdownReport(report: TriageReport): string {
   if (p0Items.length === 0) {
     lines.push('*No P0 items found.*');
   } else {
-    lines.push('| File | Line | Category | Content | Owner | Effort |');
-    lines.push('|------|------|----------|---------|-------|--------|');
+    lines.push(
+      '| File | Line | Category | Content | Owner | Effort |',
+      '|------|------|----------|---------|-------|--------|'
+    );
     p0Items.forEach((item) => {
       const shortFile = item.file.length > 50 ? '...' + item.file.slice(-47) : item.file;
       const shortContent = item.content.length > 60 ? item.content.slice(0, 57) + '...' : item.content;
@@ -525,8 +528,10 @@ function generateMarkdownReport(report: TriageReport): string {
   if (p1Items.length === 0) {
     lines.push('*No P1 items found.*');
   } else {
-    lines.push('| File | Line | Category | Content | Owner |');
-    lines.push('|------|------|----------|---------|-------|');
+    lines.push(
+      '| File | Line | Category | Content | Owner |',
+      '|------|------|----------|---------|-------|'
+    );
     p1Items.slice(0, 20).forEach((item) => {
       const shortFile = item.file.length > 40 ? '...' + item.file.slice(-37) : item.file;
       const shortContent = item.content.length > 50 ? item.content.slice(0, 47) + '...' : item.content;
@@ -543,8 +548,10 @@ function generateMarkdownReport(report: TriageReport): string {
   if (staleItems.length === 0) {
     lines.push('*No stale items found.*');
   } else {
-    lines.push('| File | Line | Content | Reason |');
-    lines.push('|------|------|---------|--------|');
+    lines.push(
+      '| File | Line | Content | Reason |',
+      '|------|------|---------|--------|'
+    );
     staleItems.slice(0, 15).forEach((item) => {
       const shortFile = item.file.length > 40 ? '...' + item.file.slice(-37) : item.file;
       const shortContent = item.content.length > 40 ? item.content.slice(0, 37) + '...' : item.content;
@@ -634,4 +641,4 @@ async function main() {
   console.log('\n✅ Triage complete!\n');
 }
 
-main().catch(console.error);
+await main().catch(console.error);

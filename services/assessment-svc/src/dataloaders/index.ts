@@ -12,6 +12,7 @@ import {
   createRelationLoader,
   type DataLoader,
 } from '@aivo/ts-api-utils';
+
 import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -27,8 +28,8 @@ export interface AssessmentDataLoaders {
   questionById: DataLoader<string, QuestionEntity>;
   /** Load attempts by assessment ID (returns array) */
   attemptsByAssessmentId: DataLoader<string, AttemptEntity[]>;
-  /** Load attempts by learner ID (returns array) */
-  attemptsByLearnerId: DataLoader<string, AttemptEntity[]>;
+  /** Load attempts by user ID (returns array) */
+  attemptsByUserId: DataLoader<string, AttemptEntity[]>;
   /** Load responses by attempt ID (returns array) */
   responsesByAttemptId: DataLoader<string, ResponseEntity[]>;
 }
@@ -52,28 +53,31 @@ interface AssessmentQuestionEntity {
   assessmentId: string;
   questionId: string;
   orderIndex: number;
-  pointsOverride: number | null;
+  points: number;
+  required: boolean;
 }
 
 interface QuestionEntity {
   id: string;
   tenantId: string;
-  stem: string;
   type: string;
+  status: string;
+  subjectId: string;
   difficulty: string;
-  points: number;
-  choices: object | null;
-  metadata: object | null;
+  version: number;
+  authorId: string;
+  createdAt: Date;
 }
 
 interface AttemptEntity {
   id: string;
+  tenantId: string;
   assessmentId: string;
-  learnerId: string;
+  userId: string;
   status: string;
-  score: number | null;
+  attemptNumber: number;
   startedAt: Date;
-  completedAt: Date | null;
+  submittedAt: Date | null;
 }
 
 interface ResponseEntity {
@@ -172,17 +176,17 @@ export function createAssessmentDataLoaders(tenantId: string): AssessmentDataLoa
     ),
 
     /**
-     * Load attempts for learners
+     * Load attempts for users
      */
-    attemptsByLearnerId: createRelationLoader<AttemptEntity>(
-      async (learnerIds: string[]) => {
+    attemptsByUserId: createRelationLoader<AttemptEntity>(
+      async (userIds: string[]) => {
         return prisma.attempt.findMany({
-          where: { learnerId: { in: learnerIds } },
+          where: { userId: { in: userIds } },
           orderBy: { startedAt: 'desc' },
         }) as Promise<AttemptEntity[]>;
       },
-      (attempt) => attempt.learnerId,
-      { name: 'AttemptsByLearnerLoader' }
+      (attempt) => attempt.userId,
+      { name: 'AttemptsByUserLoader' }
     ),
 
     /**
@@ -190,7 +194,7 @@ export function createAssessmentDataLoaders(tenantId: string): AssessmentDataLoa
      */
     responsesByAttemptId: createRelationLoader<ResponseEntity>(
       async (attemptIds: string[]) => {
-        return prisma.response.findMany({
+        return prisma.questionResponse.findMany({
           where: { attemptId: { in: attemptIds } },
         }) as Promise<ResponseEntity[]>;
       },
@@ -200,4 +204,4 @@ export function createAssessmentDataLoaders(tenantId: string): AssessmentDataLoa
   };
 }
 
-export type { DataLoader };
+export type { DataLoader } from '@aivo/ts-api-utils';

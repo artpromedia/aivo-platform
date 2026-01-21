@@ -12,7 +12,24 @@
  * @module soft-delete-middleware
  */
 
-import type { Prisma } from '@prisma/client';
+/**
+ * Prisma middleware params (compatible with Prisma's internal type)
+ */
+interface MiddlewareParams {
+  model?: string;
+  action: string;
+  args: Record<string, unknown>;
+  dataPath: string[];
+  runInTransaction: boolean;
+}
+
+/**
+ * Prisma middleware function type
+ */
+type PrismaMiddleware = (
+  params: MiddlewareParams,
+  next: (params: MiddlewareParams) => Promise<unknown>
+) => Promise<unknown>;
 
 /**
  * Models that support soft delete (have deletedAt field)
@@ -52,6 +69,72 @@ export function supportsSoftDelete(model: string): boolean {
 export const INCLUDE_DELETED_KEY = 'includeDeleted';
 
 /**
+ * Read actions that should filter out soft-deleted records
+ */
+const READ_ACTIONS = new Set([
+  'findUnique',
+  'findUniqueOrThrow',
+  'findFirst',
+  'findFirstOrThrow',
+  'findMany',
+  'count',
+  'aggregate',
+  'groupBy',
+]);
+
+/**
+ * Apply soft delete filter to where clause
+ * Adds deletedAt: null if not already specified
+ */
+function applySoftDeleteFilter(
+  args: Record<string, unknown>,
+  where: Record<string, unknown> | undefined
+): void {
+  if (where) {
+    if (where.deletedAt === undefined) {
+      where['deletedAt'] = null;
+    }
+  } else {
+    args['where'] = { deletedAt: null };
+  }
+}
+
+/**
+ * Check and remove the includeDeleted flag from where clause
+ * Returns true if includeDeleted was set
+ */
+function checkAndRemoveIncludeDeleted(where: Record<string, unknown> | undefined): boolean {
+  if (!where) return false;
+  const includeDeleted = where[INCLUDE_DELETED_KEY];
+  if (includeDeleted) {
+    delete where[INCLUDE_DELETED_KEY];
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Handle delete operations by converting to soft delete
+ */
+function handleDeleteOperation(
+  params: MiddlewareParams,
+  args: Record<string, unknown>
+): void {
+  if (params.action === 'delete') {
+    params.action = 'update';
+    args['data'] = { deletedAt: new Date() };
+  } else if (params.action === 'deleteMany') {
+    params.action = 'updateMany';
+    const existingData = args.data;
+    if (existingData && typeof existingData === 'object') {
+      (existingData as Record<string, unknown>)['deletedAt'] = new Date();
+    } else {
+      args['data'] = { deletedAt: new Date() };
+    }
+  }
+}
+
+/**
  * Create Prisma middleware for soft delete filtering
  *
  * This middleware:
@@ -68,8 +151,8 @@ export const INCLUDE_DELETED_KEY = 'includeDeleted';
  * prisma.$use(createSoftDeleteMiddleware());
  * ```
  */
-export function createSoftDeleteMiddleware(): Prisma.Middleware {
-  return async (params, next) => {
+export function createSoftDeleteMiddleware(): PrismaMiddleware {
+  return async (params: MiddlewareParams, next: (params: MiddlewareParams) => Promise<unknown>) => {
     const model = params.model;
 
     // Only apply to models that support soft delete
@@ -77,69 +160,28 @@ export function createSoftDeleteMiddleware(): Prisma.Middleware {
       return next(params);
     }
 
+    const args = params.args;
+
     // Handle DELETE operations - convert to soft delete
-    if (params.action === 'delete') {
-      params.action = 'update';
-      params.args['data'] = { deletedAt: new Date() };
+    if (params.action === 'delete' || params.action === 'deleteMany') {
+      handleDeleteOperation(params, args);
       return next(params);
     }
 
-    if (params.action === 'deleteMany') {
-      params.action = 'updateMany';
-      if (params.args.data !== undefined) {
-        params.args.data['deletedAt'] = new Date();
-      } else {
-        params.args['data'] = { deletedAt: new Date() };
-      }
-      return next(params);
-    }
+    const where = args.where as Record<string, unknown> | undefined;
 
     // Handle READ operations - filter out deleted records
-    const readActions = [
-      'findUnique',
-      'findUniqueOrThrow',
-      'findFirst',
-      'findFirstOrThrow',
-      'findMany',
-      'count',
-      'aggregate',
-      'groupBy',
-    ];
-
-    if (readActions.includes(params.action)) {
-      // Check if we should include deleted records
-      const includeDeleted = params.args?.where?.[INCLUDE_DELETED_KEY];
-
-      if (includeDeleted) {
-        // Remove the special key and don't filter
-        delete params.args.where[INCLUDE_DELETED_KEY];
+    if (READ_ACTIONS.has(params.action)) {
+      if (checkAndRemoveIncludeDeleted(where)) {
         return next(params);
       }
-
-      // Add deletedAt: null filter
-      if (params.args.where) {
-        if (params.args.where.deletedAt === undefined) {
-          params.args.where['deletedAt'] = null;
-        }
-      } else {
-        params.args['where'] = { deletedAt: null };
-      }
+      applySoftDeleteFilter(args, where);
     }
 
     // Handle UPDATE operations - ensure we're not updating deleted records
     if (params.action === 'update' || params.action === 'updateMany') {
-      const includeDeleted = params.args?.where?.[INCLUDE_DELETED_KEY];
-
-      if (!includeDeleted) {
-        if (params.args.where) {
-          if (params.args.where.deletedAt === undefined) {
-            params.args.where['deletedAt'] = null;
-          }
-        } else {
-          params.args['where'] = { deletedAt: null };
-        }
-      } else {
-        delete params.args.where[INCLUDE_DELETED_KEY];
+      if (!checkAndRemoveIncludeDeleted(where)) {
+        applySoftDeleteFilter(args, where);
       }
     }
 

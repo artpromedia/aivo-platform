@@ -38,10 +38,15 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
+ * Result type for loadMany operations - can be a value, null, or an Error
+ */
+export type LoadManyResult<V> = V | null | Error;
+
+/**
  * Batch loading function that takes an array of keys and returns values in the same order.
  * Must return exactly one value per key (null for missing items).
  */
-export type BatchLoadFn<K, V> = (keys: K[]) => Promise<(V | null | Error)[]>;
+export type BatchLoadFn<K, V> = (keys: K[]) => Promise<LoadManyResult<V>[]>;
 
 /**
  * DataLoader configuration options
@@ -78,7 +83,7 @@ export interface DataLoader<K, V> {
   /** Load a single value by key */
   load(key: K): Promise<V | null>;
   /** Load multiple values by keys */
-  loadMany(keys: K[]): Promise<(V | null | Error)[]>;
+  loadMany(keys: K[]): Promise<LoadManyResult<V>[]>;
   /** Clear a single cached value */
   clear(key: K): this;
   /** Clear all cached values */
@@ -97,7 +102,7 @@ export interface DataLoader<K, V> {
  * Simple Map-based cache (default)
  */
 export class MapCache<K, V> implements DataLoaderCache<K, V> {
-  private cache = new Map<K, Promise<V>>();
+  private readonly cache = new Map<K, Promise<V>>();
 
   get(key: K): Promise<V> | undefined {
     return this.cache.get(key);
@@ -120,8 +125,8 @@ export class MapCache<K, V> implements DataLoaderCache<K, V> {
  * LRU (Least Recently Used) cache with size limit
  */
 export class LRUCache<K, V> implements DataLoaderCache<K, V> {
-  private cache = new Map<K, Promise<V>>();
-  private maxSize: number;
+  private readonly cache = new Map<K, Promise<V>>();
+  private readonly maxSize: number;
 
   constructor(maxSize = 1000) {
     this.maxSize = maxSize;
@@ -165,8 +170,8 @@ export class LRUCache<K, V> implements DataLoaderCache<K, V> {
  * TTL (Time To Live) cache that expires entries after a duration
  */
 export class TTLCache<K, V> implements DataLoaderCache<K, V> {
-  private cache = new Map<K, { value: Promise<V>; expiresAt: number }>();
-  private ttlMs: number;
+  private readonly cache = new Map<K, { value: Promise<V>; expiresAt: number }>();
+  private readonly ttlMs: number;
 
   constructor(ttlMs = 60000) {
     this.ttlMs = ttlMs;
@@ -278,7 +283,8 @@ export function createDataLoader<K, V>(
         if (value instanceof Error) {
           item.reject(value);
         } else {
-          item.resolve(value);
+          // value is V | null at this point
+          item.resolve(value ?? null);
         }
       });
     } catch (error) {
@@ -305,9 +311,7 @@ export function createDataLoader<K, V>(
     // Create promise for this load
     const promise = new Promise<V | null>((resolve, reject) => {
       // Initialize batch if needed
-      if (!batch) {
-        batch = [];
-      }
+      batch ??= [];
 
       // Add to batch
       batch.push({ key, resolve, reject });
@@ -331,7 +335,7 @@ export function createDataLoader<K, V>(
   /**
    * Load multiple values
    */
-  async function loadMany(keys: K[]): Promise<(V | null | Error)[]> {
+  async function loadMany(keys: K[]): Promise<LoadManyResult<V>[]> {
     const results: (V | null | Error)[] = [];
 
     for (const key of keys) {
@@ -398,15 +402,28 @@ export function createDataLoader<K, V>(
 
 /**
  * Create a DataLoader for loading records by ID from a database
+ *
+ * @template K - The key type (defaults to string)
+ * @template T - The entity type
  */
-export function createIdLoader<T extends { id: string }>(
-  fetchByIds: (ids: string[]) => Promise<T[]>,
-  options?: Omit<DataLoaderOptions<string, T>, 'cacheKeyFn'>
-): DataLoader<string, T> {
-  return createDataLoader<string, T>(
+export function createIdLoader<K extends string, T>(
+  fetchByIds: (ids: K[]) => Promise<T[]>,
+  options?: Omit<DataLoaderOptions<K, T>, 'cacheKeyFn'>
+): DataLoader<K, T> {
+  return createDataLoader<K, T>(
     async (ids) => {
       const records = await fetchByIds(ids);
-      const recordMap = new Map(records.map((r) => [r.id, r]));
+      // Use the first record to detect which field to use as the key
+      // Most entities use 'id' but some use other fields
+      const recordMap = new Map<K, T>();
+      for (const record of records) {
+        // Try common key fields: id, userId, etc.
+        const id = ((record as Record<string, unknown>)['id'] ??
+          (record as Record<string, unknown>)['userId']) as K | undefined;
+        if (id !== undefined) {
+          recordMap.set(id, record);
+        }
+      }
       return ids.map((id) => recordMap.get(id) ?? null);
     },
     options
@@ -479,7 +496,7 @@ export function createCompoundKeyLoader<T>(
  * Creates fresh loaders for each request to avoid cache leaks between requests.
  */
 export class DataLoaderFactory {
-  private factories = new Map<string, () => DataLoader<unknown, unknown>>();
+  private readonly factories = new Map<string, () => DataLoader<unknown, unknown>>();
 
   /**
    * Register a loader factory
