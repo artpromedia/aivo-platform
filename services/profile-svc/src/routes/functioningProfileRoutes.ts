@@ -1,0 +1,614 @@
+/**
+ * Functioning Profile Routes
+ *
+ * API endpoints for managing learner functioning profiles and sensory profiles
+ * for accessibility support.
+ *
+ * @author AIVO Platform Team
+ */
+
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
+
+import { prisma } from '../prisma.js';
+import type { TenantContext } from '../types/index.js';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ZOD SCHEMAS
+// ══════════════════════════════════════════════════════════════════════════════
+
+const FunctioningLevelEnum = z.enum(['TYPICAL', 'MILD', 'MODERATE', 'SEVERE', 'PROFOUND']);
+const SensoryImpairmentTypeEnum = z.enum([
+  'NONE',
+  'BLIND',
+  'LOW_VISION',
+  'DEAF',
+  'HARD_OF_HEARING',
+  'DEAFBLIND',
+]);
+const InputMethodEnum = z.enum([
+  'STANDARD',
+  'LARGE_TOUCH',
+  'SWITCH_SINGLE',
+  'SWITCH_DUAL',
+  'EYE_GAZE',
+  'VOICE_CONTROL',
+  'PARTNER_ASSISTED',
+  'HEAD_TRACKING',
+]);
+const CommunicationModalityEnum = z.enum([
+  'VERBAL',
+  'WRITTEN',
+  'SIGN_LANGUAGE',
+  'PICTURE_SYMBOLS',
+  'AAC_DEVICE',
+  'GESTURES',
+  'COMBINATION',
+]);
+const AACSystemTypeEnum = z.enum([
+  'NONE',
+  'PECS',
+  'PROLOQUO2GO',
+  'LAMP',
+  'TOUCHCHAT',
+  'SNAP_CORE',
+  'BOARDMAKER',
+  'CUSTOM',
+]);
+
+const CreateFunctioningProfileSchema = z.object({
+  functioningLevel: FunctioningLevelEnum,
+  cognitiveIndicators: z
+    .object({
+      followsSimpleInstructions: z.boolean().optional(),
+      recognizesSymbols: z.boolean().optional(),
+      respondsToName: z.boolean().optional(),
+      maintainsAttention: z.string().optional(),
+      problemSolving: z.string().optional(),
+    })
+    .optional(),
+  dailyLivingSkills: z
+    .object({
+      selfCare: z.string().optional(),
+      mobility: z.string().optional(),
+      communication: z.string().optional(),
+      socialSkills: z.string().optional(),
+    })
+    .optional(),
+  supportNeeds: z
+    .object({
+      requiresConstantSupervision: z.boolean().optional(),
+      requiresPhysicalAssistance: z.boolean().optional(),
+      requiresPrompting: z.string().optional(),
+      breakFrequency: z.string().optional(),
+    })
+    .optional(),
+  assessmentNotes: z.string().optional(),
+  determinedBy: z.enum(['PARENT_ASSESSMENT', 'IEP_IMPORT', 'CLINICAL_EVALUATION', 'MANUAL_ENTRY']),
+});
+
+const UpdateFunctioningProfileSchema = CreateFunctioningProfileSchema.partial();
+
+const CreateSensoryProfileSchema = z.object({
+  sensoryImpairmentType: SensoryImpairmentTypeEnum,
+  visionProfile: z
+    .object({
+      hasUsableVision: z.boolean().optional(),
+      usesScreenMagnification: z.boolean().optional(),
+      magnificationLevel: z.number().optional(),
+      usesScreenReader: z.boolean().optional(),
+      screenReaderType: z.string().optional(),
+      preferredFontSize: z.number().optional(),
+      requiresHighContrast: z.boolean().optional(),
+      lightSensitivity: z.string().optional(),
+    })
+    .optional(),
+  hearingProfile: z
+    .object({
+      hasUsableHearing: z.boolean().optional(),
+      usesHearingAid: z.boolean().optional(),
+      hearingAidType: z.string().optional(),
+      usesCochlearImplant: z.boolean().optional(),
+      preferredVolume: z.number().optional(),
+      requiresCaptions: z.boolean().optional(),
+      captionStyle: z.string().optional(),
+      usesSignLanguage: z.boolean().optional(),
+      signLanguageType: z.string().optional(),
+    })
+    .optional(),
+  aacSettings: z
+    .object({
+      usesAAC: z.boolean().optional(),
+      aacSystemType: AACSystemTypeEnum.optional(),
+      symbolSet: z.string().optional(),
+      gridSize: z.string().optional(),
+      voiceOutput: z.boolean().optional(),
+    })
+    .optional(),
+  inputMethods: z.array(InputMethodEnum),
+  preferredInputMethod: InputMethodEnum,
+  communicationModality: CommunicationModalityEnum,
+});
+
+const UpdateSensoryProfileSchema = CreateSensoryProfileSchema.partial();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface LearnerParams {
+  learnerId: string;
+}
+
+function extractTenantContext(request: FastifyRequest): TenantContext {
+  const tenantId = request.headers['x-tenant-id'] as string | undefined;
+  const userId = request.headers['x-user-id'] as string | undefined;
+  const userRole = request.headers['x-user-role'] as string | undefined;
+
+  if (!tenantId || !userId || !userRole) {
+    throw new Error('Missing tenant context');
+  }
+
+  return {
+    tenantId,
+    userId,
+    userRole: userRole as TenantContext['userRole'],
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ROUTES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export async function registerFunctioningProfileRoutes(app: FastifyInstance): Promise<void> {
+  // ────────────────────────────────────────────────────────────────────────────
+  // FUNCTIONING PROFILE ROUTES
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // GET /learners/:learnerId/functioning-profile
+  app.get<{ Params: LearnerParams }>(
+    '/learners/:learnerId/functioning-profile',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      try {
+        const profile = await prisma.learnerFunctioningProfile.findUnique({
+          where: {
+            learnerId_tenantId: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+          },
+        });
+
+        if (!profile) {
+          return reply.status(404).send({
+            error: 'Not Found',
+            message: 'Functioning profile not found',
+          });
+        }
+
+        return reply.status(200).send({ profile });
+      } catch (error) {
+        console.error('[functioning-profile-routes] get_functioning_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to get functioning profile',
+        });
+      }
+    }
+  );
+
+  // POST /learners/:learnerId/functioning-profile
+  app.post<{ Params: LearnerParams }>(
+    '/learners/:learnerId/functioning-profile',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      const parseResult = CreateFunctioningProfileSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          details: parseResult.error.issues,
+        });
+      }
+
+      try {
+        const profile = await prisma.learnerFunctioningProfile.upsert({
+          where: {
+            learnerId_tenantId: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+          },
+          create: {
+            id: crypto.randomUUID(),
+            learnerId,
+            tenantId: context.tenantId,
+            ...parseResult.data,
+          },
+          update: parseResult.data,
+        });
+
+        console.log('[functioning-profile-routes] functioning_profile_created', {
+          learnerId,
+          profileId: profile.id,
+          functioningLevel: profile.functioningLevel,
+          determinedBy: parseResult.data.determinedBy,
+        });
+
+        return reply.status(201).send({ profile });
+      } catch (error) {
+        console.error('[functioning-profile-routes] create_functioning_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to create functioning profile',
+        });
+      }
+    }
+  );
+
+  // PATCH /learners/:learnerId/functioning-profile
+  app.patch<{ Params: LearnerParams }>(
+    '/learners/:learnerId/functioning-profile',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      const parseResult = UpdateFunctioningProfileSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          details: parseResult.error.issues,
+        });
+      }
+
+      try {
+        const profile = await prisma.learnerFunctioningProfile.update({
+          where: {
+            learnerId_tenantId: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+          },
+          data: parseResult.data,
+        });
+
+        console.log('[functioning-profile-routes] functioning_profile_updated', {
+          learnerId,
+          profileId: profile.id,
+        });
+
+        return reply.status(200).send({ profile });
+      } catch (error) {
+        console.error('[functioning-profile-routes] update_functioning_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to update functioning profile',
+        });
+      }
+    }
+  );
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // SENSORY PROFILE ROUTES
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // GET /learners/:learnerId/sensory-profile
+  app.get<{ Params: LearnerParams }>(
+    '/learners/:learnerId/sensory-profile',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      try {
+        const profile = await prisma.learnerSensoryProfile.findUnique({
+          where: {
+            learnerId_tenantId: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+          },
+        });
+
+        if (!profile) {
+          return reply.status(404).send({
+            error: 'Not Found',
+            message: 'Sensory profile not found',
+          });
+        }
+
+        return reply.status(200).send({ profile });
+      } catch (error) {
+        console.error('[functioning-profile-routes] get_sensory_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to get sensory profile',
+        });
+      }
+    }
+  );
+
+  // POST /learners/:learnerId/sensory-profile
+  app.post<{ Params: LearnerParams }>(
+    '/learners/:learnerId/sensory-profile',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      const parseResult = CreateSensoryProfileSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          details: parseResult.error.issues,
+        });
+      }
+
+      try {
+        const profile = await prisma.learnerSensoryProfile.upsert({
+          where: {
+            learnerId_tenantId: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+          },
+          create: {
+            id: crypto.randomUUID(),
+            learnerId,
+            tenantId: context.tenantId,
+            ...parseResult.data,
+          },
+          update: parseResult.data,
+        });
+
+        console.log('[functioning-profile-routes] sensory_profile_created', {
+          learnerId,
+          profileId: profile.id,
+          sensoryImpairmentType: profile.sensoryImpairmentType,
+        });
+
+        return reply.status(201).send({ profile });
+      } catch (error) {
+        console.error('[functioning-profile-routes] create_sensory_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to create sensory profile',
+        });
+      }
+    }
+  );
+
+  // PATCH /learners/:learnerId/sensory-profile
+  app.patch<{ Params: LearnerParams }>(
+    '/learners/:learnerId/sensory-profile',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      const parseResult = UpdateSensoryProfileSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          details: parseResult.error.issues,
+        });
+      }
+
+      try {
+        const profile = await prisma.learnerSensoryProfile.update({
+          where: {
+            learnerId_tenantId: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+          },
+          data: parseResult.data,
+        });
+
+        console.log('[functioning-profile-routes] sensory_profile_updated', {
+          learnerId,
+          profileId: profile.id,
+        });
+
+        return reply.status(200).send({ profile });
+      } catch (error) {
+        console.error('[functioning-profile-routes] update_sensory_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to update sensory profile',
+        });
+      }
+    }
+  );
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // ASSESSMENT MODE DECISION ROUTES
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // GET /learners/:learnerId/assessment-mode
+  // Get the current assessment mode decision for a learner
+  app.get<{ Params: LearnerParams }>(
+    '/learners/:learnerId/assessment-mode',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      try {
+        const decision = await prisma.assessmentModeDecision.findFirst({
+          where: {
+            learnerId,
+            tenantId: context.tenantId,
+          },
+          orderBy: {
+            decidedAt: 'desc',
+          },
+        });
+
+        if (!decision) {
+          return reply.status(404).send({
+            error: 'Not Found',
+            message: 'No assessment mode decision found',
+          });
+        }
+
+        return reply.status(200).send({ decision });
+      } catch (error) {
+        console.error('[functioning-profile-routes] get_assessment_mode_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to get assessment mode',
+        });
+      }
+    }
+  );
+
+  // POST /learners/:learnerId/assessment-mode
+  // Record an assessment mode decision
+  app.post<{ Params: LearnerParams }>(
+    '/learners/:learnerId/assessment-mode',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      const schema = z.object({
+        mode: z.enum(['STANDARD', 'MODIFIED', 'SUPPORTED', 'OBSERVATIONAL', 'SENSORY_ADAPTED']),
+        functioningLevel: FunctioningLevelEnum,
+        sensoryImpairment: SensoryImpairmentTypeEnum.optional(),
+        inputMethod: InputMethodEnum.optional(),
+        accommodations: z.array(
+          z.object({
+            type: z.string(),
+            value: z.unknown(),
+            reason: z.string(),
+          })
+        ),
+        flags: z
+          .array(
+            z.object({
+              flag: z.string(),
+              severity: z.enum(['info', 'warning', 'critical']),
+              recommendation: z.string(),
+            })
+          )
+          .optional(),
+        reasoning: z.string(),
+        confidence: z.number().min(0).max(1),
+        source: z.enum(['PARENT_ASSESSMENT', 'IEP_IMPORT', 'MANUAL_OVERRIDE', 'SYSTEM_DETECTION']),
+      });
+
+      const parseResult = schema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          details: parseResult.error.issues,
+        });
+      }
+
+      try {
+        const decision = await prisma.assessmentModeDecision.create({
+          data: {
+            id: crypto.randomUUID(),
+            learnerId,
+            tenantId: context.tenantId,
+            ...parseResult.data,
+            decidedAt: new Date(),
+          },
+        });
+
+        console.log('[functioning-profile-routes] assessment_mode_decision_recorded', {
+          learnerId,
+          decisionId: decision.id,
+          mode: decision.mode,
+          source: parseResult.data.source,
+        });
+
+        return reply.status(201).send({ decision });
+      } catch (error) {
+        console.error('[functioning-profile-routes] record_assessment_mode_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to record assessment mode decision',
+        });
+      }
+    }
+  );
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // COMBINED ACCESSIBILITY PROFILE
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // GET /learners/:learnerId/accessibility
+  // Get complete accessibility profile (functioning + sensory + assessment mode)
+  app.get<{ Params: LearnerParams }>(
+    '/learners/:learnerId/accessibility',
+    async (request, reply: FastifyReply) => {
+      const context = extractTenantContext(request);
+      const { learnerId } = request.params;
+
+      try {
+        const [functioningProfile, sensoryProfile, assessmentModeDecision] = await Promise.all([
+          prisma.learnerFunctioningProfile.findUnique({
+            where: {
+              learnerId_tenantId: {
+                learnerId,
+                tenantId: context.tenantId,
+              },
+            },
+          }),
+          prisma.learnerSensoryProfile.findUnique({
+            where: {
+              learnerId_tenantId: {
+                learnerId,
+                tenantId: context.tenantId,
+              },
+            },
+          }),
+          prisma.assessmentModeDecision.findFirst({
+            where: {
+              learnerId,
+              tenantId: context.tenantId,
+            },
+            orderBy: {
+              decidedAt: 'desc',
+            },
+          }),
+        ]);
+
+        return reply.status(200).send({
+          learnerId,
+          functioningProfile,
+          sensoryProfile,
+          assessmentModeDecision,
+          hasAccessibilityNeeds:
+            functioningProfile?.functioningLevel !== 'TYPICAL' ||
+            sensoryProfile?.sensoryImpairmentType !== 'NONE',
+        });
+      } catch (error) {
+        console.error('[functioning-profile-routes] get_accessibility_profile_failed', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to get accessibility profile',
+        });
+      }
+    }
+  );
+}
