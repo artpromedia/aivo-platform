@@ -9,10 +9,7 @@ import {
 } from '../lib/adaptiveDifficulty.js';
 import { generateBaselineQuestions, scoreResponse } from '../lib/aiOrchestrator.js';
 import { publishBaselineAccepted } from '../lib/eventPublisher.js';
-import {
-  getGradeLevelCalculator,
-  gradeBandToGrade,
-} from '../lib/gradeLevelEquivalent.js';
+import { getGradeLevelCalculator, gradeBandToGrade } from '../lib/gradeLevelEquivalent.js';
 import { prisma } from '../prisma.js';
 import { ALL_DOMAINS, DOMAIN_SKILL_CODES, type GeneratedQuestion } from '../types/baseline.js';
 
@@ -120,16 +117,18 @@ async function ensureTeacherProfile(userId: string): Promise<void> {
 /**
  * Fetch tenant curriculum standards
  */
-async function getTenantCurriculum(tenantId: string): Promise<{ curriculumStandards?: string[]; stateCode?: string } | null> {
+async function getTenantCurriculum(
+  tenantId: string
+): Promise<{ curriculumStandards?: string[]; stateCode?: string } | null> {
   try {
     const tenantUrl = process.env.TENANT_SVC_URL || 'http://localhost:4001';
     const response = await fetch(`${tenantUrl}/tenants/${tenantId}`);
-    
+
     if (!response.ok) {
       console.error(`Failed to fetch tenant curriculum for ${tenantId}: ${response.statusText}`);
       return null;
     }
-    
+
     const tenant = await response.json();
     return {
       curriculumStandards: tenant.curriculumStandards,
@@ -153,44 +152,17 @@ async function alignWithCurriculum(
 ): Promise<void> {
   try {
     const brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://localhost:4004';
-    const response = await fetch(`${brainEngineUrl}/api/v1/brain/${tenantId}/${learnerId}/curriculum/align`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        state_code: stateCode,
-        grade_level: gradeLevel,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error(`Failed to align curriculum for learner ${learnerId}: ${response.statusText}`);
-    }
-  } catch (error) {
-    // Log but don't fail the baseline creation if curriculum alignment fails
-    console.error(`Error aligning curriculum for learner ${learnerId}:`, error);
-  }
-}
-
-/**
- * Align learner with district curriculum standards
- */
-async function alignWithCurriculum(
-  learnerId: string,
-  tenantId: string,
-  curriculumStandards: string[],
-  stateCode?: string,
-  gradeLevel?: string
-): Promise<void> {
-  try {
-    const brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://localhost:4004';
-    const response = await fetch(`${brainEngineUrl}/api/v1/brain/${tenantId}/${learnerId}/curriculum/align`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        state_code: stateCode,
-        grade_level: gradeLevel,
-      }),
-    });
+    const response = await fetch(
+      `${brainEngineUrl}/api/v1/brain/${tenantId}/${learnerId}/curriculum/align`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          state_code: stateCode,
+          grade_level: gradeLevel,
+        }),
+      }
+    );
 
     if (!response.ok) {
       console.error(`Failed to align curriculum for learner ${learnerId}: ${response.statusText}`);
@@ -241,7 +213,9 @@ async function getParentInfoForLearner(
     }
 
     // If teacher is enrolling, find the learner's parent
-    const parentData = await prisma.$queryRaw<{ parent_id: string; email: string; parent_name: string; learner_name: string }[]>`
+    const parentData = await prisma.$queryRaw<
+      { parent_id: string; email: string; parent_name: string; learner_name: string }[]
+    >`
       SELECT 
         pl.parent_id,
         u.email,
@@ -316,10 +290,10 @@ async function sendParentAssessmentInvitation(params: {
       }),
     });
 
-    if (!response.ok) {
-      console.error(`Failed to send parent assessment invitation: ${response.statusText}`);
-    } else {
+    if (response.ok) {
       console.log(`Parent assessment invitation sent to ${params.parentEmail}`);
+    } else {
+      console.error(`Failed to send parent assessment invitation: ${response.statusText}`);
     }
   } catch (error) {
     // Log but don't fail if email sending fails
@@ -332,14 +306,24 @@ async function sendParentAssessmentInvitation(params: {
  * Extracted to reduce cognitive complexity in complete endpoint.
  */
 function calculateDomainScoresAndSkillEstimates(
-  items: { domain: string; promptJson: unknown; responses: { isCorrect: boolean | null; score: unknown }[] }[],
+  items: {
+    domain: string;
+    promptJson: unknown;
+    responses: { isCorrect: boolean | null; score: unknown }[];
+  }[],
   adaptiveEngine: ReturnType<typeof getAdaptiveEngine>
 ): {
   domainScores: Record<string, { correct: number; total: number; adaptiveAbility: number }>;
   skillEstimates: { domain: string; skillCode: string; estimate: number; confidence: number }[];
 } {
-  const domainScores: Record<string, { correct: number; total: number; adaptiveAbility: number }> = {};
-  const skillEstimates: { domain: string; skillCode: string; estimate: number; confidence: number }[] = [];
+  const domainScores: Record<string, { correct: number; total: number; adaptiveAbility: number }> =
+    {};
+  const skillEstimates: {
+    domain: string;
+    skillCode: string;
+    estimate: number;
+    confidence: number;
+  }[] = [];
 
   for (const item of items) {
     const domain = item.domain;
@@ -383,6 +367,56 @@ function calculateDomainScoresAndSkillEstimates(
   }
 
   return { domainScores, skillEstimates };
+}
+
+/**
+ * Validate if a new attempt can be started for the given profile.
+ * Returns null if validation passes, or an error response object if it fails.
+ */
+function validateAttemptStart(
+  profile: { status: string; attempts: { attemptNumber: number; completedAt: Date | null }[] },
+  parentAssessment: { status: string; id: string } | null
+): { status: number; body: Record<string, unknown> } | null {
+  // Check if parent assessment is completed before allowing baseline to start
+  if (parentAssessment && parentAssessment.status !== 'COMPLETED') {
+    const message =
+      parentAssessment.status === 'PENDING'
+        ? 'Please complete the parent assessment first. Check your email for the assessment link.'
+        : 'Please complete the parent assessment you started before beginning the baseline assessment.';
+    return {
+      status: 400,
+      body: {
+        error: 'Parent assessment must be completed before starting baseline assessment',
+        message,
+        parentAssessmentId: parentAssessment.id,
+        parentAssessmentStatus: parentAssessment.status,
+      },
+    };
+  }
+
+  // Check if already finalized
+  if (profile.status === 'FINAL_ACCEPTED') {
+    return { status: 400, body: { error: 'Profile is already finalized' } };
+  }
+
+  // Check attempt limit (max 2: initial + 1 retest)
+  const lastAttempt = profile.attempts[0];
+  if (lastAttempt) {
+    if (!lastAttempt.completedAt) {
+      return {
+        status: 400,
+        body: { error: 'An attempt is already in progress', attemptId: lastAttempt.id },
+      };
+    }
+    if (profile.status !== 'RETEST_ALLOWED') {
+      return { status: 400, body: { error: 'Cannot start new attempt without retest request' } };
+    }
+    if (lastAttempt.attemptNumber >= 2) {
+      return { status: 400, body: { error: 'Maximum attempts reached (2)' } };
+    }
+  }
+
+  return null;
 }
 
 // --- Routes ---
@@ -447,10 +481,13 @@ export async function baselineRoutes(fastify: FastifyInstance) {
     // If created by a teacher, ensure teacher profile exists and apply district curriculum
     if (user.role === 'teacher') {
       await ensureTeacherProfile(user.sub);
-      
+
       // Fetch and apply district curriculum standards for assessments
       const tenantCurriculum = await getTenantCurriculum(tenantId);
-      if (tenantCurriculum?.curriculumStandards && tenantCurriculum.curriculumStandards.length > 0) {
+      if (
+        tenantCurriculum?.curriculumStandards &&
+        tenantCurriculum.curriculumStandards.length > 0
+      ) {
         // Map grade band to grade level for curriculum alignment
         let gradeLevel = 'K';
         if (gradeBand === 'G6_8') {
@@ -458,7 +495,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         } else if (gradeBand === 'G9_12') {
           gradeLevel = '9';
         }
-        
+
         // Align learner's brain with district curriculum
         await alignWithCurriculum(
           learnerId,
@@ -517,40 +554,13 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         where: { baselineProfileId: profileId },
       });
 
-      if (parentAssessment && parentAssessment.status !== 'COMPLETED') {
-        return reply.status(400).send({
-          error: 'Parent assessment must be completed before starting baseline assessment',
-          message: parentAssessment.status === 'PENDING'
-            ? 'Please complete the parent assessment first. Check your email for the assessment link.'
-            : 'Please complete the parent assessment you started before beginning the baseline assessment.',
-          parentAssessmentId: parentAssessment.id,
-          parentAssessmentStatus: parentAssessment.status,
-        });
+      // Validate attempt can be started
+      const validationError = validateAttemptStart(profile, parentAssessment);
+      if (validationError) {
+        return reply.status(validationError.status).send(validationError.body);
       }
 
-      // Check if already finalized
-      if (profile.status === 'FINAL_ACCEPTED') {
-        return reply.status(400).send({ error: 'Profile is already finalized' });
-      }
-
-      // Check attempt limit (max 2: initial + 1 retest)
       const lastAttempt = profile.attempts[0];
-      if (lastAttempt) {
-        if (!lastAttempt.completedAt) {
-          return reply
-            .status(400)
-            .send({ error: 'An attempt is already in progress', attemptId: lastAttempt.id });
-        }
-        if (profile.status !== 'RETEST_ALLOWED') {
-          return reply
-            .status(400)
-            .send({ error: 'Cannot start new attempt without retest request' });
-        }
-        if (lastAttempt.attemptNumber >= 2) {
-          return reply.status(400).send({ error: 'Maximum attempts reached (2)' });
-        }
-      }
-
       const attemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
 
       // Initialize adaptive difficulty engine for this attempt
@@ -875,9 +885,10 @@ export async function baselineRoutes(fastify: FastifyInstance) {
 
       // Adaptive overall score (weighted average of domain abilities)
       const domainAbilities = Object.values(domainScores).map((d) => d.adaptiveAbility);
-      const adaptiveOverallScore = domainAbilities.length > 0
-        ? domainAbilities.reduce((a, b) => a + b, 0) / domainAbilities.length
-        : rawScore;
+      const adaptiveOverallScore =
+        domainAbilities.length > 0
+          ? domainAbilities.reduce((a, b) => a + b, 0) / domainAbilities.length
+          : rawScore;
 
       // Update in transaction
       const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -924,7 +935,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
       const gradeCalculator = getGradeLevelCalculator();
       const { profile } = attempt;
       const actualGrade = gradeBandToGrade(profile.gradeBand as 'K5' | 'G6_8' | 'G9_12');
-      
+
       const gradeLevelReport = gradeCalculator.calculateFullReport(
         profile.learnerId,
         actualGrade,
@@ -953,7 +964,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         gradeEquivalents: {
           actualGrade,
           overall: gradeLevelReport.overallGradeEquivalent,
-          byDomain: gradeLevelReport.domainResults.map(dr => ({
+          byDomain: gradeLevelReport.domainResults.map((dr) => ({
             domain: dr.domain,
             domainDisplayName: dr.domainDisplayName,
             gradeEquivalent: dr.gradeEquivalent.gradeEquivalentDisplay,

@@ -86,15 +86,16 @@ export async function publishBaselineAccepted(
     }));
 
     // Include parent assessment insights if available
-    const parentContext = profile.parentAssessment?.status === 'COMPLETED'
-      ? {
-          learningStyleNotes: profile.parentAssessment.learningStyleNotes,
-          strengthsNotes: profile.parentAssessment.strengthsNotes,
-          challengesNotes: profile.parentAssessment.challengesNotes,
-          behaviorNotes: profile.parentAssessment.behaviorNotes,
-          enrolledByRole: profile.parentAssessment.enrolledByRole,
-        }
-      : null;
+    const parentContext =
+      profile.parentAssessment?.status === 'COMPLETED'
+        ? {
+            learningStyleNotes: profile.parentAssessment.learningStyleNotes,
+            strengthsNotes: profile.parentAssessment.strengthsNotes,
+            challengesNotes: profile.parentAssessment.challengesNotes,
+            behaviorNotes: profile.parentAssessment.behaviorNotes,
+            enrolledByRole: profile.parentAssessment.enrolledByRole,
+          }
+        : null;
 
     // Call learner-model-svc to initialize virtual brain
     const initPayload = {
@@ -184,12 +185,6 @@ async function notifyParentOfBaselineCompletion(
       console.log('[EventPublisher] No parent found for learner, skipping notification');
       return;
     }
-
-    // Get learner name
-    const learner = await prisma.baselineProfile.findFirst({
-      where: { learnerId: event.learnerId },
-      select: { learnerId: true },
-    });
 
     // Fetch learner details from learner table if available
     let learnerName = 'Your child';
@@ -379,7 +374,11 @@ export async function publishIepComparisonReady(
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('[EventPublisher] IEP comparison notification failed:', response.status, errorBody);
+      console.error(
+        '[EventPublisher] IEP comparison notification failed:',
+        response.status,
+        errorBody
+      );
       return;
     }
 
@@ -463,10 +462,10 @@ async function triggerIepGeneration(
       }),
     });
 
-    if (!response.ok) {
-      console.error('[EventPublisher] IEP generation failed:', response.status);
-    } else {
+    if (response.ok) {
       console.log('[EventPublisher] IEP generation triggered successfully');
+    } else {
+      console.error('[EventPublisher] IEP generation failed:', response.status);
     }
   } catch (error) {
     console.error('[EventPublisher] Error triggering IEP generation:', error);
@@ -497,10 +496,10 @@ async function triggerExistingIepImport(
       }),
     });
 
-    if (!response.ok) {
-      console.error('[EventPublisher] IEP import failed:', response.status);
-    } else {
+    if (response.ok) {
       console.log('[EventPublisher] IEP import triggered successfully');
+    } else {
+      console.error('[EventPublisher] IEP import failed:', response.status);
     }
   } catch (error) {
     console.error('[EventPublisher] Error triggering IEP import:', error);
@@ -531,10 +530,10 @@ async function triggerMergedIepGeneration(
       }),
     });
 
-    if (!response.ok) {
-      console.error('[EventPublisher] Merged IEP generation failed:', response.status);
-    } else {
+    if (response.ok) {
       console.log('[EventPublisher] Merged IEP generation triggered successfully');
+    } else {
+      console.error('[EventPublisher] Merged IEP generation failed:', response.status);
     }
   } catch (error) {
     console.error('[EventPublisher] Error triggering merged IEP generation:', error);
@@ -565,10 +564,10 @@ async function triggerProfessionalReview(
       }),
     });
 
-    if (!response.ok) {
-      console.error('[EventPublisher] Review request failed:', response.status);
-    } else {
+    if (response.ok) {
       console.log('[EventPublisher] Professional review requested successfully');
+    } else {
+      console.error('[EventPublisher] Review request failed:', response.status);
     }
   } catch (error) {
     console.error('[EventPublisher] Error requesting professional review:', error);
