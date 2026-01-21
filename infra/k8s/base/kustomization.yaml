@@ -20,10 +20,12 @@ resources:
   - ../deployments/auth-svc.yaml
   - ../deployments/session-svc.yaml
   - ../deployments/consent-svc.yaml
+  - ../deployments/profile-svc.yaml
   # Content and learning services
   - ../deployments/content-svc.yaml
   - ../deployments/assessment-svc.yaml
   - ../deployments/personalization-svc.yaml
+  - ../deployments/life-skills-svc.yaml
   # AI and analytics
   - ../deployments/ai-orchestrator.yaml
   - ../deployments/analytics-svc.yaml
@@ -33,5 +35,9 @@ resources:
   # Goal and focus tracking
   - ../deployments/goal-svc.yaml
   - ../deployments/focus-svc.yaml
-  # Billing
+  # Billing and payments
   - ../deployments/billing-svc.yaml
+  - ../deployments/payments-svc.yaml
+  # Parent portal
+  - ../deployments/parent-svc.yaml
+  - ../deployments/baseline-svc.yaml

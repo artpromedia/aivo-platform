@@ -1,0 +1,100 @@
+# =============================================================================
+# AIVO Platform - Pod Disruption Budgets (Production)
+# =============================================================================
+# Ensures high availability during node maintenance and deployments
+# =============================================================================
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth-svc
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: content-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: content-svc
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: session-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: session-svc
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-orchestrator-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ai-orchestrator
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: billing-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: billing-svc
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analytics-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: analytics-svc
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notify-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notify-svc
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: messaging-svc-pdb
+  namespace: aivo-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: messaging-svc

@@ -1,0 +1,196 @@
+# =============================================================================
+# AIVO Platform - Production Ingress Configuration
+# =============================================================================
+# Kong ingress configuration for production traffic routing
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aivo-api-ingress
+  namespace: aivo-prod
+  annotations:
+    kubernetes.io/ingress.class: kong
+    konghq.com/strip-path: "false"
+    konghq.com/protocols: "https"
+    konghq.com/https-redirect-status-code: "301"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Rate limiting
+    konghq.com/plugins: rate-limiting-prod,cors-prod
+spec:
+  tls:
+    - hosts:
+        - api.aivo.ai
+        - api.aivolearning.com
+      secretName: aivo-api-tls
+  rules:
+    - host: api.aivo.ai
+      http:
+        paths:
+          - path: /api/v1/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-svc
+                port:
+                  number: 3000
+          - path: /api/v1/content
+            pathType: Prefix
+            backend:
+              service:
+                name: content-svc
+                port:
+                  number: 3000
+          - path: /api/v1/sessions
+            pathType: Prefix
+            backend:
+              service:
+                name: session-svc
+                port:
+                  number: 3000
+          - path: /api/v1/assessments
+            pathType: Prefix
+            backend:
+              service:
+                name: assessment-svc
+                port:
+                  number: 3000
+          - path: /api/v1/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-svc
+                port:
+                  number: 3000
+          - path: /api/v1/ai
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-orchestrator
+                port:
+                  number: 3000
+          - path: /api/v1/notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notify-svc
+                port:
+                  number: 3000
+          - path: /api/v1/messages
+            pathType: Prefix
+            backend:
+              service:
+                name: messaging-svc
+                port:
+                  number: 3000
+          - path: /api/v1/goals
+            pathType: Prefix
+            backend:
+              service:
+                name: goal-svc
+                port:
+                  number: 3000
+          - path: /api/v1/focus
+            pathType: Prefix
+            backend:
+              service:
+                name: focus-svc
+                port:
+                  number: 3000
+          - path: /api/v1/personalization
+            pathType: Prefix
+            backend:
+              service:
+                name: personalization-svc
+                port:
+                  number: 3000
+          - path: /api/v1/billing
+            pathType: Prefix
+            backend:
+              service:
+                name: billing-svc
+                port:
+                  number: 3000
+          - path: /api/v1/consent
+            pathType: Prefix
+            backend:
+              service:
+                name: consent-svc
+                port:
+                  number: 3000
+          - path: /api/v1/profile
+            pathType: Prefix
+            backend:
+              service:
+                name: profile-svc
+                port:
+                  number: 3000
+          - path: /api/v1/life-skills
+            pathType: Prefix
+            backend:
+              service:
+                name: life-skills-svc
+                port:
+                  number: 3000
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: auth-svc
+                port:
+                  number: 3000
+    - host: api.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-svc
+                port:
+                  number: 3000
+
+---
+# Kong Rate Limiting Plugin for Production
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: rate-limiting-prod
+  namespace: aivo-prod
+config:
+  minute: 1000
+  hour: 50000
+  policy: redis
+  redis_host: redis-cache
+  redis_port: 6379
+plugin: rate-limiting
+
+---
+# Kong CORS Plugin for Production
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: cors-prod
+  namespace: aivo-prod
+config:
+  origins:
+    - "https://aivo.ai"
+    - "https://app.aivo.ai"
+    - "https://aivolearning.com"
+    - "https://app.aivolearning.com"
+  methods:
+    - GET
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+    - OPTIONS
+  headers:
+    - Accept
+    - Authorization
+    - Content-Type
+    - X-Request-ID
+    - X-Tenant-ID
+  credentials: true
+  max_age: 3600
+plugin: cors

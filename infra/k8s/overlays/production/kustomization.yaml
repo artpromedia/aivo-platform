@@ -1,0 +1,135 @@
+# =============================================================================
+# AIVO Platform - Production Environment Overlay
+# =============================================================================
+# Production-specific configuration that overrides base settings.
+# Deployed via GitHub Actions workflow: deploy-production.yml
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference the base configuration
+resources:
+  - ../../base
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml
+  - network-policies.yaml
+
+# Override namespace for production
+namespace: aivo-prod
+
+# Production-specific labels
+commonLabels:
+  environment: production
+  app.kubernetes.io/environment: production
+
+# Common annotations
+commonAnnotations:
+  deployment.kubernetes.io/environment: production
+  prometheus.io/scrape: "true"
+
+# Image configuration - use GCR registry
+# Note: Image tags are set dynamically by the CI/CD pipeline using:
+#   kustomize edit set image gcr.io/aivo-platform/<service>=gcr.io/aivo-platform/<service>:<tag>
+images:
+  - name: aivo/auth-svc
+    newName: gcr.io/aivo-platform/auth-svc
+  - name: aivo/content-svc
+    newName: gcr.io/aivo-platform/content-svc
+  - name: aivo/session-svc
+    newName: gcr.io/aivo-platform/session-svc
+  - name: aivo/assessment-svc
+    newName: gcr.io/aivo-platform/assessment-svc
+  - name: aivo/analytics-svc
+    newName: gcr.io/aivo-platform/analytics-svc
+  - name: aivo/ai-orchestrator
+    newName: gcr.io/aivo-platform/ai-orchestrator
+  - name: aivo/notify-svc
+    newName: gcr.io/aivo-platform/notify-svc
+  - name: aivo/messaging-svc
+    newName: gcr.io/aivo-platform/messaging-svc
+  - name: aivo/goal-svc
+    newName: gcr.io/aivo-platform/goal-svc
+  - name: aivo/focus-svc
+    newName: gcr.io/aivo-platform/focus-svc
+  - name: aivo/personalization-svc
+    newName: gcr.io/aivo-platform/personalization-svc
+  - name: aivo/billing-svc
+    newName: gcr.io/aivo-platform/billing-svc
+  - name: aivo/consent-svc
+    newName: gcr.io/aivo-platform/consent-svc
+  - name: aivo/profile-svc
+    newName: gcr.io/aivo-platform/profile-svc
+  - name: aivo/baseline-svc
+    newName: gcr.io/aivo-platform/baseline-svc
+  - name: aivo/life-skills-svc
+    newName: gcr.io/aivo-platform/life-skills-svc
+  - name: aivo/parent-svc
+    newName: gcr.io/aivo-platform/parent-svc
+  - name: aivo/payments-svc
+    newName: gcr.io/aivo-platform/payments-svc
+
+# Patches for production-specific configurations
+patches:
+  # Increase replica counts for production
+  - target:
+      kind: Deployment
+      name: auth-svc
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: Deployment
+      name: content-svc
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: Deployment
+      name: session-svc
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: Deployment
+      name: ai-orchestrator
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: analytics-svc
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: billing-svc
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+# ConfigMap generators for production environment
+configMapGenerator:
+  - name: production-config
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+
+# Secret generator references (actual secrets from GCP Secret Manager)
+secretGenerator:
+  - name: production-secrets
+    type: Opaque
+    options:
+      disableNameSuffixHash: true
+    # Secrets are mounted from external-secrets operator
