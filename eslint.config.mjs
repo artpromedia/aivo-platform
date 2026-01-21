@@ -78,6 +78,14 @@ export default [
       ...js.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
+      // Warn on undated TODO/FIXME comments - use format: TODO(YYYY-MM-DD): message
+      "no-warning-comments": [
+        "warn",
+        {
+          "terms": ["TODO", "FIXME", "HACK", "XXX", "BUG"],
+          "location": "start"
+        }
+      ],
       "import/order": [
         "warn",
         {
