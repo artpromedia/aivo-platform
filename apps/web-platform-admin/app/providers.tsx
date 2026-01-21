@@ -25,13 +25,15 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
 });
 
+interface AuthProviderProps {
+  children: ReactNode;
+  initialAuth: AuthState;
+}
+
 export function AuthProvider({
   children,
   initialAuth,
-}: {
-  children: ReactNode;
-  initialAuth: AuthState;
-}) {
+}: Readonly<AuthProviderProps>) {
   const router = useRouter();
   const [state] = useState<AuthState>(initialAuth);
 

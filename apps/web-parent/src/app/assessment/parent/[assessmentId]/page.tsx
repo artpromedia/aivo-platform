@@ -31,7 +31,7 @@ const CATEGORY_INFO = {
   social_emotional: { title: 'Social-Emotional', icon: '🤝', description: 'Confidence and resilience' },
 };
 
-export default function ParentAssessmentPage({ assessmentId, profileId }: ParentAssessmentProps) {
+export default function ParentAssessmentPage({ assessmentId, profileId }: Readonly<ParentAssessmentProps>) {
   const router = useRouter();
   const [questions, setQuestions] = useState<ParentAssessmentQuestion[]>([]);
   const [responses, setResponses] = useState<Record<string, unknown>>({});
@@ -194,7 +194,7 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Parent
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-3xl font-bold text-gray-900">Parent Assessment</h1>
-          <p className="text-gray-600">Help us understand your child's learning needs</p>
+          <p className="text-gray-600">Help us understand your child&apos;s learning needs</p>
         </div>
 
         {/* Progress Bar */}
@@ -243,9 +243,9 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Parent
                 {/* Multiple Choice */}
                 {question.questionType === 'multiple_choice' && question.options && (
                   <div className="space-y-2">
-                    {question.options.map((option, optIdx) => (
+                    {question.options.map((option) => (
                       <label
-                        key={optIdx}
+                        key={option}
                         className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-gray-200 p-4 transition-colors hover:border-violet-300"
                       >
                         <input
@@ -265,22 +265,24 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Parent
                 {/* Multi Select */}
                 {question.questionType === 'multi_select' && question.options && (
                   <div className="space-y-2">
-                    {question.options.map((option, optIdx) => {
+                    {question.options.map((option) => {
                       const currentValues = (responses[question.id] as string[]) || [];
+                      const isChecked = currentValues.includes(option);
+                      const handleCheckboxChange = (checked: boolean) => {
+                        const newValues = checked
+                          ? [...currentValues, option]
+                          : currentValues.filter(v => v !== option);
+                        handleResponse(question.id, newValues);
+                      };
                       return (
                         <label
-                          key={optIdx}
+                          key={option}
                           className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-gray-200 p-4 transition-colors hover:border-violet-300"
                         >
                           <input
                             type="checkbox"
-                            checked={currentValues.includes(option)}
-                            onChange={(e) => {
-                              const newValues = e.target.checked
-                                ? [...currentValues, option]
-                                : currentValues.filter(v => v !== option);
-                              handleResponse(question.id, newValues);
-                            }}
+                            checked={isChecked}
+                            onChange={(e) => handleCheckboxChange(e.target.checked)}
                             className="h-4 w-4 text-violet-600"
                           />
                           <span className="text-gray-700">{option}</span>
