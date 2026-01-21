@@ -2412,6 +2412,9 @@ model VaultLicense {
   /// Reference to contract (if part of a contract)
   contractId          String?             @map("contract_id") @db.Uuid
 
+  /// Reference to pilot program (if issued for a pilot)
+  pilotProgramId      String?             @map("pilot_program_id") @db.Uuid
+
   /// When the license was issued
   issuedAt            DateTime            @default(now()) @map("issued_at") @db.Timestamptz
 
@@ -2449,11 +2452,13 @@ model VaultLicense {
   codes               VaultCode[]
   auditLogs           VaultAuditLog[]
   enterpriseDeal      EnterpriseDeal?     @relation(fields: [enterpriseDealId], references: [id])
+  pilotProgram        PilotProgram?       @relation(fields: [pilotProgramId], references: [id])
 
   @@index([tenantId, status])
   @@index([type, status])
   @@index([enterpriseDealId])
   @@index([contractId])
+  @@index([pilotProgramId])
   @@index([expiresAt])
   @@index([issuedAt(sort: Desc)])
   @@map("vault_licenses")
@@ -2896,4 +2901,443 @@ model EnterpriseProvisioningBatch {
   @@index([initiatedBy])
   @@index([status, createdAt(sort: Desc)])
   @@map("enterprise_provisioning_batches")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PILOT PROGRAMS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Pilot programs for districts and nonprofits to evaluate before committing
+// to a full contract. Pilots can convert to paid contracts.
+//
+
+/// Pilot program status
+enum PilotProgramStatus {
+  PENDING         // Awaiting start
+  ACTIVE          // Currently running
+  EXTENDED        // Extended beyond original end date
+  CONVERTING      // In process of converting to contract
+  CONVERTED       // Successfully converted to paid contract
+  EXPIRED         // Ended without conversion
+  CANCELLED       // Cancelled before completion
+}
+
+/// Pilot program type
+enum PilotProgramType {
+  DISTRICT_PILOT      // District/school evaluation
+  NONPROFIT_PILOT     // Non-profit organization pilot
+  CHARTER_PILOT       // Charter school/network pilot
+  ENTERPRISE_TRIAL    // Enterprise evaluation (larger scale)
+  PROMOTIONAL         // Promotional/marketing pilot
+}
+
+/// Pilot program for district/nonprofit evaluation
+model PilotProgram {
+  /// Unique pilot identifier
+  id                    String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Tenant ID for this pilot
+  tenantId              String              @map("tenant_id") @db.Uuid
+
+  /// Reference to enterprise customer (if applicable)
+  enterpriseCustomerId  String?             @map("enterprise_customer_id") @db.Uuid
+
+  /// Reference to enterprise deal (if originated from deal)
+  enterpriseDealId      String?             @map("enterprise_deal_id") @db.Uuid
+
+  /// Pilot type
+  type                  PilotProgramType
+
+  /// Pilot status
+  status                PilotProgramStatus  @default(PENDING)
+
+  /// Pilot name/title
+  name                  String
+
+  /// Description of the pilot
+  description           String?
+
+  /// Number of seats/licenses for this pilot
+  seats                 Int
+
+  /// Actual number of seats being used
+  seatsUsed             Int                 @default(0) @map("seats_used")
+
+  /// Start date
+  startDate             DateTime            @map("start_date") @db.Date
+
+  /// Original end date
+  originalEndDate       DateTime            @map("original_end_date") @db.Date
+
+  /// Current end date (may be extended)
+  endDate               DateTime            @map("end_date") @db.Date
+
+  /// Number of times extended
+  extensionCount        Int                 @default(0) @map("extension_count")
+
+  /// Max allowed extensions
+  maxExtensions         Int                 @default(2) @map("max_extensions")
+
+  /// Primary contact name
+  primaryContactName    String?             @map("primary_contact_name")
+
+  /// Primary contact email
+  primaryContactEmail   String?             @map("primary_contact_email")
+
+  /// Primary contact phone
+  primaryContactPhone   String?             @map("primary_contact_phone")
+
+  /// Features/modules included (JSON array)
+  featuresJson          Json?               @map("features_json")
+
+  /// Success criteria for conversion
+  successCriteriaJson   Json?               @map("success_criteria_json")
+
+  /// Payment method on file (for auto-conversion)
+  hasPaymentMethodOnFile Boolean            @default(false) @map("has_payment_method_on_file")
+
+  /// Billing instrument ID (if payment method stored)
+  billingInstrumentId   String?             @map("billing_instrument_id") @db.Uuid
+
+  /// Auto-convert to contract on success
+  autoConvertEnabled    Boolean             @default(false) @map("auto_convert_enabled")
+
+  /// Promotional discount % for conversion
+  conversionDiscountPct Float?              @map("conversion_discount_pct")
+
+  /// Conversion price per seat (in cents, null = standard pricing)
+  conversionPricePerSeatCents Int?          @map("conversion_price_per_seat_cents")
+
+  /// Reference to contract (after conversion)
+  convertedContractId   String?             @map("converted_contract_id") @db.Uuid
+
+  /// Reference to subscription (after conversion)
+  convertedSubscriptionId String?           @map("converted_subscription_id") @db.Uuid
+
+  /// When converted
+  convertedAt           DateTime?           @map("converted_at") @db.Timestamptz
+
+  /// Sales rep or admin who created this pilot
+  createdBy             String              @map("created_by") @db.Uuid
+
+  /// Notes
+  notes                 String?
+
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  licenses              VaultLicense[]
+  reminders             PilotReminder[]
+  extensions            PilotExtension[]
+
+  @@index([tenantId, status])
+  @@index([enterpriseCustomerId])
+  @@index([enterpriseDealId])
+  @@index([status, endDate])
+  @@index([endDate])
+  @@map("pilot_programs")
+}
+
+/// Pilot program extension record
+model PilotExtension {
+  /// Unique extension identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the pilot program
+  pilotId             String              @map("pilot_id") @db.Uuid
+
+  /// Previous end date
+  previousEndDate     DateTime            @map("previous_end_date") @db.Date
+
+  /// New end date
+  newEndDate          DateTime            @map("new_end_date") @db.Date
+
+  /// Reason for extension
+  reason              String?
+
+  /// User who approved the extension
+  approvedBy          String              @map("approved_by") @db.Uuid
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  pilot               PilotProgram        @relation(fields: [pilotId], references: [id])
+
+  @@index([pilotId])
+  @@map("pilot_extensions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRIAL & PILOT REMINDERS
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Scheduled reminders for trials and pilots about expiration and payment.
+//
+
+/// Reminder type
+enum ReminderType {
+  TRIAL_ENDING_14_DAYS    // 2 weeks before trial ends
+  TRIAL_ENDING_7_DAYS     // 1 week before trial ends
+  TRIAL_ENDING_48_HOURS   // 48 hours before trial ends (payment notice)
+  PILOT_ENDING_14_DAYS    // 2 weeks before pilot ends
+  PILOT_ENDING_7_DAYS     // 1 week before pilot ends
+  PILOT_ENDING_48_HOURS   // 48 hours before pilot ends
+  PAYMENT_CHARGE_NOTICE   // 48 hours before first charge
+  CONVERSION_OPPORTUNITY  // Conversion/upgrade opportunity
+}
+
+/// Reminder status
+enum ReminderStatus {
+  PENDING     // Scheduled but not sent
+  SENT        // Successfully sent
+  FAILED      // Failed to send
+  CANCELLED   // Cancelled (e.g., converted before reminder)
+  SKIPPED     // Skipped (e.g., no email on file)
+}
+
+/// Trial reminder schedule
+model TrialReminder {
+  /// Unique reminder identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Subscription ID for this trial
+  subscriptionId      String              @map("subscription_id") @db.Uuid
+
+  /// Tenant ID
+  tenantId            String              @map("tenant_id") @db.Uuid
+
+  /// User ID to notify
+  userId              String              @map("user_id") @db.Uuid
+
+  /// Reminder type
+  type                ReminderType
+
+  /// Reminder status
+  status              ReminderStatus      @default(PENDING)
+
+  /// When the reminder should be sent
+  scheduledFor        DateTime            @map("scheduled_for") @db.Timestamptz
+
+  /// When the reminder was actually sent
+  sentAt              DateTime?           @map("sent_at") @db.Timestamptz
+
+  /// Email address used
+  emailAddress        String?             @map("email_address")
+
+  /// Error message (if failed)
+  errorMessage        String?             @map("error_message")
+
+  /// Whether payment method is on file
+  hasPaymentMethod    Boolean             @default(false) @map("has_payment_method")
+
+  /// Amount to be charged (in cents, for payment notice)
+  chargeAmountCents   Int?                @map("charge_amount_cents")
+
+  /// Trial end date
+  trialEndDate        DateTime            @map("trial_end_date") @db.Date
+
+  /// Metadata (template vars, etc.)
+  metadataJson        Json?               @map("metadata_json")
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([subscriptionId])
+  @@index([tenantId, userId])
+  @@index([status, scheduledFor])
+  @@index([scheduledFor])
+  @@map("trial_reminders")
+}
+
+/// Pilot reminder schedule
+model PilotReminder {
+  /// Unique reminder identifier
+  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the pilot program
+  pilotId             String              @map("pilot_id") @db.Uuid
+
+  /// Reminder type
+  type                ReminderType
+
+  /// Reminder status
+  status              ReminderStatus      @default(PENDING)
+
+  /// When the reminder should be sent
+  scheduledFor        DateTime            @map("scheduled_for") @db.Timestamptz
+
+  /// When the reminder was actually sent
+  sentAt              DateTime?           @map("sent_at") @db.Timestamptz
+
+  /// Email address used
+  emailAddress        String?             @map("email_address")
+
+  /// Error message (if failed)
+  errorMessage        String?             @map("error_message")
+
+  /// Whether payment method is on file
+  hasPaymentMethod    Boolean             @default(false) @map("has_payment_method")
+
+  /// Amount to be charged (in cents, for payment notice)
+  chargeAmountCents   Int?                @map("charge_amount_cents")
+
+  /// Metadata (template vars, etc.)
+  metadataJson        Json?               @map("metadata_json")
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  pilot               PilotProgram        @relation(fields: [pilotId], references: [id])
+
+  @@index([pilotId])
+  @@index([status, scheduledFor])
+  @@index([scheduledFor])
+  @@map("pilot_reminders")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROMOTIONAL PRICING
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Special pricing and discounts for trial conversions, pilot conversions,
+// and promotional campaigns.
+//
+
+/// Promotional pricing type
+enum PromotionalPricingType {
+  TRIAL_CONVERSION      // Discount for converting from trial
+  PILOT_CONVERSION      // Discount for converting from pilot
+  FIRST_YEAR            // First year promotional pricing
+  LOYALTY               // Loyalty/renewal discount
+  VOLUME                // Volume-based discount
+  PARTNER               // Partner/referral discount
+  CAMPAIGN              // Marketing campaign discount
+}
+
+/// Promotional pricing rule
+model PromotionalPricing {
+  /// Unique pricing rule identifier
+  id                    String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Pricing rule name
+  name                  String
+
+  /// Description
+  description           String?
+
+  /// Pricing type
+  type                  PromotionalPricingType
+
+  /// Discount percentage (0-100)
+  discountPercent       Float?              @map("discount_percent")
+
+  /// Fixed discount amount in cents
+  discountAmountCents   Int?                @map("discount_amount_cents")
+
+  /// Special price per seat in cents (overrides standard pricing)
+  pricePerSeatCents     Int?                @map("price_per_seat_cents")
+
+  /// Minimum seats required for this pricing
+  minSeats              Int?                @map("min_seats")
+
+  /// Maximum seats for this pricing
+  maxSeats              Int?                @map("max_seats")
+
+  /// Duration this pricing applies (in months, null = perpetual)
+  durationMonths        Int?                @map("duration_months")
+
+  /// Applicable to which plan SKUs (JSON array, null = all)
+  applicablePlansJson   Json?               @map("applicable_plans_json")
+
+  /// Applicable to which customer types (JSON array, null = all)
+  applicableCustomerTypesJson Json?         @map("applicable_customer_types_json")
+
+  /// Stripe coupon ID (if applicable)
+  stripeCouponId        String?             @map("stripe_coupon_id")
+
+  /// Stripe promotion code ID (if applicable)
+  stripePromotionCodeId String?             @map("stripe_promotion_code_id")
+
+  /// Is this pricing currently active
+  isActive              Boolean             @default(true) @map("is_active")
+
+  /// Start date for this pricing
+  validFrom             DateTime?           @map("valid_from") @db.Date
+
+  /// End date for this pricing
+  validUntil            DateTime?           @map("valid_until") @db.Date
+
+  /// Maximum number of redemptions (null = unlimited)
+  maxRedemptions        Int?                @map("max_redemptions")
+
+  /// Current redemption count
+  redemptionCount       Int                 @default(0) @map("redemption_count")
+
+  /// Priority for rule matching (higher = first)
+  priority              Int                 @default(0)
+
+  /// Created by
+  createdBy             String              @map("created_by") @db.Uuid
+
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  redemptions           PromotionalPricingRedemption[]
+
+  @@index([type, isActive])
+  @@index([isActive, validFrom, validUntil])
+  @@index([priority])
+  @@map("promotional_pricing")
+}
+
+/// Record of promotional pricing redemption
+model PromotionalPricingRedemption {
+  /// Unique redemption identifier
+  id                    String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Reference to the promotional pricing rule
+  pricingId             String              @map("pricing_id") @db.Uuid
+
+  /// Tenant ID
+  tenantId              String              @map("tenant_id") @db.Uuid
+
+  /// Subscription ID (if subscription-based)
+  subscriptionId        String?             @map("subscription_id") @db.Uuid
+
+  /// Contract ID (if contract-based)
+  contractId            String?             @map("contract_id") @db.Uuid
+
+  /// Pilot program ID (if converted from pilot)
+  pilotProgramId        String?             @map("pilot_program_id") @db.Uuid
+
+  /// Original price (in cents)
+  originalPriceCents    Int                 @map("original_price_cents")
+
+  /// Final price after discount (in cents)
+  finalPriceCents       Int                 @map("final_price_cents")
+
+  /// Discount amount (in cents)
+  discountCents         Int                 @map("discount_cents")
+
+  /// User who redeemed
+  redeemedBy            String              @map("redeemed_by") @db.Uuid
+
+  /// When redeemed
+  redeemedAt            DateTime            @default(now()) @map("redeemed_at") @db.Timestamptz
+
+  /// Notes
+  notes                 String?
+
+  // Relations
+  pricing               PromotionalPricing  @relation(fields: [pricingId], references: [id])
+
+  @@index([pricingId])
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@index([contractId])
+  @@index([pilotProgramId])
+  @@map("promotional_pricing_redemptions")
 }
