@@ -1,0 +1,620 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Life skill category
+enum SkillCategory {
+  PERSONAL_HYGIENE      // Brushing teeth, washing hands, bathing, grooming
+  EATING_SKILLS         // Using utensils, table manners, food preparation
+  DRESSING              // Putting on clothes, shoes, buttons, zippers
+  SAFETY_AWARENESS      // Road safety, stranger danger, emergency response
+  SOCIAL_SKILLS         // Greetings, personal space, asking for help
+  DAILY_ROUTINES        // Morning routine, bedtime routine, transitions
+  COMMUNITY_SKILLS      // Shopping, public transport, restaurants
+  HOME_SKILLS           // Cleaning, organizing, basic cooking
+  COMMUNICATION         // Expressing needs, phone use, basic writing
+  MONEY_SKILLS          // Recognizing coins, simple transactions
+
+  @@map("skill_category")
+}
+
+/// Difficulty level for skills and steps
+enum DifficultyLevel {
+  FOUNDATIONAL   // Most basic, heavy support needed
+  EMERGING       // Beginning to show skill
+  DEVELOPING     // Partial independence
+  PROFICIENT     // Mostly independent
+  INDEPENDENT    // Full independence, generalized
+
+  @@map("difficulty_level")
+}
+
+/// Type of instructional content
+enum ContentType {
+  VIDEO           // Video demonstration
+  ANIMATION       // Animated sequence
+  IMAGE_SEQUENCE  // Series of images
+  SYMBOL_CARDS    // AAC symbols/PCS
+  AUDIO           // Audio instruction
+  TEXT            // Written instruction
+  INTERACTIVE     // Touch/click interaction
+
+  @@map("content_type")
+}
+
+/// Progress status for learner skill tracking
+enum ProgressStatus {
+  NOT_INTRODUCED     // Skill not yet started
+  INTRODUCED         // Skill introduced, heavy prompting
+  PROMPTED           // Requires prompting to perform
+  PARTIAL            // Can do some steps independently
+  INDEPENDENT        // Can do independently in one context
+  GENERALIZED        // Can do across multiple contexts
+
+  @@map("progress_status")
+}
+
+/// Type of prompt/support
+enum PromptLevel {
+  FULL_PHYSICAL      // Hand-over-hand assistance
+  PARTIAL_PHYSICAL   // Light physical guidance
+  MODELING           // Adult demonstrates
+  GESTURAL           // Pointing, gestures
+  VERBAL             // Verbal cues
+  VISUAL             // Visual cues/reminders
+  INDEPENDENT        // No prompt needed
+
+  @@map("prompt_level")
+}
+
+/// Safety scenario type
+enum SafetyScenarioType {
+  ROAD_CROSSING       // Crossing streets safely
+  STRANGER_AWARENESS  // Recognizing safe vs unsafe people
+  EMERGENCY_RESPONSE  // What to do in emergencies
+  FIRE_SAFETY         // Fire drills, smoke alarms
+  WATER_SAFETY        // Pool, bath safety
+  ONLINE_SAFETY       // Internet, device safety
+  BODY_SAFETY         // Personal boundaries, consent
+  HOME_SAFETY         // Sharp objects, hot items
+
+  @@map("safety_scenario_type")
+}
+
+/// Scenario decision outcome
+enum DecisionOutcome {
+  SAFE              // Safe choice made
+  UNSAFE            // Unsafe choice made
+  PARTIALLY_SAFE    // Partially correct response
+
+  @@map("decision_outcome")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SKILL LIBRARY MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// A life skill in the curriculum (e.g., "Brushing Teeth")
+model LifeSkill {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @map("tenant_id") @db.Uuid // null = system-wide
+  
+  // Identification
+  code              String           @unique // e.g., "HYGIENE_BRUSH_TEETH"
+  name              String           // "Brushing Teeth"
+  description       String           @db.Text
+  category          SkillCategory
+  
+  // Difficulty and prerequisites
+  difficultyLevel   DifficultyLevel  @default(FOUNDATIONAL) @map("difficulty_level")
+  prerequisiteIds   String[]         @default([]) @map("prerequisite_ids") @db.Uuid
+  
+  // Target info
+  minAgeMonths      Int?             @map("min_age_months")
+  maxAgeMonths      Int?             @map("max_age_months")
+  
+  // Display
+  iconUrl           String?          @map("icon_url")
+  coverImageUrl     String?          @map("cover_image_url")
+  themeColor        String?          @map("theme_color") // Hex color for UI
+  
+  // Timing
+  estimatedMinutes  Int?             @map("estimated_minutes") // Typical time to complete
+  
+  // Flags
+  isActive          Boolean          @default(true) @map("is_active")
+  isSystemSkill     Boolean          @default(true) @map("is_system_skill")
+  
+  // SEO/Search
+  keywords          String[]         @default([])
+  
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  taskAnalysis      TaskAnalysis?
+  learnerProgress   LearnerSkillProgress[]
+  learnerGoals      LifeSkillGoal[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([difficultyLevel])
+  @@index([isActive])
+  @@map("life_skills")
+}
+
+/// Task analysis - breaks a skill into discrete, teachable steps
+model TaskAnalysis {
+  id              String      @id @default(uuid()) @db.Uuid
+  skillId         String      @unique @map("skill_id") @db.Uuid
+  
+  // Overview
+  totalSteps      Int         @map("total_steps")
+  version         Int         @default(1)
+  
+  // Teaching notes
+  teachingTips    String?     @map("teaching_tips") @db.Text
+  materialsNeeded String[]    @default([]) @map("materials_needed")
+  setupNotes      String?     @map("setup_notes") @db.Text
+  
+  // Reinforcement
+  reinforcementIdeas String[]  @default([]) @map("reinforcement_ideas")
+  
+  // Generalization contexts
+  generalizationContexts Json? @map("generalization_contexts") @db.JsonB
+  // { "home": true, "school": true, "community": true, "contexts": ["bathroom at home", "school restroom"] }
+  
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  skill           LifeSkill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  steps           SkillStep[]
+
+  @@index([skillId])
+  @@map("task_analyses")
+}
+
+/// Individual step within a task analysis
+model SkillStep {
+  id                String        @id @default(uuid()) @db.Uuid
+  taskAnalysisId    String        @map("task_analysis_id") @db.Uuid
+  
+  // Order
+  stepNumber        Int           @map("step_number")
+  
+  // Instruction
+  instruction       String        // "Pick up the toothbrush"
+  detailedPrompt    String?       @map("detailed_prompt") @db.Text // Longer explanation
+  
+  // Content for teaching
+  primaryContent    ContentType   @default(IMAGE_SEQUENCE) @map("primary_content")
+  
+  // Media
+  imageUrl          String?       @map("image_url")
+  videoUrl          String?       @map("video_url")
+  animationUrl      String?       @map("animation_url")
+  symbolUrl         String?       @map("symbol_url") // AAC symbol
+  audioUrl          String?       @map("audio_url") // Audio instruction
+  
+  // AI prompt template (for agentic guidance)
+  aiPromptTemplate  String?       @map("ai_prompt_template") @db.Text
+  
+  // Common errors and corrections
+  commonErrors      Json?         @map("common_errors") @db.JsonB
+  // [{ "error": "Too much toothpaste", "correction": "Use a pea-sized amount" }]
+  
+  // Timing
+  expectedSeconds   Int?          @map("expected_seconds")
+  
+  // Flags
+  isCritical        Boolean       @default(false) @map("is_critical") // Must complete for safety
+  allowSkip         Boolean       @default(false) @map("allow_skip")
+  
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  taskAnalysis      TaskAnalysis  @relation(fields: [taskAnalysisId], references: [id], onDelete: Cascade)
+  stepProgress      StepProgress[]
+
+  @@unique([taskAnalysisId, stepNumber])
+  @@index([taskAnalysisId])
+  @@map("skill_steps")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SAFETY SCENARIOS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Interactive safety scenario for decision-making practice
+model SafetyScenario {
+  id                String              @id @default(uuid()) @db.Uuid
+  tenantId          String?             @map("tenant_id") @db.Uuid
+  
+  // Identification
+  code              String              @unique
+  title             String
+  description       String              @db.Text
+  scenarioType      SafetyScenarioType  @map("scenario_type")
+  
+  // Target
+  minAgeMonths      Int?                @map("min_age_months")
+  maxAgeMonths      Int?                @map("max_age_months")
+  difficultyLevel   DifficultyLevel     @default(FOUNDATIONAL) @map("difficulty_level")
+  
+  // Scene setup
+  sceneImageUrl     String?             @map("scene_image_url")
+  sceneVideoUrl     String?             @map("scene_video_url")
+  sceneAudioUrl     String?             @map("scene_audio_url")
+  sceneDescription  String              @map("scene_description") @db.Text
+  
+  // The question/decision point
+  decisionPrompt    String              @map("decision_prompt") @db.Text
+  
+  // AI coaching template
+  aiCoachingTemplate String?            @map("ai_coaching_template") @db.Text
+  
+  // Flags
+  isActive          Boolean             @default(true) @map("is_active")
+  isSystemScenario  Boolean             @default(true) @map("is_system_scenario")
+  
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  choices           SafetyChoice[]
+  attempts          SafetyAttempt[]
+
+  @@index([tenantId])
+  @@index([scenarioType])
+  @@index([isActive])
+  @@map("safety_scenarios")
+}
+
+/// Choice option for a safety scenario
+model SafetyChoice {
+  id              String            @id @default(uuid()) @db.Uuid
+  scenarioId      String            @map("scenario_id") @db.Uuid
+  
+  // Choice content
+  choiceText      String            @map("choice_text")
+  choiceImageUrl  String?           @map("choice_image_url")
+  choiceSymbolUrl String?           @map("choice_symbol_url")
+  
+  // Outcome
+  outcome         DecisionOutcome
+  
+  // Feedback
+  feedbackText    String            @map("feedback_text") @db.Text
+  feedbackVideoUrl String?          @map("feedback_video_url")
+  
+  // Explanation of why this is safe/unsafe
+  explanation     String            @db.Text
+  
+  // Order for display
+  orderIndex      Int               @default(0) @map("order_index")
+  
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  scenario        SafetyScenario    @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  attempts        SafetyAttempt[]
+
+  @@index([scenarioId])
+  @@map("safety_choices")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEARNER PROGRESS TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Learner's overall progress on a life skill
+model LearnerSkillProgress {
+  id                String          @id @default(uuid()) @db.Uuid
+  tenantId          String          @map("tenant_id") @db.Uuid
+  learnerId         String          @map("learner_id") @db.Uuid
+  skillId           String          @map("skill_id") @db.Uuid
+  
+  // Status
+  status            ProgressStatus  @default(NOT_INTRODUCED)
+  
+  // Mastery tracking
+  stepsCompleted    Int             @default(0) @map("steps_completed")
+  totalSteps        Int             @map("total_steps")
+  masteryPercent    Float           @default(0) @map("mastery_percent")
+  
+  // Prompt fading
+  currentPromptLevel PromptLevel    @default(FULL_PHYSICAL) @map("current_prompt_level")
+  
+  // Generalization
+  contextsAchieved  String[]        @default([]) @map("contexts_achieved")
+  
+  // Session tracking
+  totalSessions     Int             @default(0) @map("total_sessions")
+  totalMinutes      Int             @default(0) @map("total_minutes")
+  lastSessionAt     DateTime?       @map("last_session_at") @db.Timestamptz
+  
+  // Streak tracking
+  currentStreak     Int             @default(0) @map("current_streak")
+  longestStreak     Int             @default(0) @map("longest_streak")
+  
+  // Dates
+  startedAt         DateTime        @default(now()) @map("started_at") @db.Timestamptz
+  achievedAt        DateTime?       @map("achieved_at") @db.Timestamptz
+  generalizedAt     DateTime?       @map("generalized_at") @db.Timestamptz
+  
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  skill             LifeSkill       @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  stepProgress      StepProgress[]
+  sessions          SkillSession[]
+
+  @@unique([learnerId, skillId])
+  @@index([tenantId, learnerId])
+  @@index([skillId])
+  @@index([status])
+  @@map("learner_skill_progress")
+}
+
+/// Progress on individual steps
+model StepProgress {
+  id                    String                @id @default(uuid()) @db.Uuid
+  learnerProgressId     String                @map("learner_progress_id") @db.Uuid
+  stepId                String                @map("step_id") @db.Uuid
+  
+  // Mastery
+  isAcquired            Boolean               @default(false) @map("is_acquired")
+  acquisitionDate       DateTime?             @map("acquisition_date") @db.Timestamptz
+  
+  // Prompt level needed
+  lastPromptLevel       PromptLevel           @default(FULL_PHYSICAL) @map("last_prompt_level")
+  
+  // Attempts
+  totalAttempts         Int                   @default(0) @map("total_attempts")
+  successfulAttempts    Int                   @default(0) @map("successful_attempts")
+  
+  // Notes
+  teacherNotes          String?               @map("teacher_notes") @db.Text
+  
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  learnerProgress       LearnerSkillProgress  @relation(fields: [learnerProgressId], references: [id], onDelete: Cascade)
+  step                  SkillStep             @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([learnerProgressId, stepId])
+  @@index([learnerProgressId])
+  @@index([stepId])
+  @@map("step_progress")
+}
+
+/// A teaching/practice session for a skill
+model SkillSession {
+  id                  String                @id @default(uuid()) @db.Uuid
+  learnerProgressId   String                @map("learner_progress_id") @db.Uuid
+  
+  // Context
+  context             String?               // "home", "school", "bathroom"
+  facilitator         String?               // Who helped (parent name, teacher name)
+  facilitatorRole     String?               @map("facilitator_role") // "PARENT", "TEACHER", "AIDE"
+  
+  // Timing
+  startedAt           DateTime              @map("started_at") @db.Timestamptz
+  endedAt             DateTime?             @map("ended_at") @db.Timestamptz
+  durationMinutes     Int?                  @map("duration_minutes")
+  
+  // Results
+  stepsAttempted      Int                   @default(0) @map("steps_attempted")
+  stepsCompleted      Int                   @default(0) @map("steps_completed")
+  overallPromptLevel  PromptLevel?          @map("overall_prompt_level")
+  
+  // Mood/engagement
+  learnerMood         String?               @map("learner_mood") // "happy", "frustrated", "calm"
+  engagementLevel     Int?                  @map("engagement_level") // 1-5
+  
+  // AI interaction
+  aiGuidanceUsed      Boolean               @default(false) @map("ai_guidance_used")
+  aiInteractionCount  Int                   @default(0) @map("ai_interaction_count")
+  
+  // Notes
+  sessionNotes        String?               @map("session_notes") @db.Text
+  nextSessionFocus    String?               @map("next_session_focus") @db.Text
+  
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  learnerProgress     LearnerSkillProgress  @relation(fields: [learnerProgressId], references: [id], onDelete: Cascade)
+  stepAttempts        StepAttempt[]
+
+  @@index([learnerProgressId])
+  @@index([startedAt])
+  @@map("skill_sessions")
+}
+
+/// Individual step attempt within a session
+model StepAttempt {
+  id              String        @id @default(uuid()) @db.Uuid
+  sessionId       String        @map("session_id") @db.Uuid
+  stepNumber      Int           @map("step_number")
+  
+  // Result
+  wasSuccessful   Boolean       @map("was_successful")
+  promptLevel     PromptLevel   @map("prompt_level")
+  
+  // Timing
+  attemptedAt     DateTime      @map("attempted_at") @db.Timestamptz
+  durationSeconds Int?          @map("duration_seconds")
+  
+  // Errors
+  errorType       String?       @map("error_type")
+  errorNotes      String?       @map("error_notes")
+  
+  // AI coaching
+  aiPromptGiven   String?       @map("ai_prompt_given") @db.Text
+  aiResponseUsed  Boolean       @default(false) @map("ai_response_used")
+
+  // Relations
+  session         SkillSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("step_attempts")
+}
+
+/// Attempt at a safety scenario
+model SafetyAttempt {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  learnerId       String          @map("learner_id") @db.Uuid
+  scenarioId      String          @map("scenario_id") @db.Uuid
+  choiceId        String          @map("choice_id") @db.Uuid
+  
+  // Result
+  outcome         DecisionOutcome
+  
+  // Response time
+  responseTimeMs  Int?            @map("response_time_ms")
+  
+  // AI coaching
+  aiGuidanceGiven String?         @map("ai_guidance_given") @db.Text
+  aiFollowUp      String?         @map("ai_follow_up") @db.Text
+  
+  // Context
+  attemptedAt     DateTime        @default(now()) @map("attempted_at") @db.Timestamptz
+  context         String?         // "classroom", "home", "community_outing"
+
+  // Relations
+  scenario        SafetyScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  choice          SafetyChoice    @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, learnerId])
+  @@index([scenarioId])
+  @@index([attemptedAt])
+  @@map("safety_attempts")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GOAL SETTING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Life skill goal set by parent/teacher/learner
+model LifeSkillGoal {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  learnerId       String          @map("learner_id") @db.Uuid
+  skillId         String          @map("skill_id") @db.Uuid
+  createdByUserId String          @map("created_by_user_id") @db.Uuid
+  
+  // Goal details
+  title           String
+  description     String?         @db.Text
+  
+  // Target
+  targetStatus    ProgressStatus  @default(INDEPENDENT) @map("target_status")
+  targetPromptLevel PromptLevel?  @map("target_prompt_level")
+  targetContexts  String[]        @default([]) @map("target_contexts")
+  
+  // Timeline
+  startDate       DateTime        @default(now()) @map("start_date") @db.Date
+  targetDate      DateTime?       @map("target_date") @db.Date
+  
+  // Status
+  isActive        Boolean         @default(true) @map("is_active")
+  isAchieved      Boolean         @default(false) @map("is_achieved")
+  achievedAt      DateTime?       @map("achieved_at") @db.Timestamptz
+  
+  // Celebration
+  celebrationShown Boolean        @default(false) @map("celebration_shown")
+  
+  // Notes
+  motivationNotes String?         @map("motivation_notes") @db.Text
+  
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  skill           LifeSkill       @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  milestones      GoalMilestone[]
+
+  @@index([tenantId, learnerId])
+  @@index([skillId])
+  @@index([isActive])
+  @@map("life_skill_goals")
+}
+
+/// Milestones within a goal
+model GoalMilestone {
+  id              String          @id @default(uuid()) @db.Uuid
+  goalId          String          @map("goal_id") @db.Uuid
+  
+  // Milestone
+  title           String
+  description     String?
+  
+  // Target
+  targetDate      DateTime?       @map("target_date") @db.Date
+  
+  // Status
+  isComplete      Boolean         @default(false) @map("is_complete")
+  completedAt     DateTime?       @map("completed_at") @db.Timestamptz
+  
+  // Order
+  orderIndex      Int             @default(0) @map("order_index")
+  
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  goal            LifeSkillGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_milestones")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AI INTERACTION LOGS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Log of AI coaching interactions for review and improvement
+model AICoachingLog {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  learnerId       String    @map("learner_id") @db.Uuid
+  
+  // Context
+  skillId         String?   @map("skill_id") @db.Uuid
+  scenarioId      String?   @map("scenario_id") @db.Uuid
+  sessionId       String?   @map("session_id") @db.Uuid
+  
+  // Interaction
+  interactionType String    @map("interaction_type") // "prompt", "encouragement", "correction", "celebration"
+  userInput       String?   @map("user_input") @db.Text
+  aiResponse      String    @map("ai_response") @db.Text
+  
+  // Effectiveness
+  wasHelpful      Boolean?  @map("was_helpful")
+  learnerReaction String?   @map("learner_reaction") // "positive", "neutral", "confused", "frustrated"
+  
+  // Timing
+  responseTimeMs  Int?      @map("response_time_ms")
+  
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([skillId])
+  @@index([scenarioId])
+  @@index([createdAt])
+  @@map("ai_coaching_logs")
+}
