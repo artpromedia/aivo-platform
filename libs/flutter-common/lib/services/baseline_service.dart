@@ -145,6 +145,152 @@ class BaselineSubjectStatus {
       };
 }
 
+/// Grade level equivalent from assessment.
+/// Represents the learner's performance as a grade level (e.g., Grade 4.6 = 4th grade, 6th month).
+class GradeLevelEquivalent {
+  const GradeLevelEquivalent({
+    required this.gradeLevel,
+    required this.gradeMonth,
+    required this.displayString,
+    this.abilityScore,
+    this.percentile,
+    this.parentMessage,
+    this.performance,
+  });
+
+  /// Numeric grade level (0 = Kindergarten, 1 = 1st grade, etc.)
+  final int gradeLevel;
+
+  /// Month within the grade (0-9, where 0 = September, 9 = June)
+  final int gradeMonth;
+
+  /// Human-readable display (e.g., "Grade 4.6" or "Kindergarten")
+  final String displayString;
+
+  /// Raw ability score from IRT/adaptive assessment (0.0 to 1.0)
+  final double? abilityScore;
+
+  /// Percentile rank (0-100)
+  final int? percentile;
+
+  /// Parent-friendly message (e.g., "Your 7th grader is performing at a 4th grade level in Math")
+  final String? parentMessage;
+
+  /// Performance category relative to enrolled grade: 'below', 'at', or 'above'
+  final String? performance;
+
+  factory GradeLevelEquivalent.fromJson(Map<String, dynamic> json) {
+    return GradeLevelEquivalent(
+      gradeLevel: json['gradeLevel'] as int? ?? 0,
+      gradeMonth: json['gradeMonth'] as int? ?? 0,
+      displayString: json['displayString'] as String? ?? 'Unknown',
+      abilityScore: (json['abilityScore'] as num?)?.toDouble(),
+      percentile: json['percentile'] as int?,
+      parentMessage: json['parentMessage'] as String?,
+      performance: json['performance'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'gradeLevel': gradeLevel,
+        'gradeMonth': gradeMonth,
+        'displayString': displayString,
+        'abilityScore': abilityScore,
+        'percentile': percentile,
+        'parentMessage': parentMessage,
+        'performance': performance,
+      };
+
+  /// Get the numeric grade level as a decimal (e.g., 4.6 for 4th grade, 6th month)
+  double get gradeDecimal => gradeLevel + (gradeMonth / 10);
+
+  /// Get a friendly grade name (e.g., "4th Grade" or "Kindergarten")
+  String get gradeName {
+    if (gradeLevel == 0) return 'Kindergarten';
+    final suffix = switch (gradeLevel) {
+      1 => 'st',
+      2 => 'nd',
+      3 => 'rd',
+      _ => 'th',
+    };
+    return '$gradeLevel$suffix Grade';
+  }
+
+  @override
+  String toString() => displayString;
+}
+
+/// Full grade level report for all assessed domains.
+class GradeLevelReport {
+  const GradeLevelReport({
+    required this.actualGrade,
+    required this.overall,
+    this.byDomain = const {},
+    this.summary,
+    this.recommendations = const [],
+  });
+
+  /// The learner's enrolled/actual grade level
+  final int actualGrade;
+
+  /// Overall grade level equivalent across all domains
+  final GradeLevelEquivalent overall;
+
+  /// Grade level equivalent per domain (e.g., 'MATH' -> GradeLevelEquivalent)
+  final Map<String, GradeLevelEquivalent> byDomain;
+
+  /// Summary message for parents
+  final String? summary;
+
+  /// Recommended next steps
+  final List<String> recommendations;
+
+  factory GradeLevelReport.fromJson(Map<String, dynamic> json) {
+    return GradeLevelReport(
+      actualGrade: json['actualGrade'] as int? ?? 0,
+      overall: json['overall'] != null
+          ? GradeLevelEquivalent.fromJson(json['overall'] as Map<String, dynamic>)
+          : const GradeLevelEquivalent(
+              gradeLevel: 0,
+              gradeMonth: 0,
+              displayString: 'Unknown',
+            ),
+      byDomain: (json['byDomain'] as Map<String, dynamic>?)?.map(
+            (k, v) => MapEntry(
+              k,
+              GradeLevelEquivalent.fromJson(v as Map<String, dynamic>),
+            ),
+          ) ??
+          {},
+      summary: json['summary'] as String?,
+      recommendations:
+          (json['recommendations'] as List<dynamic>?)?.cast<String>() ?? [],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'actualGrade': actualGrade,
+        'overall': overall.toJson(),
+        'byDomain': byDomain.map((k, v) => MapEntry(k, v.toJson())),
+        'summary': summary,
+        'recommendations': recommendations,
+      };
+
+  /// Get domains where the learner is below grade level
+  List<String> get belowGradeDomains =>
+      byDomain.entries
+          .where((e) => e.value.performance == 'below')
+          .map((e) => e.key)
+          .toList();
+
+  /// Get domains where the learner is at or above grade level
+  List<String> get atOrAboveGradeDomains =>
+      byDomain.entries
+          .where((e) => e.value.performance != 'below')
+          .map((e) => e.key)
+          .toList();
+}
+
 /// Result for a subject baseline.
 class BaselineSubjectResult {
   const BaselineSubjectResult({
@@ -154,6 +300,7 @@ class BaselineSubjectResult {
     this.strengthAreas = const [],
     this.improvementAreas = const [],
     this.topicProficiencies = const {},
+    this.gradeEquivalent,
   });
 
   final String subject;
@@ -162,6 +309,9 @@ class BaselineSubjectResult {
   final List<String> strengthAreas;
   final List<String> improvementAreas;
   final Map<String, double> topicProficiencies;
+
+  /// Grade level equivalent for this subject (e.g., "Grade 4.6")
+  final GradeLevelEquivalent? gradeEquivalent;
 
   factory BaselineSubjectResult.fromJson(Map<String, dynamic> json) {
     return BaselineSubjectResult(
@@ -175,6 +325,10 @@ class BaselineSubjectResult {
       topicProficiencies: (json['topicProficiencies'] as Map<String, dynamic>?)
               ?.map((k, v) => MapEntry(k, (v as num).toDouble())) ??
           {},
+      gradeEquivalent: json['gradeEquivalent'] != null
+          ? GradeLevelEquivalent.fromJson(
+              json['gradeEquivalent'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -185,6 +339,7 @@ class BaselineSubjectResult {
         'strengthAreas': strengthAreas,
         'improvementAreas': improvementAreas,
         'topicProficiencies': topicProficiencies,
+        'gradeEquivalent': gradeEquivalent?.toJson(),
       };
 }
 

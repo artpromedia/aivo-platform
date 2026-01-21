@@ -5,6 +5,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { baselineRoutes } from './routes/baseline.js';
 import { iepUploadRoutes } from './routes/iepUpload.js';
+import { parentAssessmentRoutes } from './routes/parentAssessment.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({
@@ -27,6 +28,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register routes
   void fastify.register(baselineRoutes);
   void fastify.register(iepUploadRoutes); // IEP document upload and comparison routes
+  void fastify.register(parentAssessmentRoutes); // Parent assessment routes
 
   return fastify;
 }

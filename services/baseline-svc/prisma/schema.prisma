@@ -62,6 +62,7 @@ model BaselineProfile {
   attempts     BaselineAttempt[]      @relation("ProfileAttempts")
   finalAttempt BaselineAttempt?       @relation("FinalAttempt", fields: [finalAttemptId], references: [id])
   iepDocuments BaselineIepDocument[]  // Uploaded IEP documents for comparison
+  parentAssessment ParentAssessment?  // Parent's pre-baseline assessment
 
   @@unique([tenantId, learnerId])
   @@index([tenantId, learnerId])
@@ -166,6 +167,54 @@ enum IepComparisonDecision {
   REQUEST_REVIEW    // Request professional review
 
   @@map("iep_comparison_decision")
+}
+
+enum ParentAssessmentStatus {
+  PENDING      // Invitation sent, parent hasn't started
+  IN_PROGRESS  // Parent started but hasn't submitted
+  COMPLETED    // Parent submitted assessment
+
+  @@map("parent_assessment_status")
+}
+
+/// Parent's pre-baseline assessment of their child
+/// Provides valuable context before child takes baseline assessment
+model ParentAssessment {
+  id                String                  @id @default(uuid()) @db.Uuid
+  baselineProfileId String                  @unique @map("baseline_profile_id") @db.Uuid
+  
+  // Parent information
+  parentUserId      String                  @map("parent_user_id") @db.Uuid
+  parentEmail       String?                 @map("parent_email")
+  
+  // Assessment status
+  status            ParentAssessmentStatus  @default(PENDING)
+  
+  // Assessment responses (JSON array of question/answer pairs)
+  responsesJson     Json?                   @map("responses_json")
+  
+  // Extracted insights for AI consumption
+  learningStyleNotes String?               @map("learning_style_notes")
+  strengthsNotes     String?               @map("strengths_notes")
+  challengesNotes    String?               @map("challenges_notes")
+  behaviorNotes      String?               @map("behavior_notes")
+  
+  // Enrollment context
+  enrolledByRole    String                  @map("enrolled_by_role") // 'parent' or 'teacher'
+  
+  // Timestamps
+  invitedAt         DateTime                @default(now()) @map("invited_at") @db.Timestamptz
+  startedAt         DateTime?               @map("started_at") @db.Timestamptz
+  completedAt       DateTime?               @map("completed_at") @db.Timestamptz
+  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+
+  profile BaselineProfile @relation(fields: [baselineProfileId], references: [id], onDelete: Cascade)
+
+  @@index([parentUserId])
+  @@index([status])
+  @@index([baselineProfileId, status])
+  @@map("parent_assessments")
 }
 
 /// Uploaded IEP document linked to a baseline profile

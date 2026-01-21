@@ -35,11 +35,13 @@ export class OnboardingService {
   private readonly tenantServiceUrl: string;
   private readonly notifySvcUrl: string;
   private readonly learnerModelSvcUrl: string;
+  private readonly brainEngineUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
     this.tenantServiceUrl = process.env.TENANT_SERVICE_URL || 'http://tenant-svc:3000';
     this.notifySvcUrl = process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4012';
     this.learnerModelSvcUrl = process.env.LEARNER_MODEL_SERVICE_URL || 'http://learner-model-svc:4008';
+    this.brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://brain-engine:8001';
   }
 
   /**
@@ -204,6 +206,14 @@ export class OnboardingService {
       });
     }
 
+    // Align learner's brain with curriculum based on location
+    // This initializes the brain-engine with curriculum-specific knowledge
+    await this.alignBrainWithCurriculum(
+      learner.id,
+      input.location,
+      district
+    );
+
     return {
       learnerId: learner.id,
       learnerPin,
@@ -243,11 +253,11 @@ export class OnboardingService {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        logger.info('Learner app download notification sent successfully');
+      } else {
         const errorBody = await response.text();
         logger.error('Failed to send learner app notification', { error: errorBody });
-      } else {
-        logger.info('Learner app download notification sent successfully');
       }
     } catch (error) {
       // Don't fail the registration if notification fails
@@ -364,6 +374,13 @@ export class OnboardingService {
       location.stateCode || locationResult.district?.stateCode
     );
 
+    // Call brain-engine to align the learner's brain with curriculum
+    await this.alignBrainWithCurriculum(
+      learnerId,
+      location,
+      locationResult.district
+    );
+
     return {
       curriculumStandards: locationResult.curriculum.curriculumStandards,
       district: locationResult.district,
@@ -396,7 +413,12 @@ export class OnboardingService {
         }
       );
 
-      if (!response.ok) {
+      if (response.ok) {
+        logger.info('Learner model curriculum updated successfully', {
+          learnerId,
+          curriculumStandards,
+        });
+      } else {
         const errorBody = await response.text();
         logger.warn('Failed to update learner model curriculum', {
           learnerId,
@@ -404,15 +426,62 @@ export class OnboardingService {
           error: errorBody,
         });
         // Don't throw - this is a non-critical operation that shouldn't block the main flow
-      } else {
-        logger.info('Learner model curriculum updated successfully', {
-          learnerId,
-          curriculumStandards,
-        });
       }
     } catch (error) {
       // Log but don't throw - curriculum sync can be retried later
       logger.error('Error calling learner-model-svc to update curriculum', {
+        learnerId,
+        error,
+      });
+    }
+  }
+
+  /**
+   * Align the learner's brain with curriculum in brain-engine
+   * This is called when a learner's location is set or updated to ensure
+   * the brain's knowledge graph and training use the correct curriculum standards.
+   */
+  private async alignBrainWithCurriculum(
+    learnerId: string,
+    location: LocationInput,
+    district?: DistrictInfo
+  ): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.brainEngineUrl}/brain/${learnerId}/curriculum`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'parent-svc',
+          },
+          body: JSON.stringify({
+            state_code: location.stateCode || district?.stateCode,
+            zip_code: location.zipCode,
+            district_id: district?.ncesDistrictId,
+            district_name: district?.districtName,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        logger.info('Brain curriculum alignment successful', {
+          learnerId,
+          stateCode: location.stateCode || district?.stateCode,
+          districtId: district?.ncesDistrictId,
+        });
+      } else {
+        const errorBody = await response.text();
+        logger.warn('Failed to align brain with curriculum', {
+          learnerId,
+          status: response.status,
+          error: errorBody,
+        });
+        // Don't throw - brain alignment can be retried later
+      }
+    } catch (error) {
+      // Log but don't throw - brain alignment is async and non-blocking
+      logger.error('Error calling brain-engine to align curriculum', {
         learnerId,
         error,
       });

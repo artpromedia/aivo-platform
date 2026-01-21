@@ -13,7 +13,7 @@ This module provides comprehensive brain state management including:
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 import structlog
 from pydantic import BaseModel, Field
@@ -27,7 +27,7 @@ class KnowledgeNode(BaseModel):
     id: str
     type: str = "concept"  # concept, subject, skill, topic
     mastery: float = Field(default=0.0, ge=0.0, le=1.0)
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -130,18 +130,32 @@ class AdaptiveParameters(BaseModel):
     challenge_factor: float = Field(default=1.0, ge=0.5, le=2.0)
 
 
+class CurriculumAlignment(BaseModel):
+    """Curriculum standards and location-based alignment for the learner."""
+
+    state_code: Optional[str] = None  # 2-letter state code (e.g., "TX", "CA")
+    zip_code: Optional[str] = None  # 5-digit ZIP code
+    nces_district_id: Optional[str] = None  # NCES district identifier
+    district_name: Optional[str] = None  # Human-readable district name
+    curriculum_standards: List[str] = Field(default_factory=list)  # ["TEKS", "CCSS", "NGSS"]
+    curriculum_version: str = Field(default="1.0")  # Version for tracking updates
+    aligned_skills: List[str] = Field(default_factory=list)  # Skills aligned to curriculum
+    last_synced: Optional[datetime] = None  # Last curriculum sync
+
+
 class BrainState(BaseModel):
     """Complete brain state for a learner."""
 
     learner_id: str
     version: str = "1.0"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     knowledge_graph: KnowledgeGraph = Field(default_factory=KnowledgeGraph)
     learning_patterns: LearningPatterns = Field(default_factory=LearningPatterns)
     mastery_levels: Dict[str, MasteryLevel] = Field(default_factory=dict)
     engagement_profile: EngagementProfile = Field(default_factory=EngagementProfile)
     adaptive_parameters: AdaptiveParameters = Field(default_factory=AdaptiveParameters)
+    curriculum_alignment: CurriculumAlignment = Field(default_factory=CurriculumAlignment)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for database storage."""
@@ -155,6 +169,7 @@ class BrainState(BaseModel):
             "mastery_levels": {k: v.model_dump() for k, v in self.mastery_levels.items()},
             "engagement_profile": self.engagement_profile.model_dump(),
             "adaptive_parameters": self.adaptive_parameters.model_dump(),
+            "curriculum_alignment": self.curriculum_alignment.model_dump(),
         }
 
 
@@ -257,7 +272,7 @@ class LearnerBrainManager:
                 id=subject,
                 type='subject',
                 mastery=score / 100,
-                last_updated=datetime.utcnow(),
+                last_updated=datetime.now(timezone.utc),
                 metadata={'source': 'baseline_assessment'},
             )
             knowledge_graph.add_node(node)
@@ -270,7 +285,7 @@ class LearnerBrainManager:
                     id=concept_id,
                     type='concept',
                     mastery=concept_data.get('score', 0) / 100,
-                    last_updated=datetime.utcnow(),
+                    last_updated=datetime.now(timezone.utc),
                     metadata={
                         'subject': concept_data.get('subject'),
                         'grade_level': concept_data.get('grade_level'),
@@ -414,50 +429,13 @@ class LearnerBrainManager:
         # Extract learning signals
         subject = activity_data.get('subject')
         accuracy = activity_data.get('accuracy', 0)
-        time_spent = activity_data.get('time_spent', 0)
-        engagement = activity_data.get('engagement', 0)
-        completed = activity_data.get('completed', False)
+        _time_spent = activity_data.get('time_spent', 0)  # Reserved for future use
+        _engagement = activity_data.get('engagement', 0)  # Reserved for future use  
+        _completed = activity_data.get('completed', False)  # Reserved for future use
 
-        # Update mastery level
-        if subject and subject in brain_state.mastery_levels:
-            mastery = brain_state.mastery_levels[subject]
-            current = mastery.current_level
-
-            # Exponential moving average with adaptive rate
-            alpha = brain_state.adaptive_parameters.difficulty_adjustment_rate
-            new_level = alpha * accuracy + (1 - alpha) * current
-
-            # Update streak
-            if accuracy >= 0.8:
-                mastery.streak += 1
-                mastery.best_streak = max(mastery.best_streak, mastery.streak)
-                # Boost mastery gain for streaks
-                streak_bonus = min(mastery.streak * 0.01, 0.1)
-                new_level = min(1.0, new_level + streak_bonus)
-            else:
-                mastery.streak = 0
-
-            # Track progress rate
-            if mastery.last_practiced:
-                time_since = (datetime.utcnow() - mastery.last_practiced).total_seconds()
-                if time_since > 0:
-                    mastery.progress_rate = (new_level - current) / (time_since / 3600)  # per hour
-
-            mastery.current_level = new_level
-            mastery.last_practiced = datetime.utcnow()
-            mastery.practice_count += 1
-            if accuracy >= 0.5:
-                mastery.correct_count += 1
-
-            # Update spaced repetition interval
-            self._update_spaced_repetition(mastery, accuracy)
-
-        # Update knowledge graph
+        # Update mastery level and knowledge graph
         if subject:
-            node = brain_state.knowledge_graph.get_node(subject)
-            if node:
-                node.mastery = brain_state.mastery_levels[subject].current_level
-                node.last_updated = datetime.utcnow()
+            self._update_mastery_and_graph(brain_state, subject, accuracy)
 
         # Update learning patterns
         self._update_learning_patterns(brain_state, activity_data)
@@ -466,7 +444,7 @@ class LearnerBrainManager:
         self._update_engagement(brain_state, activity_data)
 
         # Update timestamp
-        brain_state.updated_at = datetime.utcnow()
+        brain_state.updated_at = datetime.now(timezone.utc)
 
         # Update cache
         self._cache[learner_id] = brain_state
@@ -490,6 +468,65 @@ class LearnerBrainManager:
         )
 
         return brain_dict
+
+    def _update_mastery_and_graph(
+        self, brain_state: BrainState, subject: str, accuracy: float
+    ) -> None:
+        """Update mastery level and knowledge graph for a subject."""
+        if subject not in brain_state.mastery_levels:
+            return
+
+        mastery = brain_state.mastery_levels[subject]
+        current = mastery.current_level
+
+        # Calculate new mastery level
+        alpha = brain_state.adaptive_parameters.difficulty_adjustment_rate
+        new_level = alpha * accuracy + (1 - alpha) * current
+
+        # Update streak and apply bonus
+        new_level = self._update_streak_and_bonus(mastery, accuracy, new_level)
+
+        # Track progress rate
+        self._update_progress_rate(mastery, current, new_level)
+
+        # Update mastery metadata
+        mastery.current_level = new_level
+        mastery.last_practiced = datetime.now(timezone.utc)
+        mastery.practice_count += 1
+        if accuracy >= 0.5:
+            mastery.correct_count += 1
+
+        # Update spaced repetition interval
+        self._update_spaced_repetition(mastery, accuracy)
+
+        # Update knowledge graph node
+        node = brain_state.knowledge_graph.get_node(subject)
+        if node:
+            node.mastery = new_level
+            node.last_updated = datetime.now(timezone.utc)
+
+    def _update_streak_and_bonus(
+        self, mastery: MasteryLevel, accuracy: float, new_level: float
+    ) -> float:
+        """Update streak counter and apply bonus to mastery level."""
+        if accuracy >= 0.8:
+            mastery.streak += 1
+            mastery.best_streak = max(mastery.best_streak, mastery.streak)
+            # Boost mastery gain for streaks
+            streak_bonus = min(mastery.streak * 0.01, 0.1)
+            return min(1.0, new_level + streak_bonus)
+        else:
+            mastery.streak = 0
+            return new_level
+
+    def _update_progress_rate(
+        self, mastery: MasteryLevel, old_level: float, new_level: float
+    ) -> None:
+        """Calculate and update progress rate (change per hour)."""
+        if mastery.last_practiced:
+            time_since = (datetime.now(timezone.utc) - mastery.last_practiced).total_seconds()
+            if time_since > 0:
+                mastery.progress_rate = (new_level - old_level) / (time_since / 3600)
 
     def _update_spaced_repetition(self, mastery: MasteryLevel, accuracy: float) -> None:
         """Update spaced repetition interval based on performance."""
@@ -515,48 +552,72 @@ class LearnerBrainManager:
         patterns = brain_state.learning_patterns
 
         # Track optimal session length
-        if activity.get('completed', False):
-            current_length = patterns.optimal_session_length
-            actual_length = activity.get('time_spent', 0) / 60  # Convert to minutes
-
-            # If high engagement and completion, session length was good
-            if activity.get('engagement', 0) > 0.7 and actual_length > 0:
-                # Slight adjustment toward this length
-                patterns.optimal_session_length = int(
-                    0.9 * current_length + 0.1 * actual_length
-                )
+        self._update_session_length(patterns, activity)
 
         # Track response time profile
+        self._update_response_time(patterns, activity)
+
+        # Detect best time of day
+        self._update_best_time_of_day(patterns, activity)
+
+    def _update_session_length(
+        self, patterns: LearningPatterns, activity: Dict[str, Any]
+    ) -> None:
+        """Update optimal session length based on completed activities."""
+        if not activity.get('completed', False):
+            return
+
+        current_length = patterns.optimal_session_length
+        actual_length = activity.get('time_spent', 0) / 60  # Convert to minutes
+
+        # If high engagement and completion, session length was good
+        if activity.get('engagement', 0) > 0.7 and actual_length > 0:
+            # Slight adjustment toward this length
+            patterns.optimal_session_length = int(
+                0.9 * current_length + 0.1 * actual_length
+            )
+
+    def _update_response_time(
+        self, patterns: LearningPatterns, activity: Dict[str, Any]
+    ) -> None:
+        """Update response time profile by subject."""
         subject = activity.get('subject')
-        if subject and activity.get('time_spent', 0) > 0:
-            questions = activity.get('questions_answered', 1)
-            avg_time = activity.get('time_spent', 0) / max(questions, 1)
+        if not subject or activity.get('time_spent', 0) <= 0:
+            return
 
-            if subject in patterns.response_time_profile:
-                # Moving average
-                current = patterns.response_time_profile[subject]
-                patterns.response_time_profile[subject] = 0.8 * current + 0.2 * avg_time
-            else:
-                patterns.response_time_profile[subject] = avg_time
+        questions = activity.get('questions_answered', 1)
+        avg_time = activity.get('time_spent', 0) / max(questions, 1)
 
-        # Detect best time of day (if timestamp provided)
+        if subject in patterns.response_time_profile:
+            # Moving average
+            current = patterns.response_time_profile[subject]
+            patterns.response_time_profile[subject] = 0.8 * current + 0.2 * avg_time
+        else:
+            patterns.response_time_profile[subject] = avg_time
+
+    def _update_best_time_of_day(
+        self, patterns: LearningPatterns, activity: Dict[str, Any]
+    ) -> None:
+        """Detect and update best time of day for learning."""
         activity_time = activity.get('timestamp')
-        if activity_time and activity.get('engagement', 0) > 0.8:
-            if isinstance(activity_time, str):
-                activity_time = datetime.fromisoformat(activity_time)
-            hour = activity_time.hour
+        if not activity_time or activity.get('engagement', 0) <= 0.8:
+            return
 
-            if 5 <= hour < 12:
-                time_of_day = 'morning'
-            elif 12 <= hour < 17:
-                time_of_day = 'afternoon'
-            elif 17 <= hour < 21:
-                time_of_day = 'evening'
-            else:
-                time_of_day = 'night'
+        if isinstance(activity_time, str):
+            activity_time = datetime.fromisoformat(activity_time)
+        hour = activity_time.hour
 
-            # Simple majority rule (would use more sophisticated tracking in production)
-            patterns.best_time_of_day = time_of_day
+        if 5 <= hour < 12:
+            time_of_day = 'morning'
+        elif 12 <= hour < 17:
+            time_of_day = 'afternoon'
+        elif 17 <= hour < 21:
+            time_of_day = 'evening'
+        else:
+            time_of_day = 'night'
+
+        # Simple majority rule (would use more sophisticated tracking in production)
+        patterns.best_time_of_day = time_of_day
 
     def _update_engagement(self, brain_state: BrainState, activity: Dict[str, Any]) -> None:
         """Update engagement profile."""
@@ -570,12 +631,40 @@ class LearnerBrainManager:
         profile.total_time_spent += time_spent
 
         # Track activity completions
+        self._track_activity_completion(profile, activity)
+
+        # Track favorite and struggle subjects
+        self._update_subject_preferences(profile, subject, engagement, accuracy)
+
+        # Update average engagement (exponential moving average)
+        profile.average_engagement_score = (
+            0.95 * profile.average_engagement_score + 0.05 * engagement
+        )
+
+        # Update game preferences
+        self._update_game_preferences(profile, activity)
+
+    def _track_activity_completion(
+        self, profile: EngagementProfile, activity: Dict[str, Any]
+    ) -> None:
+        """Track activity completion counts by type."""
         activity_type = activity.get('activity_type', 'unknown')
         profile.activity_completions[activity_type] = \
             profile.activity_completions.get(activity_type, 0) + 1
 
+    def _update_subject_preferences(
+        self,
+        profile: EngagementProfile,
+        subject: Optional[str],
+        engagement: float,
+        accuracy: float
+    ) -> None:
+        """Update favorite and struggle subject lists."""
+        if not subject:
+            return
+
         # Track favorite subjects (high engagement)
-        if engagement > 0.8 and subject:
+        if engagement > 0.8:
             if subject not in profile.favorite_subjects:
                 profile.favorite_subjects.append(subject)
             # Remove from struggle if performing well
@@ -583,16 +672,15 @@ class LearnerBrainManager:
                 profile.struggle_subjects.remove(subject)
 
         # Track struggle subjects
-        if (engagement < 0.3 or accuracy < 0.5) and subject:
+        if engagement < 0.3 or accuracy < 0.5:
             if subject not in profile.struggle_subjects:
                 profile.struggle_subjects.append(subject)
 
-        # Update average engagement (exponential moving average)
-        profile.average_engagement_score = (
-            0.95 * profile.average_engagement_score + 0.05 * engagement
-        )
-
-        # Update game preferences based on completion rates
+    def _update_game_preferences(
+        self, profile: EngagementProfile, activity: Dict[str, Any]
+    ) -> None:
+        """Update game preference list based on completions."""
+        activity_type = activity.get('activity_type', 'unknown')
         if activity.get('completed', False) and activity_type.endswith('_game'):
             if activity_type not in profile.game_preferences:
                 profile.game_preferences.append(activity_type)
@@ -616,88 +704,12 @@ class LearnerBrainManager:
             return []
 
         recommendations = []
-        now = datetime.utcnow()
 
-        # Recommend practice for weak areas
-        for subject, mastery in brain_state.mastery_levels.items():
-            if mastery.current_level < mastery.target_level:
-                gap = mastery.target_level - mastery.current_level
-
-                # Adjust priority based on struggle subjects
-                priority_boost = 0.1 if subject in brain_state.engagement_profile.struggle_subjects else 0
-
-                recommendations.append({
-                    'type': 'practice',
-                    'subject': subject,
-                    'priority': gap + priority_boost,
-                    'reason': f'Improve {subject} mastery (currently {mastery.current_level:.0%})',
-                    'estimated_time': int(gap * 30),  # minutes
-                    'current_mastery': mastery.current_level,
-                    'target_mastery': mastery.target_level,
-                    'suggested_difficulty': self._calculate_suggested_difficulty(
-                        mastery, brain_state.adaptive_parameters
-                    ),
-                })
-
-        # Recommend review using spaced repetition
-        for subject, mastery in brain_state.mastery_levels.items():
-            if mastery.last_practiced:
-                if isinstance(mastery.last_practiced, str):
-                    last_practiced = datetime.fromisoformat(mastery.last_practiced)
-                else:
-                    last_practiced = mastery.last_practiced
-
-                days_since = (now - last_practiced).days
-
-                # Check if due for review based on spaced repetition interval
-                if days_since >= mastery.spaced_repetition_interval:
-                    # Higher priority for longer gaps
-                    overdue_factor = min(days_since / mastery.spaced_repetition_interval, 2.0)
-
-                    recommendations.append({
-                        'type': 'review',
-                        'subject': subject,
-                        'priority': 0.5 * overdue_factor,
-                        'reason': f'Spaced repetition review ({days_since} days since practice)',
-                        'estimated_time': 10,
-                        'days_since_practice': days_since,
-                        'current_mastery': mastery.current_level,
-                    })
-
-        # Recommend challenge activities for mastered subjects
-        for subject in brain_state.engagement_profile.favorite_subjects:
-            if subject in brain_state.mastery_levels:
-                mastery = brain_state.mastery_levels[subject]
-                if mastery.current_level >= mastery.target_level:
-                    recommendations.append({
-                        'type': 'challenge',
-                        'subject': subject,
-                        'priority': 0.3,
-                        'reason': f'Advanced challenge in favorite subject',
-                        'estimated_time': 15,
-                        'current_mastery': mastery.current_level,
-                    })
-
-        # Recommend exploring new topics based on knowledge graph
-        explored_subjects = set(brain_state.mastery_levels.keys())
-        for node in brain_state.knowledge_graph.nodes:
-            if node.id not in explored_subjects and node.type == 'concept':
-                # Check if prerequisites are met
-                prereqs = brain_state.knowledge_graph.get_prerequisites(node.id)
-                prereqs_met = all(
-                    brain_state.mastery_levels.get(p, MasteryLevel()).current_level >= 0.6
-                    for p in prereqs
-                )
-
-                if prereqs_met or not prereqs:
-                    recommendations.append({
-                        'type': 'explore',
-                        'subject': node.id,
-                        'priority': 0.2,
-                        'reason': f'Ready to explore new concept: {node.id}',
-                        'estimated_time': 20,
-                        'prerequisites_met': prereqs_met,
-                    })
+        # Generate different types of recommendations
+        self._add_practice_recommendations(recommendations, brain_state)
+        self._add_review_recommendations(recommendations, brain_state)
+        self._add_challenge_recommendations(recommendations, brain_state)
+        self._add_explore_recommendations(recommendations, brain_state)
 
         # Sort by priority
         recommendations.sort(key=lambda x: x['priority'], reverse=True)
@@ -710,10 +722,108 @@ class LearnerBrainManager:
 
         return recommendations[:5]  # Top 5 recommendations
 
+    def _add_practice_recommendations(
+        self, recommendations: List[Dict[str, Any]], brain_state: BrainState
+    ) -> None:
+        """Add practice recommendations for weak areas."""
+        for subject, mastery in brain_state.mastery_levels.items():
+            if mastery.current_level < mastery.target_level:
+                gap = mastery.target_level - mastery.current_level
+                priority_boost = 0.1 if subject in brain_state.engagement_profile.struggle_subjects else 0
+
+                recommendations.append({
+                    'type': 'practice',
+                    'subject': subject,
+                    'priority': gap + priority_boost,
+                    'reason': f'Improve {subject} mastery (currently {mastery.current_level:.0%})',
+                    'estimated_time': int(gap * 30),
+                    'current_mastery': mastery.current_level,
+                    'target_mastery': mastery.target_level,
+                    'suggested_difficulty': self._calculate_suggested_difficulty(
+                        mastery, brain_state.adaptive_parameters
+                    ),
+                })
+
+    def _add_review_recommendations(
+        self, recommendations: List[Dict[str, Any]], brain_state: BrainState
+    ) -> None:
+        """Add spaced repetition review recommendations."""
+        now = datetime.now(timezone.utc)
+
+        for subject, mastery in brain_state.mastery_levels.items():
+            if not mastery.last_practiced:
+                continue
+
+            last_practiced = mastery.last_practiced
+            if isinstance(last_practiced, str):
+                last_practiced = datetime.fromisoformat(last_practiced)
+
+            days_since = (now - last_practiced).days
+
+            # Check if due for review based on spaced repetition interval
+            if days_since >= mastery.spaced_repetition_interval:
+                overdue_factor = min(days_since / mastery.spaced_repetition_interval, 2.0)
+
+                recommendations.append({
+                    'type': 'review',
+                    'subject': subject,
+                    'priority': 0.5 * overdue_factor,
+                    'reason': f'Spaced repetition review ({days_since} days since practice)',
+                    'estimated_time': 10,
+                    'days_since_practice': days_since,
+                    'current_mastery': mastery.current_level,
+                })
+
+    def _add_challenge_recommendations(
+        self, recommendations: List[Dict[str, Any]], brain_state: BrainState
+    ) -> None:
+        """Add challenge recommendations for mastered favorite subjects."""
+        for subject in brain_state.engagement_profile.favorite_subjects:
+            if subject not in brain_state.mastery_levels:
+                continue
+
+            mastery = brain_state.mastery_levels[subject]
+            if mastery.current_level >= mastery.target_level:
+                recommendations.append({
+                    'type': 'challenge',
+                    'subject': subject,
+                    'priority': 0.3,
+                    'reason': f'Advanced challenge in favorite subject: {subject}',
+                    'estimated_time': 15,
+                    'current_mastery': mastery.current_level,
+                })
+
+    def _add_explore_recommendations(
+        self, recommendations: List[Dict[str, Any]], brain_state: BrainState
+    ) -> None:
+        """Add recommendations to explore new concepts."""
+        explored_subjects = set(brain_state.mastery_levels.keys())
+
+        for node in brain_state.knowledge_graph.nodes:
+            if node.id in explored_subjects or node.type != 'concept':
+                continue
+
+            # Check if prerequisites are met
+            prereqs = brain_state.knowledge_graph.get_prerequisites(node.id)
+            prereqs_met = all(
+                brain_state.mastery_levels.get(p, MasteryLevel()).current_level >= 0.6
+                for p in prereqs
+            )
+
+            if prereqs_met or not prereqs:
+                recommendations.append({
+                    'type': 'explore',
+                    'subject': node.id,
+                    'priority': 0.2,
+                    'reason': f'Ready to explore new concept: {node.id}',
+                    'estimated_time': 20,
+                    'prerequisites_met': prereqs_met,
+                })
+
     def _calculate_suggested_difficulty(
         self,
         mastery: MasteryLevel,
-        params: AdaptiveParameters
+        _params: AdaptiveParameters
     ) -> str:
         """Calculate suggested difficulty based on mastery and parameters."""
         level = mastery.current_level

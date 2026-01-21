@@ -1,5 +1,7 @@
 /// Baseline assessment domain types and models used across mobile apps.
 
+import '../services/baseline_service.dart' show GradeLevelEquivalent, GradeLevelReport;
+
 // Navigation diagram (Parent flow):
 // ┌─────────────────────────────────────────────────────────────────────────────┐
 // │ Dashboard -> AddChild -> (consent) -> CreateBaselineProfile -> Dashboard   │
@@ -90,6 +92,8 @@ class DomainScore {
     required this.correct,
     required this.total,
     required this.percentage,
+    this.gradeEquivalent,
+    this.abilityScore,
   });
 
   final BaselineDomain domain;
@@ -97,14 +101,37 @@ class DomainScore {
   final int total;
   final double percentage;
 
+  /// Grade level equivalent for this domain (e.g., Grade 4.6)
+  final GradeLevelEquivalent? gradeEquivalent;
+
+  /// Raw ability score from IRT/adaptive assessment (0.0 to 1.0)
+  final double? abilityScore;
+
   factory DomainScore.fromJson(Map<String, dynamic> json) {
     return DomainScore(
       domain: BaselineDomain.fromCode(json['domain']?.toString() ?? 'ELA'),
       correct: (json['correct'] as num?)?.toInt() ?? 0,
       total: (json['total'] as num?)?.toInt() ?? 5,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
+      gradeEquivalent: json['gradeEquivalent'] != null
+          ? GradeLevelEquivalent.fromJson(
+              json['gradeEquivalent'] as Map<String, dynamic>)
+          : null,
+      abilityScore: (json['abilityScore'] as num?)?.toDouble(),
     );
   }
+
+  /// Get a human-readable grade level string (e.g., "4th Grade" or "Grade 4.6")
+  String? get gradeLevelDisplay => gradeEquivalent?.displayString;
+
+  /// Get whether this domain is below the learner's enrolled grade
+  bool get isBelowGradeLevel => gradeEquivalent?.performance == 'below';
+
+  /// Get whether this domain is at the learner's enrolled grade
+  bool get isAtGradeLevel => gradeEquivalent?.performance == 'at';
+
+  /// Get whether this domain is above the learner's enrolled grade
+  bool get isAboveGradeLevel => gradeEquivalent?.performance == 'above';
 }
 
 /// Baseline attempt summary.
@@ -118,6 +145,8 @@ class BaselineAttempt {
     this.overallScore,
     this.retestReason,
     this.retestNotes,
+    this.gradeEquivalents,
+    this.actualGrade,
   });
 
   final String id;
@@ -129,25 +158,86 @@ class BaselineAttempt {
   final RetestReason? retestReason;
   final String? retestNotes;
 
+  /// Full grade level report with per-domain equivalents
+  final GradeLevelReport? gradeEquivalents;
+
+  /// The learner's enrolled/actual grade level
+  final int? actualGrade;
+
   bool get isCompleted => completedAt != null;
+
+  /// Get domains where the learner is performing below grade level
+  List<DomainScore> get belowGradeDomains =>
+      domainScores.where((d) => d.isBelowGradeLevel).toList();
+
+  /// Get domains where the learner is performing at or above grade level
+  List<DomainScore> get atOrAboveGradeDomains =>
+      domainScores.where((d) => !d.isBelowGradeLevel).toList();
+
+  /// Get a summary message about the learner's performance
+  String? get performanceSummary => gradeEquivalents?.summary;
 
   factory BaselineAttempt.fromJson(Map<String, dynamic> json) {
     final domainScoresJson = json['domainScoresJson'] as Map<String, dynamic>?;
+    final gradeEquivJson = json['gradeEquivalents'] as Map<String, dynamic>?;
+    final byDomainJson = gradeEquivJson?['byDomain'] as List<dynamic>?;
+
+    // Build a map of domain -> grade equivalent for lookup
+    final gradeEquivByDomain = <String, Map<String, dynamic>>{};
+    if (byDomainJson != null) {
+      for (final item in byDomainJson) {
+        if (item is Map<String, dynamic>) {
+          final domain = item['domain']?.toString();
+          if (domain != null) {
+            gradeEquivByDomain[domain] = item;
+          }
+        }
+      }
+    }
+
     final domainScores = <DomainScore>[];
     if (domainScoresJson != null) {
       for (final entry in domainScoresJson.entries) {
         final data = entry.value as Map<String, dynamic>? ?? {};
+        final gradeEquivData = gradeEquivByDomain[entry.key];
+
         domainScores.add(DomainScore(
           domain: BaselineDomain.fromCode(entry.key),
           correct: (data['correct'] as num?)?.toInt() ?? 0,
           total: (data['total'] as num?)?.toInt() ?? 5,
           percentage: (data['correct'] as num? ?? 0) / (data['total'] as num? ?? 5),
+          gradeEquivalent: gradeEquivData != null
+              ? GradeLevelEquivalent.fromJson(gradeEquivData)
+              : null,
+          abilityScore: (data['ability'] as num?)?.toDouble(),
         ));
       }
     }
 
     final overallJson = json['overallEstimateJson'] as Map<String, dynamic>?;
     final overallScore = overallJson?['score'] as num?;
+
+    // Parse grade equivalents report
+    GradeLevelReport? gradeEquivalents;
+    if (gradeEquivJson != null) {
+      // Convert byDomain array to map for GradeLevelReport
+      final byDomainMap = <String, dynamic>{};
+      if (byDomainJson != null) {
+        for (final item in byDomainJson) {
+          if (item is Map<String, dynamic>) {
+            final domain = item['domain']?.toString();
+            if (domain != null) {
+              byDomainMap[domain] = item;
+            }
+          }
+        }
+      }
+
+      gradeEquivalents = GradeLevelReport.fromJson({
+        ...gradeEquivJson,
+        'byDomain': byDomainMap,
+      });
+    }
 
     return BaselineAttempt(
       id: json['id']?.toString() ?? '',
@@ -162,6 +252,8 @@ class BaselineAttempt {
           ? RetestReason.fromCode(json['retestReasonType'].toString())
           : null,
       retestNotes: json['retestReasonNotes']?.toString(),
+      gradeEquivalents: gradeEquivalents,
+      actualGrade: gradeEquivJson?['actualGrade'] as int?,
     );
   }
 }

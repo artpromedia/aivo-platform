@@ -14,11 +14,16 @@ import { translationRoutes } from './routes/translations';
 const app = new Hono();
 
 // CORS configuration - requires explicit origins in production
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-  : process.env.NODE_ENV === 'production'
-    ? [] // No origins allowed by default in production
-    : ['http://localhost:3000', 'http://localhost:3001']; // Dev defaults
+function getCorsOrigins(): string[] {
+  if (process.env.CORS_ORIGIN) {
+    return process.env.CORS_ORIGIN.split(',').map((o) => o.trim());
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return []; // No origins allowed by default in production
+  }
+  return ['http://localhost:3000', 'http://localhost:3001']; // Dev defaults
+}
+const corsOrigins = getCorsOrigins();
 
 // Middleware
 app.use('*', honoLogger());

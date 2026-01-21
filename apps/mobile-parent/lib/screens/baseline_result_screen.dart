@@ -171,14 +171,17 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Domain breakdown
+          // Domain breakdown with grade level equivalents
           Text(
             'Performance by Subject',
             style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
 
-          ...domainScores.map((score) => _DomainScoreBar(score: score)),
+          ...domainScores.map((score) => _DomainScoreBar(
+                score: score,
+                actualGrade: attempt.actualGrade,
+              )),
 
           if (domainScores.isEmpty)
             Card(
@@ -214,7 +217,11 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _buildSummary(domainScores, overallScore),
+                    _buildSummary(
+                      domainScores,
+                      overallScore,
+                      gradeSummary: attempt.performanceSummary,
+                    ),
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],
@@ -333,13 +340,27 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
     return 'We\'ll create a personalized plan to build skills.';
   }
 
-  String _buildSummary(List<DomainScore> scores, double overall) {
+  String _buildSummary(List<DomainScore> scores, double overall, {String? gradeSummary}) {
+    // If we have a grade level summary from the API, use it
+    if (gradeSummary != null && gradeSummary.isNotEmpty) {
+      return gradeSummary;
+    }
+
     if (scores.isEmpty) {
       return 'Based on this assessment, we\'ll create a personalized learning plan for your child.';
     }
 
-    final strengths = scores.where((s) => s.percentage >= 0.8).map((s) => s.domain.label).toList();
-    final needsWork = scores.where((s) => s.percentage < 0.6).map((s) => s.domain.label).toList();
+    // Use grade level performance if available
+    final belowGrade = scores.where((s) => s.isBelowGradeLevel).map((s) => s.domain.label).toList();
+    final atOrAbove = scores.where((s) => !s.isBelowGradeLevel).map((s) => s.domain.label).toList();
+
+    // Fall back to percentage-based analysis
+    final strengths = atOrAbove.isNotEmpty
+        ? atOrAbove
+        : scores.where((s) => s.percentage >= 0.8).map((s) => s.domain.label).toList();
+    final needsWork = belowGrade.isNotEmpty
+        ? belowGrade
+        : scores.where((s) => s.percentage < 0.6).map((s) => s.domain.label).toList();
 
     final buffer = StringBuffer();
 
@@ -359,60 +380,175 @@ class _BaselineResultScreenState extends ConsumerState<BaselineResultScreen> {
   }
 }
 
+/// Widget showing a domain's score with grade level equivalent.
 class _DomainScoreBar extends StatelessWidget {
-  const _DomainScoreBar({required this.score});
+  const _DomainScoreBar({
+    required this.score,
+    this.actualGrade,
+  });
 
   final DomainScore score;
+  final int? actualGrade;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final percentage = score.percentage;
+    final gradeEquiv = score.gradeEquivalent;
 
+    // Determine color based on grade level performance (if available) or percentage
     Color barColor;
-    if (percentage >= 0.8) {
-      barColor = AivoBrand.success;
-    } else if (percentage >= 0.6) {
-      barColor = AivoBrand.warning;
+    Color? badgeColor;
+    String? badgeText;
+
+    if (gradeEquiv != null) {
+      if (score.isAboveGradeLevel) {
+        barColor = AivoBrand.success;
+        badgeColor = AivoBrand.success;
+        badgeText = 'Above Grade Level';
+      } else if (score.isAtGradeLevel) {
+        barColor = AivoBrand.mint[600]!;
+        badgeColor = AivoBrand.mint[600];
+        badgeText = 'At Grade Level';
+      } else {
+        barColor = AivoBrand.warning;
+        badgeColor = AivoBrand.warning;
+        badgeText = 'Needs Support';
+      }
     } else {
-      barColor = theme.colorScheme.error;
+      if (percentage >= 0.8) {
+        barColor = AivoBrand.success;
+      } else if (percentage >= 0.6) {
+        barColor = AivoBrand.warning;
+      } else {
+        barColor = theme.colorScheme.error;
+      }
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                score.domain.label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Domain name and badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  score.domain.label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Text(
-                '${score.correct}/${score.total}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage,
-              minHeight: 12,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                if (badgeText != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: badgeColor?.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: badgeColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-        ],
+
+            const SizedBox(height: 12),
+
+            // Grade level equivalent (prominent display)
+            if (gradeEquiv != null) ...[
+              Row(
+                children: [
+                  Icon(
+                    Icons.school,
+                    size: 20,
+                    color: barColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    gradeEquiv.displayString,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: barColor,
+                    ),
+                  ),
+                  if (actualGrade != null) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      '(enrolled in ${_ordinalGrade(actualGrade!)})',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (gradeEquiv.parentMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  gradeEquiv.parentMessage!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+            ],
+
+            // Progress bar
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Questions: ${score.correct}/${score.total}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  '${(percentage * 100).round()}%',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: percentage,
+                minHeight: 8,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(barColor),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _ordinalGrade(int grade) {
+    if (grade == 0) return 'Kindergarten';
+    final suffix = switch (grade) {
+      1 => 'st',
+      2 => 'nd',
+      3 => 'rd',
+      _ => 'th',
+    };
+    return '$grade$suffix Grade';
   }
 }
 

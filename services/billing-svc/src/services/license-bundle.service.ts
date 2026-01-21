@@ -86,7 +86,7 @@ export interface BulkInviteParams {
 }
 
 export class LicenseBundleService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   /**
    * Generate a unique invite code
@@ -111,6 +111,81 @@ export class LicenseBundleService {
     const expiration = new Date();
     expiration.setDate(expiration.getDate() + 14);
     return expiration;
+  }
+
+  /**
+   * Ensure teacher profile exists in content-authoring-svc
+   */
+  private async ensureTeacherProfile(teacherId: string): Promise<void> {
+    try {
+      const contentAuthUrl = process.env.CONTENT_AUTHORING_URL || 'http://localhost:4009';
+      const response = await fetch(`${contentAuthUrl}/teacher-community/profiles/${teacherId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: teacherId }),
+      });
+
+      if (!response.ok && response.status !== 200 && response.status !== 201) {
+        console.error(`Failed to ensure teacher profile for ${teacherId}: ${response.statusText}`);
+      }
+    } catch (error) {
+      // Log but don't fail the enrollment if teacher profile creation fails
+      console.error(`Error ensuring teacher profile for ${teacherId}:`, error);
+    }
+  }
+
+  /**
+   * Align learner brain with district curriculum
+   */
+  private async alignWithCurriculum(
+    learnerId: string,
+    tenantId: string,
+    stateCode?: string,
+    gradeLevel?: string
+  ): Promise<void> {
+    try {
+      const brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://localhost:4004';
+      const response = await fetch(
+        `${brainEngineUrl}/api/v1/brain/${tenantId}/${learnerId}/curriculum/align`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            state_code: stateCode,
+            grade_level: gradeLevel,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`Failed to align curriculum for learner ${learnerId}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error(`Error aligning curriculum for learner ${learnerId}:`, error);
+    }
+  }
+
+  /**
+   * Fetch tenant information including curriculum standards
+   */
+  private async getTenantInfo(tenantId: string): Promise<{ stateCode?: string } | null> {
+    try {
+      const tenantUrl = process.env.TENANT_SVC_URL || 'http://localhost:4001';
+      const response = await fetch(`${tenantUrl}/tenants/${tenantId}`);
+
+      if (!response.ok) {
+        console.error(`Failed to fetch tenant info for ${tenantId}: ${response.statusText}`);
+        return null;
+      }
+
+      const tenant = await response.json();
+      return {
+        stateCode: tenant.stateCode,
+      };
+    } catch (error) {
+      console.error(`Error fetching tenant info for ${tenantId}:`, error);
+      return null;
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -205,7 +280,7 @@ export class LicenseBundleService {
    * Create bundle from district seat assignment
    *
    * Called when a teacher assigns a district license to a learner.
-   * Automatically sends parent invite.
+   * Automatically sends parent invite and ensures teacher profile exists.
    */
   async createDistrictBundle(params: {
     tenantId: string;
@@ -239,7 +314,41 @@ export class LicenseBundleService {
       },
     });
 
+    // Ensure teacher profile exists when enrolling learner
+    await this.ensureTeacherProfile(params.teacherId);
+
+    // Align learner with district curriculum for assessments
+    const tenantInfo = await this.getTenantInfo(params.tenantId);
+    if (tenantInfo?.stateCode) {
+      // Map grade band to grade level for curriculum alignment
+      const gradeLevel = this.gradeBandToGradeLevel(params.gradeBand);
+      await this.alignWithCurriculum(
+        params.learnerId,
+        params.tenantId,
+        tenantInfo.stateCode,
+        gradeLevel
+      );
+    }
+
     return bundle;
+  }
+
+  /**
+   * Convert grade band to grade level string
+   */
+  private gradeBandToGradeLevel(gradeBand: GradeBand): string {
+    switch (gradeBand) {
+      case 'K_2':
+        return 'K';
+      case 'G3_5':
+        return '3';
+      case 'G6_8':
+        return '6';
+      case 'G9_12':
+        return '9';
+      default:
+        return '1';
+    }
   }
 
   /**

@@ -1,0 +1,320 @@
+{{!-- Parent Assessment Invitation Email Template --}}
+{{!-- Sent to parents when a teacher enrolls their child --}}
+
+<!DOCTYPE html>
+<html lang="{{locale}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help Us Understand {{childName}}'s Learning Needs</title>
+  <style>
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fc;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(124, 58, 237, 0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+      padding: 40px 24px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .header .emoji {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .header p {
+      margin: 12px 0 0;
+      font-size: 16px;
+      opacity: 0.95;
+    }
+    .content {
+      padding: 32px 24px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a2e;
+    }
+    .content p {
+      margin: 16px 0;
+      color: #4a4a68;
+      font-size: 16px;
+    }
+    .highlight-box {
+      background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%);
+      border-left: 4px solid #7c3aed;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+    .highlight-box h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #7c3aed;
+    }
+    .highlight-box p {
+      margin: 0;
+      color: #1a1a2e;
+    }
+    .highlight-box ul {
+      margin: 12px 0 0;
+      padding-left: 20px;
+      color: #4a4a68;
+    }
+    .highlight-box li {
+      margin: 8px 0;
+    }
+    .cta-button {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin: 32px auto;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+      color: #ffffff;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+      transition: transform 0.2s;
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .info-card {
+      background: #f8f9fc;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .info-card .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .info-card h4 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      color: #7c3aed;
+      font-weight: 600;
+    }
+    .info-card p {
+      margin: 0;
+      font-size: 14px;
+      color: #4a4a68;
+    }
+    .timeline {
+      background: #fff;
+      border: 2px solid #ede9fe;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      margin: 16px 0;
+      padding-left: 12px;
+      border-left: 3px solid #7c3aed;
+    }
+    .timeline-item .number {
+      background: #7c3aed;
+      color: #fff;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-right: 12px;
+      flex-shrink: 0;
+      margin-left: -26px;
+    }
+    .timeline-item h4 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      color: #1a1a2e;
+    }
+    .timeline-item p {
+      margin: 0;
+      font-size: 14px;
+      color: #4a4a68;
+    }
+    .footer {
+      background: #f8f9fc;
+      padding: 24px;
+      text-align: center;
+      color: #6b6b85;
+      font-size: 14px;
+    }
+    .footer p {
+      margin: 8px 0;
+    }
+    .footer a {
+      color: #7c3aed;
+      text-decoration: none;
+    }
+    @media only screen and (max-width: 600px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+      .header h1 {
+        font-size: 24px;
+      }
+      .cta-button {
+        font-size: 16px;
+        padding: 14px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <span class="emoji">📝💡</span>
+      <h1>Share Your Insights About {{childName}}</h1>
+      <p>Help us personalize their learning journey</p>
+    </div>
+
+    <div class="content">
+      <p class="greeting">Hi {{parentName}},</p>
+
+      <p>
+        {{childName}}'s teacher has enrolled them in AIVO, and we're excited to create a personalized
+        learning experience tailored to their unique needs and strengths!
+      </p>
+
+      <div class="highlight-box">
+        <h3>🎯 Why Your Input Matters</h3>
+        <p>
+          You know {{childName}} better than anyone. Your observations help us understand:
+        </p>
+        <ul>
+          <li>How {{childName}} learns best</li>
+          <li>Their strengths and areas for growth</li>
+          <li>What motivates and engages them</li>
+          <li>Challenges they may face</li>
+          <li>Their interests and preferences</li>
+        </ul>
+      </div>
+
+      <p>
+        <strong>Before {{childName}} takes their baseline assessment</strong>, we'd love to hear from you.
+        This quick parent assessment takes about <strong>10-15 minutes</strong> and provides valuable
+        context that helps our AI create the perfect learning path for {{childName}}.
+      </p>
+
+      <a href="{{assessmentUrl}}" class="cta-button">
+        Start Parent Assessment →
+      </a>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="icon">⏱️</div>
+          <h4>Quick & Easy</h4>
+          <p>10-15 minutes</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">🔒</div>
+          <h4>Confidential</h4>
+          <p>Your responses are private</p>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <h3 style="margin-top: 0; color: #7c3aed;">What Happens Next</h3>
+        
+        <div class="timeline-item">
+          <div class="number">1</div>
+          <div>
+            <h4>Complete Parent Assessment</h4>
+            <p>Share your observations about {{childName}}'s learning style and needs</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="number">2</div>
+          <div>
+            <h4>{{childName}} Takes Baseline</h4>
+            <p>A fun, adaptive assessment to understand their current skill levels</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="number">3</div>
+          <div>
+            <h4>Personalized Learning Begins</h4>
+            <p>We combine your insights with assessment data to create the perfect learning plan</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box" style="background: #fef3c7; border-color: #f59e0b;">
+        <h3 style="color: #f59e0b;">⚡ Important</h3>
+        <p>
+          {{childName}} cannot begin their baseline assessment until you complete this parent assessment.
+          Please complete it soon so they can get started!
+        </p>
+      </div>
+
+      <p>
+        If you have any questions or need assistance, please don't hesitate to reach out to
+        {{childName}}'s teacher or our support team.
+      </p>
+
+      <p style="margin-top: 32px;">
+        Thank you for partnering with us in {{childName}}'s educational journey! 🌟
+      </p>
+
+      <p style="font-size: 14px; color: #6b6b85; margin-top: 24px;">
+        <em>
+          Note: This assessment link is unique to {{childName}}'s profile. You can save it and
+          return to complete it later if needed.
+        </em>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>
+        <strong>AIVO</strong> – AI-Powered Personalized Learning
+      </p>
+      <p>
+        Have questions? <a href="mailto:support@aivo.education">Contact Support</a>
+      </p>
+      <p style="font-size: 12px; margin-top: 16px;">
+        © 2026 AIVO. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

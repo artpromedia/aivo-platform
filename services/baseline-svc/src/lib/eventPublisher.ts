@@ -49,7 +49,7 @@ export async function publishBaselineAccepted(
   console.log('[EventPublisher] BASELINE_ACCEPTED event:', JSON.stringify(fullEvent));
 
   try {
-    // Fetch profile with attempt and skill estimates
+    // Fetch profile with attempt, skill estimates, and parent assessment
     const profile = await prisma.baselineProfile.findUnique({
       where: { id: event.profileId },
       include: {
@@ -58,6 +58,7 @@ export async function publishBaselineAccepted(
             skillEstimates: true,
           },
         },
+        parentAssessment: true,
       },
     });
 
@@ -84,6 +85,17 @@ export async function publishBaselineAccepted(
       confidence: Number(se.confidence),
     }));
 
+    // Include parent assessment insights if available
+    const parentContext = profile.parentAssessment?.status === 'COMPLETED'
+      ? {
+          learningStyleNotes: profile.parentAssessment.learningStyleNotes,
+          strengthsNotes: profile.parentAssessment.strengthsNotes,
+          challengesNotes: profile.parentAssessment.challengesNotes,
+          behaviorNotes: profile.parentAssessment.behaviorNotes,
+          enrolledByRole: profile.parentAssessment.enrolledByRole,
+        }
+      : null;
+
     // Call learner-model-svc to initialize virtual brain
     const initPayload = {
       tenantId: profile.tenantId,
@@ -92,6 +104,7 @@ export async function publishBaselineAccepted(
       baselineAttemptId: profile.finalAttempt.id,
       gradeBand: profile.gradeBand,
       skillEstimates,
+      parentContext, // Include parent assessment insights
     };
 
     const learnerModelUrl = config.learnerModelSvcUrl || 'http://localhost:4015';

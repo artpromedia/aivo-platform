@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
+    "strictNullChecks": true,
     "moduleResolution": "bundler",
     "module": "ESNext",
     "baseUrl": "../..",

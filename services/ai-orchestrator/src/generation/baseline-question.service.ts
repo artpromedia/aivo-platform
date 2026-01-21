@@ -27,6 +27,12 @@ export interface BaselineQuestionRequest {
   skillCodes: string[];
   /** Optional seed for reproducible randomization (for testing) */
   seed?: string;
+  /** Curriculum standards to align questions (e.g., ["TEKS", "COMMON_CORE"]) */
+  curriculumStandards?: string[];
+  /** Specific grade level for more precise question difficulty */
+  gradeLevel?: number;
+  /** State code for state-specific content (e.g., "TX", "CA") */
+  stateCode?: string;
 }
 
 export interface BaselineQuestion {
@@ -232,6 +238,41 @@ const GRADE_BAND_DESCRIPTIONS: Record<
   },
 };
 
+// ══════════════════════════════════════════════════════════════════════════════
+// CURRICULUM STANDARDS GUIDANCE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Guidance for question generation based on curriculum standards
+ */
+const CURRICULUM_GUIDANCE: Record<string, string> = {
+  TEKS: 'Texas Essential Knowledge and Skills - Emphasize practical application, Texas history/geography context where relevant, explicit skill progressions',
+  COMMON_CORE: 'Common Core State Standards - Focus on deep understanding, reasoning, and evidence-based responses. Emphasize analytical thinking.',
+  NGSS: 'Next Generation Science Standards - Focus on three-dimensional learning: practices, crosscutting concepts, and disciplinary core ideas',
+  C3: 'College, Career, and Civic Life Framework - Emphasize inquiry-based social studies, civic participation, and evidence evaluation',
+  SOL: 'Virginia Standards of Learning - Focus on specific content knowledge and skill benchmarks',
+  'B.E.S.T': 'Florida Benchmarks for Excellent Student Thinking - Emphasize math fluency and explicit ELA skills',
+  IAS: 'Indiana Academic Standards - Focus on clear learning progressions and practical applications',
+  OAS: 'Oklahoma Academic Standards - Balance conceptual understanding with procedural fluency',
+  SCCCR: 'South Carolina College and Career Ready Standards - Emphasize college and career readiness skills',
+};
+
+/**
+ * State-specific notes for localized content
+ */
+const STATE_CURRICULUM_NOTES: Record<string, string> = {
+  TX: 'Include references to Texas geography, history, and culture where appropriate. Use TEKS terminology.',
+  CA: 'Include diverse cultural references. Align with California Content Standards where possible.',
+  NY: 'Reference New York state contexts. Align with NY Learning Standards.',
+  FL: 'Use Florida B.E.S.T. standards terminology. Include Florida-relevant contexts.',
+  VA: 'Align with Virginia SOL expectations. Include Virginia historical references where appropriate.',
+  IL: 'Include Midwest regional contexts. Align with Illinois Learning Standards.',
+  PA: 'Reference Pennsylvania history and geography where relevant.',
+  OH: 'Include Ohio-specific contexts. Align with Ohio Learning Standards.',
+  GA: 'Include Georgia contexts. Align with Georgia Standards of Excellence.',
+  NC: 'Align with NC Standard Course of Study.',
+};
+
 const BASELINE_SYSTEM_PROMPT = `You are an expert educational assessment designer creating baseline diagnostic questions.
 
 Your goal is to generate questions that accurately assess a learner's current skill level without teaching.
@@ -250,7 +291,7 @@ Key principles:
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class BaselineQuestionGenerationService {
-  constructor(private llm: LLMOrchestrator) {}
+  constructor(private readonly llm: LLMOrchestrator) {}
 
   /**
    * Generate unique baseline questions for a learner
@@ -330,41 +371,105 @@ export class BaselineQuestionGenerationService {
       `Domain: ${request.domain}`,
       `Grade Band: ${gradeBandInfo.grades} (${gradeBandInfo.ageRange})`,
       `Complexity Level: ${gradeBandInfo.complexity}`,
+    ];
+
+    // Add specific grade level if provided
+    if (request.gradeLevel !== undefined) {
+      parts.push(`Specific Grade Level: Grade ${request.gradeLevel}`);
+    }
+
+    // Add curriculum standards context
+    this.addCurriculumContext(parts, request);
+
+    // Add generation metadata
+    parts.push(
+      '',
       `Unique Generation ID: ${generationId}`,
       `Learner ID: ${request.learnerId}`,
       '',
-      '═══ SKILLS TO ASSESS ═══',
-    ];
+      '═══ SKILLS TO ASSESS ═══'
+    );
 
-    for (const skillCode of request.skillCodes) {
+    // Add skill descriptions
+    this.addSkillDescriptions(parts, request.skillCodes);
+
+    // Add requirements and format
+    parts.push(
+      '',
+      '═══ REQUIREMENTS ═══',
+      '1. Generate exactly ONE question per skill code',
+      '2. Each question must be unique (do not reuse questions from previous assessments)',
+      '3. Most questions should be MULTIPLE_CHOICE with 4 options (A, B, C, D)',
+      '4. Include 1-2 OPEN_ENDED questions for writing/verbal skills if appropriate',
+      '5. For MULTIPLE_CHOICE: correctAnswer is the index (0-3) of the correct option',
+      '6. For OPEN_ENDED: correctAnswer is a sample correct response, include a rubric',
+      '7. Make distractors plausible - based on common misconceptions',
+      '8. Language must be appropriate for the grade band',
+      '9. Questions should be clear, concise, and unambiguous',
+      '',
+      '═══ RESPONSE FORMAT ═══',
+      'Respond with valid JSON:',
+      this.getResponseFormatExample()
+    );
+
+    return parts.join('\n');
+  }
+
+  /**
+   * Add curriculum context to prompt parts
+   */
+  private addCurriculumContext(parts: string[], request: BaselineQuestionRequest): void {
+    if (!request.curriculumStandards || request.curriculumStandards.length === 0) {
+      return;
+    }
+
+    parts.push(
+      '',
+      '═══ CURRICULUM ALIGNMENT ═══',
+      `Standards: ${request.curriculumStandards.join(', ')}`
+    );
+
+    // Add curriculum-specific guidance
+    for (const standard of request.curriculumStandards) {
+      const guidance = CURRICULUM_GUIDANCE[standard];
+      if (guidance) {
+        parts.push(`${standard} Focus: ${guidance}`);
+      }
+    }
+
+    if (request.stateCode) {
+      parts.push(`State: ${request.stateCode}`);
+      const stateGuidance = STATE_CURRICULUM_NOTES[request.stateCode];
+      if (stateGuidance) {
+        parts.push(`State Notes: ${stateGuidance}`);
+      }
+    }
+  }
+
+  /**
+   * Add skill descriptions to prompt parts
+   */
+  private addSkillDescriptions(parts: string[], skillCodes: string[]): void {
+    for (const skillCode of skillCodes) {
       const skill = SKILL_DESCRIPTIONS[skillCode];
       if (skill) {
-        parts.push(`\n${skillCode}:`);
-        parts.push(`  Name: ${skill.name}`);
-        parts.push(`  Description: ${skill.description}`);
-        parts.push(`  Sample Topics: ${skill.sampleTopics.join(', ')}`);
+        parts.push(
+          `\n${skillCode}:`,
+          `  Name: ${skill.name}`,
+          `  Description: ${skill.description}`,
+          `  Sample Topics: ${skill.sampleTopics.join(', ')}`
+        );
       } else {
         parts.push(`\n${skillCode}: (custom skill)`);
       }
     }
+  }
 
-    parts.push('');
-    parts.push('═══ REQUIREMENTS ═══');
-    parts.push('1. Generate exactly ONE question per skill code');
-    parts.push(
-      '2. Each question must be unique (do not reuse questions from previous assessments)'
-    );
-    parts.push('3. Most questions should be MULTIPLE_CHOICE with 4 options (A, B, C, D)');
-    parts.push('4. Include 1-2 OPEN_ENDED questions for writing/verbal skills if appropriate');
-    parts.push('5. For MULTIPLE_CHOICE: correctAnswer is the index (0-3) of the correct option');
-    parts.push('6. For OPEN_ENDED: correctAnswer is a sample correct response, include a rubric');
-    parts.push('7. Make distractors plausible - based on common misconceptions');
-    parts.push('8. Language must be appropriate for the grade band');
-    parts.push('9. Questions should be clear, concise, and unambiguous');
-    parts.push('');
-    parts.push('═══ RESPONSE FORMAT ═══');
-    parts.push('Respond with valid JSON:');
-    parts.push(`{
+  /**
+   * Get the response format example JSON
+   */
+  private getResponseFormatExample(): string {
+    return `{
   "questions": [
     {
       "skillCode": "SKILL_CODE",
@@ -381,9 +486,7 @@ export class BaselineQuestionGenerationService {
       "rubric": "Scoring rubric for evaluating responses"
     }
   ]
-}`);
-
-    return parts.join('\n');
+}`;
   }
 
   /**
@@ -436,20 +539,7 @@ export class BaselineQuestionGenerationService {
 
     // Add valid parsed questions
     for (const q of questions) {
-      if (!q.questionText || q.questionText.length < 10) continue;
-
-      if (q.questionType === 'MULTIPLE_CHOICE') {
-        if (!q.options || q.options.length < 2) continue;
-        if (
-          typeof q.correctAnswer !== 'number' ||
-          q.correctAnswer < 0 ||
-          q.correctAnswer >= q.options.length
-        ) {
-          q.correctAnswer = 0; // Default to first option if invalid
-        }
-      }
-
-      if (expectedSkillCodes.includes(q.skillCode) && !coveredSkills.has(q.skillCode)) {
+      if (this.isValidQuestion(q) && this.isExpectedSkill(q, expectedSkillCodes, coveredSkills)) {
         coveredSkills.add(q.skillCode);
         result.push(q);
       }
@@ -458,25 +548,68 @@ export class BaselineQuestionGenerationService {
     // Generate fallback questions for missing skills
     for (const skillCode of expectedSkillCodes) {
       if (!coveredSkills.has(skillCode)) {
-        const skill = SKILL_DESCRIPTIONS[skillCode];
-        result.push({
-          skillCode,
-          questionType: 'MULTIPLE_CHOICE',
-          questionText: skill
-            ? `Which of the following best demonstrates understanding of ${skill.name.toLowerCase()}?`
-            : `Which answer best demonstrates the skill: ${skillCode}?`,
-          options: [
-            'I can demonstrate this skill independently',
-            'I need some help with this skill',
-            'I am still learning this skill',
-            'I have not yet learned this skill',
-          ],
-          correctAnswer: 0,
-        });
+        result.push(this.createFallbackQuestion(skillCode));
       }
     }
 
     return result;
+  }
+
+  /**
+   * Check if a question is valid
+   */
+  private isValidQuestion(q: BaselineQuestion): boolean {
+    if (!q.questionText || q.questionText.length < 10) {
+      return false;
+    }
+
+    if (q.questionType === 'MULTIPLE_CHOICE') {
+      if (!q.options || q.options.length < 2) {
+        return false;
+      }
+      // Fix invalid correctAnswer
+      if (
+        typeof q.correctAnswer !== 'number' ||
+        q.correctAnswer < 0 ||
+        q.correctAnswer >= q.options.length
+      ) {
+        q.correctAnswer = 0;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if question's skill is expected and not yet covered
+   */
+  private isExpectedSkill(
+    q: BaselineQuestion,
+    expectedSkillCodes: string[],
+    coveredSkills: Set<string>
+  ): boolean {
+    return expectedSkillCodes.includes(q.skillCode) && !coveredSkills.has(q.skillCode);
+  }
+
+  /**
+   * Create a fallback question for a skill
+   */
+  private createFallbackQuestion(skillCode: string): BaselineQuestion {
+    const skill = SKILL_DESCRIPTIONS[skillCode];
+    return {
+      skillCode,
+      questionType: 'MULTIPLE_CHOICE',
+      questionText: skill
+        ? `Which of the following best demonstrates understanding of ${skill.name.toLowerCase()}?`
+        : `Which answer best demonstrates the skill: ${skillCode}?`,
+      options: [
+        'I can demonstrate this skill independently',
+        'I need some help with this skill',
+        'I am still learning this skill',
+        'I have not yet learned this skill',
+      ],
+      correctAnswer: 0,
+    };
   }
 
   /**
@@ -518,7 +651,7 @@ export class BaselineQuestionGenerationService {
   private hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
+      const char = str.codePointAt(i) ?? 0;
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }

@@ -4,12 +4,17 @@ Brain Management API Routes
 REST API endpoints for managing learner brain states.
 """
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 import structlog
 
 from src.services.brain_manager import LearnerBrainManager, get_brain_manager
+from src.services.curriculum_integration import (
+    CurriculumIntegrationService,
+    get_curriculum_integration,
+)
 from src.lib.supabase_client import get_supabase_client
 
 logger = structlog.get_logger()
@@ -96,11 +101,69 @@ class InsightsResponse(BaseModel):
     best_streak_ever: int
 
 
+# Curriculum-related models
+
+class CurriculumLocationRequest(BaseModel):
+    """Request to align brain with curriculum based on location."""
+
+    state_code: Optional[str] = Field(None, description="Two-letter state code (e.g., TX, CA)")
+    zip_code: Optional[str] = Field(None, description="5-digit ZIP code")
+    district_id: Optional[str] = Field(None, description="NCES district ID")
+    district_name: Optional[str] = Field(None, description="District name")
+    school_id: Optional[str] = Field(None, description="School identifier")
+    grade_level: Optional[str] = Field(None, description="Grade level (e.g., 'K', '1', '2', ..., '12')")
+
+
+class CurriculumAlignmentResponse(BaseModel):
+    """Response for curriculum alignment."""
+
+    learner_id: str
+    success: bool
+    curriculum_standards: List[str]
+    aligned_skills: List[str]
+    state_code: Optional[str]
+    district_name: Optional[str]
+    message: str
+
+
+class LearningPathItem(BaseModel):
+    """Single item in a learning path."""
+
+    skill_id: str
+    skill_name: str
+    priority: float
+    current_mastery: float
+    target_mastery: float
+    estimated_time_minutes: int
+    prerequisites: List[str]
+    curriculum_standard: Optional[str]
+    difficulty: str
+
+
+class LearningPathResponse(BaseModel):
+    """Curriculum-aligned learning path response."""
+
+    learner_id: str
+    path_id: str
+    path_name: str
+    total_items: int
+    estimated_total_time_hours: float
+    curriculum_standards: List[str]
+    items: List[LearningPathItem]
+    created_at: str
+
+
 # Dependency to get brain manager
 def get_manager() -> LearnerBrainManager:
     """Get brain manager with Supabase client."""
     client = get_supabase_client()
     return get_brain_manager(client)
+
+
+# Dependency to get curriculum integration service
+def get_curriculum_service() -> CurriculumIntegrationService:
+    """Get curriculum integration service."""
+    return get_curriculum_integration()
 
 
 # Routes
@@ -359,3 +422,278 @@ async def set_mastery_target(
         "new_target": target,
         "current_level": brain_state.mastery_levels[subject].current_level,
     }
+
+
+# ========== Curriculum Integration Endpoints ==========
+
+
+@router.put(
+    "/{learner_id}/curriculum",
+    response_model=CurriculumAlignmentResponse,
+    summary="Align brain with curriculum",
+    description="Align learner's brain with curriculum based on location (state, ZIP, district)"
+)
+async def align_brain_with_curriculum(
+    learner_id: str,
+    request: CurriculumLocationRequest,
+    manager: LearnerBrainManager = Depends(get_manager),
+    curriculum_service: CurriculumIntegrationService = Depends(get_curriculum_service),
+) -> Dict[str, Any]:
+    """
+    Align a learner's brain with curriculum based on their location.
+    
+    This endpoint:
+    1. Detects curriculum standards from the learner's state
+    2. Looks up district-specific curriculum if available
+    3. Updates the brain's curriculum alignment
+    4. Adjusts skill priorities based on curriculum requirements
+    """
+    # Get existing brain state
+    brain_state = await manager.get_brain(learner_id)
+    
+    if not brain_state:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Brain not found for learner: {learner_id}"
+        )
+    
+    try:
+        # Detect curriculum standards from location (sync function)
+        curriculum_standards = curriculum_service.detect_curriculum_standards(
+            state_code=request.state_code,
+            zip_code=request.zip_code,
+        )
+        
+        # Look up district-specific curriculum if district provided
+        if request.district_id or request.zip_code:
+            district_curriculum = await curriculum_service.lookup_district_curriculum(
+                zip_code=request.zip_code,
+                state_code=request.state_code,
+                district_id=request.district_id,
+                district_name=request.district_name,
+            )
+            # Use district's standards if available
+            if district_curriculum.get("standards"):
+                curriculum_standards = district_curriculum["standards"]
+        
+        # Align brain with curriculum
+        aligned_brain = await curriculum_service.align_brain_with_curriculum(
+            brain_state=brain_state,
+            state_code=request.state_code,
+            zip_code=request.zip_code,
+            nces_district_id=request.district_id,
+            curriculum_standards=curriculum_standards,
+        )
+        
+        # Get aligned skills
+        aligned_skills = aligned_brain.curriculum_alignment.aligned_skills
+        
+        logger.info(
+            "brain_curriculum_aligned",
+            learner_id=learner_id,
+            state_code=request.state_code,
+            standards_count=len(curriculum_standards),
+            skills_aligned=len(aligned_skills),
+        )
+        
+        return {
+            "learner_id": learner_id,
+            "success": True,
+            "curriculum_standards": curriculum_standards,
+            "aligned_skills": aligned_skills,
+            "state_code": request.state_code,
+            "district_name": request.district_name,
+            "message": f"Brain aligned with {len(curriculum_standards)} curriculum standards",
+        }
+        
+    except Exception as e:
+        logger.error("curriculum_alignment_failed", error=str(e), learner_id=learner_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to align curriculum: {str(e)}"
+        )
+
+
+@router.get(
+    "/{learner_id}/curriculum",
+    summary="Get curriculum alignment",
+    description="Get the current curriculum alignment for a learner's brain"
+)
+async def get_curriculum_alignment(
+    learner_id: str,
+    manager: LearnerBrainManager = Depends(get_manager),
+) -> Dict[str, Any]:
+    """Get the current curriculum alignment for a learner."""
+    brain_state = await manager.get_brain(learner_id)
+    
+    if not brain_state:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Brain not found for learner: {learner_id}"
+        )
+    
+    alignment = brain_state.curriculum_alignment
+    
+    return {
+        "learner_id": learner_id,
+        "state_code": alignment.state_code,
+        "zip_code": alignment.zip_code,
+        "nces_district_id": alignment.nces_district_id,
+        "district_name": alignment.district_name,
+        "curriculum_standards": alignment.curriculum_standards,
+        "curriculum_version": alignment.curriculum_version,
+        "aligned_skills": alignment.aligned_skills,
+        "last_synced": alignment.last_synced.isoformat() if alignment.last_synced else None,
+    }
+
+
+@router.get(
+    "/{learner_id}/learning-path",
+    summary="Get curriculum-aligned learning path",
+    description="Generate a personalized learning path based on curriculum and mastery"
+)
+async def get_learning_path(
+    learner_id: str,
+    max_items: int = 20,
+    manager: LearnerBrainManager = Depends(get_manager),
+    curriculum_service: CurriculumIntegrationService = Depends(get_curriculum_service),
+) -> Dict[str, Any]:
+    """
+    Generate a personalized, curriculum-aligned learning path.
+    
+    This considers:
+    - Current mastery levels
+    - Curriculum requirements
+    - Skill prerequisites
+    - Learning velocity
+    """
+    brain_state = await manager.get_brain(learner_id)
+    
+    if not brain_state:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Brain not found for learner: {learner_id}"
+        )
+    
+    try:
+        learning_path_items = await curriculum_service.create_curriculum_learning_path(
+            brain_state=brain_state,
+        )
+        
+        # Limit to max_items
+        limited_items = learning_path_items[:max_items]
+        
+        # Calculate estimated total time (15 min per item average)
+        estimated_hours = len(limited_items) * 0.25
+        
+        return {
+            "learner_id": learner_id,
+            "path_id": f"path_{learner_id}_{len(limited_items)}",
+            "path_name": "Personalized Learning Path",
+            "total_items": len(limited_items),
+            "estimated_total_time_hours": estimated_hours,
+            "curriculum_standards": brain_state.curriculum_alignment.curriculum_standards,
+            "items": [
+                {
+                    "skill_id": item["skill_id"],
+                    "skill_name": item.get("name", item["skill_id"]),
+                    "priority": item.get("priority", 0.5),
+                    "current_mastery": item.get("current_mastery", 0.0),
+                    "target_mastery": item.get("target_mastery", 0.8),
+                    "estimated_time_minutes": 15,
+                    "prerequisites": [],
+                    "curriculum_standard": None,
+                    "difficulty": "medium",
+                }
+                for item in limited_items
+            ],
+            "created_at": datetime.now().isoformat(),
+        }
+        
+    except Exception as e:
+        logger.error("learning_path_generation_failed", error=str(e), learner_id=learner_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate learning path: {str(e)}"
+        )
+
+
+@router.post(
+    "/{learner_id}/curriculum/sync",
+    summary="Sync curriculum from external source",
+    description="Force a curriculum sync from the curriculum service"
+)
+async def sync_curriculum(
+    learner_id: str,
+    manager: LearnerBrainManager = Depends(get_manager),
+    curriculum_service: CurriculumIntegrationService = Depends(get_curriculum_service),
+) -> Dict[str, Any]:
+    """
+    Force a curriculum sync for a learner.
+    
+    This re-fetches the latest curriculum standards and updates the brain.
+    """
+    brain_state = await manager.get_brain(learner_id)
+    
+    if not brain_state:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Brain not found for learner: {learner_id}"
+        )
+    
+    try:
+        # Get current alignment info
+        alignment = brain_state.curriculum_alignment
+        
+        if not alignment.state_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No curriculum alignment configured. Use PUT /brain/{id}/curriculum first."
+            )
+        
+        # Re-fetch curriculum standards (sync function)
+        curriculum_standards = curriculum_service.detect_curriculum_standards(
+            state_code=alignment.state_code,
+            zip_code=alignment.zip_code,
+        )
+        
+        # Look up district curriculum if configured
+        if alignment.nces_district_id or alignment.zip_code:
+            district_curriculum = await curriculum_service.lookup_district_curriculum(
+                zip_code=alignment.zip_code,
+                state_code=alignment.state_code,
+                district_id=alignment.nces_district_id,
+            )
+            if district_curriculum.get("standards"):
+                curriculum_standards = district_curriculum["standards"]
+        
+        # Align brain with curriculum
+        aligned_brain = await curriculum_service.align_brain_with_curriculum(
+            brain_state=brain_state,
+            state_code=alignment.state_code,
+            zip_code=alignment.zip_code,
+            nces_district_id=alignment.nces_district_id,
+            curriculum_standards=curriculum_standards,
+        )
+        
+        logger.info(
+            "curriculum_synced",
+            learner_id=learner_id,
+            standards_count=len(curriculum_standards),
+        )
+        
+        return {
+            "success": True,
+            "learner_id": learner_id,
+            "curriculum_standards": curriculum_standards,
+            "synced_at": aligned_brain.curriculum_alignment.last_synced.isoformat(),
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("curriculum_sync_failed", error=str(e), learner_id=learner_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync curriculum: {str(e)}"
+        )

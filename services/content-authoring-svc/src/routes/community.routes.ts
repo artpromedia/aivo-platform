@@ -100,6 +100,38 @@ export async function communityRoutes(fastify: FastifyInstance) {
   );
 
   /**
+   * POST /teacher-community/profiles/:id
+   * Get or create teacher profile (for service-to-service calls)
+   * This is used when other services need to ensure a teacher profile exists
+   */
+  fastify.post(
+    '/teacher-community/profiles/:id',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const paramsResult = TeacherIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid parameters',
+          details: paramsResult.error.flatten(),
+        });
+      }
+
+      const { id } = paramsResult.data;
+
+      try {
+        const profile = await communityService.getOrCreateTeacherProfile(id);
+        return reply.status(profile ? 200 : 201).send(profile);
+      } catch (error) {
+        const err = error as Error;
+        fastify.log.error(err);
+        return reply.status(500).send({
+          error: 'Failed to create/get teacher profile',
+          message: err.message,
+        });
+      }
+    }
+  );
+
+  /**
    * PATCH /teachers/me/profile
    * Update current user's teacher profile
    */
