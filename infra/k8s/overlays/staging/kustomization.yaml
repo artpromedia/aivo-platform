@@ -27,32 +27,49 @@ commonAnnotations:
 # Note: Image tags are set dynamically by the CI/CD pipeline using:
 #   kustomize edit set image gcr.io/aivo-platform/<service>=gcr.io/aivo-platform/<service>:<tag>
 images:
+  # Authentication & User Management
   - name: aivo/auth-svc
     newName: gcr.io/aivo-platform/auth-svc
-  - name: aivo/content-svc
-    newName: gcr.io/aivo-platform/content-svc
   - name: aivo/session-svc
     newName: gcr.io/aivo-platform/session-svc
+  - name: aivo/consent-svc
+    newName: gcr.io/aivo-platform/consent-svc
+  - name: aivo/profile-svc
+    newName: gcr.io/aivo-platform/profile-svc
+  # Content & Learning
+  - name: aivo/content-svc
+    newName: gcr.io/aivo-platform/content-svc
   - name: aivo/assessment-svc
     newName: gcr.io/aivo-platform/assessment-svc
-  - name: aivo/analytics-svc
-    newName: gcr.io/aivo-platform/analytics-svc
+  - name: aivo/personalization-svc
+    newName: gcr.io/aivo-platform/personalization-svc
+  - name: aivo/life-skills-svc
+    newName: gcr.io/aivo-platform/life-skills-svc
+  # AI & Analytics
   - name: aivo/ai-orchestrator
     newName: gcr.io/aivo-platform/ai-orchestrator
+  - name: aivo/analytics-svc
+    newName: gcr.io/aivo-platform/analytics-svc
+  # Communication
   - name: aivo/notify-svc
     newName: gcr.io/aivo-platform/notify-svc
   - name: aivo/messaging-svc
     newName: gcr.io/aivo-platform/messaging-svc
+  # Goal & Focus
   - name: aivo/goal-svc
     newName: gcr.io/aivo-platform/goal-svc
   - name: aivo/focus-svc
     newName: gcr.io/aivo-platform/focus-svc
-  - name: aivo/personalization-svc
-    newName: gcr.io/aivo-platform/personalization-svc
+  # Billing & Payments
   - name: aivo/billing-svc
     newName: gcr.io/aivo-platform/billing-svc
-  - name: aivo/consent-svc
-    newName: gcr.io/aivo-platform/consent-svc
+  - name: aivo/payments-svc
+    newName: gcr.io/aivo-platform/payments-svc
+  # Parent Portal
+  - name: aivo/parent-svc
+    newName: gcr.io/aivo-platform/parent-svc
+  - name: aivo/baseline-svc
+    newName: gcr.io/aivo-platform/baseline-svc
 
 # Patches for staging-specific configuration
 patches:

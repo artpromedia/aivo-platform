@@ -235,7 +235,17 @@ jobs:
     needs: prepare
     strategy:
       matrix:
-        app: [web-author, web-district, web-platform-admin, web-teacher]
+        app: 
+          - learner-app
+          - web-author
+          - web-creator
+          - web-dev-portal
+          - web-district
+          - web-learner
+          - web-marketing
+          - web-parent
+          - web-platform-admin
+          - web-teacher
     steps:
       - uses: actions/checkout@v4
 
@@ -307,6 +317,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "### 🌐 Web Apps Built" >> $GITHUB_STEP_SUMMARY
-          for app in web-author web-district web-platform-admin web-teacher; do
+          for app in learner-app web-author web-creator web-dev-portal web-district web-learner web-marketing web-parent web-platform-admin web-teacher; do
             echo "- ✅ \`$app\`" >> $GITHUB_STEP_SUMMARY
           done

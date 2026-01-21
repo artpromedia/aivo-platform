@@ -67,20 +67,33 @@ jobs:
         run: |
           cd infra/k8s/overlays/staging
 
+          # Core services deployed in base kustomization
           SERVICES=(
+            # Authentication & User Management
             "auth-svc"
-            "content-svc"
             "session-svc"
+            "consent-svc"
+            "profile-svc"
+            # Content & Learning
+            "content-svc"
             "assessment-svc"
-            "analytics-svc"
+            "personalization-svc"
+            "life-skills-svc"
+            # AI & Analytics
             "ai-orchestrator"
+            "analytics-svc"
+            # Communication
             "notify-svc"
             "messaging-svc"
+            # Goal & Focus
             "goal-svc"
             "focus-svc"
-            "personalization-svc"
+            # Billing & Payments
             "billing-svc"
-            "consent-svc"
+            "payments-svc"
+            # Parent Portal
+            "parent-svc"
+            "baseline-svc"
           )
 
           for service in "${SERVICES[@]}"; do

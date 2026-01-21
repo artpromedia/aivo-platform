@@ -1,7 +1,7 @@
 # ==============================================================================
-# AIVO Platform - Infrastructure Pipeline
+# AIVO Platform - Infrastructure Pipeline (GCP)
 # ==============================================================================
-# Terraform infrastructure deployment with plan/apply workflow
+# Terraform infrastructure deployment with plan/apply workflow for GCP
 
 name: Infrastructure Pipeline
 
@@ -9,11 +9,11 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'infrastructure/terraform/**'
+      - 'infra/terraform/**'
   pull_request:
     branches: [main, develop]
     paths:
-      - 'infrastructure/terraform/**'
+      - 'infra/terraform/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -21,7 +21,7 @@ on:
         required: true
         type: choice
         options:
-          - development
+          - dev
           - staging
           - production
       action:
@@ -39,7 +39,8 @@ concurrency:
 
 env:
   TF_VERSION: '1.6.0'
-  AWS_REGION: ${{ vars.AWS_REGION }}
+  PROJECT_ID: aivo-platform
+  GCP_REGION: us-central1
 
 jobs:
   # ============================================================================
@@ -57,7 +58,7 @@ jobs:
         id: validate
         run: |
           # Validate environment input against allowed values
-          VALID_ENVIRONMENTS="development staging production"
+          VALID_ENVIRONMENTS="dev staging production"
           INPUT_ENV="${{ github.event.inputs.environment }}"
           if [[ ! " $VALID_ENVIRONMENTS " =~ " $INPUT_ENV " ]]; then
             echo "::error::Invalid environment: $INPUT_ENV"
@@ -94,18 +95,18 @@ jobs:
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
-        working-directory: infrastructure/terraform
+        working-directory: infra/terraform
 
       - name: Terraform Init (modules)
         run: |
-          for dir in infrastructure/terraform/modules/*/; do
+          for dir in infra/terraform/modules/*/; do
             echo "Initializing $dir..."
             terraform -chdir="$dir" init -backend=false
           done
 
       - name: Terraform Validate (modules)
         run: |
-          for dir in infrastructure/terraform/modules/*/; do
+          for dir in infra/terraform/modules/*/; do
             echo "Validating $dir..."
             terraform -chdir="$dir" validate
           done
@@ -122,13 +123,13 @@ jobs:
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
-          working_directory: infrastructure/terraform
+          working_directory: infra/terraform
           soft_fail: true
 
       - name: Run checkov
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: infrastructure/terraform
+          directory: infra/terraform
           soft_fail: true
           output_format: sarif
           output_file_path: checkov-results.sarif
@@ -140,12 +141,12 @@ jobs:
           sarif_file: checkov-results.sarif
 
   # ============================================================================
-  # TERRAFORM PLAN - DEVELOPMENT
+  # TERRAFORM PLAN - DEV
   # ============================================================================
   plan-dev:
     name: Plan Development
     needs: [validate, security]
-    if: github.event.inputs.environment == 'development' || github.event.inputs.environment == '' || github.event_name == 'pull_request'
+    if: github.event.inputs.environment == 'dev' || github.event.inputs.environment == '' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     environment: development
     permissions:
@@ -155,11 +156,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
-          aws-region: ${{ env.AWS_REGION }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -168,7 +173,7 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: infrastructure/terraform/environments/development
+        working-directory: infra/terraform/environments/dev
 
       - name: Terraform Plan
         id: plan
@@ -177,14 +182,14 @@ jobs:
           echo "plan_output<<EOF" >> $GITHUB_OUTPUT
           cat plan-output.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-        working-directory: infrastructure/terraform/environments/development
+        working-directory: infra/terraform/environments/dev
         continue-on-error: true
 
       - name: Upload Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-dev
-          path: infrastructure/terraform/environments/development/tfplan
+          path: infra/terraform/environments/dev/tfplan
 
       - name: Comment on PR
         uses: actions/github-script@v7
@@ -225,11 +230,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
-          aws-region: ${{ env.AWS_REGION }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -238,17 +247,17 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: infrastructure/terraform/environments/staging
+        working-directory: infra/terraform/environments/staging
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
-        working-directory: infrastructure/terraform/environments/staging
+        working-directory: infra/terraform/environments/staging
 
       - name: Upload Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-staging
-          path: infrastructure/terraform/environments/staging/tfplan
+          path: infra/terraform/environments/staging/tfplan
 
   # ============================================================================
   # TERRAFORM PLAN - PRODUCTION
@@ -265,11 +274,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
-          aws-region: ${{ env.AWS_REGION }}
+          credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -278,17 +291,17 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: infrastructure/terraform/environments/production
+        working-directory: infra/terraform/environments/production
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
-        working-directory: infrastructure/terraform/environments/production
+        working-directory: infra/terraform/environments/production
 
       - name: Upload Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-production
-          path: infrastructure/terraform/environments/production/tfplan
+          path: infra/terraform/environments/production/tfplan
 
   # ============================================================================
   # TERRAFORM APPLY
@@ -311,11 +324,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', env.VALIDATED_ENV == 'development' && 'DEV' || env.VALIDATED_ENV == 'staging' && 'STAGING' || 'PROD')] }}
-          aws-region: ${{ env.AWS_REGION }}
+          credentials_json: ${{ env.VALIDATED_ENV == 'production' && secrets.GCP_PROD_SA_KEY || secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -326,22 +343,22 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan-${{ env.VALIDATED_ENV }}
-          path: infrastructure/terraform/environments/${{ env.VALIDATED_ENV }}
+          path: infra/terraform/environments/${{ env.VALIDATED_ENV }}
 
       - name: Terraform Init
         run: terraform init
-        working-directory: infrastructure/terraform/environments/${{ env.VALIDATED_ENV }}
+        working-directory: infra/terraform/environments/${{ env.VALIDATED_ENV }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-        working-directory: infrastructure/terraform/environments/${{ env.VALIDATED_ENV }}
+        working-directory: infra/terraform/environments/${{ env.VALIDATED_ENV }}
 
       - name: Notify
         uses: 8398a7/action-slack@v3
         if: always()
         with:
           status: ${{ job.status }}
-          text: 'Terraform apply ${{ env.VALIDATED_ENV }}: ${{ job.status }}'
+          text: 'Terraform apply ${{ env.VALIDATED_ENV }} (GCP): ${{ job.status }}'
           channel: '#infrastructure'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
