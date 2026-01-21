@@ -10,7 +10,6 @@ import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart'
     hide ConnectionState;
-import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_common/offline/connectivity_service.dart' 
     show ConnectionState, ConnectivityService;
 

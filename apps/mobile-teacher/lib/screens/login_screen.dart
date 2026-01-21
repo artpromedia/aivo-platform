@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart' hide AuthState;
-import 'package:flutter_common/theme/theme.dart';
 
 import '../main.dart';
 

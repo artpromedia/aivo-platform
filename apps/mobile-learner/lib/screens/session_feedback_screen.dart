@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
-import 'package:flutter_common/theme/theme.dart';
 
 /// Difficulty rating.
 enum DifficultyRating {
