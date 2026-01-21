@@ -461,7 +461,7 @@ async def align_brain_with_curriculum(
         # Detect curriculum standards from location (sync function)
         curriculum_standards = curriculum_service.detect_curriculum_standards(
             state_code=request.state_code,
-            zip_code=request.zip_code,
+            _zip_code=request.zip_code,
         )
         
         # Look up district-specific curriculum if district provided
@@ -481,7 +481,7 @@ async def align_brain_with_curriculum(
             brain_state=brain_state,
             state_code=request.state_code,
             zip_code=request.zip_code,
-            nces_district_id=request.district_id,
+            _nces_district_id=request.district_id,
             curriculum_standards=curriculum_standards,
         )
         
@@ -654,7 +654,7 @@ async def sync_curriculum(
         # Re-fetch curriculum standards (sync function)
         curriculum_standards = curriculum_service.detect_curriculum_standards(
             state_code=alignment.state_code,
-            zip_code=alignment.zip_code,
+            _zip_code=alignment.zip_code,
         )
         
         # Look up district curriculum if configured
@@ -672,7 +672,7 @@ async def sync_curriculum(
             brain_state=brain_state,
             state_code=alignment.state_code,
             zip_code=alignment.zip_code,
-            nces_district_id=alignment.nces_district_id,
+            _nces_district_id=alignment.nces_district_id,
             curriculum_standards=curriculum_standards,
         )
         
