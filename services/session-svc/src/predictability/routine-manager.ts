@@ -5,11 +5,7 @@
  * Provides routine templates for welcome, goodbye, breaks, and calming.
  */
 
-import type {
-  RoutineType,
-  SessionRoutineData,
-  RoutineStep,
-} from './predictability.types.js';
+import type { RoutineType, SessionRoutineData, RoutineStep } from './predictability.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SYSTEM DEFAULT ROUTINES
@@ -270,7 +266,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
             id: 'fcw1',
             type: 'greeting',
             title: 'Hi Friend!',
-            instruction: "Your buddy is so happy to see you! Wave hello! 👋",
+            instruction: 'Your buddy is so happy to see you! Wave hello! 👋',
             durationSeconds: 5,
             isSkippable: false,
             requiresInteraction: true,
@@ -396,7 +392,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
             id: 'rc1',
             type: 'preview',
             title: 'Ready?',
-            instruction: 'Tap when you\'re ready to continue!',
+            instruction: "Tap when you're ready to continue!",
             durationSeconds: 10,
             isSkippable: false,
             requiresInteraction: true,
@@ -443,7 +439,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
             id: 'sc1',
             type: 'affirmation',
             title: '⭐ Star Moment! ⭐',
-            instruction: 'You earned a star! You\'re amazing!',
+            instruction: "You earned a star! You're amazing!",
             durationSeconds: 10,
             isSkippable: false,
             requiresInteraction: false,
@@ -470,8 +466,8 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
           {
             id: 'db2',
             type: 'affirmation',
-            title: 'You\'re Safe',
-            instruction: 'You\'re doing great. Everything is okay.',
+            title: "You're Safe",
+            instruction: "You're doing great. Everything is okay.",
             durationSeconds: 10,
             isSkippable: false,
             requiresInteraction: false,
@@ -555,7 +551,15 @@ export function validateRoutineSteps(steps: RoutineStep[]): { valid: boolean; er
       errors.push(`Step ${i + 1}: Duration should not exceed 5 minutes`);
     }
 
-    const validTypes = ['greeting', 'breathing', 'preview', 'checkin', 'movement', 'affirmation', 'custom'];
+    const validTypes = [
+      'greeting',
+      'breathing',
+      'preview',
+      'checkin',
+      'movement',
+      'affirmation',
+      'custom',
+    ];
     if (!validTypes.includes(step.type)) {
       errors.push(`Step ${i + 1}: Invalid type "${step.type}"`);
     }
@@ -575,9 +579,18 @@ export function calculateRoutineDuration(steps: RoutineStep[]): number {
 }
 
 /**
+ * Display info for routine types
+ */
+export interface RoutineDisplayInfo {
+  icon: string;
+  color: string;
+  label: string;
+}
+
+/**
  * Get routine display info
  */
-export function getRoutineDisplayInfo(type: RoutineType): { icon: string; color: string; label: string } {
+export function getRoutineDisplayInfo(type: RoutineType): RoutineDisplayInfo {
   const info: Record<RoutineType, { icon: string; color: string; label: string }> = {
     WELCOME: { icon: 'waving_hand', color: '#4CAF50', label: 'Welcome' },
     CHECKIN: { icon: 'mood', color: '#2196F3', label: 'Check-In' },

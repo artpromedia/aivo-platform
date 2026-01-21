@@ -4,22 +4,17 @@
  * CRUD and workflow operations for Learning Object Versions.
  */
 
+import type { LearningObjectVersionState, Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+
 import { prisma } from '../prisma.js';
-import type { LearningObjectVersionState, Prisma } from '@prisma/client';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
 // ══════════════════════════════════════════════════════════════════════════════
 
-const VersionStateEnum = z.enum([
-  'DRAFT',
-  'IN_REVIEW',
-  'APPROVED',
-  'PUBLISHED',
-  'RETIRED',
-]);
+const VersionStateEnum = z.enum(['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED', 'RETIRED']);
 
 const CreateVersionSchema = z.object({
   changeSummary: z.string().max(1000).optional(),
@@ -70,7 +65,6 @@ interface JwtUser {
 }
 
 function getUserFromRequest(request: FastifyRequest): JwtUser | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const user = (request as any).user;
   if (!user || typeof user.sub !== 'string') return null;
   return user as JwtUser;
@@ -83,10 +77,7 @@ function getUserTenantId(user: JwtUser): string | undefined {
 /**
  * Valid state transitions.
  */
-const VALID_TRANSITIONS: Record<
-  LearningObjectVersionState,
-  LearningObjectVersionState[]
-> = {
+const VALID_TRANSITIONS: Record<LearningObjectVersionState, LearningObjectVersionState[]> = {
   DRAFT: ['IN_REVIEW'],
   IN_REVIEW: ['DRAFT', 'APPROVED'],
   APPROVED: ['DRAFT', 'PUBLISHED'],
@@ -112,10 +103,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/learning-objects/:loId/versions',
-    async (
-      request: FastifyRequest<{ Params: { loId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { loId: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -145,10 +133,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/learning-objects/:loId/versions',
-    async (
-      request: FastifyRequest<{ Params: { loId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { loId: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -229,10 +214,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/versions/:id',
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -265,10 +247,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.patch(
     '/versions/:id',
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -324,10 +303,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/versions/:id/transition',
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -397,8 +373,8 @@ export async function versionRoutes(fastify: FastifyInstance) {
             versionId: id,
             fromState: existing.state,
             toState: targetState as LearningObjectVersionState,
-            userId: user.sub,
-            comment,
+            transitionedByUserId: user.sub,
+            reason: comment,
           },
         }),
       ]);
@@ -413,10 +389,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/versions/:id/publish',
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -463,8 +436,8 @@ export async function versionRoutes(fastify: FastifyInstance) {
             versionId: id,
             fromState: 'APPROVED',
             toState: 'PUBLISHED',
-            userId: user.sub,
-            comment: 'Published',
+            transitionedByUserId: user.sub,
+            reason: 'Published',
           },
         }),
       ]);
@@ -479,10 +452,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
    */
   fastify.put(
     '/versions/:id/skills',
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -607,7 +577,6 @@ export async function versionRoutes(fastify: FastifyInstance) {
       const { subject, gradeBand, skillId, limit } = query.data;
       const userTenantId = getUserTenantId(user);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: any = {
         state: 'PUBLISHED',
         learningObject: {

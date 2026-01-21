@@ -14,14 +14,14 @@
  * Routine types for predictable session structure
  */
 export type RoutineType =
-  | 'WELCOME'     // Start of session
-  | 'CHECKIN'     // Emotional check-in
-  | 'TRANSITION'  // Between activities
-  | 'BREAK'       // Break routine
-  | 'RETURN'      // Return from break
-  | 'GOODBYE'     // End of session
+  | 'WELCOME' // Start of session
+  | 'CHECKIN' // Emotional check-in
+  | 'TRANSITION' // Between activities
+  | 'BREAK' // Break routine
+  | 'RETURN' // Return from break
+  | 'GOODBYE' // End of session
   | 'CELEBRATION' // After achievement
-  | 'CALMING';    // When overwhelmed
+  | 'CALMING'; // When overwhelmed
 
 /**
  * Predictability event types for logging
@@ -128,6 +128,13 @@ export interface PredictabilityPreferences {
   includeGoodbyeRoutine: boolean;
   includeBreakRoutines: boolean;
 
+  // Event schema compatibility fields
+  enabled?: boolean;
+  warnMinutesBefore?: number;
+  showRemainingTime?: boolean;
+  useVisualSchedule?: boolean;
+  preferredRoutineTypes?: string[];
+
   // Comfort elements
   showFamiliarCharacter: boolean;
   characterName?: string;
@@ -168,6 +175,13 @@ export interface PredictabilityPreferencesInput {
   showFamiliarCharacter?: boolean;
   characterName?: string;
   characterAvatarUrl?: string;
+  // Additional optional preferences from routes
+  preferredRoutineTypes?: RoutineType[];
+  enabled?: boolean;
+  warnMinutesBefore?: number;
+  showRemainingTime?: boolean;
+  useVisualSchedule?: boolean;
+  customSettings?: Record<string, unknown>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -311,6 +325,7 @@ export interface CharacterInfo {
  * A complete predictable session plan
  */
 export interface PredictableSessionPlan {
+  id?: string;
   sessionId: string;
   learnerId: string;
   tenantId: string;
@@ -340,6 +355,10 @@ export interface PredictableSessionPlan {
   currentPhase: SessionPhase;
   currentActivityIndex: number;
   unexpectedChangesCount: number;
+
+  // Additional state fields for API responses
+  phase?: SessionPhase;
+  progress?: number;
 }
 
 /**
@@ -402,6 +421,11 @@ export interface ChangeExplanation {
   whatWillHappen: string;
   whatStaysSame: string;
   visualAid?: string;
+  // Event schema fields
+  severity?: 'low' | 'medium' | 'high';
+  title?: string;
+  message?: string;
+  iconType?: string;
 }
 
 /**
@@ -411,6 +435,7 @@ export interface ChangeRequestResult {
   allowed: boolean;
   explanation?: ChangeExplanation;
   reason?: string;
+  requiresApproval?: boolean;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -424,6 +449,7 @@ export interface AnxietyReportResult {
   recommendations: string[];
   shouldPause: boolean;
   calmingRoutine?: SessionRoutineData;
+  supportActions?: string[];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

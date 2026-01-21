@@ -12,7 +12,8 @@ export function createApp() {
   const app = Fastify({ logger: true });
 
   // Rate limiting - strict limits for auth endpoints to prevent brute force
-  void app.register(rateLimit, FastifyRateLimitPresets.authService('auth-svc'));
+
+  void app.register(rateLimit as any, FastifyRateLimitPresets.authService('auth-svc'));
 
   // Register form body parser for SAML POST binding
   app.addContentTypeParser(

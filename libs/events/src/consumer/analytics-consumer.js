@@ -10,294 +10,304 @@
 //   - session_metrics_hourly: Session metrics per hour
 //   - engagement_metrics_hourly: Engagement aggregations
 //   - focus_metrics_hourly: Focus score aggregations
+import { createLogger } from '../logger.js';
 import { BaseConsumer } from './base-consumer.js';
+const log = createLogger('analytics-consumer');
 // -----------------------------------------------------------------------------
 // Analytics Consumer Class
 // -----------------------------------------------------------------------------
 export class AnalyticsConsumer extends BaseConsumer {
-    buffer;
-    flushTimer = null;
-    writers;
-    windowMs;
-    constructor(config) {
-        super(config.connection, {
-            ...config.consumer,
-            durableName: `${config.consumer.stream.toLowerCase()}-analytics`,
-        });
-        this.writers = config.writers;
-        this.windowMs = config.windowMs ?? 60000;
-        this.buffer = this.createEmptyBuffer();
+  buffer;
+  flushTimer = null;
+  writers;
+  windowMs;
+  constructor(config) {
+    super(config.connection, {
+      ...config.consumer,
+      durableName: `${config.consumer.stream.toLowerCase()}-analytics`,
+    });
+    this.writers = config.writers;
+    this.windowMs = config.windowMs ?? 60000;
+    this.buffer = this.createEmptyBuffer();
+  }
+  createEmptyBuffer() {
+    return {
+      eventCounts: new Map(),
+      sessionMetrics: new Map(),
+      engagementMetrics: new Map(),
+      focusMetrics: new Map(),
+    };
+  }
+  async start() {
+    // Start aggregation flush timer
+    this.flushTimer = setInterval(() => {
+      this.flush().catch((err) => {
+        log.error({ err }, 'Flush error');
+      });
+    }, this.windowMs);
+    await super.start();
+  }
+  async close() {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
     }
-    createEmptyBuffer() {
-        return {
-            eventCounts: new Map(),
-            sessionMetrics: new Map(),
-            engagementMetrics: new Map(),
-            focusMetrics: new Map(),
-        };
+    await this.flush();
+    await super.close();
+  }
+  async handleMessage(message) {
+    const event = message.event;
+    const hourBucket = this.getHourBucket(new Date(event.timestamp));
+    // Always count events
+    this.aggregateEventCount(event, hourBucket);
+    // Type-specific aggregations
+    switch (event.eventType) {
+      case 'learning.session.started':
+        this.aggregateSessionStarted(event, hourBucket);
+        break;
+      case 'learning.session.ended':
+        this.aggregateSessionEnded(event, hourBucket);
+        break;
+      case 'learning.activity.completed':
+        this.aggregateActivityCompleted(event, hourBucket);
+        break;
+      case 'learning.engagement.metric':
+        this.aggregateEngagement(event, hourBucket);
+        break;
+      case 'focus.sample':
+        this.aggregateFocusSample(event, hourBucket);
+        break;
+      case 'focus.session.summary':
+        this.aggregateFocusSummary(event, hourBucket);
+        break;
     }
-    async start() {
-        // Start aggregation flush timer
-        this.flushTimer = setInterval(() => {
-            this.flush().catch((err) => {
-                console.error('[AnalyticsConsumer] Flush error:', err);
-            });
-        }, this.windowMs);
-        await super.start();
+  }
+  getHourBucket(timestamp) {
+    const bucket = new Date(timestamp);
+    bucket.setMinutes(0, 0, 0);
+    return bucket;
+  }
+  getAggregationKey(tenantId, ...parts) {
+    return [tenantId, ...parts].join(':');
+  }
+  // ---------------------------------------------------------------------------
+  // Event Count Aggregation
+  // ---------------------------------------------------------------------------
+  aggregateEventCount(event, hourBucket) {
+    const key = this.getAggregationKey(event.tenantId, event.eventType, hourBucket.toISOString());
+    const existing = this.buffer.eventCounts.get(key);
+    if (existing) {
+      existing.count++;
+      existing.updatedAt = new Date();
+    } else {
+      this.buffer.eventCounts.set(key, {
+        tenantId: event.tenantId,
+        eventType: event.eventType,
+        hourBucket,
+        count: 1,
+        updatedAt: new Date(),
+      });
     }
-    async close() {
-        if (this.flushTimer) {
-            clearInterval(this.flushTimer);
-            this.flushTimer = null;
-        }
-        await this.flush();
-        await super.close();
+  }
+  // ---------------------------------------------------------------------------
+  // Session Metrics Aggregation
+  // ---------------------------------------------------------------------------
+  aggregateSessionStarted(event, hourBucket) {
+    const key = this.getAggregationKey(
+      event.tenantId,
+      event.payload.sessionType,
+      hourBucket.toISOString()
+    );
+    const existing = this.buffer.sessionMetrics.get(key);
+    if (existing) {
+      existing.sessionsStarted++;
+      existing.updatedAt = new Date();
+    } else {
+      this.buffer.sessionMetrics.set(key, {
+        tenantId: event.tenantId,
+        sessionType: event.payload.sessionType,
+        hourBucket,
+        sessionsStarted: 1,
+        sessionsEnded: 0,
+        totalDurationMs: 0,
+        avgDurationMs: 0,
+        activitiesCompleted: 0,
+        correctAnswers: 0,
+        incorrectAnswers: 0,
+        updatedAt: new Date(),
+      });
     }
-    async handleMessage(message) {
-        const event = message.event;
-        const hourBucket = this.getHourBucket(new Date(event.timestamp));
-        // Always count events
-        this.aggregateEventCount(event, hourBucket);
-        // Type-specific aggregations
-        switch (event.eventType) {
-            case 'learning.session.started':
-                this.aggregateSessionStarted(event, hourBucket);
-                break;
-            case 'learning.session.ended':
-                this.aggregateSessionEnded(event, hourBucket);
-                break;
-            case 'learning.activity.completed':
-                this.aggregateActivityCompleted(event, hourBucket);
-                break;
-            case 'learning.engagement.metric':
-                this.aggregateEngagement(event, hourBucket);
-                break;
-            case 'focus.sample':
-                this.aggregateFocusSample(event, hourBucket);
-                break;
-            case 'focus.session.summary':
-                this.aggregateFocusSummary(event, hourBucket);
-                break;
-        }
+  }
+  aggregateSessionEnded(event, hourBucket) {
+    // Try to find matching session type from existing data
+    // In production, we'd look this up from the session
+    const sessionType = 'LEARNING'; // Default
+    const key = this.getAggregationKey(event.tenantId, sessionType, hourBucket.toISOString());
+    const existing = this.buffer.sessionMetrics.get(key);
+    if (existing) {
+      existing.sessionsEnded++;
+      existing.totalDurationMs += event.payload.durationMs;
+      existing.avgDurationMs = existing.totalDurationMs / existing.sessionsEnded;
+      existing.activitiesCompleted += event.payload.summary.activitiesCompleted;
+      existing.correctAnswers += event.payload.summary.correctAnswers;
+      existing.incorrectAnswers += event.payload.summary.incorrectAnswers;
+      existing.updatedAt = new Date();
+    } else {
+      this.buffer.sessionMetrics.set(key, {
+        tenantId: event.tenantId,
+        sessionType,
+        hourBucket,
+        sessionsStarted: 0,
+        sessionsEnded: 1,
+        totalDurationMs: event.payload.durationMs,
+        avgDurationMs: event.payload.durationMs,
+        activitiesCompleted: event.payload.summary.activitiesCompleted,
+        correctAnswers: event.payload.summary.correctAnswers,
+        incorrectAnswers: event.payload.summary.incorrectAnswers,
+        updatedAt: new Date(),
+      });
     }
-    getHourBucket(timestamp) {
-        const bucket = new Date(timestamp);
-        bucket.setMinutes(0, 0, 0);
-        return bucket;
+  }
+  aggregateActivityCompleted(_event, _hourBucket) {
+    // Activities contribute to the nearest session metrics bucket
+    // This is a simplified aggregation
+  }
+  // ---------------------------------------------------------------------------
+  // Engagement Metrics Aggregation
+  // ---------------------------------------------------------------------------
+  aggregateEngagement(event, hourBucket) {
+    const key = this.getAggregationKey(event.tenantId, hourBucket.toISOString());
+    const existing = this.buffer.engagementMetrics.get(key);
+    if (existing) {
+      // Running average calculation
+      const newCount = existing.sampleCount + 1;
+      existing.avgEngagementScore =
+        (existing.avgEngagementScore * existing.sampleCount + event.payload.engagementScore) /
+        newCount;
+      existing.minEngagementScore = Math.min(
+        existing.minEngagementScore,
+        event.payload.engagementScore
+      );
+      existing.maxEngagementScore = Math.max(
+        existing.maxEngagementScore,
+        event.payload.engagementScore
+      );
+      existing.avgInteractionRate =
+        (existing.avgInteractionRate * existing.sampleCount +
+          event.payload.components.interactionRate) /
+        newCount;
+      existing.avgOnTaskRatio =
+        (existing.avgOnTaskRatio * existing.sampleCount + event.payload.components.onTaskRatio) /
+        newCount;
+      existing.sampleCount = newCount;
+      existing.updatedAt = new Date();
+    } else {
+      this.buffer.engagementMetrics.set(key, {
+        tenantId: event.tenantId,
+        hourBucket,
+        sampleCount: 1,
+        avgEngagementScore: event.payload.engagementScore,
+        minEngagementScore: event.payload.engagementScore,
+        maxEngagementScore: event.payload.engagementScore,
+        avgInteractionRate: event.payload.components.interactionRate,
+        avgOnTaskRatio: event.payload.components.onTaskRatio,
+        updatedAt: new Date(),
+      });
     }
-    getAggregationKey(tenantId, ...parts) {
-        return [tenantId, ...parts].join(':');
+  }
+  // ---------------------------------------------------------------------------
+  // Focus Metrics Aggregation
+  // ---------------------------------------------------------------------------
+  aggregateFocusSample(event, hourBucket) {
+    const gradeBand = event.payload.gradeBand ?? 'unknown';
+    const key = this.getAggregationKey(event.tenantId, gradeBand, hourBucket.toISOString());
+    const existing = this.buffer.focusMetrics.get(key);
+    if (existing) {
+      const newCount = existing.sampleCount + 1;
+      existing.avgFocusScore =
+        (existing.avgFocusScore * existing.sampleCount + event.payload.focusScore) / newCount;
+      existing.minFocusScore = Math.min(existing.minFocusScore, event.payload.focusScore);
+      existing.maxFocusScore = Math.max(existing.maxFocusScore, event.payload.focusScore);
+      existing.avgIdleMs =
+        (existing.avgIdleMs * existing.sampleCount + event.payload.avgIdleMs) / newCount;
+      existing.totalBackgroundMs += event.payload.backgroundMs;
+      existing.sampleCount = newCount;
+      existing.updatedAt = new Date();
+    } else {
+      this.buffer.focusMetrics.set(key, {
+        tenantId: event.tenantId,
+        gradeBand,
+        hourBucket,
+        sampleCount: 1,
+        avgFocusScore: event.payload.focusScore,
+        minFocusScore: event.payload.focusScore,
+        maxFocusScore: event.payload.focusScore,
+        avgIdleMs: event.payload.avgIdleMs,
+        totalBackgroundMs: event.payload.backgroundMs,
+        focusLossCount: 0,
+        updatedAt: new Date(),
+      });
     }
-    // ---------------------------------------------------------------------------
-    // Event Count Aggregation
-    // ---------------------------------------------------------------------------
-    aggregateEventCount(event, hourBucket) {
-        const key = this.getAggregationKey(event.tenantId, event.eventType, hourBucket.toISOString());
-        const existing = this.buffer.eventCounts.get(key);
-        if (existing) {
-            existing.count++;
-            existing.updatedAt = new Date();
-        }
-        else {
-            this.buffer.eventCounts.set(key, {
-                tenantId: event.tenantId,
-                eventType: event.eventType,
-                hourBucket,
-                count: 1,
-                updatedAt: new Date(),
-            });
-        }
+  }
+  aggregateFocusSummary(event, hourBucket) {
+    const gradeBand = event.payload.gradeBand ?? 'unknown';
+    const key = this.getAggregationKey(event.tenantId, gradeBand, hourBucket.toISOString());
+    const existing = this.buffer.focusMetrics.get(key);
+    if (existing) {
+      existing.focusLossCount += event.payload.focusLossCount;
+      existing.totalBackgroundMs += event.payload.backgroundMs;
+      existing.updatedAt = new Date();
     }
-    // ---------------------------------------------------------------------------
-    // Session Metrics Aggregation
-    // ---------------------------------------------------------------------------
-    aggregateSessionStarted(event, hourBucket) {
-        const key = this.getAggregationKey(event.tenantId, event.payload.sessionType, hourBucket.toISOString());
-        const existing = this.buffer.sessionMetrics.get(key);
-        if (existing) {
-            existing.sessionsStarted++;
-            existing.updatedAt = new Date();
-        }
-        else {
-            this.buffer.sessionMetrics.set(key, {
-                tenantId: event.tenantId,
-                sessionType: event.payload.sessionType,
-                hourBucket,
-                sessionsStarted: 1,
-                sessionsEnded: 0,
-                totalDurationMs: 0,
-                avgDurationMs: 0,
-                activitiesCompleted: 0,
-                correctAnswers: 0,
-                incorrectAnswers: 0,
-                updatedAt: new Date(),
-            });
-        }
+  }
+  // ---------------------------------------------------------------------------
+  // Flush Aggregations
+  // ---------------------------------------------------------------------------
+  async flush() {
+    const currentBuffer = this.buffer;
+    this.buffer = this.createEmptyBuffer();
+    const promises = [];
+    // Flush event counts
+    for (const agg of currentBuffer.eventCounts.values()) {
+      promises.push(this.writers.writeEventCount(agg));
     }
-    aggregateSessionEnded(event, hourBucket) {
-        // Try to find matching session type from existing data
-        // In production, we'd look this up from the session
-        const sessionType = 'LEARNING'; // Default
-        const key = this.getAggregationKey(event.tenantId, sessionType, hourBucket.toISOString());
-        const existing = this.buffer.sessionMetrics.get(key);
-        if (existing) {
-            existing.sessionsEnded++;
-            existing.totalDurationMs += event.payload.durationMs;
-            existing.avgDurationMs = existing.totalDurationMs / existing.sessionsEnded;
-            existing.activitiesCompleted += event.payload.summary.activitiesCompleted;
-            existing.correctAnswers += event.payload.summary.correctAnswers;
-            existing.incorrectAnswers += event.payload.summary.incorrectAnswers;
-            existing.updatedAt = new Date();
-        }
-        else {
-            this.buffer.sessionMetrics.set(key, {
-                tenantId: event.tenantId,
-                sessionType,
-                hourBucket,
-                sessionsStarted: 0,
-                sessionsEnded: 1,
-                totalDurationMs: event.payload.durationMs,
-                avgDurationMs: event.payload.durationMs,
-                activitiesCompleted: event.payload.summary.activitiesCompleted,
-                correctAnswers: event.payload.summary.correctAnswers,
-                incorrectAnswers: event.payload.summary.incorrectAnswers,
-                updatedAt: new Date(),
-            });
-        }
+    // Flush session metrics
+    for (const agg of currentBuffer.sessionMetrics.values()) {
+      promises.push(this.writers.writeSessionMetrics(agg));
     }
-    aggregateActivityCompleted(event, hourBucket) {
-        // Activities contribute to the nearest session metrics bucket
-        // This is a simplified aggregation
+    // Flush engagement metrics
+    for (const agg of currentBuffer.engagementMetrics.values()) {
+      promises.push(this.writers.writeEngagementMetrics(agg));
     }
-    // ---------------------------------------------------------------------------
-    // Engagement Metrics Aggregation
-    // ---------------------------------------------------------------------------
-    aggregateEngagement(event, hourBucket) {
-        const key = this.getAggregationKey(event.tenantId, hourBucket.toISOString());
-        const existing = this.buffer.engagementMetrics.get(key);
-        if (existing) {
-            // Running average calculation
-            const newCount = existing.sampleCount + 1;
-            existing.avgEngagementScore =
-                (existing.avgEngagementScore * existing.sampleCount + event.payload.engagementScore) /
-                    newCount;
-            existing.minEngagementScore = Math.min(existing.minEngagementScore, event.payload.engagementScore);
-            existing.maxEngagementScore = Math.max(existing.maxEngagementScore, event.payload.engagementScore);
-            existing.avgInteractionRate =
-                (existing.avgInteractionRate * existing.sampleCount +
-                    event.payload.components.interactionRate) /
-                    newCount;
-            existing.avgOnTaskRatio =
-                (existing.avgOnTaskRatio * existing.sampleCount + event.payload.components.onTaskRatio) /
-                    newCount;
-            existing.sampleCount = newCount;
-            existing.updatedAt = new Date();
-        }
-        else {
-            this.buffer.engagementMetrics.set(key, {
-                tenantId: event.tenantId,
-                hourBucket,
-                sampleCount: 1,
-                avgEngagementScore: event.payload.engagementScore,
-                minEngagementScore: event.payload.engagementScore,
-                maxEngagementScore: event.payload.engagementScore,
-                avgInteractionRate: event.payload.components.interactionRate,
-                avgOnTaskRatio: event.payload.components.onTaskRatio,
-                updatedAt: new Date(),
-            });
-        }
+    // Flush focus metrics
+    for (const agg of currentBuffer.focusMetrics.values()) {
+      promises.push(this.writers.writeFocusMetrics(agg));
     }
-    // ---------------------------------------------------------------------------
-    // Focus Metrics Aggregation
-    // ---------------------------------------------------------------------------
-    aggregateFocusSample(event, hourBucket) {
-        const gradeBand = event.payload.gradeBand ?? 'unknown';
-        const key = this.getAggregationKey(event.tenantId, gradeBand, hourBucket.toISOString());
-        const existing = this.buffer.focusMetrics.get(key);
-        if (existing) {
-            const newCount = existing.sampleCount + 1;
-            existing.avgFocusScore =
-                (existing.avgFocusScore * existing.sampleCount + event.payload.focusScore) / newCount;
-            existing.minFocusScore = Math.min(existing.minFocusScore, event.payload.focusScore);
-            existing.maxFocusScore = Math.max(existing.maxFocusScore, event.payload.focusScore);
-            existing.avgIdleMs =
-                (existing.avgIdleMs * existing.sampleCount + event.payload.avgIdleMs) / newCount;
-            existing.totalBackgroundMs += event.payload.backgroundMs;
-            existing.sampleCount = newCount;
-            existing.updatedAt = new Date();
-        }
-        else {
-            this.buffer.focusMetrics.set(key, {
-                tenantId: event.tenantId,
-                gradeBand,
-                hourBucket,
-                sampleCount: 1,
-                avgFocusScore: event.payload.focusScore,
-                minFocusScore: event.payload.focusScore,
-                maxFocusScore: event.payload.focusScore,
-                avgIdleMs: event.payload.avgIdleMs,
-                totalBackgroundMs: event.payload.backgroundMs,
-                focusLossCount: 0,
-                updatedAt: new Date(),
-            });
-        }
+    if (promises.length > 0) {
+      await Promise.all(promises);
+      log.debug(
+        { stream: this.consumerOptions.stream, count: promises.length },
+        'Flushed aggregations'
+      );
     }
-    aggregateFocusSummary(event, hourBucket) {
-        const gradeBand = event.payload.gradeBand ?? 'unknown';
-        const key = this.getAggregationKey(event.tenantId, gradeBand, hourBucket.toISOString());
-        const existing = this.buffer.focusMetrics.get(key);
-        if (existing) {
-            existing.focusLossCount += event.payload.focusLossCount;
-            existing.totalBackgroundMs += event.payload.backgroundMs;
-            existing.updatedAt = new Date();
-        }
-    }
-    // ---------------------------------------------------------------------------
-    // Flush Aggregations
-    // ---------------------------------------------------------------------------
-    async flush() {
-        const currentBuffer = this.buffer;
-        this.buffer = this.createEmptyBuffer();
-        const promises = [];
-        // Flush event counts
-        for (const agg of currentBuffer.eventCounts.values()) {
-            promises.push(this.writers.writeEventCount(agg));
-        }
-        // Flush session metrics
-        for (const agg of currentBuffer.sessionMetrics.values()) {
-            promises.push(this.writers.writeSessionMetrics(agg));
-        }
-        // Flush engagement metrics
-        for (const agg of currentBuffer.engagementMetrics.values()) {
-            promises.push(this.writers.writeEngagementMetrics(agg));
-        }
-        // Flush focus metrics
-        for (const agg of currentBuffer.focusMetrics.values()) {
-            promises.push(this.writers.writeFocusMetrics(agg));
-        }
-        if (promises.length > 0) {
-            await Promise.all(promises);
-            console.log(`[AnalyticsConsumer:${this.consumerOptions.stream}] Flushed ${promises.length} aggregations`);
-        }
-    }
+  }
 }
 // -----------------------------------------------------------------------------
 // Factory Function
 // -----------------------------------------------------------------------------
 export function createAnalyticsConsumers(connection, writers, options) {
-    // Only consume LEARNING and FOCUS for analytics
-    const streams = ['LEARNING', 'FOCUS'];
-    return streams.map((stream) => {
-        const config = {
-            connection,
-            consumer: { stream },
-            writers,
-        };
-        if (options?.windowMs !== undefined) {
-            config.windowMs = options.windowMs;
-        }
-        return new AnalyticsConsumer(config);
-    });
+  // Only consume LEARNING and FOCUS for analytics
+  const streams = ['LEARNING', 'FOCUS'];
+  return streams.map((stream) => {
+    const config = {
+      connection,
+      consumer: { stream },
+      writers,
+    };
+    if (options?.windowMs !== undefined) {
+      config.windowMs = options.windowMs;
+    }
+    return new AnalyticsConsumer(config);
+  });
 }
 // -----------------------------------------------------------------------------
 // SQL Helpers

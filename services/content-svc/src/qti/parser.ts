@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * QTI Parser Service
  *
@@ -503,17 +503,22 @@ export class QtiParser {
     const resourcesNode = manifest?.resources as Record<string, unknown>;
     const resourceNodes = this.ensureArray(resourcesNode?.resource);
 
-    const resources: QtiPackageResource[] = resourceNodes.map((res) => ({
-      identifier: (res['@_identifier'] as string) ?? '',
-      type: (res['@_type'] as string) ?? '',
-      href: (res['@_href'] as string) ?? '',
-      files: this.ensureArray(res.file)
-        .map((f) => f['@_href'] as string)
-        .filter(Boolean),
-      dependencies: this.ensureArray(res.dependency)
-        .map((d) => d['@_identifierref'] as string)
-        .filter(Boolean),
-    }));
+    const resources: QtiPackageResource[] = resourceNodes.map((res) => {
+      const r = res as Record<string, unknown>;
+      return {
+        identifier: (r['@_identifier'] as string) ?? '',
+        type: (r['@_type'] as string) ?? '',
+        href: (r['@_href'] as string) ?? '',
+        files: this.ensureArray(r.file as Record<string, unknown>[] | Record<string, unknown>)
+          .map((f) => f['@_href'] as string)
+          .filter(Boolean),
+        dependencies: this.ensureArray(
+          r.dependency as Record<string, unknown>[] | Record<string, unknown>
+        )
+          .map((d) => d['@_identifierref'] as string)
+          .filter(Boolean),
+      };
+    });
 
     return { identifier, resources };
   }
@@ -537,17 +542,17 @@ export class QtiParser {
 
     // Parse response declarations
     const responseDeclarations = this.ensureArray(node.responseDeclaration).map((rd) =>
-      this.parseResponseDeclaration(rd)
+      this.parseResponseDeclaration(rd as Record<string, unknown>)
     );
 
     // Parse outcome declarations
     const outcomeDeclarations = this.ensureArray(node.outcomeDeclaration).map((od) =>
-      this.parseOutcomeDeclaration(od)
+      this.parseOutcomeDeclaration(od as Record<string, unknown>)
     );
 
     // Parse stylesheets
     const stylesheets = this.ensureArray(node.stylesheet)
-      .map((ss) => ss['@_href'] as string)
+      .map((ss) => (ss as Record<string, unknown>)['@_href'] as string)
       .filter(Boolean);
 
     // Parse item body
@@ -560,7 +565,7 @@ export class QtiParser {
 
     // Parse modal feedback
     const modalFeedback = this.ensureArray(node.modalFeedback).map((mf) =>
-      this.parseModalFeedback(mf)
+      this.parseModalFeedback(mf as Record<string, unknown>)
     );
 
     return {
@@ -693,7 +698,7 @@ export class QtiParser {
     for (const type of interactionTypes) {
       const interactionNodes = this.ensureArray(node[type]);
       for (const intNode of interactionNodes) {
-        interactions.push(this.parseInteraction(type, intNode, version));
+        interactions.push(this.parseInteraction(type, intNode as Record<string, unknown>, version));
       }
     }
 
@@ -784,13 +789,13 @@ export class QtiParser {
     // Parse response conditions
     const conditions = this.ensureArray(node.responseCondition);
     for (const cond of conditions) {
-      rules.push({ type: 'responseCondition', raw: cond });
+      rules.push({ type: 'responseCondition', raw: cond as Record<string, unknown> });
     }
 
     // Parse set outcome value
     const setOutcomes = this.ensureArray(node.setOutcomeValue);
     for (const so of setOutcomes) {
-      rules.push({ type: 'setOutcomeValue', raw: so });
+      rules.push({ type: 'setOutcomeValue', raw: so as Record<string, unknown> });
     }
 
     return { template, rules: rules.length > 0 ? rules : undefined };
@@ -820,7 +825,7 @@ export class QtiParser {
 
     // Parse outcome declarations
     const outcomeDeclarations = this.ensureArray(node.outcomeDeclaration).map((od) =>
-      this.parseOutcomeDeclaration(od)
+      this.parseOutcomeDeclaration(od as Record<string, unknown>)
     );
 
     // Parse time limits
@@ -834,7 +839,9 @@ export class QtiParser {
       : undefined;
 
     // Parse test parts
-    const testParts = this.ensureArray(node.testPart).map((tp) => this.parseTestPart(tp, version));
+    const testParts = this.ensureArray(node.testPart).map((tp) =>
+      this.parseTestPart(tp as Record<string, unknown>, version)
+    );
 
     // Outcome processing
     const outcomeProcessing = node.outcomeProcessing as Record<string, unknown>;
@@ -860,7 +867,7 @@ export class QtiParser {
 
     // Parse sections
     const sections = this.ensureArray(node.assessmentSection).map((s) =>
-      this.parseSection(s, version)
+      this.parseSection(s as Record<string, unknown>, version)
     );
 
     // Parse item session control
@@ -896,11 +903,13 @@ export class QtiParser {
     const fixed = node['@_fixed'] as boolean;
 
     // Parse item references
-    const items = this.ensureArray(node.assessmentItemRef).map((ir) => this.parseItemRef(ir));
+    const items = this.ensureArray(node.assessmentItemRef).map((ir) =>
+      this.parseItemRef(ir as Record<string, unknown>)
+    );
 
     // Parse nested sections
     const sections = this.ensureArray(node.assessmentSection).map((s) =>
-      this.parseSection(s, version)
+      this.parseSection(s as Record<string, unknown>, version)
     );
 
     // Parse selection

@@ -3,6 +3,13 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import { ScheduleService } from '../schedules/schedule.service.js';
+import type {
+  CreateScheduleInput,
+  ScheduleItem,
+  SessionActivity,
+  CreateTemplateInput,
+  UpdateTemplateInput,
+} from '../schedules/schedule.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -229,7 +236,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
       const schedule = await scheduleService.createSchedule({
         ...body,
         date: new Date(body.date),
-      });
+      } as CreateScheduleInput);
 
       return reply.status(201).send(schedule);
     }
@@ -381,7 +388,11 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
       const body = AddItemSchema.parse(request.body);
 
       try {
-        const schedule = await scheduleService.addItem(id, body.item, body.afterItemId);
+        const schedule = await scheduleService.addItem(
+          id,
+          body.item as Omit<ScheduleItem, 'status' | 'id'>,
+          body.afterItemId
+        );
         return reply.status(201).send(schedule);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
@@ -427,7 +438,10 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
       const body = ReorderItemsSchema.parse(request.body);
 
       try {
-        const schedule = await scheduleService.reorderItems(id, body.itemOrders);
+        const schedule = await scheduleService.reorderItems(
+          id,
+          body.itemOrders as { itemId: string; newIndex: number }[]
+        );
         return schedule;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
@@ -455,7 +469,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
         body.sessionId,
         body.learnerId,
         body.tenantId,
-        body.activities
+        body.activities as SessionActivity[]
       );
 
       return reply.status(201).send(schedule);
@@ -467,10 +481,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/activity-breakdown/:activityType',
-    async (
-      request: FastifyRequest<{ Params: { activityType: string } }>,
-      _reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { activityType: string } }>, _reply: FastifyReply) => {
       const { activityType } = request.params;
       const breakdown = scheduleService.getActivityBreakdown(activityType);
       return { activityType, steps: breakdown };
@@ -559,7 +570,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
     ) => {
       const body = CreateTemplateSchema.parse(request.body);
 
-      const template = await scheduleService.createTemplate(body);
+      const template = await scheduleService.createTemplate(body as CreateTemplateInput);
 
       return reply.status(201).send(template);
     }
@@ -581,7 +592,10 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
       const body = UpdateTemplateSchema.parse(request.body);
 
       try {
-        const template = await scheduleService.updateTemplate(templateId, body);
+        const template = await scheduleService.updateTemplate(
+          templateId,
+          body as UpdateTemplateInput
+        );
         return template;
       } catch {
         return reply.status(404).send({ error: 'Template not found' });

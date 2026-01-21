@@ -141,7 +141,7 @@ export async function searchRoutes(fastify: FastifyInstance) {
         .send({ error: 'Invalid request body', details: bodyResult.error.flatten() });
     }
 
-    const result = await selectContentForPlan(bodyResult.data);
+    const result = await selectContentForPlan(bodyResult.data as any);
 
     return reply.send(result);
   });

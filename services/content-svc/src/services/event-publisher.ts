@@ -5,7 +5,9 @@
 // Publishes content ingestion events to NATS JetStream.
 // Falls back to logging when NATS is disabled or unavailable.
 
-import { EventPublisher, createEventPublisher } from '@aivo/events';
+import type { EventPublisher } from '@aivo/events';
+import { createEventPublisher } from '@aivo/events';
+
 import { config } from '../config.js';
 
 // -----------------------------------------------------------------------------
@@ -106,7 +108,9 @@ class ContentEventPublisherService {
   /**
    * Publish a file ingestion job event to trigger background processing.
    */
-  async publishFileIngestionJob(data: FileIngestionJobData): Promise<{ success: boolean; error?: string }> {
+  async publishFileIngestionJob(
+    data: FileIngestionJobData
+  ): Promise<{ success: boolean; error?: string }> {
     const publisher = await this.ensureConnected();
 
     const subject = `content.ingestion.file.${data.jobId}`;
@@ -126,14 +130,21 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        // Use the generic publish method for custom events
-        const result = await publisher.publish(subject, payload);
+        // Use publishRaw for custom events
+        const result = await publisher.publishRaw({
+          tenantId: data.tenantId ?? 'system',
+          eventType: subject,
+          eventVersion: '1.0.0',
+          payload,
+        });
 
         if (result.success) {
           console.log(`[content-svc] Published file ingestion job: ${data.jobId}`);
           return { success: true };
         } else {
-          console.error(`[content-svc] Failed to publish file ingestion job: ${result.error?.message}`);
+          console.error(
+            `[content-svc] Failed to publish file ingestion job: ${result.error?.message}`
+          );
           return { success: false, error: result.error?.message };
         }
       } catch (err) {
@@ -180,7 +191,12 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        const result = await publisher.publish(subject, payload);
+        const result = await publisher.publishRaw({
+          tenantId: data.tenantId ?? 'system',
+          eventType: subject,
+          eventVersion: '1.0.0',
+          payload,
+        });
 
         if (result.success) {
           console.log(`[content-svc] Published AI draft job: ${data.jobId}`);

@@ -11,8 +11,6 @@
  * @see https://scorm.com/scorm-explained/technical-scorm/scorm-2004-overview-for-developers/
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-condition */
-
 import type { Readable } from 'stream';
 
 import { XMLParser } from 'fast-xml-parser';
@@ -333,7 +331,7 @@ export class ScormParser {
     if (!orgsNode) return [];
 
     const orgNodes = this.ensureArray(orgsNode.organization);
-    return orgNodes.map((org) => this.parseOrganization(org, version));
+    return orgNodes.map((org) => this.parseOrganization(org as Record<string, unknown>, version));
   }
 
   /**
@@ -414,7 +412,7 @@ export class ScormParser {
     if (!resourcesNode) return [];
 
     const resNodes = this.ensureArray(resourcesNode.resource);
-    return resNodes.map((res) => this.parseResource(res));
+    return resNodes.map((res) => this.parseResource(res as Record<string, unknown>));
   }
 
   /**

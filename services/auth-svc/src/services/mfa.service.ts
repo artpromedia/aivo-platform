@@ -13,12 +13,12 @@
  * Created: January 2026 - Enterprise QA Audit requirement
  */
 
-import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'node:crypto';
+import { randomBytes, createCipheriv, createDecipheriv, createHash, createHmac } from 'node:crypto';
 
 import type { Redis } from 'ioredis';
 
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import { config } from '../config.js';
-import type { PrismaClient } from '../generated/prisma-client/index.js';
 
 // ============================================================================
 // TOTP Implementation (RFC 6238)
@@ -92,14 +92,13 @@ function base32Decode(encoded: string): Buffer {
 /**
  * Generate TOTP code for a given secret and time
  */
-function generateTotpCode(secret: string, time?: number): string {
+function _generateTotpCode(secret: string, time?: number): string {
   const counter = Math.floor((time ?? Date.now() / 1000) / TOTP_STEP);
   const counterBuffer = Buffer.alloc(8);
   counterBuffer.writeBigInt64BE(BigInt(counter));
 
   // HMAC-SHA1
-  const crypto = await import('node:crypto');
-  const hmac = crypto.createHmac('sha1', base32Decode(secret));
+  const hmac = createHmac('sha1', base32Decode(secret));
   hmac.update(counterBuffer);
   const hash = hmac.digest();
 
@@ -218,7 +217,7 @@ function decryptSecret(encrypted: string): string {
 // ============================================================================
 
 const BACKUP_CODE_COUNT = 10;
-const BACKUP_CODE_LENGTH = 8;
+const _BACKUP_CODE_LENGTH = 8;
 
 function generateBackupCodes(): string[] {
   const codes: string[] = [];

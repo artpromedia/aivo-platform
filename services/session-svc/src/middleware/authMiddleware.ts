@@ -1,4 +1,4 @@
-import { authMiddleware as sharedAuthMiddleware } from '@aivo/ts-rbac';
+import { authMiddleware as sharedAuthMiddleware, Role } from '@aivo/ts-rbac';
 import type { FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
@@ -22,9 +22,9 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
       // Always provide a user in test runs so routes can execute
       if (!(request as FastifyRequest & { user?: unknown }).user) {
         (request as FastifyRequest & { user?: unknown }).user = {
-          sub: 'test-user',
+          userId: 'test-user',
           tenantId: '11111111-1111-1111-1111-111111111111',
-          role: 'service',
+          roles: [Role.PLATFORM_ADMIN],
         };
       }
       return;

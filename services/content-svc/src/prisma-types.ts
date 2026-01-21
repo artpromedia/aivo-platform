@@ -4,9 +4,9 @@
  * Provides type definitions for Prisma models and operations.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars, @typescript-eslint/no-unnecessary-boolean-literal-compare, @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars */
 
-import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import type { PrismaClient as BasePrismaClient } from '@prisma/client';
 
 // Generic model delegate interface
 interface ModelDelegate {
@@ -26,7 +26,17 @@ interface ModelDelegate {
 }
 
 // Extended Prisma Client with content-svc specific models
-export interface ExtendedPrismaClient extends Omit<BasePrismaClient, '$transaction'> {
+// Note: We don't extend BasePrismaClient directly due to delegate type incompatibilities
+export interface ExtendedPrismaClient {
+  // Standard Prisma methods
+  $connect: () => Promise<void>;
+  $disconnect: () => Promise<void>;
+  $executeRaw: (query: any, ...values: any[]) => Promise<number>;
+  $executeRawUnsafe: (query: string, ...values: any[]) => Promise<number>;
+  $queryRaw: <T = unknown>(query: any, ...values: any[]) => Promise<T>;
+  $queryRawUnsafe: <T = unknown>(query: string, ...values: any[]) => Promise<T>;
+  $on: (event: string, callback: (event: any) => void) => void;
+
   // Content models
   learningObject: ModelDelegate;
   learningObjectVersion: ModelDelegate;

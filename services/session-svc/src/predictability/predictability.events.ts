@@ -5,8 +5,7 @@
  * Uses @aivo/events schemas for type-safe event publishing.
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { EventPublisher, createEventPublisher } from '@aivo/events';
+import { createEventPublisher } from '@aivo/events';
 import type {
   SessionPlanCreated,
   SessionProgressUpdated,
@@ -17,10 +16,13 @@ import type {
   RoutineStepCompleted,
   RoutineCompleted,
   PreferencesUpdated,
+  EventPublisher,
 } from '@aivo/events';
+import { v4 as uuidv4 } from 'uuid';
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+
 import type {
   SessionOutlineItem,
   PredictabilityPreferences,
@@ -120,23 +122,38 @@ class PredictabilityEventPublisherService {
     return this.publisher;
   }
 
-  private async publishEvent(eventType: string, tenantId: string, event: unknown): Promise<void> {
+  private async publishEvent(_eventType: string, _tenantId: string, event: unknown): Promise<void> {
     const publisher = await this.ensureConnected();
 
     if (publisher) {
       try {
-        const result = await publisher.publish(eventType, event);
+        // Use publishRaw for custom event types
+        const result = await publisher.publishRaw(
+          event as Parameters<typeof publisher.publishRaw>[0]
+        );
         if (result.success) {
-          logger.debug({ eventType, sequence: result.sequence }, '[PredictabilityEvent] Published event');
+          logger.debug(
+            { eventType: _eventType, eventId: result.eventId },
+            '[PredictabilityEvent] Published event'
+          );
         } else {
-          logger.error({ eventType, error: result.error?.message }, '[PredictabilityEvent] Failed to publish');
+          logger.error(
+            { eventType: _eventType, error: result.error?.message },
+            '[PredictabilityEvent] Failed to publish'
+          );
         }
       } catch (error) {
-        logger.error({ error, eventType }, '[PredictabilityEvent] Error publishing event');
+        logger.error(
+          { error, eventType: _eventType },
+          '[PredictabilityEvent] Error publishing event'
+        );
       }
     } else {
       // Log event when NATS is not available
-      logger.debug({ eventType, tenantId, event }, '[PredictabilityEvent] Event not sent (NATS unavailable)');
+      logger.debug(
+        { eventType: _eventType, tenantId: _tenantId, event },
+        '[PredictabilityEvent] Event not sent (NATS unavailable)'
+      );
     }
   }
 

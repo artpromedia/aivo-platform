@@ -6,7 +6,6 @@
  */
 
 import type { LearningObjectSubject, LearningObjectGradeBand } from './prisma-types.js';
-
 import { searchContent, getRecentlyUsedLOIds, type SearchResult } from './search.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -107,8 +106,8 @@ export async function selectContentForPlan(
   // 1. Search for matching content
   const searchResults = await searchContent({
     tenantId,
-    subject,
-    gradeBand,
+    subject: subject as LearningObjectSubject,
+    gradeBand: gradeBand as LearningObjectGradeBand,
     skillIds: targetSkills,
     limit: 100, // Get more candidates for selection
   });

@@ -491,6 +491,19 @@ export class EventPublisher {
     return this.transport.publish(event, options);
   }
 
+  /**
+   * Generic publish method (alias for publishRaw).
+   * Publishes an event to NATS JetStream.
+   */
+  async publish(
+    _eventType: string,
+    event: unknown,
+    options?: PublishOptions
+  ): Promise<PublishResult> {
+    // Cast to expected shape and delegate to transport
+    return this.transport.publish(event as Parameters<typeof this.transport.publish>[0], options);
+  }
+
   // ---------------------------------------------------------------------------
   // Utility
   // ---------------------------------------------------------------------------

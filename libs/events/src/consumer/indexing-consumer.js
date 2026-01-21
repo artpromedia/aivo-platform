@@ -22,89 +22,90 @@
 //     sequence BIGINT NOT NULL,
 //     indexed_at TIMESTAMPTZ DEFAULT NOW()
 //   );
+import { createLogger } from '../logger.js';
 import { BaseConsumer } from './base-consumer.js';
+const log = createLogger('indexing-consumer');
 // -----------------------------------------------------------------------------
 // Indexing Consumer Class
 // -----------------------------------------------------------------------------
 export class IndexingConsumer extends BaseConsumer {
-    buffer = [];
-    flushTimer = null;
-    writeEvent;
-    batchSize;
-    flushIntervalMs;
-    constructor(config) {
-        super(config.connection, {
-            ...config.consumer,
-            durableName: `${config.consumer.stream.toLowerCase()}-indexer`,
-        });
-        this.writeEvent = config.writeEvent;
-        this.batchSize = config.batchSize ?? 100;
-        this.flushIntervalMs = config.flushIntervalMs ?? 1000;
+  buffer = [];
+  flushTimer = null;
+  writeEvent;
+  batchSize;
+  flushIntervalMs;
+  constructor(config) {
+    super(config.connection, {
+      ...config.consumer,
+      durableName: `${config.consumer.stream.toLowerCase()}-indexer`,
+    });
+    this.writeEvent = config.writeEvent;
+    this.batchSize = config.batchSize ?? 100;
+    this.flushIntervalMs = config.flushIntervalMs ?? 1000;
+  }
+  async start() {
+    // Start flush timer
+    this.flushTimer = setInterval(() => {
+      this.flush().catch((err) => {
+        log.error({ err }, 'Flush error');
+      });
+    }, this.flushIntervalMs);
+    await super.start();
+  }
+  async close() {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
     }
-    async start() {
-        // Start flush timer
-        this.flushTimer = setInterval(() => {
-            this.flush().catch((err) => {
-                console.error('[IndexingConsumer] Flush error:', err);
-            });
-        }, this.flushIntervalMs);
-        await super.start();
+    // Final flush
+    await this.flush();
+    await super.close();
+  }
+  async handleMessage(message) {
+    const event = message.event;
+    const indexedEvent = {
+      id: event.eventId,
+      tenantId: event.tenantId,
+      eventType: event.eventType,
+      eventVersion: event.eventVersion,
+      timestamp: new Date(event.timestamp),
+      sourceService: event.source.service,
+      sourceVersion: event.source.version,
+      payload: event.payload ?? {},
+      stream: this.consumerOptions.stream,
+      sequence: message.sequence,
+      indexedAt: new Date(),
+    };
+    // Add optional fields only if they exist
+    if (event.correlationId) {
+      indexedEvent.correlationId = event.correlationId;
     }
-    async close() {
-        if (this.flushTimer) {
-            clearInterval(this.flushTimer);
-            this.flushTimer = null;
-        }
-        // Final flush
-        await this.flush();
-        await super.close();
+    if (event.causationId) {
+      indexedEvent.causationId = event.causationId;
     }
-    async handleMessage(message) {
-        const event = message.event;
-        const indexedEvent = {
-            id: event.eventId,
-            tenantId: event.tenantId,
-            eventType: event.eventType,
-            eventVersion: event.eventVersion,
-            timestamp: new Date(event.timestamp),
-            sourceService: event.source.service,
-            sourceVersion: event.source.version,
-            payload: event.payload ?? {},
-            stream: this.consumerOptions.stream,
-            sequence: message.sequence,
-            indexedAt: new Date(),
-        };
-        // Add optional fields only if they exist
-        if (event.correlationId) {
-            indexedEvent.correlationId = event.correlationId;
-        }
-        if (event.causationId) {
-            indexedEvent.causationId = event.causationId;
-        }
-        if (event.metadata) {
-            indexedEvent.metadata = event.metadata;
-        }
-        this.buffer.push(indexedEvent);
-        if (this.buffer.length >= this.batchSize) {
-            await this.flush();
-        }
+    if (event.metadata) {
+      indexedEvent.metadata = event.metadata;
     }
-    async flush() {
-        if (this.buffer.length === 0) {
-            return;
-        }
-        const batch = this.buffer.splice(0, this.batchSize);
-        try {
-            // Write events in parallel (within batch)
-            await Promise.all(batch.map((event) => this.writeEvent(event)));
-            console.log(`[IndexingConsumer:${this.consumerOptions.stream}] Indexed ${batch.length} events`);
-        }
-        catch (err) {
-            // Put failed events back in buffer for retry
-            this.buffer.unshift(...batch);
-            throw err;
-        }
+    this.buffer.push(indexedEvent);
+    if (this.buffer.length >= this.batchSize) {
+      await this.flush();
     }
+  }
+  async flush() {
+    if (this.buffer.length === 0) {
+      return;
+    }
+    const batch = this.buffer.splice(0, this.batchSize);
+    try {
+      // Write events in parallel (within batch)
+      await Promise.all(batch.map((event) => this.writeEvent(event)));
+      log.debug({ stream: this.consumerOptions.stream, count: batch.length }, 'Indexed events');
+    } catch (err) {
+      // Put failed events back in buffer for retry
+      this.buffer.unshift(...batch);
+      throw err;
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 // Factory Function
@@ -113,21 +114,21 @@ export class IndexingConsumer extends BaseConsumer {
  * Create indexing consumers for all streams.
  */
 export function createIndexingConsumers(connection, writeEvent, options) {
-    const streams = ['LEARNING', 'FOCUS', 'HOMEWORK', 'RECOMMENDATION'];
-    return streams.map((stream) => {
-        const config = {
-            connection,
-            consumer: { stream },
-            writeEvent,
-        };
-        if (options?.batchSize !== undefined) {
-            config.batchSize = options.batchSize;
-        }
-        if (options?.flushIntervalMs !== undefined) {
-            config.flushIntervalMs = options.flushIntervalMs;
-        }
-        return new IndexingConsumer(config);
-    });
+  const streams = ['LEARNING', 'FOCUS', 'HOMEWORK', 'RECOMMENDATION'];
+  return streams.map((stream) => {
+    const config = {
+      connection,
+      consumer: { stream },
+      writeEvent,
+    };
+    if (options?.batchSize !== undefined) {
+      config.batchSize = options.batchSize;
+    }
+    if (options?.flushIntervalMs !== undefined) {
+      config.flushIntervalMs = options.flushIntervalMs;
+    }
+    return new IndexingConsumer(config);
+  });
 }
 // -----------------------------------------------------------------------------
 // SQL Helpers

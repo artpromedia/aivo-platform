@@ -63,19 +63,20 @@ function getCorsOrigins(): string[] {
 }
 
 // Register CORS
-await fastify.register(cors, {
+
+await fastify.register(cors as any, {
   origin: getCorsOrigins(),
   credentials: true,
 });
 
 // Rate limiting for content endpoints
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-await fastify.register(rateLimit, FastifyRateLimitPresets.content('content-svc'));
+
+await fastify.register(rateLimit as any, FastifyRateLimitPresets.content('content-svc'));
 
 // DataLoader initialization per request (prevents N+1 queries)
 fastify.addHook('preHandler', async (request) => {
   // Extract tenant ID from JWT user if available
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const user = (request as any).user as { tenantId?: string; tenant_id?: string } | undefined;
   const tenantId = user?.tenantId ?? user?.tenant_id;
   request.loaders = createContentDataLoaders(tenantId);

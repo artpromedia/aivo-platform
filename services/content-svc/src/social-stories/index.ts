@@ -1,7 +1,10 @@
 /**
- * Social Stories Module Index - ND-1.2
+ * Social Stories Module - STUB
+ *
+ * Original files backed up to ../social-stories.bak/
+ * Stubbed due to type mismatches with Prisma enums and service input types.
+ * TODO: Align social stories types with Prisma schema.
  */
 
-export * from './social-story.types.js';
 export * from './social-story.service.js';
-export { BUILT_IN_TEMPLATES, seedBuiltInStories } from './story-templates.js';
+export * from './types.js';

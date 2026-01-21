@@ -17,7 +17,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import { createRateLimiter } from '../lib/rate-limit.js';
 import { MfaService } from '../services/mfa.service.js';
 
@@ -77,6 +77,9 @@ interface AuthenticatedUser {
   roles: string[];
 }
 
+// Type helper to bypass strict FastifySchema typing for OpenAPI extensions
+type OpenAPISchema = Record<string, unknown>;
+
 // ============================================================================
 // Route Registration
 // ============================================================================
@@ -112,10 +115,10 @@ export async function registerMfaRoutes(
             },
           },
         },
-      },
+      } as OpenAPISchema,
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = request.user as AuthenticatedUser;
+      const user = request.user as unknown as AuthenticatedUser;
 
       try {
         const result = await mfaService.initializeSetup(user.id, user.tenantId);
@@ -164,10 +167,10 @@ export async function registerMfaRoutes(
             },
           },
         },
-      },
+      } as OpenAPISchema,
     },
     async (request: FastifyRequest<{ Body: MfaVerifyBody }>, reply: FastifyReply) => {
-      const user = request.user as AuthenticatedUser;
+      const user = request.user as unknown as AuthenticatedUser;
       const { code } = request.body;
 
       try {
@@ -214,10 +217,10 @@ export async function registerMfaRoutes(
             },
           },
         },
-      },
+      } as OpenAPISchema,
     },
     async (request: FastifyRequest<{ Body: MfaDisableBody }>, reply: FastifyReply) => {
-      const user = request.user as AuthenticatedUser;
+      const user = request.user as unknown as AuthenticatedUser;
       const { code } = request.body;
 
       try {
@@ -259,15 +262,15 @@ export async function registerMfaRoutes(
             },
           },
         },
-      },
+      } as OpenAPISchema,
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = request.user as AuthenticatedUser;
+      const user = request.user as unknown as AuthenticatedUser;
 
       try {
         const status = await mfaService.getStatus(user.id, user.tenantId);
         return reply.send(status);
-      } catch (error: any) {
+      } catch (_error: any) {
         return reply.status(500).send({ error: 'Failed to get MFA status' });
       }
     }
@@ -313,7 +316,7 @@ export async function registerMfaRoutes(
             },
           },
         },
-      },
+      } as OpenAPISchema,
     },
     async (request: FastifyRequest<{ Body: MfaChallengeVerifyBody }>, reply: FastifyReply) => {
       const { challengeId, code } = request.body;
@@ -389,10 +392,10 @@ export async function registerMfaRoutes(
             },
           },
         },
-      },
+      } as OpenAPISchema,
     },
     async (request: FastifyRequest<{ Body: MfaBackupCodesBody }>, reply: FastifyReply) => {
-      const user = request.user as AuthenticatedUser;
+      const user = request.user as unknown as AuthenticatedUser;
       const { code } = request.body;
 
       try {

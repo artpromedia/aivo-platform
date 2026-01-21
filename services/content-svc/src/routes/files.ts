@@ -15,9 +15,10 @@ import {
   createAccessContext,
   type UploadOptions,
   type FileCategory as StorageFileCategory,
+  type StorageConfig,
 } from '@aivo/ts-storage';
 import multipart from '@fastify/multipart';
-import { type FileCategory, type VirusScanStatus } from '@prisma/client';
+import type { Prisma, type FileCategory, type VirusScanStatus } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
@@ -45,7 +46,7 @@ if (process.env.VIRUSTOTAL_API_KEY) {
 const virusScanner = createVirusScanner(virusScannerConfig);
 
 // Build storage config without undefined optional properties
-const storageConfig: Parameters<typeof StorageService>[0] = {
+const storageConfig: StorageConfig = {
   bucket: process.env.S3_BUCKET ?? 'aivo-files',
   region: process.env.S3_REGION ?? process.env.AWS_REGION ?? 'us-east-1',
   forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
@@ -125,7 +126,6 @@ interface JwtUser {
 }
 
 function getUserFromRequest(request: FastifyRequest): JwtUser | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const user = (request as any).user;
   if (!user || typeof user.sub !== 'string') return null;
   return user as JwtUser;
@@ -204,7 +204,8 @@ function mapPrismaToStoredFile(file: {
 
 export async function fileRoutes(fastify: FastifyInstance) {
   // Register multipart support for direct uploads
-  await fastify.register(multipart, {
+
+  await fastify.register(multipart as any, {
     limits: {
       fileSize: 100 * 1024 * 1024, // 100MB
       files: 1,
@@ -337,7 +338,9 @@ export async function fileRoutes(fastify: FastifyInstance) {
         s3Key: result.file.s3Key,
         virusScanStatus: result.file.virusScanStatus as VirusScanStatus,
         virusScannedAt: result.file.virusScannedAt,
-        virusScanResult: result.scanResult ? structuredClone(result.scanResult) : undefined,
+        virusScanResult: result.scanResult
+          ? (structuredClone(result.scanResult) as unknown as Prisma.InputJsonValue)
+          : undefined,
         metadataJson: metadata ?? {},
       },
     });
@@ -371,7 +374,8 @@ export async function fileRoutes(fastify: FastifyInstance) {
     }
 
     // Parse multipart form data
-    const data = await request.file();
+
+    const data = await (request as any).file();
     if (!data) {
       return reply.status(400).send({ error: 'No file provided' });
     }
@@ -439,7 +443,9 @@ export async function fileRoutes(fastify: FastifyInstance) {
         s3Key: result.file.s3Key,
         virusScanStatus: result.file.virusScanStatus as VirusScanStatus,
         virusScannedAt: result.file.virusScannedAt,
-        virusScanResult: result.scanResult ? structuredClone(result.scanResult) : undefined,
+        virusScanResult: result.scanResult
+          ? (structuredClone(result.scanResult) as unknown as Prisma.InputJsonValue)
+          : undefined,
         metadataJson: {},
       },
     });

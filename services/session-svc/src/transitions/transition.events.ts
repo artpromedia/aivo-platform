@@ -5,18 +5,20 @@
 // Publishes transition events to NATS JetStream.
 // Uses @aivo/events schemas for type-safe event publishing.
 
-import { v4 as uuidv4 } from 'uuid';
-import { EventPublisher, createEventPublisher } from '@aivo/events';
+import { createEventPublisher } from '@aivo/events';
 import type {
   TransitionStarted,
   TransitionWarning as TransitionWarningEvent,
   TransitionAcknowledged,
   TransitionRoutineStep as TransitionRoutineStepEvent,
   TransitionCompleted,
+  EventPublisher,
 } from '@aivo/events';
+import { v4 as uuidv4 } from 'uuid';
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+
 import type {
   TransitionPlan,
   TransitionContext,
@@ -113,23 +115,35 @@ class TransitionEventPublisherService {
     return this.publisher;
   }
 
-  private async publishEvent(eventType: string, tenantId: string, event: unknown): Promise<void> {
+  private async publishEvent(_eventType: string, _tenantId: string, event: unknown): Promise<void> {
     const publisher = await this.ensureConnected();
 
     if (publisher) {
       try {
-        const result = await publisher.publish(eventType, event);
+        // Use publishRaw for custom event types
+        const result = await publisher.publishRaw(
+          event as Parameters<typeof publisher.publishRaw>[0]
+        );
         if (result.success) {
-          logger.debug({ eventType, sequence: result.sequence }, '[TransitionEvent] Published event');
+          logger.debug(
+            { eventType: _eventType, eventId: result.eventId },
+            '[TransitionEvent] Published event'
+          );
         } else {
-          logger.error({ eventType, error: result.error?.message }, '[TransitionEvent] Failed to publish');
+          logger.error(
+            { eventType: _eventType, error: result.error?.message },
+            '[TransitionEvent] Failed to publish'
+          );
         }
       } catch (error) {
-        logger.error({ error, eventType }, '[TransitionEvent] Error publishing event');
+        logger.error({ error, eventType: _eventType }, '[TransitionEvent] Error publishing event');
       }
     } else {
       // Log event when NATS is not available
-      logger.debug({ eventType, tenantId, event }, '[TransitionEvent] Event not sent (NATS unavailable)');
+      logger.debug(
+        { eventType: _eventType, tenantId: _tenantId, event },
+        '[TransitionEvent] Event not sent (NATS unavailable)'
+      );
     }
   }
 
@@ -148,7 +162,6 @@ class TransitionEventPublisherService {
       transitionId,
       sessionId,
       learnerId,
-      tenantId,
       fromActivity: context.fromActivity
         ? {
             id: context.fromActivity.id,
@@ -198,13 +211,26 @@ class TransitionEventPublisherService {
       transitionId,
       sessionId,
       learnerId,
-      tenantId,
       warningNumber,
       secondsRemaining: warning.secondsBefore,
       isTimerVisible: warning.type === 'visual',
-      visualStyle: warning.type === 'visual' ? warning.intensity : 'subtle',
+      visualStyle:
+        warning.type === 'visual'
+          ? warning.intensity === 'low'
+            ? 'subtle'
+            : warning.intensity === 'medium'
+              ? 'moderate'
+              : 'prominent'
+          : 'subtle',
       audioType: warning.type === 'audio' || warning.type === 'spoken' ? warning.type : null,
-      hapticPattern: warning.type === 'haptic' ? warning.intensity : null,
+      hapticPattern:
+        warning.type === 'haptic'
+          ? warning.intensity === 'low'
+            ? 'gentle'
+            : warning.intensity === 'medium'
+              ? 'moderate'
+              : 'strong'
+          : null,
       timestamp: new Date().toISOString(),
     };
 
@@ -232,7 +258,6 @@ class TransitionEventPublisherService {
       transitionId,
       sessionId,
       learnerId,
-      tenantId,
       acknowledgedAt: new Date().toISOString(),
       secondsBeforeStart,
       readyState,
@@ -264,7 +289,6 @@ class TransitionEventPublisherService {
       transitionId,
       sessionId,
       learnerId,
-      tenantId,
       stepIndex,
       stepType: step.type,
       stepDuration: step.duration,
@@ -307,7 +331,6 @@ class TransitionEventPublisherService {
       transitionId,
       sessionId,
       learnerId,
-      tenantId,
       ...analytics,
       completedAt: new Date().toISOString(),
     };

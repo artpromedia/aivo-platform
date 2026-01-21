@@ -209,7 +209,6 @@ export interface CreateLearnerSensoryProfileInput {
   notes?: string;
 }
 
-export interface UpdateLearnerSensoryProfileInput
-  extends Partial<CreateLearnerSensoryProfileInput> {
+export interface UpdateLearnerSensoryProfileInput extends Partial<CreateLearnerSensoryProfileInput> {
   parentConfirmedByUserId?: string;
 }

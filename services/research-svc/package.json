@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:integration": "vitest --config vitest.integration.config.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "prisma generate && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:worker": "node dist/worker.js",
     "db:generate": "prisma generate",

@@ -22,6 +22,7 @@ import type {
   TransitionContext,
   TransitionPreferencesInput,
   TransitionRoutineStep,
+  CreateRoutineInput,
 } from './transition.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -660,7 +661,7 @@ export async function transitionRoutes(fastify: FastifyInstance): Promise<void> 
       }
 
       const { routineId } = params.data;
-      const updates = body.data;
+      const updates = body.data as Partial<CreateRoutineInput>;
 
       try {
         // Get existing routine to check access

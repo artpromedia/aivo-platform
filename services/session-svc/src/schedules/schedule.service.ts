@@ -6,6 +6,7 @@
  */
 
 import type { PrismaClient, ScheduleType, ScheduleDisplayStyle } from '@prisma/client';
+
 import type {
   ScheduleItem,
   ScheduleSubItem,
@@ -18,12 +19,9 @@ import type {
   UpdatePreferencesInput,
   SessionActivity,
   ScheduleTemplateItem,
+  VisualSchedule,
 } from './schedule.types';
-import {
-  ACTIVITY_BREAKDOWNS,
-  ACTIVITY_TYPE_ICONS,
-  ACTIVITY_TYPE_COLORS,
-} from './schedule.types';
+import { ACTIVITY_BREAKDOWNS, ACTIVITY_TYPE_ICONS, ACTIVITY_TYPE_COLORS } from './schedule.types';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SERVICE INTERFACE
@@ -32,11 +30,7 @@ import {
 export interface ScheduleServiceDeps {
   prisma: PrismaClient;
   publishEvent?: (topic: string, data: unknown) => Promise<void>;
-  callService?: (
-    service: string,
-    path: string,
-    options: { method: string }
-  ) => Promise<unknown>;
+  callService?: (service: string, path: string, options: { method: string }) => Promise<unknown>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -113,13 +107,11 @@ export class ScheduleService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let schedule = await this.prisma.visualSchedule.findUnique({
+    let schedule = await this.prisma.visualSchedule.findFirst({
       where: {
-        learnerId_date_type: {
-          learnerId,
-          date: today,
-          type,
-        },
+        learnerId,
+        date: today,
+        type,
       },
     });
 
@@ -489,11 +481,7 @@ export class ScheduleService {
    * Get activity breakdown as mini-schedule
    */
   getActivityBreakdown(activityType: string): ScheduleSubItem[] {
-    return (
-      ACTIVITY_BREAKDOWNS[activityType.toLowerCase()] ??
-      ACTIVITY_BREAKDOWNS['lesson'] ??
-      []
-    );
+    return ACTIVITY_BREAKDOWNS[activityType.toLowerCase()] ?? ACTIVITY_BREAKDOWNS.lesson ?? [];
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -655,9 +643,8 @@ export class ScheduleService {
     const items = schedule.items as unknown as ScheduleItem[];
     const currentItem = items[schedule.currentItemIndex] ?? null;
     const nextItem =
-      items.find(
-        (item, idx) => idx > schedule.currentItemIndex && item.status === 'upcoming'
-      ) ?? null;
+      items.find((item, idx) => idx > schedule.currentItemIndex && item.status === 'upcoming') ??
+      null;
 
     const completedItems = items.filter(
       (item) => item.status === 'completed' || item.status === 'skipped'
@@ -678,7 +665,7 @@ export class ScheduleService {
     };
 
     return {
-      schedule: schedule as unknown as import('./schedule.types').VisualSchedule,
+      schedule: schedule as unknown as VisualSchedule,
       items,
       currentItem,
       nextItem,

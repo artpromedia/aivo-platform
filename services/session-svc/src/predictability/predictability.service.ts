@@ -6,7 +6,7 @@
  * for learners who require predictable flow.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, type PrismaClient } from '@prisma/client';
 
 import type {
   PredictabilityPreferences,
@@ -191,21 +191,15 @@ export class PredictabilityService {
       : undefined;
 
     // Build outline
-    const outline = this.buildSessionOutline(
-      activities,
-      {
-        welcomeRoutine: welcomeRoutine ?? undefined,
-        checkInRoutine: checkInRoutine ?? undefined,
-        breakRoutine,
-        goodbyeRoutine,
-      }
-    );
+    const outline = this.buildSessionOutline(activities, {
+      welcomeRoutine: welcomeRoutine ?? undefined,
+      checkInRoutine: checkInRoutine ?? undefined,
+      breakRoutine,
+      goodbyeRoutine,
+    });
 
     // Calculate total time
-    const estimatedTotalMinutes = outline.reduce(
-      (sum, item) => sum + item.estimatedMinutes,
-      0
-    );
+    const estimatedTotalMinutes = outline.reduce((sum, item) => sum + item.estimatedMinutes, 0);
 
     // Get character if enabled
     let character: CharacterInfo | undefined;
@@ -240,7 +234,7 @@ export class PredictabilityService {
         sessionId,
         learnerId,
         tenantId,
-        planData: plan as unknown as Record<string, unknown>,
+        planData: plan as unknown as Prisma.InputJsonValue,
         currentPhase: 'welcome',
         currentActivityIndex: -1,
         unexpectedChangesCount: 0,
@@ -283,10 +277,7 @@ export class PredictabilityService {
   /**
    * Update session progress
    */
-  async updateProgress(
-    sessionId: string,
-    currentItemId: string
-  ): Promise<PredictableSessionPlan> {
+  async updateProgress(sessionId: string, currentItemId: string): Promise<PredictableSessionPlan> {
     const plan = await this.getSessionPlan(sessionId);
     if (!plan) {
       throw new Error('Session plan not found');
@@ -323,7 +314,7 @@ export class PredictabilityService {
     await this.prisma.sessionPlan.update({
       where: { sessionId },
       data: {
-        planData: plan as unknown as Record<string, unknown>,
+        planData: plan as unknown as Prisma.InputJsonValue,
         currentPhase: plan.currentPhase,
         currentActivityIndex: plan.currentActivityIndex,
       },
@@ -345,7 +336,11 @@ export class PredictabilityService {
   /**
    * Mark session as completed
    */
-  async markSessionCompleted(sessionId: string, learnerId: string, tenantId: string): Promise<void> {
+  async markSessionCompleted(
+    sessionId: string,
+    learnerId: string,
+    tenantId: string
+  ): Promise<void> {
     await this.prisma.sessionPlan.update({
       where: { sessionId },
       data: { completedAt: new Date() },
@@ -414,7 +409,7 @@ export class PredictabilityService {
       where: { sessionId: request.sessionId },
       data: {
         unexpectedChangesCount: plan.unexpectedChangesCount,
-        planData: plan as unknown as Record<string, unknown>,
+        planData: plan as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -482,16 +477,13 @@ export class PredictabilityService {
     }
 
     // Recalculate total time
-    plan.estimatedTotalMinutes = plan.outline.reduce(
-      (sum, item) => sum + item.estimatedMinutes,
-      0
-    );
+    plan.estimatedTotalMinutes = plan.outline.reduce((sum, item) => sum + item.estimatedMinutes, 0);
 
     // Persist changes
     await this.prisma.sessionPlan.update({
       where: { sessionId },
       data: {
-        planData: plan as unknown as Record<string, unknown>,
+        planData: plan as unknown as Prisma.InputJsonValue,
         estimatedTotalMinutes: plan.estimatedTotalMinutes,
       },
     });
@@ -527,7 +519,7 @@ export class PredictabilityService {
       id: routine.id,
       name: routine.name,
       type: routine.type as RoutineType,
-      steps: routine.steps as SessionRoutineData['steps'],
+      steps: routine.steps as unknown as SessionRoutineData['steps'],
       totalDurationSeconds: routine.totalDurationSeconds,
     };
   }
@@ -545,10 +537,7 @@ export class PredictabilityService {
     targetAgeMin?: number;
     targetAgeMax?: number;
   }): Promise<SessionRoutineData> {
-    const totalDurationSeconds = input.steps.reduce(
-      (sum, step) => sum + step.durationSeconds,
-      0
-    );
+    const totalDurationSeconds = input.steps.reduce((sum, step) => sum + step.durationSeconds, 0);
 
     const routine = await this.prisma.sessionRoutine.create({
       data: {
@@ -556,7 +545,7 @@ export class PredictabilityService {
         name: input.name,
         type: input.type,
         description: input.description,
-        steps: input.steps,
+        steps: input.steps as unknown as Prisma.InputJsonValue,
         totalDurationSeconds,
         isDefault: input.isDefault ?? false,
         targetAgeMin: input.targetAgeMin,
@@ -569,7 +558,7 @@ export class PredictabilityService {
       id: routine.id,
       name: routine.name,
       type: routine.type as RoutineType,
-      steps: routine.steps as SessionRoutineData['steps'],
+      steps: routine.steps as unknown as SessionRoutineData['steps'],
       totalDurationSeconds: routine.totalDurationSeconds,
     };
   }
@@ -593,7 +582,7 @@ export class PredictabilityService {
       id: r.id,
       name: r.name,
       type: r.type as RoutineType,
-      steps: r.steps as SessionRoutineData['steps'],
+      steps: r.steps as unknown as SessionRoutineData['steps'],
       totalDurationSeconds: r.totalDurationSeconds,
     }));
   }
@@ -661,9 +650,8 @@ export class PredictabilityService {
         learnerId,
         tenantId,
         eventType,
-        details: details as unknown as Record<string, unknown>,
-        predictabilityMaintained:
-          eventType !== 'UNEXPECTED_CHANGE' || details.allowed === false,
+        details: details as unknown as Prisma.InputJsonValue,
+        predictabilityMaintained: eventType !== 'UNEXPECTED_CHANGE' || details.allowed === false,
         unexpectedChangeCount: plan?.unexpectedChangesCount ?? 0,
       },
     });
