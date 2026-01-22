@@ -36,7 +36,7 @@ async function apiFetch<T>(baseUrl: string, path: string, options?: RequestInit)
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(existingHeaders instanceof Headers
-      ? Object.fromEntries(existingHeaders.entries())
+      ? Object.fromEntries(existingHeaders as unknown as Iterable<[string, string]>)
       : Array.isArray(existingHeaders)
         ? Object.fromEntries(existingHeaders)
         : existingHeaders),
@@ -542,7 +542,7 @@ export interface IngestionJob {
   successCount: number;
   errorCount: number;
   createdLoIds: string[];
-  errors: Array<{ row?: number; slug?: string; errors?: Array<{ field: string; message: string }> }>;
+  errors: { row?: number; slug?: string; errors?: { field: string; message: string }[] }[];
   createdByUserId: string;
   createdAt: string;
   startedAt: string | null;
@@ -557,7 +557,17 @@ export interface IngestionJobsParams {
 }
 
 export interface IngestionJobsResponse {
-  jobs: Pick<IngestionJob, 'id' | 'source' | 'status' | 'totalRows' | 'successCount' | 'errorCount' | 'createdAt' | 'completedAt'>[];
+  jobs: Pick<
+    IngestionJob,
+    | 'id'
+    | 'source'
+    | 'status'
+    | 'totalRows'
+    | 'successCount'
+    | 'errorCount'
+    | 'createdAt'
+    | 'completedAt'
+  >[];
   pagination: {
     total: number;
     limit: number;
@@ -565,7 +575,9 @@ export interface IngestionJobsResponse {
   };
 }
 
-export async function getIngestionJobs(params?: IngestionJobsParams): Promise<IngestionJobsResponse> {
+export async function getIngestionJobs(
+  params?: IngestionJobsParams
+): Promise<IngestionJobsResponse> {
   const searchParams = new URLSearchParams();
   if (params?.status) searchParams.set('status', params.status);
   if (params?.source) searchParams.set('source', params.source);
@@ -606,15 +618,15 @@ export interface ManualIngestionResponse {
   totalItems: number;
   successCount: number;
   errorCount: number;
-  results: Array<{
+  results: {
     index: number;
     slug: string;
     success: boolean;
     loId?: string;
     versionId?: string;
-    errors?: Array<{ field: string; message: string }>;
-    warnings?: Array<{ field: string; message: string }>;
-  }>;
+    errors?: { field: string; message: string }[];
+    warnings?: { field: string; message: string }[];
+  }[];
 }
 
 export async function ingestManual(data: ManualIngestionRequest): Promise<ManualIngestionResponse> {

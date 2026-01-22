@@ -5,7 +5,6 @@
 
 'use client';
 
-import React, { useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,6 +15,8 @@ import {
   Trophy,
   Clock,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
 import type {
   InteractiveLesson,
   LessonSection,
@@ -104,7 +105,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
     } else if (currentSectionIndex > 0) {
       setCurrentSectionIndex(currentSectionIndex - 1);
       const prevSection = sections[currentSectionIndex - 1];
-      setCurrentActivityIndex(prevSection.activities.length - 1);
+      setCurrentActivityIndex(prevSection ? prevSection.activities.length - 1 : 0);
     }
     setShowHint(false);
     setHintIndex(0);
@@ -153,9 +154,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
         <div className="text-center">
           <Trophy className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
           <h2 className="text-2xl font-bold text-text mb-2">Lesson Complete!</h2>
-          <p className="text-muted mb-4">
-            You scored {score} points
-          </p>
+          <p className="text-muted mb-4">You scored {score} points</p>
         </div>
       </div>
     );
@@ -170,7 +169,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-muted mb-2">
             <span>
-              Section {currentSectionIndex + 1} of {sections.length}: {currentSection.title}
+              Section {currentSectionIndex + 1} of {sections.length}: {currentSection?.title}
             </span>
             <span className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-yellow-500" />
@@ -208,18 +207,16 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
           <ActivityRenderer
             activity={currentActivity}
             state={state}
-            onStateChange={(updates) => updateActivityState(currentActivity.id, updates)}
+            onStateChange={(updates) => {
+              updateActivityState(currentActivity.id, updates);
+            }}
             onSubmit={handleSubmit}
           />
         </div>
 
         {/* Feedback */}
         {state.submitted && (
-          <div
-            className={`px-6 py-4 ${
-              state.isCorrect ? 'bg-success/10' : 'bg-error/10'
-            }`}
-          >
+          <div className={`px-6 py-4 ${state.isCorrect ? 'bg-success/10' : 'bg-error/10'}`}>
             <div className="flex items-center gap-2">
               {state.isCorrect ? (
                 <>
@@ -247,7 +244,7 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
               <HelpCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div>
                 <span className="font-medium text-yellow-700">Hint {hintIndex}:</span>
-                <p className="text-yellow-800">{currentActivity.hints[hintIndex - 1].text}</p>
+                <p className="text-yellow-800">{currentActivity.hints[hintIndex - 1]?.text}</p>
               </div>
             </div>
           </div>
@@ -265,15 +262,17 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
                 Get Hint
               </button>
             )}
-            {state.submitted && !state.isCorrect && state.attempts < lesson.settings.maxAttempts && (
-              <button
-                onClick={handleRetry}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Try Again ({lesson.settings.maxAttempts - state.attempts} left)
-              </button>
-            )}
+            {state.submitted &&
+              !state.isCorrect &&
+              state.attempts < lesson.settings.maxAttempts && (
+                <button
+                  onClick={handleRetry}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Try Again ({lesson.settings.maxAttempts - state.attempts} left)
+                </button>
+              )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -420,7 +419,9 @@ function MultipleChoiceActivity({
         {content.options.map((option) => (
           <button
             key={option.id}
-            onClick={() => handleSelect(option.id)}
+            onClick={() => {
+              handleSelect(option.id);
+            }}
             disabled={state.submitted}
             className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
               state.selectedOptions.includes(option.id)
@@ -430,8 +431,8 @@ function MultipleChoiceActivity({
                     : 'border-error bg-error/10'
                   : 'border-primary bg-primary/10'
                 : state.submitted && option.isCorrect
-                ? 'border-success bg-success/10'
-                : 'border-border hover:border-border'
+                  ? 'border-success bg-success/10'
+                  : 'border-border hover:border-border'
             }`}
           >
             <span className="flex items-center gap-3">
@@ -494,9 +495,7 @@ function MatchingActivity({
   };
 
   const handleSubmit = () => {
-    const isCorrect = content.pairs.every(
-      (pair) => state.matches[pair.id] === pair.id
-    );
+    const isCorrect = content.pairs.every((pair) => state.matches[pair.id] === pair.id);
     onSubmit(isCorrect);
   };
 
@@ -509,13 +508,15 @@ function MatchingActivity({
           {content.pairs.map((pair) => (
             <button
               key={`left-${pair.id}`}
-              onClick={() => handleLeftClick(pair.id)}
+              onClick={() => {
+                handleLeftClick(pair.id);
+              }}
               className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
                 selectedLeft === pair.id
                   ? 'border-primary bg-primary/10'
                   : state.matches[pair.id]
-                  ? 'border-success bg-success/10'
-                  : 'border-border hover:border-border'
+                    ? 'border-success bg-success/10'
+                    : 'border-border hover:border-border'
               }`}
             >
               {pair.left.text}
@@ -526,7 +527,9 @@ function MatchingActivity({
           {content.pairs.map((pair) => (
             <button
               key={`right-${pair.id}`}
-              onClick={() => handleRightClick(pair.id)}
+              onClick={() => {
+                handleRightClick(pair.id);
+              }}
               className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
                 Object.values(state.matches).includes(pair.id)
                   ? 'border-success bg-success/10'
@@ -600,7 +603,9 @@ function FillInBlankActivity({
               <input
                 type="text"
                 value={state.textInputs[index] || ''}
-                onChange={(e) => handleChange(index, e.target.value)}
+                onChange={(e) => {
+                  handleChange(index, e.target.value);
+                }}
                 disabled={state.submitted}
                 className="inline-block w-32 mx-1 px-2 py-1 border-b-2 border-primary bg-primary/10 text-center focus:outline-none focus:bg-primary/20"
                 placeholder="..."
@@ -640,9 +645,7 @@ function OrderingActivity({
   // Initialize ordering if empty
   React.useEffect(() => {
     if (state.ordering.length === 0 && content.items.length > 0) {
-      const shuffled = [...content.items]
-        .sort(() => Math.random() - 0.5)
-        .map((item) => item.id);
+      const shuffled = [...content.items].sort(() => Math.random() - 0.5).map((item) => item.id);
       onStateChange({ ordering: shuffled });
     }
   }, [content.items, state.ordering.length, onStateChange]);
@@ -651,8 +654,10 @@ function OrderingActivity({
     if (state.submitted) return;
     const newOrdering = [...state.ordering];
     const [removed] = newOrdering.splice(fromIndex, 1);
-    newOrdering.splice(toIndex, 0, removed);
-    onStateChange({ ordering: newOrdering });
+    if (removed !== undefined) {
+      newOrdering.splice(toIndex, 0, removed);
+      onStateChange({ ordering: newOrdering });
+    }
   };
 
   const handleSubmit = () => {
@@ -674,10 +679,7 @@ function OrderingActivity({
           const item = getItemById(itemId);
           if (!item) return null;
           return (
-            <div
-              key={itemId}
-              className="flex items-center gap-2 p-3 bg-surface border rounded-lg"
-            >
+            <div key={itemId} className="flex items-center gap-2 p-3 bg-surface border rounded-lg">
               <span className="w-6 h-6 flex items-center justify-center bg-surface-muted rounded-full text-sm font-medium">
                 {index + 1}
               </span>
@@ -685,14 +687,18 @@ function OrderingActivity({
               {!state.submitted && (
                 <div className="flex gap-1">
                   <button
-                    onClick={() => moveItem(index, Math.max(0, index - 1))}
+                    onClick={() => {
+                      moveItem(index, Math.max(0, index - 1));
+                    }}
                     disabled={index === 0}
                     className="p-1 hover:bg-surface-muted rounded disabled:opacity-30"
                   >
                     ↑
                   </button>
                   <button
-                    onClick={() => moveItem(index, Math.min(state.ordering.length - 1, index + 1))}
+                    onClick={() => {
+                      moveItem(index, Math.min(state.ordering.length - 1, index + 1));
+                    }}
                     disabled={index === state.ordering.length - 1}
                     className="p-1 hover:bg-surface-muted rounded disabled:opacity-30"
                   >
@@ -732,7 +738,7 @@ function FreeResponseActivity({
   onStateChange: (updates: Partial<ActivityState>) => void;
   onSubmit: (isCorrect: boolean) => void;
 }) {
-  const response = state.textInputs['response'] || '';
+  const response = state.textInputs.response || '';
   const wordCount = response.trim().split(/\s+/).filter(Boolean).length;
 
   const handleSubmit = () => {
@@ -750,7 +756,9 @@ function FreeResponseActivity({
 
       <textarea
         value={response}
-        onChange={(e) => onStateChange({ textInputs: { response: e.target.value } })}
+        onChange={(e) => {
+          onStateChange({ textInputs: { response: e.target.value } });
+        }}
         disabled={state.submitted}
         rows={6}
         className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-focus"

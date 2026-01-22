@@ -7,12 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 import { getReviewQueue, submitReview } from '../lib/authoring-api';
 import { useToast } from '../lib/toast';
-import {
-  SUBJECT_LABELS,
-  GRADE_BAND_LABELS,
-  type Subject,
-  type GradeBand,
-} from '../lib/types';
+import { SUBJECT_LABELS, GRADE_BAND_LABELS, type Subject, type GradeBand } from '../lib/types';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -99,7 +94,7 @@ export function ReviewQueue() {
         limit: pageSize,
         offset: (page - 1) * pageSize,
       });
-      setItems(result.items);
+      setItems(result.items as ReviewQueueItem[]);
       setTotal(result.pagination.total);
     } catch (err) {
       addToast('error', err instanceof Error ? err.message : 'Failed to load review queue');
@@ -212,7 +207,9 @@ export function ReviewQueue() {
             <ReviewQueueCard
               key={item.id}
               item={item}
-              onReview={() => handleOpenReview(item)}
+              onReview={() => {
+                handleOpenReview(item);
+              }}
             />
           ))}
         </div>
@@ -306,7 +303,9 @@ function ReviewQueueCard({ item, onReview }: ReviewQueueCardProps) {
             {reviewCount > 0 && (
               <>
                 <span>•</span>
-                <span>{reviewCount} review{reviewCount > 1 ? 's' : ''}</span>
+                <span>
+                  {reviewCount} review{reviewCount > 1 ? 's' : ''}
+                </span>
               </>
             )}
           </div>
@@ -353,7 +352,9 @@ function FilterSelect({ label, value, options, paramName }: FilterSelectProps) {
       <label className="text-sm font-medium text-text">{label}:</label>
       <select
         value={value}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={(e) => {
+          handleChange(e.target.value);
+        }}
         className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
       >
         {options.map((opt) => (
@@ -395,7 +396,9 @@ function ReviewDialog({
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
-        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onClose();
+        }}
         role="button"
         tabIndex={0}
         aria-label="Close dialog"
@@ -416,7 +419,9 @@ function ReviewDialog({
               <button
                 key={d}
                 type="button"
-                onClick={() => onDecisionChange(d)}
+                onClick={() => {
+                  onDecisionChange(d);
+                }}
                 className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   decision === d
                     ? d === 'APPROVED'
@@ -440,7 +445,9 @@ function ReviewDialog({
           </label>
           <textarea
             value={comments}
-            onChange={(e) => onCommentsChange(e.target.value)}
+            onChange={(e) => {
+              onCommentsChange(e.target.value);
+            }}
             placeholder={
               decision === 'APPROVED'
                 ? 'Optional feedback for the author...'

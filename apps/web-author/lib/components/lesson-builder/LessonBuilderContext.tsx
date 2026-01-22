@@ -5,8 +5,9 @@
 
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, type ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+
 import type {
   InteractiveLesson,
   LessonSection,
@@ -28,8 +29,14 @@ type LessonBuilderAction =
   | { type: 'UPDATE_SECTION'; payload: { id: string; updates: Partial<LessonSection> } }
   | { type: 'DELETE_SECTION'; payload: string }
   | { type: 'REORDER_SECTIONS'; payload: string[] }
-  | { type: 'ADD_ACTIVITY'; payload: { sectionId: string; activity: Omit<LessonActivity, 'id' | 'orderIndex'> } }
-  | { type: 'UPDATE_ACTIVITY'; payload: { sectionId: string; activityId: string; updates: Partial<LessonActivity> } }
+  | {
+      type: 'ADD_ACTIVITY';
+      payload: { sectionId: string; activity: Omit<LessonActivity, 'id' | 'orderIndex'> };
+    }
+  | {
+      type: 'UPDATE_ACTIVITY';
+      payload: { sectionId: string; activityId: string; updates: Partial<LessonActivity> };
+    }
   | { type: 'DELETE_ACTIVITY'; payload: { sectionId: string; activityId: string } }
   | { type: 'REORDER_ACTIVITIES'; payload: { sectionId: string; activityIds: string[] } }
   | { type: 'SELECT_SECTION'; payload: string | null }
@@ -113,9 +120,7 @@ function lessonBuilderReducer(
         lesson: {
           ...state.lesson,
           sections: state.lesson.sections.map((section) =>
-            section.id === action.payload.id
-              ? { ...section, ...action.payload.updates }
-              : section
+            section.id === action.payload.id ? { ...section, ...action.payload.updates } : section
           ),
           updatedAt: new Date().toISOString(),
         },
@@ -137,7 +142,8 @@ function lessonBuilderReducer(
           sections: remainingSections,
           updatedAt: new Date().toISOString(),
         },
-        selectedSectionId: state.selectedSectionId === action.payload ? null : state.selectedSectionId,
+        selectedSectionId:
+          state.selectedSectionId === action.payload ? null : state.selectedSectionId,
         isDirty: true,
         undoStack: [...state.undoStack, state.lesson],
         redoStack: [],
@@ -319,7 +325,7 @@ function lessonBuilderReducer(
       const previousLesson = state.undoStack[state.undoStack.length - 1];
       return {
         ...state,
-        lesson: previousLesson,
+        lesson: previousLesson ?? null,
         undoStack: state.undoStack.slice(0, -1),
         redoStack: [...state.redoStack, state.lesson],
         isDirty: true,
@@ -331,7 +337,7 @@ function lessonBuilderReducer(
       const nextLesson = state.redoStack[state.redoStack.length - 1];
       return {
         ...state,
-        lesson: nextLesson,
+        lesson: nextLesson ?? null,
         undoStack: [...state.undoStack, state.lesson],
         redoStack: state.redoStack.slice(0, -1),
         isDirty: true,
@@ -439,36 +445,33 @@ export function LessonBuilderProvider({ children, initialLesson }: LessonBuilder
     });
   }, []);
 
-  const addActivity = useCallback(
-    (sectionId: string, activityType: LessonActivity['type']) => {
-      const defaultContent = getDefaultActivityContent(activityType);
-      dispatch({
-        type: 'ADD_ACTIVITY',
-        payload: {
-          sectionId,
-          activity: {
-            type: activityType,
-            title: `New ${activityType.replace(/_/g, ' ')}`,
-            instructions: '',
-            points: 10,
-            required: true,
-            content: defaultContent,
-            feedback: {
-              correct: { message: 'Great job!' },
-              incorrect: { message: 'Try again!' },
-              encouragement: ['You can do it!', 'Keep trying!'],
-            },
-            hints: [],
-            media: [],
-            accessibility: {
-              ariaLabel: `${activityType} activity`,
-            },
+  const addActivity = useCallback((sectionId: string, activityType: LessonActivity['type']) => {
+    const defaultContent = getDefaultActivityContent(activityType);
+    dispatch({
+      type: 'ADD_ACTIVITY',
+      payload: {
+        sectionId,
+        activity: {
+          type: activityType,
+          title: `New ${activityType.replace(/_/g, ' ')}`,
+          instructions: '',
+          points: 10,
+          required: true,
+          content: defaultContent,
+          feedback: {
+            correct: { message: 'Great job!' },
+            incorrect: { message: 'Try again!' },
+            encouragement: ['You can do it!', 'Keep trying!'],
+          },
+          hints: [],
+          media: [],
+          accessibility: {
+            ariaLabel: `${activityType} activity`,
           },
         },
-      });
-    },
-    []
-  );
+      },
+    });
+  }, []);
 
   const validateLesson = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = [];
@@ -546,9 +549,7 @@ export function LessonBuilderProvider({ children, initialLesson }: LessonBuilder
     getSelectedActivity,
   };
 
-  return (
-    <LessonBuilderContext.Provider value={value}>{children}</LessonBuilderContext.Provider>
-  );
+  return <LessonBuilderContext.Provider value={value}>{children}</LessonBuilderContext.Provider>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

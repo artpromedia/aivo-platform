@@ -5,7 +5,6 @@
 
 'use client';
 
-import React, { useState } from 'react';
 import {
   Settings,
   HelpCircle,
@@ -17,6 +16,8 @@ import {
   Check,
   X,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { useLessonBuilder } from './LessonBuilderContext';
 import type {
   LessonActivity,
@@ -82,13 +83,13 @@ export function ActivityEditor() {
         <input
           type="text"
           value={activity.title}
-          onChange={(e) => updateActivity({ title: e.target.value })}
+          onChange={(e) => {
+            updateActivity({ title: e.target.value });
+          }}
           className="text-lg font-semibold w-full border-none focus:outline-none focus:ring-2 focus:ring-focus rounded px-2 py-1"
           placeholder="Activity Title"
         />
-        <div className="text-sm text-muted mt-1 capitalize">
-          {activity.type.replace(/_/g, ' ')}
-        </div>
+        <div className="text-sm text-muted mt-1 capitalize">{activity.type.replace(/_/g, ' ')}</div>
       </div>
 
       {/* Tabs */}
@@ -97,7 +98,9 @@ export function ActivityEditor() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+              }}
               className={`flex items-center gap-2 px-3 py-2 border-b-2 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'border-primary text-primary'
@@ -113,15 +116,11 @@ export function ActivityEditor() {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6 bg-surface-muted">
-        {activeTab === 'content' && (
-          <ContentEditor activity={activity} onUpdate={updateActivity} />
-        )}
+        {activeTab === 'content' && <ContentEditor activity={activity} onUpdate={updateActivity} />}
         {activeTab === 'feedback' && (
           <FeedbackEditor activity={activity} onUpdate={updateActivity} />
         )}
-        {activeTab === 'hints' && (
-          <HintsEditor activity={activity} onUpdate={updateActivity} />
-        )}
+        {activeTab === 'hints' && <HintsEditor activity={activity} onUpdate={updateActivity} />}
         {activeTab === 'settings' && (
           <SettingsEditor activity={activity} onUpdate={updateActivity} />
         )}
@@ -148,12 +147,12 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
     <div className="space-y-6">
       {/* Instructions */}
       <div className="bg-surface rounded-lg p-4 shadow-sm">
-        <label className="block text-sm font-medium text-text mb-2">
-          Instructions
-        </label>
+        <label className="block text-sm font-medium text-text mb-2">Instructions</label>
         <textarea
           value={activity.instructions}
-          onChange={(e) => onUpdate({ instructions: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ instructions: e.target.value });
+          }}
           rows={3}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Enter instructions for this activity..."
@@ -168,10 +167,7 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
         />
       )}
       {activity.type === 'matching' && (
-        <MatchingEditor
-          content={activity.content as MatchingContent}
-          onUpdate={updateContent}
-        />
+        <MatchingEditor content={activity.content as MatchingContent} onUpdate={updateContent} />
       )}
       {activity.type === 'fill_in_blank' && (
         <FillInBlankEditor
@@ -180,10 +176,7 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
         />
       )}
       {activity.type === 'ordering' && (
-        <OrderingEditor
-          content={activity.content as OrderingContent}
-          onUpdate={updateContent}
-        />
+        <OrderingEditor content={activity.content as OrderingContent} onUpdate={updateContent} />
       )}
       {activity.type === 'free_response' && (
         <FreeResponseEditor
@@ -191,14 +184,17 @@ function ContentEditor({ activity, onUpdate }: EditorProps) {
           onUpdate={updateContent}
         />
       )}
-      {!['multiple_choice', 'matching', 'fill_in_blank', 'ordering', 'free_response'].includes(activity.type) && (
+      {!['multiple_choice', 'matching', 'fill_in_blank', 'ordering', 'free_response'].includes(
+        activity.type
+      ) && (
         <div className="bg-surface rounded-lg p-6 shadow-sm text-center border-2 border-dashed border-muted">
           <div className="text-4xl mb-3">🛠️</div>
           <p className="text-muted font-medium">
             Editor for {activity.type.replace(/_/g, ' ')} activities
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            This activity type is not yet supported for editing. Please contact support if you need this feature.
+            This activity type is not yet supported for editing. Please contact support if you need
+            this feature.
           </p>
         </div>
       )}
@@ -238,8 +234,9 @@ function MultipleChoiceEditor({
   };
 
   const setCorrectAnswer = (index: number) => {
-    if (content.multiSelect) {
-      updateOption(index, { isCorrect: !content.options[index].isCorrect });
+    const option = content.options[index];
+    if (content.multiSelect && option) {
+      updateOption(index, { isCorrect: !option.isCorrect });
     } else {
       const newOptions = content.options.map((opt, i) => ({
         ...opt,
@@ -255,7 +252,9 @@ function MultipleChoiceEditor({
         <label className="block text-sm font-medium text-text mb-2">Question</label>
         <textarea
           value={content.question}
-          onChange={(e) => onUpdate({ question: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ question: e.target.value });
+          }}
           rows={2}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Enter your question..."
@@ -267,7 +266,9 @@ function MultipleChoiceEditor({
           <input
             type="checkbox"
             checked={content.multiSelect}
-            onChange={(e) => onUpdate({ multiSelect: e.target.checked })}
+            onChange={(e) => {
+              onUpdate({ multiSelect: e.target.checked });
+            }}
             className="rounded border-border text-primary focus:ring-focus"
           />
           <span className="text-sm text-muted">Allow multiple selections</span>
@@ -276,7 +277,9 @@ function MultipleChoiceEditor({
           <input
             type="checkbox"
             checked={content.shuffleOptions}
-            onChange={(e) => onUpdate({ shuffleOptions: e.target.checked })}
+            onChange={(e) => {
+              onUpdate({ shuffleOptions: e.target.checked });
+            }}
             className="rounded border-border text-primary focus:ring-focus"
           />
           <span className="text-sm text-muted">Shuffle options</span>
@@ -295,7 +298,9 @@ function MultipleChoiceEditor({
             >
               <GripVertical className="w-4 h-4 text-muted cursor-grab" />
               <button
-                onClick={() => setCorrectAnswer(index)}
+                onClick={() => {
+                  setCorrectAnswer(index);
+                }}
                 className={`p-1 rounded-full ${
                   option.isCorrect
                     ? 'bg-success text-on-accent'
@@ -307,12 +312,16 @@ function MultipleChoiceEditor({
               <input
                 type="text"
                 value={option.text}
-                onChange={(e) => updateOption(index, { text: e.target.value })}
+                onChange={(e) => {
+                  updateOption(index, { text: e.target.value });
+                }}
                 className="flex-1 border-none focus:outline-none focus:ring-0 bg-transparent"
                 placeholder={`Option ${index + 1}`}
               />
               <button
-                onClick={() => removeOption(index)}
+                onClick={() => {
+                  removeOption(index);
+                }}
                 className="p-1 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
@@ -373,7 +382,9 @@ function MatchingEditor({
         <label className="block text-sm font-medium text-text mb-2">Prompt</label>
         <textarea
           value={content.prompt}
-          onChange={(e) => onUpdate({ prompt: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ prompt: e.target.value });
+          }}
           rows={2}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Match the items..."
@@ -388,7 +399,9 @@ function MatchingEditor({
               <input
                 type="text"
                 value={pair.left.text}
-                onChange={(e) => updatePair(index, 'left', e.target.value)}
+                onChange={(e) => {
+                  updatePair(index, 'left', e.target.value);
+                }}
                 className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                 placeholder="Left item"
               />
@@ -396,12 +409,16 @@ function MatchingEditor({
               <input
                 type="text"
                 value={pair.right.text}
-                onChange={(e) => updatePair(index, 'right', e.target.value)}
+                onChange={(e) => {
+                  updatePair(index, 'right', e.target.value);
+                }}
                 className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                 placeholder="Right item"
               />
               <button
-                onClick={() => removePair(index)}
+                onClick={() => {
+                  removePair(index);
+                }}
                 className="p-2 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
@@ -440,7 +457,9 @@ function FillInBlankEditor({
         </label>
         <textarea
           value={content.text}
-          onChange={(e) => onUpdate({ text: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ text: e.target.value });
+          }}
           rows={4}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus font-mono"
           placeholder="The quick [blank] fox jumps over the [blank] dog."
@@ -455,7 +474,9 @@ function FillInBlankEditor({
           <input
             type="checkbox"
             checked={content.caseSensitive}
-            onChange={(e) => onUpdate({ caseSensitive: e.target.checked })}
+            onChange={(e) => {
+              onUpdate({ caseSensitive: e.target.checked });
+            }}
             className="rounded border-border text-primary focus:ring-focus"
           />
           <span className="text-sm text-muted">Case sensitive</span>
@@ -464,7 +485,9 @@ function FillInBlankEditor({
           <input
             type="checkbox"
             checked={content.allowPartialCredit}
-            onChange={(e) => onUpdate({ allowPartialCredit: e.target.checked })}
+            onChange={(e) => {
+              onUpdate({ allowPartialCredit: e.target.checked });
+            }}
             className="rounded border-border text-primary focus:ring-focus"
           />
           <span className="text-sm text-muted">Allow partial credit</span>
@@ -518,7 +541,9 @@ function OrderingEditor({
         <label className="block text-sm font-medium text-text mb-2">Prompt</label>
         <textarea
           value={content.prompt}
-          onChange={(e) => onUpdate({ prompt: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ prompt: e.target.value });
+          }}
           rows={2}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Put these items in the correct order..."
@@ -526,9 +551,7 @@ function OrderingEditor({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-text mb-2">
-          Items (in correct order)
-        </label>
+        <label className="block text-sm font-medium text-text mb-2">Items (in correct order)</label>
         <div className="space-y-2">
           {content.items.map((item, index) => (
             <div key={item.id} className="flex items-center gap-2">
@@ -537,12 +560,16 @@ function OrderingEditor({
               <input
                 type="text"
                 value={item.content}
-                onChange={(e) => updateItem(index, e.target.value)}
+                onChange={(e) => {
+                  updateItem(index, e.target.value);
+                }}
                 className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                 placeholder={`Item ${index + 1}`}
               />
               <button
-                onClick={() => removeItem(index)}
+                onClick={() => {
+                  removeItem(index);
+                }}
                 className="p-2 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
@@ -563,7 +590,9 @@ function OrderingEditor({
         <label className="block text-sm font-medium text-text mb-2">Direction</label>
         <select
           value={content.direction}
-          onChange={(e) => onUpdate({ direction: e.target.value as 'vertical' | 'horizontal' })}
+          onChange={(e) => {
+            onUpdate({ direction: e.target.value as 'vertical' | 'horizontal' });
+          }}
           className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
         >
           <option value="vertical">Vertical</option>
@@ -591,7 +620,9 @@ function FreeResponseEditor({
         <label className="block text-sm font-medium text-text mb-2">Prompt</label>
         <textarea
           value={content.prompt}
-          onChange={(e) => onUpdate({ prompt: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ prompt: e.target.value });
+          }}
           rows={3}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Write your response to the following..."
@@ -600,30 +631,26 @@ function FreeResponseEditor({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-text mb-2">
-            Minimum Words
-          </label>
+          <label className="block text-sm font-medium text-text mb-2">Minimum Words</label>
           <input
             type="number"
             value={content.minWords || ''}
-            onChange={(e) =>
-              onUpdate({ minWords: e.target.value ? parseInt(e.target.value) : undefined })
-            }
+            onChange={(e) => {
+              onUpdate({ minWords: e.target.value ? parseInt(e.target.value) : undefined });
+            }}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Optional"
             min={0}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-text mb-2">
-            Maximum Words
-          </label>
+          <label className="block text-sm font-medium text-text mb-2">Maximum Words</label>
           <input
             type="number"
             value={content.maxWords || ''}
-            onChange={(e) =>
-              onUpdate({ maxWords: e.target.value ? parseInt(e.target.value) : undefined })
-            }
+            onChange={(e) => {
+              onUpdate({ maxWords: e.target.value ? parseInt(e.target.value) : undefined });
+            }}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Optional"
             min={0}
@@ -649,9 +676,9 @@ function FeedbackEditor({ activity, onUpdate }: EditorProps) {
         <h3 className="font-medium text-success mb-3">Correct Answer Feedback</h3>
         <textarea
           value={activity.feedback.correct.message}
-          onChange={(e) =>
-            updateFeedback('correct', { ...activity.feedback.correct, message: e.target.value })
-          }
+          onChange={(e) => {
+            updateFeedback('correct', { ...activity.feedback.correct, message: e.target.value });
+          }}
           rows={2}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Great job! That's correct."
@@ -662,9 +689,12 @@ function FeedbackEditor({ activity, onUpdate }: EditorProps) {
         <h3 className="font-medium text-error mb-3">Incorrect Answer Feedback</h3>
         <textarea
           value={activity.feedback.incorrect.message}
-          onChange={(e) =>
-            updateFeedback('incorrect', { ...activity.feedback.incorrect, message: e.target.value })
-          }
+          onChange={(e) => {
+            updateFeedback('incorrect', {
+              ...activity.feedback.incorrect,
+              message: e.target.value,
+            });
+          }}
           rows={2}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
           placeholder="Not quite. Try again!"
@@ -678,7 +708,9 @@ function FeedbackEditor({ activity, onUpdate }: EditorProps) {
         </p>
         <textarea
           value={activity.feedback.encouragement.join('\n')}
-          onChange={(e) => updateFeedback('encouragement', e.target.value.split('\n'))}
+          onChange={(e) => {
+            updateFeedback('encouragement', e.target.value.split('\n'));
+          }}
           rows={3}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus font-mono text-sm"
           placeholder="You can do it!&#10;Keep trying!&#10;Almost there!"
@@ -707,7 +739,7 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
     });
   };
 
-  const updateHint = (index: number, updates: Partial<typeof activity.hints[0]>) => {
+  const updateHint = (index: number, updates: Partial<(typeof activity.hints)[0]>) => {
     const newHints = activity.hints.map((hint, i) =>
       i === index ? { ...hint, ...updates } : hint
     );
@@ -716,9 +748,7 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
 
   const removeHint = (index: number) => {
     onUpdate({
-      hints: activity.hints
-        .filter((_, i) => i !== index)
-        .map((h, i) => ({ ...h, orderIndex: i })),
+      hints: activity.hints.filter((_, i) => i !== index).map((h, i) => ({ ...h, orderIndex: i })),
     });
   };
 
@@ -738,7 +768,9 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
               <div className="flex-1 space-y-2">
                 <textarea
                   value={hint.text}
-                  onChange={(e) => updateHint(index, { text: e.target.value })}
+                  onChange={(e) => {
+                    updateHint(index, { text: e.target.value });
+                  }}
                   rows={2}
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
                   placeholder="Enter hint text..."
@@ -748,16 +780,18 @@ function HintsEditor({ activity, onUpdate }: EditorProps) {
                   <input
                     type="number"
                     value={hint.pointsDeduction}
-                    onChange={(e) =>
-                      updateHint(index, { pointsDeduction: parseInt(e.target.value) || 0 })
-                    }
+                    onChange={(e) => {
+                      updateHint(index, { pointsDeduction: parseInt(e.target.value) || 0 });
+                    }}
                     className="w-20 border rounded px-2 py-1 text-sm"
                     min={0}
                   />
                 </div>
               </div>
               <button
-                onClick={() => removeHint(index)}
+                onClick={() => {
+                  removeHint(index);
+                }}
                 className="p-1 hover:bg-error/10 rounded text-error"
               >
                 <Trash2 className="w-4 h-4" />
@@ -793,7 +827,9 @@ function SettingsEditor({ activity, onUpdate }: EditorProps) {
           <input
             type="number"
             value={activity.points}
-            onChange={(e) => onUpdate({ points: parseInt(e.target.value) || 0 })}
+            onChange={(e) => {
+              onUpdate({ points: parseInt(e.target.value) || 0 });
+            }}
             className="w-32 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             min={0}
           />
@@ -803,7 +839,9 @@ function SettingsEditor({ activity, onUpdate }: EditorProps) {
           <input
             type="checkbox"
             checked={activity.required}
-            onChange={(e) => onUpdate({ required: e.target.checked })}
+            onChange={(e) => {
+              onUpdate({ required: e.target.checked });
+            }}
             className="rounded border-border text-primary focus:ring-focus"
           />
           <span className="text-sm text-text">Required to complete lesson</span>
@@ -818,30 +856,28 @@ function SettingsEditor({ activity, onUpdate }: EditorProps) {
           <input
             type="text"
             value={activity.accessibility.ariaLabel}
-            onChange={(e) =>
+            onChange={(e) => {
               onUpdate({
                 accessibility: { ...activity.accessibility, ariaLabel: e.target.value },
-              })
-            }
+              });
+            }}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Descriptive label for screen readers"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text mb-2">
-            Keyboard Instructions
-          </label>
+          <label className="block text-sm font-medium text-text mb-2">Keyboard Instructions</label>
           <textarea
             value={activity.accessibility.keyboardInstructions || ''}
-            onChange={(e) =>
+            onChange={(e) => {
               onUpdate({
                 accessibility: {
                   ...activity.accessibility,
                   keyboardInstructions: e.target.value,
                 },
-              })
-            }
+              });
+            }}
             rows={2}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus"
             placeholder="Instructions for keyboard navigation"

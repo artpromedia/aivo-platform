@@ -130,8 +130,11 @@ function ReadingPassageEditor({ content, canEdit, onChange }: ReadingPassageEdit
 
   const updateQuestion = (index: number, updates: Partial<ContentQuestion>) => {
     const updated = [...questions];
-    updated[index] = { ...updated[index], ...updates };
-    onChange({ ...content, questions: updated });
+    const existing = updated[index];
+    if (existing) {
+      updated[index] = { ...existing, ...updates };
+      onChange({ ...content, questions: updated });
+    }
   };
 
   const removeQuestion = (index: number) => {

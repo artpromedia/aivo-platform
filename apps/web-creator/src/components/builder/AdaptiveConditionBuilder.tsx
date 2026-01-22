@@ -3,27 +3,6 @@
  * Visual builder for creating conditional display rules
  */
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import {
   Plus,
   Trash2,
@@ -35,25 +14,40 @@ import {
   Hash,
   MessageSquare,
 } from 'lucide-react';
-import { AdaptiveCondition } from '@/lib/api/content';
+import React, { useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { AdaptiveCondition } from '@/lib/api/content';
 import { cn } from '@/lib/utils';
 
 interface AdaptiveConditionBuilderProps {
   conditions: AdaptiveCondition[];
   onChange: (conditions: AdaptiveCondition[]) => void;
-  availableBlocks?: Array<{ id: string; label: string; type: string }>;
-  availableSkills?: Array<{ id: string; name: string }>;
+  availableBlocks?: { id: string; label: string; type: string }[];
+  availableSkills?: { id: string; name: string }[];
 }
 
 type ConditionType = AdaptiveCondition['type'];
 type ConditionOperator = AdaptiveCondition['operator'];
 
-const CONDITION_TYPES: Array<{
+const CONDITION_TYPES: {
   type: ConditionType;
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-}> = [
+}[] = [
   {
     type: 'mastery',
     label: 'Skill Mastery',
@@ -86,7 +80,7 @@ const CONDITION_TYPES: Array<{
   },
 ];
 
-const OPERATORS: Record<ConditionType, Array<{ value: ConditionOperator; label: string }>> = {
+const OPERATORS: Record<ConditionType, { value: ConditionOperator; label: string }[]> = {
   mastery: [
     { value: 'greater_than', label: 'Greater than' },
     { value: 'less_than', label: 'Less than' },
@@ -106,9 +100,7 @@ const OPERATORS: Record<ConditionType, Array<{ value: ConditionOperator; label: 
     { value: 'greater_than', label: 'More than' },
     { value: 'less_than', label: 'Less than' },
   ],
-  custom: [
-    { value: 'equals', label: 'Evaluates to true' },
-  ],
+  custom: [{ value: 'equals', label: 'Evaluates to true' }],
 };
 
 export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> = ({
@@ -121,7 +113,7 @@ export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> =
 
   const addCondition = (type: ConditionType) => {
     const newCondition: AdaptiveCondition = {
-      id: `cond_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `cond_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type,
       operator: OPERATORS[type][0].value,
       value: getDefaultValue(type),
@@ -131,11 +123,7 @@ export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> =
   };
 
   const updateCondition = (id: string, updates: Partial<AdaptiveCondition>) => {
-    onChange(
-      conditions.map((cond) =>
-        cond.id === id ? { ...cond, ...updates } : cond
-      )
-    );
+    onChange(conditions.map((cond) => (cond.id === id ? { ...cond, ...updates } : cond)));
   };
 
   const removeCondition = (id: string) => {
@@ -180,15 +168,15 @@ export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> =
                 {CONDITION_TYPES.map((condType) => (
                   <button
                     key={condType.type}
-                    onClick={() => addCondition(condType.type)}
+                    onClick={() => {
+                      addCondition(condType.type);
+                    }}
                     className="w-full flex items-start gap-3 p-2 rounded-lg hover:bg-muted text-left"
                   >
                     <condType.icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{condType.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {condType.description}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{condType.description}</p>
                     </div>
                   </button>
                 ))}
@@ -203,13 +191,19 @@ export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> =
               <React.Fragment key={condition.id}>
                 {index > 0 && (
                   <div className="flex items-center justify-center">
-                    <Badge variant="secondary" className="text-xs">AND</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      AND
+                    </Badge>
                   </div>
                 )}
                 <ConditionCard
                   condition={condition}
-                  onUpdate={(updates) => updateCondition(condition.id, updates)}
-                  onRemove={() => removeCondition(condition.id)}
+                  onUpdate={(updates) => {
+                    updateCondition(condition.id, updates);
+                  }}
+                  onRemove={() => {
+                    removeCondition(condition.id);
+                  }}
                   availableBlocks={availableBlocks}
                   availableSkills={availableSkills}
                 />
@@ -230,15 +224,15 @@ export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> =
                 {CONDITION_TYPES.map((condType) => (
                   <button
                     key={condType.type}
-                    onClick={() => addCondition(condType.type)}
+                    onClick={() => {
+                      addCondition(condType.type);
+                    }}
                     className="w-full flex items-start gap-3 p-2 rounded-lg hover:bg-muted text-left"
                   >
                     <condType.icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{condType.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {condType.description}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{condType.description}</p>
                     </div>
                   </button>
                 ))}
@@ -262,8 +256,8 @@ interface ConditionCardProps {
   condition: AdaptiveCondition;
   onUpdate: (updates: Partial<AdaptiveCondition>) => void;
   onRemove: () => void;
-  availableBlocks: Array<{ id: string; label: string; type: string }>;
-  availableSkills: Array<{ id: string; name: string }>;
+  availableBlocks: { id: string; label: string; type: string }[];
+  availableSkills: { id: string; name: string }[];
 }
 
 const ConditionCard: React.FC<ConditionCardProps> = ({
@@ -287,12 +281,7 @@ const ConditionCard: React.FC<ConditionCardProps> = ({
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">{conditionType?.label}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRemove}
-                className="h-6 w-6 p-0"
-              >
+              <Button variant="ghost" size="sm" onClick={onRemove} className="h-6 w-6 p-0">
                 <Trash2 className="h-3 w-3" />
               </Button>
             </div>
@@ -323,17 +312,11 @@ const ConditionCard: React.FC<ConditionCardProps> = ({
             )}
 
             {condition.type === 'time_spent' && (
-              <TimeSpentConditionInputs
-                condition={condition}
-                onUpdate={onUpdate}
-              />
+              <TimeSpentConditionInputs condition={condition} onUpdate={onUpdate} />
             )}
 
             {condition.type === 'custom' && (
-              <CustomConditionInputs
-                condition={condition}
-                onUpdate={onUpdate}
-              />
+              <CustomConditionInputs condition={condition} onUpdate={onUpdate} />
             )}
           </div>
         </div>
@@ -346,12 +329,14 @@ const ConditionCard: React.FC<ConditionCardProps> = ({
 const MasteryConditionInputs: React.FC<{
   condition: AdaptiveCondition;
   onUpdate: (updates: Partial<AdaptiveCondition>) => void;
-  skills: Array<{ id: string; name: string }>;
+  skills: { id: string; name: string }[];
 }> = ({ condition, onUpdate, skills }) => (
   <div className="grid grid-cols-3 gap-2">
     <Select
       value={condition.skillId || ''}
-      onValueChange={(skillId) => onUpdate({ skillId })}
+      onValueChange={(skillId) => {
+        onUpdate({ skillId });
+      }}
     >
       <SelectTrigger className="h-8 text-xs">
         <SelectValue placeholder="Select skill" />
@@ -367,7 +352,9 @@ const MasteryConditionInputs: React.FC<{
 
     <Select
       value={condition.operator}
-      onValueChange={(operator: ConditionOperator) => onUpdate({ operator })}
+      onValueChange={(operator: ConditionOperator) => {
+        onUpdate({ operator });
+      }}
     >
       <SelectTrigger className="h-8 text-xs">
         <SelectValue />
@@ -388,7 +375,9 @@ const MasteryConditionInputs: React.FC<{
         max={100}
         step={5}
         value={Math.round((condition.value || 0) * 100)}
-        onChange={(e) => onUpdate({ value: parseInt(e.target.value) / 100 })}
+        onChange={(e) => {
+          onUpdate({ value: parseInt(e.target.value) / 100 });
+        }}
         className="h-8 text-xs"
       />
       <span className="text-xs text-muted-foreground">%</span>
@@ -400,7 +389,7 @@ const MasteryConditionInputs: React.FC<{
 const PreviousAnswerConditionInputs: React.FC<{
   condition: AdaptiveCondition;
   onUpdate: (updates: Partial<AdaptiveCondition>) => void;
-  blocks: Array<{ id: string; label: string; type: string }>;
+  blocks: { id: string; label: string; type: string }[];
 }> = ({ condition, onUpdate, blocks }) => {
   const questionBlocks = blocks.filter((b) =>
     ['multiple-choice', 'true-false', 'fill-blank', 'matching', 'ordering'].includes(b.type)
@@ -410,7 +399,9 @@ const PreviousAnswerConditionInputs: React.FC<{
     <div className="space-y-2">
       <Select
         value={condition.targetBlockId || ''}
-        onValueChange={(targetBlockId) => onUpdate({ targetBlockId })}
+        onValueChange={(targetBlockId) => {
+          onUpdate({ targetBlockId });
+        }}
       >
         <SelectTrigger className="h-8 text-xs">
           <SelectValue placeholder="Select question block" />
@@ -427,7 +418,9 @@ const PreviousAnswerConditionInputs: React.FC<{
       <div className="grid grid-cols-2 gap-2">
         <Select
           value={condition.operator}
-          onValueChange={(operator: ConditionOperator) => onUpdate({ operator })}
+          onValueChange={(operator: ConditionOperator) => {
+            onUpdate({ operator });
+          }}
         >
           <SelectTrigger className="h-8 text-xs">
             <SelectValue />
@@ -443,7 +436,9 @@ const PreviousAnswerConditionInputs: React.FC<{
 
         <Select
           value={condition.value || 'correct'}
-          onValueChange={(value) => onUpdate({ value })}
+          onValueChange={(value) => {
+            onUpdate({ value });
+          }}
         >
           <SelectTrigger className="h-8 text-xs">
             <SelectValue />
@@ -464,7 +459,7 @@ const PreviousAnswerConditionInputs: React.FC<{
 const AttemptCountConditionInputs: React.FC<{
   condition: AdaptiveCondition;
   onUpdate: (updates: Partial<AdaptiveCondition>) => void;
-  blocks: Array<{ id: string; label: string; type: string }>;
+  blocks: { id: string; label: string; type: string }[];
 }> = ({ condition, onUpdate, blocks }) => {
   const questionBlocks = blocks.filter((b) =>
     ['multiple-choice', 'true-false', 'fill-blank', 'matching', 'ordering'].includes(b.type)
@@ -474,7 +469,9 @@ const AttemptCountConditionInputs: React.FC<{
     <div className="space-y-2">
       <Select
         value={condition.targetBlockId || ''}
-        onValueChange={(targetBlockId) => onUpdate({ targetBlockId })}
+        onValueChange={(targetBlockId) => {
+          onUpdate({ targetBlockId });
+        }}
       >
         <SelectTrigger className="h-8 text-xs">
           <SelectValue placeholder="Select question block" />
@@ -491,7 +488,9 @@ const AttemptCountConditionInputs: React.FC<{
       <div className="grid grid-cols-2 gap-2">
         <Select
           value={condition.operator}
-          onValueChange={(operator: ConditionOperator) => onUpdate({ operator })}
+          onValueChange={(operator: ConditionOperator) => {
+            onUpdate({ operator });
+          }}
         >
           <SelectTrigger className="h-8 text-xs">
             <SelectValue />
@@ -510,7 +509,9 @@ const AttemptCountConditionInputs: React.FC<{
           min={1}
           max={10}
           value={condition.value || 1}
-          onChange={(e) => onUpdate({ value: parseInt(e.target.value) })}
+          onChange={(e) => {
+            onUpdate({ value: parseInt(e.target.value) });
+          }}
           className="h-8 text-xs"
           placeholder="Number of attempts"
         />
@@ -527,7 +528,9 @@ const TimeSpentConditionInputs: React.FC<{
   <div className="grid grid-cols-2 gap-2">
     <Select
       value={condition.operator}
-      onValueChange={(operator: ConditionOperator) => onUpdate({ operator })}
+      onValueChange={(operator: ConditionOperator) => {
+        onUpdate({ operator });
+      }}
     >
       <SelectTrigger className="h-8 text-xs">
         <SelectValue />
@@ -546,7 +549,9 @@ const TimeSpentConditionInputs: React.FC<{
         type="number"
         min={0}
         value={condition.value || 60}
-        onChange={(e) => onUpdate({ value: parseInt(e.target.value) })}
+        onChange={(e) => {
+          onUpdate({ value: parseInt(e.target.value) });
+        }}
         className="h-8 text-xs"
       />
       <span className="text-xs text-muted-foreground">seconds</span>
@@ -562,7 +567,9 @@ const CustomConditionInputs: React.FC<{
   <div className="space-y-2">
     <Input
       value={condition.value || ''}
-      onChange={(e) => onUpdate({ value: e.target.value })}
+      onChange={(e) => {
+        onUpdate({ value: e.target.value });
+      }}
       className="h-8 text-xs font-mono"
       placeholder="e.g., learner.score > 80 && learner.attempts < 3"
     />

@@ -164,9 +164,14 @@ export interface ValidationError {
 const API_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:4070/api/v1';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const headers = options.headers instanceof Headers
-    ? Object.fromEntries(Array.from(options.headers as Iterable<[string, string]>))
-    : options.headers ?? {};
+  let headers: Record<string, string> = {};
+  if (options.headers instanceof Headers) {
+    headers = Object.fromEntries(options.headers as unknown as Iterable<[string, string]>);
+  } else if (Array.isArray(options.headers)) {
+    headers = Object.fromEntries(options.headers);
+  } else if (options.headers) {
+    headers = options.headers;
+  }
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
@@ -397,9 +402,21 @@ export const MODALITIES = [
 ];
 
 export const ALLOWED_SCOPES = [
-  { value: 'LEARNER_PROFILE_MIN', label: 'Basic Learner Profile', description: 'User ID and display name' },
-  { value: 'LEARNER_PROGRESS_READ', label: 'Read Progress', description: 'View learner progress data' },
-  { value: 'LEARNER_PROGRESS_WRITE', label: 'Write Progress', description: 'Update learner progress' },
+  {
+    value: 'LEARNER_PROFILE_MIN',
+    label: 'Basic Learner Profile',
+    description: 'User ID and display name',
+  },
+  {
+    value: 'LEARNER_PROGRESS_READ',
+    label: 'Read Progress',
+    description: 'View learner progress data',
+  },
+  {
+    value: 'LEARNER_PROGRESS_WRITE',
+    label: 'Write Progress',
+    description: 'Update learner progress',
+  },
   { value: 'SESSION_EVENTS_READ', label: 'Read Events', description: 'View session events' },
   { value: 'SESSION_EVENTS_WRITE', label: 'Write Events', description: 'Log session events' },
   { value: 'ASSIGNMENT_READ', label: 'Read Assignments', description: 'View assignment context' },

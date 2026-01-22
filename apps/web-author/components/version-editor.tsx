@@ -94,7 +94,12 @@ export function VersionEditor() {
     if (!version) return;
     setSaving(true);
     try {
-      const updated = await updateVersion(loId, versionNumber, updates);
+      // Convert null to undefined for API compatibility
+      const cleanedUpdates = {
+        ...updates,
+        changeSummary: updates.changeSummary ?? undefined,
+      };
+      const updated = await updateVersion(loId, versionNumber, cleanedUpdates);
       setVersion(updated);
       addToast('success', 'Changes saved');
     } catch (err) {
