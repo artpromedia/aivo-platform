@@ -16,8 +16,17 @@ import { incrementCounter, recordHistogram } from '../providers/metrics-helper.j
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export type GradeBand = 'K5' | 'G6_8' | 'G9_12';
-export type BaselineDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL';
+export type GradeBand = 'PRE_K' | 'K5' | 'K_2' | 'GRADE_3_5' | 'G6_8' | 'GRADE_6_8' | 'G9_12' | 'GRADE_9_12';
+export type BaselineDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL' | 'SPELLING' | 'CREATIVE_WRITING' | 'LIFE_SKILLS';
+
+/**
+ * Assessment Type based on parent assessment results (IDEA/504 aligned)
+ * - STANDARD: Full assessment, grade-level questions
+ * - STANDARD_WITH_ACCOMMODATIONS: Full content but with accommodations (extended time, breaks)
+ * - MODIFIED: Simplified language, visual supports, fewer options
+ * - ALTERNATE: Performance-based, functional skills focus, caregiver-assisted
+ */
+export type AssessmentType = 'STANDARD' | 'STANDARD_WITH_ACCOMMODATIONS' | 'MODIFIED' | 'ALTERNATE';
 
 export interface BaselineQuestionRequest {
   tenantId: string;
@@ -33,6 +42,10 @@ export interface BaselineQuestionRequest {
   gradeLevel?: number;
   /** State code for state-specific content (e.g., "TX", "CA") */
   stateCode?: string;
+  /** Assessment type from parent assessment (determines language complexity, supports) */
+  assessmentType?: AssessmentType;
+  /** Specific accommodations to apply */
+  accommodations?: string[];
 }
 
 export interface BaselineQuestion {
@@ -215,23 +228,179 @@ const SKILL_DESCRIPTIONS: Record<
       'seeking help',
     ],
   },
+  
+  // Spelling Skills
+  SPELL_PATTERNS: {
+    name: 'Spelling Patterns',
+    description: 'Recognition and application of common spelling patterns',
+    sampleTopics: ['vowel patterns', 'consonant blends', 'word families', 'suffixes', 'prefixes'],
+  },
+  SPELL_PHONICS: {
+    name: 'Phonetic Spelling',
+    description: 'Ability to spell words using sound-letter relationships',
+    sampleTopics: ['phoneme-grapheme correspondence', 'silent letters', 'digraphs'],
+  },
+  SPELL_RULES: {
+    name: 'Spelling Rules',
+    description: 'Application of spelling rules and conventions',
+    sampleTopics: ['doubling rules', 'plurals', 'changing y to i', 'dropping silent e'],
+  },
+  SPELL_SIGHT_WORDS: {
+    name: 'Sight Words',
+    description: 'Recognition and spelling of high-frequency words',
+    sampleTopics: ['common words', 'irregular spellings', 'frequently used words'],
+  },
+  SPELL_COMPOUND: {
+    name: 'Compound Words',
+    description: 'Understanding and spelling compound words',
+    sampleTopics: ['closed compounds', 'hyphenated compounds', 'open compounds'],
+  },
+
+  // Creative Writing Skills
+  CW_STORY_ELEMENTS: {
+    name: 'Story Elements',
+    description: 'Understanding of basic narrative components',
+    sampleTopics: ['beginning, middle, end', 'problem and solution', 'narrative arc'],
+  },
+  CW_CHARACTER: {
+    name: 'Character Development',
+    description: 'Creating and describing characters in writing',
+    sampleTopics: ['character traits', 'dialogue', 'motivation', 'relationships'],
+  },
+  CW_SETTING: {
+    name: 'Setting Description',
+    description: 'Describing time, place, and atmosphere in writing',
+    sampleTopics: ['location details', 'time period', 'mood', 'sensory details'],
+  },
+  CW_DESCRIPTIVE: {
+    name: 'Descriptive Writing',
+    description: 'Using vivid language and sensory details',
+    sampleTopics: ['adjectives', 'adverbs', 'metaphors', 'similes', 'imagery'],
+  },
+  CW_IMAGINATION: {
+    name: 'Creative Imagination',
+    description: 'Ability to generate original ideas for stories',
+    sampleTopics: ['brainstorming', 'what-if scenarios', 'fantasy elements', 'creativity'],
+  },
+
+  // Life Skills
+  LIFE_TIME: {
+    name: 'Time Management',
+    description: 'Understanding time concepts and scheduling',
+    sampleTopics: ['reading clocks', 'calendars', 'daily routines', 'schedules'],
+  },
+  LIFE_MONEY: {
+    name: 'Money Skills',
+    description: 'Basic financial literacy and money handling',
+    sampleTopics: ['coin identification', 'making change', 'basic budgeting', 'saving'],
+  },
+  LIFE_SAFETY: {
+    name: 'Safety Awareness',
+    description: 'Understanding personal and community safety',
+    sampleTopics: ['crossing streets', 'stranger safety', 'emergency numbers', 'fire safety'],
+  },
+  LIFE_HYGIENE: {
+    name: 'Personal Hygiene',
+    description: 'Understanding health and hygiene practices',
+    sampleTopics: ['hand washing', 'dental care', 'bathing', 'grooming'],
+  },
+  LIFE_ORGANIZATION: {
+    name: 'Organization Skills',
+    description: 'Ability to organize belongings and tasks',
+    sampleTopics: ['keeping things tidy', 'following routines', 'task completion', 'planning'],
+  },
+};
+
+/**
+ * Assessment type specific guidance for question generation
+ */
+const ASSESSMENT_TYPE_GUIDANCE: Record<AssessmentType, { 
+  description: string; 
+  languageLevel: string;
+  questionFormat: string;
+  supportFeatures: string[];
+}> = {
+  STANDARD: {
+    description: 'Standard grade-level assessment',
+    languageLevel: 'Age-appropriate vocabulary and sentence complexity',
+    questionFormat: 'Standard multiple choice with 4 options',
+    supportFeatures: [],
+  },
+  STANDARD_WITH_ACCOMMODATIONS: {
+    description: 'Standard content with accommodation support',
+    languageLevel: 'Age-appropriate vocabulary with clear, direct language',
+    questionFormat: 'Standard multiple choice with 4 options, clearly formatted',
+    supportFeatures: ['Clear visual layout', 'Extra white space', 'Larger text compatibility'],
+  },
+  MODIFIED: {
+    description: 'Modified assessment with simplified language and supports',
+    languageLevel: 'Simplified vocabulary, shorter sentences, concrete language only',
+    questionFormat: 'Multiple choice with 3 options maximum, visual supports encouraged',
+    supportFeatures: [
+      'Simplified language (2-3 grade levels below)',
+      'Concrete examples only',
+      'Visual supports and pictures',
+      'Reduced answer choices (3 instead of 4)',
+      'Short, simple sentences',
+      'Avoid idioms and figurative language',
+    ],
+  },
+  ALTERNATE: {
+    description: 'Alternate assessment for significant cognitive disabilities',
+    languageLevel: 'Very simple vocabulary, single-step instructions, functional language',
+    questionFormat: 'Simple choice (2-3 options), picture-based when possible, functional focus',
+    supportFeatures: [
+      'Very simple language',
+      'Functional life skills focus',
+      'Picture/symbol supports',
+      '2-3 answer choices maximum',
+      'Single-step questions',
+      'Observable behaviors',
+      'Caregiver/teacher assistance noted',
+    ],
+  },
 };
 
 const GRADE_BAND_DESCRIPTIONS: Record<
   GradeBand,
   { grades: string; ageRange: string; complexity: string }
 > = {
+  PRE_K: {
+    grades: 'Pre-Kindergarten',
+    ageRange: '3-5 years old',
+    complexity: 'Very simple language, concrete concepts, picture-based, play-focused',
+  },
+  K_2: {
+    grades: 'Kindergarten through 2nd grade',
+    ageRange: '5-8 years old',
+    complexity: 'Simple language, concrete concepts, visual/hands-on focus, short sentences',
+  },
   K5: {
     grades: 'Kindergarten through 5th grade',
     ageRange: '5-11 years old',
     complexity: 'Simple language, concrete concepts, visual/hands-on focus',
+  },
+  GRADE_3_5: {
+    grades: '3rd through 5th grade',
+    ageRange: '8-11 years old',
+    complexity: 'Age-appropriate language, some abstract concepts, multi-step reasoning',
   },
   G6_8: {
     grades: '6th through 8th grade',
     ageRange: '11-14 years old',
     complexity: 'Moderate complexity, abstract thinking introduced, multi-step problems',
   },
+  GRADE_6_8: {
+    grades: '6th through 8th grade',
+    ageRange: '11-14 years old',
+    complexity: 'Moderate complexity, abstract thinking introduced, multi-step problems',
+  },
   G9_12: {
+    grades: '9th through 12th grade',
+    ageRange: '14-18 years old',
+    complexity: 'Advanced concepts, critical thinking, complex analysis',
+  },
+  GRADE_9_12: {
     grades: '9th through 12th grade',
     ageRange: '14-18 years old',
     complexity: 'Advanced concepts, critical thinking, complex analysis',
@@ -362,7 +531,9 @@ export class BaselineQuestionGenerationService {
    * Build the generation prompt
    */
   private buildPrompt(request: BaselineQuestionRequest, generationId: string): string {
-    const gradeBandInfo = GRADE_BAND_DESCRIPTIONS[request.gradeBand];
+    const gradeBandInfo = GRADE_BAND_DESCRIPTIONS[request.gradeBand] || GRADE_BAND_DESCRIPTIONS['K5'];
+    const assessmentType = request.assessmentType || 'STANDARD';
+    const typeGuidance = ASSESSMENT_TYPE_GUIDANCE[assessmentType];
 
     const parts: string[] = [
       `Generate ${request.skillCodes.length} unique baseline assessment questions for a learner.`,
@@ -376,6 +547,28 @@ export class BaselineQuestionGenerationService {
     // Add specific grade level if provided
     if (request.gradeLevel !== undefined) {
       parts.push(`Specific Grade Level: Grade ${request.gradeLevel}`);
+    }
+
+    // Add assessment type context (CRITICAL for IDEA/504 compliance)
+    parts.push(
+      '',
+      '═══ ASSESSMENT TYPE (CRITICAL) ═══',
+      `Type: ${assessmentType}`,
+      `Description: ${typeGuidance.description}`,
+      `Language Level: ${typeGuidance.languageLevel}`,
+      `Question Format: ${typeGuidance.questionFormat}`
+    );
+
+    if (typeGuidance.supportFeatures.length > 0) {
+      parts.push('Support Features Required:');
+      typeGuidance.supportFeatures.forEach((feature, idx) => {
+        parts.push(`  ${idx + 1}. ${feature}`);
+      });
+    }
+
+    // Add specific accommodations if provided
+    if (request.accommodations && request.accommodations.length > 0) {
+      parts.push('', 'Specific Accommodations:', ...request.accommodations.map(a => `  - ${a}`));
     }
 
     // Add curriculum standards context
@@ -393,23 +586,48 @@ export class BaselineQuestionGenerationService {
     // Add skill descriptions
     this.addSkillDescriptions(parts, request.skillCodes);
 
+    // Determine requirements based on assessment type
+    const optionCount = assessmentType === 'ALTERNATE' ? '2-3' : assessmentType === 'MODIFIED' ? '3' : '4';
+    const optionLabels = assessmentType === 'ALTERNATE' ? '(A, B, or C)' : assessmentType === 'MODIFIED' ? '(A, B, C)' : '(A, B, C, D)';
+
     // Add requirements and format
     parts.push(
       '',
       '═══ REQUIREMENTS ═══',
       '1. Generate exactly ONE question per skill code',
       '2. Each question must be unique (do not reuse questions from previous assessments)',
-      '3. Most questions should be MULTIPLE_CHOICE with 4 options (A, B, C, D)',
-      '4. Include 1-2 OPEN_ENDED questions for writing/verbal skills if appropriate',
-      '5. For MULTIPLE_CHOICE: correctAnswer is the index (0-3) of the correct option',
+      `3. Multiple choice questions should have ${optionCount} options ${optionLabels}`,
+      '4. Include 1-2 OPEN_ENDED questions for writing/verbal skills if appropriate (skip for ALTERNATE type)',
+      `5. For MULTIPLE_CHOICE: correctAnswer is the index (0-${assessmentType === 'ALTERNATE' ? 2 : assessmentType === 'MODIFIED' ? 2 : 3}) of the correct option`,
       '6. For OPEN_ENDED: correctAnswer is a sample correct response, include a rubric',
       '7. Make distractors plausible - based on common misconceptions',
-      '8. Language must be appropriate for the grade band',
-      '9. Questions should be clear, concise, and unambiguous',
+      `8. Language must be appropriate for ${assessmentType === 'MODIFIED' || assessmentType === 'ALTERNATE' ? 'simplified accessibility' : 'the grade band'}`,
+      '9. Questions should be clear, concise, and unambiguous'
+    );
+
+    // Add assessment-type specific requirements
+    if (assessmentType === 'MODIFIED') {
+      parts.push(
+        '10. Use simple, concrete vocabulary - avoid abstract concepts',
+        '11. Keep sentences short (under 15 words)',
+        '12. Avoid idioms, metaphors, and figurative language',
+        '13. Consider adding picture/visual cues in question descriptions'
+      );
+    } else if (assessmentType === 'ALTERNATE') {
+      parts.push(
+        '10. Focus on functional, real-life applications',
+        '11. Use single-step instructions only',
+        '12. Questions should assess observable skills',
+        '13. Include only 2-3 very distinct answer choices',
+        '14. Consider performance-based alternatives where appropriate'
+      );
+    }
+
+    parts.push(
       '',
       '═══ RESPONSE FORMAT ═══',
       'Respond with valid JSON:',
-      this.getResponseFormatExample()
+      this.getResponseFormatExample(assessmentType)
     );
 
     return parts.join('\n');
@@ -466,27 +684,40 @@ export class BaselineQuestionGenerationService {
   }
 
   /**
-   * Get the response format example JSON
+   * Get the response format example JSON based on assessment type
    */
-  private getResponseFormatExample(): string {
-    return `{
-  "questions": [
-    {
-      "skillCode": "SKILL_CODE",
-      "questionType": "MULTIPLE_CHOICE",
-      "questionText": "The question text here?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": 0
-    },
-    {
-      "skillCode": "SKILL_CODE",
-      "questionType": "OPEN_ENDED",
-      "questionText": "The open-ended question here?",
-      "correctAnswer": "Sample correct response",
-      "rubric": "Scoring rubric for evaluating responses"
+  private getResponseFormatExample(assessmentType: AssessmentType = 'STANDARD'): string {
+    // Adjust options based on assessment type
+    const optionCount = assessmentType === 'ALTERNATE' ? 3 : assessmentType === 'MODIFIED' ? 3 : 4;
+    const options = ['Option A', 'Option B', 'Option C'];
+    if (optionCount === 4) options.push('Option D');
+
+    const examples: Array<{ skillCode: string; questionType: string; questionText: string; options?: string[]; correctAnswer: number | string; rubric?: string }> = [
+      {
+        skillCode: 'SKILL_CODE',
+        questionType: 'MULTIPLE_CHOICE',
+        questionText: assessmentType === 'ALTERNATE' 
+          ? 'Simple, functional question here?' 
+          : assessmentType === 'MODIFIED'
+            ? 'Clear, simplified question here?'
+            : 'The question text here?',
+        options,
+        correctAnswer: 0
+      }
+    ];
+
+    // Only include open-ended for STANDARD types
+    if (assessmentType === 'STANDARD' || assessmentType === 'STANDARD_WITH_ACCOMMODATIONS') {
+      examples.push({
+        skillCode: 'SKILL_CODE',
+        questionType: 'OPEN_ENDED',
+        questionText: 'The open-ended question here?',
+        correctAnswer: 'Sample correct response',
+        rubric: 'Scoring rubric for evaluating responses'
+      });
     }
-  ]
-}`;
+
+    return JSON.stringify({ questions: examples }, null, 2);
   }
 
   /**

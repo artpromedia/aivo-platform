@@ -611,4 +611,163 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       }
     }
   );
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // INTERNAL SERVICE-TO-SERVICE ROUTES
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // POST /internal/learner-functioning-profile
+  // Called by baseline-svc to sync parent assessment results
+  app.post(
+    '/internal/learner-functioning-profile',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // Verify internal service call
+      const internalService = request.headers['x-internal-service'] as string | undefined;
+      if (!internalService) {
+        return reply.status(403).send({ error: 'Internal service header required' });
+      }
+
+      const schema = z.object({
+        tenantId: z.string().uuid(),
+        learnerId: z.string().uuid(),
+        assessmentType: z.enum(['STANDARD', 'STANDARD_WITH_ACCOMMODATIONS', 'MODIFIED', 'ALTERNATE']),
+        parentAssessmentScore: z.number().min(0).max(100).optional(),
+        hasIepDocumentation: z.boolean().optional(),
+        createdByUserId: z.string(),
+      });
+
+      const parseResult = schema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: parseResult.error.flatten(),
+        });
+      }
+
+      const data = parseResult.data;
+
+      try {
+        // Map AssessmentType from baseline-svc to profile-svc enum
+        // Also set legacy AssessmentMode for backward compatibility
+        const legacyModeMap: Record<string, 'STANDARD' | 'MODIFIED' | 'SUPPORTED' | 'OBSERVATIONAL'> = {
+          STANDARD: 'STANDARD',
+          STANDARD_WITH_ACCOMMODATIONS: 'STANDARD',
+          MODIFIED: 'MODIFIED',
+          ALTERNATE: 'SUPPORTED',
+        };
+
+        // Map to FunctioningLevel based on assessment type
+        const functioningLevelMap: Record<string, 'TYPICAL' | 'MILD' | 'MODERATE' | 'SEVERE'> = {
+          STANDARD: 'TYPICAL',
+          STANDARD_WITH_ACCOMMODATIONS: 'MILD',
+          MODIFIED: 'MODERATE',
+          ALTERNATE: 'SEVERE',
+        };
+
+        const profile = await prisma.learnerFunctioningProfile.upsert({
+          where: {
+            tenantId_learnerId: {
+              tenantId: data.tenantId,
+              learnerId: data.learnerId,
+            },
+          },
+          create: {
+            tenantId: data.tenantId,
+            learnerId: data.learnerId,
+            functioningLevel: functioningLevelMap[data.assessmentType],
+            assessmentType: data.assessmentType,
+            assessmentTypeConfirmed: true,
+            recommendedAssessmentMode: legacyModeMap[data.assessmentType],
+            assessmentModeConfirmed: true,
+            parentAssessmentScore: data.parentAssessmentScore,
+            hasIepDocumentation: data.hasIepDocumentation || false,
+            createdByUserId: data.createdByUserId,
+            updatedByUserId: data.createdByUserId,
+          },
+          update: {
+            functioningLevel: functioningLevelMap[data.assessmentType],
+            assessmentType: data.assessmentType,
+            assessmentTypeConfirmed: true,
+            recommendedAssessmentMode: legacyModeMap[data.assessmentType],
+            assessmentModeConfirmed: true,
+            parentAssessmentScore: data.parentAssessmentScore,
+            hasIepDocumentation: data.hasIepDocumentation || false,
+            updatedByUserId: data.createdByUserId,
+          },
+        });
+
+        console.log('[internal/learner-functioning-profile] Profile synced', {
+          learnerId: data.learnerId,
+          assessmentType: data.assessmentType,
+          profileId: profile.id,
+        });
+
+        return reply.status(200).send({
+          success: true,
+          profileId: profile.id,
+          assessmentType: profile.assessmentType,
+        });
+      } catch (error) {
+        console.error('[internal/learner-functioning-profile] Failed to sync profile', {
+          learnerId: data.learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to sync functioning profile',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+  );
+
+  // GET /internal/learner-functioning-profile/:learnerId
+  // Called by web-learner to fetch assessment type for baseline assessment
+  app.get<{ Params: { learnerId: string }; Querystring: { tenantId?: string } }>(
+    '/internal/learner-functioning-profile/:learnerId',
+    async (request, reply: FastifyReply) => {
+      const { learnerId } = request.params;
+      const tenantId = request.query.tenantId || request.headers['x-tenant-id'] as string;
+
+      if (!tenantId) {
+        return reply.status(400).send({ error: 'tenantId is required' });
+      }
+
+      try {
+        const profile = await prisma.learnerFunctioningProfile.findUnique({
+          where: {
+            tenantId_learnerId: {
+              tenantId,
+              learnerId,
+            },
+          },
+        });
+
+        if (!profile) {
+          return reply.status(404).send({ error: 'Functioning profile not found' });
+        }
+
+        return reply.status(200).send({
+          learnerId,
+          tenantId,
+          assessmentType: profile.assessmentType,
+          selectedAssessmentType: profile.selectedAssessmentType,
+          assessmentTypeConfirmed: profile.assessmentTypeConfirmed,
+          functioningLevel: profile.functioningLevel,
+          parentAssessmentScore: profile.parentAssessmentScore,
+          hasIepDocumentation: profile.hasIepDocumentation,
+          // Legacy fields
+          recommendedAssessmentMode: profile.recommendedAssessmentMode,
+          selectedAssessmentMode: profile.selectedAssessmentMode,
+        });
+      } catch (error) {
+        console.error('[internal/learner-functioning-profile] Failed to get profile', {
+          learnerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          error: 'Failed to get functioning profile',
+        });
+      }
+    }
+  );
 }

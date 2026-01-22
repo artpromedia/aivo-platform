@@ -21,6 +21,7 @@ import type {
   LLMOrchestratorConfig,
 } from './llm-provider.interface.js';
 import { incrementCounter } from './metrics-helper.js';
+import { OllamaProvider } from './ollama.provider.js';
 import { OpenAIProvider } from './openai.provider.js';
 
 // Logger helper
@@ -37,10 +38,10 @@ function log(level: 'info' | 'warn' | 'error', message: string, context?: Record
 }
 
 export class LLMOrchestrator {
-  private providers = new Map<string, LLMProviderInterface>();
-  private circuitBreakers = new Map<string, CircuitBreaker>();
-  private primaryProvider: string;
-  private fallbackOrder: string[];
+  private readonly providers = new Map<string, LLMProviderInterface>();
+  private readonly circuitBreakers = new Map<string, CircuitBreaker>();
+  private readonly primaryProvider: string;
+  private readonly fallbackOrder: string[];
 
   constructor(config: LLMOrchestratorConfig) {
     // Initialize OpenAI provider
@@ -106,9 +107,30 @@ export class LLMOrchestrator {
       );
     }
 
+    // Initialize Ollama provider (local LLM for development)
+    if (config.ollama) {
+      const ollama = new OllamaProvider(config.ollama);
+      this.providers.set('ollama', ollama);
+      this.circuitBreakers.set(
+        'ollama',
+        new CircuitBreaker({
+          failureThreshold: 3,
+          resetTimeout: 10000, // Faster reset for local provider
+          onStateChange: (from, to) => {
+            log('info', `Ollama circuit breaker: ${from} -> ${to}`);
+            incrementCounter('llm.circuit_breaker.state_change', {
+              provider: 'ollama',
+              from,
+              to,
+            });
+          },
+        })
+      );
+    }
+
     // Set primary provider and fallback order
     this.primaryProvider = config.primaryProvider ?? 'openai';
-    this.fallbackOrder = config.fallbackOrder ?? ['openai', 'anthropic', 'google'];
+    this.fallbackOrder = config.fallbackOrder ?? ['openai', 'anthropic', 'google', 'ollama'];
 
     log('info', 'LLM Orchestrator initialized', {
       providers: Array.from(this.providers.keys()),
@@ -301,9 +323,10 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
   }
 
   // Google Gemini configuration
-  if (process.env.GOOGLE_API_KEY || process.env.GOOGLE_GEMINI_API_KEY) {
+  const googleApiKey = process.env.GOOGLE_GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+  if (googleApiKey) {
     config.google = {
-      apiKey: process.env.GOOGLE_GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY!,
+      apiKey: googleApiKey,
       projectId: process.env.GOOGLE_PROJECT_ID,
       location: process.env.GOOGLE_LOCATION ?? 'us-central1',
       rateLimits: {
@@ -318,9 +341,23 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
     };
   }
 
+  // Ollama configuration (local LLM for development)
+  // Always enable Ollama if OLLAMA_BASE_URL is set, or in development mode
+  const ollamaUrl = process.env.OLLAMA_BASE_URL ?? 
+    (process.env.NODE_ENV === 'production' ? undefined : 'http://ollama:11434');
+  
+  if (ollamaUrl) {
+    config.ollama = {
+      apiKey: 'not-required', // Ollama doesn't need an API key
+      baseUrl: ollamaUrl,
+      defaultModel: process.env.OLLAMA_DEFAULT_MODEL ?? 'llama3.2:3b',
+      timeout: Number.parseInt(process.env.OLLAMA_TIMEOUT_MS ?? '120000', 10),
+    };
+  }
+
   // Provider configuration
   config.primaryProvider = process.env.LLM_PRIMARY_PROVIDER ?? 'openai';
-  config.fallbackOrder = (process.env.LLM_FALLBACK_ORDER ?? 'openai,anthropic,google')
+  config.fallbackOrder = (process.env.LLM_FALLBACK_ORDER ?? 'openai,anthropic,google,ollama')
     .split(',')
     .map((s) => s.trim());
 

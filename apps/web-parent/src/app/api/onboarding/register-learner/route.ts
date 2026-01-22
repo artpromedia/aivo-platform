@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { firstName, lastName, dateOfBirth, gradeLevel, zipCode } = body;
+    const { firstName, lastName, dateOfBirth, gradeLevel, location, classCode } = body;
 
     // Validate required fields
     if (!firstName || !gradeLevel) {
@@ -32,15 +32,26 @@ export async function POST(request: NextRequest) {
         lastName: lastName || '',
         dateOfBirth: dateOfBirth || null,
         gradeLevel,
-        zipCode: zipCode || null,
-        classCode: `AIVO${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        zipCode: location?.zipCode || null,
+        // If user provided a class code, use it; otherwise generate one
+        classCode: classCode || `AIVO${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        joinedClassCode: classCode || null, // Track if they joined via a code
         pin, // 6-digit PIN for web/mobile login
         createdAt: new Date().toISOString(),
       };
 
+      // If class code was provided, simulate joining the class
+      if (classCode) {
+        console.log(`[Register Learner] Joining class with code: ${classCode}`);
+      }
+
       return NextResponse.json({
         learner: mockLearner,
         message: 'Learner registered successfully',
+        joinedClass: classCode ? {
+          code: classCode,
+          name: 'Demo Classroom',
+        } : null,
       });
     }
 
@@ -60,6 +71,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
+    console.error('Register learner error:', error);
     return NextResponse.json(
       { message: 'An error occurred during learner registration' },
       { status: 500 }

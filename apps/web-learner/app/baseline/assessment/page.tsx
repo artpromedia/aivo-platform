@@ -3,7 +3,99 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ASSESSMENT_DOMAINS, type AssessmentDomain, type AssessmentQuestion } from './types';
+import { type AssessmentDomain, type AssessmentQuestion } from './types';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSESSMENT CONFIGURATION TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+type AssessmentType = 'STANDARD' | 'STANDARD_WITH_ACCOMMODATIONS' | 'MODIFIED' | 'ALTERNATE';
+type GradeBand = 'PRE_K' | 'K_2' | 'GRADE_3_5' | 'GRADE_6_8' | 'GRADE_9_12';
+
+interface DomainConfig {
+  domain: string;
+  name: string;
+  icon: string;
+  questionsPerDomain: number;
+  enabled: boolean;
+  order: number;
+}
+
+interface AssessmentConfig {
+  assessmentType: AssessmentType;
+  gradeBand: GradeBand;
+  gradeLevel: string;
+  domains: DomainConfig[];
+  estimatedDurationMinutes: number;
+  questionsPerDomain: number;
+  totalQuestions: number;
+  accommodations: {
+    extendedTime: boolean;
+    frequentBreaks: boolean;
+    simplifiedLanguage: boolean;
+    visualSupports: boolean;
+    audioNarration: boolean;
+    reducedOptions: boolean;
+    largerText: boolean;
+    caregiverAssisted: boolean;
+  };
+  uiConfig: {
+    showTimer: boolean;
+    allowSkip: boolean;
+    showProgress: boolean;
+    breakFrequency: number;
+    optionCount: number;
+    fontSizeMultiplier: number;
+    highContrast: boolean;
+    animationsEnabled: boolean;
+  };
+  introMessage: string;
+  completionMessage: string;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEFAULT CONFIG (fallback)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const DEFAULT_CONFIG: AssessmentConfig = {
+  assessmentType: 'STANDARD',
+  gradeBand: 'K_2',
+  gradeLevel: '1',
+  domains: [
+    { domain: 'MATH', name: 'Math', icon: '🔢', questionsPerDomain: 5, enabled: true, order: 1 },
+    { domain: 'ELA', name: 'Reading & Language', icon: '📚', questionsPerDomain: 5, enabled: true, order: 2 },
+    { domain: 'SPELLING', name: 'Spelling', icon: '✏️', questionsPerDomain: 5, enabled: true, order: 3 },
+    { domain: 'SPEECH', name: 'Speech & Language', icon: '🗣️', questionsPerDomain: 5, enabled: true, order: 4 },
+    { domain: 'CREATIVE_WRITING', name: 'Creative Writing', icon: '✨', questionsPerDomain: 5, enabled: true, order: 5 },
+    { domain: 'SEL', name: 'Social-Emotional', icon: '💚', questionsPerDomain: 5, enabled: true, order: 6 },
+    { domain: 'LIFE_SKILLS', name: 'Life Skills', icon: '🌟', questionsPerDomain: 5, enabled: true, order: 7 },
+  ],
+  estimatedDurationMinutes: 35,
+  questionsPerDomain: 5,
+  totalQuestions: 35,
+  accommodations: {
+    extendedTime: false,
+    frequentBreaks: false,
+    simplifiedLanguage: false,
+    visualSupports: false,
+    audioNarration: false,
+    reducedOptions: false,
+    largerText: false,
+    caregiverAssisted: false,
+  },
+  uiConfig: {
+    showTimer: true,
+    allowSkip: false,
+    showProgress: true,
+    breakFrequency: 10,
+    optionCount: 4,
+    fontSizeMultiplier: 1.0,
+    highContrast: false,
+    animationsEnabled: true,
+  },
+  introMessage: "Let's find out what you already know! 🚀",
+  completionMessage: "Amazing job! 🎉",
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PHASE 1: Learning Style Questions (existing 7 questions)
@@ -188,6 +280,7 @@ const GAME_BREAKS: GameBreak[] = [
 // ══════════════════════════════════════════════════════════════════════════════
 
 type AssessmentPhase = 
+  | 'loading'
   | 'learning_style' 
   | 'transition_to_domains'
   | 'domain_intro'
@@ -202,8 +295,13 @@ type AssessmentPhase =
 export default function BaselineAssessmentPage() {
   const router = useRouter();
   
+  // Assessment configuration (from parent assessment)
+  const [config, setConfig] = useState<AssessmentConfig>(DEFAULT_CONFIG);
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+  const [learnerName, setLearnerName] = useState<string>('');
+  
   // Phase management
-  const [phase, setPhase] = useState<AssessmentPhase>('learning_style');
+  const [phase, setPhase] = useState<AssessmentPhase>('loading');
   
   // Learning style phase state
   const [lsIndex, setLsIndex] = useState(0);
@@ -225,16 +323,53 @@ export default function BaselineAssessmentPage() {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Current domain info
-  const currentDomain = ASSESSMENT_DOMAINS[currentDomainIndex];
-  const currentBreak = GAME_BREAKS[currentBreakIndex % GAME_BREAKS.length];
+  // ════════════════════════════════════════════════════════════════════════════
+  // FETCH ASSESSMENT CONFIG ON LOAD
+  // ════════════════════════════════════════════════════════════════════════════
 
-  // Calculate overall progress
-  const totalQuestions = LEARNING_STYLE_QUESTIONS.length + (ASSESSMENT_DOMAINS.length * 5);
-  const questionsCompleted = phase === 'learning_style' 
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const response = await fetch('/api/baseline/config');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.config) {
+            setConfig(data.config);
+            if (data.learnerName) {
+              setLearnerName(data.learnerName);
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Using default config:', error);
+      } finally {
+        setIsConfigLoaded(true);
+        setPhase('learning_style');
+      }
+    }
+    fetchConfig();
+  }, []);
+
+  // Current domain info - use config domains
+  const enabledDomains = config.domains.filter(d => d.enabled);
+  const currentDomainConfig = enabledDomains[currentDomainIndex];
+  const currentDomainId = currentDomainConfig?.domain as AssessmentDomain || 'MATH';
+  const currentBreak = GAME_BREAKS[currentBreakIndex % GAME_BREAKS.length];
+  const questionsPerDomain = currentDomainConfig?.questionsPerDomain || 5;
+
+  // Calculate overall progress using config
+  const totalDomainQuestions = enabledDomains.reduce((sum, d) => sum + d.questionsPerDomain, 0);
+  const totalQuestions = LEARNING_STYLE_QUESTIONS.length + totalDomainQuestions;
+  const completedDomainQuestions = enabledDomains.slice(0, currentDomainIndex).reduce((sum, d) => sum + d.questionsPerDomain, 0);
+  const questionsCompleted = phase === 'learning_style' || phase === 'loading'
     ? lsIndex 
-    : LEARNING_STYLE_QUESTIONS.length + (currentDomainIndex * 5) + currentQuestionInDomain;
+    : LEARNING_STYLE_QUESTIONS.length + completedDomainQuestions + currentQuestionInDomain;
   const overallProgress = (questionsCompleted / totalQuestions) * 100;
+
+  // UI adaptations based on assessment type
+  const fontSize = config.uiConfig.fontSizeMultiplier > 1 ? 'text-lg md:text-xl' : 'text-base md:text-lg';
+  const isSimplified = config.assessmentType === 'MODIFIED' || config.assessmentType === 'ALTERNATE';
+  const isAlternate = config.assessmentType === 'ALTERNATE';
 
   // ════════════════════════════════════════════════════════════════════════════
   // FETCH DOMAIN QUESTIONS FROM AI
@@ -246,7 +381,15 @@ export default function BaselineAssessmentPage() {
       const response = await fetch('/api/baseline/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain, count: 5 }),
+        body: JSON.stringify({ 
+          domain, 
+          count: currentDomainConfig?.questionsPerDomain || 5,
+          gradeBand: config.gradeBand,
+          assessmentType: config.assessmentType,
+          accommodations: Object.entries(config.accommodations)
+            .filter(([, v]) => v)
+            .map(([k]) => k),
+        }),
       });
 
       if (response.ok) {
@@ -263,7 +406,7 @@ export default function BaselineAssessmentPage() {
       setIsLoadingQuestions(false);
       setQuestionStartTime(Date.now());
     }
-  }, []);
+  }, [config.gradeBand, config.assessmentType, config.accommodations, currentDomainConfig?.questionsPerDomain]);
 
   // Generate stub questions for demo/fallback
   function generateStubQuestions(domain: AssessmentDomain): AssessmentQuestion[] {
@@ -390,11 +533,11 @@ export default function BaselineAssessmentPage() {
   }, []);
 
   const startCurrentDomain = useCallback(() => {
-    if (currentDomain) {
-      fetchDomainQuestions(currentDomain.id);
+    if (currentDomainId) {
+      fetchDomainQuestions(currentDomainId);
       setPhase('domain_questions');
     }
-  }, [currentDomain, fetchDomainQuestions]);
+  }, [currentDomainId, fetchDomainQuestions]);
 
   const handleDomainAnswer = (optionIndex: number) => {
     const currentQuestion = domainQuestions[currentQuestionInDomain];
@@ -408,13 +551,13 @@ export default function BaselineAssessmentPage() {
     }));
 
     setTimeout(() => {
-      if (currentQuestionInDomain < 4) {
+      if (currentQuestionInDomain < questionsPerDomain - 1) {
         // More questions in this domain
         setCurrentQuestionInDomain((prev) => prev + 1);
         setQuestionStartTime(Date.now());
       } else {
         // Domain complete - show game break or complete
-        if (currentDomainIndex < ASSESSMENT_DOMAINS.length - 1) {
+        if (currentDomainIndex < enabledDomains.length - 1) {
           setPhase('game_break');
         } else {
           // All domains complete!
@@ -429,7 +572,7 @@ export default function BaselineAssessmentPage() {
   // GAME BREAK HANDLERS
   // ════════════════════════════════════════════════════════════════════════════
 
-  const breakTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const breakTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const moveToNextDomain = useCallback(() => {
     setCurrentBreakIndex((prev) => prev + 1);
@@ -612,81 +755,120 @@ export default function BaselineAssessmentPage() {
           <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-bounce">
             <span className="text-5xl">🎉</span>
           </div>
-          <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-4">
-            Great job so far!
+          <h2 className={`font-bold text-[var(--aivo-brand-navy)] mb-4 ${isAlternate ? 'text-2xl' : 'text-3xl'}`}>
+            {isSimplified ? 'You did great!' : 'Great job so far!'}
           </h2>
-          <p className="text-lg text-[var(--aivo-neutral-600)] mb-6">
-            Now let&apos;s explore what you know! We&apos;ll play some quick games in different subjects.
+          <p className={`text-[var(--aivo-neutral-600)] mb-6 ${isAlternate ? 'text-xl' : 'text-lg'}`}>
+            {isAlternate 
+              ? 'Let\'s play some games!' 
+              : isSimplified 
+                ? 'Now let\'s play some fun games!'
+                : 'Now let\'s explore what you know! We\'ll play some quick games in different subjects.'
+            }
           </p>
-          
-          <div className="grid grid-cols-4 gap-3 mb-8">
-            {ASSESSMENT_DOMAINS.slice(0, 4).map((domain) => (
-              <div key={domain.id} className="text-center">
-                <div className="w-14 h-14 mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2">
-                  <span className="text-2xl">{domain.emoji}</span>
-                </div>
-                <span className="text-xs text-[var(--aivo-neutral-500)]">{domain.name}</span>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-8 max-w-xs mx-auto">
-            {ASSESSMENT_DOMAINS.slice(4).map((domain) => (
-              <div key={domain.id} className="text-center">
-                <div className="w-14 h-14 mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2">
-                  <span className="text-2xl">{domain.emoji}</span>
-                </div>
-                <span className="text-xs text-[var(--aivo-neutral-500)]">{domain.name}</span>
-              </div>
-            ))}
-          </div>
 
-          <p className="text-sm text-[var(--aivo-neutral-500)] mb-6">
-            Don&apos;t worry - there are no wrong answers! Just do your best. 💪
+          {/* Caregiver notice for ALTERNATE */}
+          {isAlternate && (
+            <div className="bg-[var(--aivo-teal-50)] text-[var(--aivo-teal-600)] px-4 py-2 rounded-lg text-center mb-4">
+              👋 Helper: Please guide the learner through these activities
+            </div>
+          )}
+          
+          {/* Show domain icons based on enabled domains from config */}
+          <div className={`grid gap-3 mb-8 ${
+            enabledDomains.length <= 4 
+              ? 'grid-cols-' + enabledDomains.length 
+              : 'grid-cols-4'
+          }`}>
+            {enabledDomains.slice(0, 4).map((domain) => (
+              <div key={domain.domain} className="text-center">
+                <div className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}>
+                  <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{domain.icon}</span>
+                </div>
+                <span className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}>{domain.name}</span>
+              </div>
+            ))}
+          </div>
+          {enabledDomains.length > 4 && (
+            <div className={`grid gap-3 mb-8 max-w-xs mx-auto grid-cols-${Math.min(enabledDomains.length - 4, 3)}`}>
+              {enabledDomains.slice(4).map((domain) => (
+                <div key={domain.domain} className="text-center">
+                  <div className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}>
+                    <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{domain.icon}</span>
+                  </div>
+                  <span className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}>{domain.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className={`text-[var(--aivo-neutral-500)] mb-6 ${isAlternate ? 'text-base' : 'text-sm'}`}>
+            {isSimplified 
+              ? 'Just try your best! 💪' 
+              : 'Don\'t worry - there are no wrong answers! Just do your best. 💪'
+            }
           </p>
 
           <button
             onClick={startDomainAssessment}
-            className="w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
-              hover:opacity-90 text-white text-xl font-bold rounded-xl transition-all"
+            className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+              hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl py-5' : 'text-xl'}`}
           >
-            Let&apos;s Go! 🚀
+            {isSimplified ? 'Let\'s Play! 🎮' : 'Let\'s Go! 🚀'}
           </button>
         </div>
       </div>
     </div>
   );
 
-  const renderDomainIntro = () => (
+  const renderDomainIntro = () => {
+    // Use config for domain info
+    const domainInfo = {
+      name: currentDomainConfig?.name || 'Questions',
+      emoji: currentDomainConfig?.icon || '📝',
+      description: isSimplified 
+        ? `Let's answer some ${currentDomainConfig?.name?.toLowerCase() || 'fun'} questions!`
+        : `Let's see what you know about ${currentDomainConfig?.name?.toLowerCase() || 'this topic'}!`,
+      color: 'from-purple-400 to-purple-600',
+    };
+    
+    return (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-xl w-full text-center">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
-          <div className={`w-28 h-28 mx-auto bg-gradient-to-br ${currentDomain?.color || 'from-purple-400 to-purple-600'} rounded-full flex items-center justify-center mb-6 shadow-lg`}>
-            <span className="text-6xl">{currentDomain?.emoji}</span>
+        <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] ${isAlternate ? 'text-xl' : ''}`}>
+          <div className={`w-28 h-28 mx-auto bg-gradient-to-br ${domainInfo.color} rounded-full flex items-center justify-center mb-6 shadow-lg`}>
+            <span className="text-6xl">{domainInfo.emoji}</span>
           </div>
-          <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-3">
-            {currentDomain?.name}
+          <h2 className={`font-bold text-[var(--aivo-brand-navy)] mb-3 ${isAlternate ? 'text-4xl' : 'text-3xl'}`}>
+            {domainInfo.name}
           </h2>
-          <p className="text-lg text-[var(--aivo-neutral-600)] mb-2">
-            {currentDomain?.description}
+          <p className={`text-[var(--aivo-neutral-600)] mb-2 ${isAlternate ? 'text-xl' : 'text-lg'}`}>
+            {domainInfo.description}
           </p>
           <div className="inline-block bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)] px-4 py-2 rounded-full text-sm font-medium mb-6">
-            5 quick questions
+            {questionsPerDomain} {isSimplified ? 'fun' : 'quick'} questions
           </div>
+
+          {isAlternate && (
+            <p className="text-lg text-[var(--aivo-teal-500)] mb-4">
+              👋 Your helper can read these to you!
+            </p>
+          )}
 
           <button
             onClick={startCurrentDomain}
-            className="w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
-              hover:opacity-90 text-white text-xl font-bold rounded-xl transition-all"
+            className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+              hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl' : 'text-xl'}`}
           >
-            Start! ✨
+            {isSimplified ? "Let's Go! 🎉" : 'Start! ✨'}
           </button>
         </div>
 
         {/* Domain progress indicator */}
-        <div className="mt-6 flex justify-center gap-2">
-          {ASSESSMENT_DOMAINS.map((domain, idx) => (
+        <div className="mt-6 flex justify-center gap-2 flex-wrap">
+          {enabledDomains.map((domain, idx) => (
             <div
-              key={domain.id}
+              key={domain.domain}
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
                 idx < currentDomainIndex 
                   ? 'bg-[var(--aivo-teal-400)] text-white' 
@@ -695,13 +877,14 @@ export default function BaselineAssessmentPage() {
                     : 'bg-white text-[var(--aivo-neutral-400)] border-2 border-[var(--aivo-neutral-200)]'
               }`}
             >
-              {idx < currentDomainIndex ? '✓' : <span className="text-lg">{domain.emoji}</span>}
+              {idx < currentDomainIndex ? '✓' : <span className="text-lg">{domain.icon}</span>}
             </div>
           ))}
         </div>
       </div>
     </div>
   );
+  };
 
   const renderDomainQuestions = () => {
     if (isLoadingQuestions) {
@@ -709,9 +892,11 @@ export default function BaselineAssessmentPage() {
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4 animate-pulse">
-              <span className="text-4xl">{currentDomain?.emoji}</span>
+              <span className="text-4xl">{currentDomainConfig?.icon || '📝'}</span>
             </div>
-            <p className="text-lg text-[var(--aivo-neutral-600)]">Getting your questions ready...</p>
+            <p className={`text-[var(--aivo-neutral-600)] ${isAlternate ? 'text-xl' : 'text-lg'}`}>
+              {isSimplified ? 'Getting ready... 🎮' : 'Getting your questions ready...'}
+            </p>
           </div>
         </div>
       );
@@ -722,43 +907,69 @@ export default function BaselineAssessmentPage() {
 
     return (
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-xl w-full">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+        <div className={`max-w-xl w-full ${isAlternate ? 'max-w-2xl' : ''}`}>
+          <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] 
+            ${config.uiConfig.highContrast ? 'border-4' : ''}`}>
             {/* Domain badge */}
             <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-2xl">{currentDomain?.emoji}</span>
-              <span className="text-sm font-medium text-[var(--aivo-neutral-500)]">
-                {currentDomain?.name} • Question {currentQuestionInDomain + 1} of 5
+              <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{currentDomainConfig?.icon || '📝'}</span>
+              <span className={`font-medium text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-lg' : 'text-sm'}`}>
+                {currentDomainConfig?.name || 'Questions'} • Question {currentQuestionInDomain + 1} of {questionsPerDomain}
               </span>
             </div>
 
+            {/* Caregiver helper notice for ALTERNATE */}
+            {isAlternate && (
+              <div className="bg-[var(--aivo-teal-50)] text-[var(--aivo-teal-600)] px-4 py-2 rounded-lg text-center mb-4">
+                👋 Helper: Please read aloud to the learner
+              </div>
+            )}
+
             {/* Question */}
-            <h2 className="text-xl font-bold text-[var(--aivo-brand-navy)] text-center mb-6">
+            <h2 className={`font-bold text-[var(--aivo-brand-navy)] text-center mb-6 
+              ${isAlternate ? 'text-2xl leading-relaxed' : isSimplified ? 'text-xl' : 'text-xl'}`}
+              style={{ fontSize: `${1.25 * config.uiConfig.fontSizeMultiplier}rem` }}>
               {currentQ.questionText}
             </h2>
 
-            {/* Options */}
-            <div className="grid gap-3">
-              {currentQ.options?.map((option, idx) => (
+            {/* Options - adapted for assessment type */}
+            <div className={`grid gap-3 ${isAlternate ? 'gap-4' : ''}`}>
+              {currentQ.options?.slice(0, config.uiConfig.optionCount).map((option, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleDomainAnswer(idx)}
-                  className="p-4 rounded-xl border-2 border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-brand-primary)] 
-                    hover:bg-[var(--aivo-purple-50)] transition-all text-left font-medium text-[var(--aivo-brand-navy)]"
+                  className={`p-4 rounded-xl border-2 transition-all text-left font-medium text-[var(--aivo-brand-navy)]
+                    ${isAlternate 
+                      ? 'border-[var(--aivo-neutral-300)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-100)] p-6 text-xl' 
+                      : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)]'
+                    }
+                    ${config.uiConfig.highContrast ? 'border-3' : ''}`}
+                  style={{ fontSize: `${1 * config.uiConfig.fontSizeMultiplier}rem` }}
                 >
-                  <span className="inline-flex items-center justify-center w-8 h-8 bg-[var(--aivo-purple-100)] 
-                    text-[var(--aivo-brand-primary)] rounded-full mr-3 text-sm font-bold">
+                  <span className={`inline-flex items-center justify-center bg-[var(--aivo-purple-100)] 
+                    text-[var(--aivo-brand-primary)] rounded-full mr-3 font-bold
+                    ${isAlternate ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}>
                     {String.fromCharCode(65 + idx)}
                   </span>
                   {option}
                 </button>
               ))}
             </div>
+
+            {/* Skip button for accommodated assessments */}
+            {config.uiConfig.allowSkip && (
+              <button
+                onClick={() => handleDomainAnswer(-1)} // -1 indicates skipped
+                className="w-full mt-4 py-2 text-[var(--aivo-neutral-500)] hover:text-[var(--aivo-brand-primary)] text-sm"
+              >
+                Skip this question →
+              </button>
+            )}
           </div>
 
           {/* Question progress dots */}
           <div className="mt-6 flex justify-center gap-2">
-            {[0, 1, 2, 3, 4].map((idx) => (
+            {Array.from({ length: questionsPerDomain }).map((_, idx) => (
               <div
                 key={idx}
                 className={`w-3 h-3 rounded-full transition-colors ${
@@ -828,8 +1039,8 @@ export default function BaselineAssessmentPage() {
 
         {/* Celebration message */}
         <div className="mt-6 bg-[var(--aivo-teal-50)] rounded-2xl p-4">
-          <p className="text-[var(--aivo-teal-700)] font-medium">
-            🎉 You completed {currentDomain?.name}! {ASSESSMENT_DOMAINS.length - currentDomainIndex - 1} more to go!
+          <p className={`text-[var(--aivo-teal-700)] font-medium ${isAlternate ? 'text-lg' : ''}`}>
+            🎉 {isSimplified ? 'Yay!' : 'You completed'} {currentDomainConfig?.name}! {enabledDomains.length - currentDomainIndex - 1} more to go!
           </p>
         </div>
       </div>
@@ -876,10 +1087,11 @@ export default function BaselineAssessmentPage() {
           <div className="flex-1">
             <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-1">
               <span>
+                {phase === 'loading' && 'Loading...'}
                 {phase === 'learning_style' && 'Getting to know you...'}
                 {phase === 'transition_to_domains' && 'Ready for the fun part!'}
-                {phase === 'domain_intro' && `Starting ${currentDomain?.name}...`}
-                {phase === 'domain_questions' && `${currentDomain?.name} - Q${currentQuestionInDomain + 1}/5`}
+                {phase === 'domain_intro' && `Starting ${currentDomainConfig?.name || 'Questions'}...`}
+                {phase === 'domain_questions' && `${currentDomainConfig?.name || 'Questions'} - Q${currentQuestionInDomain + 1}/${questionsPerDomain}`}
                 {phase === 'game_break' && 'Break time! 🎉'}
                 {phase === 'completing' && 'Almost done!'}
               </span>
@@ -896,6 +1108,19 @@ export default function BaselineAssessmentPage() {
       </div>
 
       {/* Phase content */}
+      {phase === 'loading' && (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <span className="text-5xl">🌟</span>
+            </div>
+            <p className="text-xl text-[var(--aivo-brand-navy)] font-medium mb-2">
+              {learnerName ? `Hi ${learnerName}!` : 'Welcome!'}
+            </p>
+            <p className="text-[var(--aivo-neutral-600)]">Setting up your personalized assessment...</p>
+          </div>
+        </div>
+      )}
       {phase === 'learning_style' && renderLearningStylePhase()}
       {phase === 'transition_to_domains' && renderTransitionToDomains()}
       {phase === 'domain_intro' && renderDomainIntro()}

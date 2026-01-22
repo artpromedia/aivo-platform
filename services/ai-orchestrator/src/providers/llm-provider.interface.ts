@@ -93,10 +93,20 @@ export interface GoogleGeminiConfig extends LLMProviderConfig {
   location?: string;
 }
 
+export interface OllamaConfig extends LLMProviderConfig {
+  /** Base URL for Ollama API (default: http://localhost:11434) */
+  baseUrl?: string;
+  /** Default model to use (default: llama3.2:3b) */
+  defaultModel?: string;
+  /** Request timeout in ms (default: 120000 for local inference) */
+  timeout?: number;
+}
+
 export interface LLMOrchestratorConfig {
   openai?: OpenAIConfig;
   anthropic?: AnthropicConfig;
   google?: GoogleGeminiConfig;
+  ollama?: OllamaConfig;
   primaryProvider?: string;
   fallbackOrder?: string[];
 }

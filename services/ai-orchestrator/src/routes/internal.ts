@@ -53,9 +53,12 @@ const baselineGenerateSchema = z.object({
   learnerId: z.string(),
   agentType: z.literal('BASELINE'),
   payload: z.object({
-    gradeBand: z.enum(['K5', 'G6_8', 'G9_12']),
-    domain: z.enum(['ELA', 'MATH', 'SCIENCE', 'SPEECH', 'SEL']),
+    gradeBand: z.enum(['PRE_K', 'K_2', 'K5', 'GRADE_3_5', 'G6_8', 'GRADE_6_8', 'G9_12', 'GRADE_9_12']),
+    domain: z.enum(['ELA', 'MATH', 'SCIENCE', 'SPEECH', 'SEL', 'SPELLING', 'CREATIVE_WRITING', 'LIFE_SKILLS']),
     skillCodes: z.array(z.string()).min(1).max(10),
+    assessmentType: z.enum(['STANDARD', 'STANDARD_WITH_ACCOMMODATIONS', 'MODIFIED', 'ALTERNATE']).optional(),
+    accommodations: z.array(z.string()).optional(),
+    gradeLevel: z.number().optional(),
   }),
 });
 
@@ -265,6 +268,12 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
   /**
    * POST /ai/baseline/generate - Generate unique baseline assessment questions
    * Called by baseline-svc to get AI-generated questions for each learner
+   * 
+   * Supports IDEA/504-aligned assessment types:
+   * - STANDARD: Full grade-level assessment
+   * - STANDARD_WITH_ACCOMMODATIONS: Standard with support features
+   * - MODIFIED: Simplified language, visual supports, 3 options
+   * - ALTERNATE: Functional skills focus, 2-3 options, performance-based
    */
   app.post('/ai/baseline/generate', async (request, reply) => {
     const parsed = baselineGenerateSchema.safeParse(request.body);
@@ -277,7 +286,7 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     }
 
     const { tenantId, learnerId, payload } = parsed.data;
-    const { gradeBand, domain, skillCodes } = payload;
+    const { gradeBand, domain, skillCodes, assessmentType, accommodations, gradeLevel } = payload;
 
     try {
       const llm = getLLMOrchestrator();
@@ -289,11 +298,17 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
         gradeBand,
         domain,
         skillCodes,
+        assessmentType,
+        accommodations,
+        gradeLevel,
       });
 
       reply.code(200).send({
         questions: result.questions,
         generationId: result.generationId,
+        assessmentType: assessmentType || 'STANDARD',
+        gradeBand,
+        domain,
       });
     } catch (err: unknown) {
       console.error('Baseline question generation failed', { error: err, tenantId, learnerId });

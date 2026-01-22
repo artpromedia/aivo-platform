@@ -90,7 +90,19 @@ enum FunctioningLevel {
   @@map("functioning_level")
 }
 
+/// Assessment type aligned with IDEA/Section 504 requirements
+/// Used for routing learners to appropriate baseline assessment format
+enum AssessmentType {
+  STANDARD                      // Full baseline assessment, all domains, 4 options
+  STANDARD_WITH_ACCOMMODATIONS  // Standard with extended time, breaks, simplified navigation
+  MODIFIED                      // Simplified language, visual supports, 3 options, shorter sessions
+  ALTERNATE                     // Performance-based, caregiver-assisted, 2-3 options, functional skills
+  
+  @@map("assessment_type")
+}
+
 /// Assessment mode based on functioning level and sensory needs
+/// (Legacy - use AssessmentType for new implementations)
 enum AssessmentMode {
   STANDARD              // Full baseline assessment
   MODIFIED              // Reduced items, simplified UI, extended time
@@ -558,6 +570,17 @@ model LearnerFunctioningProfile {
   /// Overall functioning level
   functioningLevel          FunctioningLevel  @default(TYPICAL) @map("functioning_level")
   
+  // ── Assessment Type (IDEA/Section 504 aligned) ──────────────────────────────
+  /// Assessment type determined from parent assessment (IDEA-aligned)
+  assessmentType            AssessmentType    @default(STANDARD) @map("assessment_type")
+  
+  /// Parent's selected assessment type (may override recommended)
+  selectedAssessmentType    AssessmentType?   @map("selected_assessment_type")
+  
+  /// Whether parent has confirmed the assessment type
+  assessmentTypeConfirmed   Boolean           @default(false) @map("assessment_type_confirmed")
+  
+  // ── Legacy Assessment Mode (kept for backward compatibility) ────────────────
   /// Recommended assessment mode based on profile
   recommendedAssessmentMode AssessmentMode    @default(STANDARD) @map("recommended_assessment_mode")
   

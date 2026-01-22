@@ -177,6 +177,16 @@ enum ParentAssessmentStatus {
   @@map("parent_assessment_status")
 }
 
+/// Assessment type aligned with IDEA/Section 504 requirements
+enum AssessmentType {
+  STANDARD                      // Full baseline assessment, all domains, 4 options
+  STANDARD_WITH_ACCOMMODATIONS  // Standard with extended time, breaks, simplified navigation
+  MODIFIED                      // Simplified language, visual supports, 3 options, shorter sessions
+  ALTERNATE                     // Performance-based, caregiver-assisted, 2-3 options, functional skills
+  
+  @@map("assessment_type")
+}
+
 /// Parent's pre-baseline assessment of their child
 /// Provides valuable context before child takes baseline assessment
 model ParentAssessment {
@@ -189,6 +199,29 @@ model ParentAssessment {
   
   // Assessment status
   status            ParentAssessmentStatus  @default(PENDING)
+  
+  // ── IDEA/Section 504 Aligned Assessment Type ────────────────────────────────
+  /// Determined assessment type based on responses
+  assessmentType    AssessmentType          @default(STANDARD) @map("assessment_type")
+  
+  /// Support level score (0-100, higher = more support needed)
+  supportLevel      Float?                  @map("support_level")
+  
+  /// IEP/504 documentation flags
+  hasExistingIep    Boolean                 @default(false) @map("has_existing_iep")
+  hasExisting504    Boolean                 @default(false) @map("has_existing_504")
+  
+  /// IDEA disability categories (array of category codes)
+  disabilityCategoriesJson Json?            @map("disability_categories_json")
+  
+  /// Current services the child receives
+  currentServicesJson Json?                 @map("current_services_json")
+  
+  /// Assistive technology in use
+  assistiveTechnologyJson Json?             @map("assistive_technology_json")
+  
+  /// Recommended accommodations based on assessment
+  recommendationsJson Json?                 @map("recommendations_json")
   
   // Assessment responses (JSON array of question/answer pairs)
   responsesJson     Json?                   @map("responses_json")

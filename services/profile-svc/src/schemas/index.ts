@@ -170,13 +170,15 @@ export function validateNonDiagnosticLanguage(text: string): { valid: boolean; f
 
 /**
  * Zod refinement for non-diagnostic language
+ * Note: chain length validations before refine() since refine() returns ZodEffects
  */
-const nonDiagnosticString = z.string().refine(
-  (val) => validateNonDiagnosticLanguage(val).valid,
-  (val) => ({
-    message: `Description contains diagnostic language. Please use preference-based language. Flagged terms: ${validateNonDiagnosticLanguage(val).flaggedTerms.join(', ')}`,
-  })
-);
+const nonDiagnosticString = (min: number, max: number) =>
+  z.string().min(min).max(max).refine(
+    (val) => validateNonDiagnosticLanguage(val).valid,
+    (val) => ({
+      message: `Description contains diagnostic language. Please use preference-based language. Flagged terms: ${validateNonDiagnosticLanguage(val).flaggedTerms.join(', ')}`,
+    })
+  );
 
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUEST SCHEMAS
@@ -196,7 +198,7 @@ export const UpdateProfileRequestSchema = CreateProfileRequestSchema.partial();
 
 export const CreateAccommodationRequestSchema = z.object({
   category: AccommodationCategorySchema,
-  description: nonDiagnosticString.min(5).max(500),
+  description: nonDiagnosticString(5, 500),
   appliesToDomains: z.array(z.string()).optional(),
   source: AccommodationSourceSchema.optional(),
   isCritical: z.boolean().optional(),
