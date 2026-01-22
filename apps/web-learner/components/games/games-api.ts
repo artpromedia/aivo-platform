@@ -7,7 +7,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_GAME_LIBRARY_API_URL || 'http://localhost:8082/api/games';
 
 export type GameType = 'FOCUS_BREAK' | 'BRAIN_TRAINING' | 'EDUCATIONAL' | 'REWARD' | 'RELAXATION';
-export type GameCategory = 'PUZZLE' | 'MEMORY' | 'REACTION' | 'PATTERN' | 'RELAXATION' | 'MOVEMENT' | 'CREATIVE' | 'MATH' | 'LANGUAGE';
+export type ApiGameCategory = 'PUZZLE' | 'MEMORY' | 'REACTION' | 'PATTERN' | 'RELAXATION' | 'MOVEMENT' | 'CREATIVE' | 'MATH' | 'LANGUAGE';
 export type GradeBand = 'K_2' | 'G3_5' | 'G6_8' | 'G9_12';
 export type SessionStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
 
@@ -17,7 +17,7 @@ export interface GameSummary {
   title: string;
   description: string;
   type: GameType;
-  category: GameCategory;
+  category: ApiGameCategory;
   thumbnailUrl?: string;
   gradeBands: GradeBand[];
   estimatedDurationSec: number;
@@ -84,7 +84,7 @@ export interface LeaderboardEntry {
 
 export interface GamesFilter {
   type?: GameType;
-  category?: GameCategory;
+  category?: ApiGameCategory;
   gradeBand?: GradeBand;
   search?: string;
   limit?: number;

@@ -10,10 +10,7 @@
  * - Accessible drag-and-drop
  */
 
-import type {
-  DragStartEvent,
-  DragEndEvent,
-  DragOverEvent,
+import {
   DndContext as DndKitContext,
   DragOverlay,
   closestCenter,
@@ -21,6 +18,9 @@ import type {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
   type KeyboardCoordinateGetter,
 } from '@dnd-kit/core';
 import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 
 export interface PopoverProps {
   children: React.ReactNode;
@@ -10,8 +11,15 @@ export const Popover: React.FC<PopoverProps> = ({ children }) => {
   return <div className="relative">{children}</div>;
 };
 
-export const PopoverTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
-  ({ className, ...props }, ref) => <button ref={ref} className={className} {...props} />
+export interface PopoverTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
+export const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTriggerProps>(
+  ({ className, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button';
+    return <Comp ref={ref} className={className} {...props} />;
+  }
 );
 PopoverTrigger.displayName = 'PopoverTrigger';
 

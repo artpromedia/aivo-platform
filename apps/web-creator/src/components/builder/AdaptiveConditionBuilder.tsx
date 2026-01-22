@@ -101,6 +101,30 @@ const OPERATORS: Record<ConditionType, { value: ConditionOperator; label: string
     { value: 'less_than', label: 'Less than' },
   ],
   custom: [{ value: 'equals', label: 'Evaluates to true' }],
+  performance: [
+    { value: 'greater_than', label: 'Greater than' },
+    { value: 'less_than', label: 'Less than' },
+    { value: 'equals', label: 'Equals' },
+  ],
+  attempts: [
+    { value: 'equals', label: 'Equals' },
+    { value: 'greater_than', label: 'Greater than' },
+    { value: 'less_than', label: 'Less than' },
+  ],
+  time: [
+    { value: 'greater_than', label: 'More than' },
+    { value: 'less_than', label: 'Less than' },
+  ],
+  engagement: [
+    { value: 'greater_than', label: 'Greater than' },
+    { value: 'less_than', label: 'Less than' },
+    { value: 'equals', label: 'Equals' },
+  ],
+  skill: [
+    { value: 'greater_than', label: 'Greater than' },
+    { value: 'less_than', label: 'Less than' },
+    { value: 'equals', label: 'Equals' },
+  ],
 };
 
 export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> = ({
@@ -112,10 +136,11 @@ export const AdaptiveConditionBuilder: React.FC<AdaptiveConditionBuilderProps> =
   const [showAddMenu, setShowAddMenu] = useState(false);
 
   const addCondition = (type: ConditionType) => {
+    const operators = OPERATORS[type];
     const newCondition: AdaptiveCondition = {
       id: `cond_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type,
-      operator: OPERATORS[type][0].value,
+      operator: operators?.[0]?.value ?? 'equals',
       value: getDefaultValue(type),
     };
     onChange([...conditions, newCondition]);
@@ -352,8 +377,8 @@ const MasteryConditionInputs: React.FC<{
 
     <Select
       value={condition.operator}
-      onValueChange={(operator: ConditionOperator) => {
-        onUpdate({ operator });
+      onValueChange={(value) => {
+        onUpdate({ operator: value as ConditionOperator });
       }}
     >
       <SelectTrigger className="h-8 text-xs">
@@ -374,7 +399,7 @@ const MasteryConditionInputs: React.FC<{
         min={0}
         max={100}
         step={5}
-        value={Math.round((condition.value || 0) * 100)}
+        value={Math.round((Number(condition.value) || 0) * 100)}
         onChange={(e) => {
           onUpdate({ value: parseInt(e.target.value) / 100 });
         }}
@@ -418,8 +443,8 @@ const PreviousAnswerConditionInputs: React.FC<{
       <div className="grid grid-cols-2 gap-2">
         <Select
           value={condition.operator}
-          onValueChange={(operator: ConditionOperator) => {
-            onUpdate({ operator });
+          onValueChange={(value) => {
+            onUpdate({ operator: value as ConditionOperator });
           }}
         >
           <SelectTrigger className="h-8 text-xs">
@@ -435,7 +460,7 @@ const PreviousAnswerConditionInputs: React.FC<{
         </Select>
 
         <Select
-          value={condition.value || 'correct'}
+          value={String(condition.value) || 'correct'}
           onValueChange={(value) => {
             onUpdate({ value });
           }}
@@ -488,8 +513,8 @@ const AttemptCountConditionInputs: React.FC<{
       <div className="grid grid-cols-2 gap-2">
         <Select
           value={condition.operator}
-          onValueChange={(operator: ConditionOperator) => {
-            onUpdate({ operator });
+          onValueChange={(value) => {
+            onUpdate({ operator: value as ConditionOperator });
           }}
         >
           <SelectTrigger className="h-8 text-xs">
@@ -508,7 +533,7 @@ const AttemptCountConditionInputs: React.FC<{
           type="number"
           min={1}
           max={10}
-          value={condition.value || 1}
+          value={Number(condition.value) || 1}
           onChange={(e) => {
             onUpdate({ value: parseInt(e.target.value) });
           }}
@@ -528,8 +553,8 @@ const TimeSpentConditionInputs: React.FC<{
   <div className="grid grid-cols-2 gap-2">
     <Select
       value={condition.operator}
-      onValueChange={(operator: ConditionOperator) => {
-        onUpdate({ operator });
+      onValueChange={(value) => {
+        onUpdate({ operator: value as ConditionOperator });
       }}
     >
       <SelectTrigger className="h-8 text-xs">
@@ -548,7 +573,7 @@ const TimeSpentConditionInputs: React.FC<{
       <Input
         type="number"
         min={0}
-        value={condition.value || 60}
+        value={Number(condition.value) || 60}
         onChange={(e) => {
           onUpdate({ value: parseInt(e.target.value) });
         }}
@@ -566,7 +591,7 @@ const CustomConditionInputs: React.FC<{
 }> = ({ condition, onUpdate }) => (
   <div className="space-y-2">
     <Input
-      value={condition.value || ''}
+      value={String(condition.value ?? '')}
       onChange={(e) => {
         onUpdate({ value: e.target.value });
       }}

@@ -12,11 +12,11 @@ import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
-import Table from '@tiptap/extension-table';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
@@ -150,7 +150,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Sync external value changes
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, false);
+      editor.commands.setContent(value, { emitUpdate: false });
     }
   }, [value, editor]);
 
@@ -313,7 +313,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor, minimal }) => {
           <Separator orientation="vertical" className="h-6 mx-1" />
 
           {/* Alignment */}
-          <ToggleGroup type="single" size="sm" value={getTextAlign(editor)}>
+          <ToggleGroup type="single" value={getTextAlign(editor)}>
             <ToggleGroupItem
               value="left"
               onClick={() => editor.chain().focus().setTextAlign('left').run()}

@@ -88,7 +88,7 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
     transition,
   };
 
-  const isHidden = block.content?.hidden === true;
+  const isHidden = (block.content as { hidden?: boolean } | undefined)?.hidden === true;
 
   return (
     <div

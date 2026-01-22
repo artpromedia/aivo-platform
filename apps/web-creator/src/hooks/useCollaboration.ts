@@ -84,7 +84,7 @@ export function useCollaboration({
     const hash = userId.split('').reduce((acc, char) => {
       return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);
-    return COLLABORATOR_COLORS[Math.abs(hash) % COLLABORATOR_COLORS.length];
+    return COLLABORATOR_COLORS[Math.abs(hash) % COLLABORATOR_COLORS.length] ?? '#3b82f6';
   }, []);
 
   // Connect to WebSocket

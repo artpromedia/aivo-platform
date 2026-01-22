@@ -80,8 +80,10 @@ function generateNumberPattern(difficulty: string): Puzzle {
       val *= pattern.multiply;
     }
   } else {
+    const start = pattern.start ?? 0;
+    const step = pattern.step ?? 1;
     for (let i = 0; i <= sequenceLength; i++) {
-      numbers.push(pattern.start + i * pattern.step);
+      numbers.push(start + i * step);
     }
   }
 

@@ -37,7 +37,8 @@ import {
   Minus,
   Edit,
 } from 'lucide-react';
-import { contentApi, LessonVersion, Lesson } from '@/lib/api/content';
+import { contentApi } from '@/lib/api/content';
+import type { LessonVersion, Lesson, LessonBlock } from '@/lib/api/content';
 import { cn } from '@/lib/utils';
 
 interface VersionHistoryPanelProps {
@@ -186,7 +187,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
                     <div className="text-sm text-muted-foreground space-y-1">
                       <div className="flex items-center gap-2">
                         <User className="h-3 w-3" />
-                        {versions?.find(v => v.id === selectedVersion)?.createdBy.name}
+                        {versions?.find(v => v.id === selectedVersion)?.createdBy?.name ?? 'Unknown'}
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-3 w-3" />
@@ -302,7 +303,7 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
     </div>
     <div className="text-xs text-muted-foreground">
       <div>{getRelativeTime(version.createdAt)}</div>
-      <div>{version.createdBy.name}</div>
+      <div>{version.createdBy?.name ?? 'Unknown'}</div>
     </div>
     {version.note && (
       <p className="text-xs mt-1 truncate">{version.note}</p>
@@ -311,7 +312,7 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
 );
 
 // Version Preview
-const VersionPreview: React.FC<{ version: Lesson }> = ({ version }) => (
+const VersionPreview: React.FC<{ version: LessonVersion }> = ({ version }) => (
   <div className="space-y-4">
     <h4 className="font-medium">Blocks ({version.blocks?.length || 0})</h4>
     <div className="space-y-2">
@@ -336,7 +337,7 @@ const VersionPreview: React.FC<{ version: Lesson }> = ({ version }) => (
 );
 
 // Diff View
-const DiffView: React.FC<{ current: Lesson; previous: Lesson }> = ({
+const DiffView: React.FC<{ current: LessonVersion; previous: LessonVersion }> = ({
   current,
   previous,
 }) => {

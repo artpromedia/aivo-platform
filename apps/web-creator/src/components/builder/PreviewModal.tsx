@@ -37,7 +37,7 @@ import {
   XCircle,
   HelpCircle,
 } from 'lucide-react';
-import { LessonBlock } from '@/lib/api/content';
+import type { LessonBlock } from '@/lib/api/content';
 import { cn } from '@/lib/utils';
 
 interface PreviewModalProps {
@@ -194,7 +194,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
                     <BlockPreview
                       block={currentBlock}
                       response={responses[currentBlock.id]}
-                      showFeedback={showFeedback[currentBlock.id]}
+                      showFeedback={showFeedback[currentBlock.id] ?? false}
                       onResponse={(r) => handleResponse(currentBlock.id, r)}
                       onSubmit={() => handleSubmit(currentBlock.id)}
                       learnerProfile={learnerProfile}

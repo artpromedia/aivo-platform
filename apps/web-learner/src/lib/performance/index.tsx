@@ -521,13 +521,13 @@ export function useIdleCallback(callback: () => void, options: { timeout?: numbe
 
   useEffect(() => {
     if ('requestIdleCallback' in window) {
-      const id = (window as Record<string, unknown>).requestIdleCallback as (
+      const id = (window as unknown as Record<string, unknown>).requestIdleCallback as (
         cb: () => void,
         opts?: { timeout?: number }
       ) => number;
       const handle = id(callback, { timeout: optionsTimeoutRef.current });
       return () => {
-        const cancelId = (window as Record<string, unknown>).cancelIdleCallback as (
+        const cancelId = (window as unknown as Record<string, unknown>).cancelIdleCallback as (
           handle: number
         ) => void;
         cancelId(handle);

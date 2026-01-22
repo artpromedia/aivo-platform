@@ -72,7 +72,9 @@ export function useUndoRedo<T>(
     if (currentIndexRef.current > 0) {
       currentIndexRef.current -= 1;
       const previousState = historyRef.current[currentIndexRef.current];
-      setStateInternal(previousState);
+      if (previousState !== undefined) {
+        setStateInternal(previousState);
+      }
       forceUpdate({});
     }
   }, []);
@@ -81,7 +83,9 @@ export function useUndoRedo<T>(
     if (currentIndexRef.current < historyRef.current.length - 1) {
       currentIndexRef.current += 1;
       const nextState = historyRef.current[currentIndexRef.current];
-      setStateInternal(nextState);
+      if (nextState !== undefined) {
+        setStateInternal(nextState);
+      }
       forceUpdate({});
     }
   }, []);
@@ -122,7 +126,7 @@ export function useUndoRedoWithBatching<T>(
   const baseResult = useUndoRedo(initialState, undoRedoOptions);
   
   const lastOperationRef = useRef<BatchedOperation<T> | null>(null);
-  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const batchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const batchPush = useCallback((newState: T, operationType: string) => {
     const now = Date.now();
