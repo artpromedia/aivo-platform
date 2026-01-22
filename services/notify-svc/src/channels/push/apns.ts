@@ -14,8 +14,8 @@
 import apn from '@parse/node-apn';
 
 import { config } from '../../config.js';
-import type { PushPayload, DeliveryResult, BatchDeliveryResult } from '../../types.js';
 import { DeliveryChannel } from '../../prisma.js';
+import type { PushPayload, DeliveryResult, BatchDeliveryResult } from '../../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -150,7 +150,7 @@ export async function sendApnsNotification(
 
   try {
     const result = await sendWithRetry(notification, payload.token, retryConfig);
-    
+
     if (result.sent.length > 0) {
       console.log('[APNs] Message sent successfully:', {
         token: payload.token.substring(0, 20) + '...',
@@ -251,7 +251,8 @@ function buildApnsNotification(payload: PushPayload): apn.Notification {
 
   // Category for actions
   if (payload.category) {
-    notification.category = payload.category;
+    notification.aps = notification.aps || {};
+    notification.aps.category = payload.category;
   }
 
   // Collapse ID
@@ -277,8 +278,8 @@ async function sendWithRetry(
   notification: apn.Notification,
   token: string,
   retryConfig: RetryConfig
-): Promise<apn.Responses> {
-  let lastResult: apn.Responses | null = null;
+): Promise<apn.Responses<apn.ResponseSent, apn.ResponseFailure>> {
+  let lastResult: apn.Responses<apn.ResponseSent, apn.ResponseFailure> | null = null;
 
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     const result = await apnsProvider!.send(notification, token);
@@ -303,7 +304,9 @@ async function sendWithRetry(
           retryConfig.baseDelayMs * Math.pow(2, attempt),
           retryConfig.maxDelayMs
         );
-        console.log(`[APNs] Retry attempt ${attempt + 1}/${retryConfig.maxRetries} after ${delay}ms`);
+        console.log(
+          `[APNs] Retry attempt ${attempt + 1}/${retryConfig.maxRetries} after ${delay}ms`
+        );
         await sleep(delay);
       }
     }
@@ -319,9 +322,7 @@ async function sendWithRetry(
 /**
  * Send batch notifications to multiple tokens
  */
-export async function sendApnsBatch(
-  payloads: PushPayload[]
-): Promise<BatchDeliveryResult> {
+export async function sendApnsBatch(payloads: PushPayload[]): Promise<BatchDeliveryResult> {
   if (!isInitialized || !apnsProvider) {
     return {
       channel: DeliveryChannel.PUSH,
@@ -344,7 +345,7 @@ export async function sendApnsBatch(
   for (let i = 0; i < payloads.length; i += APNS_BATCH_SIZE) {
     const batch = payloads.slice(i, i + APNS_BATCH_SIZE);
     const batchResult = await sendSingleBatch(batch);
-    
+
     results.push(...batchResult.results);
     totalSent += batchResult.totalSent;
     totalFailed += batchResult.totalFailed;
@@ -355,18 +356,14 @@ export async function sendApnsBatch(
     totalSent,
     totalFailed,
     results,
-    invalidTokens: results
-      .filter((r) => r.shouldRemoveToken)
-      .map((r) => r.token),
+    invalidTokens: results.filter((r) => r.shouldRemoveToken).map((r) => r.token),
   };
 }
 
 /**
  * Send a single batch
  */
-async function sendSingleBatch(
-  payloads: PushPayload[]
-): Promise<BatchDeliveryResult> {
+async function sendSingleBatch(payloads: PushPayload[]): Promise<BatchDeliveryResult> {
   // For APNs, we need to send individual notifications
   // but the provider handles connection pooling
   const firstPayload = payloads[0];

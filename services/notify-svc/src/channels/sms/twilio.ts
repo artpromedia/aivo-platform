@@ -13,6 +13,7 @@ import Twilio from 'twilio';
 import type { MessageInstance } from 'twilio/lib/rest/api/v2010/account/message.js';
 
 import { config } from '../../config.js';
+
 import type {
   SmsProvider,
   SendSmsOptions,
@@ -39,16 +40,143 @@ const UNICODE_CONCAT_CHAR_LIMIT = 67;
 function isGsmEncoding(text: string): boolean {
   // GSM 7-bit basic character set
   const GSM_BASIC = new Set([
-    '@', '£', '$', '¥', 'è', 'é', 'ù', 'ì', 'ò', 'Ç', '\n', 'Ø', 'ø', '\r',
-    'Å', 'å', 'Δ', '_', 'Φ', 'Γ', 'Λ', 'Ω', 'Π', 'Ψ', 'Σ', 'Θ', 'Ξ', ' ',
-    'Æ', 'æ', 'ß', 'É', '!', '"', '#', '¤', '%', '&', "'", '(', ')', '*',
-    '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-    '9', ':', ';', '<', '=', '>', '?', '¡', 'A', 'B', 'C', 'D', 'E', 'F',
-    'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-    'U', 'V', 'W', 'X', 'Y', 'Z', 'Ä', 'Ö', 'Ñ', 'Ü', '§', '¿', 'a', 'b',
-    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-    'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ä', 'ö', 'ñ', 'ü',
-    'à', '\f', '^', '{', '}', '\\', '[', '~', ']', '|', '€',
+    '@',
+    '£',
+    '$',
+    '¥',
+    'è',
+    'é',
+    'ù',
+    'ì',
+    'ò',
+    'Ç',
+    '\n',
+    'Ø',
+    'ø',
+    '\r',
+    'Å',
+    'å',
+    'Δ',
+    '_',
+    'Φ',
+    'Γ',
+    'Λ',
+    'Ω',
+    'Π',
+    'Ψ',
+    'Σ',
+    'Θ',
+    'Ξ',
+    ' ',
+    'Æ',
+    'æ',
+    'ß',
+    'É',
+    '!',
+    '"',
+    '#',
+    '¤',
+    '%',
+    '&',
+    "'",
+    '(',
+    ')',
+    '*',
+    '+',
+    ',',
+    '-',
+    '.',
+    '/',
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    ':',
+    ';',
+    '<',
+    '=',
+    '>',
+    '?',
+    '¡',
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    'Ä',
+    'Ö',
+    'Ñ',
+    'Ü',
+    '§',
+    '¿',
+    'a',
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm',
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
+    'ä',
+    'ö',
+    'ñ',
+    'ü',
+    'à',
+    '\f',
+    '^',
+    '{',
+    '}',
+    '\\',
+    '[',
+    '~',
+    ']',
+    '|',
+    '€',
   ]);
 
   for (const char of text) {
@@ -82,7 +210,9 @@ function calculateSegments(body: string): number {
 /**
  * Map Twilio status to our status
  */
-function mapTwilioStatus(status: string): 'QUEUED' | 'SENT' | 'DELIVERED' | 'UNDELIVERED' | 'FAILED' {
+function mapTwilioStatus(
+  status: string
+): 'QUEUED' | 'SENT' | 'DELIVERED' | 'UNDELIVERED' | 'FAILED' {
   switch (status) {
     case 'queued':
     case 'accepted':
@@ -152,10 +282,10 @@ class TwilioProvider implements SmsProvider {
 
     try {
       this.client = Twilio(accountSid, authToken);
-      
+
       // Verify credentials by fetching account info
       const account = await this.client.api.accounts(accountSid).fetch();
-      
+
       console.log('[TwilioProvider] Initialized successfully', {
         accountSid: accountSid.substring(0, 8) + '...',
         accountStatus: account.status,
@@ -199,41 +329,42 @@ class TwilioProvider implements SmsProvider {
     }
 
     try {
-      const messageParams: Twilio.Twilio['messages']['create'] extends (params: infer P) => unknown ? P : never = {
+      const messageParams: Twilio.Twilio['messages']['create'] extends (params: infer P) => unknown
+        ? P
+        : never = {
         to: options.to,
         body: options.body,
       };
 
       // Use Messaging Service SID for A2P 10DLC compliance
       const messagingServiceSid = config.sms.twilio?.messagingServiceSid;
+      const params = messageParams as unknown as Record<string, unknown>;
       if (messagingServiceSid) {
-        (messageParams as Record<string, unknown>).messagingServiceSid = messagingServiceSid;
+        params.messagingServiceSid = messagingServiceSid;
       } else if (options.from) {
-        (messageParams as Record<string, unknown>).from = options.from;
+        params.from = options.from;
       } else if (config.sms.twilio?.fromNumber) {
-        (messageParams as Record<string, unknown>).from = config.sms.twilio.fromNumber;
+        params.from = config.sms.twilio.fromNumber;
       }
 
       // Add status callback URL
       const statusCallback = options.statusCallback || config.sms.twilio?.statusCallbackUrl;
       if (statusCallback) {
-        (messageParams as Record<string, unknown>).statusCallback = `${statusCallback}/status`;
+        params.statusCallback = `${statusCallback}/status`;
       }
 
       // Add MMS media URLs if present
       if (options.mediaUrls && options.mediaUrls.length > 0) {
-        (messageParams as Record<string, unknown>).mediaUrl = options.mediaUrls.slice(0, 10);
+        params.mediaUrl = options.mediaUrls.slice(0, 10);
       }
 
       // Schedule for later if specified
       if (options.scheduledAt && options.scheduledAt > new Date()) {
-        (messageParams as Record<string, unknown>).sendAt = options.scheduledAt.toISOString();
-        (messageParams as Record<string, unknown>).scheduleType = 'fixed';
+        params.sendAt = options.scheduledAt.toISOString();
+        params.scheduleType = 'fixed';
       }
 
-      const message: MessageInstance = await this.client.messages.create(
-        messageParams
-      );
+      const message: MessageInstance = await this.client.messages.create(messageParams);
 
       console.log('[TwilioProvider] SMS sent:', {
         messageId: message.sid,
@@ -253,7 +384,7 @@ class TwilioProvider implements SmsProvider {
       };
     } catch (error) {
       const twilioError = error as { code?: number; message?: string; moreInfo?: string };
-      
+
       console.error('[TwilioProvider] Send failed:', {
         to: options.to.substring(0, 6) + '****',
         errorCode: twilioError.code,
@@ -348,7 +479,9 @@ class TwilioProvider implements SmsProvider {
 
     const verifyServiceSid = config.sms.twilio?.verifyServiceSid;
     if (!verifyServiceSid) {
-      console.warn('[TwilioProvider] Verify service not configured, OTP verification not available');
+      console.warn(
+        '[TwilioProvider] Verify service not configured, OTP verification not available'
+      );
       return false;
     }
 
@@ -452,7 +585,7 @@ class TwilioProvider implements SmsProvider {
     try {
       const accountSid = config.sms.twilio?.accountSid;
       if (!accountSid) return false;
-      
+
       const account = await this.client.api.accounts(accountSid).fetch();
       return account.status === 'active';
     } catch {

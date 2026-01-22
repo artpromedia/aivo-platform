@@ -16,29 +16,33 @@
  * Types of SMS messages for compliance and routing
  */
 export type SmsType =
-  | 'OTP'           // One-time passwords, verification codes
+  | 'OTP' // One-time passwords, verification codes
   | 'TRANSACTIONAL' // Account-related, receipts
-  | 'REMINDER'      // Session reminders, appointments
-  | 'ALERT'         // Security alerts, urgent notifications
-  | 'MARKETING';    // Promotional (requires explicit consent)
+  | 'REMINDER' // Session reminders, appointments
+  | 'ALERT' // Security alerts, urgent notifications
+  | 'MARKETING'; // Promotional (requires explicit consent)
 
 /**
  * SMS delivery status
  */
 export type SmsStatus =
-  | 'QUEUED'        // Queued for sending
-  | 'SENT'          // Sent to carrier
-  | 'DELIVERED'     // Delivered to handset
-  | 'UNDELIVERED'   // Carrier could not deliver
-  | 'FAILED';       // Send failed
+  | 'QUEUED' // Queued for sending
+  | 'SENDING' // Being sent to carrier
+  | 'SENT' // Sent to carrier
+  | 'DELIVERED' // Delivered to handset
+  | 'UNDELIVERED' // Carrier could not deliver
+  | 'FAILED' // Send failed
+  | 'RECEIVED' // Inbound message received
+  | 'READ' // Message read (if supported)
+  | 'UNKNOWN'; // Unknown status
 
 /**
  * Consent types for SMS communications
  */
 export type ConsentType =
   | 'TRANSACTIONAL' // Account-related messages only
-  | 'MARKETING'     // Marketing/promotional messages
-  | 'ALL';          // All message types
+  | 'MARKETING' // Marketing/promotional messages
+  | 'ALL'; // All message types
 
 /**
  * Phone number type
@@ -217,21 +221,22 @@ export interface SmsConsent {
  * Methods by which consent can be obtained
  */
 export type ConsentMethod =
-  | 'web_form'      // Online form submission
-  | 'sms_keyword'   // Texted keyword (e.g., "YES")
-  | 'verbal'        // Verbal consent (call recording)
-  | 'written'       // Physical written consent
-  | 'api';          // Programmatic consent
+  | 'web_form' // Online form submission
+  | 'sms_keyword' // Texted keyword (e.g., "YES")
+  | 'verbal' // Verbal consent (call recording)
+  | 'written' // Physical written consent
+  | 'api'; // Programmatic consent
 
 /**
  * Methods by which consent can be revoked
  */
 export type RevokeMethod =
-  | 'sms_stop'      // Replied STOP
-  | 'web_form'      // Online preference update
-  | 'api'           // Programmatic revocation
-  | 'support'       // Customer support request
-  | 'expired';      // Auto-expired (18 months TCPA)
+  | 'sms_stop' // Replied STOP
+  | 'sms_keyword' // Replied with keyword (e.g., STOP, UNSUBSCRIBE)
+  | 'web_form' // Online preference update
+  | 'api' // Programmatic revocation
+  | 'support' // Customer support request
+  | 'expired'; // Auto-expired (18 months TCPA)
 
 /**
  * Consent check result
@@ -268,7 +273,15 @@ export interface RecordConsentOptions {
  */
 export interface TwilioStatusCallback {
   MessageSid: string;
-  MessageStatus: 'accepted' | 'queued' | 'sending' | 'sent' | 'delivered' | 'undelivered' | 'failed' | 'canceled';
+  MessageStatus:
+    | 'accepted'
+    | 'queued'
+    | 'sending'
+    | 'sent'
+    | 'delivered'
+    | 'undelivered'
+    | 'failed'
+    | 'canceled';
   To: string;
   From: string;
   ErrorCode?: string;
@@ -308,14 +321,18 @@ export interface TwilioInboundSms {
  * Canonical SMS webhook event
  */
 export interface SmsWebhookEvent {
-  provider: 'twilio';
-  eventType: 'status_update' | 'inbound' | 'opt_out';
+  provider?: 'twilio';
+  type: 'sms.status' | 'sms.inbound' | 'sms.opt_out';
+  eventType?: 'status_update' | 'inbound' | 'opt_out';
   messageId: string;
-  phoneNumber: string;
+  phoneNumber?: string;
+  to?: string;
+  from?: string;
   status?: SmsStatus;
   body?: string;
+  errorCode?: string;
   timestamp: Date;
-  rawEvent: unknown;
+  rawEvent?: unknown;
   metadata?: Record<string, unknown>;
 }
 

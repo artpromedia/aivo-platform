@@ -11,15 +11,20 @@
  * - Batch sending (up to 500 per batch)
  */
 
-import * as admin from 'firebase-admin';
-import type { Message, MulticastMessage, BatchResponse, SendResponse } from 'firebase-admin/messaging';
 import { createLogger } from '@aivo/ts-api-utils';
+import * as admin from 'firebase-admin';
+import type {
+  Message,
+  MulticastMessage,
+  BatchResponse,
+  SendResponse,
+} from 'firebase-admin/messaging';
 
 import { config } from '../../config.js';
 
 const logger = createLogger('notify-svc:fcm');
-import type { PushPayload, DeliveryResult, BatchDeliveryResult } from '../../types.js';
 import { DeliveryChannel } from '../../prisma.js';
+import type { PushPayload, DeliveryResult, BatchDeliveryResult } from '../../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -95,19 +100,22 @@ export function initializeFcm(fcmConfig?: FcmConfig): boolean {
     // Parse private key (handle escaped newlines from env vars)
     const parsedPrivateKey = privateKey.replace(/\\n/g, '\n');
 
-    fcmApp = admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        privateKey: parsedPrivateKey,
-        clientEmail,
-      }),
-    }, 'aivo-notify-svc');
+    fcmApp = admin.initializeApp(
+      {
+        credential: admin.credential.cert({
+          projectId,
+          privateKey: parsedPrivateKey,
+          clientEmail,
+        }),
+      },
+      'aivo-notify-svc'
+    );
 
     isInitialized = true;
     logger.info('Firebase Admin SDK initialized successfully');
     return true;
   } catch (error) {
-    logger.error({ error }, 'Failed to initialize Firebase Admin SDK');
+    logger.error('Failed to initialize Firebase Admin SDK', { error });
     return false;
   }
 }
@@ -159,7 +167,10 @@ export async function sendFcmNotification(
   try {
     const messageId = await sendWithRetry(message, retryConfig);
 
-    logger.info({ messageId, token: payload.token.substring(0, 20) + '...' }, 'Message sent successfully');
+    logger.info('Message sent successfully', {
+      messageId,
+      token: payload.token.substring(0, 20) + '...',
+    });
 
     return {
       channel: DeliveryChannel.PUSH,
@@ -171,7 +182,7 @@ export async function sendFcmNotification(
     const fcmError = error as admin.FirebaseError;
     const isInvalidToken = INVALID_TOKEN_ERRORS.includes(fcmError.code);
 
-    logger.error({ code: fcmError.code, message: fcmError.message, isInvalidToken }, 'Send failed');
+    logger.error('Send failed', { code: fcmError.code, message: fcmError.message, isInvalidToken });
 
     return {
       channel: DeliveryChannel.PUSH,
@@ -230,7 +241,9 @@ function buildFcmMessage(payload: PushPayload): Message {
       },
       headers: {
         'apns-priority': payload.priority === 'high' ? '10' : '5',
-        ...(payload.ttlSeconds && { 'apns-expiration': String(Math.floor(Date.now() / 1000) + payload.ttlSeconds) }),
+        ...(payload.ttlSeconds && {
+          'apns-expiration': String(Math.floor(Date.now() / 1000) + payload.ttlSeconds),
+        }),
         ...(payload.collapseKey && { 'apns-collapse-id': payload.collapseKey }),
       },
     };
@@ -256,12 +269,9 @@ function buildFcmMessage(payload: PushPayload): Message {
 /**
  * Send message with exponential backoff retry
  */
-async function sendWithRetry(
-  message: Message,
-  retryConfig: RetryConfig
-): Promise<string> {
+async function sendWithRetry(message: Message, retryConfig: RetryConfig): Promise<string> {
   let lastError: Error | null = null;
-  
+
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     try {
       return await getMessaging().send(message);
@@ -279,7 +289,11 @@ async function sendWithRetry(
           retryConfig.baseDelayMs * Math.pow(2, attempt),
           retryConfig.maxDelayMs
         );
-        logger.info({ attempt: attempt + 1, maxRetries: retryConfig.maxRetries, delayMs: delay }, 'Retrying FCM send');
+        logger.info('Retrying FCM send', {
+          attempt: attempt + 1,
+          maxRetries: retryConfig.maxRetries,
+          delayMs: delay,
+        });
         await sleep(delay);
       }
     }
@@ -295,9 +309,7 @@ async function sendWithRetry(
 /**
  * Send batch notifications (up to 500 per batch)
  */
-export async function sendFcmBatch(
-  payloads: PushPayload[]
-): Promise<BatchDeliveryResult> {
+export async function sendFcmBatch(payloads: PushPayload[]): Promise<BatchDeliveryResult> {
   if (!isInitialized) {
     return {
       channel: DeliveryChannel.PUSH,
@@ -320,7 +332,7 @@ export async function sendFcmBatch(
   for (let i = 0; i < payloads.length; i += FCM_BATCH_SIZE) {
     const batch = payloads.slice(i, i + FCM_BATCH_SIZE);
     const batchResult = await sendSingleBatch(batch);
-    
+
     results.push(...batchResult.results);
     totalSent += batchResult.totalSent;
     totalFailed += batchResult.totalFailed;
@@ -331,18 +343,14 @@ export async function sendFcmBatch(
     totalSent,
     totalFailed,
     results,
-    invalidTokens: results
-      .filter((r) => r.shouldRemoveToken)
-      .map((r) => r.token),
+    invalidTokens: results.filter((r) => r.shouldRemoveToken).map((r) => r.token),
   };
 }
 
 /**
  * Send a single batch (max 500 tokens)
  */
-async function sendSingleBatch(
-  payloads: PushPayload[]
-): Promise<BatchDeliveryResult> {
+async function sendSingleBatch(payloads: PushPayload[]): Promise<BatchDeliveryResult> {
   // Group by similar content to use multicast
   const firstPayload = payloads[0];
   const tokens = payloads.map((p) => p.token);
@@ -369,10 +377,10 @@ async function sendSingleBatch(
 
   try {
     const response: BatchResponse = await getMessaging().sendEachForMulticast(multicastMessage);
-    
+
     const results = response.responses.map((resp: SendResponse, idx: number) => {
       const token = tokens[idx];
-      
+
       if (resp.success) {
         return {
           token,
@@ -393,7 +401,11 @@ async function sendSingleBatch(
       };
     });
 
-    logger.info({ total: tokens.length, success: response.successCount, failure: response.failureCount }, 'Batch sent');
+    logger.info('Batch sent', {
+      total: tokens.length,
+      success: response.successCount,
+      failure: response.failureCount,
+    });
 
     return {
       channel: DeliveryChannel.PUSH,
@@ -403,7 +415,7 @@ async function sendSingleBatch(
     };
   } catch (error) {
     const fcmError = error as Error;
-    logger.error({ error: fcmError.message }, 'Batch send failed');
+    logger.error('Batch send failed', { error: fcmError.message });
 
     return {
       channel: DeliveryChannel.PUSH,
@@ -440,10 +452,14 @@ export async function subscribeToTopic(
 
   try {
     const response = await getMessaging().subscribeToTopic(tokens, sanitizedTopic);
-    
+
     const failedTokens = response.errors?.map((e) => tokens[e.index]) || [];
 
-    logger.info({ topic: sanitizedTopic, successCount: response.successCount, failureCount: response.failureCount }, 'Topic subscription completed');
+    logger.info('Topic subscription completed', {
+      topic: sanitizedTopic,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
 
     return {
       successCount: response.successCount,
@@ -451,7 +467,7 @@ export async function subscribeToTopic(
       failedTokens,
     };
   } catch (error) {
-    logger.error({ error }, 'Topic subscription failed');
+    logger.error('Topic subscription failed', { error });
     throw error;
   }
 }
@@ -471,10 +487,14 @@ export async function unsubscribeFromTopic(
 
   try {
     const response = await getMessaging().unsubscribeFromTopic(tokens, sanitizedTopic);
-    
+
     const failedTokens = response.errors?.map((e) => tokens[e.index]) || [];
 
-    logger.info({ topic: sanitizedTopic, successCount: response.successCount, failureCount: response.failureCount }, 'Topic unsubscription completed');
+    logger.info('Topic unsubscription completed', {
+      topic: sanitizedTopic,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
 
     return {
       successCount: response.successCount,
@@ -482,7 +502,7 @@ export async function unsubscribeFromTopic(
       failedTokens,
     };
   } catch (error) {
-    logger.error({ error }, 'Topic unsubscription failed');
+    logger.error('Topic unsubscription failed', { error });
     throw error;
   }
 }
@@ -518,7 +538,7 @@ export async function sendToTopic(
   try {
     const messageId = await getMessaging().send(message);
 
-    logger.info({ topic: sanitizedTopic, messageId }, 'Topic message sent');
+    logger.info('Topic message sent', { topic: sanitizedTopic, messageId });
 
     return {
       channel: DeliveryChannel.PUSH,
@@ -528,7 +548,7 @@ export async function sendToTopic(
     };
   } catch (error) {
     const fcmError = error as admin.FirebaseError;
-    logger.error({ error: fcmError.message }, 'Topic send failed');
+    logger.error('Topic send failed', { error: fcmError.message });
 
     return {
       channel: DeliveryChannel.PUSH,

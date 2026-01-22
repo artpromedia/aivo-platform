@@ -5,7 +5,9 @@
  * and entitlements. Provides CRUD operations and complex queries.
  */
 
-import type { Prisma } from '../../generated/prisma-client/index.js';
+import type { z } from 'zod';
+
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 import type {
   Contract,
@@ -88,10 +90,7 @@ export class ProductRepository {
   /**
    * Update a product.
    */
-  async update(
-    id: string,
-    data: Partial<z.infer<typeof CreateProductSchema>>
-  ): Promise<Product> {
+  async update(id: string, data: Partial<z.infer<typeof CreateProductSchema>>): Promise<Product> {
     return prisma.product.update({
       where: { id },
       data: {
@@ -120,9 +119,7 @@ export class PriceBookRepository {
   /**
    * Create a new price book.
    */
-  async create(
-    data: z.infer<typeof CreatePriceBookSchema>
-  ): Promise<PriceBook> {
+  async create(data: z.infer<typeof CreatePriceBookSchema>): Promise<PriceBook> {
     return prisma.priceBook.create({
       data: {
         ...data,
@@ -210,9 +207,7 @@ export class PriceBookEntryRepository {
   /**
    * Create a new price book entry.
    */
-  async create(
-    data: z.infer<typeof CreatePriceBookEntrySchema>
-  ): Promise<PriceBookEntry> {
+  async create(data: z.infer<typeof CreatePriceBookEntrySchema>): Promise<PriceBookEntry> {
     return prisma.priceBookEntry.create({
       data: {
         ...data,
@@ -235,10 +230,7 @@ export class PriceBookEntryRepository {
   /**
    * Get entry for a specific SKU in a price book.
    */
-  async getBySku(
-    priceBookId: string,
-    sku: string
-  ): Promise<PriceBookEntry | null> {
+  async getBySku(priceBookId: string, sku: string): Promise<PriceBookEntry | null> {
     return prisma.priceBookEntry.findFirst({
       where: { priceBookId, sku },
       include: { product: true },
@@ -301,9 +293,7 @@ export class DistrictBillingProfileRepository {
   /**
    * Get profile by billing account ID.
    */
-  async getByBillingAccountId(
-    billingAccountId: string
-  ): Promise<DistrictBillingProfile | null> {
+  async getByBillingAccountId(billingAccountId: string): Promise<DistrictBillingProfile | null> {
     return prisma.districtBillingProfile.findUnique({
       where: { billingAccountId },
     }) as unknown as DistrictBillingProfile | null;
@@ -408,9 +398,7 @@ export class ContractRepository {
   /**
    * Get a contract by contract number.
    */
-  async getByContractNumber(
-    contractNumber: string
-  ): Promise<Contract | null> {
+  async getByContractNumber(contractNumber: string): Promise<Contract | null> {
     return prisma.contract.findUnique({
       where: { contractNumber },
     }) as unknown as Contract | null;
@@ -470,11 +458,7 @@ export class ContractRepository {
   /**
    * Update contract status.
    */
-  async updateStatus(
-    id: string,
-    status: ContractStatus,
-    signedAt?: Date
-  ): Promise<Contract> {
+  async updateStatus(id: string, status: ContractStatus, signedAt?: Date): Promise<Contract> {
     return prisma.contract.update({
       where: { id },
       data: { status, signedAt },
@@ -503,10 +487,7 @@ export class ContractRepository {
   /**
    * Update contract metadata.
    */
-  async update(
-    id: string,
-    data: Partial<z.infer<typeof CreateContractSchema>>
-  ): Promise<Contract> {
+  async update(id: string, data: Partial<z.infer<typeof CreateContractSchema>>): Promise<Contract> {
     return prisma.contract.update({
       where: { id },
       data: {
@@ -525,13 +506,9 @@ export class ContractLineItemRepository {
   /**
    * Create a line item.
    */
-  async create(
-    data: z.infer<typeof CreateContractLineItemSchema>
-  ): Promise<ContractLineItem> {
+  async create(data: z.infer<typeof CreateContractLineItemSchema>): Promise<ContractLineItem> {
     // Calculate total value
-    const totalValueCents = BigInt(
-      Math.round(data.unitPrice * data.quantityCommitted * 100)
-    );
+    const totalValueCents = BigInt(Math.round(data.unitPrice * data.quantityCommitted * 100));
 
     return prisma.contractLineItem.create({
       data: {
@@ -615,9 +592,7 @@ export class ContractAllocationRepository {
   /**
    * Create an allocation.
    */
-  async create(
-    data: z.infer<typeof CreateContractAllocationSchema>
-  ): Promise<ContractAllocation> {
+  async create(data: z.infer<typeof CreateContractAllocationSchema>): Promise<ContractAllocation> {
     return prisma.contractAllocation.create({
       data: {
         ...data,

@@ -7,13 +7,14 @@
  * - Security signature verification
  */
 
-import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import crypto from 'node:crypto';
+
+import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
 import { config } from '../../../config.js';
 import { logger } from '../../../logger.js';
-import type { EmailWebhookEvent, SuppressionReason } from '../types.js';
 import { emailService } from '../email.service.js';
+import type { EmailWebhookEvent, SuppressionReason } from '../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -83,13 +84,23 @@ async function handleDelivered(event: SendGridEvent): Promise<void> {
 }
 
 async function handleBounce(event: SendGridEvent): Promise<void> {
-  logger.info({ email: event.email, type: event.type, reason: event.reason, classification: event.bounce_classification }, 'Email bounced');
+  logger.info(
+    {
+      email: event.email,
+      type: event.type,
+      reason: event.reason,
+      classification: event.bounce_classification,
+    },
+    'Email bounced'
+  );
 
   // Determine if hard bounce (add to suppression) or soft bounce (retry later)
-  const isHardBounce = event.type === 'bounce' && 
-    ['invalid', 'blocked', 'hard'].some(t => 
-      event.bounce_classification?.toLowerCase().includes(t) ||
-      event.reason?.toLowerCase().includes(t)
+  const isHardBounce =
+    event.type === 'bounce' &&
+    ['invalid', 'blocked', 'hard'].some(
+      (t) =>
+        event.bounce_classification?.toLowerCase().includes(t) ||
+        event.reason?.toLowerCase().includes(t)
     );
 
   if (isHardBounce) {
@@ -109,7 +120,10 @@ async function handleDropped(event: SendGridEvent): Promise<void> {
 }
 
 async function handleDeferred(event: SendGridEvent): Promise<void> {
-  logger.debug({ email: event.email, attempt: event.attempt, response: event.response }, 'Email deferred');
+  logger.debug(
+    { email: event.email, attempt: event.attempt, response: event.response },
+    'Email deferred'
+  );
 
   // Temporary failure, SendGrid will retry
 }
@@ -142,7 +156,10 @@ async function handleOpen(event: SendGridEvent): Promise<void> {
 }
 
 async function handleClick(event: SendGridEvent): Promise<void> {
-  logger.debug({ email: event.email, url: event.url, userAgent: event.useragent, ip: event.ip }, 'Link clicked');
+  logger.debug(
+    { email: event.email, url: event.url, userAgent: event.useragent, ip: event.ip },
+    'Link clicked'
+  );
 
   // Track engagement metrics
 }
@@ -184,7 +201,10 @@ async function processEvents(events: SendGridEvent[]): Promise<void> {
           logger.debug({ eventType: event.event }, 'Unknown event type');
       }
     } catch (error) {
-      logger.error({ err: error, eventType: event.event, email: event.email }, 'Error processing event');
+      logger.error(
+        { err: error, eventType: event.event, email: event.email },
+        'Error processing event'
+      );
     }
   }
 }
@@ -228,7 +248,7 @@ export async function sendGridWebhookHandler(
 
   // Process events asynchronously
   const events = request.body;
-  
+
   if (!Array.isArray(events)) {
     return reply.status(400).send({ error: 'Invalid payload format' });
   }
@@ -271,15 +291,16 @@ export function transformToCanonicalEvent(event: SendGridEvent): EmailWebhookEve
     dropped: 'dropped',
     deferred: 'deferred',
     spamreport: 'complained',
-    unsubscribe: 'unsubscribed',
-    group_unsubscribe: 'unsubscribed',
+    unsubscribe: 'unsubscribe',
+    group_unsubscribe: 'unsubscribe',
     open: 'opened',
     click: 'clicked',
   };
 
+  const mappedEventType = eventTypeMap[event.event];
   return {
     provider: 'sendgrid',
-    eventType: eventTypeMap[event.event] || 'unknown',
+    eventType: mappedEventType ?? 'delivered', // Default to delivered for unknown events
     email: event.email,
     messageId: event.sg_message_id || '',
     timestamp: new Date(event.timestamp * 1000),

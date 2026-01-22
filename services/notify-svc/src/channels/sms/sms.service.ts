@@ -11,17 +11,18 @@
  * - Delivery logging
  */
 
-import type { PrismaClient } from '@prisma/client';
-import { RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import { createLogger } from '@aivo/ts-api-utils';
+import type { PrismaClient } from '@prisma/client';
+import type { RateLimiterRes } from 'rate-limiter-flexible';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
 
 import { config } from '../../config.js';
 
 const logger = createLogger('notify-svc:sms');
-import { twilioProvider } from './twilio.js';
 import { phoneValidationService, toE164 } from './phone-validation.js';
 import { smsConsentService } from './sms-consent.js';
 import { renderSmsTemplate, type SmsTemplateName } from './sms-templates.js';
+import { twilioProvider } from './twilio.js';
 import type {
   SendSmsOptions,
   SmsResult,
@@ -51,7 +52,7 @@ const SHAFT_PATTERNS = [
  */
 const QUIET_HOURS = {
   start: 21, // 9 PM
-  end: 8,    // 8 AM
+  end: 8, // 8 AM
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -119,7 +120,7 @@ class SmsService {
     const providerReady = await twilioProvider.initialize();
 
     this._isInitialized = true;
-    logger.info({ providerReady }, 'SMS service initialized');
+    logger.info('SMS service initialized', { providerReady });
 
     return providerReady;
   }
@@ -136,10 +137,7 @@ class SmsService {
   /**
    * Send an SMS message
    */
-  async send(
-    options: SendSmsOptions,
-    serviceOptions: SmsServiceOptions = {}
-  ): Promise<SmsResult> {
+  async send(options: SendSmsOptions, serviceOptions: SmsServiceOptions = {}): Promise<SmsResult> {
     // Ensure service is initialized
     if (!this._isInitialized) {
       await this.initialize();
@@ -161,7 +159,10 @@ class SmsService {
         });
 
         if (!validation.isValid) {
-          return this.createErrorResult('INVALID_PHONE', validation.reason || 'Invalid phone number');
+          return this.createErrorResult(
+            'INVALID_PHONE',
+            validation.reason || 'Invalid phone number'
+          );
         }
 
         // Update to E.164 format
@@ -183,9 +184,16 @@ class SmsService {
 
       // Check rate limits
       if (!serviceOptions.skipRateLimit) {
-        const rateLimitResult = await this.checkRateLimits(options.to, options.tenantId, options.type);
+        const rateLimitResult = await this.checkRateLimits(
+          options.to,
+          options.tenantId,
+          options.type
+        );
         if (!rateLimitResult.allowed) {
-          return this.createErrorResult('RATE_LIMITED', rateLimitResult.reason || 'Rate limit exceeded');
+          return this.createErrorResult(
+            'RATE_LIMITED',
+            rateLimitResult.reason || 'Rate limit exceeded'
+          );
         }
       }
 
@@ -203,7 +211,10 @@ class SmsService {
       if (!serviceOptions.skipContentFilter) {
         const contentCheck = this.checkContent(options.body);
         if (!contentCheck.allowed) {
-          return this.createErrorResult('PROHIBITED_CONTENT', contentCheck.reason || 'Message contains prohibited content');
+          return this.createErrorResult(
+            'PROHIBITED_CONTENT',
+            contentCheck.reason || 'Message contains prohibited content'
+          );
         }
       }
 
@@ -214,18 +225,18 @@ class SmsService {
       await this.logDelivery(options, result);
 
       const duration = Date.now() - startTime;
-      logger.info({
+      logger.info('SMS sent', {
         to: phoneValidationService.maskPhoneNumber(options.to),
         type: options.type,
         segments: result.segments,
         success: result.success,
         duration,
-      }, 'SMS sent');
+      });
 
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error({ error: errorMessage }, 'SMS send error');
+      logger.error('SMS send error', { error: errorMessage });
       return this.createErrorResult('SEND_ERROR', errorMessage);
     }
   }
@@ -258,11 +269,7 @@ class SmsService {
   /**
    * Send OTP code
    */
-  async sendOtp(
-    phoneNumber: string,
-    code: string,
-    tenantId: string
-  ): Promise<SmsResult> {
+  async sendOtp(phoneNumber: string, code: string, tenantId: string): Promise<SmsResult> {
     // OTPs bypass consent and most rate limits
     const options: SendOtpOptions = {
       phoneNumber,
@@ -275,7 +282,10 @@ class SmsService {
     try {
       await otpRateLimiter.consume(phoneNumber);
     } catch {
-      return this.createErrorResult('OTP_RATE_LIMITED', 'Too many OTP requests. Please wait before trying again.');
+      return this.createErrorResult(
+        'OTP_RATE_LIMITED',
+        'Too many OTP requests. Please wait before trying again.'
+      );
     }
 
     // Try Twilio Verify first
@@ -284,14 +294,10 @@ class SmsService {
     }
 
     // Fall back to regular SMS
-    return this.sendTemplated(
-      'otp',
-      phoneNumber,
-      { code },
-      tenantId,
-      'OTP',
-      { skipConsentCheck: true, skipQuietHours: true }
-    );
+    return this.sendTemplated('otp', phoneNumber, { code }, tenantId, 'OTP', {
+      skipConsentCheck: true,
+      skipQuietHours: true,
+    });
   }
 
   /**
@@ -386,7 +392,7 @@ class SmsService {
 
       return { allowed: true };
     } catch (error) {
-      logger.error({ error }, 'Rate limit check error');
+      logger.error('Rate limit check error', { error });
       return { allowed: true }; // Fail open
     }
   }
@@ -460,7 +466,7 @@ class SmsService {
         },
       });
     } catch (error) {
-      logger.error({ error }, 'Failed to log SMS delivery');
+      logger.error('Failed to log SMS delivery', { error });
     }
   }
 

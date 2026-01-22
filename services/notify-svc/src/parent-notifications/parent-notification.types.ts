@@ -5,7 +5,6 @@
  * for urgency levels, frequency, delivery channels, and content types.
  */
 
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /* eslint-disable no-redeclare */
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -42,6 +41,7 @@ export const ParentNotificationStatus = {
   PENDING: 'PENDING',
   SCHEDULED: 'SCHEDULED',
   QUEUED_FOR_DIGEST: 'QUEUED_FOR_DIGEST',
+  DIGESTED: 'DIGESTED',
   SENDING: 'SENDING',
   SENT: 'SENT',
   DELIVERED: 'DELIVERED',
@@ -195,10 +195,11 @@ export interface ParentNotificationPreferencesData {
   quietHoursStart: string;
   quietHoursEnd: string;
   quietHoursWeekendOnly: boolean;
+  quietHoursBypassCritical?: boolean;
 
   // Digest settings
   digestEnabled: boolean;
-  digestFrequency: 'daily' | 'weekly' | 'none';
+  digestFrequency: 'realtime' | 'hourly' | 'daily' | 'weekly' | 'none';
   digestTime: string;
   digestDayOfWeek?: number;
   digestIncludeDetails: boolean;
@@ -257,6 +258,15 @@ export interface NotificationContent {
   body: string;
   richContent?: NotificationRichContent;
   actionUrl?: string;
+  // Additional fields used for delivery
+  category?: ParentNotificationCategory;
+  urgency?: ParentNotificationUrgency;
+  learnerId?: string;
+  learnerName?: string;
+  notificationId?: string;
+  deepLink?: string;
+  recipientEmail?: string;
+  recipientPhone?: string;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

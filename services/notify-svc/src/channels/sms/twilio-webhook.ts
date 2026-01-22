@@ -7,14 +7,15 @@
  * - Webhook signature validation
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { PrismaClient } from '@prisma/client';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import Twilio from 'twilio';
 
 import { config } from '../../config.js';
+
 import { smsConsentService } from './sms-consent.js';
 import { renderSmsTemplate } from './sms-templates.js';
-import type { SmsWebhookEvent } from './types.js';
+import type { SmsWebhookEvent, SmsStatus } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -82,12 +83,7 @@ function validateTwilioSignature(
   }
 
   try {
-    return Twilio.validateRequest(
-      config.sms.twilio.authToken,
-      signature,
-      url,
-      params
-    );
+    return Twilio.validateRequest(config.sms.twilio.authToken, signature, url, params);
   } catch (error) {
     console.error('[TwilioWebhook] Signature validation error:', error);
     return false;
@@ -105,7 +101,8 @@ async function handleStatusCallback(
   body: StatusCallbackBody,
   context: WebhookContext
 ): Promise<void> {
-  const { MessageSid, MessageStatus, To, ErrorCode, ErrorMessage, Price, PriceUnit, NumSegments } = body;
+  const { MessageSid, MessageStatus, To, ErrorCode, ErrorMessage, Price, PriceUnit, NumSegments } =
+    body;
 
   console.log('[TwilioWebhook] Status callback:', {
     messageSid: MessageSid,
@@ -242,10 +239,7 @@ async function handleInboundSms(
 /**
  * Handle STOP keyword - opt out user
  */
-async function handleStopKeyword(
-  phoneNumber: string,
-  context: WebhookContext
-): Promise<string> {
+async function handleStopKeyword(phoneNumber: string, context: WebhookContext): Promise<string> {
   console.log('[TwilioWebhook] Processing STOP request:', maskPhone(phoneNumber));
 
   try {
@@ -269,10 +263,7 @@ function handleHelpKeyword(): string {
 /**
  * Log inbound SMS to database
  */
-async function logInboundSms(
-  body: InboundSmsBody,
-  context: WebhookContext
-): Promise<void> {
+async function logInboundSms(body: InboundSmsBody, context: WebhookContext): Promise<void> {
   try {
     await context.prisma.smsLog.create({
       data: {
@@ -296,8 +287,8 @@ async function logInboundSms(
 // UTILITY FUNCTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function mapTwilioStatus(twilioStatus: string): string {
-  const statusMap: Record<string, string> = {
+function mapTwilioStatus(twilioStatus: string): SmsStatus {
+  const statusMap: Record<string, SmsStatus> = {
     queued: 'QUEUED',
     sending: 'SENDING',
     sent: 'SENT',
@@ -464,9 +455,4 @@ function escapeXml(text: string): string {
 // EXPORTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export {
-  handleStatusCallback,
-  handleInboundSms,
-  validateTwilioSignature,
-  mapTwilioStatus,
-};
+export { handleStatusCallback, handleInboundSms, validateTwilioSignature, mapTwilioStatus };

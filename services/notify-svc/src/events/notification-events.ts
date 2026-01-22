@@ -81,7 +81,7 @@ type DeviceEventType = 'device.registered' | 'device.unregistered';
 // ══════════════════════════════════════════════════════════════════════════════
 
 // In-memory event queue for when NATS is not available
-const eventQueue: Array<{ subject: string; data: unknown }> = [];
+const eventQueue: { subject: string; data: unknown }[] = [];
 const MAX_QUEUE_SIZE = 1000;
 
 // NATS connection placeholder - would be initialized with actual NATS client
@@ -103,7 +103,7 @@ export async function initializeNats(): Promise<boolean> {
     // In production, use @aivo/events library
     // const { connect } = await import('@aivo/events');
     // natsClient = await connect(config.nats.url);
-    
+
     console.log('[NotificationEvents] NATS connection placeholder initialized');
     return true;
   } catch (error) {
@@ -131,7 +131,7 @@ export async function closeNats(): Promise<void> {
  */
 export async function emitNotificationEvent(
   eventType: NotificationEventType,
-  data: Omit<NotificationSentEvent | NotificationDeliveredEvent | NotificationFailedEvent | NotificationReadEvent, 'timestamp'>
+  data: Record<string, unknown>
 ): Promise<void> {
   const event = {
     ...data,
@@ -275,7 +275,7 @@ function queueEvent(subject: string, data: unknown): void {
 /**
  * Get queued events (for testing/debugging)
  */
-export function getQueuedEvents(): Array<{ subject: string; data: unknown }> {
+export function getQueuedEvents(): { subject: string; data: unknown }[] {
   return [...eventQueue];
 }
 

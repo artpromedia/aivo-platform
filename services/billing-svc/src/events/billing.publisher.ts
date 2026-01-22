@@ -15,8 +15,8 @@
  * Falls back to in-memory handlers when NATS is not available.
  */
 
-import type { NatsConnection, JetStreamClient} from 'nats';
-import { connect, StringCodec } from 'nats';
+import type { NatsConnection, JetStreamClient } from 'nats';
+import { connect, StringCodec, RetentionPolicy, StorageType } from 'nats';
 
 // Simple logger using console
 const logger = {
@@ -364,10 +364,10 @@ class BillingEventPublisher {
           await jsm.streams.add({
             name: this.streamName,
             subjects: ['billing.>'],
-            retention: 'limits',
+            retention: RetentionPolicy.Limits,
             max_msgs: 100000,
             max_age: 7 * 24 * 60 * 60 * 1000000000, // 7 days in nanoseconds
-            storage: 'file',
+            storage: StorageType.File,
             replicas: 1,
           });
           logger.info('NATS JetStream stream created', { stream: this.streamName });

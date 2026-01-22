@@ -171,13 +171,14 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send({
       success: true,
       license: {
-        id: result.licenseId,
-        licenseKey: result.licenseKey,
+        id: result.license.id,
+        licenseKey: result.license.fullKey,
+        displayKey: result.license.displayKey,
         type: body.type,
         seats: body.seats,
         status: 'ISSUED',
         issuedAt: new Date().toISOString(),
-        expiresAt: body.expiresAt,
+        expiresAt: result.license.expiresAt.toISOString(),
       },
     });
   });
@@ -193,29 +194,28 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = BulkIssueLicensesSchema.parse(request.body);
 
-    const result = await licenseVaultService.generateBulkLicenses(
-      {
-        tenantId: body.tenantId,
-        type: body.type,
-        count: body.count,
-        seatsPerLicense: body.seatsPerLicense,
-        features: body.features,
-        expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
-        enterpriseDealId: body.enterpriseDealId,
-        contractId: body.contractId,
-      },
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
+    // Calculate validDays from expiresAt if provided, default to 365 days
+    const validDays = body.expiresAt
+      ? Math.ceil((new Date(body.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : 365;
+
+    const result = await licenseVaultService.generateBulkLicenses({
+      tenantId: body.tenantId,
+      type: body.type,
+      quantity: body.count,
+      seatsPerLicense: body.seatsPerLicense,
+      features: body.features,
+      validDays,
+      enterpriseDealId: body.enterpriseDealId ?? '',
+      issuedBy: ctx.userId,
+    });
 
     return reply.status(201).send({
       success: true,
-      batchId: result.batchId,
       totalIssued: result.licenses.length,
       licenses: result.licenses.map((l) => ({
-        id: l.licenseId,
-        licenseKey: l.licenseKey,
+        id: l.id,
+        displayKey: l.displayKey,
       })),
     });
   });
@@ -231,11 +231,9 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const query = ListLicensesQuerySchema.parse(request.query);
 
-    const result = await licenseVaultService.listLicenses({
-      tenantId: query.tenantId,
+    const result = await licenseVaultService.listLicenses(query.tenantId, {
       type: query.type,
       status: query.status,
-      enterpriseDealId: query.enterpriseDealId,
       limit: query.limit,
       offset: query.offset,
     });
@@ -291,25 +289,21 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
     const body = VerifyLicenseSchema.parse(request.body);
     const ctx = getContext(request);
 
-    const result = await licenseVaultService.verifyLicense(
-      body.licenseKey,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
+    const result = await licenseVaultService.verifyLicense(body.licenseKey);
+
+    const isExpired = result.expiresAt ? new Date(result.expiresAt) < new Date() : false;
 
     return reply.send({
       success: true,
       verification: {
-        isValid: result.isValid,
+        isValid: result.valid,
         status: result.status,
         type: result.type,
         seats: result.seats,
-        seatsUsed: result.seatsUsed,
         features: result.features,
         expiresAt: result.expiresAt,
-        isExpired: result.isExpired,
-        errorMessage: result.errorMessage,
+        isExpired,
+        errorMessage: result.error,
       },
     });
   });
@@ -325,18 +319,19 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = ActivateLicenseSchema.parse(request.body);
 
-    const result = await licenseVaultService.activateLicense(
-      body.licenseId,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
-
-    return reply.send({
-      success: result.success,
-      message: result.success ? 'License activated successfully' : 'Failed to activate license',
-      error: result.error,
-    });
+    try {
+      await licenseVaultService.activateLicense(body.licenseId, ctx.userId);
+      return reply.send({
+        success: true,
+        message: 'License activated successfully',
+      });
+    } catch (err) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Failed to activate license',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
   });
 
   /**
@@ -350,19 +345,23 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = SuspendLicenseSchema.parse(request.body);
 
-    const result = await licenseVaultService.suspendLicense(
-      body.licenseId,
-      body.reason ?? 'Suspended by admin',
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
-
-    return reply.send({
-      success: result.success,
-      message: result.success ? 'License suspended successfully' : 'Failed to suspend license',
-      error: result.error,
-    });
+    try {
+      await licenseVaultService.suspendLicense(
+        body.licenseId,
+        body.reason ?? 'Suspended by admin',
+        ctx.userId
+      );
+      return reply.send({
+        success: true,
+        message: 'License suspended successfully',
+      });
+    } catch (err) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Failed to suspend license',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
   });
 
   /**
@@ -376,19 +375,19 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = RevokeLicenseSchema.parse(request.body);
 
-    const result = await licenseVaultService.revokeLicense(
-      body.licenseId,
-      body.reason,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
-
-    return reply.send({
-      success: result.success,
-      message: result.success ? 'License revoked successfully' : 'Failed to revoke license',
-      error: result.error,
-    });
+    try {
+      await licenseVaultService.revokeLicense(body.licenseId, body.reason, ctx.userId);
+      return reply.send({
+        success: true,
+        message: 'License revoked successfully',
+      });
+    } catch (err) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Failed to revoke license',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
   });
 
   /**
@@ -402,18 +401,19 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = ActivateLicenseSchema.parse(request.body); // Same schema, just needs licenseId
 
-    const result = await licenseVaultService.reinstateLicense(
-      body.licenseId,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
-
-    return reply.send({
-      success: result.success,
-      message: result.success ? 'License reinstated successfully' : 'Failed to reinstate license',
-      error: result.error,
-    });
+    try {
+      await licenseVaultService.reinstateLicense(body.licenseId, ctx.userId);
+      return reply.send({
+        success: true,
+        message: 'License reinstated successfully',
+      });
+    } catch (err) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Failed to reinstate license',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
   });
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -431,23 +431,24 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = GenerateCodesSchema.parse(request.body);
 
-    const result = await licenseVaultService.generateCodes(
-      {
-        licenseId: body.licenseId,
-        codeType: body.codeType,
-        count: body.count,
-        maxRedemptions: body.maxRedemptions,
-        expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
-      },
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
+    // Calculate validDays from expiresAt if provided
+    const validDays = body.expiresAt
+      ? Math.ceil((new Date(body.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : undefined;
+
+    const result = await licenseVaultService.generateCodes({
+      licenseId: body.licenseId,
+      codeType: body.codeType,
+      quantity: body.count,
+      maxRedemptions: body.maxRedemptions,
+      validDays,
+      createdBy: ctx.userId,
+    });
 
     return reply.status(201).send({
       success: true,
       codes: result.codes.map((c) => ({
-        id: c.codeId,
+        id: c.id,
         code: c.code,
         type: body.codeType,
       })),
@@ -464,17 +465,18 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const result = await licenseVaultService.verifyCode(body.code);
 
+    const isExpired = result.expiresAt ? new Date(result.expiresAt) < new Date() : false;
+
     return reply.send({
       success: true,
       verification: {
-        isValid: result.isValid,
+        isValid: result.valid,
         codeType: result.codeType,
-        status: result.status,
         remainingRedemptions: result.remainingRedemptions,
         expiresAt: result.expiresAt,
-        isExpired: result.isExpired,
+        isExpired,
         licenseId: result.licenseId,
-        errorMessage: result.errorMessage,
+        errorMessage: result.error,
       },
     });
   });
@@ -488,13 +490,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
     const ctx = getContext(request);
     const body = RedeemCodeSchema.parse(request.body);
 
-    const result = await licenseVaultService.redeemCode(
-      body.code,
-      ctx.userId,
-      body.targetTenantId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
+    const result = await licenseVaultService.redeemCode(body.code, ctx.userId, body.targetTenantId);
 
     if (!result.success) {
       return reply.status(400).send({
@@ -507,10 +503,8 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
       success: true,
       redemption: {
         licenseId: result.licenseId,
-        licenseType: result.licenseType,
-        seats: result.seats,
-        features: result.features,
-        expiresAt: result.expiresAt,
+        tenantId: result.tenantId,
+        activatedSeats: result.activatedSeats,
       },
     });
   });
@@ -526,19 +520,19 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = RevokeCodeSchema.parse(request.body);
 
-    const result = await licenseVaultService.revokeCode(
-      body.codeId,
-      body.reason,
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
-
-    return reply.send({
-      success: result.success,
-      message: result.success ? 'Code revoked successfully' : 'Failed to revoke code',
-      error: result.error,
-    });
+    try {
+      await licenseVaultService.revokeCode(body.codeId, body.reason, ctx.userId);
+      return reply.send({
+        success: true,
+        message: 'Code revoked successfully',
+      });
+    } catch (err) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Failed to revoke code',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
   });
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -556,18 +550,14 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const query = AuditLogQuerySchema.parse(request.query);
 
-    const result = await licenseVaultService.getAuditLog({
-      licenseId: query.licenseId,
-      codeId: query.codeId,
-      action: query.action,
-      performedBy: query.performedBy,
+    const result = await licenseVaultService.getAuditLog(query.licenseId, {
       limit: query.limit,
       offset: query.offset,
     });
 
     return reply.send({
       success: true,
-      auditLogs: result.logs,
+      auditLogs: result.entries,
       total: result.total,
       limit: query.limit,
       offset: query.offset,

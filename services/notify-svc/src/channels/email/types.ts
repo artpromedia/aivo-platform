@@ -164,7 +164,8 @@ export type EmailEventType =
   | 'dropped'
   | 'spam_report'
   | 'unsubscribe'
-  | 'deferred';
+  | 'deferred'
+  | 'complained';
 
 export interface EmailWebhookEvent {
   provider: EmailProviderType;
@@ -237,18 +238,18 @@ export interface EmailTemplateContext {
   appUrl: string;
   supportEmail: string;
   currentYear: number;
-  
+
   // User context
   recipientName?: string;
   recipientEmail?: string;
-  
+
   // Tenant context
   tenantName?: string;
   tenantLogo?: string;
-  
+
   // Locale
   locale?: SupportedLocale;
-  
+
   // Template-specific data
   [key: string]: unknown;
 }

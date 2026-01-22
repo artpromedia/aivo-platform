@@ -4,7 +4,9 @@
  * Data access layer for seat entitlements, license assignments, and licensing events.
  */
 
-import type { Prisma } from '../../generated/prisma-client/index.js';
+import type { z } from 'zod';
+
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 import type {
   CreateLicenseAssignmentSchema,
@@ -31,9 +33,7 @@ export class SeatEntitlementRepository {
   /**
    * Create a new seat entitlement.
    */
-  async create(
-    data: z.infer<typeof CreateSeatEntitlementSchema>
-  ): Promise<SeatEntitlement> {
+  async create(data: z.infer<typeof CreateSeatEntitlementSchema>): Promise<SeatEntitlement> {
     return prisma.seatEntitlement.create({
       data: {
         ...data,
@@ -57,9 +57,7 @@ export class SeatEntitlementRepository {
   /**
    * Get entitlement with assignments.
    */
-  async getByIdWithAssignments(
-    id: string
-  ): Promise<SeatEntitlementWithAssignments | null> {
+  async getByIdWithAssignments(id: string): Promise<SeatEntitlementWithAssignments | null> {
     return prisma.seatEntitlement.findUnique({
       where: { id },
       include: {
@@ -150,10 +148,7 @@ export class SeatEntitlementRepository {
   /**
    * Increment allocated count.
    */
-  async incrementAllocated(
-    id: string,
-    isOverage: boolean
-  ): Promise<SeatEntitlement> {
+  async incrementAllocated(id: string, isOverage: boolean): Promise<SeatEntitlement> {
     return prisma.seatEntitlement.update({
       where: { id },
       data: {
@@ -166,10 +161,7 @@ export class SeatEntitlementRepository {
   /**
    * Decrement allocated count.
    */
-  async decrementAllocated(
-    id: string,
-    wasOverage: boolean
-  ): Promise<SeatEntitlement> {
+  async decrementAllocated(id: string, wasOverage: boolean): Promise<SeatEntitlement> {
     return prisma.seatEntitlement.update({
       where: { id },
       data: {
@@ -214,9 +206,7 @@ export class SeatEntitlementRepository {
       overageCount: e.overageCount,
       overageLimit: e.overageLimit,
       utilizationPercent:
-        e.quantityCommitted > 0
-          ? Math.round((e.quantityAllocated / e.quantityCommitted) * 100)
-          : 0,
+        e.quantityCommitted > 0 ? Math.round((e.quantityAllocated / e.quantityCommitted) * 100) : 0,
       isOverCap: e.quantityAllocated > e.quantityCommitted,
       enforcement: e.enforcement as SeatCapEnforcement,
     }));
@@ -274,9 +264,7 @@ export class LicenseAssignmentRepository {
   /**
    * Get assignment with entitlement.
    */
-  async getByIdWithEntitlement(
-    id: string
-  ): Promise<LicenseAssignmentWithEntitlement | null> {
+  async getByIdWithEntitlement(id: string): Promise<LicenseAssignmentWithEntitlement | null> {
     return prisma.licenseAssignment.findUnique({
       where: { id },
       include: { entitlement: true },
@@ -286,9 +274,7 @@ export class LicenseAssignmentRepository {
   /**
    * Find active assignment for a learner.
    */
-  async findActiveByLearnerId(
-    learnerId: string
-  ): Promise<LicenseAssignment | null> {
+  async findActiveByLearnerId(learnerId: string): Promise<LicenseAssignment | null> {
     return prisma.licenseAssignment.findFirst({
       where: {
         learnerId,
@@ -316,9 +302,7 @@ export class LicenseAssignmentRepository {
   /**
    * List active assignments for an entitlement.
    */
-  async listActiveByEntitlement(
-    entitlementId: string
-  ): Promise<LicenseAssignment[]> {
+  async listActiveByEntitlement(entitlementId: string): Promise<LicenseAssignment[]> {
     return prisma.licenseAssignment.findMany({
       where: {
         entitlementId,
@@ -386,11 +370,7 @@ export class LicenseAssignmentRepository {
   /**
    * Revoke an assignment.
    */
-  async revoke(
-    id: string,
-    reason?: string,
-    revokedBy?: string
-  ): Promise<LicenseAssignment> {
+  async revoke(id: string, reason?: string, revokedBy?: string): Promise<LicenseAssignment> {
     return prisma.licenseAssignment.update({
       where: { id },
       data: {
@@ -454,9 +434,7 @@ export class LicenseEventRepository {
   /**
    * Create a license event.
    */
-  async create(
-    data: z.infer<typeof CreateLicenseEventSchema>
-  ): Promise<LicenseEvent> {
+  async create(data: z.infer<typeof CreateLicenseEventSchema>): Promise<LicenseEvent> {
     return prisma.licenseEvent.create({
       data: {
         ...data,
@@ -470,10 +448,7 @@ export class LicenseEventRepository {
   /**
    * List events for a tenant.
    */
-  async listByTenant(
-    tenantId: string,
-    limit = 100
-  ): Promise<LicenseEvent[]> {
+  async listByTenant(tenantId: string, limit = 100): Promise<LicenseEvent[]> {
     return prisma.licenseEvent.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
@@ -484,10 +459,7 @@ export class LicenseEventRepository {
   /**
    * List events for an entitlement.
    */
-  async listByEntitlement(
-    entitlementId: string,
-    limit = 50
-  ): Promise<LicenseEvent[]> {
+  async listByEntitlement(entitlementId: string, limit = 50): Promise<LicenseEvent[]> {
     return prisma.licenseEvent.findMany({
       where: { entitlementId },
       orderBy: { createdAt: 'desc' },
@@ -498,10 +470,7 @@ export class LicenseEventRepository {
   /**
    * List events for a learner.
    */
-  async listByLearner(
-    learnerId: string,
-    limit = 50
-  ): Promise<LicenseEvent[]> {
+  async listByLearner(learnerId: string, limit = 50): Promise<LicenseEvent[]> {
     return prisma.licenseEvent.findMany({
       where: { learnerId },
       orderBy: { createdAt: 'desc' },
