@@ -14,6 +14,9 @@
  * @see https://adlnet.gov/projects/scorm-2004-4th-edition/
  */
 
+import { logger } from '../logger.js';
+
+import { DEFAULT_LEARNER_PREFERENCES } from './types.js';
 import type {
   Activity,
   DeliveryRequest,
@@ -27,8 +30,6 @@ import type {
   SuspendedStateData,
   TerminationRequest,
 } from './types.js';
-import { DEFAULT_LEARNER_PREFERENCES } from './types.js';
-import { logger } from '../logger.js';
 
 // ============================================================================
 // SEQUENCING ERROR

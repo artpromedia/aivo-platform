@@ -171,6 +171,7 @@ export default [
       "services/realtime-svc/**/*.{ts,tsx}",
       "services/reports-svc/**/*.{ts,tsx}",
       "services/sandbox-svc/**/*.{ts,tsx}",
+      "services/scorm-svc/**/*.{ts,tsx}",
       "services/session-svc/**/*.{ts,tsx}",
       "services/writing-pad-svc/**/*.{ts,tsx}",
       "packages/i18n/**/*.{ts,tsx}",

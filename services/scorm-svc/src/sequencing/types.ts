@@ -405,7 +405,7 @@ export interface SerializedActivityState {
     attemptExperiencedDuration?: number;
     activityAbsoluteDuration?: number;
     activityExperiencedDuration?: number;
-    objectiveProgress: Array<[string, ObjectiveProgress]>;
+    objectiveProgress: [string, ObjectiveProgress][];
   };
 }
 
@@ -416,7 +416,7 @@ export interface SuspendedStateData {
   /** Serialized activity states */
   activityStates?: SerializedActivityState[];
   /** Global objective states (serialized as array) */
-  globalObjectives?: Array<[string, ObjectiveProgress]>;
+  globalObjectives?: [string, ObjectiveProgress][];
   /** Learner preferences at suspend time */
   learnerPreferences?: LearnerPreferences;
   /** Current activity ID at suspend time */
