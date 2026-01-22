@@ -84,7 +84,7 @@ export default function DashboardPage() {
         return;
       }
       if (action === 'sel_observation') {
-        const student = selectedClass?.students.find((s) => s.learnerId === studentId);
+        const student = selectedClass?.students?.find((s) => s.learnerId === studentId);
         if (student) {
           setSelectedStudentForSEL({
             id: studentId,
@@ -342,7 +342,7 @@ export default function DashboardPage() {
           ) : (
             /* Student Roster View */
             <StudentRoster
-              students={selectedClass.students}
+              students={selectedClass.students || []}
               classId={selectedClass.id}
               onStudentAction={handleStudentAction}
             />

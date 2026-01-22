@@ -5,15 +5,17 @@ export interface SelectProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: string;
   onValueChange?: (value: string) => void;
   defaultValue?: string;
+  disabled?: boolean;
 }
 
 export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
-  ({ className, children, value, onValueChange, defaultValue, ...props }, ref) => {
+  ({ className, children, value, onValueChange, defaultValue, disabled, ...props }, ref) => {
     const [internalValue, setInternalValue] = React.useState(defaultValue || '');
     const [isOpen, setIsOpen] = React.useState(false);
     const currentValue = value !== undefined ? value : internalValue;
 
     const handleValueChange = (newValue: string) => {
+      if (disabled) return;
       if (value === undefined) {
         setInternalValue(newValue);
       }
@@ -23,7 +25,7 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 
     return (
       <div ref={ref} className={cn('relative', className)} {...props}>
-        <SelectContext.Provider value={{ value: currentValue, onValueChange: handleValueChange, isOpen, setIsOpen }}>
+        <SelectContext.Provider value={{ value: currentValue, onValueChange: handleValueChange, isOpen, setIsOpen, disabled: disabled ?? false }}>
           {children}
         </SelectContext.Provider>
       </div>
@@ -38,7 +40,8 @@ const SelectContext = React.createContext<{
   onValueChange: (value: string) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-}>({ value: '', onValueChange: () => {}, isOpen: false, setIsOpen: () => {} });
+  disabled: boolean;
+}>({ value: '', onValueChange: () => {}, isOpen: false, setIsOpen: () => {}, disabled: false });
 
 export interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
@@ -53,7 +56,8 @@ export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerPr
           'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
-        onClick={() => context.setIsOpen(!context.isOpen)}
+        onClick={() => !context.disabled && context.setIsOpen(!context.isOpen)}
+        disabled={context.disabled}
         {...props}
       >
         {children}
@@ -64,12 +68,16 @@ export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerPr
 
 SelectTrigger.displayName = 'SelectTrigger';
 
-export const SelectValue = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
-  ({ className, ...props }, ref) => {
+export interface SelectValueProps extends React.HTMLAttributes<HTMLSpanElement> {
+  placeholder?: string;
+}
+
+export const SelectValue = React.forwardRef<HTMLSpanElement, SelectValueProps>(
+  ({ className, placeholder = 'Select...', ...props }, ref) => {
     const context = React.useContext(SelectContext);
     return (
       <span ref={ref} className={cn('', className)} {...props}>
-        {context.value || 'Select...'}
+        {context.value || placeholder}
       </span>
     );
   }

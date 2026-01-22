@@ -202,6 +202,8 @@ export function addHours(date: Date | string, hours: number): Date {
 export function formatDueDate(dueDate: Date | string): {
   text: string;
   urgency: 'overdue' | 'due-today' | 'due-soon' | 'upcoming' | 'far';
+  className?: string;
+  icon?: string;
 } {
   const d = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
   const now = new Date();

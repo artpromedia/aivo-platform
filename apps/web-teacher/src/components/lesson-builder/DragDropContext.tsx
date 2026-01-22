@@ -58,7 +58,8 @@ export function DragDropContext({
         if (!context.active) return null;
 
         const { code } = event;
-        const { currentCoordinates } = context;
+        // Cast context to include currentCoordinates (internal dnd-kit property)
+        const currentCoordinates = (context as { currentCoordinates?: { x: number; y: number } }).currentCoordinates;
 
         if (!currentCoordinates) return null;
 
@@ -340,7 +341,7 @@ export function useDropZones(count: number) {
       index: i,
       isActive: isDropZoneActive(i),
     }));
-  }, [count, activeDropZone]);
+  }, [count, activeDropZone, isDropZoneActive]);
 
   return {
     dropZones,

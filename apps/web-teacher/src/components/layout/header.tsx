@@ -13,7 +13,24 @@ import Link from 'next/link';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
-import { useAuth } from '../../../../components/providers';
+
+// Types for auth context
+interface AuthContext {
+  userName?: string;
+  userInitials?: string;
+  userRole?: string;
+  userEmail?: string;
+}
+
+// Stub useAuth hook - integrate with actual auth provider
+function useAuth(): AuthContext {
+  return {
+    userName: undefined,
+    userInitials: undefined,
+    userRole: undefined,
+    userEmail: undefined,
+  };
+}
 
 interface HeaderProps {
   title?: string;
@@ -345,7 +362,7 @@ function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProp
       <div className="py-1">
         {menuItems.map((item, index) => {
           if ('divider' in item) {
-            return <div key={index} className="my-1 border-t" />;
+            return <div key={`divider-${index}`} className="my-1 border-t" />;
           }
           return (
             <Link

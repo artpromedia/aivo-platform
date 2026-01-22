@@ -27,6 +27,11 @@ const categoryConfig: Record<PostCategory, { label: string; color: string; icon:
   resource: { label: 'Resource', color: 'bg-green-100 text-green-700', icon: '📦' },
   question: { label: 'Question', color: 'bg-amber-100 text-amber-700', icon: '❓' },
   'success-story': { label: 'Success Story', color: 'bg-purple-100 text-purple-700', icon: '🌟' },
+  tips: { label: 'Tips', color: 'bg-teal-100 text-teal-700', icon: '💡' },
+  questions: { label: 'Questions', color: 'bg-amber-100 text-amber-700', icon: '❓' },
+  'success-stories': { label: 'Success Stories', color: 'bg-purple-100 text-purple-700', icon: '🌟' },
+  general: { label: 'General', color: 'bg-gray-100 text-gray-700', icon: '📌' },
+  announcements: { label: 'Announcements', color: 'bg-red-100 text-red-700', icon: '📢' },
 };
 
 const resourceTypeIcons: Record<string, string> = {
@@ -158,7 +163,7 @@ export default function CommunityPage() {
                 <button
                   key={key}
                   onClick={() => {
-                    setSelectedCategory(key);
+                    setSelectedCategory(key as PostCategory);
                   }}
                   className={`rounded-full px-3 py-1 text-sm ${
                     selectedCategory === key

@@ -138,7 +138,7 @@ export function StudentAnalyticsDetail({ studentId, studentName, classId }: Stud
               />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
-              {comparison.subjects.map((subject) => (
+              {comparison?.subjects.map((subject) => (
                 <div key={subject.subject} className="flex items-center justify-between p-2 border rounded">
                   <span className="font-medium">{subject.subject}</span>
                   <Badge variant={subject.percentile >= 75 ? 'default' : 'secondary'}>

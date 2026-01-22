@@ -17,6 +17,9 @@ export interface IEPGoal {
   targetValue: number;
   measurementMethod: string;
   currentValue: number;
+  currentProgress?: number;
+  title?: string;
+  unit?: string;
   targetDate: Date;
   status: IEPGoalStatus;
   progressHistory: IEPProgressEntry[];
@@ -113,6 +116,8 @@ export interface IEPDocument {
 export interface IEPAccommodation {
   id: string;
   category: AccommodationCategory;
+  /** Accommodation type identifier for badge display */
+  type?: string;
   description: string;
   settings: string[];
   appliesTo: ('classroom' | 'testing' | 'homework' | 'all')[];

@@ -46,6 +46,8 @@ export {
   AccordionItem,
   AccordionTrigger,
 } from './components/ui/accordion';
+export { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 
 // AI Components
 export { LessonGenerator, AITutorChat, AIFeedback } from './components/ai';

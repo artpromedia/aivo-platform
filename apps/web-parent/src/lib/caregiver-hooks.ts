@@ -201,7 +201,7 @@ export function useRevokeCaregiverAccess() {
 
   return useMutation({
     mutationFn: async (dto: RevokeCaregiverAccessDto): Promise<void> => {
-      await api.delete('/api/caregivers/access', dto);
+      await api.delete(`/api/caregivers/access/${dto.studentId}/${dto.caregiverId}`);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: caregiverQueryKeys.caregivers(variables.studentId) });
@@ -234,7 +234,7 @@ export function useCancelCaregiverInvite() {
 
   return useMutation({
     mutationFn: async ({ inviteId, studentId }: { inviteId: string; studentId: string }): Promise<void> => {
-      await api.delete(`/api/caregivers/invite/${inviteId}`, {});
+      await api.delete(`/api/caregivers/invite/${inviteId}`);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: caregiverQueryKeys.caregivers(variables.studentId) });

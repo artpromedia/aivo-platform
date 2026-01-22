@@ -10,7 +10,11 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
-import type { AssessmentRubric, RubricCriterion, RubricLevel } from '@/lib/types';
+import type { 
+  AssessmentRubric, 
+  AssessmentRubricCriterion as RubricCriterion, 
+  AssessmentRubricLevel as RubricLevel 
+} from '@/lib/types';
 
 interface RubricBuilderProps {
   rubric: AssessmentRubric | null;

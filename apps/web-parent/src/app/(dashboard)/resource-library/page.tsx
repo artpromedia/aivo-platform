@@ -1,6 +1,7 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@aivo/ui-web';
+
 import { ResourceDashboard } from '@/components/resource-library/resource-dashboard';
 import { ResourceBrowser } from '@/components/resource-library/resource-browser';
 import { VideoLibrary } from '@/components/resource-library/video-library';

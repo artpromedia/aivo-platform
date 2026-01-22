@@ -1,6 +1,7 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@aivo/ui-web';
+
 import { ParentForum } from '@/components/community-support/parent-forum';
 import { ExpertQA } from '@/components/community-support/expert-qa';
 import { SupportGroups } from '@/components/community-support/support-groups';

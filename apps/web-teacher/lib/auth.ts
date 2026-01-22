@@ -8,7 +8,7 @@
  * - Replaces hardcoded mock user data with proper auth context
  */
 import { Role } from '@aivo/ts-rbac';
-import { importSPKI, jwtVerify, type KeyLike } from 'jose';
+import { importSPKI, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { NextResponse } from 'next/server';
@@ -19,7 +19,7 @@ const REFRESH_COOKIE = 'aivo_refresh_token';
 const authSvcUrl = process.env.AUTH_SVC_URL ?? 'http://localhost:4001';
 const authPublicKey = process.env.AUTH_PUBLIC_KEY;
 
-let publicKeyPromise: Promise<KeyLike> | null = null;
+let publicKeyPromise: Promise<CryptoKey> | null = null;
 
 async function getPublicKey() {
   if (!authPublicKey) return null;

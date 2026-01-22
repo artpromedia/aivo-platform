@@ -21,7 +21,7 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader title="Settings" description="Manage your preferences" />
-      <Tabs tabs={tabs} activeId={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="mt-6">
         {activeTab === 'profile' && <ProfileSettings />}

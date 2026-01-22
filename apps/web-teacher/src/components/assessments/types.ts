@@ -42,12 +42,19 @@ export interface MatchingPair {
   right: string;
 }
 
+// Alias for matching pairs used in question renderers
+export type QuestionPair = MatchingPair;
+
 export interface FillBlankSlot {
   id: string;
   position: number;
   correctAnswers: string[];
   caseSensitive?: boolean;
+  placeholder?: string;
 }
+
+// Alias for fill blank slots used in question renderers
+export type QuestionBlank = FillBlankSlot;
 
 export interface HotspotRegion {
   id: string;
@@ -91,6 +98,16 @@ export interface Question {
   tags: string[];
   hint?: string;
   explanation?: string;
+  
+  // Feedback for correct/incorrect answers
+  feedback?: {
+    correct: string;
+    incorrect: string;
+  };
+  
+  // Word count limits for essay/short answer
+  minWords?: number;
+  maxWords?: number;
   
   // Type-specific fields
   options?: QuestionOption[];
@@ -305,4 +322,25 @@ export interface CreateAssessmentInput {
 export interface UpdateAssessmentInput extends Partial<CreateAssessmentInput> {
   id: string;
   questions?: UpdateQuestionInput[];
+}
+
+// ============================================================================
+// ADDITIONAL EXPORTS
+// ============================================================================
+
+export type AssessmentStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'CLOSED';
+
+export interface TestCase {
+  id: string;
+  input: string;
+  expectedOutput: string;
+  isHidden?: boolean;
+  hidden?: boolean;
+  weight?: number;
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  questionId?: string;
 }

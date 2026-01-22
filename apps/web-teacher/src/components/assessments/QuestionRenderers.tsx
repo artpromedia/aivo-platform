@@ -588,7 +588,7 @@ export function MatchingRenderer({
   isSubmitted,
   disabled,
 }: QuestionRendererProps) {
-  const matches = (response as Record<string, string>) ?? {};
+  const matches = (response as Record<string, string>) || {};
   
   // Create shuffled right-side options
   const rightOptions = useMemo(() => {
@@ -705,8 +705,13 @@ export function OrderingRenderer({
   isSubmitted,
   disabled,
 }: QuestionRendererProps) {
-  const ordered = (response as string[]) ?? question.options?.map(o => o.id) ?? [];
-  const correctOrder = question.correctOrder ?? question.options?.map(o => o.id) ?? [];
+  const ordered = useMemo(() => {
+    return (response as string[]) || question.options?.map(o => o.id) || [];
+  }, [response, question.options]);
+  
+  const correctOrder = useMemo(() => {
+    return question.correctOrder || question.options?.map(o => o.id) || [];
+  }, [question.correctOrder, question.options]);
   
   const isCorrect = useMemo(() => {
     if (!isSubmitted) return false;
@@ -840,10 +845,10 @@ export function NumericRenderer({
   isSubmitted,
   disabled,
 }: QuestionRendererProps) {
-  const value = (response as string) ?? '';
+  const value = (response as string) || '';
   const numericValue = parseFloat(value);
   const correctAnswer = question.correctAnswer as number;
-  const tolerance = question.tolerance ?? 0;
+  const tolerance = question.tolerance || 0;
   
   const isCorrect = useMemo(() => {
     if (!isSubmitted || value === '' || isNaN(numericValue)) return false;
@@ -914,7 +919,7 @@ export function CodeRenderer({
   showPoints,
   disabled,
 }: QuestionRendererProps) {
-  const value = (response as string) ?? (question.starterCode || '');
+  const value = (response as string) || question.starterCode || '';
 
   return (
     <div className="space-y-4">
@@ -938,9 +943,9 @@ export function CodeRenderer({
       {question.testCases && question.testCases.length > 0 && (
         <div className="text-sm text-muted-foreground">
           <span className="font-medium">Test cases:</span> {question.testCases.length}
-          {question.testCases.some(tc => !tc.hidden) && (
+          {question.testCases.some(tc => !tc.isHidden) && (
             <span className="ml-1">
-              ({question.testCases.filter(tc => !tc.hidden).length} visible)
+              ({question.testCases.filter(tc => !tc.isHidden).length} visible)
             </span>
           )}
         </div>
@@ -963,7 +968,7 @@ export function MathEquationRenderer({
   isCorrect,
   disabled,
 }: QuestionRendererProps) {
-  const value = (response as string) ?? '';
+  const value = (response as string) || '';
 
   return (
     <div className="space-y-4">

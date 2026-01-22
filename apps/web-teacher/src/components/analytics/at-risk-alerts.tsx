@@ -82,10 +82,13 @@ interface AlertItemProps {
 }
 
 function AlertItem({ alert, onDismiss, onAction }: AlertItemProps) {
-  const severityColors = {
+  const severityColors: Record<StudentAlert['severity'], string> = {
+    info: 'border-l-blue-400 bg-blue-50',
     low: 'border-l-yellow-400 bg-yellow-50',
+    warning: 'border-l-orange-400 bg-orange-50',
     medium: 'border-l-orange-400 bg-orange-50',
     high: 'border-l-red-400 bg-red-50',
+    critical: 'border-l-red-400 bg-red-50',
   };
 
   const typeIcons: Record<string, string> = {

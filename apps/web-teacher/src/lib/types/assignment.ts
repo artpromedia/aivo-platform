@@ -13,11 +13,17 @@ export interface Assignment {
   description?: string;
   instructions?: string;
   category: string;
+  type?: string;
   pointsPossible: number;
+  totalPoints?: number;
+  className?: string;
   weight?: number;
   dueDate: Date;
   availableFrom?: Date;
   availableUntil?: Date;
+  availableDate?: Date;
+  allowLateSubmission?: boolean;
+  latePenaltyPercent?: number;
   submissionTypes: SubmissionType[];
   allowedFileTypes?: string[];
   maxFileSize?: number;
@@ -28,6 +34,8 @@ export interface Assignment {
   attachments?: Attachment[];
   status: AssignmentStatus;
   submissionStats?: SubmissionStats;
+  submissionCount?: number;
+  totalStudents?: number;
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date;
@@ -60,21 +68,29 @@ export interface Attachment {
 export interface Rubric {
   id?: string;
   title?: string;
+  name?: string;
+  totalPoints?: number;
   criteria: RubricCriterion[];
 }
 
 export interface RubricCriterion {
   id: string;
-  description: string;
-  points: number;
+  name?: string;
+  description?: string;
+  points?: number;
+  maxPoints?: number;
+  weight?: number;
   levels: RubricLevel[];
   longDescription?: string;
 }
 
 export interface RubricLevel {
   id?: string;
-  description: string;
+  name?: string;
+  description?: string;
   points: number;
+  score?: number;
+  label?: string;
   longDescription?: string;
 }
 
@@ -177,13 +193,17 @@ export interface Gradebook {
 
 export interface GradebookStudent {
   id: string;
+  studentId?: string;
   name: string;
+  studentName?: string;
   email: string;
   photoUrl?: string;
   hasIep: boolean;
   accommodations: string[];
   overallGrade?: number;
   letterGrade?: string;
+  missingCount?: number;
+  grades?: Grade[];
 }
 
 export interface GradebookAssignment {
@@ -207,6 +227,7 @@ export interface GradebookCategory {
 
 // DTOs
 export interface CreateAssignmentDto {
+  classId: string;
   title: string;
   description?: string;
   instructions?: string;

@@ -69,8 +69,7 @@ export function BaselineWithIepUpload({
       setActiveStep(4);
     } else if (
       iepStatus.overallStatus === 'AWAITING_DECISION' ||
-      iepStatus.overallStatus === 'COMPARISON_READY' ||
-      (iepStatus.overallStatus === 'READY_FOR_COMPARISON' && comparisonDetails)
+      iepStatus.overallStatus === 'READY_FOR_COMPARISON'
     ) {
       setActiveStep(3);
     } else if (hasCompletedAssessment) {

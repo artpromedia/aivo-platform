@@ -4,6 +4,8 @@
  * Represents classes, sections, and course-level data
  */
 
+import type { ClassEnrollment } from './dashboard';
+
 export interface Class {
   id: string;
   name: string;
@@ -20,10 +22,13 @@ export interface Class {
   term: string;
   studentCount: number;
   status: 'active' | 'archived' | 'upcoming';
+  color?: string;
+  averageScore?: number;
   gradingPeriods: GradingPeriod[];
   gradeScale: GradeScale;
   categories: AssignmentCategory[];
   settings: ClassSettings;
+  students?: ClassEnrollment[];
   createdAt: Date;
   updatedAt: Date;
 }

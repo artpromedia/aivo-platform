@@ -12,6 +12,8 @@ export interface Student {
   email: string;
   studentNumber?: string;
   photoUrl?: string;
+  /** Alternative to photoUrl, for avatar display */
+  avatar?: string;
   gradeLevel: string;
   dateOfBirth?: Date;
   enrollmentDate: Date;
@@ -23,6 +25,53 @@ export interface Student {
   parentContacts: ParentContact[];
   accommodations: Accommodation[];
   tags?: string[];
+  /** Risk assessment level */
+  riskLevel?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  /** Average score percentage */
+  averageScore?: number;
+  /** Progress percentage (0-100) */
+  progressPercentage?: number;
+  /** Number of completed assignments */
+  assignmentsCompleted?: number;
+  /** Total number of assignments */
+  totalAssignments?: number;
+  /** Student engagement level */
+  engagementLevel?: 'low' | 'medium' | 'high';
+  /** Last activity timestamp */
+  lastActivity?: Date;
+  /** IEP details for students with IEP */
+  iepDetails?: {
+    id: string;
+    nextReviewDate?: Date;
+    goals?: { id: string; title: string; progress: number }[];
+  };
+  /** 504 plan details */
+  plan504Details?: {
+    id: string;
+    accommodations: string[];
+    renewalDate?: Date;
+  };
+  /** Risk factors for at-risk students */
+  riskFactors?: string[];
+  /** Recent SEL observations */
+  recentSelObservations?: {
+    date: Date;
+    observation: string;
+    category: string;
+  }[];
+  /** Performance history data points */
+  performanceHistory?: { date: Date; score: number }[];
+  /** Mastery trends data */
+  masteryTrends?: { skill: string; level: number }[];
+  /** Completed assignments details */
+  completedAssignments?: { id: string; title: string; score: number }[];
+  /** Active interventions */
+  interventions?: {
+    id: string;
+    name: string;
+    status: 'active' | 'completed' | 'on_hold';
+    startDate: Date;
+  }[];
 }
 
 export interface ParentContact {
@@ -49,6 +98,10 @@ export interface Accommodation {
   endDate?: Date;
   isActive: boolean;
   settings?: Record<string, unknown>;
+  /** Accommodation category for display/grouping */
+  category?: string;
+  /** Implementation status for monitoring */
+  implementationStatus?: 'not_started' | 'in_progress' | 'implemented' | 'needs_review';
 }
 
 export type AccommodationType =
@@ -190,11 +243,21 @@ export interface StudentRosterEntry {
   missingCount: number;
   lastActivity?: Date;
   alerts: StudentAlert[];
+  /** Flattened properties for component compatibility */
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  photoUrl?: string;
+  accommodations?: Accommodation[];
 }
 
 export interface StudentAlert {
+  id: string;
+  studentId: string;
+  studentName: string;
+  className?: string;
   type: 'missing_work' | 'low_grade' | 'attendance' | 'iep_review' | 'intervention_needed';
-  severity: 'info' | 'warning' | 'critical';
+  severity: 'info' | 'warning' | 'critical' | 'low' | 'medium' | 'high';
   message: string;
   actionUrl?: string;
 }

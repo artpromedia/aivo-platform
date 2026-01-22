@@ -1,26 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@aivo/ui-web';
+import { useState } from 'react';
 import { 
   Search, 
   MessageSquare,
@@ -263,10 +266,9 @@ export function ParentForum() {
 
               <div className="flex items-center gap-4 pt-4 border-t">
                 <Button
-                  variant={selectedPost.isLiked ? 'default' : 'outline'}
+                  variant={selectedPost.isLiked ? 'primary' : 'outline'}
                   size="sm"
-                  onClick={() => handleLikePost(selectedPost.id)}
-                >
+                  onClick={() => handleLikePost(selectedPost.id)}>
                   <ThumbsUp className="h-4 w-4 mr-2" />
                   {selectedPost.likeCount} Likes
                 </Button>

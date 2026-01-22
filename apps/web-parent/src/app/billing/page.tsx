@@ -176,7 +176,7 @@ export default function BillingPage() {
     setCouponCode(code);
     // Wait a bit for the query to resolve
     await new Promise(resolve => setTimeout(resolve, 500));
-    return validatedCoupon;
+    return validatedCoupon ?? null;
   };
 
   const isLoading = subscriptionLoading || plansLoading || paymentMethodsLoading;

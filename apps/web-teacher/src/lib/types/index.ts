@@ -2,6 +2,22 @@
  * Type Exports for Teacher Portal
  */
 
+// Dashboard types
+export type {
+  DashboardStats,
+  WeeklyProgress,
+  ClassPerformanceData,
+  RecentActivityItem,
+  UpcomingLesson,
+  UpcomingEvent,
+  InterventionAlert,
+  DashboardData,
+  StudentSortBy,
+  StudentFilterBy,
+  StudentFilters,
+  ClassEnrollment,
+} from './dashboard';
+
 // Class types
 export type {
   Class,

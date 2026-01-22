@@ -30,6 +30,10 @@ export interface GradeCalculationResult {
   categoryBreakdown: CategoryGrade[];
   trend: 'up' | 'down' | 'stable';
   trendChange: number;
+  /** Alias for percentage, used by grade-calculator component */
+  overall?: number;
+  /** Category breakdown as a record, used by grade-calculator component */
+  byCategory?: Record<string, { percentage: number; pointsEarned: number; pointsPossible: number }>;
 }
 
 export interface CategoryGrade {

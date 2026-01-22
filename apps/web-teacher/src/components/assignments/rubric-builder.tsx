@@ -34,10 +34,10 @@ export function RubricBuilder({ value, onChange, totalPoints, className }: Rubri
       description: '',
       maxPoints: 10,
       levels: [
-        { score: 10, label: 'Excellent', description: 'Exceeds expectations' },
-        { score: 7, label: 'Good', description: 'Meets expectations' },
-        { score: 4, label: 'Fair', description: 'Partially meets expectations' },
-        { score: 0, label: 'Poor', description: 'Does not meet expectations' },
+        { score: 10, points: 10, label: 'Excellent', description: 'Exceeds expectations' },
+        { score: 7, points: 7, label: 'Good', description: 'Meets expectations' },
+        { score: 4, points: 4, label: 'Fair', description: 'Partially meets expectations' },
+        { score: 0, points: 0, label: 'Poor', description: 'Does not meet expectations' },
       ],
     };
 
@@ -66,7 +66,7 @@ export function RubricBuilder({ value, onChange, totalPoints, className }: Rubri
     onChange({ ...rubric, criteria: newCriteria });
   };
 
-  const currentTotal = rubric.criteria.reduce((sum, c) => sum + c.maxPoints, 0);
+  const currentTotal = rubric.criteria.reduce((sum, c) => sum + (c.maxPoints ?? 0), 0);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -157,7 +157,7 @@ function CriterionEditor({
   };
 
   const addLevel = () => {
-    const newLevels = [...criterion.levels, { score: 0, label: 'New Level', description: '' }];
+    const newLevels = [...criterion.levels, { score: 0, points: 0, label: 'New Level', description: '' }];
     onChange({ levels: newLevels });
   };
 
@@ -253,7 +253,7 @@ function CriterionEditor({
           />
           <div className="grid gap-2">
             {criterion.levels.map((level, levelIndex) => (
-              <div key={levelIndex} className="flex items-start gap-2 rounded bg-gray-50 p-2">
+              <div key={level.id || `level-${levelIndex}`} className="flex items-start gap-2 rounded bg-gray-50 p-2">
                 <input
                   type="number"
                   value={level.score}

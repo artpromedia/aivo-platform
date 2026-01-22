@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === 'production' && MOCK_REQUESTED) {
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export type PostCategory = 'tips' | 'questions' | 'success-stories' | 'general' | 'announcements';
+export type PostCategory = 'tips' | 'questions' | 'success-stories' | 'general' | 'announcements' | 'discussion' | 'resource' | 'question' | 'success-story';
 
 export interface PostAuthor {
   id: string;
@@ -63,6 +63,7 @@ export interface SharedResource {
   gradeLevel?: string;
   downloads: number;
   likes: number;
+  rating?: number;
   author: string;
   authorId: string;
   thumbnailUrl?: string;
@@ -75,6 +76,8 @@ export interface CommunityStats {
   totalResources: number;
   totalComments: number;
   activeUsers: number;
+  resourcesShared?: number;
+  likesReceived?: number;
   trendingTopics?: Array<{ category: string; count: number }>;
 }
 
@@ -242,6 +245,10 @@ export async function fetchPosts(
       'success-stories': 'SUCCESS_STORIES',
       'general': 'GENERAL',
       'announcements': 'ANNOUNCEMENTS',
+      'discussion': 'DISCUSSION',
+      'resource': 'RESOURCE',
+      'question': 'QUESTION',
+      'success-story': 'SUCCESS_STORY',
     };
     params.set('category', categoryMap[options.category]);
   }
@@ -392,6 +399,10 @@ export async function createPost(
     'success-stories': 'SUCCESS_STORIES',
     'general': 'GENERAL',
     'announcements': 'ANNOUNCEMENTS',
+    'discussion': 'DISCUSSION',
+    'resource': 'RESOURCE',
+    'question': 'QUESTION',
+    'success-story': 'SUCCESS_STORY',
   };
 
   const res = await fetch(`${COMMUNITY_SVC_URL}/posts`, {

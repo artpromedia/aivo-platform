@@ -68,10 +68,10 @@ export function SubjectAccess({
     // Initialize subject settings for all available subjects
     const initialSubjects: SubjectAccessSettings['subjects'] = {};
     availableSubjects.forEach((subject) => {
+      const existingSettings = initialSettings?.subjects?.[subject.id];
       initialSubjects[subject.id] = {
-        enabled: true,
-        maxLevel: subject.maxLevel,
-        ...initialSettings?.subjects?.[subject.id],
+        enabled: existingSettings?.enabled ?? true,
+        maxLevel: existingSettings?.maxLevel ?? subject.maxLevel,
       };
     });
     setSettings({
@@ -112,10 +112,10 @@ export function SubjectAccess({
   const handleReset = () => {
     const resetSubjects: SubjectAccessSettings['subjects'] = {};
     availableSubjects.forEach((subject) => {
+      const existingSettings = initialSettings?.subjects?.[subject.id];
       resetSubjects[subject.id] = {
-        enabled: true,
-        maxLevel: subject.maxLevel,
-        ...initialSettings?.subjects?.[subject.id],
+        enabled: existingSettings?.enabled ?? true,
+        maxLevel: existingSettings?.maxLevel ?? subject.maxLevel,
       };
     });
     setSettings({

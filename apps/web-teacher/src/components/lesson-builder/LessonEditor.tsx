@@ -24,7 +24,6 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -52,7 +51,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { type ActivityTemplate, ACTIVITY_TYPES } from './ActivityLibrary';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -78,8 +76,10 @@ export interface LessonData {
 export interface Resource {
   id: string;
   name: string;
-  type: string;
+  type: 'document' | 'image' | 'video' | 'audio' | 'link' | 'other';
   url: string;
+  size?: number;
+  mimeType?: string;
 }
 
 interface LessonEditorProps {
@@ -267,7 +267,7 @@ export function LessonEditor({
         <div className="space-y-3">
           {lesson.objectives.map((objective, index) => (
             <div
-              key={index}
+              key={`objective-${index}-${objective.slice(0, 20)}`}
               className="flex items-center gap-2 rounded-lg bg-gray-50 p-3"
             >
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
