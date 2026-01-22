@@ -231,7 +231,7 @@ function NavItemComponent({
         </button>
         {isExpanded && (
           <ul className="mt-1 space-y-1 pl-9">
-            {item.children.map((child) => (
+            {(item.children ?? []).map((child) => (
               <li key={child.href}>
                 <Link
                   href={child.href}

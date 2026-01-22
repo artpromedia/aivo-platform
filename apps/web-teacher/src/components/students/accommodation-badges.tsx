@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /**
  * Accommodation Badges Component
  *
@@ -80,10 +80,11 @@ export function AccommodationBadges({
   return (
     <div className={cn('flex flex-wrap gap-1', className)}>
       {visible.map((accommodation, index) => {
-        const config = accommodationConfig[accommodation.type] || {
+        const accType = accommodation.type ?? '';
+        const config = accommodationConfig[accType] || {
           icon: '📌',
           color: 'bg-gray-100 text-gray-700',
-          label: accommodation.type.replace(/_/g, ' '),
+          label: accType.replace(/_/g, ' '),
         };
 
         return (

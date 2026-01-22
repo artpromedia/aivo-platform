@@ -8,10 +8,12 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
-import type { Student, StudentSortBy, StudentFilterBy, ClassEnrollment } from '@/lib/types';
+
 import { StudentCard } from './StudentCard';
 import { StudentDetailModal } from './StudentDetailModal';
+
+import type { Student, StudentSortBy, StudentFilterBy, ClassEnrollment } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface StudentRosterProps {
   students: ClassEnrollment[];
@@ -44,9 +46,9 @@ export function StudentRoster({
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (s) =>
-          s.name.toLowerCase().includes(query) ||
-          s.firstName.toLowerCase().includes(query) ||
-          s.lastName.toLowerCase().includes(query)
+          (s.name ?? '').toLowerCase().includes(query) ||
+          (s.firstName ?? '').toLowerCase().includes(query) ||
+          (s.lastName ?? '').toLowerCase().includes(query)
       );
     }
 
@@ -84,17 +86,15 @@ export function StudentRoster({
     result.sort((a, b) => {
       switch (sortBy) {
         case 'name':
-          return a.name.localeCompare(b.name);
+          return (a.name ?? '').localeCompare(b.name ?? '');
         case 'performance':
           return (b.averageScore ?? 0) - (a.averageScore ?? 0);
         case 'progress':
           return (b.progressPercentage ?? 0) - (a.progressPercentage ?? 0);
-        case 'risk':
+        case 'risk': {
           const riskOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
-          return (
-            (riskOrder[a.riskLevel ?? 'none'] ?? 4) -
-            (riskOrder[b.riskLevel ?? 'none'] ?? 4)
-          );
+          return (riskOrder[a.riskLevel ?? 'none'] ?? 4) - (riskOrder[b.riskLevel ?? 'none'] ?? 4);
+        }
         case 'lastActivity':
           return new Date(b.lastActivity ?? 0).getTime() - new Date(a.lastActivity ?? 0).getTime();
         default:
@@ -106,23 +106,26 @@ export function StudentRoster({
   }, [learners, searchQuery, filterBy, sortBy]);
 
   // Calculate filter counts
-  const filterCounts = useMemo(() => ({
-    all: learners.length,
-    iep: learners.filter((s) => s.hasIep).length,
-    '504': learners.filter((s) => s.has504).length,
-    struggling: learners.filter((s) => (s.averageScore ?? 100) < 70).length,
-    excelling: learners.filter((s) => (s.averageScore ?? 0) >= 90).length,
-    at_risk: learners.filter(
-      (s) => s.riskLevel && ['medium', 'high', 'critical'].includes(s.riskLevel)
-    ).length,
-    needs_attention: learners.filter(
-      (s) =>
-        s.hasIep ||
-        s.has504 ||
-        (s.riskLevel && s.riskLevel !== 'none') ||
-        (s.averageScore ?? 100) < 70
-    ).length,
-  }), [learners]);
+  const filterCounts = useMemo(
+    () => ({
+      all: learners.length,
+      iep: learners.filter((s) => s.hasIep).length,
+      '504': learners.filter((s) => s.has504).length,
+      struggling: learners.filter((s) => (s.averageScore ?? 100) < 70).length,
+      excelling: learners.filter((s) => (s.averageScore ?? 0) >= 90).length,
+      at_risk: learners.filter(
+        (s) => s.riskLevel && ['medium', 'high', 'critical'].includes(s.riskLevel)
+      ).length,
+      needs_attention: learners.filter(
+        (s) =>
+          s.hasIep ||
+          s.has504 ||
+          (s.riskLevel && s.riskLevel !== 'none') ||
+          (s.averageScore ?? 100) < 70
+      ).length,
+    }),
+    [learners]
+  );
 
   return (
     <div className={cn('rounded-xl border border-border bg-surface', className)}>
@@ -160,7 +163,9 @@ export function StudentRoster({
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setViewMode('grid')}
+            onClick={() => {
+              setViewMode('grid');
+            }}
             className={cn(
               'rounded-lg p-2',
               viewMode === 'grid'
@@ -172,7 +177,9 @@ export function StudentRoster({
             <GridIcon className="h-4 w-4" />
           </button>
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => {
+              setViewMode('list');
+            }}
             className={cn(
               'rounded-lg p-2',
               viewMode === 'list'
@@ -195,7 +202,9 @@ export function StudentRoster({
             type="text"
             placeholder="Search students..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
             className="w-full rounded-lg border border-border bg-surface py-2 pl-10 pr-4 text-sm text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
@@ -203,7 +212,9 @@ export function StudentRoster({
         {/* Filter */}
         <select
           value={filterBy}
-          onChange={(e) => setFilterBy(e.target.value as StudentFilterBy)}
+          onChange={(e) => {
+            setFilterBy(e.target.value as StudentFilterBy);
+          }}
           className="rounded-lg border border-border bg-surface px-4 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <option value="all">All Students ({filterCounts.all})</option>
@@ -218,7 +229,9 @@ export function StudentRoster({
         {/* Sort */}
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as StudentSortBy)}
+          onChange={(e) => {
+            setSortBy(e.target.value as StudentSortBy);
+          }}
           className="rounded-lg border border-border bg-surface px-4 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <option value="name">Sort by Name</option>
@@ -235,21 +248,27 @@ export function StudentRoster({
           label="IEP"
           count={filterCounts.iep}
           isActive={filterBy === 'iep'}
-          onClick={() => setFilterBy(filterBy === 'iep' ? 'all' : 'iep')}
+          onClick={() => {
+            setFilterBy(filterBy === 'iep' ? 'all' : 'iep');
+          }}
           icon={<IEPBadge className="h-3.5 w-3.5" />}
         />
         <FilterPill
           label="504"
           count={filterCounts['504']}
           isActive={filterBy === '504'}
-          onClick={() => setFilterBy(filterBy === '504' ? 'all' : '504')}
+          onClick={() => {
+            setFilterBy(filterBy === '504' ? 'all' : '504');
+          }}
           icon={<Plan504Badge className="h-3.5 w-3.5" />}
         />
         <FilterPill
           label="At Risk"
           count={filterCounts.at_risk}
           isActive={filterBy === 'at_risk'}
-          onClick={() => setFilterBy(filterBy === 'at_risk' ? 'all' : 'at_risk')}
+          onClick={() => {
+            setFilterBy(filterBy === 'at_risk' ? 'all' : 'at_risk');
+          }}
           icon={<AlertIcon className="h-3.5 w-3.5" />}
           color="warning"
         />
@@ -257,7 +276,9 @@ export function StudentRoster({
           label="Struggling"
           count={filterCounts.struggling}
           isActive={filterBy === 'struggling'}
-          onClick={() => setFilterBy(filterBy === 'struggling' ? 'all' : 'struggling')}
+          onClick={() => {
+            setFilterBy(filterBy === 'struggling' ? 'all' : 'struggling');
+          }}
           icon={<TrendingDownIcon className="h-3.5 w-3.5" />}
           color="error"
         />
@@ -265,7 +286,9 @@ export function StudentRoster({
           label="Excelling"
           count={filterCounts.excelling}
           isActive={filterBy === 'excelling'}
-          onClick={() => setFilterBy(filterBy === 'excelling' ? 'all' : 'excelling')}
+          onClick={() => {
+            setFilterBy(filterBy === 'excelling' ? 'all' : 'excelling');
+          }}
           icon={<StarIcon className="h-3.5 w-3.5" />}
           color="success"
         />
@@ -280,7 +303,9 @@ export function StudentRoster({
                 <StudentCard
                   key={student.id}
                   student={student}
-                  onClick={() => setSelectedStudent(student)}
+                  onClick={() => {
+                    setSelectedStudent(student);
+                  }}
                 />
               ))}
             </div>
@@ -290,7 +315,9 @@ export function StudentRoster({
                 <StudentListItem
                   key={student.id}
                   student={student}
-                  onClick={() => setSelectedStudent(student)}
+                  onClick={() => {
+                    setSelectedStudent(student);
+                  }}
                 />
               ))}
             </div>
@@ -299,9 +326,7 @@ export function StudentRoster({
           <div className="py-12 text-center">
             <UsersIcon className="mx-auto h-12 w-12 text-muted/50" />
             <p className="mt-2 text-sm text-muted">
-              {searchQuery
-                ? 'No students match your search'
-                : 'No students in this category'}
+              {searchQuery ? 'No students match your search' : 'No students in this category'}
             </p>
             {(searchQuery || filterBy !== 'all') && (
               <button
@@ -323,7 +348,9 @@ export function StudentRoster({
         <StudentDetailModal
           student={selectedStudent}
           classId={classId}
-          onClose={() => setSelectedStudent(null)}
+          onClose={() => {
+            setSelectedStudent(null);
+          }}
           onAction={(action) => {
             onStudentAction?.(selectedStudent.id, action);
           }}
@@ -384,12 +411,12 @@ function StudentListItem({ student, onClick }: StudentListItemProps) {
       {student.avatar ? (
         <img
           src={student.avatar}
-          alt={student.name}
+          alt={student.name ?? 'Student'}
           className="h-12 w-12 rounded-full object-cover"
         />
       ) : (
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
-          {student.name
+          {(student.name ?? 'S')
             .split(' ')
             .map((n) => n[0])
             .join('')}
@@ -399,7 +426,7 @@ function StudentListItem({ student, onClick }: StudentListItemProps) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-medium text-text">{student.name}</p>
+          <p className="font-medium text-text">{student.name ?? 'Unknown'}</p>
           {student.hasIep && <IEPBadge className="h-4 w-4 text-blue-600" />}
           {student.has504 && <Plan504Badge className="h-4 w-4 text-purple-600" />}
           {student.riskLevel && student.riskLevel !== 'none' && (
@@ -408,18 +435,13 @@ function StudentListItem({ student, onClick }: StudentListItemProps) {
         </div>
         <p className="text-sm text-muted">
           Grade {student.gradeLevel}
-          {student.lastActivity && ` • Last active ${formatTimeAgo(student.lastActivity)}`}
+          {student.lastActivity && ` • Last active ${formatTimeAgo(String(student.lastActivity))}`}
         </p>
       </div>
 
       {/* Score */}
       <div className="text-right">
-        <p
-          className={cn(
-            'text-lg font-bold',
-            getScoreColor(student.averageScore)
-          )}
-        >
+        <p className={cn('text-lg font-bold', getScoreColor(student.averageScore))}>
           {student.averageScore !== undefined ? `${student.averageScore}%` : '-'}
         </p>
         <p className="text-xs text-muted">Avg Score</p>

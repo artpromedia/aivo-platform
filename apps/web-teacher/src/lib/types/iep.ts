@@ -20,6 +20,10 @@ export interface IEPGoal {
   currentProgress?: number;
   title?: string;
   unit?: string;
+  /** Domain area for the goal (e.g., 'Academic', 'Functional', 'Behavioral') */
+  domain?: string;
+  /** Target progress percentage to achieve */
+  targetProgress?: number;
   targetDate: Date;
   status: IEPGoalStatus;
   progressHistory: IEPProgressEntry[];
@@ -51,7 +55,8 @@ export type IEPGoalStatus =
   | 'at_risk'
   | 'on_track'
   | 'mastered'
-  | 'discontinued';
+  | 'discontinued'
+  | 'met';
 
 export interface IEPProgressEntry {
   id: string;
@@ -197,8 +202,10 @@ export interface UpdateIEPGoalDto extends Partial<CreateIEPGoalDto> {
 }
 
 export interface AddIEPProgressDto {
+  goalId?: string;
   value: number;
   notes?: string;
+  date?: Date | string;
   evidenceUrls?: string[];
   dataSource?: IEPProgressEntry['dataSource'];
 }

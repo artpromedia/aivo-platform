@@ -21,7 +21,7 @@ export function useAssignments(classId?: string) {
     setLoading(true);
     setError(null);
     try {
-      const data = await assignmentsApi.list(classId);
+      const data = await assignmentsApi.list(classId ? { classId } : undefined);
       setAssignments(data);
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Failed to fetch assignments'));
@@ -35,7 +35,8 @@ export function useAssignments(classId?: string) {
   }, [fetchAssignments]);
 
   const createAssignment = async (data: CreateAssignmentDto) => {
-    const newAssignment = await assignmentsApi.create(data);
+    if (!classId) throw new Error('Class ID is required to create assignment');
+    const newAssignment = await assignmentsApi.create(classId, data);
     setAssignments((prev) => [...prev, newAssignment]);
     return newAssignment;
   };
@@ -104,7 +105,7 @@ export function useSubmissions(assignmentId: string) {
   }, [fetchSubmissions]);
 
   const gradeSubmission = async (submissionId: string, score: number, feedback?: string) => {
-    const updated = await assignmentsApi.gradeSubmission(submissionId, {
+    const updated = await assignmentsApi.gradeSubmission(assignmentId, submissionId, {
       score,
       feedback,
     });

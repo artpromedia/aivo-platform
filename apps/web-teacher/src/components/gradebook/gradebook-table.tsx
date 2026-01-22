@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain, @typescript-eslint/no-unused-vars */
 /**
  * Gradebook Table Component
  *
@@ -13,7 +13,7 @@ import * as React from 'react';
 import { GradeInput } from './grade-input';
 
 import { Spinner } from '@/components/shared/loading-states';
-import type { Gradebook, GradebookStudent, Assignment, Grade } from '@/lib/types';
+import type { Gradebook, GradebookStudent, GradebookAssignment, Grade } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDueDate } from '@/lib/utils/date-utils';
 import { getLetterGrade, getGradeColorClass } from '@/lib/utils/grade-calculations';
@@ -21,7 +21,7 @@ import { getLetterGrade, getGradeColorClass } from '@/lib/utils/grade-calculatio
 interface GradebookTableProps {
   gradebook: Gradebook;
   onGradeChange: (studentId: string, assignmentId: string, score: number | null) => Promise<void>;
-  onAssignmentClick?: (assignment: Assignment) => void;
+  onAssignmentClick?: (assignment: GradebookAssignment) => void;
   onStudentClick?: (student: GradebookStudent) => void;
   loading?: boolean;
   className?: string;
@@ -46,7 +46,7 @@ export function GradebookTable({
 
   // Group assignments by category
   const assignmentsByCategory = React.useMemo(() => {
-    const grouped: Record<string, Assignment[]> = {};
+    const grouped: Record<string, GradebookAssignment[]> = {};
     for (const assignment of assignments) {
       if (!grouped[assignment.category]) {
         grouped[assignment.category] = [];
@@ -58,7 +58,7 @@ export function GradebookTable({
 
   // Flatten assignments for column indexing
   const flatAssignments = React.useMemo(() => {
-    const result: Assignment[] = [];
+    const result: GradebookAssignment[] = [];
     for (const category of Object.keys(assignmentsByCategory)) {
       result.push(...assignmentsByCategory[category]);
     }
@@ -96,7 +96,10 @@ export function GradebookTable({
           const student = students[row];
           const assignment = flatAssignments[col];
           if (student && assignment) {
-            setEditingCell({ studentId: student.studentId, assignmentId: assignment.id });
+            setEditingCell({
+              studentId: student.studentId ?? student.id,
+              assignmentId: assignment.id,
+            });
           }
           e.preventDefault();
           break;
@@ -140,7 +143,7 @@ export function GradebookTable({
   };
 
   const getGrade = (student: GradebookStudent, assignmentId: string): Grade | undefined => {
-    return student.grades.find((g) => g.assignmentId === assignmentId);
+    return (student.grades ?? []).find((g) => g.assignmentId === assignmentId);
   };
 
   if (loading) {
@@ -192,13 +195,15 @@ export function GradebookTable({
                 key={assignment.id}
                 className="min-w-[80px] cursor-pointer border-r px-2 py-2 text-center hover:bg-gray-100"
                 onClick={() => onAssignmentClick?.(assignment)}
-                title={`${assignment.title}\nDue: ${formatDueDate(assignment.dueDate).text}\nPoints: ${assignment.totalPoints}`}
+                title={`${assignment.title}\nDue: ${assignment.dueDate ? formatDueDate(new Date(assignment.dueDate)).text : 'Not set'}\nPoints: ${assignment.totalPoints ?? assignment.pointsPossible ?? 0}`}
               >
                 <div className="flex flex-col items-center">
                   <span className="max-w-[70px] truncate text-xs font-medium text-gray-700">
                     {assignment.title}
                   </span>
-                  <span className="text-[10px] text-gray-500">{assignment.totalPoints} pts</span>
+                  <span className="text-[10px] text-gray-500">
+                    {assignment.totalPoints ?? assignment.pointsPossible ?? 0} pts
+                  </span>
                 </div>
               </th>
             ))}
@@ -211,13 +216,13 @@ export function GradebookTable({
         {/* Body */}
         <tbody className="divide-y">
           {students.map((student, rowIndex) => {
-            const overallGrade = student.overallGrade;
+            const overallGrade = student.overallGrade ?? 0;
             const letterGrade = getLetterGrade(overallGrade);
-            const colorClass = getGradeColorClass(overallGrade);
+            const colorClass = getGradeColorClass(letterGrade);
 
             return (
               <tr
-                key={student.studentId}
+                key={student.studentId ?? student.id}
                 className={cn('hover:bg-gray-50', rowIndex % 2 === 0 && 'bg-gray-25')}
               >
                 {/* Student name - sticky */}
@@ -227,14 +232,16 @@ export function GradebookTable({
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-medium text-primary-700">
-                      {student.studentName
+                      {(student.studentName ?? student.name ?? '')
                         .split(' ')
                         .map((n) => n[0])
                         .join('')}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{student.studentName}</p>
-                      {student.missingCount > 0 && (
+                      <p className="text-sm font-medium text-gray-900">
+                        {student.studentName ?? student.name}
+                      </p>
+                      {(student.missingCount ?? 0) > 0 && (
                         <p className="text-xs text-red-500">{student.missingCount} missing</p>
                       )}
                     </div>
@@ -250,11 +257,12 @@ export function GradebookTable({
 
                 {/* Grade cells */}
                 {flatAssignments.map((assignment, colIndex) => {
+                  const studentId = student.studentId ?? student.id;
                   const grade = getGrade(student, assignment.id);
-                  const cellKey = `${student.studentId}-${assignment.id}`;
+                  const cellKey = `${studentId}-${assignment.id}`;
                   const isActive = activeCell?.row === rowIndex && activeCell?.col === colIndex;
                   const isEditing =
-                    editingCell?.studentId === student.studentId &&
+                    editingCell?.studentId === studentId &&
                     editingCell?.assignmentId === assignment.id;
                   const isSaving = savingCells.has(cellKey);
 
@@ -270,7 +278,7 @@ export function GradebookTable({
                       }}
                       onDoubleClick={() => {
                         setEditingCell({
-                          studentId: student.studentId,
+                          studentId: studentId,
                           assignmentId: assignment.id,
                         });
                       }}
@@ -278,10 +286,8 @@ export function GradebookTable({
                       {isEditing ? (
                         <GradeInput
                           initialValue={grade?.score ?? null}
-                          maxPoints={assignment.totalPoints}
-                          onSubmit={(score) =>
-                            handleGradeSubmit(student.studentId, assignment.id, score)
-                          }
+                          maxPoints={assignment.totalPoints ?? assignment.pointsPossible ?? 0}
+                          onSubmit={(score) => handleGradeSubmit(studentId, assignment.id, score)}
                           onCancel={() => {
                             setEditingCell(null);
                           }}
@@ -290,7 +296,7 @@ export function GradebookTable({
                       ) : (
                         <GradeCell
                           grade={grade}
-                          maxPoints={assignment.totalPoints}
+                          maxPoints={assignment.totalPoints ?? assignment.pointsPossible ?? 0}
                           loading={isSaving}
                         />
                       )}
@@ -320,7 +326,7 @@ export function GradebookTable({
             </td>
             <td className="sticky left-[180px] z-20 border-r bg-gray-100 px-2 py-2 text-center font-medium">
               {(
-                students.reduce((sum, s) => sum + s.overallGrade, 0) / students.length || 0
+                students.reduce((sum, s) => sum + (s.overallGrade ?? 0), 0) / students.length || 0
               ).toFixed(1)}
               %
             </td>
@@ -329,7 +335,8 @@ export function GradebookTable({
                 .map((s) => getGrade(s, assignment.id)?.score)
                 .filter((s): s is number => s !== null && s !== undefined);
               const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-              const pct = assignment.totalPoints > 0 ? (avg / assignment.totalPoints) * 100 : 0;
+              const totalPoints = assignment.totalPoints ?? assignment.pointsPossible ?? 0;
+              const pct = totalPoints > 0 ? (avg / totalPoints) * 100 : 0;
 
               return (
                 <td
@@ -342,7 +349,7 @@ export function GradebookTable({
             })}
             <td className="bg-gray-100 px-2 py-2 text-center font-medium">
               {getLetterGrade(
-                students.reduce((sum, s) => sum + s.overallGrade, 0) / students.length || 0
+                students.reduce((sum, s) => sum + (s.overallGrade ?? 0), 0) / students.length || 0
               )}
             </td>
           </tr>
@@ -376,7 +383,7 @@ function GradeCell({ grade, maxPoints, loading }: GradeCellProps) {
   }
 
   const pct = maxPoints > 0 ? (grade.score / maxPoints) * 100 : 0;
-  const colorClass = getGradeColorClass(pct);
+  const colorClass = getGradeColorClass(getLetterGrade(pct));
 
   return (
     <div className={cn('flex h-full items-center justify-center p-2', colorClass)}>

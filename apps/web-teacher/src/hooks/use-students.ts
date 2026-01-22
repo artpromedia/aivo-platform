@@ -21,7 +21,7 @@ export function useStudents(classId?: string) {
     setLoading(true);
     setError(null);
     try {
-      const data = await studentsApi.list(classId);
+      const data = await studentsApi.list(classId ? { classId } : undefined);
       setStudents(data);
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Failed to fetch students'));
@@ -74,7 +74,7 @@ export function useStudentProgress(studentId: string, classId?: string) {
     const fetchProgress = async () => {
       setLoading(true);
       try {
-        const data = await studentsApi.getProgress(studentId, classId);
+        const data = await studentsApi.getProgress(studentId, classId ? { classId } : undefined);
         setProgress(data);
       } catch (e) {
         setError(e instanceof Error ? e : new Error('Failed to fetch progress'));

@@ -13,21 +13,11 @@
  * - Preview and publish controls
  */
 
-import * as React from 'react';
+import { ArrowLeft, Loader2, Save, Send, Eye, AlertCircle, CheckCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  ArrowLeft,
-  Loader2,
-  Save,
-  Send,
-  Eye,
-  AlertCircle,
-  CheckCircle,
-  Users,
-} from 'lucide-react';
+import * as React from 'react';
 
-import { Button } from '@/components/ui/button';
 import {
   AssessmentSettings,
   QuestionEditor,
@@ -35,6 +25,7 @@ import {
   RubricBuilder,
   AutoGradingConfig,
 } from '@/components/assessment';
+import { Button } from '@/components/ui/button';
 import { useAssessmentBuilder } from '@/hooks/useAssessmentBuilder';
 import type { Question } from '@/lib/types';
 
@@ -95,8 +86,12 @@ export default function AssessmentBuilderPage() {
   // Show save success message temporarily
   React.useEffect(() => {
     if (saveSuccess) {
-      const timer = setTimeout(() => setSaveSuccess(false), 3000);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [saveSuccess]);
 
@@ -148,7 +143,7 @@ export default function AssessmentBuilderPage() {
         { id: crypto.randomUUID(), text: '', isCorrect: false },
         { id: crypto.randomUUID(), text: '', isCorrect: false },
       ],
-      correctAnswer: null,
+      correctAnswer: undefined,
       points: 1,
     });
   };
@@ -183,9 +178,7 @@ export default function AssessmentBuilderPage() {
             <h1 className="text-xl font-semibold">
               {assessmentId ? 'Edit Assessment' : 'Create Assessment'}
             </h1>
-            <p className="text-sm text-gray-500">
-              Build a custom assessment for your students
-            </p>
+            <p className="text-sm text-gray-500">Build a custom assessment for your students</p>
           </div>
         </div>
 
@@ -197,9 +190,7 @@ export default function AssessmentBuilderPage() {
               Saved
             </span>
           )}
-          {isDirty && !saving && (
-            <span className="text-sm text-gray-500">Unsaved changes</span>
-          )}
+          {isDirty && !saving && <span className="text-sm text-gray-500">Unsaved changes</span>}
           {saving && (
             <span className="flex items-center gap-1 text-sm text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -208,17 +199,18 @@ export default function AssessmentBuilderPage() {
           )}
 
           {/* Actions */}
-          <Button variant="outline" size="sm" onClick={() => setShowPreview(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowPreview(true);
+            }}
+          >
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || !isDirty}
-          >
+          <Button variant="outline" size="sm" onClick={handleSave} disabled={saving || !isDirty}>
             <Save className="mr-2 h-4 w-4" />
             Save Draft
           </Button>
@@ -226,7 +218,9 @@ export default function AssessmentBuilderPage() {
           <Button
             variant="default"
             size="sm"
-            onClick={() => setShowAssignModal(true)}
+            onClick={() => {
+              setShowAssignModal(true);
+            }}
             disabled={!isValid}
             className="bg-green-600 hover:bg-green-700"
           >
@@ -268,9 +262,7 @@ export default function AssessmentBuilderPage() {
                 {validationErrors.slice(0, 3).map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
-                {validationErrors.length > 3 && (
-                  <li>...and {validationErrors.length - 3} more</li>
-                )}
+                {validationErrors.length > 3 && <li>...and {validationErrors.length - 3} more</li>}
               </ul>
             </div>
           </div>
@@ -285,7 +277,9 @@ export default function AssessmentBuilderPage() {
             {/* Settings */}
             <AssessmentSettings
               assessment={assessment}
-              onChange={(updates) => setAssessment((prev) => ({ ...prev, ...updates }))}
+              onChange={(updates) => {
+                setAssessment((prev) => ({ ...prev, ...updates }));
+              }}
             />
 
             {/* Questions */}
@@ -313,8 +307,12 @@ export default function AssessmentBuilderPage() {
                       key={question.id}
                       question={question}
                       index={index}
-                      onUpdate={(updates) => updateQuestion(question.id, updates)}
-                      onRemove={() => removeQuestion(question.id)}
+                      onUpdate={(updates) => {
+                        updateQuestion(question.id, updates);
+                      }}
+                      onRemove={() => {
+                        removeQuestion(question.id);
+                      }}
                     />
                   ))}
 
@@ -333,7 +331,9 @@ export default function AssessmentBuilderPage() {
             {assessment.type === 'project' && (
               <RubricBuilder
                 rubric={assessment.rubric}
-                onChange={(rubric) => setAssessment((prev) => ({ ...prev, rubric }))}
+                onChange={(rubric) => {
+                  setAssessment((prev) => ({ ...prev, rubric }));
+                }}
               />
             )}
 
@@ -341,9 +341,9 @@ export default function AssessmentBuilderPage() {
             {assessment.autoGrade && (
               <AutoGradingConfig
                 config={assessment.autoGradeConfig}
-                onChange={(config) =>
-                  setAssessment((prev) => ({ ...prev, autoGradeConfig: config }))
-                }
+                onChange={(config) => {
+                  setAssessment((prev) => ({ ...prev, autoGradeConfig: config }));
+                }}
               />
             )}
           </div>
@@ -396,18 +396,13 @@ export default function AssessmentBuilderPage() {
                 <h3 className="font-semibold text-gray-900">Question Types</h3>
                 <div className="space-y-2">
                   {Object.entries(
-                    assessment.questions.reduce(
-                      (acc, q) => {
-                        acc[q.type] = (acc[q.type] || 0) + 1;
-                        return acc;
-                      },
-                      {} as Record<string, number>
-                    )
+                    assessment.questions.reduce<Record<string, number>>((acc, q) => {
+                      acc[q.type] = (acc[q.type] || 0) + 1;
+                      return acc;
+                    }, {})
                   ).map(([type, count]) => (
                     <div key={type} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 capitalize">
-                        {type.replace('-', ' ')}
-                      </span>
+                      <span className="text-gray-600 capitalize">{type.replace('-', ' ')}</span>
                       <span className="font-medium text-gray-900">{count}</span>
                     </div>
                   ))}
@@ -424,7 +419,13 @@ export default function AssessmentBuilderPage() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-xl font-bold">Assessment Preview</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowPreview(false);
+                }}
+              >
                 Close
               </Button>
             </div>
@@ -450,16 +451,15 @@ export default function AssessmentBuilderPage() {
                       <div className="flex items-start gap-3">
                         <span className="font-bold text-purple-600">{index + 1}.</span>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{question.text || '(No question text)'}</p>
+                          <p className="font-medium text-gray-900">
+                            {question.text || '(No question text)'}
+                          </p>
                           <p className="text-sm text-gray-500 mt-1">{question.points} point(s)</p>
 
                           {question.type === 'multiple-choice' && question.options && (
                             <div className="mt-3 space-y-2">
                               {question.options.map((opt, optIndex) => (
-                                <div
-                                  key={opt.id}
-                                  className="flex items-center gap-2"
-                                >
+                                <div key={opt.id} className="flex items-center gap-2">
                                   <span className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm">
                                     {String.fromCharCode(65 + optIndex)}
                                   </span>
@@ -507,13 +507,18 @@ export default function AssessmentBuilderPage() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label htmlFor="select-class" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="select-class"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Select Class
                 </label>
                 <select
                   id="select-class"
                   value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedClassId(e.target.value);
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="">Choose a class...</option>
@@ -533,7 +538,9 @@ export default function AssessmentBuilderPage() {
                   type="datetime-local"
                   id="due-date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={(e) => {
+                    setDueDate(e.target.value);
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>

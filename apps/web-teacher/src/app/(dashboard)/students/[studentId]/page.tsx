@@ -16,7 +16,7 @@ import { PageHeader } from '@/components/layout/breadcrumb';
 import { useStudent } from '@/hooks/use-students';
 import { studentsApi } from '@/lib/api';
 
-export default function StudentDetailPage({ params }: { params: { studentId: string } }) {
+export default function StudentDetailPage({ params }: { params: { studentId?: string } }) {
   const router = useRouter();
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
@@ -24,7 +24,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
   const [noteError, setNoteError] = useState<string | null>(null);
 
   // Fetch student data using the useStudent hook
-  const { student: studentData, loading, error } = useStudent(params.studentId);
+  const { student: studentData, loading, error } = useStudent(params.studentId ?? '');
 
   // Transform student data for display
   const student = studentData
@@ -32,7 +32,7 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
         id: studentData.id,
         firstName: studentData.firstName,
         lastName: studentData.lastName,
-        grade: parseInt(studentData.gradeLevel, 10) || 0,
+        grade: parseInt(studentData.gradeLevel ?? '0', 10) || 0,
         email: studentData.email,
         currentGrade: studentData.overallGrade ?? 0,
         hasIep: studentData.hasIep,
@@ -79,7 +79,9 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
         <p className="text-red-600">{error?.message ?? 'Student not found'}</p>
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            router.back();
+          }}
           className="mt-4 text-sm text-primary-600 hover:underline"
         >
           Go back
@@ -188,7 +190,9 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
               <ActionButton
                 icon="📝"
                 label="Add Note"
-                onClick={() => setIsNoteModalOpen(true)}
+                onClick={() => {
+                  setIsNoteModalOpen(true);
+                }}
               />
               <ActionButton
                 href={`/messages/new?to=${student.id}&type=parent`}
@@ -209,7 +213,9 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
       {isNoteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">Add Note for {student.firstName}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Add Note for {student.firstName}
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               This note will be visible to other teachers with access to this student.
             </p>
@@ -218,15 +224,17 @@ export default function StudentDetailPage({ params }: { params: { studentId: str
               rows={4}
               placeholder="Enter your note..."
               value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
+              onChange={(e) => {
+                setNoteText(e.target.value);
+              }}
             />
-            {noteError && (
-              <p className="mt-2 text-sm text-red-600">{noteError}</p>
-            )}
+            {noteError && <p className="mt-2 text-sm text-red-600">{noteError}</p>}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setIsNoteModalOpen(false)}
+                onClick={() => {
+                  setIsNoteModalOpen(false);
+                }}
                 className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
               >
                 Cancel
@@ -255,7 +263,8 @@ interface ActionButtonProps {
 }
 
 function ActionButton({ href, icon, label, onClick }: ActionButtonProps) {
-  const className = "flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-gray-50 w-full text-left";
+  const className =
+    'flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-gray-50 w-full text-left';
 
   if (onClick) {
     return (

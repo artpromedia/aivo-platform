@@ -210,6 +210,9 @@ export function getGradeColor(
   return level?.color ?? '#6b7280';
 }
 
+// Alias for backwards compatibility
+export const getGradeColorClass = getGradeColor;
+
 /**
  * Round grade according to scale settings
  */

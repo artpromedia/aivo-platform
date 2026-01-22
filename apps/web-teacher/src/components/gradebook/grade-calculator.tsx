@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain */
 /**
  * Grade Calculator Component
  *
@@ -58,22 +58,17 @@ export function GradeCalculator({
 
   // Calculate overall with merged grades
   const overallResult = React.useMemo(() => {
-    return calculateOverallGrade(
-      mergedGrades.map((g) => ({
-        assignmentId: g.assignmentId,
-        score: g.score ?? 0,
-        maxPoints: g.maxPoints,
-      })),
-      assignments.map((a) => ({
-        id: a.id,
-        totalPoints: a.totalPoints,
-        category: a.category,
-      })),
-      categoryWeights
-    );
-  }, [mergedGrades, assignments, categoryWeights]);
+    const entries = mergedGrades.map((g) => ({
+      score: g.score ?? 0,
+      possible: g.maxPoints ?? 0,
+      category: g.category,
+      weight: categoryWeights[g.category] ?? 1,
+      isExcused: false,
+    }));
+    return calculateOverallGrade(entries, gradeScale);
+  }, [mergedGrades, categoryWeights, gradeScale]);
 
-  const letterGrade = getLetterGrade(overallResult.overall, gradeScale);
+  const letterGrade = getLetterGrade(overallResult.percentage ?? 0, gradeScale);
 
   // Calculate what score is needed on remaining assignments to reach target
   const targetAnalysis = React.useMemo(() => {
@@ -89,9 +84,9 @@ export function GradeCalculator({
 
     if (ungraded.length === 0) {
       return {
-        possible: overallResult.overall >= targetPct,
+        possible: (overallResult.percentage ?? 0) >= targetPct,
         message:
-          overallResult.overall >= targetPct
+          (overallResult.percentage ?? 0) >= targetPct
             ? "You've already achieved this grade!"
             : 'All assignments are graded. Target cannot be reached.',
         neededAverage: null,
@@ -112,9 +107,9 @@ export function GradeCalculator({
           g.score !== null &&
           !assignments.find((a) => a.id === g.assignmentId && ungraded.includes(a))
       )
-      .reduce((sum, g) => sum + g.maxPoints, 0);
+      .reduce((sum, g) => sum + (g.maxPoints ?? 0), 0);
 
-    const ungradedMax = ungraded.reduce((sum, a) => sum + a.totalPoints, 0);
+    const ungradedMax = ungraded.reduce((sum, a) => sum + (a.totalPoints ?? 0), 0);
     const totalMax = gradedMax + ungradedMax;
 
     // targetPct = (gradedTotal + neededPoints) / totalMax * 100
@@ -169,7 +164,9 @@ export function GradeCalculator({
         </p>
         <div className="mt-2 flex items-center justify-center gap-4">
           <span className="text-5xl font-bold text-primary-700">{letterGrade}</span>
-          <span className="text-2xl text-gray-600">{overallResult.overall.toFixed(1)}%</span>
+          <span className="text-2xl text-gray-600">
+            {(overallResult.percentage ?? 0).toFixed(1)}%
+          </span>
         </div>
         {hasChanges && (
           <button
@@ -216,12 +213,12 @@ export function GradeCalculator({
       <div className="rounded-lg border p-4">
         <h3 className="mb-3 font-medium text-gray-900">Grade by Category</h3>
         <div className="space-y-3">
-          {Object.entries(overallResult.byCategory).map(([category, data]) => (
-            <div key={category} className="flex items-center justify-between">
+          {(overallResult.categoryBreakdown ?? []).map((data) => (
+            <div key={data.categoryId} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">{category}</span>
+                <span className="text-sm font-medium text-gray-700">{data.categoryName}</span>
                 <span className="text-xs text-gray-400">
-                  ({(categoryWeights[category] * 100).toFixed(0)}% weight)
+                  ({(data.weight * 100).toFixed(0)}% weight)
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -279,13 +276,13 @@ export function GradeCalculator({
                     }}
                     placeholder={currentGrade?.score?.toString() ?? '—'}
                     min={0}
-                    max={assignment.totalPoints * 1.2}
+                    max={(assignment.totalPoints ?? 0) * 1.2}
                     className={cn(
                       'w-20 rounded border px-2 py-1 text-center text-sm',
                       isModified && 'border-yellow-400 bg-yellow-50'
                     )}
                   />
-                  <span className="text-xs text-gray-400">/ {assignment.totalPoints}</span>
+                  <span className="text-xs text-gray-400">/ {assignment.totalPoints ?? 0}</span>
                 </div>
               </div>
             );

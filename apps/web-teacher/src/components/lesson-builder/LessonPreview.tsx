@@ -9,12 +9,12 @@
  * - Responsive layout preview
  */
 
-import React from 'react';
 import { Monitor, Tablet, Smartphone, X, Eye } from 'lucide-react';
+import React from 'react';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 // ════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -82,7 +82,9 @@ export function LessonPreview({ lesson, defaultMode = 'desktop', onClose }: Less
             <Button
               variant={mode === 'desktop' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setMode('desktop')}
+              onClick={() => {
+                setMode('desktop');
+              }}
               title="Desktop Preview"
             >
               <Monitor className="h-4 w-4" />
@@ -90,7 +92,9 @@ export function LessonPreview({ lesson, defaultMode = 'desktop', onClose }: Less
             <Button
               variant={mode === 'tablet' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setMode('tablet')}
+              onClick={() => {
+                setMode('tablet');
+              }}
               title="Tablet Preview"
             >
               <Tablet className="h-4 w-4" />
@@ -98,7 +102,9 @@ export function LessonPreview({ lesson, defaultMode = 'desktop', onClose }: Less
             <Button
               variant={mode === 'mobile' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setMode('mobile')}
+              onClick={() => {
+                setMode('mobile');
+              }}
               title="Mobile Preview"
             >
               <Smartphone className="h-4 w-4" />
@@ -125,18 +131,18 @@ export function LessonPreview({ lesson, defaultMode = 'desktop', onClose }: Less
             {/* Lesson Header */}
             <div className="border-b p-6">
               <h1 className="mb-2 text-2xl font-bold">{lesson.title}</h1>
-              {lesson.description && (
-                <p className="text-muted-foreground">{lesson.description}</p>
-              )}
+              {lesson.description && <p className="text-muted-foreground">{lesson.description}</p>}
               <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <div>
                   <span className="font-medium">Subject:</span> {lesson.metadata.subject}
                 </div>
                 <div>
-                  <span className="font-medium">Grade:</span> {formatGradeBand(lesson.metadata.gradeBand)}
+                  <span className="font-medium">Grade:</span>{' '}
+                  {formatGradeBand(lesson.metadata.gradeBand)}
                 </div>
                 <div>
-                  <span className="font-medium">Duration:</span> ~{lesson.metadata.estimatedDuration} min
+                  <span className="font-medium">Duration:</span> ~
+                  {lesson.metadata.estimatedDuration} min
                 </div>
               </div>
             </div>
@@ -175,22 +181,24 @@ function BlockRenderer({ block, mode }: BlockRendererProps) {
   const { type, content, settings = {} } = block;
 
   const getAlignment = () => {
-    const alignment = settings.alignment || 'left';
-    return {
+    const alignment = (settings.alignment || 'left') as 'left' | 'center' | 'right' | 'justify';
+    const alignmentClasses: Record<'left' | 'center' | 'right' | 'justify', string> = {
       left: 'text-left',
       center: 'text-center',
       right: 'text-right',
       justify: 'text-justify',
-    }[alignment];
+    };
+    return alignmentClasses[alignment] || alignmentClasses.left;
   };
 
   const getFontSize = () => {
-    const fontSize = settings.fontSize || 'medium';
-    return {
+    const fontSize = (settings.fontSize || 'medium') as 'small' | 'medium' | 'large';
+    const fontSizeClasses: Record<'small' | 'medium' | 'large', string> = {
       small: 'text-sm',
       medium: 'text-base',
       large: 'text-lg',
-    }[fontSize];
+    };
+    return fontSizeClasses[fontSize] || fontSizeClasses.medium;
   };
 
   switch (type) {
@@ -201,23 +209,27 @@ function BlockRenderer({ block, mode }: BlockRendererProps) {
         </div>
       );
 
-    case 'TEXT_HEADING':
-      const HeadingTag = `h${content.level || 2}` as keyof JSX.IntrinsicElements;
-      return (
-        <HeadingTag className={cn('font-bold', getAlignment())}>
-          {content.text}
-        </HeadingTag>
-      );
+    case 'TEXT_HEADING': {
+      const HeadingTag = `h${content.level || 2}` as keyof React.JSX.IntrinsicElements;
+      return <HeadingTag className={cn('font-bold', getAlignment())}>{content.text}</HeadingTag>;
+    }
 
-    case 'TEXT_LIST':
+    case 'TEXT_LIST': {
       const ListTag = content.listType === 'ordered' ? 'ol' : 'ul';
       return (
-        <ListTag className={cn('space-y-2', content.listType === 'ordered' ? 'list-decimal' : 'list-disc', 'ml-6')}>
+        <ListTag
+          className={cn(
+            'space-y-2',
+            content.listType === 'ordered' ? 'list-decimal' : 'list-disc',
+            'ml-6'
+          )}
+        >
           {(content.items || []).map((item: string, index: number) => (
             <li key={index}>{item}</li>
           ))}
         </ListTag>
       );
+    }
 
     case 'TEXT_QUOTE':
       return (
@@ -265,9 +277,7 @@ function BlockRenderer({ block, mode }: BlockRendererProps) {
           {content.url ? (
             <VideoEmbed url={content.url} provider={content.provider} title={content.title} />
           ) : (
-            <div className="flex h-full items-center justify-center text-white">
-              No video URL
-            </div>
+            <div className="flex h-full items-center justify-center text-white">No video URL</div>
           )}
         </div>
       );
@@ -345,7 +355,7 @@ function BlockRenderer({ block, mode }: BlockRendererProps) {
     case 'LAYOUT_DIVIDER':
       return <hr className="my-8 border-gray-300" />;
 
-    case 'LAYOUT_CALLOUT':
+    case 'LAYOUT_CALLOUT': {
       const calloutStyles = {
         info: 'border-blue-200 bg-blue-50 text-blue-900',
         warning: 'border-yellow-200 bg-yellow-50 text-yellow-900',
@@ -353,11 +363,17 @@ function BlockRenderer({ block, mode }: BlockRendererProps) {
         error: 'border-red-200 bg-red-50 text-red-900',
       };
       return (
-        <div className={cn('rounded-lg border p-4', calloutStyles[settings.type as keyof typeof calloutStyles] || calloutStyles.info)}>
+        <div
+          className={cn(
+            'rounded-lg border p-4',
+            calloutStyles[settings.type as keyof typeof calloutStyles] || calloutStyles.info
+          )}
+        >
           {content.title && <h4 className="mb-2 font-semibold">{content.title}</h4>}
           <div dangerouslySetInnerHTML={{ __html: content.text || '' }} />
         </div>
       );
+    }
 
     default:
       return (
@@ -385,7 +401,10 @@ function QuizBlock({ content, settings }: { content: any; settings: any }) {
   return (
     <div className="rounded-lg border p-6">
       <div className="mb-4">
-        <div className="mb-3 text-lg font-semibold" dangerouslySetInnerHTML={{ __html: content.question || '' }} />
+        <div
+          className="mb-3 text-lg font-semibold"
+          dangerouslySetInnerHTML={{ __html: content.question || '' }}
+        />
       </div>
 
       <div className="space-y-2">
@@ -396,14 +415,19 @@ function QuizBlock({ content, settings }: { content: any; settings: any }) {
               'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
               selectedAnswer === index && 'border-primary bg-primary/5',
               submitted && index === content.correctAnswer && 'border-green-500 bg-green-50',
-              submitted && selectedAnswer === index && index !== content.correctAnswer && 'border-red-500 bg-red-50'
+              submitted &&
+                selectedAnswer === index &&
+                index !== content.correctAnswer &&
+                'border-red-500 bg-red-50'
             )}
           >
             <input
               type="radio"
               name="quiz-answer"
               checked={selectedAnswer === index}
-              onChange={() => setSelectedAnswer(index)}
+              onChange={() => {
+                setSelectedAnswer(index);
+              }}
               disabled={submitted}
               className="h-4 w-4"
             />
@@ -413,20 +437,19 @@ function QuizBlock({ content, settings }: { content: any; settings: any }) {
       </div>
 
       {!submitted && (
-        <Button
-          onClick={handleSubmit}
-          disabled={selectedAnswer === null}
-          className="mt-4"
-        >
+        <Button onClick={handleSubmit} disabled={selectedAnswer === null} className="mt-4">
           Submit Answer
         </Button>
       )}
 
       {submitted && settings.showFeedback && (
-        <div className={cn('mt-4 rounded-lg p-4', isCorrect ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900')}>
-          <p className="font-semibold">
-            {isCorrect ? '✓ Correct!' : '✗ Incorrect'}
-          </p>
+        <div
+          className={cn(
+            'mt-4 rounded-lg p-4',
+            isCorrect ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
+          )}
+        >
+          <p className="font-semibold">{isCorrect ? '✓ Correct!' : '✗ Incorrect'}</p>
           {content.explanation && (
             <div className="mt-2" dangerouslySetInnerHTML={{ __html: content.explanation }} />
           )}
@@ -468,7 +491,9 @@ function PollBlock({ content, settings }: { content: any; settings: any }) {
             <input
               type={settings.multipleChoice ? 'checkbox' : 'radio'}
               checked={selectedOptions.has(index)}
-              onChange={() => toggleOption(index)}
+              onChange={() => {
+                toggleOption(index);
+              }}
               disabled={submitted}
               className="h-4 w-4"
             />
@@ -478,16 +503,16 @@ function PollBlock({ content, settings }: { content: any; settings: any }) {
       </div>
       {!submitted && (
         <Button
-          onClick={() => setSubmitted(true)}
+          onClick={() => {
+            setSubmitted(true);
+          }}
           disabled={selectedOptions.size === 0}
           className="mt-4"
         >
           Submit Vote
         </Button>
       )}
-      {submitted && (
-        <p className="mt-4 text-sm text-green-600">Thank you for your response!</p>
-      )}
+      {submitted && <p className="mt-4 text-sm text-green-600">Thank you for your response!</p>}
     </div>
   );
 }
@@ -500,18 +525,24 @@ function FlashcardBlock({ content }: { content: any }) {
   const currentCard = cards[currentIndex];
 
   if (cards.length === 0) {
-    return <div className="rounded-lg border p-6 text-center text-muted-foreground">No flashcards</div>;
+    return (
+      <div className="rounded-lg border p-6 text-center text-muted-foreground">No flashcards</div>
+    );
   }
 
   return (
     <div className="rounded-lg border p-6">
       <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
-        <span>Flashcard {currentIndex + 1} of {cards.length}</span>
+        <span>
+          Flashcard {currentIndex + 1} of {cards.length}
+        </span>
         <span>Click card to flip</span>
       </div>
 
       <div
-        onClick={() => setIsFlipped(!isFlipped)}
+        onClick={() => {
+          setIsFlipped(!isFlipped);
+        }}
         className="mb-4 flex min-h-[200px] cursor-pointer items-center justify-center rounded-lg border-2 bg-white p-8 text-center text-lg shadow-md transition-transform hover:scale-105"
       >
         {isFlipped ? currentCard?.back : currentCard?.front}
@@ -550,10 +581,10 @@ function FlashcardBlock({ content }: { content: any }) {
 function VideoEmbed({ url, provider, title }: { url: string; provider: string; title?: string }) {
   const getEmbedUrl = () => {
     if (provider === 'youtube') {
-      const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
+      const videoId = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/.exec(url)?.[1];
       return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
     } else if (provider === 'vimeo') {
-      const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
+      const videoId = /vimeo\.com\/(\d+)/.exec(url)?.[1];
       return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
     }
     return url;
@@ -562,7 +593,9 @@ function VideoEmbed({ url, provider, title }: { url: string; provider: string; t
   const embedUrl = getEmbedUrl();
 
   if (!embedUrl) {
-    return <div className="flex h-full items-center justify-center text-white">Invalid video URL</div>;
+    return (
+      <div className="flex h-full items-center justify-center text-white">Invalid video URL</div>
+    );
   }
 
   return (

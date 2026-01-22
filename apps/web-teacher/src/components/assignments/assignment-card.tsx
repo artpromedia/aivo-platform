@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Assignment Card Component
  *
@@ -52,7 +52,9 @@ export function AssignmentCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
-          <span className="text-2xl">{typeIcons[assignment.type] || '📄'}</span>
+          <span className="text-2xl">
+            {(assignment.type && typeIcons[assignment.type]) || '📄'}
+          </span>
           <div>
             <Link
               href={`/assignments/${assignment.id}`}
@@ -143,7 +145,7 @@ export function AssignmentCard({
 }
 
 function StatusBadge({ status }: { status: Assignment['status'] }) {
-  const styles: Record<Assignment['status'], string> = {
+  const styles: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600',
     published: 'bg-green-100 text-green-700',
     closed: 'bg-blue-100 text-blue-700',
@@ -151,7 +153,9 @@ function StatusBadge({ status }: { status: Assignment['status'] }) {
   };
 
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', styles[status])}>
+    <span
+      className={cn('rounded-full px-2 py-0.5 text-xs font-medium', styles[status] || styles.draft)}
+    >
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );

@@ -4,26 +4,121 @@
  * Represents student data, progress, and profiles
  */
 
+/** IEP Details for students with Individualized Education Programs */
+export interface IEPDetails {
+  id: string;
+  studentId?: string;
+  status?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  nextReviewDate?: Date | string;
+  eligibilityCategory?: string;
+  primaryDisability?: string;
+  caseManager?: string;
+  goals?: IEPGoalSummary[];
+  services?: IEPServiceSummary[];
+  lastModified?: Date | string;
+}
+
+export interface IEPGoalSummary {
+  id: string;
+  title?: string;
+  domain?: string;
+  description?: string;
+  baseline?: string;
+  targetDate?: Date | string;
+  measurementMethod?: string;
+  currentProgress?: number;
+  targetProgress?: number;
+  progress?: number;
+  status?: string;
+  objectives?: unknown[];
+  progressNotes?: unknown[];
+}
+
+export interface IEPServiceSummary {
+  id?: string;
+  type?: string;
+  serviceType?: string;
+  provider?: string;
+  frequency?: string;
+  duration?: string;
+  location?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+}
+
+/** 504 Plan details for students with disabilities */
+export interface Plan504Details {
+  id: string;
+  studentId?: string;
+  status?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  nextReviewDate?: Date | string;
+  renewalDate?: Date | string;
+  disablingCondition?: string;
+  accommodations?: string[];
+  lastModified?: Date | string;
+}
+
+/** Risk factor for at-risk students */
+export interface RiskFactor {
+  id: string;
+  type: string;
+  description: string;
+  severity: string;
+  detectedAt: Date | string;
+  indicators?: string[];
+}
+
+/** Recent SEL observation with extended properties */
+export interface SELObservation {
+  id?: string;
+  date: Date | string;
+  observation: string;
+  category: string;
+  level?: string;
+  competency?: string;
+  context?: string;
+}
+
+/** Intervention details for students */
+export interface StudentIntervention {
+  id: string;
+  studentId?: string;
+  name?: string;
+  title?: string;
+  type?: string;
+  description?: string;
+  status: 'active' | 'completed' | 'on_hold' | 'in_progress';
+  startDate: Date | string;
+  progress?: number;
+  responsibleParty?: string;
+  goals?: string[];
+  notes?: unknown[];
+}
+
 export interface Student {
   id: string;
-  firstName: string;
-  lastName: string;
-  name: string; // Full name computed
-  email: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string; // Full name computed
+  email?: string;
   studentNumber?: string;
   photoUrl?: string;
   /** Alternative to photoUrl, for avatar display */
   avatar?: string;
-  gradeLevel: string;
-  dateOfBirth?: Date;
-  enrollmentDate: Date;
-  status: 'active' | 'inactive' | 'transferred' | 'graduated';
-  hasIep: boolean;
-  has504: boolean;
-  isEll: boolean;
+  gradeLevel?: string;
+  dateOfBirth?: Date | string;
+  enrollmentDate?: Date | string;
+  status?: 'active' | 'inactive' | 'transferred' | 'graduated';
+  hasIep?: boolean;
+  has504?: boolean;
+  isEll?: boolean;
   primaryLanguage?: string;
-  parentContacts: ParentContact[];
-  accommodations: Accommodation[];
+  parentContacts?: ParentContact[];
+  accommodations?: Accommodation[];
   tags?: string[];
   /** Risk assessment level */
   riskLevel?: 'none' | 'low' | 'medium' | 'high' | 'critical';
@@ -38,40 +133,27 @@ export interface Student {
   /** Student engagement level */
   engagementLevel?: 'low' | 'medium' | 'high';
   /** Last activity timestamp */
-  lastActivity?: Date;
+  lastActivity?: Date | string;
   /** IEP details for students with IEP */
-  iepDetails?: {
-    id: string;
-    nextReviewDate?: Date;
-    goals?: { id: string; title: string; progress: number }[];
-  };
+  iepDetails?: IEPDetails;
   /** 504 plan details */
-  plan504Details?: {
-    id: string;
-    accommodations: string[];
-    renewalDate?: Date;
-  };
+  plan504Details?: Plan504Details;
   /** Risk factors for at-risk students */
-  riskFactors?: string[];
+  riskFactors?: (string | RiskFactor)[];
   /** Recent SEL observations */
-  recentSelObservations?: {
-    date: Date;
-    observation: string;
-    category: string;
-  }[];
+  recentSelObservations?: SELObservation[];
   /** Performance history data points */
-  performanceHistory?: { date: Date; score: number }[];
+  performanceHistory?: { date: Date | string; score: number }[];
   /** Mastery trends data */
-  masteryTrends?: { skill: string; level: number }[];
+  masteryTrends?: ({ skill: string; level: number } | { name: string; level: number })[];
   /** Completed assignments details */
-  completedAssignments?: { id: string; title: string; score: number }[];
+  completedAssignments?: { id: string; title: string; score: number }[] | number;
   /** Active interventions */
-  interventions?: {
-    id: string;
-    name: string;
-    status: 'active' | 'completed' | 'on_hold';
-    startDate: Date;
-  }[];
+  interventions?: StudentIntervention[];
+  /** Current streak of consecutive activity days */
+  streak?: number;
+  /** Missing assignments for this student */
+  missingAssignments?: number;
 }
 
 export interface ParentContact {
@@ -82,7 +164,8 @@ export interface ParentContact {
   phone?: string;
   isPrimary: boolean;
   preferredLanguage?: string;
-  communicationPreferences: {
+  preferredContactMethod?: 'email' | 'phone' | 'sms' | 'app';
+  communicationPreferences?: {
     email: boolean;
     sms: boolean;
     app: boolean;
@@ -91,17 +174,21 @@ export interface ParentContact {
 
 export interface Accommodation {
   id: string;
-  type: AccommodationType;
-  description: string;
-  source: 'iep' | '504' | 'ell' | 'teacher';
-  startDate: Date;
-  endDate?: Date;
-  isActive: boolean;
+  type?: string;
+  description?: string;
+  source?: 'iep' | '504' | 'ell' | 'teacher';
+  startDate?: Date | string;
+  endDate?: Date | string;
+  isActive?: boolean;
   settings?: Record<string, unknown>;
   /** Accommodation category for display/grouping */
   category?: string;
   /** Implementation status for monitoring */
-  implementationStatus?: 'not_started' | 'in_progress' | 'implemented' | 'needs_review';
+  implementationStatus?: 'not_started' | 'in_progress' | 'implemented' | 'needs_review' | 'active';
+  /** Whether this accommodation is critical/high-priority */
+  isCritical?: boolean;
+  /** Additional notes about this accommodation */
+  notes?: string;
 }
 
 export type AccommodationType =

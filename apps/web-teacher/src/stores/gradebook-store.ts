@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Gradebook Store - Gradebook state with optimistic updates
  */
@@ -28,9 +28,15 @@ export const useGradebookStore = create<GradebookState>((set, get) => ({
   error: null,
   pendingUpdates: new Map(),
 
-  setGradebook: (gradebook) => set({ gradebook, error: null }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
+  setGradebook: (gradebook) => {
+    set({ gradebook, error: null });
+  },
+  setLoading: (loading) => {
+    set({ loading });
+  },
+  setError: (error) => {
+    set({ error });
+  },
 
   updateGrade: (studentId, assignmentId, score) => {
     const { gradebook, pendingUpdates } = get();
@@ -44,7 +50,7 @@ export const useGradebookStore = create<GradebookState>((set, get) => ({
       if (s.studentId !== studentId) return s;
       return {
         ...s,
-        grades: s.grades.map((g) =>
+        grades: (s.grades ?? []).map((g) =>
           g.assignmentId === assignmentId ? { ...g, score, status: 'graded' as const } : g
         ),
       };
@@ -72,7 +78,7 @@ export const useGradebookStore = create<GradebookState>((set, get) => ({
       if (s.studentId !== studentId) return s;
       return {
         ...s,
-        grades: s.grades.map((g) =>
+        grades: (s.grades ?? []).map((g) =>
           g.assignmentId === assignmentId ? { ...g, score: originalScore } : g
         ),
       };

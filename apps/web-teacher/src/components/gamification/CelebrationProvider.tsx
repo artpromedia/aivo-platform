@@ -4,10 +4,10 @@
  * Delightful visual feedback for achievements
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import type { CelebrationConfig } from '@aivo/ts-types/gamification.types';
+import confetti from 'canvas-confetti';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState, useCallback } from 'react';
 
 interface CelebrationProviderProps {
   children: React.ReactNode;
@@ -58,7 +58,8 @@ function fireFireworks() {
     const timeLeft = animationEnd - Date.now();
 
     if (timeLeft <= 0) {
-      return clearInterval(interval);
+      clearInterval(interval);
+      return;
     }
 
     const particleCount = 50 * (timeLeft / duration);
@@ -83,7 +84,7 @@ function fireStars() {
     gravity: 0,
     decay: 0.94,
     startVelocity: 30,
-    shapes: ['star'] as confetti.Shape[],
+    shapes: ['star'] as ('square' | 'circle' | 'star')[],
     colors: ['#fbbf24', '#f59e0b', '#d97706'],
   };
 
@@ -105,7 +106,9 @@ function LevelUpModal({ level, levelName, onClose }: LevelUpModalProps) {
   useEffect(() => {
     fireFireworks();
     const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [onClose]);
 
   return (
@@ -186,7 +189,9 @@ function AchievementModal({ title, icon, onClose }: AchievementModalProps) {
   useEffect(() => {
     fireStars();
     const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [onClose]);
 
   return (
@@ -216,9 +221,7 @@ function AchievementModal({ title, icon, onClose }: AchievementModalProps) {
           Achievement Unlocked!
         </p>
 
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-1">
-          {title}
-        </h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-1">{title}</h3>
       </motion.div>
     </motion.div>
   );
@@ -233,7 +236,9 @@ function StreakModal({ days, onClose }: StreakModalProps) {
   useEffect(() => {
     fireConfetti('high');
     const timer = setTimeout(onClose, 2500);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [onClose]);
 
   return (
@@ -302,7 +307,9 @@ interface ToastProps {
 function Toast({ message, icon, type = 'info', onClose }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [onClose]);
 
   const colors = {
@@ -336,7 +343,7 @@ interface CelebrationState {
   levelUp?: { level: number; levelName: string };
   achievement?: { title: string; icon: string };
   streak?: { days: number };
-  toasts: Array<{ id: string; message: string; icon?: string; type?: ToastProps['type'] }>;
+  toasts: { id: string; message: string; icon?: string; type?: ToastProps['type'] }[];
 }
 
 export function CelebrationProvider({ children }: CelebrationProviderProps) {
@@ -349,7 +356,10 @@ export function CelebrationProvider({ children }: CelebrationProviderProps) {
         if (config.message) {
           setState((prev) => ({
             ...prev,
-            toasts: [...prev.toasts, { id: Date.now().toString(), message: config.message!, icon: config.icon }],
+            toasts: [
+              ...prev.toasts,
+              { id: Date.now().toString(), message: config.message!, icon: config.icon },
+            ],
           }));
         }
         break;
@@ -415,9 +425,7 @@ export function CelebrationProvider({ children }: CelebrationProviderProps) {
             onClose={closeAchievement}
           />
         )}
-        {state.streak && (
-          <StreakModal days={state.streak.days} onClose={closeStreak} />
-        )}
+        {state.streak && <StreakModal days={state.streak.days} onClose={closeStreak} />}
       </AnimatePresence>
 
       {/* Toast container */}
@@ -429,7 +437,9 @@ export function CelebrationProvider({ children }: CelebrationProviderProps) {
               message={toast.message}
               icon={toast.icon}
               type={toast.type}
-              onClose={() => removeToast(toast.id)}
+              onClose={() => {
+                removeToast(toast.id);
+              }}
             />
           ))}
         </AnimatePresence>

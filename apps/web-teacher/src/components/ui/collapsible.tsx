@@ -1,4 +1,6 @@
+import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
+
 import { cn } from '@/lib/utils';
 
 export interface CollapsibleProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -34,39 +36,48 @@ Collapsible.displayName = 'Collapsible';
 const CollapsibleContext = React.createContext<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
 }>({ open: false, onOpenChange: () => {} });
 
-export const CollapsibleTrigger = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, children, ...props }, ref) => {
+export interface CollapsibleTriggerProps extends React.HTMLAttributes<HTMLDivElement> {
+  asChild?: boolean;
+}
+
+export const CollapsibleTrigger = React.forwardRef<HTMLDivElement, CollapsibleTriggerProps>(
+  ({ className, children, asChild = false, ...props }, ref) => {
     const context = React.useContext(CollapsibleContext);
+    const Comp = asChild ? Slot : 'div';
 
     return (
-      <div
+      <Comp
         ref={ref}
         className={cn('cursor-pointer', className)}
-        onClick={() => context.onOpenChange(!context.open)}
+        onClick={() => {
+          context.onOpenChange(!context.open);
+        }}
         {...props}
       >
         {children}
-      </div>
+      </Comp>
     );
   }
 );
 
 CollapsibleTrigger.displayName = 'CollapsibleTrigger';
 
-export const CollapsibleContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, children, ...props }, ref) => {
-    const context = React.useContext(CollapsibleContext);
+export const CollapsibleContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, children, ...props }, ref) => {
+  const context = React.useContext(CollapsibleContext);
 
-    if (!context.open) return null;
+  if (!context.open) return null;
 
-    return (
-      <div ref={ref} className={cn('', className)} {...props}>
-        {children}
-      </div>
-    );
-  }
-);
+  return (
+    <div ref={ref} className={cn('', className)} {...props}>
+      {children}
+    </div>
+  );
+});
 
 CollapsibleContent.displayName = 'CollapsibleContent';

@@ -86,9 +86,12 @@ export default function DashboardPage() {
       if (action === 'sel_observation') {
         const student = selectedClass?.students?.find((s) => s.learnerId === studentId);
         if (student) {
+          const learnerName =
+            student.learner.name ??
+            `${student.learner.firstName ?? ''} ${student.learner.lastName ?? ''}`.trim();
           setSelectedStudentForSEL({
             id: studentId,
-            name: student.learner.name,
+            name: learnerName || 'Unknown',
           });
           setShowSELRecorder(true);
         }

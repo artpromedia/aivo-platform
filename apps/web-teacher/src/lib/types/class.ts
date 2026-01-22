@@ -9,28 +9,31 @@ import type { ClassEnrollment } from './dashboard';
 export interface Class {
   id: string;
   name: string;
-  code: string;
-  subject: string;
-  gradeLevel: string;
+  code?: string;
+  subject?: string;
+  gradeLevel?: string;
   section?: string;
-  period?: number;
+  period?: number | string;
   room?: string;
   schedule?: ClassSchedule;
-  teacherId: string;
-  schoolId: string;
-  academicYear: string;
-  term: string;
-  studentCount: number;
-  status: 'active' | 'archived' | 'upcoming';
+  teacherId?: string;
+  schoolId?: string;
+  schoolYear?: string;
+  academicYear?: string;
+  term?: string;
+  studentCount?: number;
+  status?: 'active' | 'archived' | 'upcoming';
   color?: string;
   averageScore?: number;
-  gradingPeriods: GradingPeriod[];
-  gradeScale: GradeScale;
-  categories: AssignmentCategory[];
-  settings: ClassSettings;
+  gradingPeriods?: GradingPeriod[];
+  gradeScale?: GradeScale;
+  categories?: AssignmentCategory[];
+  settings?: ClassSettings;
   students?: ClassEnrollment[];
-  createdAt: Date;
-  updatedAt: Date;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface ClassSchedule {

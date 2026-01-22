@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 /**
  * useGradebook Hook
  *
@@ -10,7 +10,7 @@
 import * as React from 'react';
 
 import { gradesApi, classesApi } from '@/lib/api';
-import type { Gradebook, Grade, BulkGradeOperation } from '@/lib/types';
+import type { Gradebook, Grade, BulkGradeDto } from '@/lib/types';
 
 export function useGradebook(classId: string) {
   const [gradebook, setGradebook] = React.useState<Gradebook | null>(null);
@@ -39,11 +39,7 @@ export function useGradebook(classId: string) {
   const updateGrade = async (studentId: string, assignmentId: string, score: number | null) => {
     setSaving(true);
     try {
-      await gradesApi.update({
-        studentId,
-        assignmentId,
-        score,
-      });
+      await gradesApi.update(studentId, assignmentId, { score });
 
       // Update local state
       setGradebook((prev) => {
@@ -52,7 +48,7 @@ export function useGradebook(classId: string) {
           ...prev,
           students: prev.students.map((student) => {
             if (student.studentId !== studentId) return student;
-            const existingGradeIndex = student.grades.findIndex(
+            const existingGradeIndex = (student.grades ?? []).findIndex(
               (g) => g.assignmentId === assignmentId
             );
             const newGrade: Grade = {
@@ -61,10 +57,10 @@ export function useGradebook(classId: string) {
               assignmentId,
               score,
               status: score === null ? 'pending' : 'graded',
-              gradedAt: new Date().toISOString(),
+              gradedAt: new Date().toISOString() as unknown as Date,
             };
 
-            const newGrades = [...student.grades];
+            const newGrades = [...(student.grades ?? [])];
             if (existingGradeIndex >= 0) {
               newGrades[existingGradeIndex] = { ...newGrades[existingGradeIndex], ...newGrade };
             } else {
@@ -79,7 +75,10 @@ export function useGradebook(classId: string) {
               const grade = newGrades.find((g) => g.assignmentId === a.id);
               return sum + (grade?.score ?? 0);
             }, 0);
-            const maxTotal = gradedAssignments.reduce((sum, a) => sum + a.totalPoints, 0);
+            const maxTotal = gradedAssignments.reduce(
+              (sum, a) => sum + ((a as { totalPoints?: number }).totalPoints ?? 0),
+              0
+            );
             const overallGrade = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
 
             return { ...student, grades: newGrades, overallGrade };
@@ -91,10 +90,10 @@ export function useGradebook(classId: string) {
     }
   };
 
-  const bulkUpdateGrades = async (operations: BulkGradeOperation[]) => {
+  const bulkUpdateGrades = async (assignmentId: string, operations: BulkGradeDto[]) => {
     setSaving(true);
     try {
-      await gradesApi.bulkUpdate(operations);
+      await gradesApi.bulkUpdate(assignmentId, operations);
       await fetchGradebook(); // Refetch to get updated data
     } finally {
       setSaving(false);

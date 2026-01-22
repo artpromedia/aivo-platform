@@ -47,6 +47,7 @@ const AuthContext = createContext<AuthContextValue>({
   userInitials: null,
   userRole: null,
   roles: [],
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   logout: async () => {},
 });
 
@@ -100,7 +101,7 @@ export function Providers({ children, initialAuth }: ProvidersProps) {
 
   return (
     <AuthProvider initialAuth={initialAuth || defaultAuth}>
-      <GradeThemeProvider initialGrade="G6_8">
+      <GradeThemeProvider initialTheme="navigator">
         <AccessibilityProvider>
           <WebPushProvider
             vapidPublicKey={VAPID_PUBLIC_KEY}

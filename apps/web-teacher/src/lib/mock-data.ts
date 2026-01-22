@@ -678,18 +678,19 @@ export function getClassDashboardData(classId: string): DashboardData | null {
   const classData = mockClasses.find((c) => c.id === classId);
   if (!classData) return null;
 
-  const studentIds = classData.students.map((s) => s.learnerId);
+  const students = classData.students ?? [];
+  const studentIds = students.map((s) => s.learnerId);
 
   return {
     stats: {
-      totalStudents: classData.studentCount,
+      totalStudents: classData.studentCount ?? students.length,
       activeClasses: 1,
-      averageMastery: classData.averageScore || 0,
-      atRiskStudents: classData.students.filter(
+      averageMastery: classData.averageScore ?? 0,
+      atRiskStudents: students.filter(
         (s) => s.learner.riskLevel && ['medium', 'high', 'critical'].includes(s.learner.riskLevel)
       ).length,
-      iepStudents: classData.students.filter((s) => s.learner.hasIep).length,
-      plan504Students: classData.students.filter((s) => s.learner.has504).length,
+      iepStudents: students.filter((s) => s.learner.hasIep).length,
+      plan504Students: students.filter((s) => s.learner.has504).length,
       pendingGrades: Math.floor(Math.random() * 10),
       unreadMessages: Math.floor(Math.random() * 5),
       upcomingDeadlines: 2,

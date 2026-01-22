@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition, @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element */
 /**
  * Student Card Component
  *
@@ -26,11 +26,25 @@ export function StudentCard({
   onMessage,
   className,
 }: StudentCardProps) {
-  const initials = `${student.firstName[0]}${student.lastName[0]}`;
-  const fullName = `${student.firstName} ${student.lastName}`;
+  const initials = `${(student.firstName ?? '').charAt(0)}${(student.lastName ?? '').charAt(0)}`;
+  const fullName = `${student.firstName ?? ''} ${student.lastName ?? ''}`;
   const progress = 'currentGrade' in student ? student.currentGrade : null;
-  const hasAccommodations = 'accommodations' in student && student.accommodations?.length > 0;
+  const hasAccommodations =
+    'accommodations' in student && (student.accommodations?.length ?? 0) > 0;
   const hasIep = 'hasIep' in student && student.hasIep;
+  // Get gradeLevel from Student or from nested student property in StudentRosterEntry
+  const gradeLevel =
+    'gradeLevel' in student
+      ? student.gradeLevel
+      : 'student' in student
+        ? student.student.gradeLevel
+        : undefined;
+  const studentNumber =
+    'studentNumber' in student
+      ? student.studentNumber
+      : 'student' in student
+        ? student.student.studentNumber
+        : undefined;
 
   return (
     <div className={cn('rounded-xl border bg-white p-4', className)}>
@@ -57,11 +71,11 @@ export function StudentCard({
             {fullName}
           </Link>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-            {'grade' in student && <span>Grade {student.grade}</span>}
-            {'studentId' in student && student.studentId && (
+            {gradeLevel && <span>Grade {gradeLevel}</span>}
+            {studentNumber && (
               <>
                 <span>·</span>
-                <span>ID: {student.studentId}</span>
+                <span>ID: {studentNumber}</span>
               </>
             )}
           </div>
@@ -75,10 +89,10 @@ export function StudentCard({
             )}
             {hasAccommodations && (
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">
-                {(student as StudentRosterEntry).accommodations?.length} accommodations
+                {(student as StudentRosterEntry).accommodations?.length ?? 0} accommodations
               </span>
             )}
-            {'missingAssignments' in student && student.missingAssignments > 0 && (
+            {'missingAssignments' in student && (student.missingAssignments ?? 0) > 0 && (
               <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">
                 {student.missingAssignments} missing
               </span>
@@ -142,8 +156,8 @@ export function StudentListItem({
   onClick,
   className,
 }: StudentListItemProps) {
-  const initials = `${student.firstName[0]}${student.lastName[0]}`;
-  const fullName = `${student.firstName} ${student.lastName}`;
+  const initials = `${(student.firstName ?? '').charAt(0)}${(student.lastName ?? '').charAt(0)}`;
+  const fullName = `${student.firstName ?? ''} ${student.lastName ?? ''}`;
 
   return (
     <div

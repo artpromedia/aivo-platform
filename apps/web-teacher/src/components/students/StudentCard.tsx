@@ -7,8 +7,9 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+
 import type { Student } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface StudentCardProps {
   student: Student;
@@ -51,9 +52,7 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
     >
       {/* Risk indicator stripe */}
       {riskStyle && student.riskLevel !== 'critical' && (
-        <div
-          className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-xl', riskStyle.dot)}
-        />
+        <div className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-xl', riskStyle.dot)} />
       )}
 
       {/* Header */}
@@ -62,12 +61,12 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
         {student.avatar ? (
           <img
             src={student.avatar}
-            alt={student.name}
+            alt={student.name ?? 'Student'}
             className="h-12 w-12 rounded-full object-cover flex-shrink-0"
           />
         ) : (
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-semibold flex-shrink-0">
-            {student.name
+            {(student.name ?? 'S')
               .split(' ')
               .map((n) => n[0])
               .join('')}
@@ -77,7 +76,7 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
         {/* Name & Grade */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-text truncate">{student.name}</h3>
+            <h3 className="font-semibold text-text truncate">{student.name ?? 'Unknown'}</h3>
             {/* IEP Badge */}
             {student.hasIep && (
               <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">
@@ -119,10 +118,10 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
                 student.progressPercentage >= 75
                   ? 'bg-success'
                   : student.progressPercentage >= 50
-                  ? 'bg-primary'
-                  : student.progressPercentage >= 25
-                  ? 'bg-warning'
-                  : 'bg-error'
+                    ? 'bg-primary'
+                    : student.progressPercentage >= 25
+                      ? 'bg-warning'
+                      : 'bg-error'
               )}
               style={{ width: `${student.progressPercentage}%` }}
             />
@@ -149,13 +148,13 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
             student.engagementLevel === 'high'
               ? 'text-success'
               : student.engagementLevel === 'low'
-              ? 'text-error'
-              : ''
+                ? 'text-error'
+                : ''
           }
         />
         <StatItem
           icon={<ClockIcon className="h-3.5 w-3.5" />}
-          value={student.lastActivity ? formatTimeAgo(student.lastActivity) : 'Never'}
+          value={student.lastActivity ? formatTimeAgo(String(student.lastActivity)) : 'Never'}
           label="Last Active"
         />
       </div>
@@ -167,11 +166,14 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
             <span className="text-xs font-medium text-blue-700">IEP Goals</span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-success">
-                {student.iepDetails.goals.filter((g) => g.status === 'on_track').length} on track
+                {student.iepDetails.goals?.filter((g) => g.status === 'on_track').length ?? 0} on
+                track
               </span>
-              {student.iepDetails.goals.filter((g) => g.status === 'at_risk').length > 0 && (
+              {(student.iepDetails.goals?.filter((g) => g.status === 'at_risk').length ?? 0) >
+                0 && (
                 <span className="text-xs text-warning">
-                  {student.iepDetails.goals.filter((g) => g.status === 'at_risk').length} at risk
+                  {student.iepDetails.goals?.filter((g) => g.status === 'at_risk').length ?? 0} at
+                  risk
                 </span>
               )}
             </div>
@@ -187,8 +189,8 @@ export function StudentCard({ student, onClick, className }: StudentCardProps) {
             student.riskLevel === 'critical'
               ? 'bg-error/10 text-error'
               : student.riskLevel === 'high'
-              ? 'bg-error/10 text-error'
-              : 'bg-warning/10 text-warning'
+                ? 'bg-error/10 text-error'
+                : 'bg-warning/10 text-warning'
           )}
         >
           <AlertIcon className="h-4 w-4 flex-shrink-0" />
@@ -213,9 +215,7 @@ interface StatItemProps {
 function StatItem({ icon, value, label, valueClassName }: StatItemProps) {
   return (
     <div className="text-center">
-      <div className="flex items-center justify-center gap-1 text-muted mb-0.5">
-        {icon}
-      </div>
+      <div className="flex items-center justify-center gap-1 text-muted mb-0.5">{icon}</div>
       <p className={cn('text-sm font-semibold text-text capitalize', valueClassName)}>{value}</p>
       <p className="text-xs text-muted">{label}</p>
     </div>

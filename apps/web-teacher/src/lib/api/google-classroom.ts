@@ -312,10 +312,10 @@ export async function getSyncHistory(query?: SyncHistoryQuery): Promise<SyncHist
 /**
  * Post a lesson as a Google Classroom assignment
  */
-export async function postAssignment(request: AssignmentPostRequest): Promise<AssignmentLink> {
+export async function postAssignment(postRequest: AssignmentPostRequest): Promise<AssignmentLink> {
   return request<AssignmentLink>('/assignments', {
     method: 'POST',
-    body: JSON.stringify(request),
+    body: JSON.stringify(postRequest),
   });
 }
 

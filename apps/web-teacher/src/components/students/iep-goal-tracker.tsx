@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unused-vars */
 /**
  * IEP Goal Tracker Component
  *
@@ -57,8 +57,8 @@ interface IEPGoalCardProps {
 
 function IEPGoalCard({ goal, onAddProgress, onViewDetails }: IEPGoalCardProps) {
   const [showAddProgress, setShowAddProgress] = React.useState(false);
-  const progressPercent = Math.min(100, (goal.currentProgress / goal.targetValue) * 100);
-  const isOnTrack = goal.status === 'on-track';
+  const progressPercent = Math.min(100, ((goal.currentProgress ?? 0) / goal.targetValue) * 100);
+  const isOnTrack = goal.status === 'on_track';
   const isMastered = goal.status === 'mastered';
 
   return (
@@ -117,7 +117,7 @@ function IEPGoalCard({ goal, onAddProgress, onViewDetails }: IEPGoalCardProps) {
 
       {/* Timeline */}
       <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-        <span>Start: {formatDate(goal.startDate)}</span>
+        <span>Created: {formatDate(goal.createdAt)}</span>
         <span>Target: {formatDate(goal.targetDate)}</span>
       </div>
 
@@ -134,7 +134,7 @@ function IEPGoalCard({ goal, onAddProgress, onViewDetails }: IEPGoalCardProps) {
           {showAddProgress ? (
             <AddProgressForm
               goalId={goal.id}
-              unit={goal.unit}
+              unit={goal.unit ?? '%'}
               onSubmit={async (progress) => {
                 await onAddProgress(goal.id, progress);
                 setShowAddProgress(false);
@@ -160,13 +160,14 @@ function IEPGoalCard({ goal, onAddProgress, onViewDetails }: IEPGoalCardProps) {
 }
 
 function StatusBadge({ status }: { status: IEPGoal['status'] }) {
-  const styles = {
-    'not-started': 'bg-gray-100 text-gray-600',
-    'in-progress': 'bg-blue-100 text-blue-700',
-    'on-track': 'bg-green-100 text-green-700',
-    'at-risk': 'bg-orange-100 text-orange-700',
+  const styles: Record<string, string> = {
+    not_started: 'bg-gray-100 text-gray-600',
+    in_progress: 'bg-blue-100 text-blue-700',
+    on_track: 'bg-green-100 text-green-700',
+    at_risk: 'bg-orange-100 text-orange-700',
     mastered: 'bg-purple-100 text-purple-700',
     discontinued: 'bg-gray-100 text-gray-500',
+    met: 'bg-green-100 text-green-700',
   };
 
   return (

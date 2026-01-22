@@ -5,7 +5,6 @@
  * assignment to classes, and grading operations
  */
 
-import { api } from './client';
 import type {
   Assessment,
   CreateAssessmentDto,
@@ -18,6 +17,8 @@ import type {
   QuestionBankFilter,
 } from '../types';
 
+import { api } from './client';
+
 export const assessmentsApi = {
   // ══════════════════════════════════════════════════════════════════════════
   // ASSESSMENT CRUD
@@ -26,12 +27,7 @@ export const assessmentsApi = {
   /**
    * Get all assessments for the current teacher
    */
-  async getAll(params?: {
-    subject?: string;
-    gradeLevel?: string;
-    type?: string;
-    status?: string;
-  }) {
+  async getAll(params?: { subject?: string; gradeLevel?: string; type?: string; status?: string }) {
     return api.get<Assessment[]>('/assessments', params);
   },
 
@@ -60,7 +56,7 @@ export const assessmentsApi = {
    * Delete an assessment
    */
   async delete(id: string) {
-    return api.delete<void>(`/assessments/${id}`);
+    return api.delete<Record<string, never>>(`/assessments/${id}`);
   },
 
   /**
@@ -113,7 +109,9 @@ export const assessmentsApi = {
    * Remove an assignment
    */
   async removeAssignment(assessmentId: string, assignmentId: string) {
-    return api.delete<void>(`/assessments/${assessmentId}/assignments/${assignmentId}`);
+    return api.delete<Record<string, never>>(
+      `/assessments/${assessmentId}/assignments/${assignmentId}`
+    );
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -132,7 +130,9 @@ export const assessmentsApi = {
    * Get a single submission
    */
   async getSubmission(assessmentId: string, submissionId: string) {
-    return api.get<AssessmentSubmission>(`/assessments/${assessmentId}/submissions/${submissionId}`);
+    return api.get<AssessmentSubmission>(
+      `/assessments/${assessmentId}/submissions/${submissionId}`
+    );
   },
 
   /**
@@ -168,7 +168,10 @@ export const assessmentsApi = {
    * Search the question bank
    */
   async searchQuestionBank(filter: QuestionBankFilter) {
-    return api.get<QuestionBankItem[]>('/assessments/question-bank', filter);
+    return api.get<QuestionBankItem[]>(
+      '/assessments/question-bank',
+      filter as unknown as Record<string, unknown>
+    );
   },
 
   /**

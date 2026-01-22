@@ -6,11 +6,12 @@
 
 'use client';
 
+import Link from 'next/link';
 import * as React from 'react';
 import { useState } from 'react';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+
 import type { Student, IEPGoal, Accommodation } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface StudentDetailModalProps {
   student: Student;
@@ -30,13 +31,14 @@ export function StudentDetailModal({
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   // Determine available tabs
-  const tabs: { id: TabType; label: string; show: boolean }[] = [
-    { id: 'overview', label: 'Overview', show: true },
-    { id: 'iep', label: 'IEP', show: student.hasIep },
-    { id: '504', label: '504 Plan', show: student.has504 },
-    { id: 'performance', label: 'Performance', show: true },
-    { id: 'interventions', label: 'Interventions', show: !!student.interventions?.length },
-  ].filter((tab) => tab.show);
+  const allTabs: { id: TabType; label: string; show: boolean }[] = [
+    { id: 'overview' as const, label: 'Overview', show: true },
+    { id: 'iep' as const, label: 'IEP', show: student.hasIep ?? false },
+    { id: '504' as const, label: '504 Plan', show: student.has504 ?? false },
+    { id: 'performance' as const, label: 'Performance', show: true },
+    { id: 'interventions' as const, label: 'Interventions', show: !!student.interventions?.length },
+  ];
+  const tabs = allTabs.filter((tab) => tab.show);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -52,12 +54,12 @@ export function StudentDetailModal({
             {student.avatar ? (
               <img
                 src={student.avatar}
-                alt={student.name}
+                alt={student.name ?? 'Student'}
                 className="h-16 w-16 rounded-full object-cover"
               />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-white text-xl font-bold">
-                {student.name
+                {(student.name ?? 'S')
                   .split(' ')
                   .map((n) => n[0])
                   .join('')}
@@ -127,7 +129,9 @@ export function StudentDetailModal({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+              }}
               className={cn(
                 'px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 activeTab === tab.id
@@ -142,21 +146,16 @@ export function StudentDetailModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'overview' && (
-            <OverviewTab student={student} />
-          )}
-          {activeTab === 'iep' && student.iepDetails && (
-            <IEPTab iepDetails={student.iepDetails} />
-          )}
+          {activeTab === 'overview' && <OverviewTab student={student} />}
+          {activeTab === 'iep' && student.iepDetails && <IEPTab iepDetails={student.iepDetails} />}
           {activeTab === '504' && student.plan504Details && (
-            <Plan504Tab plan504Details={student.plan504Details} accommodations={student.accommodations || []} />
+            <Plan504Tab
+              plan504Details={student.plan504Details}
+              accommodations={student.accommodations || []}
+            />
           )}
-          {activeTab === 'performance' && (
-            <PerformanceTab student={student} />
-          )}
-          {activeTab === 'interventions' && (
-            <InterventionsTab student={student} />
-          )}
+          {activeTab === 'performance' && <PerformanceTab student={student} />}
+          {activeTab === 'interventions' && <InterventionsTab student={student} />}
         </div>
 
         {/* Footer Actions */}
@@ -232,34 +231,36 @@ function OverviewTab({ student }: { student: Student }) {
             student.engagementLevel === 'high'
               ? 'success'
               : student.engagementLevel === 'low'
-              ? 'error'
-              : undefined
+                ? 'error'
+                : undefined
           }
         />
       </div>
 
       {/* Accommodations Summary (if applicable) */}
-      {(student.hasIep || student.has504) && student.accommodations && student.accommodations.length > 0 && (
-        <div className="rounded-xl border border-border p-4">
-          <h3 className="font-semibold text-text mb-3 flex items-center gap-2">
-            <AccommodationIcon className="h-5 w-5 text-primary" />
-            Active Accommodations
-          </h3>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {student.accommodations
-              .filter((a) => a.implementationStatus === 'active')
-              .slice(0, 6)
-              .map((accommodation) => (
-                <AccommodationItem key={accommodation.id} accommodation={accommodation} />
-              ))}
+      {(student.hasIep || student.has504) &&
+        student.accommodations &&
+        student.accommodations.length > 0 && (
+          <div className="rounded-xl border border-border p-4">
+            <h3 className="font-semibold text-text mb-3 flex items-center gap-2">
+              <AccommodationIcon className="h-5 w-5 text-primary" />
+              Active Accommodations
+            </h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {student.accommodations
+                .filter((a) => a.implementationStatus === 'active')
+                .slice(0, 6)
+                .map((accommodation) => (
+                  <AccommodationItem key={accommodation.id} accommodation={accommodation} />
+                ))}
+            </div>
+            {student.accommodations.length > 6 && (
+              <p className="mt-2 text-sm text-muted">
+                +{student.accommodations.length - 6} more accommodations
+              </p>
+            )}
           </div>
-          {student.accommodations.length > 6 && (
-            <p className="mt-2 text-sm text-muted">
-              +{student.accommodations.length - 6} more accommodations
-            </p>
-          )}
-        </div>
-      )}
+        )}
 
       {/* Risk Factors */}
       {student.riskFactors && student.riskFactors.length > 0 && (
@@ -269,17 +270,28 @@ function OverviewTab({ student }: { student: Student }) {
             Risk Factors
           </h3>
           <div className="space-y-2">
-            {student.riskFactors.map((factor) => (
-              <div key={factor.id} className="flex items-start gap-3 p-2 bg-surface rounded-lg">
-                <RiskSeverityDot severity={factor.severity} />
-                <div>
-                  <p className="font-medium text-text">{factor.description}</p>
-                  <p className="text-xs text-muted">
-                    Detected {formatDate(factor.detectedAt)} • {formatRiskType(factor.type)}
-                  </p>
+            {student.riskFactors.map((factor, index) => {
+              // Handle both string and RiskFactor types
+              if (typeof factor === 'string') {
+                return (
+                  <div key={index} className="flex items-start gap-3 p-2 bg-surface rounded-lg">
+                    <p className="font-medium text-text">{factor}</p>
+                  </div>
+                );
+              }
+              return (
+                <div key={factor.id} className="flex items-start gap-3 p-2 bg-surface rounded-lg">
+                  <RiskSeverityDot severity={factor.severity} />
+                  <div>
+                    <p className="font-medium text-text">{factor.description}</p>
+                    <p className="text-xs text-muted">
+                      Detected {formatDate(String(factor.detectedAt))} •{' '}
+                      {formatRiskType(factor.type)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -292,15 +304,18 @@ function OverviewTab({ student }: { student: Student }) {
             Recent SEL Observations
           </h3>
           <div className="space-y-2">
-            {student.recentSelObservations.slice(0, 3).map((obs) => (
-              <div key={obs.id} className="flex items-start gap-3 p-2 bg-surface-muted rounded-lg">
-                <SELLevelBadge level={obs.level} />
+            {student.recentSelObservations.slice(0, 3).map((obs, index) => (
+              <div
+                key={obs.id ?? index}
+                className="flex items-start gap-3 p-2 bg-surface-muted rounded-lg"
+              >
+                <SELLevelBadge level={obs.level ?? 'developing'} />
                 <div className="flex-1">
                   <p className="font-medium text-text capitalize">
-                    {obs.competency.replace(/_/g, ' ')}
+                    {(obs.competency ?? obs.category ?? '').replace(/_/g, ' ')}
                   </p>
-                  <p className="text-sm text-muted">{obs.context}</p>
-                  <p className="text-xs text-muted mt-1">{formatDate(obs.date)}</p>
+                  <p className="text-sm text-muted">{obs.context ?? obs.observation}</p>
+                  <p className="text-xs text-muted mt-1">{formatDate(String(obs.date))}</p>
                 </div>
               </div>
             ))}
@@ -317,7 +332,10 @@ function OverviewTab({ student }: { student: Student }) {
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {student.parentContacts.map((contact) => (
-              <div key={contact.id} className="flex items-center gap-3 p-3 bg-surface-muted rounded-lg">
+              <div
+                key={contact.id}
+                className="flex items-center gap-3 p-3 bg-surface-muted rounded-lg"
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <UserIcon className="h-5 w-5" />
                 </div>
@@ -364,7 +382,9 @@ function IEPTab({ iepDetails }: { iepDetails: NonNullable<Student['iepDetails']>
           </div>
           <div className="text-right">
             <p className="text-sm text-blue-700">Next Review</p>
-            <p className="font-medium text-blue-900">{formatDate(iepDetails.nextReviewDate)}</p>
+            <p className="font-medium text-blue-900">
+              {formatDate(String(iepDetails.nextReviewDate ?? ''))}
+            </p>
           </div>
         </div>
         {iepDetails.caseManager && (
@@ -374,25 +394,29 @@ function IEPTab({ iepDetails }: { iepDetails: NonNullable<Student['iepDetails']>
 
       {/* Goals */}
       <div>
-        <h3 className="font-semibold text-text mb-3">IEP Goals ({iepDetails.goals.length})</h3>
+        <h3 className="font-semibold text-text mb-3">
+          IEP Goals ({iepDetails.goals?.length ?? 0})
+        </h3>
         <div className="space-y-4">
-          {iepDetails.goals.map((goal) => (
-            <IEPGoalCard key={goal.id} goal={goal} />
+          {iepDetails.goals?.map((goal) => (
+            <IEPGoalCard key={goal.id} goal={goal as unknown as IEPGoal} />
           ))}
         </div>
       </div>
 
       {/* Services */}
-      {iepDetails.services.length > 0 && (
+      {(iepDetails.services?.length ?? 0) > 0 && (
         <div>
           <h3 className="font-semibold text-text mb-3">Related Services</h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            {iepDetails.services.map((service) => (
-              <div key={service.id} className="rounded-lg border border-border p-3">
-                <p className="font-medium text-text">{service.serviceType}</p>
+            {iepDetails.services?.map((service, index) => (
+              <div key={service.id ?? index} className="rounded-lg border border-border p-3">
+                <p className="font-medium text-text">{service.serviceType ?? service.type}</p>
                 <p className="text-sm text-muted">{service.provider}</p>
                 <p className="text-xs text-muted mt-1">
-                  {service.frequency} • {service.duration} • {service.location}
+                  {service.frequency}
+                  {service.duration && ` • ${service.duration}`}
+                  {service.location && ` • ${service.location}`}
                 </p>
               </div>
             ))}
@@ -416,12 +440,18 @@ function Plan504Tab({
       <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-purple-900">504 Plan Status: {plan504Details.status}</h3>
+            <h3 className="font-semibold text-purple-900">
+              504 Plan Status: {plan504Details.status}
+            </h3>
             <p className="text-sm text-purple-700">{plan504Details.disablingCondition}</p>
           </div>
           <div className="text-right">
             <p className="text-sm text-purple-700">Next Review</p>
-            <p className="font-medium text-purple-900">{formatDate(plan504Details.nextReviewDate)}</p>
+            <p className="font-medium text-purple-900">
+              {formatDate(
+                String(plan504Details.nextReviewDate ?? plan504Details.renewalDate ?? '')
+              )}
+            </p>
           </div>
         </div>
       </div>
@@ -440,7 +470,11 @@ function Plan504Tab({
               </h4>
               <div className="space-y-2">
                 {categoryAccommodations.map((accommodation) => (
-                  <AccommodationItem key={accommodation.id} accommodation={accommodation} detailed />
+                  <AccommodationItem
+                    key={accommodation.id}
+                    accommodation={accommodation}
+                    detailed
+                  />
                 ))}
               </div>
             </div>
@@ -453,8 +487,16 @@ function Plan504Tab({
 
 function PerformanceTab({ student }: { student: Student }) {
   // Generate sample data from student metrics or use fallback
-  const performanceData = student.performanceHistory || generatePerformanceHistory(student);
-  const masteryData = student.masteryTrends || generateMasteryTrends(student);
+  const performanceData = (student.performanceHistory || generatePerformanceHistory(student)).map(
+    (p) => ({
+      date: typeof p.date === 'string' ? p.date : p.date.toISOString(),
+      score: p.score,
+    })
+  );
+  const masteryData = (student.masteryTrends || generateMasteryTrends(student)).map((item) => ({
+    name: 'name' in item ? item.name : item.skill,
+    level: item.level,
+  }));
 
   return (
     <div className="space-y-6">
@@ -477,14 +519,20 @@ function PerformanceTab({ student }: { student: Student }) {
                 <div
                   className={cn(
                     'h-full rounded-full transition-all',
-                    subject.level >= 80 ? 'bg-success' :
-                    subject.level >= 60 ? 'bg-primary' :
-                    subject.level >= 40 ? 'bg-warning' : 'bg-error'
+                    subject.level >= 80
+                      ? 'bg-success'
+                      : subject.level >= 60
+                        ? 'bg-primary'
+                        : subject.level >= 40
+                          ? 'bg-warning'
+                          : 'bg-error'
                   )}
                   style={{ width: `${subject.level}%` }}
                 />
               </div>
-              <span className="text-sm font-medium text-text w-10 text-right">{subject.level}%</span>
+              <span className="text-sm font-medium text-text w-10 text-right">
+                {subject.level}%
+              </span>
             </div>
           ))}
         </div>
@@ -497,7 +545,11 @@ function PerformanceTab({ student }: { student: Student }) {
           <p className="text-xs text-muted mt-1">Average Score</p>
         </div>
         <div className="rounded-xl border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-success">{student.completedAssignments ?? 0}</p>
+          <p className="text-2xl font-bold text-success">
+            {typeof student.completedAssignments === 'number'
+              ? student.completedAssignments
+              : (student.completedAssignments?.length ?? 0)}
+          </p>
           <p className="text-xs text-muted mt-1">Completed</p>
         </div>
         <div className="rounded-xl border border-border p-4 text-center">
@@ -561,7 +613,13 @@ function PerformanceLineChart({ data }: { data: { date: string; score: number }[
       {/* Area fill */}
       <path d={areaPath} className="fill-primary/10" />
       {/* Line */}
-      <path d={linePath} className="stroke-primary fill-none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={linePath}
+        className="stroke-primary fill-none"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       {/* Data points */}
       {data.map((d, i) => {
         const x = padding + ((width - 2 * padding) * i) / (data.length - 1 || 1);
@@ -622,8 +680,8 @@ function InterventionsTab({ student }: { student: Student }) {
                       intervention.status === 'completed'
                         ? 'bg-success/10 text-success'
                         : intervention.status === 'in_progress'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted/10 text-muted'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted/10 text-muted'
                     )}
                   >
                     {intervention.status.replace('_', ' ')}
@@ -675,15 +733,17 @@ function IEPGoalCard({ goal }: { goal: IEPGoal }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-medium text-muted uppercase">{goal.domain}</span>
-            <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', status.bg, status.text)}>
+            <span
+              className={cn('rounded-full px-2 py-0.5 text-xs font-medium', status.bg, status.text)}
+            >
               {goal.status.replace('_', ' ')}
             </span>
           </div>
           <p className="text-text">{goal.description}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-2xl font-bold text-text">{goal.currentProgress}%</p>
-          <p className="text-xs text-muted">of {goal.targetProgress}%</p>
+          <p className="text-2xl font-bold text-text">{goal.currentProgress ?? 0}%</p>
+          <p className="text-xs text-muted">of {goal.targetProgress ?? 100}%</p>
         </div>
       </div>
 
@@ -693,15 +753,21 @@ function IEPGoalCard({ goal }: { goal: IEPGoal }) {
           <div
             className={cn(
               'h-full rounded-full transition-all',
-              goal.status === 'met' ? 'bg-success' : goal.status === 'at_risk' ? 'bg-warning' : 'bg-primary'
+              goal.status === 'met'
+                ? 'bg-success'
+                : goal.status === 'at_risk'
+                  ? 'bg-warning'
+                  : 'bg-primary'
             )}
-            style={{ width: `${(goal.currentProgress / goal.targetProgress) * 100}%` }}
+            style={{
+              width: `${((goal.currentProgress ?? 0) / (goal.targetProgress ?? 100)) * 100}%`,
+            }}
           />
         </div>
       </div>
 
       {/* Target Date */}
-      <p className="mt-2 text-xs text-muted">Target: {formatDate(goal.targetDate)}</p>
+      <p className="mt-2 text-xs text-muted">Target: {formatDate(String(goal.targetDate))}</p>
     </div>
   );
 }
@@ -720,9 +786,7 @@ function AccommodationItem({
         accommodation.isCritical ? 'bg-error/5 border border-error/20' : 'bg-surface-muted'
       )}
     >
-      {accommodation.isCritical && (
-        <span className="text-error text-xs font-bold mt-0.5">!</span>
-      )}
+      {accommodation.isCritical && <span className="text-error text-xs font-bold mt-0.5">!</span>}
       <div className="flex-1">
         <p className="text-sm text-text">{accommodation.description}</p>
         {detailed && accommodation.notes && (
@@ -793,7 +857,11 @@ function RiskSeverityDot({ severity }: { severity: string }) {
     high: 'bg-error',
   };
 
-  return <div className={cn('h-2 w-2 rounded-full mt-1.5 flex-shrink-0', colors[severity] || 'bg-muted')} />;
+  return (
+    <div
+      className={cn('h-2 w-2 rounded-full mt-1.5 flex-shrink-0', colors[severity] || 'bg-muted')}
+    />
+  );
 }
 
 function SELLevelBadge({ level }: { level: string }) {

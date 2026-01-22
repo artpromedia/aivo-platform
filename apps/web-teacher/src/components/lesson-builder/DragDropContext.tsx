@@ -10,9 +10,21 @@
  * - Accessible drag-and-drop
  */
 
-import React from 'react';
-import { DndContext as DndKitContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import type {
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+  DndContext as DndKitContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type KeyboardCoordinateGetter,
+} from '@dnd-kit/core';
 import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import React from 'react';
 
 // ════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -54,14 +66,15 @@ export function DragDropContext({
     // Keyboard sensor for accessibility
     useSensor(KeyboardSensor, {
       // Custom coordinate getter for keyboard navigation
-      coordinateGetter: (event, { context }) => {
-        if (!context.active) return null;
+      coordinateGetter: ((event, { context }) => {
+        if (!context.active) return undefined;
 
         const { code } = event;
         // Cast context to include currentCoordinates (internal dnd-kit property)
-        const currentCoordinates = (context as { currentCoordinates?: { x: number; y: number } }).currentCoordinates;
+        const currentCoordinates = (context as { currentCoordinates?: { x: number; y: number } })
+          .currentCoordinates;
 
-        if (!currentCoordinates) return null;
+        if (!currentCoordinates) return undefined;
 
         const delta = 20; // Move 20px per keypress
 
@@ -77,9 +90,9 @@ export function DragDropContext({
               y: currentCoordinates.y + delta,
             };
           default:
-            return null;
+            return undefined;
         }
-      },
+      }) as KeyboardCoordinateGetter,
     })
   );
 
@@ -219,11 +232,7 @@ interface DragPreviewProps {
 }
 
 export function DragPreview({ children, className }: DragPreviewProps) {
-  return (
-    <div className={`opacity-50 ${className || ''}`}>
-      {children}
-    </div>
-  );
+  return <div className={`opacity-50 ${className || ''}`}>{children}</div>;
 }
 
 /**
@@ -236,11 +245,7 @@ interface DropIndicatorProps {
   className?: string;
 }
 
-export function DropIndicator({
-  isVisible,
-  position = 'bottom',
-  className,
-}: DropIndicatorProps) {
+export function DropIndicator({ isVisible, position = 'bottom', className }: DropIndicatorProps) {
   if (!isVisible) return null;
 
   const positionClasses = {
@@ -267,12 +272,7 @@ export function DropIndicator({
  */
 export function DragDropAnnouncer() {
   return (
-    <div
-      className="sr-only"
-      role="status"
-      aria-live="assertive"
-      aria-atomic="true"
-    >
+    <div className="sr-only" role="status" aria-live="assertive" aria-atomic="true">
       {/* Announcements will be dynamically inserted here */}
     </div>
   );

@@ -2,20 +2,27 @@
 
 /**
  * Question Editor
- * 
+ *
  * Form for creating and editing questions.
  * Adapts to different question types.
  */
 
+import { Plus, Trash2, GripVertical, Check, X } from 'lucide-react';
 import React, { useState, useCallback } from 'react';
+
+import type { Question, QuestionOption, MatchingPair, FillBlankSlot, Difficulty } from './types';
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -23,15 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Plus, Trash2, GripVertical, Check, X } from 'lucide-react';
-
-import type { Question, QuestionOption, MatchingPair, FillBlankSlot, Difficulty } from './types';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 // ============================================================================
 // PROPS
@@ -47,13 +48,17 @@ interface QuestionEditorProps {
 // COMPONENT
 // ============================================================================
 
-export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: QuestionEditorProps) {
+export function QuestionEditor({
+  question: initialQuestion,
+  onSave,
+  onCancel,
+}: QuestionEditorProps) {
   const [question, setQuestion] = useState<Question>(initialQuestion);
   const [tagInput, setTagInput] = useState('');
 
   // Update question field
   const updateField = useCallback(<K extends keyof Question>(field: K, value: Question[K]) => {
-    setQuestion(prev => ({ ...prev, [field]: value }));
+    setQuestion((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   // Handle save
@@ -68,14 +73,14 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
       text: '',
       isCorrect: false,
     };
-    setQuestion(prev => ({
+    setQuestion((prev) => ({
       ...prev,
       options: [...(prev.options ?? []), newOption],
     }));
   }, []);
 
   const updateOption = useCallback((index: number, updates: Partial<QuestionOption>) => {
-    setQuestion(prev => {
+    setQuestion((prev) => {
       const options = [...(prev.options ?? [])];
       options[index] = { ...options[index], ...updates };
       return { ...prev, options };
@@ -83,14 +88,14 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
   }, []);
 
   const removeOption = useCallback((index: number) => {
-    setQuestion(prev => ({
+    setQuestion((prev) => ({
       ...prev,
       options: (prev.options ?? []).filter((_, i) => i !== index),
     }));
   }, []);
 
   const setCorrectOption = useCallback((index: number) => {
-    setQuestion(prev => ({
+    setQuestion((prev) => ({
       ...prev,
       correctOption: index,
       options: (prev.options ?? []).map((opt, i) => ({
@@ -101,15 +106,13 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
   }, []);
 
   const toggleCorrectOption = useCallback((index: number) => {
-    setQuestion(prev => {
+    setQuestion((prev) => {
       const options = [...(prev.options ?? [])];
       options[index] = { ...options[index], isCorrect: !options[index].isCorrect };
       return {
         ...prev,
         options,
-        correctOptions: options
-          .map((opt, i) => (opt.isCorrect ? i : -1))
-          .filter(i => i >= 0),
+        correctOptions: options.map((opt, i) => (opt.isCorrect ? i : -1)).filter((i) => i >= 0),
       };
     });
   }, []);
@@ -117,7 +120,7 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
   // Tag handlers
   const addTag = useCallback(() => {
     if (tagInput.trim() && !question.tags.includes(tagInput.trim())) {
-      setQuestion(prev => ({
+      setQuestion((prev) => ({
         ...prev,
         tags: [...prev.tags, tagInput.trim()],
       }));
@@ -126,9 +129,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
   }, [tagInput, question.tags]);
 
   const removeTag = useCallback((tag: string) => {
-    setQuestion(prev => ({
+    setQuestion((prev) => ({
       ...prev,
-      tags: prev.tags.filter(t => t !== tag),
+      tags: prev.tags.filter((t) => t !== tag),
     }));
   }, []);
 
@@ -139,14 +142,14 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
       left: '',
       right: '',
     };
-    setQuestion(prev => ({
+    setQuestion((prev) => ({
       ...prev,
       pairs: [...(prev.pairs ?? []), newPair],
     }));
   }, []);
 
   const updatePair = useCallback((index: number, updates: Partial<MatchingPair>) => {
-    setQuestion(prev => {
+    setQuestion((prev) => {
       const pairs = [...(prev.pairs ?? [])];
       pairs[index] = { ...pairs[index], ...updates };
       return { ...prev, pairs };
@@ -154,7 +157,7 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
   }, []);
 
   const removePair = useCallback((index: number) => {
-    setQuestion(prev => ({
+    setQuestion((prev) => ({
       ...prev,
       pairs: (prev.pairs ?? []).filter((_, i) => i !== index),
     }));
@@ -170,7 +173,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
             id="stem"
             placeholder="Enter your question..."
             value={question.stem}
-            onChange={e => updateField('stem', e.target.value)}
+            onChange={(e) => {
+              updateField('stem', e.target.value);
+            }}
             rows={3}
           />
         </div>
@@ -184,14 +189,18 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
               type="number"
               min={1}
               value={question.points}
-              onChange={e => updateField('points', parseInt(e.target.value) || 1)}
+              onChange={(e) => {
+                updateField('points', parseInt(e.target.value) || 1);
+              }}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="difficulty">Difficulty</Label>
             <Select
               value={question.difficulty}
-              onValueChange={v => updateField('difficulty', v as Difficulty)}
+              onValueChange={(v) => {
+                updateField('difficulty', v as Difficulty);
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -223,7 +232,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   id="hint"
                   placeholder="Provide a hint for students..."
                   value={question.hint ?? ''}
-                  onChange={e => updateField('hint', e.target.value)}
+                  onChange={(e) => {
+                    updateField('hint', e.target.value);
+                  }}
                   rows={2}
                 />
               </div>
@@ -233,7 +244,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   id="explanation"
                   placeholder="Explain the correct answer..."
                   value={question.explanation ?? ''}
-                  onChange={e => updateField('explanation', e.target.value)}
+                  onChange={(e) => {
+                    updateField('explanation', e.target.value);
+                  }}
                   rows={2}
                 />
               </div>
@@ -249,18 +262,29 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   <Input
                     placeholder="Add a tag..."
                     value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                    onChange={(e) => {
+                      setTagInput(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
                   />
                   <Button variant="outline" size="icon" onClick={addTag}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {question.tags.map(tag => (
+                  {question.tags.map((tag) => (
                     <Badge key={tag} variant="secondary" className="gap-1">
                       {tag}
-                      <button onClick={() => removeTag(tag)}>
+                      <button
+                        onClick={() => {
+                          removeTag(tag);
+                        }}
+                      >
                         <X className="h-3 w-3" />
                       </button>
                     </Badge>
@@ -278,7 +302,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                 <Switch
                   id="partialCredit"
                   checked={question.partialCredit ?? false}
-                  onCheckedChange={v => updateField('partialCredit', v)}
+                  onCheckedChange={(v) => {
+                    updateField('partialCredit', v);
+                  }}
                 />
               </div>
             </AccordionContent>
@@ -290,9 +316,7 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            Save Question
-          </Button>
+          <Button onClick={handleSave}>Save Question</Button>
         </div>
       </div>
     </ScrollArea>
@@ -323,7 +347,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                         ? 'border-green-500 bg-green-500 text-white'
                         : 'border-muted-foreground'
                     }`}
-                    onClick={() => setCorrectOption(index)}
+                    onClick={() => {
+                      setCorrectOption(index);
+                    }}
                     title="Mark as correct"
                   >
                     {option.isCorrect && <Check className="h-4 w-4" />}
@@ -331,13 +357,17 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   <Input
                     placeholder={`Option ${index + 1}`}
                     value={option.text}
-                    onChange={e => updateOption(index, { text: e.target.value })}
+                    onChange={(e) => {
+                      updateOption(index, { text: e.target.value });
+                    }}
                     className="flex-1"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeOption(index)}
+                    onClick={() => {
+                      removeOption(index);
+                    }}
                     disabled={(question.options?.length ?? 0) <= 2}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -367,7 +397,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                         ? 'border-green-500 bg-green-500 text-white'
                         : 'border-muted-foreground'
                     }`}
-                    onClick={() => toggleCorrectOption(index)}
+                    onClick={() => {
+                      toggleCorrectOption(index);
+                    }}
                     title="Toggle correct"
                   >
                     {option.isCorrect && <Check className="h-4 w-4" />}
@@ -375,13 +407,17 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   <Input
                     placeholder={`Option ${index + 1}`}
                     value={option.text}
-                    onChange={e => updateOption(index, { text: e.target.value })}
+                    onChange={(e) => {
+                      updateOption(index, { text: e.target.value });
+                    }}
                     className="flex-1"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeOption(index)}
+                    onClick={() => {
+                      removeOption(index);
+                    }}
                     disabled={(question.options?.length ?? 0) <= 2}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -399,13 +435,17 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
             <div className="flex gap-4">
               <Button
                 variant={question.correctAnswer === true ? 'default' : 'outline'}
-                onClick={() => updateField('correctAnswer', true)}
+                onClick={() => {
+                  updateField('correctAnswer', true);
+                }}
               >
                 True
               </Button>
               <Button
                 variant={question.correctAnswer === false ? 'default' : 'outline'}
-                onClick={() => updateField('correctAnswer', false)}
+                onClick={() => {
+                  updateField('correctAnswer', false);
+                }}
               >
                 False
               </Button>
@@ -423,10 +463,15 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
               value={
                 Array.isArray(question.correctAnswer)
                   ? question.correctAnswer.join(', ')
-                  : question.correctAnswer ?? ''
+                  : typeof question.correctAnswer === 'boolean'
+                    ? String(question.correctAnswer)
+                    : (question.correctAnswer ?? '')
               }
-              onChange={e => {
-                const answers = e.target.value.split(',').map(a => a.trim()).filter(Boolean);
+              onChange={(e) => {
+                const answers = e.target.value
+                  .split(',')
+                  .map((a) => a.trim())
+                  .filter(Boolean);
                 updateField('correctAnswer', answers.length === 1 ? answers[0] : answers);
               }}
             />
@@ -445,9 +490,7 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
             <div className="flex items-center justify-between">
               <div>
                 <Label>Use Rubric</Label>
-                <p className="text-xs text-muted-foreground">
-                  Attach a grading rubric
-                </p>
+                <p className="text-xs text-muted-foreground">Attach a grading rubric</p>
               </div>
               <Button variant="outline" size="sm">
                 Select Rubric
@@ -473,20 +516,26 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   <Input
                     placeholder="Term"
                     value={pair.left}
-                    onChange={e => updatePair(index, { left: e.target.value })}
+                    onChange={(e) => {
+                      updatePair(index, { left: e.target.value });
+                    }}
                     className="flex-1"
                   />
                   <span className="text-muted-foreground">→</span>
                   <Input
                     placeholder="Definition"
                     value={pair.right}
-                    onChange={e => updatePair(index, { right: e.target.value })}
+                    onChange={(e) => {
+                      updatePair(index, { right: e.target.value });
+                    }}
                     className="flex-1"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removePair(index)}
+                    onClick={() => {
+                      removePair(index);
+                    }}
                     disabled={(question.pairs?.length ?? 0) <= 2}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -506,8 +555,10 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                 <Input
                   id="correctAnswer"
                   type="number"
-                  value={question.correctAnswer as number ?? ''}
-                  onChange={e => updateField('correctAnswer', parseFloat(e.target.value))}
+                  value={(question.correctAnswer as number) ?? ''}
+                  onChange={(e) => {
+                    updateField('correctAnswer', parseFloat(e.target.value));
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -518,7 +569,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                   min={0}
                   step={0.01}
                   value={question.tolerance ?? 0}
-                  onChange={e => updateField('tolerance', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    updateField('tolerance', parseFloat(e.target.value) || 0);
+                  }}
                 />
               </div>
             </div>
@@ -528,7 +581,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                 id="unit"
                 placeholder="e.g., meters, kg, %"
                 value={question.unit ?? ''}
-                onChange={e => updateField('unit', e.target.value)}
+                onChange={(e) => {
+                  updateField('unit', e.target.value);
+                }}
               />
             </div>
           </div>
@@ -541,7 +596,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
               <Label htmlFor="language">Programming Language</Label>
               <Select
                 value={question.language ?? 'javascript'}
-                onValueChange={v => updateField('language', v)}
+                onValueChange={(v) => {
+                  updateField('language', v);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -564,7 +621,9 @@ export function QuestionEditor({ question: initialQuestion, onSave, onCancel }: 
                 id="starterCode"
                 placeholder="// Write your starter code here..."
                 value={question.starterCode ?? ''}
-                onChange={e => updateField('starterCode', e.target.value)}
+                onChange={(e) => {
+                  updateField('starterCode', e.target.value);
+                }}
                 rows={5}
                 className="font-mono text-sm"
               />

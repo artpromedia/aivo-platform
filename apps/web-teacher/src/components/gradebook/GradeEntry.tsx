@@ -31,18 +31,18 @@ export interface GradeEntryProps {
     id: string;
     name: string;
     maxPoints: number;
-    criteria: Array<{
+    criteria: {
       id: string;
       name: string;
       description?: string;
       maxPoints: number;
-      levels: Array<{
+      levels: {
         points: number;
         label: string;
         description: string;
         feedback?: string;
-      }>;
-    }>;
+      }[];
+    }[];
   };
   onSubmit: (data: {
     score: number | null;
@@ -64,7 +64,7 @@ export function GradeEntry({
   rubric,
   onSubmit,
   onClose,
-  className
+  className,
 }: GradeEntryProps) {
   const [score, setScore] = React.useState<string>(initialGrade?.score?.toString() ?? '');
   const [feedback, setFeedback] = React.useState(initialGrade?.feedback ?? '');
@@ -127,7 +127,7 @@ export function GradeEntry({
         feedback,
         privateNotes,
         rubricScores: useRubric ? rubricScores : undefined,
-        status
+        status,
       });
       onClose();
     } catch (err) {
@@ -143,7 +143,12 @@ export function GradeEntry({
   };
 
   return (
-    <div className={cn('fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50', className)}>
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50',
+        className
+      )}
+    >
       <div className="w-full max-w-3xl rounded-lg bg-white shadow-xl">
         {/* Header */}
         <div className="border-b px-6 py-4">
@@ -152,13 +157,14 @@ export function GradeEntry({
               <h2 className="text-xl font-bold">Grade Entry</h2>
               <p className="text-sm text-gray-600">{studentName}</p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -171,11 +177,13 @@ export function GradeEntry({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <div className="flex gap-2">
-                {['graded', 'late', 'missing', 'exempt', 'pending'].map((s) => (
+                {(['graded', 'late', 'missing', 'exempt', 'pending'] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setStatus(s)}
+                    onClick={() => {
+                      setStatus(s);
+                    }}
                     className={cn(
                       'rounded-lg px-3 py-2 text-sm font-medium border',
                       status === s
@@ -196,7 +204,9 @@ export function GradeEntry({
                   type="checkbox"
                   id="useRubric"
                   checked={useRubric}
-                  onChange={(e) => setUseRubric(e.target.checked)}
+                  onChange={(e) => {
+                    setUseRubric(e.target.checked);
+                  }}
                   className="rounded border-gray-300"
                 />
                 <label htmlFor="useRubric" className="text-sm font-medium text-gray-700">
@@ -207,11 +217,7 @@ export function GradeEntry({
 
             {/* Score Input or Rubric */}
             {useRubric && rubric ? (
-              <RubricScorer
-                rubric={rubric}
-                scores={rubricScores}
-                onScoreChange={setRubricScores}
-              />
+              <RubricScorer rubric={rubric} scores={rubricScores} onScoreChange={setRubricScores} />
             ) : status !== 'exempt' && status !== 'missing' ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -240,7 +246,9 @@ export function GradeEntry({
                     <button
                       key={pct}
                       type="button"
-                      onClick={() => quickGrade(pct)}
+                      onClick={() => {
+                        quickGrade(pct);
+                      }}
                       className="rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200"
                     >
                       {pct}%
@@ -264,7 +272,9 @@ export function GradeEntry({
               </label>
               <textarea
                 value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
+                onChange={(e) => {
+                  setFeedback(e.target.value);
+                }}
                 className="w-full rounded-lg border p-3"
                 rows={4}
                 placeholder="Add feedback for the student..."
@@ -278,12 +288,14 @@ export function GradeEntry({
                   'Good effort, but needs improvement.',
                   'Please revise and resubmit.',
                   'Excellent understanding!',
-                  'Missing key concepts.'
+                  'Missing key concepts.',
                 ].map((template) => (
                   <button
                     key={template}
                     type="button"
-                    onClick={() => setFeedback(feedback + (feedback ? '\n' : '') + template)}
+                    onClick={() => {
+                      setFeedback(feedback + (feedback ? '\n' : '') + template);
+                    }}
                     className="rounded bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
                   >
                     {template}
@@ -299,7 +311,9 @@ export function GradeEntry({
               </label>
               <textarea
                 value={privateNotes}
-                onChange={(e) => setPrivateNotes(e.target.value)}
+                onChange={(e) => {
+                  setPrivateNotes(e.target.value);
+                }}
                 className="w-full rounded-lg border p-3"
                 rows={3}
                 placeholder="Add private notes..."
@@ -337,7 +351,7 @@ export function GradeEntry({
 function RubricScorer({
   rubric,
   scores,
-  onScoreChange
+  onScoreChange,
 }: {
   rubric: GradeEntryProps['rubric'];
   scores: Record<string, any>;
@@ -348,11 +362,14 @@ function RubricScorer({
   const selectLevel = (criterionId: string, level: any) => {
     onScoreChange({
       ...scores,
-      [criterionId]: level
+      [criterionId]: level,
     });
   };
 
-  const totalScore = Object.values(scores).reduce((sum: number, level: any) => sum + (level?.points ?? 0), 0);
+  const totalScore = Object.values(scores).reduce(
+    (sum: number, level: any) => sum + (level?.points ?? 0),
+    0
+  );
 
   return (
     <div>
@@ -381,7 +398,9 @@ function RubricScorer({
                   <button
                     key={level.points}
                     type="button"
-                    onClick={() => selectLevel(criterion.id, level)}
+                    onClick={() => {
+                      selectLevel(criterion.id, level);
+                    }}
                     className={cn(
                       'rounded-lg border p-3 text-left text-sm transition-colors',
                       isSelected

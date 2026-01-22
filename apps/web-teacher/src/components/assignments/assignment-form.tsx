@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /**
  * Assignment Form Component
  *
@@ -60,8 +60,10 @@ export function AssignmentForm({
     type: initialData?.type ?? 'homework',
     category: initialData?.category ?? 'Homework',
     totalPoints: initialData?.totalPoints ?? 100,
-    dueDate: initialData?.dueDate ? new Date(initialData.dueDate) : null,
-    availableDate: initialData?.availableDate ? new Date(initialData.availableDate) : new Date(),
+    dueDate: initialData?.dueDate ? new Date(initialData.dueDate) : (null as Date | null),
+    availableDate: initialData?.availableDate
+      ? new Date(initialData.availableDate)
+      : (new Date() as Date | null),
     allowLateSubmission: initialData?.allowLateSubmission ?? true,
     latePenaltyPercent: initialData?.latePenaltyPercent ?? 10,
   });

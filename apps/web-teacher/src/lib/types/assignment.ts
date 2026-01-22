@@ -157,6 +157,7 @@ export interface RubricScore {
 
 // For gradebook integration
 export interface Grade {
+  id?: string;
   studentId: string;
   assignmentId: string;
   score: number | null;
@@ -168,20 +169,28 @@ export interface Grade {
   lateDeduction?: number;
 }
 
-export type GradeStatus = 'graded' | 'submitted' | 'missing' | 'late' | 'excused' | 'not_submitted';
+export type GradeStatus =
+  | 'graded'
+  | 'submitted'
+  | 'missing'
+  | 'late'
+  | 'excused'
+  | 'not_submitted'
+  | 'pending'
+  | 'exempt';
 
 export interface Gradebook {
   classId: string;
   className: string;
-  gradingPeriod: {
+  gradingPeriod?: {
     id: string;
     name: string;
   };
   students: GradebookStudent[];
   assignments: GradebookAssignment[];
-  grades: Grade[];
-  categories: GradebookCategory[];
-  gradeScale: {
+  grades?: Grade[];
+  categories?: GradebookCategory[];
+  gradeScale?: {
     type: 'percentage' | 'points' | 'standards';
     levels: {
       letter: string;
@@ -210,10 +219,11 @@ export interface GradebookAssignment {
   id: string;
   title: string;
   category: string;
-  pointsPossible: number;
-  dueDate: Date;
+  pointsPossible?: number;
+  totalPoints?: number;
+  dueDate?: Date | string;
   weight?: number;
-  status: 'draft' | 'published' | 'closed';
+  status?: 'draft' | 'published' | 'closed';
 }
 
 export interface GradebookCategory {
@@ -232,19 +242,24 @@ export interface CreateAssignmentDto {
   description?: string;
   instructions?: string;
   category: string;
-  pointsPossible: number;
-  dueDate: Date;
-  availableFrom?: Date;
-  availableUntil?: Date;
-  submissionTypes: SubmissionType[];
+  type?: string;
+  pointsPossible?: number;
+  totalPoints?: number;
+  dueDate: Date | string;
+  availableFrom?: Date | string;
+  availableUntil?: Date | string;
+  availableDate?: Date | string;
+  submissionTypes?: SubmissionType[];
   allowedFileTypes?: string[];
   maxFileSize?: number;
   rubric?: Rubric;
-  assignTo: AssignmentAssignee;
+  assignTo?: AssignmentAssignee;
   accommodations?: AssignmentAccommodations;
   standards?: string[];
   attachments?: Omit<Attachment, 'id'>[];
   status?: 'draft' | 'published';
+  allowLateSubmission?: boolean;
+  latePenaltyPercent?: number;
 }
 
 export interface UpdateAssignmentDto extends Omit<Partial<CreateAssignmentDto>, 'status'> {

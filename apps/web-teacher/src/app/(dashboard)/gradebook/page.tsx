@@ -10,16 +10,17 @@ import {
   fetchGradebook,
   fetchTeacherClasses,
   updateGrade,
-  type Gradebook,
+  type Gradebook as APIGradebook,
   type TeacherClass,
 } from '../../../../lib/api/gradebook';
 
 import { GradebookTable } from '@/components/gradebook/gradebook-table';
 import { PageHeader } from '@/components/layout/breadcrumb';
+import type { Gradebook } from '@/lib/types';
 
 export default function GradebookPage() {
   const [selectedClass, setSelectedClass] = React.useState('1');
-  const [gradebook, setGradebook] = React.useState<Gradebook | null>(null);
+  const [gradebook, setGradebook] = React.useState<APIGradebook | null>(null);
   const [classes, setClasses] = React.useState<TeacherClass[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -45,6 +46,41 @@ export default function GradebookPage() {
     }
     void loadData();
   }, [selectedClass]);
+
+  // Transform API gradebook to component-compatible format
+  const compatibleGradebook: Gradebook | null = gradebook
+    ? {
+        classId: gradebook.classId,
+        className: gradebook.className,
+        gradingPeriod: { id: 'current', name: gradebook.gradingPeriod },
+        assignments: gradebook.assignments.map((a) => ({
+          id: a.id,
+          title: a.title,
+          category: a.category,
+          totalPoints: a.totalPoints,
+          dueDate: a.dueDate,
+          status: a.status,
+        })),
+        students: gradebook.students.map((s) => ({
+          id: s.studentId,
+          studentId: s.studentId,
+          name: s.studentName,
+          studentName: s.studentName,
+          email: '',
+          hasIep: false,
+          accommodations: [],
+          overallGrade: s.overallGrade,
+          missingCount: s.missingCount,
+          grades: s.grades.map((g) => ({
+            studentId: g.studentId,
+            assignmentId: g.assignmentId,
+            score: g.score,
+            status: g.status,
+            feedback: g.feedback,
+          })),
+        })),
+      }
+    : null;
 
   const handleGradeChange = async (
     studentId: string,
@@ -115,7 +151,9 @@ export default function GradebookPage() {
       </div>
 
       <div className="mt-4">
-        <GradebookTable gradebook={gradebook} onGradeChange={handleGradeChange} />
+        {compatibleGradebook && (
+          <GradebookTable gradebook={compatibleGradebook} onGradeChange={handleGradeChange} />
+        )}
       </div>
     </div>
   );
