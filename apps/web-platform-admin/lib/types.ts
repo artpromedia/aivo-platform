@@ -282,7 +282,12 @@ export interface UpdatePolicyInput {
 export const LEGAL_HOLD_STATUSES = ['ACTIVE', 'RELEASED', 'EXPIRED'] as const;
 export type LegalHoldStatus = (typeof LEGAL_HOLD_STATUSES)[number];
 
-export const LEGAL_HOLD_TYPES = ['LITIGATION', 'REGULATORY', 'INTERNAL_INVESTIGATION', 'PRESERVATION'] as const;
+export const LEGAL_HOLD_TYPES = [
+  'LITIGATION',
+  'REGULATORY',
+  'INTERNAL_INVESTIGATION',
+  'PRESERVATION',
+] as const;
 export type LegalHoldType = (typeof LEGAL_HOLD_TYPES)[number];
 
 export interface LegalHold {
@@ -364,10 +369,10 @@ export interface UpdateLegalHoldInput {
 }
 
 export interface LegalHoldFilters {
-  status?: LegalHoldStatus;
-  holdType?: LegalHoldType;
-  tenantId?: string;
-  search?: string;
+  status?: LegalHoldStatus | undefined;
+  holdType?: LegalHoldType | undefined;
+  tenantId?: string | undefined;
+  search?: string | undefined;
 }
 
 export interface LegalHoldStats {

@@ -8,7 +8,6 @@
     "moduleResolution": "Bundler",
     "module": "esnext",
     "baseUrl": ".",
-    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "@aivo/*": ["../../libs/*/src", "../../services/*/src", "../../apps/*/src"],
       "@/*": ["./*"]
@@ -19,15 +18,6 @@
       }
     ]
   },
-  "include": [
-    "app/**/*",
-    "components/**/*",
-    "lib/**/*",
-    "__tests__/**/*",
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "vitest.config.ts",
-    "vitest.setup.ts"
-  ],
-  "exclude": ["node_modules", ".next", "dist", "build"]
+  "include": ["app/**/*", "components/**/*", "lib/**/*", "next-env.d.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist", "build", "__tests__"]
 }

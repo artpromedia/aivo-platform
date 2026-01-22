@@ -52,7 +52,7 @@ export function PlanCTA({
         // Not logged in - go to registration with plan context
         goToRegister({
           plan,
-          billingInterval: interval,
+          interval: interval,
           source: 'pricing_page',
         });
       }

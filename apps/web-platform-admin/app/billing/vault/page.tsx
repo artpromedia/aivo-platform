@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { useAuth } from '../../../providers';
+import { useAuth } from '../../providers';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -338,11 +338,15 @@ export default function LicenseVaultPage() {
         </div>
         <div className="rounded-lg bg-white p-4 shadow">
           <div className="text-sm font-medium text-slate-500">Total Seats</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{stats.totalSeats.toLocaleString()}</div>
+          <div className="mt-1 text-2xl font-bold text-slate-900">
+            {stats.totalSeats.toLocaleString()}
+          </div>
         </div>
         <div className="rounded-lg bg-white p-4 shadow">
           <div className="text-sm font-medium text-slate-500">Used Seats</div>
-          <div className="mt-1 text-2xl font-bold text-blue-600">{stats.usedSeats.toLocaleString()}</div>
+          <div className="mt-1 text-2xl font-bold text-blue-600">
+            {stats.usedSeats.toLocaleString()}
+          </div>
         </div>
         <div className="rounded-lg bg-white p-4 shadow">
           <div className="text-sm font-medium text-slate-500">Valid Codes</div>
@@ -367,7 +371,9 @@ export default function LicenseVaultPage() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              onClick={() => {
+                setActiveTab(tab.id as typeof activeTab);
+              }}
               className={`border-b-2 px-1 py-3 text-sm font-medium transition ${
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600'
@@ -389,12 +395,16 @@ export default function LicenseVaultPage() {
               type="text"
               placeholder="Search licenses..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+              }}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Statuses</option>
@@ -406,7 +416,9 @@ export default function LicenseVaultPage() {
             </select>
             <select
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+              }}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Types</option>
@@ -468,7 +480,9 @@ export default function LicenseVaultPage() {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getLicenseStatusColor(license.status)}`}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getLicenseStatusColor(license.status)}`}
+                      >
                         {license.status}
                       </span>
                     </td>
@@ -479,7 +493,9 @@ export default function LicenseVaultPage() {
                       <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
                         <div
                           className={`h-full rounded-full ${license.seatsUsed >= license.seats ? 'bg-red-500' : 'bg-green-500'}`}
-                          style={{ width: `${Math.min(100, (license.seatsUsed / license.seats) * 100)}%` }}
+                          style={{
+                            width: `${Math.min(100, (license.seatsUsed / license.seats) * 100)}%`,
+                          }}
                         />
                       </div>
                     </td>
@@ -572,7 +588,9 @@ export default function LicenseVaultPage() {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getCodeStatusColor(code.status)}`}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getCodeStatusColor(code.status)}`}
+                      >
                         {code.status}
                       </span>
                     </td>
@@ -599,9 +617,7 @@ export default function LicenseVaultPage() {
               </tbody>
             </table>
             {codes.length === 0 && (
-              <div className="p-8 text-center text-slate-500">
-                No codes found.
-              </div>
+              <div className="p-8 text-center text-slate-500">No codes found.</div>
             )}
           </div>
         </div>
@@ -671,9 +687,7 @@ export default function LicenseVaultPage() {
               </tbody>
             </table>
             {auditLogs.length === 0 && (
-              <div className="p-8 text-center text-slate-500">
-                No audit logs found.
-              </div>
+              <div className="p-8 text-center text-slate-500">No audit logs found.</div>
             )}
           </div>
         </div>

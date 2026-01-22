@@ -175,6 +175,7 @@ export default [
       "services/session-svc/**/*.{ts,tsx}",
       "services/writing-pad-svc/**/*.{ts,tsx}",
       "packages/i18n/**/*.{ts,tsx}",
+      "packages/caching/**/*.{ts,tsx}",
       "libs/ui-web/**/*.{ts,tsx}",
       "libs/events/**/*.{ts,tsx}"
     ],

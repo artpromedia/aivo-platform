@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-import { useAuth } from '../../../providers';
+import { useAuth } from '../../providers';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -45,22 +45,22 @@ interface EnterpriseDeal {
 }
 
 interface PipelineAnalytics {
-  dealsByStatus: Array<{
+  dealsByStatus: {
     status: string;
     _count: number;
     _sum: { totalValueCents: number | null; arrCents: number | null };
-  }>;
+  }[];
   totals: {
     pipelineValueCents: number;
     wonValueCents: number;
     activeArrCents: number;
   };
-  recentWins: Array<{
+  recentWins: {
     id: string;
     name: string;
     totalValueCents: number;
     customer: { name: string; type: string };
-  }>;
+  }[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -259,8 +259,7 @@ export default function EnterpriseSalesPage() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        deal.name.toLowerCase().includes(query) ||
-        deal.customer.name.toLowerCase().includes(query)
+        deal.name.toLowerCase().includes(query) || deal.customer.name.toLowerCase().includes(query)
       );
     }
     return true;
@@ -292,7 +291,9 @@ export default function EnterpriseSalesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Enterprise Sales</h1>
-          <p className="text-slate-600">Manage enterprise customers, deals, and bulk provisioning</p>
+          <p className="text-slate-600">
+            Manage enterprise customers, deals, and bulk provisioning
+          </p>
         </div>
         <div className="flex gap-3">
           <Link
@@ -321,7 +322,9 @@ export default function EnterpriseSalesPage() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              onClick={() => {
+                setActiveTab(tab.id as typeof activeTab);
+              }}
               className={`border-b-2 px-1 py-3 text-sm font-medium transition ${
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600'
@@ -378,7 +381,9 @@ export default function EnterpriseSalesPage() {
                 .map((stage) => (
                   <div key={stage.status} className="flex items-center gap-4">
                     <div className="w-28">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(stage.status)}`}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(stage.status)}`}
+                      >
                         {stage.status.replace('_', ' ')}
                       </span>
                     </div>
@@ -411,7 +416,10 @@ export default function EnterpriseSalesPage() {
             ) : (
               <div className="space-y-3">
                 {analytics.recentWins.map((win) => (
-                  <div key={win.id} className="flex items-center justify-between rounded-lg bg-green-50 p-4">
+                  <div
+                    key={win.id}
+                    className="flex items-center justify-between rounded-lg bg-green-50 p-4"
+                  >
                     <div>
                       <div className="font-medium text-slate-900">{win.name}</div>
                       <div className="text-sm text-slate-600">{win.customer.name}</div>
@@ -436,12 +444,16 @@ export default function EnterpriseSalesPage() {
               type="text"
               placeholder="Search deals..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+              }}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Statuses</option>
@@ -487,7 +499,10 @@ export default function EnterpriseSalesPage() {
                 {filteredDeals.map((deal) => (
                   <tr key={deal.id} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-4 py-4">
-                      <Link href={`/billing/enterprise/deals/${deal.id}`} className="font-medium text-blue-600 hover:underline">
+                      <Link
+                        href={`/billing/enterprise/deals/${deal.id}`}
+                        className="font-medium text-blue-600 hover:underline"
+                      >
                         {deal.name}
                       </Link>
                       {deal.expectedCloseDate && (
@@ -497,7 +512,10 @@ export default function EnterpriseSalesPage() {
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
-                      <Link href={`/billing/enterprise/customers/${deal.customer.id}`} className="text-slate-900 hover:underline">
+                      <Link
+                        href={`/billing/enterprise/customers/${deal.customer.id}`}
+                        className="text-slate-900 hover:underline"
+                      >
                         {deal.customer.name}
                       </Link>
                       <div className="text-xs text-slate-500">
@@ -508,11 +526,15 @@ export default function EnterpriseSalesPage() {
                       {getDealTypeLabel(deal.type)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(deal.status)}`}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(deal.status)}`}
+                      >
                         {deal.status.replace('_', ' ')}
                       </span>
                       {deal.probability !== null && (
-                        <div className="mt-1 text-xs text-slate-500">{deal.probability}% likely</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          {deal.probability}% likely
+                        </div>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-4 text-right font-medium text-slate-900">
@@ -566,7 +588,9 @@ export default function EnterpriseSalesPage() {
               type="text"
               placeholder="Search customers..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -586,7 +610,9 @@ export default function EnterpriseSalesPage() {
                       {getCustomerTypeLabel(customer.type)}
                     </div>
                   </div>
-                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${customer.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}>
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs font-medium ${customer.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}
+                  >
                     {customer.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>

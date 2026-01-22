@@ -2,13 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
-import type {
-  LegalHoldListItem,
-  LegalHoldStatus,
-  LegalHoldType,
-} from '../../lib/types';
+import type { LegalHoldListItem, LegalHoldStatus, LegalHoldType } from '../../lib/types';
 import { LEGAL_HOLD_STATUSES, LEGAL_HOLD_TYPES } from '../../lib/types';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -104,7 +100,7 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
     description: '',
     holdType: 'LITIGATION',
     matterNumber: '',
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: new Date().toISOString().slice(0, 10),
     endDate: '',
   });
 
@@ -139,7 +135,9 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
               id="name"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+              }}
               placeholder="e.g., Smith v. District - Student Records"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -154,7 +152,9 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
               id="tenantId"
               required
               value={formData.tenantId}
-              onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, tenantId: e.target.value });
+              }}
               placeholder="tenant-uuid"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -168,7 +168,9 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
               <select
                 id="holdType"
                 value={formData.holdType}
-                onChange={(e) => setFormData({ ...formData, holdType: e.target.value as LegalHoldType })}
+                onChange={(e) => {
+                  setFormData({ ...formData, holdType: e.target.value as LegalHoldType });
+                }}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {LEGAL_HOLD_TYPES.map((type) => (
@@ -180,14 +182,19 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
             </div>
 
             <div>
-              <label htmlFor="matterNumber" className="mb-1 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="matterNumber"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
                 Matter Number
               </label>
               <input
                 type="text"
                 id="matterNumber"
                 value={formData.matterNumber}
-                onChange={(e) => setFormData({ ...formData, matterNumber: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, matterNumber: e.target.value });
+                }}
                 placeholder="LIT-2024-0001"
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
@@ -204,7 +211,9 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
                 id="startDate"
                 required
                 value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, startDate: e.target.value });
+                }}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -217,7 +226,9 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
                 type="date"
                 id="endDate"
                 value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, endDate: e.target.value });
+                }}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -231,7 +242,9 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
               id="description"
               rows={3}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value });
+              }}
               placeholder="Describe the purpose and scope of this legal hold..."
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -263,7 +276,13 @@ function CreateHoldModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateHold
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: LegalHoldsClientProps) {
+export function LegalHoldsClient({
+  holds,
+  total,
+  page,
+  pageSize,
+  accessToken,
+}: LegalHoldsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const totalPages = Math.ceil(total / pageSize);
@@ -358,7 +377,9 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
           </p>
         </div>
         <button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            setIsCreateModalOpen(true);
+          }}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           + Create Legal Hold
@@ -378,7 +399,9 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
             type="text"
             id="search"
             value={filters.search}
-            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, search: e.target.value }));
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') applyFilters();
             }}
@@ -394,7 +417,9 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
           <select
             id="status"
             value={filters.status}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, status: e.target.value }));
+            }}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">All</option>
@@ -413,7 +438,9 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
           <select
             id="holdType"
             value={filters.holdType}
-            onChange={(e) => setFilters((f) => ({ ...f, holdType: e.target.value }))}
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, holdType: e.target.value }));
+            }}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">All</option>
@@ -450,18 +477,14 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Tenant</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Type</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
-                Matter #
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Matter #</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                 Custodians
               </th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                 Start Date
               </th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
-                End Date
-              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">End Date</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 bg-white">
@@ -497,9 +520,7 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
                     {hold.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-slate-600">
-                  {hold.matterNumber ?? '-'}
-                </td>
+                <td className="px-4 py-3 text-sm text-slate-600">{hold.matterNumber ?? '-'}</td>
                 <td className="px-4 py-3 text-sm text-slate-600">
                   {hold.custodianCount.toLocaleString()}
                 </td>
@@ -530,14 +551,18 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => goToPage(page - 1)}
+              onClick={() => {
+                goToPage(page - 1);
+              }}
               disabled={page <= 1}
               className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               Previous
             </button>
             <button
-              onClick={() => goToPage(page + 1)}
+              onClick={() => {
+                goToPage(page + 1);
+              }}
               disabled={page >= totalPages}
               className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
@@ -550,7 +575,9 @@ export function LegalHoldsClient({ holds, total, page, pageSize, accessToken }: 
       {/* Create Modal */}
       <CreateHoldModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+        }}
         onSubmit={handleCreateHold}
         isSubmitting={isSubmitting}
       />

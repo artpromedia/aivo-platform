@@ -96,7 +96,7 @@ export function getPlanInfo(plan: PlanId, interval: BillingInterval) {
  * Store registration context in session storage
  */
 export function storeRegistrationContext(context: RegistrationContext): void {
-  if (globalThis.window === undefined) return;
+  if (typeof window === 'undefined') return;
   sessionStorage.setItem('aivo_registration_context', JSON.stringify(context));
 }
 
@@ -104,7 +104,7 @@ export function storeRegistrationContext(context: RegistrationContext): void {
  * Retrieve registration context from session storage
  */
 export function getStoredRegistrationContext(): RegistrationContext | null {
-  if (globalThis.window === undefined) return null;
+  if (typeof window === 'undefined') return null;
 
   const stored = sessionStorage.getItem('aivo_registration_context');
   if (!stored) return null;
@@ -120,7 +120,7 @@ export function getStoredRegistrationContext(): RegistrationContext | null {
  * Clear registration context
  */
 export function clearRegistrationContext(): void {
-  if (globalThis.window === undefined) return;
+  if (typeof window === 'undefined') return;
   sessionStorage.removeItem('aivo_registration_context');
 }
 
@@ -148,20 +148,21 @@ export function parseRegistrationParams(searchParams: URLSearchParams): Registra
  */
 export function trackConversion(event: string, data?: Record<string, unknown>): void {
   // Google Analytics
-  if (globalThis.window !== undefined && (globalThis as Record<string, unknown>).gtag) {
+  if (typeof window !== 'undefined' && (globalThis as Record<string, unknown>).gtag) {
     (
-      globalThis as Record<string, unknown> & {
+      globalThis as unknown as Record<string, unknown> & {
         gtag: (type: string, event: string, data?: unknown) => void;
       }
     ).gtag('event', event, data);
   }
 
   // Vercel Analytics
-  if (globalThis.window !== undefined && (globalThis as Record<string, unknown>).va) {
-    (globalThis as Record<string, unknown> & { va: (type: string, payload: unknown) => void }).va(
-      'event',
-      { name: event, data }
-    );
+  if (typeof window !== 'undefined' && (globalThis as Record<string, unknown>).va) {
+    (
+      globalThis as unknown as Record<string, unknown> & {
+        va: (type: string, payload: unknown) => void;
+      }
+    ).va('event', { name: event, data });
   }
 
   console.log('[Conversion]', event, data);

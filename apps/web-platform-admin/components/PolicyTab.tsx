@@ -149,7 +149,7 @@ export function PolicyTab({ tenantId, effectivePolicy, tenantOverride }: PolicyT
       setEditedPolicy((prev) => ({
         ...prev,
         [section]: {
-          ...((prev[section] as object) ?? {}),
+          ...(prev[section] as object),
           ...value,
         },
       }));
@@ -307,14 +307,12 @@ export function PolicyTab({ tenantId, effectivePolicy, tenantOverride }: PolicyT
 
 interface SectionProps<T> {
   effective: T;
-  override?: Partial<T>;
+  override?: Partial<T> | undefined;
   isEditing: boolean;
   onUpdate: (value: Partial<T>) => void;
 }
 
 function SafetySection({ effective, override, isEditing, onUpdate }: SectionProps<SafetyPolicy>) {
-  const displayValue = (field: keyof SafetyPolicy) => override?.[field] ?? effective[field];
-
   return (
     <div className="space-y-4">
       <h3 className="text-md font-semibold">Safety & Moderation Settings</h3>
@@ -327,7 +325,11 @@ function SafetySection({ effective, override, isEditing, onUpdate }: SectionProp
           <FieldRow
             label="Low severity max per session"
             value={String(effective.severity_thresholds.low_max_per_session)}
-            override={override?.severity_thresholds?.low_max_per_session?.toString()}
+            override={
+              override?.severity_thresholds?.low_max_per_session !== undefined
+                ? String(override.severity_thresholds.low_max_per_session)
+                : undefined
+            }
             isEditing={isEditing}
             inputType="number"
             onChange={(val) => {
@@ -645,7 +647,7 @@ function RetentionSection({
 interface FieldRowProps {
   label: string;
   value: string;
-  override?: string;
+  override?: string | undefined;
   isEditing: boolean;
   inputType?: 'text' | 'number' | 'toggle' | 'select';
   options?: string[];

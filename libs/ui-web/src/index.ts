@@ -5,11 +5,47 @@ export type { GradeBand } from './theme/tokens';
 
 export { Button } from './components/button';
 export { Card } from './components/card';
-export { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card';
+export {
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from './components/ui/card';
 export { Badge } from './components/badge';
 export { Heading } from './components/heading';
 export { GradeThemeToggle } from './components/grade-theme-toggle';
-export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from './components/ui/dialog';
+export {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './components/ui/dialog';
+
+// Additional UI primitives
+export { Alert, AlertTitle, AlertDescription } from './components/ui/alert';
+export { Input } from './components/ui/input';
+export { Label } from './components/ui/label';
+export { Textarea } from './components/ui/textarea';
+export { Switch } from './components/ui/switch';
+export { ScrollArea } from './components/ui/scroll-area';
+export {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './components/ui/select';
+export { Progress } from './components/ui/progress';
+export {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './components/ui/accordion';
 
 // AI Components
 export { LessonGenerator, AITutorChat, AIFeedback } from './components/ai';

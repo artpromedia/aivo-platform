@@ -5,7 +5,13 @@ import type { HTMLAttributes } from 'react';
 import { cn } from '../utils/cn';
 
 export type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'error';
-export type BadgeVariant = 'default' | 'primary' | 'secondary' | 'destructive' | 'outline';
+export type BadgeVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'outline'
+  | 'success';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
@@ -24,6 +30,8 @@ function variantToTone(variant: BadgeVariant): BadgeTone {
       return 'error';
     case 'outline':
       return 'neutral';
+    case 'success':
+      return 'success';
     default:
       return 'neutral';
   }

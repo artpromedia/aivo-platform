@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
 'use client';
 
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { useAuth } from '../../providers';
+import { useAuth } from '../providers';
 
 // Mock data types
 interface QuoteSummary {

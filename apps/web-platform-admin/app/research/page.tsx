@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, Heading, Button, Badge } from '@aivo/ui-web';
-import { useState, useEffect, useCallback } from 'react';
+import { type ReactNode, useState, useEffect, useCallback } from 'react';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -24,8 +24,8 @@ interface ExportRequest {
   dateRange: { from: string; to: string };
   dataTypes: string[];
   purpose: string;
-  irbApprovalNumber?: string;
-  researcherAffiliation?: string;
+  irbApprovalNumber?: string | undefined;
+  researcherAffiliation?: string | undefined;
   format: 'json' | 'csv' | 'parquet';
 }
 
@@ -53,7 +53,7 @@ async function fetchTenants(accessToken: string): Promise<Tenant[]> {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) throw new Error('Failed to fetch tenants');
-  const data = await res.json();
+  const data = (await res.json()) as { tenants: Tenant[] };
   return data.tenants;
 }
 
@@ -71,10 +71,13 @@ async function checkAnonymity(
     body: JSON.stringify({ tenantIds, dateRange }),
   });
   if (!res.ok) throw new Error('Failed to check anonymity');
-  return res.json();
+  return (await res.json()) as AnonymityCheckResult;
 }
 
-async function requestExport(accessToken: string, request: ExportRequest): Promise<unknown> {
+async function requestExport(
+  accessToken: string,
+  request: ExportRequest
+): Promise<{ exportId: string }> {
   const res = await fetch(`${API_BASE}/research/exports`, {
     method: 'POST',
     headers: {
@@ -84,10 +87,10 @@ async function requestExport(accessToken: string, request: ExportRequest): Promi
     body: JSON.stringify(request),
   });
   if (!res.ok) {
-    const error = await res.json();
+    const error = (await res.json()) as { message?: string };
     throw new Error(error.message || 'Export failed');
   }
-  return res.json();
+  return (await res.json()) as { exportId: string };
 }
 
 async function fetchAuditLog(accessToken: string): Promise<ExportAuditRecord[]> {
@@ -95,7 +98,7 @@ async function fetchAuditLog(accessToken: string): Promise<ExportAuditRecord[]> 
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) throw new Error('Failed to fetch audit log');
-  const data = await res.json();
+  const data = (await res.json()) as { exports: ExportAuditRecord[] };
   return data.exports;
 }
 
@@ -104,12 +107,28 @@ async function fetchAuditLog(accessToken: string): Promise<ExportAuditRecord[]> 
 // ══════════════════════════════════════════════════════════════════════════════
 
 const DATA_TYPE_OPTIONS = [
-  { value: 'sessions', label: 'Session Data', description: 'Learner session durations and activity counts' },
-  { value: 'activity_events', label: 'Activity Events', description: 'Individual responses, completions, hints' },
-  { value: 'learning_progress', label: 'Learning Progress', description: 'Skill mastery scores over time' },
+  {
+    value: 'sessions',
+    label: 'Session Data',
+    description: 'Learner session durations and activity counts',
+  },
+  {
+    value: 'activity_events',
+    label: 'Activity Events',
+    description: 'Individual responses, completions, hints',
+  },
+  {
+    value: 'learning_progress',
+    label: 'Learning Progress',
+    description: 'Skill mastery scores over time',
+  },
   { value: 'focus_events', label: 'Focus Events', description: 'Focus breaks and interventions' },
   { value: 'ai_usage', label: 'AI Usage', description: 'AI interaction patterns (anonymized)' },
-  { value: 'experiment_exposures', label: 'Experiment Exposures', description: 'A/B test variant assignments' },
+  {
+    value: 'experiment_exposures',
+    label: 'Experiment Exposures',
+    description: 'A/B test variant assignments',
+  },
 ];
 
 function TenantSelector({
@@ -120,7 +139,7 @@ function TenantSelector({
   tenants: Tenant[];
   selected: string[];
   onChange: (ids: string[]) => void;
-}) {
+}): ReactNode {
   const toggleTenant = (id: string) => {
     if (selected.includes(id)) {
       onChange(selected.filter((t) => t !== id));
@@ -129,8 +148,12 @@ function TenantSelector({
     }
   };
 
-  const selectAll = () => onChange(tenants.map((t) => t.id));
-  const selectNone = () => onChange([]);
+  const selectAll = () => {
+    onChange(tenants.map((t) => t.id));
+  };
+  const selectNone = () => {
+    onChange([]);
+  };
 
   return (
     <div className="space-y-3">
@@ -144,11 +167,16 @@ function TenantSelector({
       </div>
       <div className="max-h-48 overflow-y-auto border border-border rounded p-2 space-y-1">
         {tenants.map((t) => (
-          <label key={t.id} className="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-1 rounded">
+          <label
+            key={t.id}
+            className="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-1 rounded"
+          >
             <input
               type="checkbox"
               checked={selected.includes(t.id)}
-              onChange={() => toggleTenant(t.id)}
+              onChange={() => {
+                toggleTenant(t.id);
+              }}
               className="rounded"
             />
             <span>{t.name}</span>
@@ -179,11 +207,16 @@ function DataTypeSelector({
   return (
     <div className="space-y-2">
       {DATA_TYPE_OPTIONS.map((opt) => (
-        <label key={opt.value} className="flex items-start gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
+        <label
+          key={opt.value}
+          className="flex items-start gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded"
+        >
           <input
             type="checkbox"
             checked={selected.includes(opt.value)}
-            onChange={() => toggle(opt.value)}
+            onChange={() => {
+              toggle(opt.value);
+            }}
             className="rounded mt-1"
           />
           <div>
@@ -220,7 +253,8 @@ function AnonymityStatus({ result }: { result: AnonymityCheckResult | null }) {
         <span>K-Anonymity Check Failed</span>
       </div>
       <p className="text-sm mt-1">
-        Some cohorts have fewer than {result.threshold} learners, which could enable re-identification:
+        Some cohorts have fewer than {result.threshold} learners, which could enable
+        re-identification:
       </p>
       <ul className="text-sm mt-2 space-y-1">
         {result.failingCohorts.map((c) => (
@@ -260,7 +294,9 @@ function AuditLogTable({ records }: { records: ExportAuditRecord[] }) {
               <td className="px-4 py-3 text-sm">
                 <div className="flex flex-wrap gap-1">
                   {r.dataTypes.map((t) => (
-                    <Badge key={t} color="neutral">{t}</Badge>
+                    <Badge key={t} color="neutral">
+                      {t}
+                    </Badge>
                   ))}
                 </div>
               </td>
@@ -301,7 +337,10 @@ export default function ResearchExportsPage() {
     from.setMonth(from.getMonth() - 3);
     return { from: formatDateString(from), to: formatDateString(to) };
   });
-  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>(['sessions', 'learning_progress']);
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([
+    'sessions',
+    'learning_progress',
+  ]);
   const [purpose, setPurpose] = useState('');
   const [irbNumber, setIrbNumber] = useState('');
   const [affiliation, setAffiliation] = useState('');
@@ -426,7 +465,13 @@ export default function ResearchExportsPage() {
       {error && (
         <Card className="border-error">
           <p className="text-error">{error}</p>
-          <Button variant="secondary" onClick={() => setError(null)} className="mt-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setError(null);
+            }}
+            className="mt-2"
+          >
             Dismiss
           </Button>
         </Card>
@@ -452,7 +497,9 @@ export default function ResearchExportsPage() {
                 <input
                   type="date"
                   value={dateRange.from}
-                  onChange={(e) => setDateRange((prev) => ({ ...prev, from: e.target.value }))}
+                  onChange={(e) => {
+                    setDateRange((prev) => ({ ...prev, from: e.target.value }));
+                  }}
                   className="w-full rounded-md border border-border px-3 py-2"
                 />
               </div>
@@ -461,7 +508,9 @@ export default function ResearchExportsPage() {
                 <input
                   type="date"
                   value={dateRange.to}
-                  onChange={(e) => setDateRange((prev) => ({ ...prev, to: e.target.value }))}
+                  onChange={(e) => {
+                    setDateRange((prev) => ({ ...prev, to: e.target.value }));
+                  }}
                   className="w-full rounded-md border border-border px-3 py-2"
                 />
               </div>
@@ -480,10 +529,7 @@ export default function ResearchExportsPage() {
 
         {/* Step 3: Data Types */}
         <Card title="3. Select Data Types">
-          <DataTypeSelector
-            selected={selectedDataTypes}
-            onChange={setSelectedDataTypes}
-          />
+          <DataTypeSelector selected={selectedDataTypes} onChange={setSelectedDataTypes} />
         </Card>
 
         {/* Step 4: Research Details */}
@@ -493,7 +539,9 @@ export default function ResearchExportsPage() {
               <label className="block text-sm font-medium mb-1">Purpose of Research *</label>
               <textarea
                 value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
+                onChange={(e) => {
+                  setPurpose(e.target.value);
+                }}
                 placeholder="Describe the research purpose and how the data will be used..."
                 className="w-full rounded-md border border-border px-3 py-2 h-24"
               />
@@ -503,7 +551,9 @@ export default function ResearchExportsPage() {
               <input
                 type="text"
                 value={irbNumber}
-                onChange={(e) => setIrbNumber(e.target.value)}
+                onChange={(e) => {
+                  setIrbNumber(e.target.value);
+                }}
                 placeholder="e.g., IRB-2025-0123"
                 className="w-full rounded-md border border-border px-3 py-2"
               />
@@ -513,7 +563,9 @@ export default function ResearchExportsPage() {
               <input
                 type="text"
                 value={affiliation}
-                onChange={(e) => setAffiliation(e.target.value)}
+                onChange={(e) => {
+                  setAffiliation(e.target.value);
+                }}
                 placeholder="e.g., University of..."
                 className="w-full rounded-md border border-border px-3 py-2"
               />
@@ -522,7 +574,9 @@ export default function ResearchExportsPage() {
               <label className="block text-sm font-medium mb-1">Export Format</label>
               <select
                 value={format}
-                onChange={(e) => setFormat(e.target.value as 'json' | 'csv' | 'parquet')}
+                onChange={(e) => {
+                  setFormat(e.target.value as 'json' | 'csv' | 'parquet');
+                }}
                 className="w-full rounded-md border border-border px-3 py-2"
               >
                 <option value="json">JSON</option>
@@ -547,7 +601,9 @@ export default function ResearchExportsPage() {
             variant="primary"
             onClick={handleExport}
             loading={exporting}
-            disabled={!anonymityResult?.passed || selectedDataTypes.length === 0 || purpose.length < 10}
+            disabled={
+              !anonymityResult?.passed || selectedDataTypes.length === 0 || purpose.length < 10
+            }
           >
             Generate De-identified Export
           </Button>

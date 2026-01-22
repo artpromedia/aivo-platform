@@ -57,12 +57,12 @@ export interface PolicyAuditResponse {
 }
 
 export interface AuditFilters {
-  startDate?: string;
-  endDate?: string;
-  tenantId?: string;
-  actorType?: AuditActorType;
-  page?: number;
-  pageSize?: number;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  tenantId?: string | undefined;
+  actorType?: AuditActorType | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 /** Generic audit event (for tenant-wide queries) */
@@ -122,7 +122,7 @@ export async function getPolicyAuditLog(
   filters?: AuditFilters
 ): Promise<PolicyAuditResponse> {
   const params = new URLSearchParams();
-  
+
   if (filters?.startDate) params.append('startDate', filters.startDate);
   if (filters?.endDate) params.append('endDate', filters.endDate);
   if (filters?.tenantId) params.append('tenantId', filters.tenantId);
@@ -144,7 +144,7 @@ export async function getTenantAuditLog(
   filters?: Omit<AuditFilters, 'tenantId'>
 ): Promise<{ events: AuditEvent[]; total: number }> {
   const params = new URLSearchParams();
-  
+
   if (filters?.startDate) params.append('startDate', filters.startDate);
   if (filters?.endDate) params.append('endDate', filters.endDate);
   if (filters?.page) params.append('page', filters.page.toString());
@@ -190,7 +190,7 @@ export function formatRelativeTime(dateString: string): string {
   if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-  
+
   return formatAuditDate(dateString);
 }
 
@@ -199,19 +199,19 @@ export function formatRelativeTime(dateString: string): string {
  */
 export function formatPolicyChange(changeJson: PolicyChangeJson): string {
   const parts: string[] = [];
-  
+
   if (changeJson.policyName) {
     parts.push(`Policy: ${changeJson.policyName}`);
   }
-  
+
   if (changeJson.policyVersion) {
     parts.push(`Version: ${changeJson.policyVersion}`);
   }
-  
+
   if (changeJson.changedFields && changeJson.changedFields.length > 0) {
     parts.push(`Changed: ${changeJson.changedFields.join(', ')}`);
   }
-  
+
   return parts.join(' • ') || 'Policy document modified';
 }
 
@@ -228,7 +228,7 @@ export function getActionLabel(action: string): string {
     ACTIVATED: 'Activated',
     DEACTIVATED: 'Deactivated',
   };
-  
+
   return actionLabels[action] || action;
 }
 
@@ -245,7 +245,7 @@ export function getActionColor(action: string): string {
     ACTIVATED: 'bg-emerald-100 text-emerald-800',
     DEACTIVATED: 'bg-orange-100 text-orange-800',
   };
-  
+
   return actionColors[action] || 'bg-slate-100 text-slate-800';
 }
 
@@ -258,7 +258,7 @@ export function getActorIcon(actorType: AuditActorType): string {
     SYSTEM: '⚙️',
     AGENT: '🤖',
   };
-  
+
   return icons[actorType] || '❓';
 }
 
@@ -271,6 +271,6 @@ export function getActorTypeLabel(actorType: AuditActorType): string {
     SYSTEM: 'System',
     AGENT: 'AI Agent',
   };
-  
+
   return labels[actorType] || actorType;
 }

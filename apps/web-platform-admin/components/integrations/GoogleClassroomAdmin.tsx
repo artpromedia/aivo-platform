@@ -51,7 +51,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,17 +133,17 @@ export function GoogleClassroomAdmin() {
         throw new Error('Failed to fetch data');
       }
 
-      setStats(await statsRes.json());
-      setInstallations(await installationsRes.json());
-    } catch (err: any) {
-      setError(err.message);
+      setStats((await statsRes.json()) as IntegrationStats);
+      setInstallations((await installationsRes.json()) as DomainInstallation[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   if (loading) {
@@ -446,14 +445,14 @@ function AddDomainDialog({
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { message?: string };
         throw new Error(data.message || 'Failed to add domain');
       }
 
       onSuccess();
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -481,7 +480,7 @@ function AddDomainDialog({
             <Input
               id="tenantId"
               value={tenantId}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setTenantId(e.target.value);
               }}
               placeholder="e.g., tenant_abc123"
@@ -494,7 +493,7 @@ function AddDomainDialog({
             <Input
               id="domain"
               value={domain}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setDomain(e.target.value);
               }}
               placeholder="e.g., school.edu"
@@ -508,7 +507,7 @@ function AddDomainDialog({
               id="adminEmail"
               type="email"
               value={adminEmail}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setAdminEmail(e.target.value);
               }}
               placeholder="e.g., admin@school.edu"
@@ -715,16 +714,12 @@ function ServiceAccountTab() {
   const [validating, setValidating] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
   const fetchConfig = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/integrations/google-classroom/service-account');
       if (response.ok) {
-        setConfig(await response.json());
+        setConfig((await response.json()) as ServiceAccountConfig);
       }
     } catch (err) {
       console.error('Failed to fetch service account config:', err);
@@ -732,6 +727,10 @@ function ServiceAccountTab() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchConfig();
+  }, []);
 
   const handleValidate = async () => {
     setValidating(true);
@@ -878,14 +877,14 @@ function UploadKeyDialog({
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { message?: string };
         throw new Error(data.message || 'Failed to upload key');
       }
 
       onSuccess();
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -913,7 +912,7 @@ function UploadKeyDialog({
             <Textarea
               id="keyJson"
               value={keyJson}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                 setKeyJson(e.target.value);
               }}
               placeholder='{"type": "service_account", ...}'
@@ -944,20 +943,24 @@ function UploadKeyDialog({
   );
 }
 
-function ActivityLogsTab() {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ActivityLog {
+  success: boolean;
+  action: string;
+  details: string;
+  domain: string;
+  timestamp: string;
+}
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
+function ActivityLogsTab() {
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/integrations/google-classroom/logs?limit=100');
       if (response.ok) {
-        setLogs(await response.json());
+        setLogs((await response.json()) as ActivityLog[]);
       }
     } catch (err) {
       console.error('Failed to fetch logs:', err);
@@ -965,6 +968,10 @@ function ActivityLogsTab() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchLogs();
+  }, []);
 
   return (
     <Card>

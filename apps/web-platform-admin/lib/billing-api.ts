@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Platform Admin Billing & Usage Analytics API
  *
@@ -109,7 +108,7 @@ export function getThresholdLabel(threshold: number): string {
 // ══════════════════════════════════════════════════════════════════════════════
 
 interface FetchOptions extends RequestInit {
-  accessToken?: string;
+  accessToken?: string | undefined;
 }
 
 async function apiFetch<T>(path: string, options?: FetchOptions): Promise<T> {
@@ -195,7 +194,7 @@ export async function fetchPlatformMetrics(accessToken?: string): Promise<Platfo
  * Acknowledge an alert (admin action)
  */
 export async function acknowledgeAlert(alertId: string, accessToken?: string): Promise<void> {
-  await apiFetch<void>(`/admin/seat-usage/alerts/${alertId}/acknowledge`, {
+  await apiFetch<unknown>(`/admin/seat-usage/alerts/${alertId}/acknowledge`, {
     method: 'POST',
     accessToken,
   });
@@ -209,7 +208,7 @@ export async function resolveAlert(
   resolution: string,
   accessToken?: string
 ): Promise<void> {
-  await apiFetch<void>(`/admin/seat-usage/alerts/${alertId}/resolve`, {
+  await apiFetch<unknown>(`/admin/seat-usage/alerts/${alertId}/resolve`, {
     method: 'POST',
     body: JSON.stringify({ resolution }),
     accessToken,

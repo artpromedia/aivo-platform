@@ -4,10 +4,9 @@
  * Provides utilities for setting proper Cache-Control headers in Next.js API routes.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // NextResponse stub type - actual implementation comes from Next.js at runtime
-type NextResponse = any;
+
+type NextResponseType<_T = unknown> = any;
 
 /**
  * Cache control presets for different types of content
@@ -96,12 +95,12 @@ export function cachedResponse<T>(
     status?: number;
     headers?: Record<string, string>;
   }
-): NextResponse<T> {
-  const { status = 200, headers = {} } = options ?? {};
+): NextResponseType<T> {
+  const { status = 200, headers = {} } = options || {};
 
   const cacheHeaders = CachePresets[preset];
 
-  return NextResponse.json(data, {
+  return (globalThis as any).NextResponse?.json(data, {
     status,
     headers: {
       ...cacheHeaders,
@@ -224,9 +223,11 @@ export function etagResponse<T>(
   request: { headers: Headers },
   data: T,
   preset: CachePresetName = 'publicMedium'
-): NextResponse<T | null> {
+): NextResponseType<T | null> {
   const etag = generateETag(data);
   const ifNoneMatch = request.headers.get('If-None-Match');
+
+  const NextResponse = (globalThis as any).NextResponse;
 
   if (ifNoneMatch === etag) {
     return new NextResponse(null, {
@@ -235,7 +236,7 @@ export function etagResponse<T>(
         ETag: etag,
         ...CachePresets[preset],
       },
-    }) as NextResponse<T | null>;
+    });
   }
 
   return NextResponse.json(data, {
@@ -243,5 +244,5 @@ export function etagResponse<T>(
       ETag: etag,
       ...CachePresets[preset],
     },
-  }) as NextResponse<T | null>;
+  });
 }

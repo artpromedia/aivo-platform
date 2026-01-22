@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 const navigation = [
   {
@@ -60,9 +60,7 @@ const navigation = [
   },
   {
     title: 'API Reference',
-    items: [
-      { title: 'Interactive Docs', href: '/docs/api-reference' },
-    ],
+    items: [{ title: 'Interactive Docs', href: '/docs/api-reference' }],
   },
   {
     title: 'Guides',
@@ -98,25 +96,30 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
               <Link href="/docs" className="text-gray-900 font-medium">
                 Docs
               </Link>
-              <Link href="/api-reference" className="text-gray-600 hover:text-gray-900 transition-colors">
+              <Link
+                href="/api-reference"
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
                 API Reference
               </Link>
               <Link href="/sandbox" className="text-gray-600 hover:text-gray-900 transition-colors">
                 Sandbox
               </Link>
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="px-4 py-2 bg-portal-primary text-white rounded-lg hover:bg-portal-primary/90 transition-colors"
               >
                 Dashboard
               </Link>
             </nav>
-            <button 
-              className="md:hidden p-2"
-              onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            >
+            <button className="md:hidden p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             </button>
           </div>
@@ -125,11 +128,13 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
       <div className="max-w-8xl mx-auto flex">
         {/* Sidebar */}
-        <aside className={`
+        <aside
+          className={`
           fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 pt-16 
           transform transition-transform md:relative md:transform-none
           ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}>
+        `}
+        >
           <nav className="h-full overflow-y-auto py-6 px-4">
             {navigation.map((section) => (
               <div key={section.title} className="mb-6">
@@ -156,7 +161,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
         {/* Mobile overlay */}
         {mobileNavOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-30 md:hidden"
             onClick={() => setMobileNavOpen(false)}
           />
@@ -164,9 +169,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
         {/* Main content */}
         <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-10">
-          <div className="max-w-4xl mx-auto">
-            {children}
-          </div>
+          <div className="max-w-4xl mx-auto">{children}</div>
         </main>
       </div>
     </div>

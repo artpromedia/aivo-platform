@@ -4,7 +4,7 @@
  * Fetches AI model documentation for transparency and governance views.
  */
 
-import type { AuthSession } from './auth';
+// Auth types imported when needed
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIG
@@ -95,7 +95,7 @@ export async function listModelCards(accessToken: string): Promise<{
     throw new Error(`Failed to fetch model cards: ${res.status}`);
   }
 
-  return res.json();
+  return (await res.json()) as { modelCards: ModelCard[] };
 }
 
 /**
@@ -117,7 +117,7 @@ export async function getModelCard(
     throw new Error(`Failed to fetch model card: ${res.status}`);
   }
 
-  return res.json();
+  return (await res.json()) as { modelCard: ModelCard };
 }
 
 /**
@@ -136,7 +136,7 @@ export async function listAIFeatures(accessToken: string): Promise<{ features: A
     throw new Error(`Failed to fetch AI features: ${res.status}`);
   }
 
-  return res.json();
+  return (await res.json()) as { features: AIFeature[] };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -168,7 +168,7 @@ export function parseBestFor(intendedUseCases: string): string[] {
       continue;
     }
     if (inBestFor && (trimmed.startsWith('•') || trimmed.startsWith('-'))) {
-      bullets.push(trimmed.replace(/^[•\-]\s*/, ''));
+      bullets.push(trimmed.replace(/^[•-]\s*/, ''));
     } else if (inBestFor && trimmed && !trimmed.startsWith('•') && !trimmed.startsWith('-')) {
       break;
     }
@@ -192,7 +192,7 @@ export function parseNotAppropriateFor(limitations: string): string[] {
       continue;
     }
     if (inSection && (trimmed.startsWith('•') || trimmed.startsWith('-'))) {
-      bullets.push(trimmed.replace(/^[•\-]\s*/, ''));
+      bullets.push(trimmed.replace(/^[•-]\s*/, ''));
     } else if (inSection && trimmed.toLowerCase().includes('important:')) {
       break;
     }
@@ -206,7 +206,7 @@ export function parseNotAppropriateFor(limitations: string): string[] {
  */
 export function parseSafetyMeasures(safetyConsiderations: string): {
   measures: string[];
-  disclaimer?: string;
+  disclaimer?: string | undefined;
 } {
   const lines = safetyConsiderations.split('\n');
   const measures: string[] = [];
@@ -231,7 +231,7 @@ export function parseSafetyMeasures(safetyConsiderations: string): {
     }
 
     if (inMeasures && (trimmed.startsWith('•') || trimmed.startsWith('-'))) {
-      measures.push(trimmed.replace(/^[•\-]\s*/, ''));
+      measures.push(trimmed.replace(/^[•-]\s*/, ''));
     }
 
     if (inDisclaimer && trimmed && !trimmed.startsWith('•')) {

@@ -1,8 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useState } from 'react';
 
 interface CodeBlockProps {
   language: string;
@@ -11,18 +11,15 @@ interface CodeBlockProps {
   showLineNumbers?: boolean;
 }
 
-export function CodeBlock({ 
-  language, 
-  code, 
-  filename,
-  showLineNumbers = false,
-}: CodeBlockProps) {
+export function CodeBlock({ language, code, filename, showLineNumbers = false }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
@@ -65,6 +62,11 @@ interface CodeTabsProps {
 
 export function CodeTabs({ examples }: CodeTabsProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const currentExample = examples[activeTab];
+
+  if (!currentExample) {
+    return null;
+  }
 
   return (
     <div className="code-block my-4 rounded-lg overflow-hidden border border-gray-200">
@@ -72,11 +74,11 @@ export function CodeTabs({ examples }: CodeTabsProps) {
         {examples.map((example, index) => (
           <button
             key={example.label}
-            onClick={() => setActiveTab(index)}
+            onClick={() => {
+              setActiveTab(index);
+            }}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === index
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-400 hover:text-white'
+              activeTab === index ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
             {example.label}
@@ -84,7 +86,7 @@ export function CodeTabs({ examples }: CodeTabsProps) {
         ))}
       </div>
       <SyntaxHighlighter
-        language={examples[activeTab].language}
+        language={currentExample.language}
         style={oneDark}
         customStyle={{
           margin: 0,
@@ -92,7 +94,7 @@ export function CodeTabs({ examples }: CodeTabsProps) {
           fontSize: '0.875rem',
         }}
       >
-        {examples[activeTab].code}
+        {currentExample.code}
       </SyntaxHighlighter>
     </div>
   );
