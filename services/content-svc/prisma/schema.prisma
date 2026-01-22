@@ -61,8 +61,9 @@ model LearningObject {
   updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  versions LearningObjectVersion[]
-  tags     LearningObjectTag[]
+  versions     LearningObjectVersion[]
+  tags         LearningObjectTag[]
+  lessonDrafts LessonDraft[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, subject, gradeBand])
@@ -936,5 +937,119 @@ model SensoryIncident {
   @@index([status, severity])
   @@index([profileId])
   @@map("sensory_incidents")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LESSON BUILDER MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum LessonStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+
+  @@map("lesson_status")
+}
+
+/// Main lesson draft entity for the lesson builder.
+/// This is the working document that authors edit.
+model LessonDraft {
+  id                  String        @id @default(uuid()) @db.Uuid
+  tenantId            String        @map("tenant_id") @db.Uuid
+  learningObjectId    String?       @map("learning_object_id") @db.Uuid
+  
+  // Content
+  title               String        @db.VarChar(500)
+  description         String?       @db.Text
+  blocks              Json          @default("[]")    // Array of content blocks
+  settings            Json          @default("{}")    // Lesson-level settings
+  
+  // Status and versioning
+  status              LessonStatus  @default(DRAFT)
+  version             Int           @default(1)       // Current working version number
+  
+  // Audit
+  createdById         String        @map("created_by_id") @db.Uuid
+  lastModifiedById    String        @map("last_modified_by_id") @db.Uuid
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  publishedAt         DateTime?     @map("published_at") @db.Timestamptz
+  archivedAt          DateTime?     @map("archived_at") @db.Timestamptz
+  
+  // Relations
+  versions            LessonVersion[]
+  learningObject      LearningObject? @relation(fields: [learningObjectId], references: [id], onDelete: SetNull)
+  
+  @@index([tenantId])
+  @@index([learningObjectId])
+  @@index([status])
+  @@index([createdById])
+  @@index([lastModifiedById])
+  @@map("lesson_drafts")
+}
+
+/// Snapshot of a lesson at a point in time.
+/// Created when lessons are published or manually saved.
+model LessonVersion {
+  id              String      @id @default(uuid()) @db.Uuid
+  lessonDraftId   String      @map("lesson_draft_id") @db.Uuid
+  
+  // Version info
+  versionNumber   Int         @map("version_number")
+  title           String      @db.VarChar(500)
+  description     String?     @db.Text
+  blocks          Json        @default("[]")
+  settings        Json        @default("{}")
+  
+  // Publishing info
+  isPublished     Boolean     @default(false) @map("is_published")
+  note            String?     @db.Text    // Version note/changelog
+  
+  // Audit
+  createdById     String      @map("created_by_id") @db.Uuid
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  
+  // Relations
+  lessonDraft     LessonDraft @relation(fields: [lessonDraftId], references: [id], onDelete: Cascade)
+  
+  @@unique([lessonDraftId, versionNumber])
+  @@index([lessonDraftId])
+  @@index([isPublished])
+  @@map("lesson_versions")
+}
+
+/// Reusable lesson templates for quick lesson creation.
+model LessonTemplate {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String?   @map("tenant_id") @db.Uuid  // null = global template
+  
+  // Template info
+  name            String    @db.VarChar(200)
+  description     String?   @db.Text
+  category        String    @db.VarChar(100)    // e.g., "Reading Comprehension", "Math Practice"
+  subject         String    @db.VarChar(50)     // ELA, MATH, SCIENCE, etc.
+  gradeBand       String    @map("grade_band") @db.VarChar(50)  // K_2, G3_5, etc.
+  
+  // Template content
+  blocks          Json      @default("[]")      // Template blocks
+  settings        Json      @default("{}")      // Default settings
+  
+  // Display
+  thumbnailUrl    String?   @map("thumbnail_url") @db.VarChar(500)
+  isActive        Boolean   @default(true) @map("is_active")
+  usageCount      Int       @default(0) @map("usage_count")
+  
+  // Audit
+  createdById     String    @map("created_by_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  
+  @@index([tenantId])
+  @@index([category])
+  @@index([subject])
+  @@index([gradeBand])
+  @@index([isActive])
+  @@map("lesson_templates")
 }
 

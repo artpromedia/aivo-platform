@@ -298,6 +298,9 @@ export interface ReconciliationResult {
   /** Number of subscriptions marked for migration */
   subscriptionsMarkedForMigration: number;
 
+  /** Number of credits actually processed and issued */
+  creditsProcessed: number;
+
   /** Errors encountered */
   errors: ReconciliationError[];
 }

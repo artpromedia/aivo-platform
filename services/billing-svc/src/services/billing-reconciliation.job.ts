@@ -8,7 +8,7 @@
  * 1. Scan for parent subscriptions linked to learners with district coverage
  * 2. Detect feature overlaps where district provides what parent is paying for
  * 3. Mark subscriptions for review/migration
- * 4. Calculate pro-rata credits (TODO: implement credit processing)
+ * 4. Calculate and process pro-rata credits for overlapping coverage
  * 5. Generate reports for billing operations team
  *
  * RUN FREQUENCY: Daily at 2am (configured externally)
@@ -30,6 +30,7 @@ import {
   parentSubscriptionExtensions,
   computeCoveredFeatures,
 } from './parent-subscription.extensions.js';
+import { StripeService } from './stripe.service.js';
 
 // ============================================================================
 // Configuration
@@ -53,6 +54,12 @@ export interface ReconciliationConfig {
    * If false, just generates report without marking.
    */
   autoMarkForMigration?: boolean;
+
+  /**
+   * Whether to automatically process and issue credits.
+   * If false, just calculates potential credits without issuing.
+   */
+  autoProcessCredits?: boolean;
 
   /**
    * Whether to send notifications to parents about overlap.
@@ -80,6 +87,7 @@ const DEFAULT_CONFIG: Required<ReconciliationConfig> = {
   maxSubscriptionsPerRun: 10000,
   minCreditThresholdCents: 100, // $1.00 minimum to flag
   autoMarkForMigration: true,
+  autoProcessCredits: false, // Default to false for safety - requires manual approval
   sendParentNotifications: false,
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   onNotification: async () => {},
@@ -92,10 +100,12 @@ const DEFAULT_CONFIG: Required<ReconciliationConfig> = {
 export class BillingReconciliationJob {
   private readonly prisma: PrismaClient;
   private readonly config: Required<ReconciliationConfig>;
+  private readonly stripeService: StripeService;
 
   constructor(config: ReconciliationConfig = {}, client: PrismaClient = prisma) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.prisma = client;
+    this.stripeService = new StripeService();
   }
 
   /**
@@ -110,6 +120,7 @@ export class BillingReconciliationJob {
       overlapsDetected: [],
       totalPotentialCreditCents: 0,
       subscriptionsMarkedForMigration: 0,
+      creditsProcessed: 0,
       errors: [],
     };
 
@@ -147,6 +158,20 @@ export class BillingReconciliationJob {
                 `Overlap detected: ${overlap.featureKey}`
               );
               result.subscriptionsMarkedForMigration++;
+            }
+
+            // Process and issue credit if enabled and above threshold
+            if (
+              this.config.autoProcessCredits &&
+              (overlap.proRataCreditCents ?? 0) >= this.config.minCreditThresholdCents
+            ) {
+              const creditProcessed = await this.processCreditIssuance(overlap, sub);
+              if (creditProcessed) {
+                result.creditsProcessed++;
+                console.log(
+                  `[ReconciliationJob] Successfully processed credit for subscription ${sub.subscriptionId}`
+                );
+              }
             }
           }
         } catch (error) {
@@ -429,6 +454,80 @@ export class BillingReconciliationJob {
   }
 
   /**
+   * Process and issue credit to customer's account.
+   * Creates a refund via Stripe and records it in the database.
+   */
+  private async processCreditIssuance(
+    overlap: CoverageOverlap,
+    sub: ParentSubscriptionData
+  ): Promise<boolean> {
+    try {
+      // Get the most recent payment intent for this subscription
+      const latestInvoice = await this.prisma.invoice.findFirst({
+        where: {
+          subscriptionId: sub.subscriptionId,
+          status: 'PAID',
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          stripePaymentIntentId: true,
+          amountCents: true,
+        },
+      });
+
+      if (!latestInvoice?.stripePaymentIntentId) {
+        console.warn(
+          `[ReconciliationJob] No paid invoice found for subscription ${sub.subscriptionId}, cannot issue credit`
+        );
+        return false;
+      }
+
+      // Create a refund via Stripe
+      const refund = await this.stripeService.createRefund(
+        latestInvoice.stripePaymentIntentId,
+        overlap.proRataCreditCents,
+        'requested_by_customer'
+      );
+
+      // Record the credit in our database
+      await this.prisma.credit.create({
+        data: {
+          billingAccountId: sub.billingAccountId,
+          learnerId: overlap.learnerId,
+          amountCents: overlap.proRataCreditCents ?? 0,
+          reason: 'DISTRICT_OVERLAP',
+          sourceInvoiceId: latestInvoice.id,
+          stripeRefundId: refund.id,
+          status: 'ISSUED',
+          issuedAt: new Date(),
+          expiresAt: null,
+          metadataJson: {
+            districtContractId: overlap.districtContractId,
+            featureKey: overlap.featureKey,
+            subscriptionId: sub.subscriptionId,
+            reconciliationJobRun: new Date().toISOString(),
+          },
+        },
+      });
+
+      console.log(
+        `[ReconciliationJob] Issued credit of $${(overlap.proRataCreditCents ?? 0) / 100} for learner ${overlap.learnerId} via refund ${refund.id}`
+      );
+
+      return true;
+    } catch (error) {
+      console.error(
+        `[ReconciliationJob] Failed to process credit for subscription ${sub.subscriptionId}:`,
+        error
+      );
+      return false;
+    }
+  }
+
+  /**
    * Get feature charge for subscription from actual plan pricing.
    */
   private async getFeatureCharge(sub: ParentSubscriptionData): Promise<number> {
@@ -494,6 +593,7 @@ export class BillingReconciliationJob {
         totalOverlaps: result.overlapsDetected.length,
         totalPotentialCreditDollars: result.totalPotentialCreditCents / 100,
         subscriptionsMarkedForMigration: result.subscriptionsMarkedForMigration,
+        creditsProcessed: result.creditsProcessed,
         errorCount: result.errors.length,
       },
       byFeature: Array.from(overlapsByFeature.entries()).map(([feature, count]) => ({
@@ -520,6 +620,7 @@ export interface ReconciliationReport {
     totalOverlaps: number;
     totalPotentialCreditDollars: number;
     subscriptionsMarkedForMigration: number;
+    creditsProcessed: number;
     errorCount: number;
   };
   byFeature: {

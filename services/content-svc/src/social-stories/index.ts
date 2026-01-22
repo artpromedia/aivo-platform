@@ -1,9 +1,8 @@
 /**
- * Social Stories Module - STUB
+ * Social Stories Module - ND-1.2
  *
- * Original files backed up to ../social-stories.bak/
- * Stubbed due to type mismatches with Prisma enums and service input types.
- * TODO: Align social stories types with Prisma schema.
+ * Business logic and types for the Social Stories Library.
+ * Provides CRUD operations, personalization, recommendations, and analytics.
  */
 
 export * from './social-story.service.js';

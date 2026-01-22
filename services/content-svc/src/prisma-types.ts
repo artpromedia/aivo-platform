@@ -53,11 +53,14 @@ export interface ExtendedPrismaClient {
 
   // Social stories models
   socialStory: ModelDelegate;
-  socialStoryFrame: ModelDelegate;
+  socialStoryView: ModelDelegate;
   socialStoryAssignment: ModelDelegate;
   learnerStoryPreferences: ModelDelegate;
-  storyReadingProgress: ModelDelegate;
-  storyEngagement: ModelDelegate;
+
+  // Lesson builder models
+  lessonDraft: ModelDelegate;
+  lessonVersion: ModelDelegate;
+  lessonTemplate: ModelDelegate;
 
   // xAPI models
   xapiStatement: ModelDelegate;
@@ -100,11 +103,21 @@ export namespace Prisma {
   export type JsonValue = any;
 }
 
-// Re-export content-related types
+// Re-export content-related types from actual Prisma client
+export {
+  SocialStoryCategory,
+  SocialStoryReadingLevel,
+  SocialStoryVisualStyle,
+  LearningObjectGradeBand,
+  LearningObjectSubject,
+  LearningObjectVersionState,
+  ReviewDecision,
+  IngestionJobStatus,
+  SensoryCategory,
+  IncidentSeverity,
+  IncidentStatus,
+  LessonStatus,
+} from '@prisma/client';
+
 export type ContentSensoryMetadata = any;
-export type SocialStoryCategory = string;
-export type SocialStoryReadingLevel = string;
-export type SocialStoryVisualStyle = string;
-export type LearningObjectGradeBand = string;
-export type LearningObjectSubject = string;
 export type SensoryIncident = any;

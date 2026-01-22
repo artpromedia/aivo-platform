@@ -18,7 +18,7 @@ import {
   type StorageConfig,
 } from '@aivo/ts-storage';
 import multipart from '@fastify/multipart';
-import type { Prisma, type FileCategory, type VirusScanStatus } from '@prisma/client';
+import type { Prisma, FileCategory, VirusScanStatus } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 

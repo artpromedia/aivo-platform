@@ -106,8 +106,8 @@ export async function selectContentForPlan(
   // 1. Search for matching content
   const searchResults = await searchContent({
     tenantId,
-    subject: subject as LearningObjectSubject,
-    gradeBand: gradeBand as LearningObjectGradeBand,
+    subject,
+    gradeBand,
     skillIds: targetSkills,
     limit: 100, // Get more candidates for selection
   });

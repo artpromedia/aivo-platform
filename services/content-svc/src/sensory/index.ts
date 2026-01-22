@@ -1,13 +1,11 @@
 /**
- * Sensory Module - STUB
+ * Sensory Content Module - ND-2.1
  *
- * Original files backed up to ../sensory.bak/
- * Stubbed due to type incompatibilities between ts-shared SensoryProfile and local types.
- * TODO: Align sensory types across the codebase.
+ * Sensory profile matching and content filtering for learner accessibility.
+ * Provides matching algorithms, metadata management, incident tracking, and content filters.
  */
 
-// Re-export stub types and services
-export * from './sensory-compat-types.js';
+export * from './sensory.types.js';
 export * from './sensory-matcher.service.js';
 export * from './sensory-metadata.service.js';
 export * from './sensory-incident.service.js';
