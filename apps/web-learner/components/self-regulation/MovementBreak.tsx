@@ -6,7 +6,12 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_MOVEMENTS, type GradeBand, type MovementStep } from '@/lib/self-regulation/regulation-types';
+
+import {
+  DEFAULT_MOVEMENTS,
+  type GradeBand,
+  type MovementStep,
+} from '@/lib/self-regulation/regulation-types';
 
 // ============================================================================
 // Types
@@ -71,7 +76,9 @@ export function MovementBreak({
       const timer = setTimeout(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     } else {
       // Movement complete
       setCompletedCount((prev) => prev + 1);
@@ -158,10 +165,7 @@ export function MovementBreak({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           {onCancel && (
-            <button
-              onClick={onCancel}
-              className="text-slate-600 hover:text-slate-900"
-            >
+            <button onClick={onCancel} className="text-slate-600 hover:text-slate-900">
               ← Back
             </button>
           )}
@@ -171,9 +175,7 @@ export function MovementBreak({
         {/* Content */}
         <div className="text-center">
           <span className="text-6xl block mb-4">🏃</span>
-          <h2 className="text-2xl font-semibold text-slate-900 mb-3">
-            {getText('introTitle')}
-          </h2>
+          <h2 className="text-2xl font-semibold text-slate-900 mb-3">{getText('introTitle')}</h2>
           <p className="text-slate-600 mb-4">{getText('introDesc')}</p>
 
           {/* Movement preview */}
@@ -202,13 +204,13 @@ export function MovementBreak({
             <input
               type="checkbox"
               checked={useSeatedOption}
-              onChange={(e) => setUseSeatedOption(e.target.checked)}
+              onChange={(e) => {
+                setUseSeatedOption(e.target.checked);
+              }}
               className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
             />
             <span className="text-sm text-slate-600">
-              {gradeBand === 'K5'
-                ? 'I want to stay sitting'
-                : 'Use seated alternatives'}
+              {gradeBand === 'K5' ? 'I want to stay sitting' : 'Use seated alternatives'}
             </span>
           </label>
 
@@ -231,9 +233,7 @@ export function MovementBreak({
     return (
       <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl shadow-lg p-6 max-w-md mx-auto text-center">
         <span className="text-6xl block mb-4">🌟</span>
-        <h2 className="text-2xl font-semibold text-slate-900 mb-3">
-          {getText('completeTitle')}
-        </h2>
+        <h2 className="text-2xl font-semibold text-slate-900 mb-3">{getText('completeTitle')}</h2>
         <p className="text-slate-600 mb-4">{getText('completeDesc')}</p>
 
         <div className="p-4 bg-white rounded-lg mb-6">
@@ -259,7 +259,7 @@ export function MovementBreak({
   // ============================================================================
 
   if (phase === 'rest') {
-    const nextMovement = movements[currentIndex + 1];
+    const nextStep = movements[currentIndex + 1];
 
     return (
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 max-w-md mx-auto text-center">
@@ -268,20 +268,20 @@ export function MovementBreak({
           {gradeBand === 'K5' ? 'Good job!' : 'Nice work!'}
         </h2>
         <p className="text-slate-600 mb-6">
-          {gradeBand === 'K5' ? 'Ready for the next one?' : 'Take a breath before the next movement.'}
+          {gradeBand === 'K5'
+            ? 'Ready for the next one?'
+            : 'Take a breath before the next movement.'}
         </p>
 
         {/* Next movement preview */}
-        {nextMovement && (
+        {nextStep && (
           <div className="p-4 bg-white rounded-lg mb-6">
             <p className="text-sm text-slate-500 mb-2">Up next:</p>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-3xl">
-                {MOVEMENT_EMOJIS[nextMovement.id] || '🏃'}
-              </span>
+              <span className="text-3xl">{MOVEMENT_EMOJIS[nextStep.id] || '🏃'}</span>
               <div className="text-left">
-                <p className="font-medium text-slate-900">{nextMovement.name}</p>
-                <p className="text-sm text-slate-600">{nextMovement.durationSeconds}s</p>
+                <p className="font-medium text-slate-900">{nextStep.name}</p>
+                <p className="text-sm text-slate-600">{nextStep.durationSeconds}s</p>
               </div>
             </div>
           </div>
@@ -295,7 +295,7 @@ export function MovementBreak({
             Skip
           </button>
           <button
-            onClick={nextMovement ? nextMovement : onComplete}
+            onClick={nextStep ? nextMovement : onComplete}
             className="flex-1 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600"
           >
             {gradeBand === 'K5' ? 'Go!' : 'Continue'}
@@ -313,17 +313,16 @@ export function MovementBreak({
     <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl shadow-lg p-6 max-w-md mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={onCancel}
-          className="text-slate-600 hover:text-slate-900 text-sm"
-        >
+        <button onClick={onCancel} className="text-slate-600 hover:text-slate-900 text-sm">
           Exit
         </button>
         <span className="text-sm text-slate-600">
           {currentIndex + 1} of {movements.length}
         </span>
         <button
-          onClick={() => setIsPaused(!isPaused)}
+          onClick={() => {
+            setIsPaused(!isPaused);
+          }}
           className="text-slate-600 hover:text-slate-900 text-sm"
         >
           {isPaused ? 'Resume' : 'Pause'}
@@ -351,9 +350,7 @@ export function MovementBreak({
           {MOVEMENT_EMOJIS[currentMovement.id] || '🏃'}
         </div>
 
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">
-          {currentMovement.name}
-        </h2>
+        <h2 className="text-xl font-semibold text-slate-900 mb-2">{currentMovement.name}</h2>
 
         <p className="text-slate-600 mb-2">
           {useSeatedOption && currentMovement.seatedAlternative
@@ -397,7 +394,9 @@ export function MovementBreak({
             <span className="text-4xl block mb-2">⏸️</span>
             <p className="text-slate-600">Paused</p>
             <button
-              onClick={() => setIsPaused(false)}
+              onClick={() => {
+                setIsPaused(false);
+              }}
               className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600"
             >
               Resume

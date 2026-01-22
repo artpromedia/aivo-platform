@@ -1,13 +1,16 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useReducer,
+  useState,
+  type ReactNode,
+} from 'react';
 
-import type {
-  FocusLossReason,
-  GradeBand,
-  RegulationActivity,
-  SelfReportedMood,
-} from './focus-api';
+import type { FocusLossReason, GradeBand, RegulationActivity, SelfReportedMood } from './focus-api';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // STATE TYPES
@@ -242,31 +245,53 @@ interface FocusProviderProps {
 
 export function FocusProvider({ children, initialConfig }: FocusProviderProps) {
   const [state, dispatch] = useReducer(focusReducer, initialState);
-  const [config, setConfigState] = useReducer(
-    (_: FocusSessionConfig | null, newConfig: FocusSessionConfig) => newConfig,
-    initialConfig ?? null
-  );
+  const [config, setConfigState] = useState<FocusSessionConfig | null>(initialConfig ?? null);
 
   const actions = useMemo(
     () => ({
-      startMonitoring: () => dispatch({ type: 'START_MONITORING' }),
-      stopMonitoring: () => dispatch({ type: 'STOP_MONITORING' }),
-      recordPingSent: () => dispatch({ type: 'PING_SENT', timestamp: new Date() }),
+      startMonitoring: () => {
+        dispatch({ type: 'START_MONITORING' });
+      },
+      stopMonitoring: () => {
+        dispatch({ type: 'STOP_MONITORING' });
+      },
+      recordPingSent: () => {
+        dispatch({ type: 'PING_SENT', timestamp: new Date() });
+      },
       handleFocusLossDetection: (
         reasons: FocusLossReason[],
         confidence: number,
         intervention: 'none' | 'light_prompt' | 'regulation_break'
-      ) => dispatch({ type: 'FOCUS_LOSS_DETECTED', reasons, confidence, intervention }),
-      restoreFocus: () => dispatch({ type: 'FOCUS_RESTORED' }),
-      setPendingActivity: (activity: RegulationActivity) =>
-        dispatch({ type: 'SET_PENDING_ACTIVITY', activity }),
-      dismissBreakRecommendation: () => dispatch({ type: 'DISMISS_BREAK_RECOMMENDATION' }),
-      startBreak: (activity: RegulationActivity) => dispatch({ type: 'START_BREAK', activity }),
-      completeBreak: () => dispatch({ type: 'COMPLETE_BREAK' }),
-      setMood: (mood: SelfReportedMood) => dispatch({ type: 'SET_MOOD', mood }),
-      setError: (error: string) => dispatch({ type: 'SET_ERROR', error }),
-      clearError: () => dispatch({ type: 'CLEAR_ERROR' }),
-      reset: () => dispatch({ type: 'RESET' }),
+      ) => {
+        dispatch({ type: 'FOCUS_LOSS_DETECTED', reasons, confidence, intervention });
+      },
+      restoreFocus: () => {
+        dispatch({ type: 'FOCUS_RESTORED' });
+      },
+      setPendingActivity: (activity: RegulationActivity) => {
+        dispatch({ type: 'SET_PENDING_ACTIVITY', activity });
+      },
+      dismissBreakRecommendation: () => {
+        dispatch({ type: 'DISMISS_BREAK_RECOMMENDATION' });
+      },
+      startBreak: (activity: RegulationActivity) => {
+        dispatch({ type: 'START_BREAK', activity });
+      },
+      completeBreak: () => {
+        dispatch({ type: 'COMPLETE_BREAK' });
+      },
+      setMood: (mood: SelfReportedMood) => {
+        dispatch({ type: 'SET_MOOD', mood });
+      },
+      setError: (error: string) => {
+        dispatch({ type: 'SET_ERROR', error });
+      },
+      clearError: () => {
+        dispatch({ type: 'CLEAR_ERROR' });
+      },
+      reset: () => {
+        dispatch({ type: 'RESET' });
+      },
     }),
     []
   );

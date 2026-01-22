@@ -1,20 +1,22 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@aivo/ui-web';
+import * as React from 'react';
 
-import type { GameConfig, GameResult } from './types';
-import { GameSelector } from './GameSelector';
+import type { GameDefinition } from '../../lib/games/game-types';
+
 import { GameResults } from './GameResults';
-import { useGameSession, useGameFavorites, useRecentlyPlayed } from './useGameSession';
-import type { GradeBand } from './games-api';
 
 // Game imports
+import { LogicPuzzleGame } from './games/LogicPuzzleGame';
 import { ReactionTimeGame } from './games/ReactionTimeGame';
 import { ShapeSorterGame } from './games/ShapeSorterGame';
-import { WordScrambleGame } from './games/WordScrambleGame';
-import { LogicPuzzleGame } from './games/LogicPuzzleGame';
 import { SimonSaysGame } from './games/SimonSaysGame';
+import { WordScrambleGame } from './games/WordScrambleGame';
+import type { GradeBand } from './games-api';
+import { GameSelector } from './GameSelector';
+import type { GameConfig, GameResult } from './types';
+import { useGameSession, useGameFavorites, useRecentlyPlayed } from './useGameSession';
 
 interface GameContainerProps {
   learnerId: string;
@@ -26,12 +28,15 @@ interface GameContainerProps {
 }
 
 // Game component mapping
-const GAME_COMPONENTS: Record<string, React.ComponentType<{
-  config: GameConfig;
-  onComplete: (result: GameResult) => void;
-  onExit: () => void;
-  className?: string;
-}>> = {
+const GAME_COMPONENTS: Record<
+  string,
+  React.ComponentType<{
+    config: GameConfig;
+    onComplete: (result: GameResult) => void;
+    onExit: () => void;
+    className?: string;
+  }>
+> = {
   'reaction-time': ReactionTimeGame,
   'shape-sorter': ShapeSorterGame,
   'word-scramble': WordScrambleGame,
@@ -66,10 +71,12 @@ export function GameContainer({
   const { favorites } = useGameFavorites(learnerId);
   const { recentGames } = useRecentlyPlayed(learnerId);
 
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState<'easy' | 'medium' | 'hard'>('medium');
+  const [selectedDifficulty, setSelectedDifficulty] = React.useState<'easy' | 'medium' | 'hard'>(
+    'medium'
+  );
 
-  const handleSelectGame = (gameId: string) => {
-    actions.selectGame(gameId);
+  const handleSelectGame = (game: GameDefinition) => {
+    actions.selectGame(game.id);
   };
 
   const handleStartGame = () => {
@@ -128,7 +135,9 @@ export function GameContainer({
                 {(['easy', 'medium', 'hard'] as const).map((diff) => (
                   <button
                     key={diff}
-                    onClick={() => setSelectedDifficulty(diff)}
+                    onClick={() => {
+                      setSelectedDifficulty(diff);
+                    }}
                     className={cn(
                       'flex-1 rounded-xl py-3 font-medium transition',
                       selectedDifficulty === diff
@@ -151,13 +160,13 @@ export function GameContainer({
               <h3 className="font-medium text-slate-700 mb-2">About this game</h3>
               <p className="text-sm text-slate-600">
                 {state.selectedGame === 'reaction-time' &&
-                  'Test your reflexes by clicking as fast as you can when you see the green signal. Don\'t click too early!'}
+                  "Test your reflexes by clicking as fast as you can when you see the green signal. Don't click too early!"}
                 {state.selectedGame === 'shape-sorter' &&
                   'Sort falling shapes into the correct containers. The speed increases as you level up!'}
                 {state.selectedGame === 'word-scramble' &&
                   'Unscramble letters to form words. Use hints if you get stuck. Age-appropriate words for your grade.'}
                 {state.selectedGame === 'logic-puzzle' &&
-                  'Find the pattern and predict what comes next. Take your time - there\'s no time pressure!'}
+                  "Find the pattern and predict what comes next. Take your time - there's no time pressure!"}
                 {state.selectedGame === 'simon-says' &&
                   'Watch the color sequence and repeat it back. How long of a sequence can you remember?'}
               </p>
@@ -166,7 +175,9 @@ export function GameContainer({
             {/* Action buttons */}
             <div className="flex gap-4">
               <button
-                onClick={() => actions.reset()}
+                onClick={() => {
+                  actions.reset();
+                }}
                 className="flex-1 rounded-xl border border-slate-300 py-3 font-medium text-slate-600 hover:bg-slate-50"
               >
                 Back
@@ -248,7 +259,12 @@ export function GameContainer({
           aria-label="Close games"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       )}

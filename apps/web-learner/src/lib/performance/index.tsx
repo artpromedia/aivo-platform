@@ -83,7 +83,7 @@ export function createLazyComponent<P extends object = object>(
   return function LazyWrapper(props: P): React.JSX.Element {
     return (
       <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
-        <LazyComponent {...props} />
+        <LazyComponent {...(props as any)} />
       </Suspense>
     );
   };

@@ -1,26 +1,28 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { SensoryPreferences, useSensoryPreferences } from './SensoryProfile'
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+import type { SensoryPreferences } from './SensoryProfile';
+import { useSensoryPreferences } from './SensoryProfile';
 
 interface AccessibilityPanelProps {
-  learnerId: string
-  position?: 'left' | 'right'
-  defaultExpanded?: boolean
-  showFloatingButton?: boolean
-  onPreferenceChange?: (preferences: Partial<SensoryPreferences>) => void
-  className?: string
+  learnerId: string;
+  position?: 'left' | 'right';
+  defaultExpanded?: boolean;
+  showFloatingButton?: boolean;
+  onPreferenceChange?: (preferences: Partial<SensoryPreferences>) => void;
+  className?: string;
 }
 
 interface QuickSetting {
-  id: string
-  label: string
-  icon: string
-  description: string
-  category: keyof SensoryPreferences
-  key: string
-  type: 'toggle' | 'cycle'
-  options?: { value: string; label: string }[]
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  category: keyof SensoryPreferences;
+  key: string;
+  type: 'toggle' | 'cycle';
+  options?: { value: string; label: string }[];
 }
 
 const QUICK_SETTINGS: QuickSetting[] = [
@@ -89,7 +91,7 @@ const QUICK_SETTINGS: QuickSetting[] = [
     key: 'hideDistractions',
     type: 'toggle',
   },
-]
+];
 
 export function AccessibilityPanel({
   learnerId,
@@ -99,151 +101,155 @@ export function AccessibilityPanel({
   onPreferenceChange,
   className = '',
 }: Readonly<AccessibilityPanelProps>) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-  const [localPreferences, setLocalPreferences] = useState<SensoryPreferences | null>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
-  const savedPreferences = useSensoryPreferences(learnerId)
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [localPreferences, setLocalPreferences] = useState<SensoryPreferences | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const savedPreferences = useSensoryPreferences(learnerId);
 
   // Initialize local state from saved preferences
   useEffect(() => {
-    setLocalPreferences(savedPreferences)
-  }, [savedPreferences])
+    setLocalPreferences(savedPreferences);
+  }, [savedPreferences]);
 
   // Close panel on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        setIsExpanded(false)
+        setIsExpanded(false);
       }
-    }
+    };
 
     if (isExpanded) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isExpanded])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded]);
 
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsExpanded(false)
+        setIsExpanded(false);
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [])
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
-  const updatePreference = useCallback(<T extends keyof SensoryPreferences>(
-    category: T,
-    key: string,
-    value: unknown
-  ) => {
-    setLocalPreferences(prev => {
-      if (!prev) return prev
+  const updatePreference = useCallback(
+    (category: keyof SensoryPreferences, key: string, value: unknown) => {
+      setLocalPreferences((prev) => {
+        if (!prev) return prev;
 
-      const updated = {
-        ...prev,
-        [category]: {
-          ...prev[category],
-          [key]: value,
-        },
-      }
+        const updated = {
+          ...prev,
+          [category]: {
+            ...prev[category],
+            [key]: value,
+          },
+        };
 
-      // Save to localStorage
-      localStorage.setItem(`sensory_preferences_${learnerId}`, JSON.stringify(updated))
+        // Save to localStorage
+        localStorage.setItem(`sensory_preferences_${learnerId}`, JSON.stringify(updated));
 
-      // Notify parent
-      onPreferenceChange?.({ [category]: { [key]: value } } as Partial<SensoryPreferences>)
+        // Notify parent
+        onPreferenceChange?.({ [category]: { [key]: value } } as Partial<SensoryPreferences>);
 
-      // Apply to document
-      applyPreference(category, key, value)
+        // Apply to document
+        applyPreference(category, key, value);
 
-      return updated
-    })
-  }, [learnerId, onPreferenceChange])
+        return updated;
+      });
+    },
+    [learnerId, onPreferenceChange]
+  );
 
   const applyPreference = (category: string, key: string, value: unknown) => {
-    const root = document.documentElement
+    const root = document.documentElement;
 
     if (category === 'visual') {
       if (key === 'fontSize') {
-        root.style.setProperty('--font-size-scale', {
-          'small': '0.875',
-          'medium': '1',
-          'large': '1.125',
-          'extra-large': '1.25',
-        }[value as string] || '1')
+        root.style.setProperty(
+          '--font-size-scale',
+          {
+            small: '0.875',
+            medium: '1',
+            large: '1.125',
+            'extra-large': '1.25',
+          }[value as string] || '1'
+        );
       }
       if (key === 'contrast') {
-        root.dataset.contrast = value as string
+        root.dataset.contrast = value as string;
       }
       if (key === 'reduceMotion') {
         if (value) {
-          root.classList.add('reduce-motion')
+          root.classList.add('reduce-motion');
         } else {
-          root.classList.remove('reduce-motion')
+          root.classList.remove('reduce-motion');
         }
       }
     }
 
     if (category === 'cognitive' && key === 'hideDistractions') {
       if (value) {
-        root.classList.add('focus-mode')
+        root.classList.add('focus-mode');
       } else {
-        root.classList.remove('focus-mode')
+        root.classList.remove('focus-mode');
       }
     }
-  }
+  };
 
   const getSettingValue = (setting: QuickSetting) => {
-    if (!localPreferences) return null
-    const categoryPrefs = localPreferences[setting.category]
-    return (categoryPrefs as Record<string, unknown>)[setting.key]
-  }
+    if (!localPreferences) return null;
+    const categoryPrefs = localPreferences[setting.category];
+    return (categoryPrefs as Record<string, unknown>)[setting.key];
+  };
 
   const handleSettingClick = (setting: QuickSetting) => {
-    const currentValue = getSettingValue(setting)
+    const currentValue = getSettingValue(setting);
 
     if (setting.type === 'toggle') {
-      updatePreference(setting.category, setting.key, !currentValue)
+      updatePreference(setting.category, setting.key, !currentValue);
     } else if (setting.type === 'cycle' && setting.options) {
-      const currentIndex = setting.options.findIndex(opt => opt.value === currentValue)
-      const nextIndex = (currentIndex + 1) % setting.options.length
-      updatePreference(setting.category, setting.key, setting.options[nextIndex].value)
+      const currentIndex = setting.options.findIndex((opt) => opt.value === currentValue);
+      const nextIndex = (currentIndex + 1) % setting.options.length;
+      updatePreference(setting.category, setting.key, setting.options[nextIndex].value);
     }
-  }
+  };
 
-  const getSettingDisplay = (setting: QuickSetting) => {
-    const value = getSettingValue(setting)
+  const getSettingDisplay = (setting: QuickSetting): string => {
+    const value = getSettingValue(setting);
 
     if (setting.type === 'toggle') {
-      return value ? 'On' : 'Off'
+      return value ? 'On' : 'Off';
     }
 
     if (setting.options) {
-      const option = setting.options.find(opt => opt.value === value)
-      return option?.label || value
+      const option = setting.options.find((opt) => opt.value === value);
+      if (option?.label) return option.label;
     }
 
-    return String(value)
-  }
+    // Only convert primitive values to string
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    return '';
+  };
 
-  const positionClasses = position === 'right'
-    ? 'right-4'
-    : 'left-4'
+  const positionClasses = position === 'right' ? 'right-4' : 'left-4';
 
-  if (!localPreferences) return null
+  if (!localPreferences) return null;
 
   return (
-    <div
-      ref={panelRef}
-      className={`fixed bottom-20 ${positionClasses} z-40 ${className}`}
-    >
+    <div ref={panelRef} className={`fixed bottom-20 ${positionClasses} z-40 ${className}`}>
       {/* Panel content */}
       {isExpanded && (
         <div className="mb-3 bg-white rounded-2xl shadow-xl w-72 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -258,20 +264,23 @@ export function AccessibilityPanel({
 
           {/* Settings list */}
           <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
-            {QUICK_SETTINGS.map(setting => {
-              const isActive = setting.type === 'toggle' && getSettingValue(setting)
+            {QUICK_SETTINGS.map((setting) => {
+              const isActive = setting.type === 'toggle' && getSettingValue(setting);
 
               return (
                 <button
                   key={setting.id}
-                  onClick={() => handleSettingClick(setting)}
+                  onClick={() => {
+                    handleSettingClick(setting);
+                  }}
                   className={`
                     w-full p-3 rounded-xl text-left
                     flex items-center gap-3
                     transition-all duration-200
-                    ${isActive
-                      ? 'bg-blue-100 border-2 border-blue-400'
-                      : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                    ${
+                      isActive
+                        ? 'bg-blue-100 border-2 border-blue-400'
+                        : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
                     }
                   `}
                 >
@@ -283,16 +292,13 @@ export function AccessibilityPanel({
                   <div
                     className={`
                       px-2 py-1 rounded-lg text-xs font-medium
-                      ${isActive
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 text-gray-700'
-                      }
+                      ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}
                     `}
                   >
                     {getSettingDisplay(setting)}
                   </div>
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -311,7 +317,9 @@ export function AccessibilityPanel({
       {/* Floating button */}
       {showFloatingButton && (
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => {
+            setIsExpanded(!isExpanded);
+          }}
           className={`
             w-14 h-14 rounded-full
             bg-gradient-to-r from-purple-500 to-blue-500
@@ -329,20 +337,21 @@ export function AccessibilityPanel({
         </button>
       )}
     </div>
-  )
+  );
 }
 
 // Hook to check if accessibility features are enabled
 export function useAccessibilityStatus(learnerId: string) {
-  const preferences = useSensoryPreferences(learnerId)
+  const preferences = useSensoryPreferences(learnerId);
 
   return {
-    hasLargeText: preferences.visual.fontSize === 'large' || preferences.visual.fontSize === 'extra-large',
+    hasLargeText:
+      preferences.visual.fontSize === 'large' || preferences.visual.fontSize === 'extra-large',
     hasHighContrast: preferences.visual.contrast === 'high',
     hasReducedMotion: preferences.visual.reduceMotion,
     hasTextToSpeech: preferences.audio.textToSpeech,
     hasFocusMode: preferences.cognitive.hideDistractions,
-  }
+  };
 }
 
 // Inline accessibility toolbar (can be embedded in header)
@@ -351,60 +360,86 @@ export function AccessibilityToolbar({
   compact = false,
   className = '',
 }: Readonly<{
-  learnerId: string
-  compact?: boolean
-  className?: string
+  learnerId: string;
+  compact?: boolean;
+  className?: string;
 }>) {
-  const [preferences, setPreferences] = useState<SensoryPreferences | null>(null)
+  const [preferences, setPreferences] = useState<SensoryPreferences | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(`sensory_preferences_${learnerId}`)
+    const saved = localStorage.getItem(`sensory_preferences_${learnerId}`);
     if (saved) {
-      setPreferences(JSON.parse(saved))
+      setPreferences(JSON.parse(saved));
     }
-  }, [learnerId])
+  }, [learnerId]);
 
-  const toggle = useCallback((category: keyof SensoryPreferences, key: string) => {
-    setPreferences(prev => {
-      if (!prev) return prev
+  const toggle = useCallback(
+    (category: keyof SensoryPreferences, key: string) => {
+      setPreferences((prev) => {
+        if (!prev) return prev;
 
-      const currentValue = (prev[category] as Record<string, unknown>)[key]
-      const updated = {
-        ...prev,
-        [category]: {
-          ...prev[category],
-          [key]: !currentValue,
-        },
-      }
+        const currentValue = (prev[category] as Record<string, unknown>)[key];
+        const updated = {
+          ...prev,
+          [category]: {
+            ...prev[category],
+            [key]: !currentValue,
+          },
+        };
 
-      localStorage.setItem(`sensory_preferences_${learnerId}`, JSON.stringify(updated))
-      return updated
-    })
-  }, [learnerId])
+        localStorage.setItem(`sensory_preferences_${learnerId}`, JSON.stringify(updated));
+        return updated;
+      });
+    },
+    [learnerId]
+  );
 
-  if (!preferences) return null
+  if (!preferences) return null;
 
   const quickToggles = [
-    { icon: '🔤', active: preferences.visual.fontSize !== 'medium', label: 'Large text', category: 'visual' as const, key: 'fontSize' },
-    { icon: '🎨', active: preferences.visual.contrast === 'high', label: 'High contrast', category: 'visual' as const, key: 'contrast' },
-    { icon: '✨', active: preferences.visual.reduceMotion, label: 'Less motion', category: 'visual' as const, key: 'reduceMotion' },
-    { icon: '🔊', active: preferences.audio.textToSpeech, label: 'Read aloud', category: 'audio' as const, key: 'textToSpeech' },
-  ]
+    {
+      icon: '🔤',
+      active: preferences.visual.fontSize !== 'medium',
+      label: 'Large text',
+      category: 'visual' as const,
+      key: 'fontSize',
+    },
+    {
+      icon: '🎨',
+      active: preferences.visual.contrast === 'high',
+      label: 'High contrast',
+      category: 'visual' as const,
+      key: 'contrast',
+    },
+    {
+      icon: '✨',
+      active: preferences.visual.reduceMotion,
+      label: 'Less motion',
+      category: 'visual' as const,
+      key: 'reduceMotion',
+    },
+    {
+      icon: '🔊',
+      active: preferences.audio.textToSpeech,
+      label: 'Read aloud',
+      category: 'audio' as const,
+      key: 'textToSpeech',
+    },
+  ];
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      {quickToggles.map(item => (
+      {quickToggles.map((item) => (
         <button
           key={item.key}
-          onClick={() => toggle(item.category, item.key)}
+          onClick={() => {
+            toggle(item.category, item.key);
+          }}
           className={`
             ${compact ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-lg'}
             rounded-full
             transition-all duration-200
-            ${item.active
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 hover:bg-gray-200'
-            }
+            ${item.active ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}
           `}
           title={item.label}
           aria-label={item.label}
@@ -414,7 +449,7 @@ export function AccessibilityToolbar({
         </button>
       ))}
     </div>
-  )
+  );
 }
 
-export default AccessibilityPanel
+export default AccessibilityPanel;

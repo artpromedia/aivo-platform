@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import {
   BREATHING_PATTERNS,
   type BreathingPattern,
@@ -64,9 +65,7 @@ export function BreathingExercise({
   showAudioGuidance = false,
 }: Readonly<BreathingExerciseProps>) {
   // Get available patterns for this grade band
-  const availablePatterns = BREATHING_PATTERNS.filter((p) =>
-    p.gradeBands.includes(gradeBand)
-  );
+  const availablePatterns = BREATHING_PATTERNS.filter((p) => p.gradeBands.includes(gradeBand));
 
   // State
   const [selectedPattern, setSelectedPattern] = useState<BreathingPattern>(
@@ -80,24 +79,24 @@ export function BreathingExercise({
   const [circleScale, setCircleScale] = useState<number>(0.6);
 
   // Refs for animation
-  const animationRef = useRef<NodeJS.Timeout | null>(null);
+  const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Calculate total duration for a pattern
   const getTotalDuration = (p: BreathingPattern): number => {
-    const cycleDuration =
-      p.inhaleSeconds + p.holdInSeconds + p.exhaleSeconds + p.holdOutSeconds;
+    const cycleDuration = p.inhaleSeconds + p.holdInSeconds + p.exhaleSeconds + p.holdOutSeconds;
     return cycleDuration * p.cycles;
   };
 
   // Get the next phase in the cycle
   const getNextPhase = useCallback((): { phase: BreathPhase; duration: number } | null => {
     const p = selectedPattern;
-    const phases: Array<{ phase: BreathPhase; duration: number }> = [
-      { phase: 'inhale', duration: p.inhaleSeconds },
-      { phase: 'holdIn', duration: p.holdInSeconds },
-      { phase: 'exhale', duration: p.exhaleSeconds },
-      { phase: 'holdOut', duration: p.holdOutSeconds },
-    ].filter((item) => item.duration > 0);
+    const allPhases: { phase: BreathPhase; duration: number }[] = [
+      { phase: 'inhale' as const, duration: p.inhaleSeconds },
+      { phase: 'holdIn' as const, duration: p.holdInSeconds },
+      { phase: 'exhale' as const, duration: p.exhaleSeconds },
+      { phase: 'holdOut' as const, duration: p.holdOutSeconds },
+    ];
+    const phases = allPhases.filter((item) => item.duration > 0);
 
     const currentIndex = phases.findIndex((item) => item.phase === currentPhase);
     const nextIndex = (currentIndex + 1) % phases.length;
@@ -200,10 +199,7 @@ export function BreathingExercise({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           {onCancel && (
-            <button
-              onClick={onCancel}
-              className="text-slate-600 hover:text-slate-900"
-            >
+            <button onClick={onCancel} className="text-slate-600 hover:text-slate-900">
               ← Back
             </button>
           )}
@@ -216,15 +212,15 @@ export function BreathingExercise({
         {/* Pattern selection */}
         <div className="space-y-3 mb-6">
           <p className="text-sm text-slate-600 mb-3">
-            {gradeBand === 'K5'
-              ? 'Choose how you want to breathe:'
-              : 'Select a breathing pattern:'}
+            {gradeBand === 'K5' ? 'Choose how you want to breathe:' : 'Select a breathing pattern:'}
           </p>
 
           {availablePatterns.map((p) => (
             <button
               key={p.id}
-              onClick={() => setSelectedPattern(p)}
+              onClick={() => {
+                setSelectedPattern(p);
+              }}
               className={`w-full p-4 rounded-lg text-left transition-all ${
                 selectedPattern.id === p.id
                   ? 'bg-indigo-50 border-2 border-indigo-400'
@@ -244,21 +240,13 @@ export function BreathingExercise({
 
               {/* Pattern visualization */}
               <div className="flex items-center gap-1 mt-3">
-                <span className="text-xs text-blue-600">
-                  In: {p.inhaleSeconds}s
-                </span>
+                <span className="text-xs text-blue-600">In: {p.inhaleSeconds}s</span>
                 {p.holdInSeconds > 0 && (
-                  <span className="text-xs text-purple-600">
-                    Hold: {p.holdInSeconds}s
-                  </span>
+                  <span className="text-xs text-purple-600">Hold: {p.holdInSeconds}s</span>
                 )}
-                <span className="text-xs text-pink-600">
-                  Out: {p.exhaleSeconds}s
-                </span>
+                <span className="text-xs text-pink-600">Out: {p.exhaleSeconds}s</span>
                 {p.holdOutSeconds > 0 && (
-                  <span className="text-xs text-rose-600">
-                    Pause: {p.holdOutSeconds}s
-                  </span>
+                  <span className="text-xs text-rose-600">Pause: {p.holdOutSeconds}s</span>
                 )}
               </div>
             </button>
@@ -282,24 +270,25 @@ export function BreathingExercise({
 
   if (phase === 'breathing') {
     const progress =
-      ((currentCycle - 1) * 100 + ((selectedPattern.inhaleSeconds - phaseTimeLeft) / selectedPattern.inhaleSeconds) * 100 / selectedPattern.cycles) /
+      ((currentCycle - 1) * 100 +
+        (((selectedPattern.inhaleSeconds - phaseTimeLeft) / selectedPattern.inhaleSeconds) * 100) /
+          selectedPattern.cycles) /
       selectedPattern.cycles;
 
     return (
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 max-w-md mx-auto min-h-[500px] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={onCancel}
-            className="text-slate-600 hover:text-slate-900 text-sm"
-          >
+          <button onClick={onCancel} className="text-slate-600 hover:text-slate-900 text-sm">
             Exit
           </button>
           <p className="text-sm text-slate-600">
             Cycle {currentCycle} of {selectedPattern.cycles}
           </p>
           <button
-            onClick={() => setIsPaused(!isPaused)}
+            onClick={() => {
+              setIsPaused(!isPaused);
+            }}
             className="text-slate-600 hover:text-slate-900 text-sm"
           >
             {isPaused ? 'Resume' : 'Pause'}
@@ -345,9 +334,7 @@ export function BreathingExercise({
           <p className="text-2xl font-semibold text-slate-900">
             {PHASE_INSTRUCTIONS[currentPhase][gradeBand]}
           </p>
-          <p className="text-slate-600 mt-2">
-            {selectedPattern.name}
-          </p>
+          <p className="text-slate-600 mt-2">{selectedPattern.name}</p>
         </div>
 
         {/* Audio guidance indicator */}

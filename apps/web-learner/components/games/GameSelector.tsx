@@ -12,16 +12,16 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
+
 import type { GameDefinition, GameCategory } from '../../lib/games/game-types';
-import {
-  CATEGORY_ICONS,
-  CATEGORY_LABELS,
-  CATEGORY_COLORS,
-} from '../../lib/games/game-types';
+import { CATEGORY_ICONS, CATEGORY_LABELS, CATEGORY_COLORS } from '../../lib/games/game-types';
 
 export interface GameSelectorProps {
-  games: GameDefinition[];
+  games?: GameDefinition[];
+  gradeBand?: string;
   recommendedGameIds?: string[];
+  favorites?: string[];
+  recentlyPlayed?: string[];
   onSelectGame: (game: GameDefinition) => void;
   className?: string;
   showSearch?: boolean;
@@ -39,8 +39,11 @@ const ALL_CATEGORIES: (GameCategory | 'all')[] = [
 ];
 
 export function GameSelector({
-  games,
+  games = [],
+  gradeBand: _gradeBand,
   recommendedGameIds = [],
+  favorites: _favorites,
+  recentlyPlayed: _recentlyPlayed,
   onSelectGame,
   className = '',
   showSearch = true,
@@ -64,8 +67,7 @@ export function GameSelector({
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (game) =>
-          game.title.toLowerCase().includes(query) ||
-          game.description.toLowerCase().includes(query)
+          game.title.toLowerCase().includes(query) || game.description.toLowerCase().includes(query)
       );
     }
 
@@ -109,7 +111,9 @@ export function GameSelector({
   const renderGameCard = (game: GameDefinition, isRecommended: boolean) => (
     <button
       key={game.id}
-      onClick={() => onSelectGame(game)}
+      onClick={() => {
+        onSelectGame(game);
+      }}
       className={`
         relative text-left p-4 rounded-xl border-2 transition-all duration-200
         ${viewMode === 'grid' ? 'flex flex-col' : 'flex items-center gap-4'}
@@ -211,7 +215,9 @@ export function GameSelector({
             type="text"
             placeholder="Search games..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
             className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
           />
         </div>
@@ -224,12 +230,15 @@ export function GameSelector({
           {ALL_CATEGORIES.map((category) => (
             <button
               key={category}
-              onClick={() => setSelectedCategory(category)}
+              onClick={() => {
+                setSelectedCategory(category);
+              }}
               className={`
                 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                ${selectedCategory === category
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ${
+                  selectedCategory === category
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }
               `}
             >
@@ -241,9 +250,7 @@ export function GameSelector({
                   {CATEGORY_LABELS[category]}
                 </span>
               )}
-              <span className="ml-1 text-xs opacity-70">
-                ({categoryCounts[category] || 0})
-              </span>
+              <span className="ml-1 text-xs opacity-70">({categoryCounts[category] || 0})</span>
             </button>
           ))}
         </div>
@@ -252,7 +259,9 @@ export function GameSelector({
         {showViewToggle && (
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => {
+                setViewMode('grid');
+              }}
               className={`
                 p-2 rounded-md transition-colors
                 ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}
@@ -264,7 +273,9 @@ export function GameSelector({
               </svg>
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => {
+                setViewMode('list');
+              }}
               className={`
                 p-2 rounded-md transition-colors
                 ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}
@@ -306,9 +317,7 @@ export function GameSelector({
       {otherGames.length > 0 && (
         <div>
           {recommendedGames.length > 0 && (
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
-              All Games
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">All Games</h3>
           )}
           <div
             className={
@@ -328,13 +337,13 @@ export function GameSelector({
           <div className="text-4xl mb-3">🔍</div>
           <h3 className="text-lg font-semibold text-gray-700">No games found</h3>
           <p className="text-gray-500">
-            {searchQuery
-              ? 'Try a different search term'
-              : 'No games in this category'}
+            {searchQuery ? 'Try a different search term' : 'No games in this category'}
           </p>
           {selectedCategory !== 'all' && (
             <button
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => {
+                setSelectedCategory('all');
+              }}
               className="mt-3 text-blue-500 hover:underline"
             >
               View all games

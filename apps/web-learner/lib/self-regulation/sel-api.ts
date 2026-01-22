@@ -27,18 +27,17 @@ const SEL_API_BASE_URL = process.env.NEXT_PUBLIC_SEL_API_URL || 'http://localhos
 // Helper Functions
 // ============================================================================
 
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${SEL_API_BASE_URL}${endpoint}`;
+
+  const headers = new Headers(options.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -111,10 +110,7 @@ export async function getEmotionHistory(
 /**
  * Get mood trends for a learner
  */
-export async function getMoodTrends(
-  profileId: string,
-  days: number = 30
-): Promise<MoodTrendsReport> {
+export async function getMoodTrends(profileId: string, days = 30): Promise<MoodTrendsReport> {
   return apiRequest<MoodTrendsReport>(`/profiles/${profileId}/mood-trends?days=${days}`);
 }
 
@@ -249,10 +245,7 @@ function mapActivityType(type: ActivityType): string {
 /**
  * Get local recommendations when API is unavailable
  */
-function getLocalRecommendations(
-  currentMood?: string,
-  limit: number = 3
-): ActivityRecommendation[] {
+function getLocalRecommendations(currentMood?: string, limit = 3): ActivityRecommendation[] {
   const moodActivities: Record<string, ActivityType[]> = {
     anxious: ['breathing', 'grounding', 'progressive'],
     worried: ['breathing', 'grounding', 'visualization'],
@@ -267,34 +260,45 @@ function getLocalRecommendations(
 
   const activityInfo: Record<ActivityType, { name: string; description: string }> = {
     breathing: { name: 'Breathing Exercise', description: 'Calm your body with guided breathing' },
-    grounding: { name: '5-4-3-2-1 Grounding', description: 'Connect with your senses to feel present' },
+    grounding: {
+      name: '5-4-3-2-1 Grounding',
+      description: 'Connect with your senses to feel present',
+    },
     movement: { name: 'Movement Break', description: 'Release energy through gentle movement' },
     visualization: { name: 'Visualization', description: 'Imagine a peaceful place' },
     sensory: { name: 'Sensory Activity', description: 'Focus on calming sensations' },
     sounds: { name: 'Calming Sounds', description: 'Listen to relaxing sounds' },
     counting: { name: 'Counting Exercise', description: 'Focus your mind with counting' },
-    progressive: { name: 'Progressive Relaxation', description: 'Relax your body one part at a time' },
+    progressive: {
+      name: 'Progressive Relaxation',
+      description: 'Relax your body one part at a time',
+    },
   };
 
-  const recommendedTypes = currentMood && moodActivities[currentMood.toLowerCase()]
-    ? moodActivities[currentMood.toLowerCase()]
-    : ['breathing', 'grounding', 'movement'];
+  const defaultTypes: ActivityType[] = ['breathing', 'grounding', 'movement'];
+  const recommendedTypes: ActivityType[] =
+    currentMood && moodActivities[currentMood.toLowerCase()]
+      ? moodActivities[currentMood.toLowerCase()]
+      : defaultTypes;
 
-  return recommendedTypes.slice(0, limit).map((type, index) => ({
-    activity: {
-      id: `local-${type}`,
-      name: activityInfo[type].name,
-      description: activityInfo[type].description,
-      activityType: type,
-      difficulty: 'beginner' as const,
-      estimatedDurationSeconds: type === 'breathing' ? 120 : type === 'grounding' ? 180 : 90,
-      gradeBands: ['K5', 'G6_8', 'G9_12'] as GradeBand[],
-      steps: [],
-      tags: [type, 'regulation', 'calming'],
-    },
-    reason: getMoodReason(currentMood, type),
-    priority: index + 1,
-  }));
+  return recommendedTypes.slice(0, limit).map((type, index) => {
+    const info = activityInfo[type];
+    return {
+      activity: {
+        id: `local-${type}`,
+        name: info.name,
+        description: info.description,
+        activityType: type,
+        difficulty: 'beginner' as const,
+        estimatedDurationSeconds: type === 'breathing' ? 120 : type === 'grounding' ? 180 : 90,
+        gradeBands: ['K5', 'G6_8', 'G9_12'] as GradeBand[],
+        steps: [],
+        tags: [type, 'regulation', 'calming'],
+      },
+      reason: getMoodReason(currentMood, type),
+      priority: index + 1,
+    };
+  });
 }
 
 /**
@@ -326,8 +330,10 @@ function getMoodReason(mood?: string, activityType?: ActivityType): string {
     },
   };
 
-  return reasons[mood.toLowerCase()]?.[activityType || 'breathing']
-    || `This can help when feeling ${mood}`;
+  return (
+    reasons[mood.toLowerCase()]?.[activityType || 'breathing'] ||
+    `This can help when feeling ${mood}`
+  );
 }
 
 // ============================================================================
