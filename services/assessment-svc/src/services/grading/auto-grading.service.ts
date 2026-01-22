@@ -1,6 +1,6 @@
 /**
  * Auto-Grading Service
- * 
+ *
  * Handles automatic grading for objective question types:
  * - Multiple choice
  * - Multi-select (with partial credit)
@@ -14,6 +14,7 @@
  * - Code (via test cases)
  */
 
+import { codeExecutor } from '../code-execution/code-executor.service.js';
 import type {
   Question,
   QuestionAnswer,
@@ -44,7 +45,7 @@ export class AutoGradingService {
   /**
    * Grade a response automatically
    */
-  gradeResponse(question: Question, answer: QuestionAnswer): GradingResult {
+  async gradeResponse(question: Question, answer: QuestionAnswer): Promise<GradingResult> {
     if (answer === null || answer === undefined) {
       return {
         score: 0,
@@ -87,7 +88,10 @@ export class AutoGradingService {
         return this.gradeDragDrop(question as DragDropQuestion, answer as Record<string, string[]>);
 
       case 'CODE':
-        return this.gradeCode(question as CodeQuestion, answer as { code: string; language: string });
+        return await this.gradeCode(
+          question as CodeQuestion,
+          answer as { code: string; language: string }
+        );
 
       default:
         // Essay, Math Equation - cannot auto-grade
@@ -127,7 +131,7 @@ export class AutoGradingService {
 
   private gradeMultipleChoice(question: MultipleChoiceQuestion, answer: string): GradingResult {
     const isCorrect = answer === question.correctAnswer;
-    const selectedOption = question.options.find(o => o.id === answer);
+    const selectedOption = question.options.find((o) => o.id === answer);
 
     const feedback = isCorrect
       ? question.feedback?.correct
@@ -149,8 +153,7 @@ export class AutoGradingService {
     if (!question.partialCredit) {
       // All or nothing
       const isCorrect =
-        correctSet.size === answerSet.size &&
-        [...correctSet].every(a => answerSet.has(a));
+        correctSet.size === answerSet.size && [...correctSet].every((a) => answerSet.has(a));
 
       return {
         score: isCorrect ? question.points : 0,
@@ -174,7 +177,7 @@ export class AutoGradingService {
     }
 
     const missedCount = correctSet.size - correctCount;
-    
+
     // Score calculation: correct selections minus penalties for incorrect
     const rawScore = Math.max(0, (correctCount - incorrectCount) / correctSet.size);
     const score = Math.round(question.points * rawScore * 100) / 100;
@@ -206,7 +209,7 @@ export class AutoGradingService {
 
   private gradeShortAnswer(question: ShortAnswerQuestion, answer: string): GradingResult {
     const normalizedAnswer = this.normalizeString(answer, question.caseSensitive ?? false);
-    const acceptedAnswers = question.acceptedAnswers.map(a =>
+    const acceptedAnswers = question.acceptedAnswers.map((a) =>
       this.normalizeString(a, question.caseSensitive ?? false)
     );
 
@@ -253,11 +256,8 @@ export class AutoGradingService {
 
     for (let i = 0; i < blanks.length; i++) {
       const blank = blanks[i];
-      const studentAnswer = this.normalizeString(
-        answers[i] || '',
-        blank.caseSensitive ?? false
-      );
-      const acceptedAnswers = blank.acceptedAnswers.map(a =>
+      const studentAnswer = this.normalizeString(answers[i] || '', blank.caseSensitive ?? false);
+      const acceptedAnswers = blank.acceptedAnswers.map((a) =>
         this.normalizeString(a, blank.caseSensitive ?? false)
       );
 
@@ -278,8 +278,10 @@ export class AutoGradingService {
     }
 
     const score = question.partialCredit
-      ? Math.round((question.points * correctCount) / blanks.length * 100) / 100
-      : correctCount === blanks.length ? question.points : 0;
+      ? Math.round(((question.points * correctCount) / blanks.length) * 100) / 100
+      : correctCount === blanks.length
+        ? question.points
+        : 0;
 
     const isCorrect = correctCount === blanks.length;
 
@@ -307,8 +309,10 @@ export class AutoGradingService {
     }
 
     const score = question.partialCredit
-      ? Math.round((question.points * correctCount) / pairs.length * 100) / 100
-      : correctCount === pairs.length ? question.points : 0;
+      ? Math.round(((question.points * correctCount) / pairs.length) * 100) / 100
+      : correctCount === pairs.length
+        ? question.points
+        : 0;
 
     const isCorrect = correctCount === pairs.length;
 
@@ -346,7 +350,8 @@ export class AutoGradingService {
       }
     }
 
-    const score = Math.round((question.points * correctPositions) / correctOrder.length * 100) / 100;
+    const score =
+      Math.round(((question.points * correctPositions) / correctOrder.length) * 100) / 100;
     const isCorrect = correctPositions === correctOrder.length;
 
     return {
@@ -387,15 +392,15 @@ export class AutoGradingService {
     question: HotspotQuestion,
     answer: { x: number; y: number }[]
   ): GradingResult {
-    const correctRegions = question.regions.filter(r => r.correct);
-    
+    const correctRegions = question.regions.filter((r) => r.correct);
+
     if (question.multiSelect) {
       // Multiple hotspots - check if each click is in a correct region
       let correctClicks = 0;
       const clickResults: boolean[] = [];
 
       for (const click of answer) {
-        const inCorrectRegion = correctRegions.some(region =>
+        const inCorrectRegion = correctRegions.some((region) =>
           this.isPointInRegion(click, region)
         );
         clickResults.push(inCorrectRegion);
@@ -403,13 +408,16 @@ export class AutoGradingService {
       }
 
       const score = question.partialCredit
-        ? Math.round((question.points * correctClicks) / correctRegions.length * 100) / 100
-        : correctClicks === correctRegions.length ? question.points : 0;
+        ? Math.round(((question.points * correctClicks) / correctRegions.length) * 100) / 100
+        : correctClicks === correctRegions.length
+          ? question.points
+          : 0;
 
       return {
         score,
         maxPoints: question.points,
-        isCorrect: correctClicks === correctRegions.length && answer.length === correctRegions.length,
+        isCorrect:
+          correctClicks === correctRegions.length && answer.length === correctRegions.length,
         partialCredit: score > 0 && correctClicks < correctRegions.length,
         feedback: `${correctClicks} of ${correctRegions.length} correct regions selected`,
         details: { clickResults, correctClicks, totalRegions: correctRegions.length },
@@ -427,9 +435,7 @@ export class AutoGradingService {
         };
       }
 
-      const isCorrect = correctRegions.some(region =>
-        this.isPointInRegion(click, region)
-      );
+      const isCorrect = correctRegions.some((region) => this.isPointInRegion(click, region));
 
       return {
         score: isCorrect ? question.points : 0,
@@ -471,8 +477,10 @@ export class AutoGradingService {
 
     const totalExpected = zones.reduce((sum, z) => sum + z.acceptedItems.length, 0);
     const score = question.partialCredit
-      ? Math.round((question.points * correctPlacements) / totalExpected * 100) / 100
-      : correctPlacements === totalExpected ? question.points : 0;
+      ? Math.round(((question.points * correctPlacements) / totalExpected) * 100) / 100
+      : correctPlacements === totalExpected
+        ? question.points
+        : 0;
 
     const isCorrect = correctPlacements === totalExpected;
 
@@ -486,12 +494,11 @@ export class AutoGradingService {
     };
   }
 
-  private gradeCode(
+  private async gradeCode(
     question: CodeQuestion,
     answer: { code: string; language: string }
-  ): GradingResult {
-    // Note: In production, code execution should be sandboxed
-    // This is a simplified implementation
+  ): Promise<GradingResult> {
+    // Code execution is sandboxed in Docker containers
     const testCases = question.testCases;
     let passedTests = 0;
     let totalPoints = 0;
@@ -509,8 +516,8 @@ export class AutoGradingService {
       totalPoints += points;
 
       try {
-        // Simulate code execution (in production, use a sandboxed executor)
-        const result = this.executeCode(answer.code, answer.language, testCase.input);
+        // Execute code in sandboxed Docker container
+        const result = await this.executeCode(answer.code, answer.language, testCase.input);
         const passed = result.output.trim() === testCase.expectedOutput.trim();
 
         testResults.push({
@@ -535,8 +542,10 @@ export class AutoGradingService {
     }
 
     const score = question.partialCredit
-      ? Math.round((question.points * earnedPoints) / totalPoints * 100) / 100
-      : passedTests === testCases.length ? question.points : 0;
+      ? Math.round(((question.points * earnedPoints) / totalPoints) * 100) / 100
+      : passedTests === testCases.length
+        ? question.points
+        : 0;
 
     return {
       score,
@@ -607,7 +616,11 @@ export class AutoGradingService {
   ): boolean {
     switch (region.type) {
       case 'circle': {
-        if (region.centerX === undefined || region.centerY === undefined || region.radius === undefined) {
+        if (
+          region.centerX === undefined ||
+          region.centerY === undefined ||
+          region.radius === undefined
+        ) {
           return false;
         }
         const distance = Math.sqrt(
@@ -617,8 +630,12 @@ export class AutoGradingService {
       }
 
       case 'rectangle':
-        if (region.x === undefined || region.y === undefined || 
-            region.width === undefined || region.height === undefined) {
+        if (
+          region.x === undefined ||
+          region.y === undefined ||
+          region.width === undefined ||
+          region.height === undefined
+        ) {
           return false;
         }
         return (
@@ -660,25 +677,32 @@ export class AutoGradingService {
     return inside;
   }
 
-  private executeCode(
+  private async executeCode(
     code: string,
     language: string,
     input: string
-  ): { output: string; executionTime: number } {
-    // This is a placeholder - in production, code execution should be:
-    // 1. Sandboxed (e.g., Docker container, AWS Lambda)
-    // 2. Time-limited
-    // 3. Memory-limited
-    // 4. Network-isolated
-    
-    // For now, return a mock result
-    // In production, integrate with a code execution service like:
-    // - Judge0
-    // - Sphere Engine
-    // - HackerRank API
-    // - Custom Docker-based executor
-    
-    throw new Error('Code execution not implemented - requires sandboxed environment');
+  ): Promise<{ output: string; executionTime: number }> {
+    // Execute code in sandboxed Docker container
+    const result = await codeExecutor.execute({
+      code,
+      language: language as 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'sql',
+      input,
+      timeoutSeconds: 10,
+      memoryLimitMb: 128,
+    });
+
+    if (result.timedOut) {
+      throw new Error('Code execution timed out');
+    }
+
+    if (result.exitCode !== 0 && result.error) {
+      throw new Error(`Runtime error: ${result.error}`);
+    }
+
+    return {
+      output: result.output,
+      executionTime: result.executionTime,
+    };
   }
 }
 
