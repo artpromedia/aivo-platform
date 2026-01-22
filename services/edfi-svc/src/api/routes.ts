@@ -8,7 +8,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { EdfiClient, type EdfiApiVersion } from '../connectors/edfi-client';
 import { ExportService, type LearnerDataSource } from '../exports/export-service';
-import type { PrismaClient } from '../generated/prisma-client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 
 // Request/Response types
 interface CreateConfigBody {
@@ -50,7 +50,7 @@ interface ExportParams {
 
 export async function registerRoutes(
   app: FastifyInstance,
-  prisma: PrismaClient,
+  prisma: ExtendedPrismaClient,
   learnerDataSource: LearnerDataSource
 ): Promise<void> {
   const exportService = new ExportService(prisma, learnerDataSource);
@@ -377,9 +377,10 @@ export async function registerRoutes(
 
       return reply.send({
         valid: errors.length === 0,
-        errors: Object.entries(errorsByType).map(([type, data]) => ({
+        errors: (Object.entries(errorsByType) as [string, { count: number; samples: any[] }][]).map(([type, data]) => ({
           resourceType: type,
-          ...data,
+          count: data.count,
+          samples: data.samples,
         })),
       });
     }

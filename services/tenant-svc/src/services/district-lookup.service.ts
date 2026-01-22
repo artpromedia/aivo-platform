@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
 /**
  * District Lookup Service
  *
@@ -7,7 +8,7 @@
  * @module services/district-lookup.service
  */
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '@prisma/client';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Types

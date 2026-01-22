@@ -8,7 +8,6 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import 'dotenv/config';
-import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
 import { analyticsRoutes } from './routes/analytics.js';
@@ -35,7 +34,7 @@ async function main() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('executive-function-svc'));
+  await app.register(rateLimit as any, { max: 100, timeWindow: '1 minute' });
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'executive-function-svc' }));

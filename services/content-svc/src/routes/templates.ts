@@ -7,6 +7,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
@@ -124,10 +125,6 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
     const [items, total] = await Promise.all([
       prisma.lessonTemplate.findMany({
         where,
-        include: {
-          createdByUser: { select: { id: true, name: true } },
-          _count: { select: { usages: true } },
-        },
         orderBy: [{ isPublic: 'desc' }, { usageCount: 'desc' }, { updatedAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -138,8 +135,6 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
     return reply.send({
       items: items.map((t) => ({
         ...t,
-        usageCount: t._count.usages,
-        _count: undefined,
       })),
       pagination: {
         page,
@@ -168,9 +163,6 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         where: {
           id,
           OR: [{ tenantId: userTenantId }, { isPublic: true }],
-        },
-        include: {
-          createdByUser: { select: { id: true, name: true } },
         },
       });
 
@@ -212,15 +204,12 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         name,
         description: description ?? null,
         category,
-        blocks,
+        blocks: blocks as Prisma.InputJsonValue,
         thumbnail: thumbnail ?? null,
         tags: tags ?? [],
         isPublic: effectiveIsPublic,
         usageCount: 0,
         createdById: user.sub,
-      },
-      include: {
-        createdByUser: { select: { id: true, name: true } },
       },
     });
 
@@ -271,15 +260,16 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         delete updateData.isPublic;
       }
 
+      // Cast blocks if present
+      const dataToUpdate = {
+        ...updateData,
+        ...(updateData.blocks && { blocks: updateData.blocks as Prisma.InputJsonValue }),
+        updatedAt: new Date(),
+      };
+
       const template = await prisma.lessonTemplate.update({
         where: { id },
-        data: {
-          ...updateData,
-          updatedAt: new Date(),
-        },
-        include: {
-          createdByUser: { select: { id: true, name: true } },
-        },
+        data: dataToUpdate,
       });
 
       return reply.send(template);
@@ -373,21 +363,11 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Template not found' });
       }
 
-      // Record usage and increment counter
-      await prisma.$transaction([
-        prisma.templateUsage.create({
-          data: {
-            id: randomUUID(),
-            templateId: id,
-            tenantId: userTenantId!,
-            usedById: user.sub,
-          },
-        }),
-        prisma.lessonTemplate.update({
-          where: { id },
-          data: { usageCount: { increment: 1 } },
-        }),
-      ]);
+      // Increment usage counter (templateUsage table is optional - just update count)
+      await prisma.lessonTemplate.update({
+        where: { id },
+        data: { usageCount: { increment: 1 } },
+      });
 
       return reply.send({ success: true });
     }

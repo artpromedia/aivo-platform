@@ -4,7 +4,7 @@
  * visual schedules, planning assistance, and EF strategy recommendations.
  */
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '../../generated/prisma-client';
 
 import { getAITaskBreakdown, getAIStrategyRecommendations, type LearnerEFProfile } from './ai-planning-coach.js';
 
@@ -477,7 +477,7 @@ export class ExecutiveFunctionService {
     parentTaskId: string,
     subtasks: SubtaskSuggestion[]
   ) {
-    const createdTasks = [];
+    const createdTasks: Awaited<ReturnType<typeof this.createTask>>[] = [];
 
     for (const subtask of subtasks) {
       const task = await this.createTask(tenantId, {
@@ -660,7 +660,7 @@ export class ExecutiveFunctionService {
 
     if (!template) throw new Error('Template not found');
 
-    const templateBlocks = template.blocks as TemplateBlockInput[];
+    const templateBlocks = template.blocks as unknown as TemplateBlockInput[];
     const blocks: ScheduleBlockInput[] = templateBlocks.map(tb => {
       const startTime = new Date(date);
       startTime.setHours(0, 0, 0, 0);

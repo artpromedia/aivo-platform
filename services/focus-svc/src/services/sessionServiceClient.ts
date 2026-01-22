@@ -91,6 +91,38 @@ export class SessionServiceClient {
 
     return response.json() as Promise<{ events: EmitEventResponse[] }>;
   }
+
+  /**
+   * Get events for a learner with filtering.
+   */
+  async getEvents(params: {
+    learnerId: string;
+    eventType?: string;
+    limit?: number;
+    sinceDate?: string;
+  }): Promise<Array<{ payload: Record<string, unknown>; timestamp: string }>> {
+    const queryParams = new URLSearchParams();
+    queryParams.set('learnerId', params.learnerId);
+    if (params.eventType) queryParams.set('eventType', params.eventType);
+    if (params.limit) queryParams.set('limit', params.limit.toString());
+    if (params.sinceDate) queryParams.set('since', params.sinceDate);
+
+    const response = await fetch(`${this.baseUrl}/events?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-API-Key': this.apiKey,
+      } as HeadersInit,
+    });
+
+    if (!response.ok) {
+      // Return empty array on error for graceful degradation
+      return [];
+    }
+
+    const result = await response.json() as { events?: Array<{ payload: Record<string, unknown>; timestamp: string }> };
+    return result.events ?? [];
+  }
 }
 
 // Singleton instance

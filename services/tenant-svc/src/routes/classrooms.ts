@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
 import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcryptjs';
@@ -84,7 +85,6 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
         classroomId: params.data.classroomId,
         code,
         teacherId: body.data.teacherId,
-        teacherName: body.data.teacherName ?? null,
         expiresAt,
       },
     });
@@ -138,7 +138,7 @@ export async function registerClassroomRoutes(app: FastifyInstance) {
     const roster = {
       classroomId: sessionCode.classroom.id,
       classroomName: sessionCode.classroom.name,
-      teacherName: sessionCode.teacherName ?? 'Teacher',
+      teacherName: 'Teacher',
       gradeBand: sessionCode.classroom.grade,
       displayMode: 'FIRST_NAME_LAST_INITIAL',
       learners: sessionCode.classroom.learners.map(

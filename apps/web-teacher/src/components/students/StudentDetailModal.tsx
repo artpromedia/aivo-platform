@@ -465,7 +465,7 @@ function Plan504Tab({
 
           return (
             <div key={category} className="mb-4">
-              <h4 className="text-sm font-medium text-muted uppercase tracking-wide mb-2 capitalize">
+              <h4 className="text-sm font-medium text-muted uppercase tracking-wide mb-2">
                 {category}
               </h4>
               <div className="space-y-2">

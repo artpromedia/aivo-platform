@@ -436,3 +436,111 @@ model ClassGamificationSettings {
   
   @@index([classId])
 }
+
+// ============================================================================
+// COMPETITIONS
+// ============================================================================
+
+model Competition {
+  id               String   @id @default(cuid())
+  name             String
+  description      String
+  type             String   // individual, team, class, school
+  duration         String   // daily, weekly, seasonal
+  category         String   // xp_earned, lessons_completed, reading_minutes, etc.
+  
+  startDate        DateTime
+  endDate          DateTime
+  status           String   @default("upcoming") // upcoming, active, completed, cancelled
+  
+  minParticipants  Int      @default(2)
+  maxParticipants  Int      @default(100)
+  minLevel         Int?
+  maxLevel         Int?
+  schoolId         String?
+  
+  prizes           Json     // CompetitionPrize[]
+  isPublic         Boolean  @default(true)
+  autoJoin         Boolean  @default(false)
+  
+  createdAt        DateTime @default(now())
+  createdBy        String
+  
+  participants     CompetitionParticipant[]
+  
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([schoolId])
+}
+
+model CompetitionParticipant {
+  id              String   @id @default(cuid())
+  competitionId   String
+  competition     Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  
+  participantId   String   // studentId, teamId, classId, or schoolId
+  participantType String   // individual, team, class, school
+  score           Int      @default(0)
+  rank            Int?
+  prize           Json?    // CompetitionPrize
+  
+  joinedAt        DateTime @default(now())
+  
+  @@unique([competitionId, participantId])
+  @@index([competitionId])
+  @@index([participantId])
+  @@index([score])
+}
+
+// ============================================================================
+// TEAMS
+// ============================================================================
+
+model Team {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  avatarUrl    String?
+  
+  classId      String?
+  schoolId     String?
+  
+  totalXp      Int      @default(0)
+  level        Int      @default(1)
+  
+  createdAt    DateTime @default(now())
+  createdBy    String
+  
+  members      TeamMember[]
+  achievements TeamAchievement[]
+  
+  @@index([classId])
+  @@index([schoolId])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  studentId String
+  role      String   @default("member") // leader, member
+  
+  joinedAt  DateTime @default(now())
+  
+  @@unique([teamId, studentId])
+  @@index([studentId])
+}
+
+model TeamAchievement {
+  id            String   @id @default(cuid())
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  achievementId String
+  earnedAt      DateTime @default(now())
+  
+  @@unique([teamId, achievementId])
+  @@index([teamId])
+}

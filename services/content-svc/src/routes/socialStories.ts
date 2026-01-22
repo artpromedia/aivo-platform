@@ -9,6 +9,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import type { SocialStoryCategory, LearningObjectGradeBand } from '../prisma-types.js';
+import type { StoryTriggerType } from '../social-stories/types.js';
 import * as socialStoryService from '../social-stories/social-story.service.js';
 // import { seedBuiltInStories } from '../social-stories/story-templates.js'; // TODO: Implement story templates
 
@@ -394,15 +395,48 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
     const effectiveTenantId =
       user.role === 'PLATFORM_ADMIN' ? (parseResult.data.tenantId ?? null) : (userTenantId ?? null);
 
-    // @ts-expect-error - Type mismatch between schema and generated types
+    // Generate slug from title if not provided
+    const slug = parseResult.data.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
     const story = await socialStoryService.createStory(
       {
-        ...parseResult.data,
         tenantId: effectiveTenantId,
+        slug,
+        title: parseResult.data.title,
+        description: parseResult.data.description,
         category: parseResult.data.category as SocialStoryCategory,
+        pages: (parseResult.data.pages ?? []).map((p, idx) => ({
+          id: p.id ?? `page-${idx}`,
+          pageNumber: p.pageNumber ?? idx + 1,
+          sentences: (p.sentences ?? []).map((s, sIdx) => ({
+            id: s.id ?? `sentence-${idx}-${sIdx}`,
+            type: s.type ?? 'DESCRIPTIVE',
+            text: s.text ?? '',
+            audioUrl: s.audioUrl,
+            emphasisWords: s.emphasisWords,
+            personalizationTokens: s.personalizationTokens,
+          })),
+          imageUrl: p.imageUrl,
+          videoUrl: p.videoUrl,
+          visualStyle: p.visualStyle,
+          backgroundColor: p.backgroundColor,
+          interactionType: p.interactionType,
+          displayDuration: p.displayDuration,
+        })),
         readingLevel: parseResult.data.readingLevel,
         gradeBands: parseResult.data.gradeBands as LearningObjectGradeBand[] | undefined,
         defaultVisualStyle: parseResult.data.defaultVisualStyle,
+        estimatedDuration: parseResult.data.estimatedDuration,
+        minAge: parseResult.data.minAge,
+        maxAge: parseResult.data.maxAge,
+        supportsPersonalization: parseResult.data.supportsPersonalization,
+        personalizationTokens: parseResult.data.personalizationTokens,
+        hasAudio: parseResult.data.hasAudio,
+        hasVideo: parseResult.data.hasVideo,
+        translations: parseResult.data.translations,
       },
       user.sub
     );
@@ -431,10 +465,37 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
       }
 
       const story = await socialStoryService.updateStory(request.params.id, {
-        ...parseResult.data,
+        title: parseResult.data.title,
+        description: parseResult.data.description,
         readingLevel: parseResult.data.readingLevel,
         gradeBands: parseResult.data.gradeBands as LearningObjectGradeBand[] | undefined,
         defaultVisualStyle: parseResult.data.defaultVisualStyle,
+        estimatedDuration: parseResult.data.estimatedDuration,
+        minAge: parseResult.data.minAge,
+        maxAge: parseResult.data.maxAge,
+        supportsPersonalization: parseResult.data.supportsPersonalization,
+        personalizationTokens: parseResult.data.personalizationTokens,
+        hasAudio: parseResult.data.hasAudio,
+        hasVideo: parseResult.data.hasVideo,
+        isActive: parseResult.data.isActive,
+        pages: parseResult.data.pages?.map((p, idx) => ({
+          id: p.id ?? `page-${idx}`,
+          pageNumber: p.pageNumber ?? idx + 1,
+          sentences: (p.sentences ?? []).map((s, sIdx) => ({
+            id: s.id ?? `sentence-${idx}-${sIdx}`,
+            type: s.type ?? 'DESCRIPTIVE',
+            text: s.text ?? '',
+            audioUrl: s.audioUrl,
+            emphasisWords: s.emphasisWords,
+            personalizationTokens: s.personalizationTokens,
+          })),
+          imageUrl: p.imageUrl,
+          videoUrl: p.videoUrl,
+          visualStyle: p.visualStyle,
+          backgroundColor: p.backgroundColor,
+          interactionType: p.interactionType,
+          displayDuration: p.displayDuration,
+        })),
       });
 
       if (!story) {
@@ -615,7 +676,18 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
       const view = await socialStoryService.recordStoryView({
         storyId: request.params.storyId,
         learnerId: body.learnerId,
-        ...parseResult.data,
+        sessionId: parseResult.data.sessionId,
+        triggerType: (parseResult.data.triggerType ?? 'MANUAL') as StoryTriggerType,
+        triggerContext: parseResult.data.triggerContext,
+        pagesViewed: parseResult.data.pagesViewed ?? 0,
+        totalPages: parseResult.data.totalPages ?? 0,
+        completedAt: parseResult.data.completedAt,
+        durationSeconds: parseResult.data.durationSeconds,
+        replayCount: parseResult.data.replayCount,
+        audioPlayed: parseResult.data.audioPlayed,
+        preEmotionalState: parseResult.data.preEmotionalState,
+        postEmotionalState: parseResult.data.postEmotionalState,
+        helpfulnessRating: parseResult.data.helpfulnessRating,
       });
 
       return reply.status(201).send(view);
@@ -682,7 +754,23 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const assignment = await socialStoryService.createAssignment(parseResult.data, user.sub);
+      const assignment = await socialStoryService.createAssignment({
+        storyId: parseResult.data.storyId!,
+        learnerId: parseResult.data.learnerId!,
+        priority: parseResult.data.priority,
+        isRequired: parseResult.data.isRequired,
+        showBefore: parseResult.data.showBefore,
+        showAfter: parseResult.data.showAfter,
+        scheduledTimes: parseResult.data.scheduledTimes?.map(t => ({
+          dayOfWeek: t.dayOfWeek,
+          timeOfDay: t.timeOfDay ?? '09:00',
+          timezone: t.timezone ?? 'America/New_York',
+        })),
+        maxDailyViews: parseResult.data.maxDailyViews,
+        minHoursBetween: parseResult.data.minHoursBetween,
+        expiresAt: parseResult.data.expiresAt,
+        notes: parseResult.data.notes,
+      }, user.sub);
 
       return reply.status(201).send(assignment);
     }
@@ -728,7 +816,22 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
 
       const assignment = await socialStoryService.updateAssignment(
         request.params.id,
-        parseResult.data
+        {
+          priority: parseResult.data.priority,
+          isRequired: parseResult.data.isRequired,
+          showBefore: parseResult.data.showBefore,
+          showAfter: parseResult.data.showAfter,
+          scheduledTimes: parseResult.data.scheduledTimes?.map(t => ({
+            dayOfWeek: t.dayOfWeek,
+            timeOfDay: t.timeOfDay ?? '09:00',
+            timezone: t.timezone ?? 'America/New_York',
+          })),
+          maxDailyViews: parseResult.data.maxDailyViews,
+          minHoursBetween: parseResult.data.minHoursBetween,
+          isActive: parseResult.data.isActive,
+          expiresAt: parseResult.data.expiresAt,
+          notes: parseResult.data.notes,
+        }
       );
 
       return reply.send(assignment);

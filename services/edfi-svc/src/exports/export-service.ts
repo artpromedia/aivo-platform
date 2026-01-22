@@ -5,7 +5,7 @@
  */
 
 import { EdfiClient, type EdfiApiVersion } from '../connectors/edfi-client';
-import type { PrismaClient } from '../generated/prisma-client';
+import type { ExtendedPrismaClient } from '../prisma-types.js';
 import {
   transformToEdfiStudent,
   transformToEdfiStudentSchoolAssociation,
@@ -92,7 +92,7 @@ export interface LearnerDataSource {
 
 export class ExportService {
   constructor(
-    private prisma: PrismaClient,
+    private prisma: ExtendedPrismaClient,
     private learnerDataSource: LearnerDataSource
   ) {}
 

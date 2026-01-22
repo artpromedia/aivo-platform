@@ -4,13 +4,13 @@
  * Fastify server setup for Ed-Fi data export service.
  */
 
-import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { registerRoutes } from './api/routes.js';
 import type { LearnerDataSource } from './exports/export-service.js';
-import { PrismaClient } from './generated/prisma-client/index.js';
+import { PrismaClient } from '@prisma/client';
+import type { ExtendedPrismaClient } from './prisma-types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -27,7 +27,7 @@ export interface ServerConfig {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export async function createServer(config: ServerConfig) {
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient() as unknown as ExtendedPrismaClient;
 
   const app = Fastify({
     logger: {
@@ -36,7 +36,10 @@ export async function createServer(config: ServerConfig) {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('edfi-svc'));
+  await app.register(rateLimit as any, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
 
   // Register routes
   await registerRoutes(app, prisma, config.learnerDataSource);
@@ -60,9 +63,8 @@ export async function createServer(config: ServerConfig) {
 // Start server if run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const mockLearnerDataSource: LearnerDataSource = {
-    getLearners: async () => [],
-    getEnrollments: async () => [],
-    getGrades: async () => [],
+    getLearners: async () => ({ learners: [], hasMore: false }),
+    getSchoolMappings: async () => new Map(),
   };
 
   createServer({

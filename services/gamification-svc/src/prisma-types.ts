@@ -68,6 +68,15 @@ export interface ExtendedPrismaClient extends Omit<BasePrismaClient, '$transacti
   classGamificationSettings: ModelDelegate;
   gamificationNotification: ModelDelegate;
 
+  // Competitions
+  competition: ModelDelegate;
+  competitionParticipant: ModelDelegate;
+
+  // Teams
+  team: ModelDelegate;
+  teamMember: ModelDelegate;
+  teamAchievement: ModelDelegate;
+
   // Override $transaction to support array pattern
   $transaction: <T>(arg: Promise<T>[] | ((prisma: any) => Promise<T>), options?: any) => Promise<T[] | T>;
 }

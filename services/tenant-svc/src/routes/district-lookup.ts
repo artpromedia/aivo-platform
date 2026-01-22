@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
 /**
  * District Lookup API Routes
  *
@@ -164,7 +165,11 @@ export async function registerDistrictLookupRoutes(app: FastifyInstance) {
         });
       }
 
-      const result = await lookupService.autoDetectFromLocation(parsed.data);
+      const result = await lookupService.autoDetectFromLocation({
+        zipCode: parsed.data.zipCode,
+        stateCode: parsed.data.stateCode,
+        city: parsed.data.city,
+      });
 
       return reply.send({
         success: true,

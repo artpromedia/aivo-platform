@@ -11,7 +11,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import type {
-  CompetitionType} from '../services/competition.service.js';
+  CompetitionType,
+  CompetitionPrize,
+} from '../services/competition.service.js';
 import {
   competitionService,
   CompetitionDuration,
@@ -113,7 +115,7 @@ router.post(
       minLevel: data.minLevel,
       maxLevel: data.maxLevel,
       schoolId: data.schoolId,
-      prizes: data.prizes,
+      prizes: data.prizes as CompetitionPrize[],
       isPublic: data.isPublic,
       autoJoin: data.autoJoin,
       createdBy,

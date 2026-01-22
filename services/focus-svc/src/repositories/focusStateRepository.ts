@@ -4,6 +4,8 @@
  * Persistent storage for learner focus states, pings, and interventions.
  */
 
+import type { Prisma } from '@prisma/client';
+
 import type { FocusState, InterventionType, FocusLossReason } from '../prisma.js';
 import { prisma } from '../prisma.js';
 
@@ -186,7 +188,7 @@ export async function createIntervention(data: CreateInterventionData) {
       interventionType: data.interventionType,
       triggerReasons: data.triggerReasons,
       focusScoreBefore: data.focusScoreBefore,
-      metadataJson: data.metadata ?? {},
+      metadataJson: (data.metadata ?? {}) as unknown as Prisma.InputJsonValue,
     },
   });
 }

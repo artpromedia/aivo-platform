@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
 import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import type { Redis as RedisType } from 'ioredis';
 
-import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerClassroomRoutes } from './routes/classrooms.js';
 import { registerDistrictLookupRoutes } from './routes/district-lookup.js';
@@ -31,7 +31,8 @@ export function createApp() {
   const app = Fastify({ logger: true });
 
   // Rate limiting for tenant management service
-  app.register(rateLimit, FastifyRateLimitPresets.internalApi('tenant-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, { max: 100, timeWindow: '1 minute' });
 
   // Register tenant resolver plugin (optional - depends on Redis config)
   app.register(tenantResolverPlugin, {
