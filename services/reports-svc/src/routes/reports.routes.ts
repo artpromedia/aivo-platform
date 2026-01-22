@@ -425,7 +425,7 @@ const reportRoutes: FastifyPluginAsync<ReportRoutesOptions> = async (fastify, op
     // Cancel scheduled report in database
     // Database implementation pending schema finalization
     // When ready, update the scheduled_reports table to set status='cancelled'
-    request.log.info({ scheduleId, userId: user.id }, 'Scheduled report cancellation requested');
+    request.log.info({ scheduleId, userId: user.sub }, 'Scheduled report cancellation requested');
 
     return reply.send({
       success: true,
@@ -591,10 +591,13 @@ function getUser(request: FastifyRequest): AuthenticatedUser {
 
 async function validateReportAccess(
   user: AuthenticatedUser,
-  reportConfig: { tenantId: string; parameters?: Record<string, unknown> }
+  reportConfig: { tenantId?: string; parameters?: Record<string, unknown> }
 ): Promise<void> {
+  // Use user's tenantId if not provided
+  const tenantId = reportConfig.tenantId ?? user.tenantId;
+  
   // Verify user belongs to tenant
-  if (user.tenantId !== reportConfig.tenantId) {
+  if (user.tenantId !== tenantId) {
     throw new Error('Access denied: User does not belong to this tenant');
   }
 
@@ -604,14 +607,15 @@ async function validateReportAccess(
 }
 
 function calculateNextRun(schedule: {
-  frequency: string;
+  frequency?: string;
   dayOfWeek?: number;
   dayOfMonth?: number;
-  time: string;
-  timezone: string;
+  time?: string;
+  timezone?: string;
 }): Date {
   const now = new Date();
-  const [hours, minutes] = schedule.time.split(':').map(Number);
+  const time = schedule.time ?? '09:00';
+  const [hours, minutes] = time.split(':').map(Number);
 
   const next = new Date(now);
   next.setHours(hours ?? 0, minutes ?? 0, 0, 0);
@@ -621,19 +625,21 @@ function calculateNextRun(schedule: {
     next.setDate(next.getDate() + 1);
   }
 
-  if (schedule.frequency === 'daily') {
+  const frequency = schedule.frequency ?? 'daily';
+  
+  if (frequency === 'daily') {
     return next;
   }
 
-  if (schedule.frequency === 'weekly') {
+  if (frequency === 'weekly') {
     return calculateWeeklyNextRun(next, schedule.dayOfWeek);
   }
 
-  if (schedule.frequency === 'monthly') {
+  if (frequency === 'monthly') {
     return calculateMonthlyNextRun(next, now, schedule.dayOfMonth);
   }
 
-  if (schedule.frequency === 'quarterly') {
+  if (frequency === 'quarterly') {
     return calculateQuarterlyNextRun(next, now, schedule.dayOfMonth);
   }
 

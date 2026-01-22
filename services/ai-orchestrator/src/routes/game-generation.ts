@@ -14,6 +14,7 @@ import { z } from 'zod';
 
 import { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import { GameGenerationService } from '../generation/game-generation.service.js';
+import type { GameType } from '../generation/game-templates.js';
 import { AdaptiveGameEngine } from '../generation/adaptive-game-engine.js';
 import { getAllGameTypes, getTemplatesForGrade } from '../generation/game-templates.js';
 
@@ -171,9 +172,17 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
       const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
       const game = await gameService.generateGame({
-        ...parsed,
+        learnerId: parsed.learnerId ?? userId,
         tenantId,
         userId,
+        gameType: parsed.gameType as GameType,
+        subject: parsed.subject,
+        topic: parsed.topic,
+        gradeLevel: parsed.gradeLevel ?? 5,
+        difficulty: parsed.difficulty,
+        learnerProfile: parsed.learnerProfile,
+        customParameters: parsed.customParameters,
+        includeInstructions: parsed.includeInstructions,
       });
 
       return reply.status(201).send({
@@ -229,12 +238,21 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
     handler: async (request, reply) => {
       const parsed = sessionCreateSchema.parse(request.body);
 
+      // Map parsed objectives to required LearningObjective structure
+      const objectives = parsed.learningObjectives?.map((obj) => ({
+        id: obj.id,
+        skill: obj.skill,
+        targetMastery: obj.targetMastery,
+        currentMastery: obj.currentMastery,
+        attemptsCount: obj.attemptsCount,
+      }));
+
       const session = adaptiveEngine.createSession(
         parsed.gameId,
-        parsed.gameType as any,
+        parsed.gameType as GameType,
         parsed.learnerId,
         parsed.initialDifficulty,
-        parsed.learningObjectives
+        objectives
       );
 
       return reply.status(201).send({
@@ -359,8 +377,12 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
 
       const hint = await adaptiveEngine.generateHint(
         {
-          ...parsed,
-          gameType: parsed.gameType as any,
+          gameType: parsed.gameType as GameType,
+          currentProblem: parsed.currentProblem,
+          solution: parsed.solution,
+          playerAttempts: parsed.playerAttempts,
+          hintLevel: parsed.hintLevel,
+          context: parsed.context,
         },
         tenantId,
         userId
@@ -392,15 +414,18 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
 
       const feedback = await adaptiveEngine.generateFeedback(
         {
-          ...parsed,
-          gameType: parsed.gameType as any,
+          gameType: parsed.gameType as GameType,
+          attempt: parsed.attempt,
+          correctAnswer: parsed.correctAnswer,
+          isCorrect: parsed.isCorrect,
           performance: {
-            ...parsed.performance,
             score: 0,
+            accuracy: parsed.performance.accuracy,
             averageResponseTime: 0,
             hintsUsed: 0,
             completionRate: 0,
-            streakBest: 0,
+            streakCurrent: parsed.performance.streakCurrent,
+            streakBest: parsed.performance.streakCurrent,
             attemptsCorrect: 0,
             attemptsTotal: 0,
             timeElapsed: 0,
@@ -434,7 +459,16 @@ const gameGenerationRoutes: FastifyPluginAsync<GameGenerationRoutesOptions> = as
       const tenantId = (request.headers['x-tenant-id'] as string | undefined) ?? 'default';
       const userId = (request.headers['x-user-id'] as string | undefined) ?? 'anonymous';
 
-      const celebration = await adaptiveEngine.generateCelebration(parsed, tenantId, userId);
+      const celebration = await adaptiveEngine.generateCelebration({
+        achievement: parsed.achievement,
+        context: {
+          score: parsed.context.score,
+          accuracy: parsed.context.accuracy,
+          streak: parsed.context.streak,
+          improvement: parsed.context.improvement,
+        },
+        playerName: parsed.playerName,
+      }, tenantId, userId);
 
       return reply.send({
         celebration,

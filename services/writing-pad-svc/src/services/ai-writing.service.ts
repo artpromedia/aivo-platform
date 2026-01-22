@@ -132,7 +132,7 @@ const ENCOURAGEMENT_BY_GRADE: Record<GradeBand, string[]> = {
 
 function getRandomEncouragement(gradeBand: GradeBand): string {
   const options = ENCOURAGEMENT_BY_GRADE[gradeBand] || ENCOURAGEMENT_BY_GRADE.G6_8;
-  return options[Math.floor(Math.random() * options.length)];
+  return options[Math.floor(Math.random() * options.length)] ?? 'Great job! Keep up the good work!';
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -167,14 +167,20 @@ export async function getWritingAssistance(
     continuation = await generateContinuation(request);
   }
 
-  return {
+  const response: AIAssistanceResponse = {
     documentId: request.documentId,
     feedback,
     suggestions,
-    continuation,
     encouragement: getRandomEncouragement(request.gradeBand),
     metrics,
   };
+  
+  // Only add continuation if it was generated
+  if (continuation) {
+    response.continuation = continuation;
+  }
+  
+  return response;
 }
 
 /**
@@ -356,13 +362,21 @@ function parseFeedbackResponse(response: string, _gradeBand: GradeBand): Writing
         suggestedText?: string;
       }[];
 
-      return items.map((item) => ({
-        type: (item.type as FeedbackType) || 'CONTENT',
-        text: item.text || '',
-        severity: (item.severity as 'INFO' | 'SUGGESTION' | 'WARNING') || 'SUGGESTION',
-        originalText: item.originalText,
-        suggestedText: item.suggestedText,
-      }));
+      return items.map((item) => {
+        const feedbackItem: WritingFeedbackItem = {
+          type: (item.type as FeedbackType) || 'CONTENT',
+          text: item.text || '',
+          severity: (item.severity as 'INFO' | 'SUGGESTION' | 'WARNING') || 'SUGGESTION',
+        };
+        // Only add optional properties if defined
+        if (item.originalText) {
+          feedbackItem.originalText = item.originalText;
+        }
+        if (item.suggestedText) {
+          feedbackItem.suggestedText = item.suggestedText;
+        }
+        return feedbackItem;
+      });
     }
   } catch {
     // Fall through to empty array
@@ -385,14 +399,20 @@ function parseSuggestionsResponse(
         context?: string;
       }[];
 
-      return items.map((item) => ({
-        type: (item.type as SuggestionType) || 'ELABORATION',
-        text: item.text || '',
-        position:
-          (item.position as 'INLINE' | 'END_OF_PARAGRAPH' | 'END_OF_DOCUMENT') ||
-          'END_OF_PARAGRAPH',
-        context: item.context,
-      }));
+      return items.map((item) => {
+        const suggestionItem: WritingSuggestionItem = {
+          type: (item.type as SuggestionType) || 'ELABORATION',
+          text: item.text || '',
+          position:
+            (item.position as 'INLINE' | 'END_OF_PARAGRAPH' | 'END_OF_DOCUMENT') ||
+            'END_OF_PARAGRAPH',
+        };
+        // Only add context if defined
+        if (item.context) {
+          suggestionItem.context = item.context;
+        }
+        return suggestionItem;
+      });
     }
   } catch {
     // Fall through to empty array

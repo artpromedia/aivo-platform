@@ -153,7 +153,25 @@ const socialStoryRoutes: FastifyPluginAsync<SocialStoryRoutesOptions> = async (
       const body = personalizeStorySchema.parse(request.body);
 
       const input: SocialStoryPersonalizationInput = {
-        story: body.story,
+        story: {
+          id: body.story.id,
+          title: body.story.title,
+          category: body.story.category,
+          pages: body.story.pages.map((page) => ({
+            pageNumber: page.pageNumber,
+            title: page.title,
+            sentences: page.sentences.map((s) => ({
+              id: s.id,
+              text: s.text,
+              sentenceType: s.sentenceType,
+              emphasisWords: s.emphasisWords,
+              personalizable: s.personalizable,
+              placeholders: s.placeholders,
+            })),
+            visualPrompt: page.visualPrompt,
+          })),
+          targetSentenceTypes: body.story.targetSentenceTypes,
+        },
         learnerContext: body.learnerContext as LearnerContext,
         preferences: (body.preferences ?? {
           readingLevel: 'STANDARD',
@@ -281,7 +299,25 @@ const socialStoryRoutes: FastifyPluginAsync<SocialStoryRoutesOptions> = async (
       const results = await Promise.allSettled(
         body.stories.map((story) =>
           personalizer.personalizeStory(body.tenantId, {
-            story,
+            story: {
+              id: story.id,
+              title: story.title,
+              category: story.category,
+              pages: story.pages.map((page) => ({
+                pageNumber: page.pageNumber,
+                title: page.title,
+                sentences: page.sentences.map((s) => ({
+                  id: s.id,
+                  text: s.text,
+                  sentenceType: s.sentenceType,
+                  emphasisWords: s.emphasisWords,
+                  personalizable: s.personalizable,
+                  placeholders: s.placeholders,
+                })),
+                visualPrompt: page.visualPrompt,
+              })),
+              targetSentenceTypes: story.targetSentenceTypes,
+            },
             learnerContext: body.learnerContext as LearnerContext,
             preferences,
           })

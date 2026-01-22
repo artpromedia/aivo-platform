@@ -389,7 +389,10 @@ class AnthropicFineTuningAdapter implements FineTuningProviderAdapter {
       status: result.status,
       fineTunedModel: result.fine_tuned_model,
       error: result.error,
-      metrics: result.metrics,
+      metrics: result.metrics ? {
+        trainingLoss: result.metrics.training_loss,
+        validationLoss: result.metrics.validation_loss,
+      } : undefined,
     };
   }
 

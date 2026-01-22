@@ -446,7 +446,7 @@ export class ContentValidator {
     }
 
     // Check text blocks for readability
-    const textBlocks = blocks.filter((b) => b.type === 'text' || b.type === 'paragraph');
+    const textBlocks = blocks.filter((b) => b.type === 'text');
     for (const block of textBlocks) {
       const content = block.data.content || block.data.text || '';
       if (content) {

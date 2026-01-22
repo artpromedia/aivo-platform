@@ -9,11 +9,21 @@
 
 import { randomUUID } from 'node:crypto';
 
-import { type FastifyInstance, type FastifyPluginAsync } from 'fastify';
+import { type FastifyInstance, type FastifyPluginAsync, type FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
 import { z } from 'zod';
 
 import { publishConcernReportEvent } from '../events/event-publisher.js';
+
+// Helper type for authenticated requests
+interface AuthenticatedUser {
+  sub?: string;
+  tenant_id?: string;
+}
+
+function getUser(request: FastifyRequest): AuthenticatedUser | undefined {
+  return (request as FastifyRequest & { user?: AuthenticatedUser }).user;
+}
 
 // ════════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -456,8 +466,9 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
     const { days, limit } = parsed.data;
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const user = getUser(request);
+    const teacherId = user?.sub;
+    const tenantId = user?.tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });
@@ -508,8 +519,9 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
     const { interactionId } = request.params;
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const user = getUser(request);
+    const teacherId = user?.sub;
+    const tenantId = user?.tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });
@@ -571,8 +583,9 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
     const { type, description } = parsed.data;
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const user = getUser(request);
+    const teacherId = user?.sub;
+    const tenantId = user?.tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });
@@ -658,8 +671,9 @@ export const registerTeacherTransparencyRoutes: FastifyPluginAsync<
     const days = Number.parseInt(request.query.days ?? '7', 10);
 
     // Get teacher info from JWT
-    const teacherId = (request.user as { sub?: string })?.sub;
-    const tenantId = (request.user as { tenant_id?: string })?.tenant_id;
+    const user = getUser(request);
+    const teacherId = user?.sub;
+    const tenantId = user?.tenant_id;
 
     if (!teacherId || !tenantId) {
       reply.code(401).send({ error: 'Unauthorized' });

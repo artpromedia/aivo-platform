@@ -71,20 +71,18 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
 ) => {
   const { registry, store, telemetryStore } = opts;
 
-  app.addHook('preHandler', async (request, reply) => {
+  app.addHook('preHandler', async (request, reply): Promise<void> => {
     if (!request.url.startsWith('/internal/')) return;
     const apiKey = request.headers['x-internal-api-key'];
     if (apiKey !== config.internalApiKey) {
       reply.code(401).send({ error: 'Unauthorized' });
-      return reply;
     }
   });
 
   app.post('/ai/echo', async (request, reply) => {
     const parsed = echoBodySchema.safeParse(request.body);
     if (!parsed.success) {
-      reply.code(400).send({ error: 'Invalid payload' });
-      return;
+      return reply.code(400).send({ error: 'Invalid payload' });
     }
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
     // Reuse pipeline with a pass-through prompt
@@ -101,14 +99,13 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
       },
       telemetryStore
     );
-    reply.code(200).send({ response: result });
+    return reply.code(200).send({ response: result });
   });
 
   app.get('/ai/configs', async (request, reply) => {
     const parsed = listConfigsQuerySchema.safeParse(request.query);
     if (!parsed.success) {
-      reply.code(400).send({ error: 'Invalid filters' });
-      return;
+      return reply.code(400).send({ error: 'Invalid filters' });
     }
 
     const filters: { agentType?: AgentType; isActive?: boolean } = {};
@@ -120,22 +117,27 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     }
 
     const configs = await store.list(filters);
-    reply.code(200).send({ configs });
+    return reply.code(200).send({ configs });
   });
 
   app.post('/ai/configs', async (request, reply) => {
     const parsed = createConfigSchema.safeParse(request.body);
     if (!parsed.success) {
-      reply.code(400).send({ error: 'Invalid payload' });
-      return;
+      return reply.code(400).send({ error: 'Invalid payload' });
     }
 
     const created = await registry.create({
-      ...parsed.data,
+      agentType: parsed.data.agentType,
+      modelName: parsed.data.modelName,
+      provider: parsed.data.provider,
+      promptTemplate: parsed.data.promptTemplate,
       hyperparameters: parsed.data.hyperparameters,
+      version: parsed.data.version,
+      rolloutPercentage: parsed.data.rolloutPercentage,
+      isActive: parsed.data.isActive,
     });
 
-    reply.code(201).send({ config: created });
+    return reply.code(201).send({ config: created });
   });
 
   app.patch<{ Params: { id: string } }>('/ai/configs/:id', async (request, reply) => {

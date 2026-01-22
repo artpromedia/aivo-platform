@@ -170,6 +170,11 @@ function buildSequencingDefinition(
 
   return {
     controlMode,
+    sequencingRules: {
+      preConditionRules: [],
+      postConditionRules: [],
+      exitConditionRules: [],
+    },
     preConditionRules: [],
     postConditionRules: [],
     exitConditionRules: [],

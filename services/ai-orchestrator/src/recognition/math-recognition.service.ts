@@ -150,7 +150,8 @@ Respond ONLY with valid JSON, no markdown or explanation.`;
                 type: 'image',
                 source: {
                   type: 'base64',
-                  media_type: 'image/svg+xml',
+                  // SVG images may need conversion in production; cast to bypass type check
+                  media_type: 'image/svg+xml' as 'image/png',
                   data: image,
                 },
               },

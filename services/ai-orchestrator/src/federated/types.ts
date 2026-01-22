@@ -226,12 +226,12 @@ export interface FederatedRoundConfig {
  */
 export interface TenantSelectionCriteria {
   // Minimum data requirements
-  minTrainingExamples: number;
-  minDataQuality: number;
+  minTrainingExamples?: number;
+  minDataQuality?: number;
 
   // Activity requirements
-  minRecentActivity: number; // days
-  minFeedbackRate: number;
+  minRecentActivity?: number; // days
+  minFeedbackRate?: number;
 
   // Optional: specific tenant types
   tenantTypes?: string[];

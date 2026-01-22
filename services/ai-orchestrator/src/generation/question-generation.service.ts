@@ -70,10 +70,13 @@ const BASE_POINTS: Record<QuestionType, number> = {
   drag_drop: 2,
 };
 
-const DIFFICULTY_MULTIPLIER: Record<DifficultyLevel, number> = {
+const DIFFICULTY_MULTIPLIER: Partial<Record<DifficultyLevel, number>> = {
   easy: 1,
   medium: 1.5,
   hard: 2,
+  beginner: 1,
+  intermediate: 1.5,
+  advanced: 2,
 };
 
 export class QuestionGenerationService {

@@ -41,11 +41,11 @@ When helping with problems:
 
 Remember: You're helping build confident, independent learners!`;
 
-  protected getTemperature(): number {
+  protected override getTemperature(): number {
     return 0.8; // Slightly creative for engaging responses
   }
 
-  protected getMaxTokens(): number {
+  protected override getMaxTokens(): number {
     return 400; // Keep responses focused
   }
 

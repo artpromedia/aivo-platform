@@ -40,7 +40,7 @@ export interface LLMCompletionOptions {
   /** Tools available for the model to call (function calling) */
   tools?: unknown[];
   /** How the model should choose tools */
-  toolChoice?: 'auto' | 'required' | 'none' | { type: string; function?: { name: string } };
+  toolChoice?: 'auto' | 'required' | 'none' | { type: 'function'; function: { name: string } };
 }
 
 export interface LLMCompletionResult {

@@ -147,9 +147,17 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
 
       try {
         const result = await adaptationService.adaptContent({
-          ...data,
+          content: data.content,
+          targetLexile: data.targetLexile,
+          currentLexile: data.currentLexile,
+          subject: data.subject,
+          topic: data.topic,
+          conceptGradeLevel: data.conceptGradeLevel,
+          contentType: data.contentType,
+          preserveTerms: data.preserveTerms,
+          context: data.context,
           tenantId,
-          learnerId: user?.sub,
+          learnerId: user?.sub ?? 'anonymous',
         });
 
         return reply.send(result);
@@ -286,10 +294,15 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { question, targetLexile, subject, preserveTerms } = parseResult.data as z.infer<typeof AdaptQuestionSchema>;
+      const { question, targetLexile, subject, preserveTerms } = parseResult.data;
 
       try {
-        const result = await adaptationService.adaptQuestion(question, targetLexile, {
+        const result = await adaptationService.adaptQuestion({
+          prompt: question.prompt,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+        }, targetLexile, {
           subject,
           preserveTerms,
           tenantId: user?.tenantId,
@@ -323,11 +336,15 @@ export async function contentAdaptationRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { items, targetLexile, subject, preserveTerms } = parseResult.data as z.infer<typeof BatchAdaptSchema>;
+      const { items, targetLexile, subject, preserveTerms } = parseResult.data;
 
       try {
         const results = await adaptationService.batchAdapt({
-          items,
+          items: items.map((item) => ({
+            id: item.id,
+            content: item.content,
+            contentType: item.contentType,
+          })),
           targetLexile,
           subject,
           preserveTerms,

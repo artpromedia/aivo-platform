@@ -449,7 +449,7 @@ Respond with JSON: {"skills": [{"id": "string", "prerequisites": ["skillId"], "o
       return '2-4 weeks';
     }
 
-    const totalMinutes = nodes.reduce((sum, node) => {
+    const totalMinutes = nodes.reduce<number>((sum, node) => {
       const n = node as Record<string, unknown>;
       return sum + ((n.duration as number) ?? 30);
     }, 0);

@@ -35,6 +35,8 @@ export type SequencingException =
   | 'SB.2.4-1' // Choice target disabled
   | 'SB.2.4-2' // Choice target hidden
   | 'SB.2.4-3' // Choice target not available
+  | 'SB.2.6-1' // Flow constrained
+  | 'SB.2.6-2' // Flow blocked by control mode
   | 'SB.2.9-1' // Flow target not available
   | 'SB.2.9-2' // Flow subprocess failed
   | 'SB.2.11-1' // Exit not valid
@@ -47,6 +49,7 @@ export type SequencingException =
   // Delivery Request Exceptions
   | 'DB.1.1-1' // Cannot identify activity
   | 'DB.1.1-2' // Activity not available
+  | 'DB.1.1-3' // Activity cannot be delivered
   | 'DB.2-1'; // Delivery controls blocked
 
 // ============================================================================
@@ -74,7 +77,8 @@ export type TerminationRequest =
   | 'suspend'
   | 'suspendAll'
   | 'abandon'
-  | 'abandonAll';
+  | 'abandonAll'
+  | '_none_';
 
 export type SequencingRequest =
   | 'start'
@@ -85,7 +89,8 @@ export type SequencingRequest =
   | 'jump'
   | 'retry'
   | 'retryAll'
-  | 'exit';
+  | 'exit'
+  | '_none_';
 
 // ============================================================================
 // NAVIGATION REQUEST EVENT
@@ -104,6 +109,7 @@ export interface DeliveryRequest {
   valid: boolean;
   activityId?: string;
   exception?: SequencingException;
+  launchUrl?: string;
 }
 
 // ============================================================================
@@ -275,9 +281,10 @@ export interface ObjectiveDescription {
   objectiveId: string;
   satisfiedByMeasure: boolean;
   minNormalizedMeasure: number;
-  isPrimaryObjective: boolean;
+  isPrimaryObjective?: boolean;
   // Objective Map
   objectiveMap?: ObjectiveMap[];
+  mapInfo?: ObjectiveMap[];
 }
 
 export interface ObjectiveMap {
@@ -299,11 +306,23 @@ export interface SequencingDefinition {
     postConditionRules: SequencingRule[];
     exitConditionRules: SequencingRule[];
   };
+  /** Direct access to pre-condition rules (convenience alias) */
+  preConditionRules?: SequencingRule[];
+  /** Direct access to post-condition rules (convenience alias) */
+  postConditionRules?: SequencingRule[];
+  /** Direct access to exit-condition rules (convenience alias) */
+  exitConditionRules?: SequencingRule[];
   limitConditions: LimitConditions;
   rollupRules: RollupRules;
   objectives: ObjectiveDescription[];
+  /** Primary objective ID for this activity */
+  primaryObjectiveId?: string;
   randomizationControls: RandomizationControls;
   deliveryControls: DeliveryControls;
+  /** Constrained choice flag for flow control */
+  constrainedChoice?: boolean;
+  /** Prevent activation flag */
+  preventActivation?: boolean;
 }
 
 // ============================================================================
@@ -324,6 +343,16 @@ export interface ActivityTrackingInfo {
   attemptCount: number;
   attemptProgressStatus: boolean;
   attemptCompletionStatus: boolean | null;
+  /** Attempt completion amount (0-1) */
+  attemptCompletionAmount?: number;
+  /** Absolute duration of attempt */
+  attemptAbsoluteDuration?: number;
+  /** Experienced duration of attempt */
+  attemptExperiencedDuration?: number;
+  /** Activity absolute duration (alias for legacy code) */
+  activityAbsoluteDuration?: number;
+  /** Activity experienced duration (alias for legacy code) */
+  activityExperiencedDuration?: number;
   objectiveProgress: Map<string, ObjectiveProgress>;
 }
 
@@ -362,16 +391,46 @@ export interface Activity {
 // GLOBAL STATE
 // ============================================================================
 
+/** Activity state for serialization */
+export interface SerializedActivityState {
+  id: string;
+  trackingInfo: {
+    attemptProgressStatus: boolean;
+    attemptCompletionStatus: boolean | null;
+    attemptCompletionAmount?: number;
+    activityIsActive: boolean;
+    activityIsSuspended: boolean;
+    attemptCount: number;
+    attemptAbsoluteDuration?: number;
+    attemptExperiencedDuration?: number;
+    activityAbsoluteDuration?: number;
+    activityExperiencedDuration?: number;
+    objectiveProgress: Array<[string, ObjectiveProgress]>;
+  };
+}
+
 export interface SuspendedStateData {
-  suspendedActivityId: string;
-  activityTree: Activity;
-  dataModel: Record<string, string>;
+  suspendedActivityId?: string;
+  activityTree?: Activity;
+  dataModel?: Record<string, string>;
+  /** Serialized activity states */
+  activityStates?: SerializedActivityState[];
+  /** Global objective states (serialized as array) */
+  globalObjectives?: Array<[string, ObjectiveProgress]>;
+  /** Learner preferences at suspend time */
+  learnerPreferences?: LearnerPreferences;
+  /** Current activity ID at suspend time */
+  currentActivityId?: string;
 }
 
 export interface GlobalStateInfo {
   currentActivity: Activity | null;
   suspendedActivity: Activity | null;
   activityTree: Activity | null;
+  /** Map of globally defined objectives */
+  definedObjectives?: Map<string, ObjectiveProgress>;
+  /** Learner preferences */
+  learnerPreferences?: LearnerPreferences;
 }
 
 // ============================================================================

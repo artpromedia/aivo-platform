@@ -188,7 +188,7 @@ export class FederatedAggregationServer {
    * Select tenants eligible for participation
    */
   private async selectEligibleTenants(config: FederatedRoundConfig): Promise<TenantId[]> {
-    const criteria = config.selectionCriteria || {};
+    const criteria: Partial<TenantSelectionCriteria> = config.selectionCriteria ?? {};
 
     const result = await this.db.query(
       `

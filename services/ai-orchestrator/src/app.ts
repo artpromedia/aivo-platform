@@ -117,8 +117,8 @@ export function createApp(options: AppOptions = {}) {
 
   // Create LLM Orchestrator for AI services
   const llmOrchestrator = new LLMOrchestrator({
-    defaultProvider: 'anthropic',
-    fallbackProviders: ['openai'],
+    primaryProvider: 'anthropic',
+    fallbackOrder: ['openai'],
   });
 
   // AI Content Generation routes

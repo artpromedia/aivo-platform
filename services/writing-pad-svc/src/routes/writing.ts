@@ -213,7 +213,7 @@ export const registerWritingRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // Check ownership (learners can only see their own)
-      if (auth.role === 'LEARNER' && document.learner_id !== auth.userId) {
+      if (auth.roles.includes(Role.LEARNER) && document.learner_id !== auth.userId) {
         return reply.code(403).send({ error: 'Access denied' });
       }
 
@@ -339,15 +339,23 @@ export const registerWritingRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       try {
-        const assistance = await getWritingAssistance({
+        const request: Parameters<typeof getWritingAssistance>[0] = {
           documentId: document.id,
           content: document.content,
           writingType: document.writing_type,
           gradeBand: document.grade_band || 'G6_8',
-          subject: document.subject || undefined,
           requestTypes: parsed.data.requestTypes,
-          focusAreas: parsed.data.focusAreas as FeedbackType[] | undefined,
-        });
+        };
+        
+        // Only add optional properties if defined
+        if (document.subject) {
+          request.subject = document.subject;
+        }
+        if (parsed.data.focusAreas) {
+          request.focusAreas = parsed.data.focusAreas as FeedbackType[];
+        }
+        
+        const assistance = await getWritingAssistance(request);
 
         return reply.code(200).send(assistance);
       } catch (err) {

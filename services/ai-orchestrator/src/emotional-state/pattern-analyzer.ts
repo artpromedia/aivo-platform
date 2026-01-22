@@ -470,11 +470,10 @@ export class PatternAnalyzer {
    */
   async getLearnerInterventionHistory(
     learnerId: string
-  ): Promise<
-    Record<string, { uses: number; successes: number; successRate: number }> & {
-      lastUsed: string | null;
-    }
-  > {
+  ): Promise<{
+    entries: Record<string, { uses: number; successes: number; successRate: number }>;
+    lastUsed: string | null;
+  }> {
     const result = await this.pool.query<{
       intervention_id: string;
       usage_count: number;
@@ -509,6 +508,6 @@ export class PatternAnalyzer {
       }
     }
 
-    return { ...history, lastUsed };
+    return { entries: history, lastUsed };
   }
 }

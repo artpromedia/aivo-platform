@@ -21,10 +21,12 @@ import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 
 import type { AiLoggingService, LogAiCallInput } from '../logging/index.js';
-import type {
-  ProviderRouter,
+import {
   getProviderRouter,
   type ProviderInvocationResult,
+} from '../providers/providerRouter.js';
+import type {
+  ProviderRouter,
 } from '../providers/providerRouter.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import { safetyPostFilter } from '../safety/postFilter.js';

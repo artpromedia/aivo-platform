@@ -133,7 +133,15 @@ export async function mathRecognitionRoutes(fastify: FastifyInstance) {
 
       try {
         const result = await recognitionService.recognizeFromStrokes({
-          strokes: parsed.data.strokes,
+          strokes: parsed.data.strokes.map((s) => ({
+            id: s.id,
+            points: s.points.map((p) => ({
+              x: p.x,
+              y: p.y,
+              t: p.t,
+              p: p.p,
+            })),
+          })),
           canvasWidth: parsed.data.canvasWidth,
           canvasHeight: parsed.data.canvasHeight,
           options: parsed.data.options,

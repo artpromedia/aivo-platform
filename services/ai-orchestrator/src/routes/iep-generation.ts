@@ -435,7 +435,7 @@ const iepGenerationRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
    */
   fastify.post('/objectives', {
     schema: {
-      tags: ['IEP Generation'],
+      // tags: ['IEP Generation'], // Removed: not part of FastifySchema
       summary: 'Generate IEP objectives',
       description: 'Uses AI to generate short-term objectives for an IEP goal',
     },
@@ -461,7 +461,7 @@ const iepGenerationRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
    */
   fastify.post('/accommodations', {
     schema: {
-      tags: ['IEP Generation'],
+      // tags: ['IEP Generation'], // Removed: not part of FastifySchema
       summary: 'Suggest accommodations',
       description: 'Uses AI to suggest appropriate accommodations based on student needs',
     },

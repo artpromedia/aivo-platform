@@ -51,9 +51,10 @@ interface LearnerInterventionEntry {
 /**
  * Type for learner history lookup.
  */
-type LearnerHistory = Record<string, LearnerInterventionEntry> & {
+interface LearnerHistory {
+  entries: Record<string, LearnerInterventionEntry>;
   lastUsed: string | null;
-};
+}
 
 export class InterventionSelector {
   constructor(private pool: Pool) {}
@@ -189,7 +190,7 @@ export class InterventionSelector {
       }
     }
 
-    return { ...history, lastUsed };
+    return { entries: history, lastUsed };
   }
 
   /**
@@ -209,7 +210,7 @@ export class InterventionSelector {
     score += intervention.successRate * 30;
 
     // Learner-specific effectiveness
-    const learnerSuccess = learnerHistory[intervention.id];
+    const learnerSuccess = learnerHistory.entries[intervention.id];
     if (learnerSuccess) {
       score += learnerSuccess.successRate * 40;
       if (learnerSuccess.successRate > 0.7) {

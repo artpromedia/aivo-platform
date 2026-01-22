@@ -9,6 +9,11 @@
 import type { Pool } from 'pg';
 
 import { AnxietyDetector } from './anxiety-detector.js';
+import {
+  isPositiveState,
+  CRITICAL_STATES,
+  WARNING_STATES,
+} from './emotional-state.types.js';
 import type {
   AnxietyAnalysisResult,
   AnxietyTrigger,
@@ -26,9 +31,6 @@ import type {
   SessionStateSummary,
   StateIndicator,
   SuggestedIntervention,
-  isPositiveState,
-  CRITICAL_STATES,
-  WARNING_STATES,
 } from './emotional-state.types.js';
 import { InterventionSelector } from './intervention-selector.js';
 import { OverwhelmDetector } from './overwhelm-detector.js';

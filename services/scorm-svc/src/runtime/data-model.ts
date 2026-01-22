@@ -19,6 +19,9 @@ export interface DataModelElement {
   format?: RegExp;
   minValue?: number;
   maxValue?: number;
+  key?: string;
+  type?: string;
+  maxLength?: number;
 }
 
 // ============================================================================

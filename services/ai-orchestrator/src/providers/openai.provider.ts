@@ -100,8 +100,8 @@ export class OpenAIProvider implements LLMProviderInterface {
         presence_penalty: options.presencePenalty ?? 0,
         stop: options.stop,
         user: options.user ?? options.metadata?.userId,
-        ...(options.tools && { tools: options.tools }),
-        ...(options.toolChoice && { tool_choice: options.toolChoice }),
+        ...(options.tools && { tools: options.tools as OpenAI.Chat.Completions.ChatCompletionTool[] }),
+        ...(options.toolChoice && { tool_choice: options.toolChoice as OpenAI.Chat.Completions.ChatCompletionToolChoiceOption }),
       });
 
       const message = response.choices[0]?.message;
@@ -158,8 +158,8 @@ export class OpenAIProvider implements LLMProviderInterface {
       max_tokens: options.maxTokens ?? 1000,
       stream: true,
       user: options.user ?? options.metadata?.userId,
-      ...(options.tools && { tools: options.tools }),
-      ...(options.toolChoice && { tool_choice: options.toolChoice }),
+      ...(options.tools && { tools: options.tools as OpenAI.Chat.Completions.ChatCompletionTool[] }),
+      ...(options.toolChoice && { tool_choice: options.toolChoice as OpenAI.Chat.Completions.ChatCompletionToolChoiceOption }),
     });
 
     for await (const chunk of stream) {

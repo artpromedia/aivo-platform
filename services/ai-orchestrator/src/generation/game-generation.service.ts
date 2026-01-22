@@ -179,9 +179,9 @@ export class GameGenerationService {
         },
         metadata: {
           generatedAt: new Date(),
-          model: result.metadata?.model ?? 'unknown',
-          provider: result.metadata?.provider ?? 'unknown',
-          tokensUsed: result.metadata?.tokensUsed ?? 0,
+          model: result.model ?? 'unknown',
+          provider: result.provider ?? 'unknown',
+          tokensUsed: result.usage?.totalTokens ?? 0,
           latencyMs: Date.now() - startTime,
           template: template.id,
           personalizedFor: request.learnerId,

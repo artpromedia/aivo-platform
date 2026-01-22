@@ -101,11 +101,11 @@ When providing feedback:
 
 Remember: Your goal is to build confident writers, not perfect essays.`;
 
-  protected getTemperature(): number {
+  protected override getTemperature(): number {
     return 0.7; // Slightly creative for writing assistance
   }
 
-  protected getMaxTokens(): number {
+  protected override getMaxTokens(): number {
     return 800; // Need more tokens for detailed feedback
   }
 

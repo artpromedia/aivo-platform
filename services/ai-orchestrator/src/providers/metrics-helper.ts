@@ -19,7 +19,7 @@ type ObservabilityModule = {
 // Attempt to load observability lib
 const loadObservability = async (): Promise<void> => {
   try {
-    const obs = (await import('@aivo/ts-observability')) as ObservabilityModule;
+    const obs = (await import('@aivo/ts-observability')) as unknown as ObservabilityModule;
     if (obs.metrics) {
       observabilityMetrics = obs.metrics;
     }

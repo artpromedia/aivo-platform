@@ -6,7 +6,8 @@
     "module": "ESNext",
     "rootDir": ".",
     "outDir": "dist",
-    "noEmit": false
+    "noEmit": false,
+    "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src/**/*", "test/**/*", "scripts/**/*", "eval/**/*"],
   "exclude": ["dist", "node_modules", "build"]

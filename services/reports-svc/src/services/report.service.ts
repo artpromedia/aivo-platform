@@ -7,7 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { S3, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { SES, SendEmailCommand } from '@aws-sdk/client-ses';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -428,19 +428,16 @@ export class ReportService {
 
       await this.saveReportRequest(request);
 
-      metrics.timing('reports.generation.duration', Date.now() - startTime, {
-        type,
-        format,
-      });
+      // TODO: Add reports-specific metrics to ts-observability when report metrics are defined
+      // metrics.http.requestDuration.observe(...) - use proper structured metrics
 
-      metrics.increment('reports.generated', { type, format });
-
-      logger.info('Report generated successfully', {
+      logger.info({
         reportId,
         type,
         format,
         size: content.length,
-      });
+        durationMs: Date.now() - startTime,
+      }, 'Report generated successfully');
 
       return request;
     } catch (error) {
@@ -448,7 +445,7 @@ export class ReportService {
       request.error = error instanceof Error ? error.message : 'Unknown error';
       await this.saveReportRequest(request);
 
-      logger.error('Report generation failed', { error, reportId, type, format });
+      logger.error({ error, reportId, type, format }, 'Report generation failed');
       throw error;
     }
   }
@@ -1285,14 +1282,14 @@ export class ReportService {
 
         await this.ses.send(command);
 
-        metrics.increment('reports.email.sent');
-        logger.info('Report email sent', {
+        // TODO: Add reports-specific metrics when defined
+        logger.info({
           reportId: report.id,
           recipient: recipient.email,
-        });
+        }, 'Report email sent');
       }
     } catch (error) {
-      logger.error('Failed to send report email', { error });
+      logger.error({ error }, 'Failed to send report email');
       throw error;
     }
   }

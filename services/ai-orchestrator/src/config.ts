@@ -15,5 +15,6 @@ export const config = {
   mockSeed: process.env.AI_MOCK_SEED || 'default-seed',
   internalApiKey: requireEnvInProduction('INTERNAL_API_KEY', 'dev-only-key'),
   databaseUrl: process.env.DATABASE_URL,
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   agentConfigCacheTtlMs: Number(process.env.AGENT_CONFIG_CACHE_TTL_MS || 30_000),
 };

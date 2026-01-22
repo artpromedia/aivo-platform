@@ -12,6 +12,7 @@ export interface ScormManifest {
   defaultOrganization: string;
   resources: ScormResource[];
   scormType: 'SCORM_1.2' | 'SCORM_2004_2ND' | 'SCORM_2004_3RD' | 'SCORM_2004_4TH';
+  sequencing?: ScormSequencing;
 }
 
 export interface ScormMetadata {
@@ -33,8 +34,10 @@ export interface ScormOrganization {
 export interface ScormItem {
   identifier: string;
   identifierref?: string;
+  identifierRef?: string;
   title: string;
   items: ScormItem[];
+  children?: ScormItem[];
   isVisible: boolean;
   parameters?: string;
   // SCORM 2004 Sequencing
@@ -43,7 +46,9 @@ export interface ScormItem {
   dataFromLMS?: string;
   timeLimitAction?: 'exit,message' | 'continue,message' | 'exit,no message' | 'continue,no message';
   masteryScore?: number;
+  masterScore?: number;
   maxTimeAllowed?: string;
+  attemptLimit?: number;
 }
 
 export interface ScormResource {
@@ -71,6 +76,12 @@ export interface ScormSequencing {
   objectives?: ScormObjective[];
   randomizationControls?: ScormRandomizationControls;
   deliveryControls?: ScormDeliveryControls;
+  constrainedChoiceConsiderations?: ScormConstrainedChoiceConsiderations;
+}
+
+export interface ScormConstrainedChoiceConsiderations {
+  preventActivation?: boolean;
+  constrainChoice?: boolean;
 }
 
 export interface ScormControlMode {

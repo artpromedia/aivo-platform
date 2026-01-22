@@ -242,14 +242,14 @@ export class GoalPlannerAgent extends BaseAgent {
   /**
    * Override temperature for goal planning (slightly lower for consistency)
    */
-  protected getTemperature(): number {
+  protected override getTemperature(): number {
     return 0.6;
   }
 
   /**
    * Override max tokens for goal planning (need more for structured output)
    */
-  protected getMaxTokens(): number {
+  protected override getMaxTokens(): number {
     return 2000;
   }
 

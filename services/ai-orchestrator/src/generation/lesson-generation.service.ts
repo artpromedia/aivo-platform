@@ -25,7 +25,39 @@ import type {
   LessonOutline,
   GenerationMetadata,
   GradeLevel,
+  VocabularyItem,
+  AssessmentQuestion,
 } from './types.js';
+
+/**
+ * Interface for parsed lesson data from LLM response
+ */
+interface ParsedLessonData {
+  title?: string;
+  description?: string;
+  objectives?: string[];
+  duration?: number;
+  sections?: {
+    title: string;
+    type?: string;
+    content?: string;
+    activities?: {
+      title: string;
+      instructions: string;
+      duration?: number;
+      type?: string;
+    }[];
+  }[];
+  vocabulary?: VocabularyItem[];
+  teacherNotes?: string;
+}
+
+/**
+ * Interface for parsed assessment data from LLM response
+ */
+interface ParsedAssessmentData {
+  questions?: AssessmentQuestion[];
+}
 
 const LESSON_GENERATION_SYSTEM_PROMPT = `You are an expert educational content creator for the AIVO learning platform.
 When generating lessons:
@@ -86,7 +118,7 @@ export class LessonGenerationService {
         },
       });
 
-      const lessonData = this.parseStructuredResponse(result.content);
+      const lessonData = this.parseStructuredResponse(result.content) as ParsedLessonData;
       const blocks = this.convertToBlocks(lessonData.sections ?? []);
 
       let assessment: GeneratedAssessment | undefined;
@@ -204,7 +236,7 @@ Respond with valid JSON:
       },
     });
 
-    return this.parseStructuredResponse(result.content);
+    return this.parseStructuredResponse(result.content) as unknown as LessonOutline;
   }
 
   /**
@@ -429,7 +461,7 @@ Respond with JSON: {"questions": [{"type": "string", "stem": "string", "options"
       },
     });
 
-    const parsed = this.parseStructuredResponse(result.content);
+    const parsed = this.parseStructuredResponse(result.content) as ParsedAssessmentData;
 
     return {
       id: uuidv4(),

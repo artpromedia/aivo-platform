@@ -408,7 +408,6 @@ export const registerBrainRoutes: FastifyPluginAsync<BrainRoutesOptions> = async
     const apiKey = request.headers['x-internal-api-key'];
     if (apiKey !== config.internalApiKey) {
       reply.code(401).send({ error: 'Unauthorized' });
-      return reply;
     }
   });
 

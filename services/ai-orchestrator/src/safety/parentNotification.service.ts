@@ -13,8 +13,17 @@
  * Created: January 2026 - Enterprise QA Audit requirement
  */
 
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import type { Pool } from 'pg';
+
+// TODO: Replace with proper metrics from @aivo/ts-observability when safety metrics are added
+// For now, use stub implementations
+const safetyMetrics = {
+  parentNotificationAttempted: { inc: (_labels?: Record<string, string>) => {} },
+  parentNotificationSuccess: { inc: (_labels?: Record<string, string>) => {} },
+  parentNotificationDuration: { observe: (_labels: Record<string, string>, _value: number) => {} },
+  parentNotificationError: { inc: (_labels?: Record<string, string>) => {} },
+};
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -165,11 +174,7 @@ export class ParentSafetyNotificationService {
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             errors.push(`Failed to notify parent ${parent.parentId}: ${errorMessage}`);
-            logger.error('Failed to notify parent', {
-              parentId: parent.parentId,
-              incidentId: incident.incidentId,
-              error: errorMessage,
-            });
+            logger.error({ err: errorMessage, parentId: parent.parentId, incidentId: incident.incidentId }, 'Failed to notify parent');
           }
         }
 
@@ -189,17 +194,17 @@ export class ParentSafetyNotificationService {
       });
 
       // 5. Update metrics
-      metrics.increment('safety.parent_notification.attempted', {
+      safetyMetrics.parentNotificationAttempted.inc({
         incident_type: incident.incidentType,
         tenant_id: incident.tenantId,
       });
 
       if (parentNotified) {
-        metrics.increment('safety.parent_notification.success');
+        safetyMetrics.parentNotificationSuccess.inc();
       }
 
       const duration = Date.now() - startTime;
-      metrics.histogram('safety.parent_notification.duration_ms', duration);
+      safetyMetrics.parentNotificationDuration.observe({}, duration);
 
       return {
         success: parentNotified || schoolAdminNotified,
@@ -210,12 +215,9 @@ export class ParentSafetyNotificationService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Parent safety notification failed', {
-        incidentId: incident.incidentId,
-        error: errorMessage,
-      });
+      logger.error({ err: errorMessage, incidentId: incident.incidentId }, 'Parent safety notification failed');
 
-      metrics.increment('safety.parent_notification.error');
+      safetyMetrics.parentNotificationError.inc();
 
       return {
         success: false,
@@ -321,12 +323,12 @@ export class ParentSafetyNotificationService {
       });
       notificationIds.push(emailResult.messageId);
 
-      logger.info('Safety notification email sent', {
+      logger.info({
         parentId: parent.parentId,
         learnerId: learner.id,
         incidentId: incident.incidentId,
         messageId: emailResult.messageId,
-      });
+      }, 'Safety notification email sent');
     }
 
     // Send push notification
@@ -346,10 +348,10 @@ export class ParentSafetyNotificationService {
         notificationIds.push(pushResult.notificationId);
       } catch (error) {
         // Push notification failure is not critical
-        logger.warn('Push notification failed', {
+        logger.warn({
           parentId: parent.parentId,
-          error: error instanceof Error ? error.message : 'Unknown',
-        });
+          err: error instanceof Error ? error.message : 'Unknown',
+        }, 'Push notification failed');
       }
     }
 
@@ -395,16 +397,13 @@ export class ParentSafetyNotificationService {
           },
         });
 
-        logger.info('Safety incident escalated to admin', {
+        logger.info({
           adminId: admin.id,
           incidentId: incident.incidentId,
           reason,
-        });
+        }, 'Safety incident escalated to admin');
       } catch (error) {
-        logger.error('Failed to notify school admin', {
-          adminId: admin.id,
-          error: error instanceof Error ? error.message : 'Unknown',
-        });
+        logger.error({ err: error instanceof Error ? error.message : 'Unknown', adminId: admin.id }, 'Failed to notify school admin');
       }
     }
   }

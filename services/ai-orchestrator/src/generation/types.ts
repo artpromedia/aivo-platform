@@ -48,7 +48,7 @@ export type GradeLevel =
 
 export type ContentStyle = 'formal' | 'conversational' | 'interactive';
 
-export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'easy' | 'medium' | 'hard';
 
 export type BloomsLevel =
   | 'remember'
@@ -552,16 +552,18 @@ export interface EnhancedContent {
 // ────────────────────────────────────────────────────────────────────────────
 
 export interface CostTrackingData {
-  requestId: string;
   provider: string;
   model: string;
   inputTokens: number;
   outputTokens: number;
-  cost: number;
+  totalTokens: number;
+  estimatedCostUsd: number;
+  requestId?: string;
+  cost?: number;
   userId?: string;
-  tenantId: string;
-  useCase: string;
-  timestamp: Date;
+  tenantId?: string;
+  useCase?: string;
+  timestamp?: Date;
 }
 
 export interface UsageSummary {

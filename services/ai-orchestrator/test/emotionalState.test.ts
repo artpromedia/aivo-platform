@@ -12,12 +12,13 @@ import { InterventionSelector } from '../src/emotional-state/intervention-select
 import {
   createDefaultBehavioralSignals,
   createDefaultContextualFactors,
-  createDefaultOverwhelmThresholds,
+  DEFAULT_OVERWHELM_THRESHOLDS,
+  EMOTIONAL_STATES,
   type BehavioralSignals,
   type ContextualFactors,
   type OverwhelmThresholds,
   type AnxietyPattern,
-  EmotionalState,
+  type EmotionalState,
 } from '../src/emotional-state/emotional-state.types.js';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -38,9 +39,11 @@ function createContext(overrides: Partial<ContextualFactors> = {}): ContextualFa
   };
 }
 
-function createThresholds(overrides: Partial<OverwhelmThresholds> = {}): OverwhelmThresholds {
+function createThresholds(overrides: Partial<Omit<OverwhelmThresholds, 'learnerId' | 'tenantId'>> = {}): OverwhelmThresholds {
   return {
-    ...createDefaultOverwhelmThresholds(),
+    learnerId: 'test-learner',
+    tenantId: 'test-tenant',
+    ...DEFAULT_OVERWHELM_THRESHOLDS,
     ...overrides,
   };
 }
@@ -48,15 +51,24 @@ function createThresholds(overrides: Partial<OverwhelmThresholds> = {}): Overwhe
 function createAnxietyPatterns(): AnxietyPattern[] {
   return [
     {
-      patternId: 'pattern-1',
+      id: 'pattern-1',
       learnerId: 'learner-123',
       tenantId: 'tenant-123',
-      trigger: 'timed_activity',
-      frequency: 5,
-      typicalIntensity: 7,
-      effectiveInterventions: ['BREATHING'],
-      firstObserved: new Date(),
-      lastObserved: new Date(),
+      patternType: 'time_pressure',
+      patternName: 'Timed Activity Anxiety',
+      triggers: [{ type: 'time', value: 'timed_activity', weight: 0.8 }],
+      behavioralIndicators: {
+        responseTimeChange: 'erratic',
+        interactionPattern: 'erratic',
+        contentAvoidance: false,
+        helpSeekingChange: 'increased',
+      },
+      occurrenceCount: 5,
+      lastOccurrence: new Date(),
+      averageIntensity: 0.7,
+      effectiveInterventions: [
+        { interventionId: 'BREATHING', successRate: 0.8, usageCount: 3 },
+      ],
     },
   ];
 }
@@ -216,7 +228,6 @@ describe('OverwhelmDetector', () => {
   describe('analyze', () => {
     it('returns low risk for normal conditions', () => {
       const signals = createSignals({
-        sessionDurationMinutes: 15,
         timeSinceLastBreak: 10 * 60 * 1000,
         focusLossCount: 1,
       });
@@ -291,7 +302,7 @@ describe('OverwhelmDetector', () => {
         typicalSessionLength: 30,
       });
       const thresholds = createThresholds({
-        maxSessionWithoutBreak: 30,
+        timeOnTaskThreshold: 30,
       });
 
       const result = detector.analyze(signals, context, thresholds);
@@ -314,7 +325,7 @@ describe('OverwhelmDetector', () => {
         lastBreakMinutesAgo: 50,
       });
       const thresholds = createThresholds({
-        maxSessionWithoutBreak: 30,
+        timeOnTaskThreshold: 30,
       });
 
       const result = detector.analyze(signals, context, thresholds);
@@ -325,9 +336,7 @@ describe('OverwhelmDetector', () => {
     });
 
     it('respects personalized thresholds', () => {
-      const signals = createSignals({
-        sessionDurationMinutes: 25,
-      });
+      const signals = createSignals();
       const context = createContext({
         sessionDurationMinutes: 25,
         lastBreakMinutesAgo: 25,
@@ -338,8 +347,8 @@ describe('OverwhelmDetector', () => {
 
       // Sensitive learner (15 min max session)
       const sensitiveThresholds = createThresholds({
-        maxSessionWithoutBreak: 15,
-        sensoryThreshold: 5,
+        timeOnTaskThreshold: 15,
+        sensoryLoadThreshold: 5,
       });
       const resultSensitive = detector.analyze(signals, context, sensitiveThresholds);
 
@@ -355,29 +364,12 @@ describe('OverwhelmDetector', () => {
 describe('InterventionSelector', () => {
   describe('selectInterventions', () => {
     it('recommends breathing for high anxiety states', () => {
-      const selector = new InterventionSelector(
-        {
-          getInterventions: async () => [
-            {
-              interventionId: 'breathing-1',
-              tenantId: 'tenant-123',
-              interventionType: 'BREATHING',
-              name: 'Box Breathing',
-              description: 'Calming breathing exercise',
-              content: { instructions: 'Breathe in...', duration: 60 },
-              duration: 60,
-              minAge: 6,
-              maxAge: 18,
-              targetStates: ['ANXIOUS', 'STRESSED'],
-              successRate: 0.8,
-              usageCount: 100,
-              active: true,
-            },
-          ],
-          getLearnerInterventionHistory: async () => [],
-        } as never,
-        { query: async () => [] } as never
-      );
+      // Mock pool with query method
+      const mockPool = {
+        query: async () => ({ rows: [] }),
+      } as never;
+      
+      const selector = new InterventionSelector(mockPool);
 
       // We can't easily test the full method without mocking the database,
       // but we can verify the class instantiates correctly
@@ -389,18 +381,18 @@ describe('InterventionSelector', () => {
     it('maps emotional states to appropriate intervention types', () => {
       // Test that the state-to-intervention mapping logic works
       const stateToTypes: Record<string, string[]> = {
-        [EmotionalState.ANXIOUS]: ['BREATHING', 'GROUNDING', 'SENSORY'],
-        [EmotionalState.OVERWHELMED]: ['BREAK', 'SIMPLIFICATION', 'SENSORY'],
-        [EmotionalState.FRUSTRATED]: ['BREAK', 'ENCOURAGEMENT', 'CHOICE'],
-        [EmotionalState.STRESSED]: ['BREATHING', 'MOVEMENT', 'BREAK'],
-        [EmotionalState.CONFUSED]: ['SIMPLIFICATION', 'VISUAL_SUPPORT', 'ENCOURAGEMENT'],
-        [EmotionalState.TIRED]: ['BREAK', 'MOVEMENT', 'ENCOURAGEMENT'],
+        ANXIOUS: ['BREATHING', 'GROUNDING', 'SENSORY'],
+        OVERWHELMED: ['BREAK', 'SIMPLIFICATION', 'SENSORY'],
+        FRUSTRATED: ['BREAK', 'ENCOURAGEMENT', 'CHOICE'],
+        STRESSED: ['BREATHING', 'MOVEMENT', 'BREAK'],
+        CONFUSED: ['SIMPLIFICATION', 'VISUAL_SUPPORT', 'ENCOURAGEMENT'],
+        TIRED: ['BREAK', 'MOVEMENT', 'ENCOURAGEMENT'],
       };
 
       // Verify mappings exist for key states
-      expect(stateToTypes[EmotionalState.ANXIOUS]).toContain('BREATHING');
-      expect(stateToTypes[EmotionalState.OVERWHELMED]).toContain('BREAK');
-      expect(stateToTypes[EmotionalState.FRUSTRATED]).toContain('ENCOURAGEMENT');
+      expect(stateToTypes['ANXIOUS']).toContain('BREATHING');
+      expect(stateToTypes['OVERWHELMED']).toContain('BREAK');
+      expect(stateToTypes['FRUSTRATED']).toContain('ENCOURAGEMENT');
     });
   });
 });

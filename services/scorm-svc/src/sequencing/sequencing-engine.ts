@@ -55,7 +55,12 @@ export class SequencingError extends Error {
  */
 export class SequencingEngine {
   private globalState!: GlobalStateInfo;
-  private attemptId: string | null = null;
+  private currentAttemptId: string | null = null;
+
+  /** Get the current attempt ID */
+  getAttemptId(): string | null {
+    return this.currentAttemptId;
+  }
 
   /**
    * Initialize sequencing engine with activity tree
@@ -65,7 +70,7 @@ export class SequencingEngine {
     activityTree: Activity,
     suspendedState?: SuspendedStateData
   ): Promise<void> {
-    this.attemptId = attemptId;
+    this.currentAttemptId = attemptId;
 
     this.globalState = {
       currentActivity: null,

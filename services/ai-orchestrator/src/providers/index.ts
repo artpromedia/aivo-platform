@@ -1,10 +1,12 @@
 import { config } from '../config.js';
 import type { LLMProvider } from '../types/agent.js';
 
-import type {
-  ProviderFailoverRegistry,
+import {
   createFailoverRegistry,
   type ProviderHealth,
+} from './failover.js';
+import type {
+  ProviderFailoverRegistry,
 } from './failover.js';
 import { MockLLMProvider } from './MockLLMProvider.js';
 

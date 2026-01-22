@@ -25,10 +25,10 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
     jwtSecret || 'dev-secret-key-change-in-production'
   );
 
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     // Skip auth for health checks
     if (request.url === '/health' || request.url === '/ready') {
-      return;
+      return undefined;
     }
 
     // In tests, allow bypassing JWT verification
@@ -37,7 +37,7 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
       if (testUserHeader) {
         try {
           request.user = JSON.parse(testUserHeader) as AuthenticatedUser;
-          return;
+          return undefined;
         } catch {
           // Fall through to JWT verification
         }

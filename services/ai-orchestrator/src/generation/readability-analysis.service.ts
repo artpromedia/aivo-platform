@@ -15,6 +15,17 @@ import { incrementCounter, recordHistogram } from '../providers/metrics-helper.j
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Parsed Lexile estimate data from LLM response
+ */
+interface ParsedLexileEstimate {
+  lexileLevel?: number;
+  lexileLevelLow?: number;
+  lexileLevelHigh?: number;
+  gradeEquivalent?: number;
+  confidence?: number;
+}
+
 export interface ReadabilityAnalysis {
   /** Estimated Lexile level (e.g., 850L) */
   lexileLevel: number;
@@ -51,7 +62,7 @@ export interface LexileEstimateRequest {
   context?: {
     subject?: string;
     gradeLevel?: string;
-    contentType?: 'instruction' | 'narrative' | 'informational' | 'assessment';
+    contentType?: 'instruction' | 'narrative' | 'informational' | 'assessment' | 'explanation' | 'question' | 'feedback';
   };
   tenantId?: string;
 }
@@ -243,12 +254,12 @@ Respond with JSON only:
         },
       });
 
-      const parsed = this.parseJsonResponse(result.content);
+      const parsed = this.parseJsonResponse(result.content) as ParsedLexileEstimate;
 
       return {
         lexileLevel: parsed.lexileLevel ?? 800,
-        lexileLevelLow: parsed.lexileLevelLow ?? parsed.lexileLevel - 100,
-        lexileLevelHigh: parsed.lexileLevelHigh ?? parsed.lexileLevel + 100,
+        lexileLevelLow: parsed.lexileLevelLow ?? (parsed.lexileLevel ?? 800) - 100,
+        lexileLevelHigh: parsed.lexileLevelHigh ?? (parsed.lexileLevel ?? 800) + 100,
         gradeEquivalent: parsed.gradeEquivalent ?? 5.0,
         confidence: parsed.confidence ?? 0.7,
         assessmentBasis: 'ai_analysis',
@@ -412,7 +423,7 @@ Respond with JSON only:
     rareWordCount: number;
     domainSpecificTerms: string[];
   } {
-    const words = text.toLowerCase().match(/\b[a-zA-Z]+\b/g) ?? [];
+    const words: string[] = text.toLowerCase().match(/\b[a-zA-Z]+\b/g) ?? [];
     const wordSet = new Set(words);
 
     let academicWordCount = 0;

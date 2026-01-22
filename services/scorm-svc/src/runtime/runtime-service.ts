@@ -7,7 +7,7 @@
 
 import { nanoid } from 'nanoid';
 
-import type { ScormVersion } from '../sequencing/manifest-types.js';
+import type { ScormVersion } from '../sequencing/types.js';
 
 import {
   SCORM12_DATA_MODEL,
@@ -533,6 +533,7 @@ export class ScormRuntimeService {
         return {
           key: element,
           type: 'string',
+          dataType: 'string' as const,
           readable: true,
           writable: !element.includes('_from_lms'),
         };
@@ -591,7 +592,7 @@ export class ScormRuntimeService {
   }
 
   private validateValue(
-    element: string,
+    _element: string,
     value: string,
     elementDef: DataModelElement | undefined,
     isScorm2004: boolean
