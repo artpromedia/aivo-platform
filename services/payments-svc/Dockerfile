@@ -25,6 +25,10 @@ COPY services/payments-svc/ ./services/payments-svc/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
+# Generate Prisma client (with checksum bypass for offline builds)
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+RUN cd services/payments-svc && npx prisma generate --schema=prisma/schema.prisma
+
 # Build the service
 RUN pnpm turbo build --filter="@aivo/payments-svc"
 

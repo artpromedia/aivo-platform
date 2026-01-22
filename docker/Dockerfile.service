@@ -26,6 +26,12 @@ COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
+# Generate Prisma client if schema exists (with checksum bypass for offline builds)
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+RUN if [ -f "services/${SERVICE_NAME}/prisma/schema.prisma" ]; then \
+      cd services/${SERVICE_NAME} && npx prisma generate --schema=prisma/schema.prisma; \
+    fi
+
 # Build the service
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 

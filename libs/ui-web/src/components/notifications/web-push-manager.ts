@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Web Push Subscription Manager
  *
