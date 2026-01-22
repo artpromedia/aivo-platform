@@ -1,11 +1,10 @@
 'use client';
 
 import { GradeThemeProvider, Heading, Badge } from '@aivo/ui-web';
-import type { GradeBand } from '@aivo/ui-web';
 import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 
-import { gradeToBand } from '../../../../../lib/grade-band';
+import type { BaselineProfileView, VirtualBrainSummary } from '../../../../../lib/learner-insights';
 import {
   fetchGoals,
   fetchSessionPlans,
@@ -17,7 +16,6 @@ import {
   type SessionPlan,
   type ProgressNote,
 } from '../../../../../lib/teacher-planning-api';
-import type { BaselineProfileView, VirtualBrainSummary } from '../../../../../lib/learner-insights';
 
 import { LearnerProfileProvider, type LearnerData } from './context';
 import { ProfileTabs } from './profile-tabs';
@@ -31,7 +29,7 @@ interface LearnerProfileClientProps {
   initialGoals: Goal[];
   initialSessionPlans: SessionPlan[];
   initialProgressNotes: ProgressNote[];
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function LearnerProfileClient({
@@ -48,8 +46,6 @@ export function LearnerProfileClient({
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
   const [sessionPlans, setSessionPlans] = useState<SessionPlan[]>(initialSessionPlans);
   const [progressNotes, setProgressNotes] = useState<ProgressNote[]>(initialProgressNotes);
-
-  const gradeBand: GradeBand = gradeToBand(learner.grade);
 
   const refetchGoals = useCallback(async () => {
     try {
@@ -82,7 +78,7 @@ export function LearnerProfileClient({
   const baseUrl = `/classrooms/${classroomId}/learner/${learnerId}`;
 
   return (
-    <GradeThemeProvider initialGrade={gradeBand}>
+    <GradeThemeProvider initialGrade={learner.grade ?? undefined}>
       <LearnerProfileProvider
         value={{
           learner,
@@ -101,10 +97,7 @@ export function LearnerProfileClient({
           {/* Header */}
           <header className="flex flex-col gap-2">
             <nav className="text-sm text-muted">
-              <Link
-                href={`/classrooms/${classroomId}`}
-                className="hover:text-text hover:underline"
-              >
+              <Link href={`/classrooms/${classroomId}`} className="hover:text-text hover:underline">
                 Classroom
               </Link>
               <span className="mx-2">›</span>
@@ -117,7 +110,7 @@ export function LearnerProfileClient({
                   {learner.name}
                 </Heading>
               </div>
-              <Badge tone="info">{gradeBand} Theme</Badge>
+              <Badge tone="info">Grade {learner.grade ?? 'N/A'} Theme</Badge>
             </div>
           </header>
 

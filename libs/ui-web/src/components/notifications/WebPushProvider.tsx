@@ -8,7 +8,8 @@
  */
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+
 import { useWebPush, type PushSubscriptionData } from './web-push-manager';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -102,7 +103,7 @@ export function WebPushProvider({
   } = useWebPush({
     vapidPublicKey,
     serviceWorkerPath,
-    onSubscriptionChange,
+    ...(onSubscriptionChange ? { onSubscriptionChange } : {}),
     autoInitialize: true,
   });
 
@@ -134,9 +135,7 @@ export function WebPushProvider({
         console.log('[WebPushProvider] Subscription registered with server');
       } catch (err) {
         console.error('[WebPushProvider] Failed to register with server:', err);
-        setRegistrationError(
-          err instanceof Error ? err : new Error('Registration failed')
-        );
+        setRegistrationError(err instanceof Error ? err : new Error('Registration failed'));
       }
     },
     [registerEndpoint, userRole, userId, tenantId]
@@ -218,9 +217,7 @@ export function WebPushProvider({
     showNotification,
   };
 
-  return (
-    <WebPushContext.Provider value={value}>{children}</WebPushContext.Provider>
-  );
+  return <WebPushContext.Provider value={value}>{children}</WebPushContext.Provider>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -253,8 +250,7 @@ export function PushNotificationBanner({
   onDismiss,
   className = '',
 }: PushNotificationBannerProps) {
-  const { isSupported, permission, isSubscribed, isLoading, subscribe } =
-    useWebPushContext();
+  const { isSupported, permission, isSubscribed, isLoading, subscribe } = useWebPushContext();
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Don't show if not supported, already subscribed, or dismissed

@@ -1,7 +1,7 @@
 import { Role, hasRole } from '@aivo/ts-rbac';
-import type { GradeBand } from '@aivo/ui-web';
 
 import type { AuthSession } from './auth';
+import type { GradeBand } from './billing-api';
 import { gradeToBand } from './grade-band';
 
 export type AllowedRole = Role.TEACHER | Role.THERAPIST | Role.DISTRICT_ADMIN;
@@ -81,7 +81,7 @@ function mockBaselineProfile(learnerId: string): BaselineProfileView {
     learnerId,
     learnerName: 'Jordan Rivers',
     grade: 4,
-    gradeBand: 'K5',
+    gradeBand: 'G3_5',
     status: 'COMPLETED',
     domainScores: [
       { domain: 'ELA', score: 0.72, label: 'Strong comprehension' },
@@ -174,7 +174,7 @@ function mockVirtualBrain(learnerId: string): VirtualBrainSummary {
   return {
     id: 'vb-' + learnerId,
     learnerId,
-    gradeBand: 'K5',
+    gradeBand: 'G3_5',
     tenantId: 'mock-tenant',
     summary: {
       byDomain: skills.reduce<Record<string, { count: number; avgMastery: number }>>(

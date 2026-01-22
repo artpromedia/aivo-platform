@@ -7,7 +7,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   Building2,
   Users,
@@ -22,8 +21,9 @@ import {
   Filter,
   ArrowUpDown,
 } from 'lucide-react';
+import { useState } from 'react';
 
-interface School {
+export interface School {
   id: string;
   name: string;
   status: 'excelling' | 'on-track' | 'needs-attention';
@@ -143,32 +143,42 @@ export function SchoolPerformanceGrid({
 
   const getStatusColor = (status: School['status']) => {
     switch (status) {
-      case 'excelling': return 'bg-green-100 text-green-700 border-green-200';
-      case 'on-track': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'needs-attention': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'excelling':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'on-track':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'needs-attention':
+        return 'bg-amber-100 text-amber-700 border-amber-200';
     }
   };
 
   const getStatusIcon = (status: School['status']) => {
     switch (status) {
-      case 'excelling': return <Award className="w-4 h-4" />;
-      case 'on-track': return <CheckCircle className="w-4 h-4" />;
-      case 'needs-attention': return <AlertTriangle className="w-4 h-4" />;
+      case 'excelling':
+        return <Award className="w-4 h-4" />;
+      case 'on-track':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'needs-attention':
+        return <AlertTriangle className="w-4 h-4" />;
     }
   };
 
   const getTrendIcon = (trend: School['trend']) => {
     switch (trend) {
-      case 'up': return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case 'down': return <TrendingDown className="w-4 h-4 text-red-500" />;
-      case 'stable': return <Minus className="w-4 h-4 text-gray-400" />;
+      case 'up':
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case 'down':
+        return <TrendingDown className="w-4 h-4 text-red-500" />;
+      case 'stable':
+        return <Minus className="w-4 h-4 text-gray-400" />;
     }
   };
 
   const filteredSchools = schools
-    .filter(school => {
+    .filter((school) => {
       if (filterStatus !== 'all' && school.status !== filterStatus) return false;
-      if (searchQuery && !school.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (searchQuery && !school.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        return false;
       return true;
     })
     .sort((a, b) => {
@@ -190,8 +200,8 @@ export function SchoolPerformanceGrid({
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
-  const excellingCount = schools.filter(s => s.status === 'excelling').length;
-  const needsAttentionCount = schools.filter(s => s.status === 'needs-attention').length;
+  const excellingCount = schools.filter((s) => s.status === 'excelling').length;
+  const needsAttentionCount = schools.filter((s) => s.status === 'needs-attention').length;
   const avgMastery = Math.round(schools.reduce((sum, s) => sum + s.avgMastery, 0) / schools.length);
 
   return (
@@ -217,7 +227,9 @@ export function SchoolPerformanceGrid({
             <p className="text-xs text-green-600">Excelling</p>
           </div>
           <div className="p-3 bg-blue-50 rounded-lg text-center">
-            <p className="text-xl font-bold text-blue-700">{schools.length - excellingCount - needsAttentionCount}</p>
+            <p className="text-xl font-bold text-blue-700">
+              {schools.length - excellingCount - needsAttentionCount}
+            </p>
             <p className="text-xs text-blue-600">On Track</p>
           </div>
           <div className="p-3 bg-amber-50 rounded-lg text-center">
@@ -238,7 +250,9 @@ export function SchoolPerformanceGrid({
               type="text"
               placeholder="Search schools..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -246,14 +260,18 @@ export function SchoolPerformanceGrid({
             {(['all', 'excelling', 'on-track', 'needs-attention'] as const).map((status) => (
               <button
                 key={status}
-                onClick={() => setFilterStatus(status)}
+                onClick={() => {
+                  setFilterStatus(status);
+                }}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filterStatus === status
                     ? 'bg-indigo-100 text-indigo-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {status === 'all' ? 'All' : status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                {status === 'all'
+                  ? 'All'
+                  : status.replace('-', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
               </button>
             ))}
           </div>
@@ -273,21 +291,24 @@ export function SchoolPerformanceGrid({
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg font-semibold text-gray-900">{school.name}</span>
                   {school.rankChange !== 0 && (
-                    <span className={`text-xs font-medium ${
-                      school.rankChange > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {school.rankChange > 0 ? '+' : ''}{school.rankChange}
+                    <span
+                      className={`text-xs font-medium ${
+                        school.rankChange > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {school.rankChange > 0 ? '+' : ''}
+                      {school.rankChange}
                     </span>
                   )}
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(school.status)}`}>
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(school.status)}`}
+                >
                   {getStatusIcon(school.status)}
                   {school.status.replace('-', ' ')}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                {getTrendIcon(school.trend)}
-              </div>
+              <div className="flex items-center gap-1">{getTrendIcon(school.trend)}</div>
             </div>
 
             {/* Metrics */}
@@ -298,19 +319,29 @@ export function SchoolPerformanceGrid({
               </div>
               <div>
                 <p className="text-xs text-gray-500">Mastery</p>
-                <p className={`font-semibold ${
-                  school.avgMastery >= 80 ? 'text-green-600' :
-                  school.avgMastery >= 70 ? 'text-blue-600' : 'text-amber-600'
-                }`}>
+                <p
+                  className={`font-semibold ${
+                    school.avgMastery >= 80
+                      ? 'text-green-600'
+                      : school.avgMastery >= 70
+                        ? 'text-blue-600'
+                        : 'text-amber-600'
+                  }`}
+                >
                   {school.avgMastery}%
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">IEP Rate</p>
-                <p className={`font-semibold ${
-                  school.iepComplianceRate >= 95 ? 'text-green-600' :
-                  school.iepComplianceRate >= 90 ? 'text-blue-600' : 'text-amber-600'
-                }`}>
+                <p
+                  className={`font-semibold ${
+                    school.iepComplianceRate >= 95
+                      ? 'text-green-600'
+                      : school.iepComplianceRate >= 90
+                        ? 'text-blue-600'
+                        : 'text-amber-600'
+                  }`}
+                >
                   {school.iepComplianceRate}%
                 </p>
               </div>
@@ -325,8 +356,11 @@ export function SchoolPerformanceGrid({
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    school.seatUsage >= 80 ? 'bg-green-500' :
-                    school.seatUsage >= 60 ? 'bg-blue-500' : 'bg-amber-500'
+                    school.seatUsage >= 80
+                      ? 'bg-green-500'
+                      : school.seatUsage >= 60
+                        ? 'bg-blue-500'
+                        : 'bg-amber-500'
                   }`}
                   style={{ width: `${school.seatUsage}%` }}
                 />

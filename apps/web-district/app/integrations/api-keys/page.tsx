@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -22,9 +22,9 @@ interface ApiKey {
 
 interface CreateApiKeyRequest {
   name: string;
-  description?: string;
+  description?: string | undefined;
   scopes: string[];
-  expiresAt?: string;
+  expiresAt?: string | undefined;
   rateLimitPerMinute?: number;
   rateLimitPerDay?: number;
   allowedIps?: string[];
@@ -43,12 +43,32 @@ interface ApiKeyUsageStats {
 }
 
 const SCOPES = [
-  { value: 'READ_LEARNER_PROGRESS', label: 'Read Learner Progress', description: 'Access learner mastery and engagement data' },
-  { value: 'READ_SESSION_DATA', label: 'Read Session Data', description: 'Access session metadata and history' },
+  {
+    value: 'READ_LEARNER_PROGRESS',
+    label: 'Read Learner Progress',
+    description: 'Access learner mastery and engagement data',
+  },
+  {
+    value: 'READ_SESSION_DATA',
+    label: 'Read Session Data',
+    description: 'Access session metadata and history',
+  },
   { value: 'READ_ANALYTICS', label: 'Read Analytics', description: 'Access analytics and reports' },
-  { value: 'WRITE_EXTERNAL_EVENTS', label: 'Write External Events', description: 'Push external learning events' },
-  { value: 'WRITE_ENROLLMENTS', label: 'Write Enrollments', description: 'Manage learner enrollments' },
-  { value: 'MANAGE_WEBHOOKS', label: 'Manage Webhooks', description: 'Create and manage webhook endpoints' },
+  {
+    value: 'WRITE_EXTERNAL_EVENTS',
+    label: 'Write External Events',
+    description: 'Push external learning events',
+  },
+  {
+    value: 'WRITE_ENROLLMENTS',
+    label: 'Write Enrollments',
+    description: 'Manage learner enrollments',
+  },
+  {
+    value: 'MANAGE_WEBHOOKS',
+    label: 'Manage Webhooks',
+    description: 'Create and manage webhook endpoints',
+  },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -80,7 +100,7 @@ async function revokeApiKey(id: string, reason?: string): Promise<void> {
   if (!res.ok) throw new Error('Failed to revoke API key');
 }
 
-async function fetchApiKeyUsage(id: string, days: number = 7): Promise<ApiKeyUsageStats> {
+async function fetchApiKeyUsage(id: string, days = 7): Promise<ApiKeyUsageStats> {
   const res = await fetch(`/api/integrations/api-keys/${id}/usage?days=${days}`);
   if (!res.ok) throw new Error('Failed to fetch usage stats');
   return res.json() as Promise<ApiKeyUsageStats>;
@@ -98,7 +118,9 @@ function StatusBadge({ status }: { status: string }) {
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}
+    >
       {status}
     </span>
   );
@@ -121,12 +143,8 @@ function ApiKeyCard({
             <h3 className="text-lg font-semibold text-gray-900">{apiKey.name}</h3>
             <StatusBadge status={apiKey.status} />
           </div>
-          {apiKey.description && (
-            <p className="mt-1 text-sm text-gray-500">{apiKey.description}</p>
-          )}
-          <p className="mt-2 text-sm font-mono text-gray-600">
-            {apiKey.keyPrefix}••••••••••••••••
-          </p>
+          {apiKey.description && <p className="mt-1 text-sm text-gray-500">{apiKey.description}</p>}
+          <p className="mt-2 text-sm font-mono text-gray-600">{apiKey.keyPrefix}••••••••••••••••</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -162,18 +180,14 @@ function ApiKeyCard({
           <strong>{apiKey.usageCount.toLocaleString()}</strong> requests
         </span>
         {apiKey.lastUsedAt && (
-          <span>
-            Last used: {new Date(apiKey.lastUsedAt).toLocaleString()}
-          </span>
+          <span>Last used: {new Date(apiKey.lastUsedAt).toLocaleString()}</span>
         )}
         {apiKey.expiresAt && (
           <span className={new Date(apiKey.expiresAt) < new Date() ? 'text-red-600' : ''}>
             Expires: {new Date(apiKey.expiresAt).toLocaleDateString()}
           </span>
         )}
-        <span>
-          Created: {new Date(apiKey.createdAt).toLocaleDateString()}
-        </span>
+        <span>Created: {new Date(apiKey.createdAt).toLocaleDateString()}</span>
       </div>
     </div>
   );
@@ -207,7 +221,7 @@ function CreateApiKeyModal({
     }
   }, [isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
@@ -258,16 +272,16 @@ function CreateApiKeyModal({
           </div>
 
           <div className="p-6 space-y-6">
-            {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-            )}
+            {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Name</label>
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 required
                 className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="Production API Key"
@@ -275,10 +289,14 @@ function CreateApiKeyModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description (optional)</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Description (optional)
+              </label>
               <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                }}
                 rows={2}
                 className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="Used by our analytics dashboard..."
@@ -293,7 +311,9 @@ function CreateApiKeyModal({
                     <input
                       type="checkbox"
                       checked={scopes.includes(scope.value)}
-                      onChange={() => toggleScope(scope.value)}
+                      onChange={() => {
+                        toggleScope(scope.value);
+                      }}
                       className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600"
                     />
                     <div>
@@ -313,7 +333,9 @@ function CreateApiKeyModal({
                 <label className="block text-sm font-medium text-gray-700">Expiration</label>
                 <select
                   value={expiresIn}
-                  onChange={(e) => setExpiresIn(e.target.value)}
+                  onChange={(e) => {
+                    setExpiresIn(e.target.value);
+                  }}
                   className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
                 >
                   <option value="never">Never</option>
@@ -325,11 +347,15 @@ function CreateApiKeyModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Rate Limit (per minute)</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Rate Limit (per minute)
+                </label>
                 <input
                   type="number"
                   value={rateLimitPerMinute}
-                  onChange={(e) => setRateLimitPerMinute(parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    setRateLimitPerMinute(parseInt(e.target.value, 10));
+                  }}
                   min={1}
                   max={1000}
                   className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
@@ -376,7 +402,9 @@ function ApiKeyModal({
   const handleCopy = async () => {
     await navigator.clipboard.writeText(rawKey);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
@@ -394,14 +422,13 @@ function ApiKeyModal({
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-md p-4 font-mono text-sm break-all">
-          {rawKey}
-        </div>
+        <div className="bg-gray-50 rounded-md p-4 font-mono text-sm break-all">{rawKey}</div>
 
         <div className="mt-4 p-3 bg-yellow-50 rounded-md">
           <p className="text-sm text-yellow-800">
-            <strong>Important:</strong> Store this key securely. You won&apos;t be able to see it again.
-            Include it in your requests using the <code className="bg-yellow-100 px-1 rounded">X-Aivo-Api-Key</code> header.
+            <strong>Important:</strong> Store this key securely. You won&apos;t be able to see it
+            again. Include it in your requests using the{' '}
+            <code className="bg-yellow-100 px-1 rounded">X-Aivo-Api-Key</code> header.
           </p>
         </div>
 
@@ -443,7 +470,9 @@ function UsageModal({
       fetchApiKeyUsage(apiKey.id, days)
         .then(setStats)
         .catch(console.error)
-        .finally(() => setLoading(false));
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [isOpen, apiKey, days]);
 
@@ -466,7 +495,9 @@ function UsageModal({
           <div className="flex items-center justify-between mb-6">
             <select
               value={days}
-              onChange={(e) => setDays(parseInt(e.target.value, 10))}
+              onChange={(e) => {
+                setDays(parseInt(e.target.value, 10));
+              }}
               className="rounded-md border px-3 py-1.5 text-sm"
             >
               <option value={7}>Last 7 days</option>
@@ -511,9 +542,14 @@ function UsageModal({
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Requests by Endpoint</h4>
                   <div className="space-y-2">
                     {stats.byEndpoint.map((item) => (
-                      <div key={item.endpoint} className="flex items-center justify-between py-2 border-b">
+                      <div
+                        key={item.endpoint}
+                        className="flex items-center justify-between py-2 border-b"
+                      >
                         <span className="text-sm font-mono text-gray-600">{item.endpoint}</span>
-                        <span className="text-sm font-medium text-gray-900">{item.count.toLocaleString()}</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {item.count.toLocaleString()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -580,12 +616,12 @@ export default function ApiKeysPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
-          <p className="text-sm text-gray-500">
-            Manage API keys for external partner integrations
-          </p>
+          <p className="text-sm text-gray-500">Manage API keys for external partner integrations</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setShowCreateModal(true);
+          }}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           Create API Key
@@ -596,8 +632,8 @@ export default function ApiKeysPage() {
       <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <h4 className="text-sm font-medium text-blue-800 mb-1">Integration Documentation</h4>
         <p className="text-sm text-blue-700">
-          Use API keys to authenticate requests to Aivo&apos;s public APIs.
-          Include your key in the <code className="bg-blue-100 px-1 rounded">X-Aivo-Api-Key</code> header.
+          Use API keys to authenticate requests to Aivo&apos;s public APIs. Include your key in the{' '}
+          <code className="bg-blue-100 px-1 rounded">X-Aivo-Api-Key</code> header.
         </p>
       </div>
 
@@ -611,7 +647,9 @@ export default function ApiKeysPage() {
             Create an API key to allow partners to access your data
           </p>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setShowCreateModal(true);
+            }}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Create your first API key
@@ -623,7 +661,9 @@ export default function ApiKeysPage() {
             <ApiKeyCard
               key={apiKey.id}
               apiKey={apiKey}
-              onViewUsage={() => setViewingUsage(apiKey)}
+              onViewUsage={() => {
+                setViewingUsage(apiKey);
+              }}
               onRevoke={() => void handleRevoke(apiKey)}
             />
           ))}
@@ -632,19 +672,25 @@ export default function ApiKeysPage() {
 
       <CreateApiKeyModal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false);
+        }}
         onCreated={handleApiKeyCreated}
       />
 
       <ApiKeyModal
         isOpen={!!newRawKey}
-        onClose={() => setNewRawKey(null)}
+        onClose={() => {
+          setNewRawKey(null);
+        }}
         rawKey={newRawKey}
       />
 
       <UsageModal
         isOpen={!!viewingUsage}
-        onClose={() => setViewingUsage(null)}
+        onClose={() => {
+          setViewingUsage(null);
+        }}
         apiKey={viewingUsage}
       />
     </div>

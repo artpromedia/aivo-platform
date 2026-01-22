@@ -73,7 +73,7 @@ const mockSkills: SkillStateView[] = [
 const mockBrain: VirtualBrainSummary = {
   id: 'vb-learner-1',
   learnerId: 'learner-1',
-  gradeBand: 'K5',
+  gradeBand: 'G3_5',
   tenantId: 'tenant-1',
   summary: {
     byDomain: {
@@ -94,7 +94,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -115,7 +115,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -136,7 +136,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -156,7 +156,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -176,7 +176,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -200,7 +200,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -219,7 +219,7 @@ describe('VirtualBrainClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           brain={mockBrain}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );

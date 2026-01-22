@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge, Button, Card, GradeThemeProvider, Heading } from '@aivo/ui-web';
-import type { GradeBand } from '@aivo/ui-web';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
@@ -71,12 +70,12 @@ export function BaselineInsightsClient({
   classroomId,
   learnerId,
   baseline,
-  gradeBand,
+  grade,
 }: {
   classroomId: string;
   learnerId: string;
   baseline: BaselineProfileView;
-  gradeBand: GradeBand;
+  grade?: number;
 }) {
   const highestScore = useMemo(() => {
     return baseline.domainScores.reduce((max, d) => Math.max(max, d.score), 0);
@@ -95,7 +94,7 @@ export function BaselineInsightsClient({
   };
 
   return (
-    <GradeThemeProvider initialGrade={gradeBand}>
+    <GradeThemeProvider initialGrade={grade}>
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-2">
           <Heading level={1}>Baseline results</Heading>
@@ -103,7 +102,7 @@ export function BaselineInsightsClient({
             Classroom {classroomId} · Learner {baseline.learnerName ?? learnerId}
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <Badge tone="info">Grade band: {gradeBand}</Badge>
+            <Badge tone="info">Grade band: {baseline.gradeBand}</Badge>
             {baseline.grade && <Badge tone="neutral">Grade {baseline.grade}</Badge>}
             <Badge tone="success">Status: {baseline.status}</Badge>
           </div>

@@ -2,7 +2,7 @@
 
 import { Card, Heading, Button, Input } from '@aivo/ui-web';
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -160,11 +160,10 @@ export default function NewExportPage() {
     setPreview({
       estimatedRows: Math.floor(Math.random() * 50000) + 5000,
       kAnonymitySatisfied: true,
-      warning: undefined,
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -181,11 +180,11 @@ export default function NewExportPage() {
           datasetDefinitionId: form.datasetDefinitionId,
           cohortId: form.cohortId || undefined,
           format: form.format,
-          dateRangeStart: form.dateRangeStart ? new Date(form.dateRangeStart).toISOString() : undefined,
-          dateRangeEnd: form.dateRangeEnd ? new Date(form.dateRangeEnd).toISOString() : undefined,
-          sampling: form.samplingEnabled
-            ? { enabled: true, rate: form.samplingRate }
+          dateRangeStart: form.dateRangeStart
+            ? new Date(form.dateRangeStart).toISOString()
             : undefined,
+          dateRangeEnd: form.dateRangeEnd ? new Date(form.dateRangeEnd).toISOString() : undefined,
+          sampling: form.samplingEnabled ? { enabled: true, rate: form.samplingRate } : undefined,
         }),
       });
 
@@ -214,9 +213,7 @@ export default function NewExportPage() {
     <section className="space-y-6 max-w-3xl">
       <div>
         <Heading level={1}>Request Data Export</Heading>
-        <p className="text-muted mt-1">
-          Configure and request a de-identified data export
-        </p>
+        <p className="text-muted mt-1">Configure and request a de-identified data export</p>
       </div>
 
       {error && (
@@ -236,7 +233,9 @@ export default function NewExportPage() {
               <select
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 value={form.datasetDefinitionId}
-                onChange={(e) => updateField('datasetDefinitionId', e.target.value)}
+                onChange={(e) => {
+                  updateField('datasetDefinitionId', e.target.value);
+                }}
                 required
               >
                 <option value="">Select a dataset...</option>
@@ -253,7 +252,9 @@ export default function NewExportPage() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => router.push(`/research/projects/${projectId}/datasets/new`)}
+                onClick={() => {
+                  router.push(`/research/projects/${projectId}/datasets/new`);
+                }}
               >
                 Create Dataset Definition
               </Button>
@@ -294,7 +295,9 @@ export default function NewExportPage() {
           <select
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             value={form.cohortId}
-            onChange={(e) => updateField('cohortId', e.target.value)}
+            onChange={(e) => {
+              updateField('cohortId', e.target.value);
+            }}
           >
             <option value="">All learners (no filter)</option>
             {cohorts.map((cohort) => (
@@ -313,7 +316,9 @@ export default function NewExportPage() {
               <Input
                 type="date"
                 value={form.dateRangeStart}
-                onChange={(e) => updateField('dateRangeStart', e.target.value)}
+                onChange={(e) => {
+                  updateField('dateRangeStart', e.target.value);
+                }}
               />
             </div>
             <div>
@@ -321,7 +326,9 @@ export default function NewExportPage() {
               <Input
                 type="date"
                 value={form.dateRangeEnd}
-                onChange={(e) => updateField('dateRangeEnd', e.target.value)}
+                onChange={(e) => {
+                  updateField('dateRangeEnd', e.target.value);
+                }}
               />
             </div>
           </div>
@@ -340,7 +347,9 @@ export default function NewExportPage() {
                       name="format"
                       value={fmt}
                       checked={form.format === fmt}
-                      onChange={() => updateField('format', fmt)}
+                      onChange={() => {
+                        updateField('format', fmt);
+                      }}
                       className="text-primary"
                     />
                     <span>{fmt}</span>
@@ -354,7 +363,9 @@ export default function NewExportPage() {
                 <input
                   type="checkbox"
                   checked={form.samplingEnabled}
-                  onChange={(e) => updateField('samplingEnabled', e.target.checked)}
+                  onChange={(e) => {
+                    updateField('samplingEnabled', e.target.checked);
+                  }}
                   className="text-primary"
                 />
                 <span className="text-sm font-medium">Enable random sampling</span>
@@ -370,7 +381,9 @@ export default function NewExportPage() {
                     max={1}
                     step={0.01}
                     value={form.samplingRate}
-                    onChange={(e) => updateField('samplingRate', parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      updateField('samplingRate', parseFloat(e.target.value));
+                    }}
                     className="w-full"
                   />
                 </div>
@@ -434,7 +447,9 @@ export default function NewExportPage() {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => router.back()}
+            onClick={() => {
+              router.back();
+            }}
             disabled={submitting}
           >
             Cancel

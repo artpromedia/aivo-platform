@@ -7,7 +7,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   Shield,
   CheckCircle,
@@ -20,8 +19,9 @@ import {
   ChevronRight,
   RefreshCw,
 } from 'lucide-react';
+import { useState } from 'react';
 
-interface ComplianceItem {
+export interface ComplianceItem {
   id: string;
   name: string;
   status: 'compliant' | 'attention' | 'critical' | 'pending';
@@ -32,7 +32,7 @@ interface ComplianceItem {
   description: string;
 }
 
-interface IEPComplianceStats {
+export interface IEPComplianceStats {
   totalIEPs: number;
   activeIEPs: number;
   plans504: number;
@@ -47,7 +47,7 @@ interface CompliancePanelProps {
   items?: ComplianceItem[];
   iepStats?: IEPComplianceStats;
   onViewDetails?: (itemId: string) => void;
-  onRefresh?: () => void;
+  onRefresh?: () => void | Promise<void>;
 }
 
 const mockComplianceItems: ComplianceItem[] = [
@@ -69,7 +69,7 @@ const mockComplianceItems: ComplianceItem[] = [
     lastAudit: '2024-01-03',
     nextAudit: '2024-04-03',
     issues: 0,
-    description: 'Children\'s Online Privacy Protection Act',
+    description: "Children's Online Privacy Protection Act",
   },
   {
     id: 'idea',
@@ -114,25 +114,37 @@ export function CompliancePanel({
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await onRefresh?.();
-    setTimeout(() => setIsRefreshing(false), 1000);
+    if (onRefresh) {
+      await onRefresh();
+    }
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
   };
 
   const getStatusColor = (status: ComplianceItem['status']) => {
     switch (status) {
-      case 'compliant': return 'text-green-600 bg-green-100';
-      case 'attention': return 'text-amber-600 bg-amber-100';
-      case 'critical': return 'text-red-600 bg-red-100';
-      case 'pending': return 'text-blue-600 bg-blue-100';
+      case 'compliant':
+        return 'text-green-600 bg-green-100';
+      case 'attention':
+        return 'text-amber-600 bg-amber-100';
+      case 'critical':
+        return 'text-red-600 bg-red-100';
+      case 'pending':
+        return 'text-blue-600 bg-blue-100';
     }
   };
 
   const getStatusIcon = (status: ComplianceItem['status']) => {
     switch (status) {
-      case 'compliant': return <CheckCircle className="w-4 h-4" />;
-      case 'attention': return <AlertTriangle className="w-4 h-4" />;
-      case 'critical': return <AlertTriangle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'compliant':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'attention':
+        return <AlertTriangle className="w-4 h-4" />;
+      case 'critical':
+        return <AlertTriangle className="w-4 h-4" />;
+      case 'pending':
+        return <Clock className="w-4 h-4" />;
     }
   };
 
@@ -165,14 +177,7 @@ export function CompliancePanel({
         <div className="flex items-center gap-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl mb-6">
           <div className="relative">
             <svg className="w-24 h-24 transform -rotate-90">
-              <circle
-                cx="48"
-                cy="48"
-                r="40"
-                stroke="#e5e7eb"
-                strokeWidth="8"
-                fill="none"
-              />
+              <circle cx="48" cy="48" r="40" stroke="#e5e7eb" strokeWidth="8" fill="none" />
               <circle
                 cx="48"
                 cy="48"
@@ -208,7 +213,9 @@ export function CompliancePanel({
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-gray-900">{item.name}</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(item.status)}`}>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(item.status)}`}
+                >
                   {getStatusIcon(item.status)}
                   {item.status}
                 </span>

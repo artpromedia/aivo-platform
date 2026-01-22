@@ -14,12 +14,12 @@ interface Device {
   osVersion: string | null;
   lastCheckInAt: string | null;
   schoolId: string | null;
-  memberships: Array<{
+  memberships: {
     devicePool: {
       id: string;
       name: string;
     };
-  }>;
+  }[];
 }
 
 interface DevicesResponse {
@@ -49,15 +49,18 @@ const deviceTypeIcons: Record<string, string> = {
   WEB_BROWSER: '🌐',
 };
 
-function formatLastSeen(dateStr: string | null): { text: string; tone: 'success' | 'warning' | 'error' | 'neutral' } {
+function formatLastSeen(dateStr: string | null): {
+  text: string;
+  tone: 'success' | 'warning' | 'error' | 'neutral';
+} {
   if (!dateStr) return { text: 'Never', tone: 'neutral' };
-  
+
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  
+
   if (diffHours < 1) {
     return { text: 'Just now', tone: 'success' };
   } else if (diffHours < 24) {
@@ -84,23 +87,23 @@ export default function DevicesPage() {
 
   useEffect(() => {
     if (!tenantId) return;
-    
+    const currentTenantId = tenantId; // Capture the non-null value
+
     async function fetchDevices() {
       try {
         setLoading(true);
-        const params = new URLSearchParams({
-          tenantId,
-          limit: pagination.limit.toString(),
-          offset: pagination.offset.toString(),
-        });
-        
+        const params = new URLSearchParams();
+        params.set('tenantId', currentTenantId);
+        params.set('limit', pagination.limit.toString());
+        params.set('offset', pagination.offset.toString());
+
         if (filter.deviceType) {
           params.set('deviceType', filter.deviceType);
         }
-        
+
         const response = await fetch(`/api/devices?${params}`);
         if (!response.ok) throw new Error('Failed to fetch devices');
-        
+
         const data: DevicesResponse = await response.json();
         setDevices(data.devices);
         setPagination(data.pagination);
@@ -110,7 +113,7 @@ export default function DevicesPage() {
         setLoading(false);
       }
     }
-    
+
     void fetchDevices();
   }, [tenantId, pagination.limit, pagination.offset, filter.deviceType]);
 
@@ -176,12 +179,20 @@ export default function DevicesPage() {
             placeholder="Search devices..."
             className="rounded-lg border border-border bg-surface px-4 py-2 text-sm focus:border-primary focus:outline-none"
             value={filter.search ?? ''}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
+            onChange={(e) => {
+              setFilter((f) => ({ ...f, search: e.target.value }));
+            }}
           />
           <select
             className="rounded-lg border border-border bg-surface px-4 py-2 text-sm focus:border-primary focus:outline-none"
             value={filter.deviceType ?? ''}
-            onChange={(e) => setFilter((f) => ({ ...f, deviceType: e.target.value || undefined }))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFilter((f) => ({
+                ...(f.search ? { search: f.search } : {}),
+                ...(value ? { deviceType: value } : {}),
+              }));
+            }}
           >
             <option value="">All Device Types</option>
             {Object.entries(deviceTypeLabels).map(([value, label]) => (
@@ -234,7 +245,8 @@ export default function DevicesPage() {
                       <tr key={device.id} className="transition hover:bg-surface-muted/80">
                         <td className="px-4 py-3">
                           <div className="font-medium text-text">
-                            {deviceTypeIcons[device.deviceType] ?? '📱'} {device.deviceIdentifier.slice(0, 20)}
+                            {deviceTypeIcons[device.deviceType] ?? '📱'}{' '}
+                            {device.deviceIdentifier.slice(0, 20)}
                             {device.deviceIdentifier.length > 20 && '...'}
                           </div>
                           <div className="text-xs text-muted">{device.id.slice(0, 8)}</div>
@@ -285,21 +297,26 @@ export default function DevicesPage() {
         {pagination.total > pagination.limit && (
           <div className="flex items-center justify-between border-t border-border px-4 py-3">
             <div className="text-sm text-muted">
-              Showing {pagination.offset + 1} - {Math.min(pagination.offset + pagination.limit, pagination.total)} of{' '}
+              Showing {pagination.offset + 1} -{' '}
+              {Math.min(pagination.offset + pagination.limit, pagination.total)} of{' '}
               {pagination.total}
             </div>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
                 disabled={pagination.offset === 0}
-                onClick={() => setPagination((p) => ({ ...p, offset: Math.max(0, p.offset - p.limit) }))}
+                onClick={() => {
+                  setPagination((p) => ({ ...p, offset: Math.max(0, p.offset - p.limit) }));
+                }}
               >
                 Previous
               </Button>
               <Button
                 variant="ghost"
                 disabled={pagination.offset + pagination.limit >= pagination.total}
-                onClick={() => setPagination((p) => ({ ...p, offset: p.offset + p.limit }))}
+                onClick={() => {
+                  setPagination((p) => ({ ...p, offset: p.offset + p.limit }));
+                }}
               >
                 Next
               </Button>

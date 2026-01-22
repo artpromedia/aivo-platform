@@ -7,10 +7,9 @@
  * including active subscriptions and their billing status.
  */
 
+import { Badge, Button } from '@aivo/ui-web';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-
-import { Badge, Button } from '@aivo/ui-web';
 
 import type {
   MarketplaceInstallationWithBilling,
@@ -45,7 +44,9 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-export function MarketplaceBillingSection({ tenantId: propTenantId }: MarketplaceBillingSectionProps) {
+export function MarketplaceBillingSection({
+  tenantId: propTenantId,
+}: MarketplaceBillingSectionProps) {
   const auth = useAuth();
   const tenantId = propTenantId ?? auth.tenantId;
   const [installations, setInstallations] = useState<MarketplaceInstallationWithBilling[]>([]);
@@ -59,14 +60,12 @@ export function MarketplaceBillingSection({ tenantId: propTenantId }: Marketplac
       setLoading(true);
       setError(null);
       try {
-        const result = await listInstallationsWithBilling(tenantId, {
+        const result = await listInstallationsWithBilling(tenantId ?? '', {
           status: 'ACTIVE',
           limit: 100,
         });
         // Filter to only show paid items with active billing
-        const paidInstallations = result.data.filter(
-          (i) => !i.isFree && i.billingModel !== 'FREE'
-        );
+        const paidInstallations = result.data.filter((i) => !i.isFree && i.billingModel !== 'FREE');
         setInstallations(paidInstallations);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load marketplace billing');
@@ -162,7 +161,8 @@ function MarketplaceLineItem({
   installation: MarketplaceInstallationWithBilling;
 }) {
   const statusColor = getBillingStatusColor(installation.billingStatus);
-  const statusTone = statusColor === 'green' ? 'success' : statusColor === 'yellow' ? 'warning' : 'neutral';
+  const statusTone =
+    statusColor === 'green' ? 'success' : statusColor === 'yellow' ? 'warning' : 'neutral';
 
   return (
     <div className="flex items-center gap-4 px-6 py-4">

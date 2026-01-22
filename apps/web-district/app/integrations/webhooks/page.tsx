@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -41,7 +41,7 @@ interface WebhookDelivery {
 
 interface CreateWebhookRequest {
   name: string;
-  description?: string;
+  description?: string | undefined;
   url: string;
   eventTypes: string[];
   enabled: boolean;
@@ -73,7 +73,9 @@ async function fetchWebhooks(): Promise<WebhookEndpoint[]> {
   return res.json() as Promise<WebhookEndpoint[]>;
 }
 
-async function createWebhook(data: CreateWebhookRequest): Promise<WebhookEndpoint & { secret: string }> {
+async function createWebhook(
+  data: CreateWebhookRequest
+): Promise<WebhookEndpoint & { secret: string }> {
   const res = await fetch('/api/integrations/webhooks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -83,7 +85,10 @@ async function createWebhook(data: CreateWebhookRequest): Promise<WebhookEndpoin
   return res.json() as Promise<WebhookEndpoint & { secret: string }>;
 }
 
-async function updateWebhook(id: string, data: Partial<CreateWebhookRequest>): Promise<WebhookEndpoint> {
+async function updateWebhook(
+  id: string,
+  data: Partial<CreateWebhookRequest>
+): Promise<WebhookEndpoint> {
   const res = await fetch(`/api/integrations/webhooks/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -104,7 +109,10 @@ async function rotateWebhookSecret(id: string): Promise<{ secret: string }> {
   return res.json() as Promise<{ secret: string }>;
 }
 
-async function fetchDeliveries(webhookId: string, page: number = 1): Promise<{
+async function fetchDeliveries(
+  webhookId: string,
+  page = 1
+): Promise<{
   deliveries: WebhookDelivery[];
   pagination: { total: number; page: number; pageSize: number; hasMore: boolean };
 }> {
@@ -130,7 +138,9 @@ function StatusBadge({ status }: { status: string }) {
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}
+    >
       {status.replace('_', ' ')}
     </span>
   );
@@ -191,7 +201,9 @@ function WebhookCard({
           <button
             onClick={onToggle}
             className={`rounded-md px-3 py-1.5 text-sm ${
-              webhook.enabled ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'
+              webhook.enabled
+                ? 'text-orange-600 hover:bg-orange-50'
+                : 'text-green-600 hover:bg-green-50'
             }`}
           >
             {webhook.enabled ? 'Disable' : 'Enable'}
@@ -221,14 +233,10 @@ function WebhookCard({
           <strong>{webhook.deliveryCount}</strong> deliveries
         </span>
         {webhook.lastDeliveryAt && (
-          <span>
-            Last delivery: {new Date(webhook.lastDeliveryAt).toLocaleString()}
-          </span>
+          <span>Last delivery: {new Date(webhook.lastDeliveryAt).toLocaleString()}</span>
         )}
         {webhook.failureCount > 0 && (
-          <span className="text-orange-600">
-            {webhook.failureCount} consecutive failures
-          </span>
+          <span className="text-orange-600">{webhook.failureCount} consecutive failures</span>
         )}
       </div>
 
@@ -277,7 +285,7 @@ function CreateWebhookModal({
     setError(null);
   }, [editingWebhook, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
@@ -318,11 +326,15 @@ function CreateWebhookModal({
 
   if (!isOpen) return null;
 
-  const groupedEvents = EVENT_TYPES.reduce((acc, event) => {
-    if (!acc[event.category]) acc[event.category] = [];
-    acc[event.category].push(event);
+  const groupedEvents = EVENT_TYPES.reduce<Record<string, typeof EVENT_TYPES>>((acc, event) => {
+    const existing = acc[event.category];
+    if (!existing) {
+      acc[event.category] = [event];
+    } else {
+      existing.push(event);
+    }
     return acc;
-  }, {} as Record<string, typeof EVENT_TYPES>);
+  }, {});
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -335,16 +347,16 @@ function CreateWebhookModal({
           </div>
 
           <div className="p-6 space-y-6">
-            {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-            )}
+            {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Name</label>
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 required
                 className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="My Webhook"
@@ -352,10 +364,14 @@ function CreateWebhookModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description (optional)</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Description (optional)
+              </label>
               <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                }}
                 rows={2}
                 className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="Describe what this webhook is for..."
@@ -367,7 +383,9 @@ function CreateWebhookModal({
               <input
                 type="url"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                }}
                 required
                 className="mt-1 block w-full rounded-md border px-3 py-2 text-sm font-mono"
                 placeholder="https://your-server.com/webhooks/aivo"
@@ -385,7 +403,9 @@ function CreateWebhookModal({
                         <button
                           key={event.value}
                           type="button"
-                          onClick={() => toggleEventType(event.value)}
+                          onClick={() => {
+                            toggleEventType(event.value);
+                          }}
                           className={`px-3 py-1.5 rounded-md text-sm ${
                             eventTypes.includes(event.value)
                               ? 'bg-blue-600 text-white'
@@ -409,7 +429,9 @@ function CreateWebhookModal({
                 type="checkbox"
                 id="enabled"
                 checked={enabled}
-                onChange={(e) => setEnabled(e.target.checked)}
+                onChange={(e) => {
+                  setEnabled(e.target.checked);
+                }}
                 className="h-4 w-4 rounded border-gray-300 text-blue-600"
               />
               <label htmlFor="enabled" className="text-sm text-gray-700">
@@ -455,20 +477,23 @@ function DeliveriesModal({
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
 
-  const loadDeliveries = useCallback(async (pageNum: number) => {
-    if (!webhook) return;
-    setLoading(true);
-    try {
-      const data = await fetchDeliveries(webhook.id, pageNum);
-      setDeliveries(data.deliveries);
-      setHasMore(data.pagination.hasMore);
-      setTotal(data.pagination.total);
-    } catch (err) {
-      console.error('Failed to load deliveries:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [webhook]);
+  const loadDeliveries = useCallback(
+    async (pageNum: number) => {
+      if (!webhook) return;
+      setLoading(true);
+      try {
+        const data = await fetchDeliveries(webhook.id, pageNum);
+        setDeliveries(data.deliveries);
+        setHasMore(data.pagination.hasMore);
+        setTotal(data.pagination.total);
+      } catch (err) {
+        console.error('Failed to load deliveries:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [webhook]
+  );
 
   useEffect(() => {
     if (isOpen && webhook) {
@@ -501,11 +526,21 @@ function DeliveriesModal({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attempts</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Response</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Event
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Attempts
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Response
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Time
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -527,11 +562,13 @@ function DeliveriesModal({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {delivery.lastStatusCode && (
-                        <span className={`text-sm ${
-                          delivery.lastStatusCode >= 200 && delivery.lastStatusCode < 300
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}>
+                        <span
+                          className={`text-sm ${
+                            delivery.lastStatusCode >= 200 && delivery.lastStatusCode < 300
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}
+                        >
                           {delivery.lastStatusCode}
                         </span>
                       )}
@@ -541,7 +578,10 @@ function DeliveriesModal({
                         </span>
                       )}
                       {delivery.lastErrorMessage && (
-                        <p className="text-xs text-red-500 truncate max-w-xs" title={delivery.lastErrorMessage}>
+                        <p
+                          className="text-xs text-red-500 truncate max-w-xs"
+                          title={delivery.lastErrorMessage}
+                        >
                           {delivery.lastErrorMessage}
                         </p>
                       )}
@@ -604,7 +644,9 @@ function SecretModal({
   const handleCopy = async () => {
     await navigator.clipboard.writeText(secret);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
@@ -622,9 +664,7 @@ function SecretModal({
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-md p-4 font-mono text-sm break-all">
-          {secret}
-        </div>
+        <div className="bg-gray-50 rounded-md p-4 font-mono text-sm break-all">{secret}</div>
 
         <div className="mt-4 flex justify-end gap-3">
           <button
@@ -714,7 +754,9 @@ export default function WebhooksPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setShowCreateModal(true);
+          }}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           Create Webhook
@@ -731,7 +773,9 @@ export default function WebhooksPage() {
             Create a webhook to receive real-time event notifications
           </p>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setShowCreateModal(true);
+            }}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Create your first webhook
@@ -747,7 +791,9 @@ export default function WebhooksPage() {
                 setEditingWebhook(webhook);
                 setShowCreateModal(true);
               }}
-              onViewDeliveries={() => setViewingDeliveries(webhook)}
+              onViewDeliveries={() => {
+                setViewingDeliveries(webhook);
+              }}
               onToggle={() => void handleToggle(webhook)}
               onDelete={() => void handleDelete(webhook)}
             />
@@ -767,13 +813,17 @@ export default function WebhooksPage() {
 
       <DeliveriesModal
         isOpen={!!viewingDeliveries}
-        onClose={() => setViewingDeliveries(null)}
+        onClose={() => {
+          setViewingDeliveries(null);
+        }}
         webhook={viewingDeliveries}
       />
 
       <SecretModal
         isOpen={!!newSecret}
-        onClose={() => setNewSecret(null)}
+        onClose={() => {
+          setNewSecret(null);
+        }}
         secret={newSecret}
       />
     </div>

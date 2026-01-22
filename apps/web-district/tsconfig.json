@@ -19,5 +19,14 @@
     ]
   },
   "include": ["app/**/*", "components/**/*", "lib/**/*", "next-env.d.ts", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", ".next", "dist", "build", "__tests__"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "app/design-system/**/*"
+  ]
 }

@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
 import type {
-  Stroke,
+  AnswerValidationResult,
   CanvasState,
   MathRecognitionResult,
-  ScratchPadSession,
-  AnswerValidationResult,
   RecognitionOptions,
+  ScratchPadSession,
+  Stroke,
 } from '@aivo/ts-types';
+// eslint-disable-next-line import/order -- false positive: no empty line exists within import group
+import { useCallback, useRef, useState } from 'react';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -36,11 +37,27 @@ export interface ScratchPadState {
 }
 
 export interface ScratchPadActions {
-  recognizeMath: (strokes: Stroke[], canvasWidth: number, canvasHeight: number, options?: RecognitionOptions) => Promise<MathRecognitionResult | null>;
-  recognizeImage: (imageBase64: string, options?: RecognitionOptions) => Promise<MathRecognitionResult | null>;
-  validateAnswer: (submitted: string, expected: string, allowEquivalent?: boolean) => Promise<AnswerValidationResult | null>;
+  recognizeMath: (
+    strokes: Stroke[],
+    canvasWidth: number,
+    canvasHeight: number,
+    options?: RecognitionOptions
+  ) => Promise<MathRecognitionResult | null>;
+  recognizeImage: (
+    imageBase64: string,
+    options?: RecognitionOptions
+  ) => Promise<MathRecognitionResult | null>;
+  validateAnswer: (
+    submitted: string,
+    expected: string,
+    allowEquivalent?: boolean
+  ) => Promise<AnswerValidationResult | null>;
   startSession: () => Promise<ScratchPadSession | null>;
-  saveSnapshot: (canvasState: CanvasState, recognizedText?: string, confidence?: number) => Promise<boolean>;
+  saveSnapshot: (
+    canvasState: CanvasState,
+    recognizedText?: string,
+    confidence?: number
+  ) => Promise<boolean>;
   submitAnswer: (answer: string, workShown: CanvasState) => Promise<AnswerValidationResult | null>;
   endSession: () => Promise<boolean>;
   clearError: () => void;
@@ -50,13 +67,10 @@ export interface ScratchPadActions {
 // HOOK
 // ════════════════════════════════════════════════════════════════════════════════
 
-export function useScratchPad(options: UseScratchPadOptions = {}): [ScratchPadState, ScratchPadActions] {
-  const {
-    apiBaseUrl = '/api/v1',
-    learnerId,
-    activityId,
-    questionId,
-  } = options;
+export function useScratchPad(
+  options: UseScratchPadOptions = {}
+): [ScratchPadState, ScratchPadActions] {
+  const { apiBaseUrl = '/api/v1', learnerId, activityId, questionId } = options;
 
   // State
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -282,10 +296,7 @@ export function useScratchPad(options: UseScratchPadOptions = {}): [ScratchPadSt
   );
 
   const submitAnswer = useCallback(
-    async (
-      answer: string,
-      workShown: CanvasState
-    ): Promise<AnswerValidationResult | null> => {
+    async (answer: string, workShown: CanvasState): Promise<AnswerValidationResult | null> => {
       const currentSessionId = sessionIdRef.current;
       if (!currentSessionId) {
         setError('No active session');
@@ -339,13 +350,10 @@ export function useScratchPad(options: UseScratchPadOptions = {}): [ScratchPadSt
     setError(null);
 
     try {
-      const response = await fetch(
-        `${apiBaseUrl}/scratch-pad/sessions/${currentSessionId}/end`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const response = await fetch(`${apiBaseUrl}/scratch-pad/sessions/${currentSessionId}/end`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to end session: ${response.statusText}`);
@@ -418,9 +426,7 @@ export function ScratchPadProvider({ children, options }: ScratchPadProviderProp
   const [state, actions] = useScratchPad(options);
 
   return (
-    <ScratchPadContext.Provider value={{ state, actions }}>
-      {children}
-    </ScratchPadContext.Provider>
+    <ScratchPadContext.Provider value={{ state, actions }}>{children}</ScratchPadContext.Provider>
   );
 }
 

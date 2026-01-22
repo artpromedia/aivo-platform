@@ -9,9 +9,8 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+
 import {
-  SafetyRatingBadge,
-  DataAccessIndicator,
   PolicyTagBadge,
   safetyRatingConfig,
   dataAccessConfig,
@@ -55,7 +54,7 @@ export function SafetyDetailsModal({ versionId, isOpen, onClose }: SafetyDetails
 
   const fetchDetails = useCallback(async () => {
     if (!versionId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -87,8 +86,11 @@ export function SafetyDetailsModal({ versionId, isOpen, onClose }: SafetyDetails
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
     }
+    return undefined;
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -96,15 +98,15 @@ export function SafetyDetailsModal({ versionId, isOpen, onClose }: SafetyDetails
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 transition-opacity" 
+      <div
+        className="fixed inset-0 bg-black/50 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div 
+        <div
           className="relative w-full max-w-2xl rounded-lg bg-surface shadow-xl"
           role="dialog"
           aria-modal="true"
@@ -114,7 +116,12 @@ export function SafetyDetailsModal({ versionId, isOpen, onClose }: SafetyDetails
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  className="h-5 w-5 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -127,9 +134,7 @@ export function SafetyDetailsModal({ versionId, isOpen, onClose }: SafetyDetails
                 <h2 id="safety-details-title" className="text-lg font-semibold">
                   Safety Details
                 </h2>
-                {data && (
-                  <p className="text-sm text-muted">{data.itemTitle}</p>
-                )}
+                {data && <p className="text-sm text-muted">{data.itemTitle}</p>}
               </div>
             </div>
             <button
@@ -137,8 +142,18 @@ export function SafetyDetailsModal({ versionId, isOpen, onClose }: SafetyDetails
               className="rounded-lg p-2 hover:bg-surface-muted transition-colors"
               aria-label="Close"
             >
-              <svg className="h-5 w-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-5 w-5 text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -181,18 +196,22 @@ function SafetyDetailsContent({ data }: { data: SafetyDetailsData }) {
         <h3 className="text-sm font-medium text-muted mb-3">Safety Rating</h3>
         <div className="rounded-lg border border-border p-4">
           <div className="flex items-start gap-4">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${safetyConfig.bgColor}`}>
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-full ${safetyConfig.bgColor}`}
+            >
               <span className={safetyConfig.color}>{safetyConfig.icon}</span>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className={`font-semibold ${safetyConfig.color}`}>
-                  {safetyConfig.label}
-                </span>
+                <span className={`font-semibold ${safetyConfig.color}`}>{safetyConfig.label}</span>
                 {data.automatedChecksPassed && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Auto-checks passed
                   </span>
@@ -214,13 +233,13 @@ function SafetyDetailsContent({ data }: { data: SafetyDetailsData }) {
         <h3 className="text-sm font-medium text-muted mb-3">Data Access Level</h3>
         <div className="rounded-lg border border-border p-4">
           <div className="flex items-start gap-4">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${dataConfig.bgColor}`}>
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-full ${dataConfig.bgColor}`}
+            >
               <span className={dataConfig.color}>{dataConfig.icon}</span>
             </div>
             <div className="flex-1">
-              <span className={`font-semibold ${dataConfig.color}`}>
-                {dataConfig.label}
-              </span>
+              <span className={`font-semibold ${dataConfig.color}`}>{dataConfig.label}</span>
               <p className="mt-1 text-sm text-muted">{data.explanations.dataAccessProfile}</p>
             </div>
           </div>
@@ -234,13 +253,25 @@ function SafetyDetailsContent({ data }: { data: SafetyDetailsData }) {
               <ul className="space-y-2">
                 {data.dataCategoriesAccessed.map((category) => (
                   <li key={category} className="flex items-start gap-2 text-sm">
-                    <svg className="h-4 w-4 text-muted mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="h-4 w-4 text-muted mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                     <div>
                       <span className="font-medium">{formatCategoryName(category)}</span>
                       {data.explanations.dataCategories[category] && (
-                        <p className="text-xs text-muted">{data.explanations.dataCategories[category]}</p>
+                        <p className="text-xs text-muted">
+                          {data.explanations.dataCategories[category]}
+                        </p>
                       )}
                     </div>
                   </li>
@@ -264,8 +295,16 @@ function SafetyDetailsContent({ data }: { data: SafetyDetailsData }) {
             <ul className="space-y-2 mt-4 pt-4 border-t border-border">
               {data.policyTags.map((tag) => (
                 <li key={tag} className="flex items-start gap-2 text-sm">
-                  <svg className="h-4 w-4 text-muted mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <svg
+                    className="h-4 w-4 text-muted mt-0.5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   <span className="text-muted">
                     {data.explanations.policyTags[tag] || formatTagName(tag)}
@@ -311,14 +350,21 @@ function LoadingSkeleton() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-      <svg className="mx-auto h-10 w-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <svg
+        className="mx-auto h-10 w-10 text-red-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
       </svg>
       <p className="mt-2 text-red-600">{message}</p>
-      <button
-        onClick={onRetry}
-        className="mt-3 text-sm text-red-500 underline hover:no-underline"
-      >
+      <button onClick={onRetry} className="mt-3 text-sm text-red-500 underline hover:no-underline">
         Try again
       </button>
     </div>
@@ -355,7 +401,9 @@ export function useSafetyDetailsModal() {
   const close = useCallback(() => {
     setIsOpen(false);
     // Delay clearing versionId to prevent flash during close animation
-    setTimeout(() => setVersionId(null), 300);
+    setTimeout(() => {
+      setVersionId(null);
+    }, 300);
   }, []);
 
   return {

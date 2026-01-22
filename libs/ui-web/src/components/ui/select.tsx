@@ -18,11 +18,16 @@ export interface SelectProps {
 export function Select({ value, onValueChange, children }: SelectProps) {
   const [open, setOpen] = React.useState(false);
 
+  const contextValue: SelectContextValue = {
+    ...(value !== undefined ? { value } : {}),
+    ...(onValueChange ? { onValueChange } : {}),
+    open,
+    setOpen,
+  };
+
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
-      <div className="relative">
-        {children}
-      </div>
+    <SelectContext.Provider value={contextValue}>
+      <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
 }

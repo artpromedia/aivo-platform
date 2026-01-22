@@ -180,7 +180,7 @@ export default function DistrictAnalyticsPage() {
 
         <Card title="Mastery Distribution" subtitle="District-wide progress breakdown">
           <div className="h-64">
-            <MasteryDistributionChart buckets={overview.progress.masteryDistribution} />
+            <MasteryDistributionChart data={overview.progress.masteryDistribution} />
           </div>
         </Card>
       </div>

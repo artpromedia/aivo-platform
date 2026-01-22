@@ -3,15 +3,17 @@
 import { useState, useCallback, useEffect, type ChangeEvent } from 'react';
 
 // Simple icon components (replace with actual icons when lucide-react is added)
-const AlertTriangle = () => <span>⚠️</span>;
-const Check = () => <span>✓</span>;
-const Copy = () => <span>📋</span>;
-const Eye = () => <span>👁️</span>;
-const EyeOff = () => <span>🔒</span>;
-const RefreshCw = () => <span>🔄</span>;
-const Shield = () => <span>🛡️</span>;
-const Upload = () => <span>📤</span>;
-const X = () => <span>✕</span>;
+const AlertTriangle = ({ className }: { className?: string }) => (
+  <span className={className}>⚠️</span>
+);
+const Check = ({ className }: { className?: string }) => <span className={className}>✓</span>;
+const Copy = ({ className }: { className?: string }) => <span className={className}>📋</span>;
+const Eye = ({ className }: { className?: string }) => <span className={className}>👁️</span>;
+const EyeOff = ({ className }: { className?: string }) => <span className={className}>🔒</span>;
+const RefreshCw = ({ className }: { className?: string }) => <span className={className}>🔄</span>;
+const Shield = ({ className }: { className?: string }) => <span className={className}>🛡️</span>;
+const Upload = ({ className }: { className?: string }) => <span className={className}>📤</span>;
+const X = ({ className }: { className?: string }) => <span className={className}>✕</span>;
 
 // ============================================================================
 // TYPES

@@ -39,8 +39,8 @@ export function InstallationsList() {
       setError(null);
       try {
         const status = searchParams.get('status') as MarketplaceInstallation['status'] | undefined;
-        const result = await listInstallations(tenantId, {
-          status: status || undefined,
+        const result = await listInstallations(tenantId ?? '', {
+          ...(status ? { status } : {}),
           limit: 50,
         });
         setInstallations(result.data);
@@ -172,9 +172,9 @@ function InstallationCard({
   onRevoke,
 }: {
   installation: MarketplaceInstallation;
-  onToggleStatus: () => void;
-  onApprove: () => void;
-  onRevoke: () => void;
+  onToggleStatus: () => void | Promise<void>;
+  onApprove: () => void | Promise<void>;
+  onRevoke: () => void | Promise<void>;
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
@@ -413,7 +413,9 @@ function InstallationCard({
         <>
           <div
             className="fixed inset-0 z-40 bg-black/50"
-            onClick={() => { setShowRevokeConfirm(false); }}
+            onClick={() => {
+              setShowRevokeConfirm(false);
+            }}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-xl">
@@ -439,12 +441,15 @@ function InstallationCard({
                 </div>
               </div>
               <p className="mt-4 text-sm text-muted">
-                Are you sure you want to revoke <strong>{installation.marketplaceItem.title}</strong>?
-                This will permanently remove access for all users in your district.
+                Are you sure you want to revoke{' '}
+                <strong>{installation.marketplaceItem.title}</strong>? This will permanently remove
+                access for all users in your district.
               </p>
               <div className="mt-6 flex justify-end gap-3">
                 <button
-                  onClick={() => { setShowRevokeConfirm(false); }}
+                  onClick={() => {
+                    setShowRevokeConfirm(false);
+                  }}
                   disabled={isRevoking}
                   className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted disabled:opacity-50"
                 >

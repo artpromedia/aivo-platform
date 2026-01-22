@@ -95,8 +95,8 @@ export interface SearchableStandard {
 }
 
 export interface CurriculumFilters {
-  subjectArea?: string;
-  gradeLevel?: string;
+  subjectArea?: string | undefined;
+  gradeLevel?: string | undefined;
   status?: CurriculumStatus;
 }
 
@@ -150,16 +150,13 @@ export async function getCurriculumById(
   tenantId: string,
   accessToken: string
 ): Promise<{ curriculum: Curriculum }> {
-  const res = await fetch(
-    `${CURRICULUM_SVC_URL}/curricula/${curriculumId}?tenantId=${tenantId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    }
-  );
+  const res = await fetch(`${CURRICULUM_SVC_URL}/curricula/${curriculumId}?tenantId=${tenantId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
 
   if (!res.ok) {
     throw new Error(`Failed to fetch curriculum: ${res.status}`);
@@ -218,17 +215,14 @@ export async function updateCurriculum(
     metadata: Record<string, unknown>;
   }>
 ): Promise<{ curriculum: Curriculum }> {
-  const res = await fetch(
-    `${CURRICULUM_SVC_URL}/curricula/${curriculumId}?tenantId=${tenantId}`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }
-  );
+  const res = await fetch(`${CURRICULUM_SVC_URL}/curricula/${curriculumId}?tenantId=${tenantId}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
 
   if (!res.ok) {
     throw new Error(`Failed to update curriculum: ${res.status}`);
@@ -245,16 +239,13 @@ export async function deleteCurriculum(
   tenantId: string,
   accessToken: string
 ): Promise<void> {
-  const res = await fetch(
-    `${CURRICULUM_SVC_URL}/curricula/${curriculumId}?tenantId=${tenantId}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  const res = await fetch(`${CURRICULUM_SVC_URL}/curricula/${curriculumId}?tenantId=${tenantId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   if (!res.ok) {
     throw new Error(`Failed to delete curriculum: ${res.status}`);
@@ -417,13 +408,13 @@ export async function bulkAlignStandards(
   curriculumId: string,
   tenantId: string,
   accessToken: string,
-  standards: Array<{
+  standards: {
     standardCode: string;
     standardDescription: string;
     framework: string;
     alignmentLevel?: AlignmentLevel;
     notes?: string;
-  }>
+  }[]
 ): Promise<{ alignments: StandardAlignment[] }> {
   const res = await fetch(
     `${CURRICULUM_SVC_URL}/standards/curriculum/${curriculumId}/bulk?tenantId=${tenantId}`,
@@ -452,16 +443,13 @@ export async function removeStandardAlignment(
   tenantId: string,
   accessToken: string
 ): Promise<void> {
-  const res = await fetch(
-    `${CURRICULUM_SVC_URL}/standards/${alignmentId}?tenantId=${tenantId}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  const res = await fetch(`${CURRICULUM_SVC_URL}/standards/${alignmentId}?tenantId=${tenantId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   if (!res.ok) {
     throw new Error(`Failed to remove standard alignment: ${res.status}`);

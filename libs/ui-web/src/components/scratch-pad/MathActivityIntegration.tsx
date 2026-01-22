@@ -1,21 +1,20 @@
 'use client';
 
-import {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  type ReactNode,
-  type FormEvent,
-} from 'react';
+import type { MathRecognitionResult } from '@aivo/ts-types';
+import { useState, useCallback, useRef, useEffect, type ReactNode, type FormEvent } from 'react';
 
 import { cn } from '../../utils/cn';
 import { Button } from '../button';
 import { Card } from '../card';
+
 import { ScratchPadCanvas, type ScratchPadCanvasRef } from './ScratchPadCanvas';
-import { ScratchPadModal, ScratchPadDrawer, ScratchPadFAB, useScratchPadPopup } from './ScratchPadPopup';
+import {
+  ScratchPadModal,
+  ScratchPadDrawer,
+  ScratchPadFAB,
+  useScratchPadPopup,
+} from './ScratchPadPopup';
 import { useScratchPad } from './useScratchPad';
-import type { MathRecognitionResult, CanvasState } from '@aivo/ts-types';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -102,8 +101,8 @@ export function MathQuestionWithScratchPad({
   // Hooks
   const [scratchPadState, scratchPadActions] = useScratchPad({
     apiBaseUrl,
-    learnerId,
-    activityId,
+    ...(learnerId ? { learnerId } : {}),
+    ...(activityId ? { activityId } : {}),
     questionId: question.id,
   });
 
@@ -117,7 +116,7 @@ export function MathQuestionWithScratchPad({
     return () => {
       void scratchPadActions.endSession();
     };
-  }, [learnerId]);
+  }, [learnerId, scratchPadActions]);
 
   // Handle recognition result
   const handleRecognition = useCallback(
@@ -155,12 +154,15 @@ export function MathQuestionWithScratchPad({
           if (validation) {
             setFeedback({
               isCorrect: validation.isCorrect,
-              message: validation.feedback ?? (validation.isCorrect ? 'Correct!' : 'Not quite right. Try again!'),
+              message:
+                validation.feedback ??
+                (validation.isCorrect ? 'Correct!' : 'Not quite right. Try again!'),
             });
             onSubmit(answer, validation.isCorrect, workShown);
           } else {
             // Fallback to simple string comparison
-            const isCorrect = answer.trim().toLowerCase() === question.expectedAnswer.trim().toLowerCase();
+            const isCorrect =
+              answer.trim().toLowerCase() === question.expectedAnswer.trim().toLowerCase();
             setFeedback({
               isCorrect,
               message: isCorrect ? 'Correct!' : 'Not quite right. Try again!',
@@ -208,13 +210,9 @@ export function MathQuestionWithScratchPad({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <p className="text-lg font-medium">{question.prompt}</p>
-            {question.topic && (
-              <p className="mt-1 text-sm text-muted">Topic: {question.topic}</p>
-            )}
+            {question.topic && <p className="mt-1 text-sm text-muted">Topic: {question.topic}</p>}
           </div>
-          {question.difficulty && (
-            <DifficultyBadge difficulty={question.difficulty} />
-          )}
+          {question.difficulty && <DifficultyBadge difficulty={question.difficulty} />}
         </div>
 
         {/* Additional content */}
@@ -227,7 +225,10 @@ export function MathQuestionWithScratchPad({
           {hintsUsed > 0 && (
             <div className="mb-2 space-y-1">
               {question.hints.slice(0, hintsUsed).map((hint, i) => (
-                <div key={i} className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                <div
+                  key={hint}
+                  className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
+                >
                   <span className="font-medium">Hint {i + 1}:</span> {hint}
                 </div>
               ))}
@@ -247,11 +248,7 @@ export function MathQuestionWithScratchPad({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-muted">Work it out:</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowScratchPad(!showScratchPad)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowScratchPad(!showScratchPad)}>
               {showScratchPad ? 'Hide' : 'Show'} scratch pad
             </Button>
           </div>
@@ -294,12 +291,7 @@ export function MathQuestionWithScratchPad({
 
           {/* Scratch Pad Button (when not inline) */}
           {!inlineScratchPad && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={popup.open}
-              title="Open scratch pad"
-            >
+            <Button type="button" variant="ghost" onClick={popup.open} title="Open scratch pad">
               <PencilIcon className="h-5 w-5" />
             </Button>
           )}
@@ -377,22 +369,18 @@ export function MathActivityWithScratchPad({
       {children}
 
       {showFAB && (
-        <ScratchPadFAB
-          onClick={popup.open}
-          position={fabPosition}
-          label="Open scratch pad"
-        />
+        <ScratchPadFAB onClick={popup.open} position={fabPosition} label="Open scratch pad" />
       )}
 
       <PopupComponent
         isOpen={popup.isOpen}
         onClose={popup.close}
         onSubmit={handleSubmit}
-        onRecognitionResult={onRecognitionResult}
+        {...(onRecognitionResult ? { onRecognitionResult } : {})}
         recognitionEndpoint={`${apiBaseUrl}/math-recognition/recognize`}
         title="Scratch Pad"
         showSubmit={!!onScratchPadSubmit}
-        position={popupMode === 'drawer' ? 'bottom' : undefined}
+        {...(popupMode === 'drawer' ? { position: 'bottom' as const } : {})}
       />
     </div>
   );
@@ -449,12 +437,7 @@ function HintIcon({ className }: { className?: string }) {
 function CheckIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
 }
@@ -462,12 +445,7 @@ function CheckIcon({ className }: { className?: string }) {
 function XIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M6 18L18 6M6 6l12 12"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
@@ -475,14 +453,7 @@ function XIcon({ className }: { className?: string }) {
 function Spinner({ className }: { className?: string }) {
   return (
     <svg className={cn('animate-spin', className)} fill="none" viewBox="0 0 24 24">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

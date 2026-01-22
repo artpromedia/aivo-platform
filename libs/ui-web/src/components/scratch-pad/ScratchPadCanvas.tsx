@@ -1,23 +1,11 @@
 'use client';
 
-import {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-} from 'react';
-import type { PointerEvent as ReactPointerEvent, MouseEvent } from 'react';
+import type { Stroke, StrokePoint, CanvasState, MathRecognitionResult } from '@aivo/ts-types';
+import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 
 import { cn } from '../../utils/cn';
 import { Button } from '../button';
-import type {
-  Stroke,
-  StrokePoint,
-  CanvasState,
-  MathRecognitionResult,
-} from '@aivo/ts-types';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -124,40 +112,51 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
     const [recognitionResult, setRecognitionResult] = useState<MathRecognitionResult | null>(null);
 
     // ──────────────────────────────────────────────────────────────────────────
-    // CANVAS SETUP
+    // DRAWING FUNCTIONS (defined first as they are dependencies)
     // ──────────────────────────────────────────────────────────────────────────
 
-    useEffect(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+    const drawGrid = useCallback(
+      (ctx: CanvasRenderingContext2D) => {
+        const gridSize = 20;
+        ctx.strokeStyle = '#E5E7EB';
+        ctx.lineWidth = 0.5;
 
-      // Set canvas size for high DPI
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+        // Vertical lines
+        for (let x = gridSize; x < width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+        // Horizontal lines
+        for (let y = gridSize; y < height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+      },
+      [width, height]
+    );
 
-      ctx.scale(dpr, dpr);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      contextRef.current = ctx;
+    const drawStroke = useCallback((ctx: CanvasRenderingContext2D, stroke: Stroke) => {
+      if (stroke.points.length < 2) return;
 
-      // Initial render
-      redrawCanvas();
-    }, [width, height]);
+      ctx.beginPath();
+      ctx.strokeStyle = intToHex(stroke.color ?? 0xff000000);
+      ctx.lineWidth = stroke.strokeWidth ?? DEFAULT_STROKE_WIDTH;
 
-    // Redraw when strokes change
-    useEffect(() => {
-      redrawCanvas();
-    }, [strokes]);
+      const [first, ...rest] = stroke.points;
+      if (!first) return; // Guard against undefined
+      ctx.moveTo(first.x, first.y);
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // DRAWING FUNCTIONS
-    // ──────────────────────────────────────────────────────────────────────────
+      rest.forEach((point: StrokePoint) => {
+        ctx.lineTo(point.x, point.y);
+      });
+
+      ctx.stroke();
+    }, []);
 
     const redrawCanvas = useCallback(() => {
       const ctx = contextRef.current;
@@ -182,46 +181,128 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
       if (currentStroke) {
         drawStroke(ctx, currentStroke);
       }
-    }, [strokes, currentStroke, width, height, showGrid]);
+    }, [strokes, currentStroke, width, height, showGrid, drawGrid, drawStroke]);
 
-    const drawGrid = (ctx: CanvasRenderingContext2D) => {
-      const gridSize = 20;
-      ctx.strokeStyle = '#E5E7EB';
-      ctx.lineWidth = 0.5;
+    // ──────────────────────────────────────────────────────────────────────────
+    // CANVAS SETUP
+    // ──────────────────────────────────────────────────────────────────────────
 
-      // Vertical lines
-      for (let x = gridSize; x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      // Set canvas size for high DPI
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.scale(dpr, dpr);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      contextRef.current = ctx;
+
+      // Initial render
+      redrawCanvas();
+    }, [width, height, redrawCanvas]);
+
+    // Redraw when strokes change
+    useEffect(() => {
+      redrawCanvas();
+    }, [strokes, redrawCanvas]);
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // HISTORY (defined before pointer events that use it)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    const addToHistory = useCallback(
+      (newStrokes: Stroke[]) => {
+        setHistory((prev) => {
+          const newHistory = prev.slice(0, historyIndex + 1);
+          newHistory.push({ strokes: newStrokes });
+          if (newHistory.length > MAX_HISTORY) {
+            newHistory.shift();
+          }
+          return newHistory;
+        });
+        setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
+      },
+      [historyIndex]
+    );
+
+    const undo = useCallback(() => {
+      if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        const newStrokes = history[newIndex]?.strokes ?? [];
+        setStrokes(newStrokes);
+        onStrokesChange?.(newStrokes);
       }
+    }, [history, historyIndex, onStrokesChange]);
 
-      // Horizontal lines
-      for (let y = gridSize; y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+    const redo = useCallback(() => {
+      if (historyIndex < history.length - 1) {
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+        const newStrokes = history[newIndex]?.strokes ?? [];
+        setStrokes(newStrokes);
+        onStrokesChange?.(newStrokes);
       }
-    };
+    }, [history, historyIndex, onStrokesChange]);
 
-    const drawStroke = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
-      if (stroke.points.length < 2) return;
+    const clear = useCallback(() => {
+      setStrokes([]);
+      addToHistory([]);
+      onStrokesChange?.([]);
+      setRecognitionResult(null);
+    }, [addToHistory, onStrokesChange]);
 
-      ctx.beginPath();
-      ctx.strokeStyle = intToHex(stroke.color ?? 0xff000000);
-      ctx.lineWidth = stroke.strokeWidth ?? DEFAULT_STROKE_WIDTH;
+    // ──────────────────────────────────────────────────────────────────────────
+    // RECOGNITION (defined before pointer events that use it)
+    // ──────────────────────────────────────────────────────────────────────────
 
-      const [first, ...rest] = stroke.points;
-      ctx.moveTo(first.x, first.y);
+    const performRecognition = useCallback(
+      async (strokesToRecognize: Stroke[] = strokes): Promise<MathRecognitionResult | null> => {
+        if (strokesToRecognize.length === 0) return null;
 
-      rest.forEach((point) => {
-        ctx.lineTo(point.x, point.y);
-      });
+        setIsRecognizing(true);
 
-      ctx.stroke();
-    };
+        try {
+          const response = await fetch(recognitionEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              strokes: strokesToRecognize,
+              canvasWidth: width,
+              canvasHeight: height,
+              options: {
+                evaluateExpression: true,
+                includeAlternatives: true,
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Recognition failed');
+          }
+
+          const result: MathRecognitionResult = await response.json();
+          setRecognitionResult(result);
+          onRecognitionResult?.(result);
+          return result;
+        } catch (error) {
+          console.error('Recognition error:', error);
+          return null;
+        } finally {
+          setIsRecognizing(false);
+        }
+      },
+      [strokes, recognitionEndpoint, width, height, onRecognitionResult]
+    );
 
     // ──────────────────────────────────────────────────────────────────────────
     // POINTER EVENTS
@@ -312,92 +393,19 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
 
       setCurrentStroke(null);
       setIsDrawing(false);
-    }, [isDrawing, currentStroke, strokes, readOnly, autoRecognizeDelay, onRecognitionResult, onStrokesChange]);
+    }, [
+      isDrawing,
+      currentStroke,
+      strokes,
+      readOnly,
+      autoRecognizeDelay,
+      onRecognitionResult,
+      onStrokesChange,
+      addToHistory,
+      performRecognition,
+    ]);
 
     const handlePointerLeave = handlePointerUp;
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // HISTORY
-    // ──────────────────────────────────────────────────────────────────────────
-
-    const addToHistory = useCallback((newStrokes: Stroke[]) => {
-      setHistory((prev) => {
-        const newHistory = prev.slice(0, historyIndex + 1);
-        newHistory.push({ strokes: newStrokes });
-        if (newHistory.length > MAX_HISTORY) {
-          newHistory.shift();
-        }
-        return newHistory;
-      });
-      setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
-    }, [historyIndex]);
-
-    const undo = useCallback(() => {
-      if (historyIndex > 0) {
-        const newIndex = historyIndex - 1;
-        setHistoryIndex(newIndex);
-        const newStrokes = history[newIndex].strokes;
-        setStrokes(newStrokes);
-        onStrokesChange?.(newStrokes);
-      }
-    }, [history, historyIndex, onStrokesChange]);
-
-    const redo = useCallback(() => {
-      if (historyIndex < history.length - 1) {
-        const newIndex = historyIndex + 1;
-        setHistoryIndex(newIndex);
-        const newStrokes = history[newIndex].strokes;
-        setStrokes(newStrokes);
-        onStrokesChange?.(newStrokes);
-      }
-    }, [history, historyIndex, onStrokesChange]);
-
-    const clear = useCallback(() => {
-      setStrokes([]);
-      addToHistory([]);
-      onStrokesChange?.([]);
-      setRecognitionResult(null);
-    }, [addToHistory, onStrokesChange]);
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // RECOGNITION
-    // ──────────────────────────────────────────────────────────────────────────
-
-    const performRecognition = async (strokesToRecognize: Stroke[] = strokes): Promise<MathRecognitionResult | null> => {
-      if (strokesToRecognize.length === 0) return null;
-
-      setIsRecognizing(true);
-
-      try {
-        const response = await fetch(recognitionEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            strokes: strokesToRecognize,
-            canvasWidth: width,
-            canvasHeight: height,
-            options: {
-              evaluateExpression: true,
-              includeAlternatives: true,
-            },
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Recognition failed');
-        }
-
-        const result: MathRecognitionResult = await response.json();
-        setRecognitionResult(result);
-        onRecognitionResult?.(result);
-        return result;
-      } catch (error) {
-        console.error('Recognition error:', error);
-        return null;
-      } finally {
-        setIsRecognizing(false);
-      }
-    };
 
     // ──────────────────────────────────────────────────────────────────────────
     // CANVAS STATE
@@ -429,14 +437,18 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
     // IMPERATIVE HANDLE
     // ──────────────────────────────────────────────────────────────────────────
 
-    useImperativeHandle(ref, () => ({
-      clear,
-      undo,
-      redo,
-      getCanvasState,
-      getImageData,
-      recognize: () => performRecognition(),
-    }), [clear, undo, redo, getCanvasState, getImageData]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        clear,
+        undo,
+        redo,
+        getCanvasState,
+        getImageData,
+        recognize: () => performRecognition(),
+      }),
+      [clear, undo, redo, getCanvasState, getImageData, performRecognition]
+    );
 
     // ──────────────────────────────────────────────────────────────────────────
     // RENDER
@@ -557,10 +569,7 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
         <div className="relative overflow-hidden rounded-lg border border-border">
           <canvas
             ref={canvasRef}
-            className={cn(
-              'touch-none',
-              readOnly ? 'cursor-default' : 'cursor-crosshair'
-            )}
+            className={cn('touch-none', readOnly ? 'cursor-default' : 'cursor-crosshair')}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -591,8 +600,8 @@ export const ScratchPadCanvas = forwardRef<ScratchPadCanvasRef, ScratchPadCanvas
             {recognitionResult.alternatives.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 <span className="text-xs text-muted">Other options:</span>
-                {recognitionResult.alternatives.slice(0, 3).map((alt, i) => (
-                  <span key={i} className="rounded bg-surface px-2 py-0.5 text-xs">
+                {recognitionResult.alternatives.slice(0, 3).map((alt) => (
+                  <span key={alt.text} className="rounded bg-surface px-2 py-0.5 text-xs">
                     {alt.text}
                   </span>
                 ))}
@@ -691,14 +700,7 @@ function TrashIcon({ className }: { className?: string }) {
 function Spinner({ className }: { className?: string }) {
   return (
     <svg className={cn('animate-spin', className)} fill="none" viewBox="0 0 24 24">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

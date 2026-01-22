@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge, Button, Card, GradeThemeProvider, Heading } from '@aivo/ui-web';
-import type { GradeBand } from '@aivo/ui-web';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
@@ -141,12 +140,12 @@ export function VirtualBrainClient({
   classroomId,
   learnerId,
   brain,
-  gradeBand,
+  grade,
 }: {
   classroomId: string;
   learnerId: string;
   brain: VirtualBrainSummary;
-  gradeBand: GradeBand;
+  grade?: number;
 }) {
   const { strengths, focusAreas } = useMemo(
     () => summarizeMastery(brain.skillStates),
@@ -166,7 +165,7 @@ export function VirtualBrainClient({
   };
 
   return (
-    <GradeThemeProvider initialGrade={gradeBand}>
+    <GradeThemeProvider initialGrade={grade}>
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-2">
           <Heading level={1}>Virtual Brain</Heading>
@@ -174,7 +173,7 @@ export function VirtualBrainClient({
             Classroom {classroomId} · Learner {learnerId}
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <Badge tone="info">Grade band: {gradeBand}</Badge>
+            <Badge tone="info">Grade band: {brain.gradeBand}</Badge>
             <Badge tone="neutral">{brain.skillStates.length} skills tracked</Badge>
           </div>
         </header>

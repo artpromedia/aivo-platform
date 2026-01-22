@@ -18,7 +18,7 @@ const mockBaseline: BaselineProfileView = {
   learnerId: 'learner-1',
   learnerName: 'Jordan Rivers',
   grade: 4,
-  gradeBand: 'K5',
+  gradeBand: 'G3_5',
   status: 'COMPLETED',
   domainScores: [
     { domain: 'ELA', score: 0.72, label: 'Strong comprehension' },
@@ -55,7 +55,7 @@ describe('BaselineInsightsClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           baseline={mockBaseline}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -74,7 +74,7 @@ describe('BaselineInsightsClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           baseline={mockBaseline}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -93,7 +93,7 @@ describe('BaselineInsightsClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           baseline={mockBaseline}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -111,7 +111,7 @@ describe('BaselineInsightsClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           baseline={mockBaseline}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );
@@ -135,7 +135,7 @@ describe('BaselineInsightsClient', () => {
           classroomId="class-1"
           learnerId="learner-1"
           baseline={mockBaseline}
-          gradeBand="K5"
+          grade={4}
         />
       </TestWrapper>
     );

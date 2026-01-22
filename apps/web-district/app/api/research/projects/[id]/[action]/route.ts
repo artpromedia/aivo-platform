@@ -1,10 +1,10 @@
 /**
  * Research Project Actions API Route Handler
- * 
+ *
  * Handles submit, approve, reject, close actions.
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const RESEARCH_SVC_URL = process.env.RESEARCH_SVC_URL || 'http://localhost:4020';
@@ -19,10 +19,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Validate action
   const validActions = ['submit', 'approve', 'reject', 'close'];
   if (!validActions.includes(action)) {
-    return NextResponse.json(
-      { error: `Invalid action: ${action}` },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: `Invalid action: ${action}` }, { status: 400 });
   }
 
   try {
@@ -39,15 +36,12 @@ export async function POST(request: NextRequest, { params }: Params) {
         'Content-Type': 'application/json',
         Authorization: request.headers.get('Authorization') || '',
       },
-      body: body || undefined,
+      ...(body ? { body } : {}),
     });
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch {
-    return NextResponse.json(
-      { error: `Failed to ${action} project` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Failed to ${action} project` }, { status: 500 });
   }
 }

@@ -1,5 +1,7 @@
-import { getAuthSession } from '../../../lib/auth';
+import { Role } from '@aivo/ts-rbac';
 import { redirect } from 'next/navigation';
+
+import { getAuthSession } from '../../../lib/auth';
 
 import { SisIntegrationPage } from './SisIntegrationPage';
 
@@ -15,7 +17,7 @@ export default async function SisSettingsPage() {
   }
 
   // Check for district admin role
-  if (!auth.roles.includes('DISTRICT_ADMIN') && !auth.roles.includes('PLATFORM_ADMIN')) {
+  if (!auth.roles.includes(Role.DISTRICT_ADMIN) && !auth.roles.includes(Role.PLATFORM_ADMIN)) {
     redirect('/dashboard');
   }
 

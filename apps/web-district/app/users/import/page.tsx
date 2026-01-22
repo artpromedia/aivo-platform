@@ -12,8 +12,6 @@
 
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import {
   ArrowLeft,
   Upload,
@@ -28,6 +26,8 @@ import {
   ChevronRight,
   Trash2,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useState, useCallback, useRef, type DragEvent } from 'react';
 
 interface ParsedRow {
   email: string;
@@ -43,16 +43,14 @@ interface ParsedRow {
   originalRow: Record<string, string>;
 }
 
-interface ColumnMapping {
-  [csvColumn: string]: string;
-}
+type ColumnMapping = Record<string, string>;
 
 interface ImportResult {
   success: number;
   failed: number;
   skipped: number;
-  errors: Array<{ row: number; message: string; email?: string }>;
-  createdUsers: Array<{ email: string; role: string; schoolName: string }>;
+  errors: { row: number; message: string; email?: string }[];
+  createdUsers: { email: string; role: string; schoolName: string }[];
 }
 
 const SYSTEM_FIELDS = [
@@ -86,13 +84,15 @@ export default function BulkUserImportPage() {
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [results, setResults] = useState<ImportResult | null>(null);
-  const [step, setStep] = useState<'upload' | 'map' | 'preview' | 'importing' | 'results'>('upload');
+  const [step, setStep] = useState<'upload' | 'map' | 'preview' | 'importing' | 'results'>(
+    'upload'
+  );
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Parse CSV content
   const parseCSV = (content: string): { headers: string[]; data: string[][] } => {
-    const lines = content.split('\n').filter(line => line.trim());
+    const lines = content.split('\n').filter((line) => line.trim());
     if (lines.length < 2) return { headers: [], data: [] };
 
     const parseCSVLine = (line: string): string[] => {
@@ -100,8 +100,7 @@ export default function BulkUserImportPage() {
       let current = '';
       let inQuotes = false;
 
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
+      for (const char of line) {
         if (char === '"') {
           inQuotes = !inQuotes;
         } else if (char === ',' && !inQuotes) {
@@ -115,7 +114,11 @@ export default function BulkUserImportPage() {
       return result;
     };
 
-    const headers = parseCSVLine(lines[0]);
+    const firstLine = lines[0];
+    if (!firstLine) {
+      return { headers: [], data: [] };
+    }
+    const headers = parseCSVLine(firstLine);
     const data = lines.slice(1).map(parseCSVLine);
 
     return { headers, data };
@@ -134,10 +137,10 @@ export default function BulkUserImportPage() {
       class_id: ['class', 'class id', 'class_id', 'section', 'homeroom'],
     };
 
-    headers.forEach(header => {
+    headers.forEach((header) => {
       const normalized = header.toLowerCase().trim();
       for (const [field, patterns] of Object.entries(fieldPatterns)) {
-        if (patterns.some(pattern => normalized.includes(pattern) || normalized === pattern)) {
+        if (patterns.some((pattern) => normalized.includes(pattern) || normalized === pattern)) {
           autoMapping[header] = field;
           break;
         }
@@ -150,7 +153,7 @@ export default function BulkUserImportPage() {
   // Validate a single row
   const validateRow = (row: string[], headers: string[], mapping: ColumnMapping): ParsedRow => {
     const getValue = (field: string): string => {
-      const columnIndex = headers.findIndex(h => mapping[h] === field);
+      const columnIndex = headers.findIndex((h) => mapping[h] === field);
       return columnIndex >= 0 ? (row[columnIndex] || '').trim() : '';
     };
 
@@ -177,7 +180,9 @@ export default function BulkUserImportPage() {
     // Find school name if school ID is provided
     let schoolName = '';
     if (schoolId) {
-      const school = MOCK_SCHOOLS.find(s => s.id === schoolId || s.name.toLowerCase().includes(schoolId.toLowerCase()));
+      const school = MOCK_SCHOOLS.find(
+        (s) => s.id === schoolId || s.name.toLowerCase().includes(schoolId.toLowerCase())
+      );
       schoolName = school?.name || schoolId;
     }
 
@@ -216,19 +221,22 @@ export default function BulkUserImportPage() {
     reader.readAsText(uploadedFile);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.name.endsWith('.csv') || droppedFile?.type === 'text/csv') {
-      handleFileUpload(droppedFile);
-    }
-  }, [handleFileUpload]);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile?.name.endsWith('.csv') || droppedFile?.type === 'text/csv') {
+        handleFileUpload(droppedFile);
+      }
+    },
+    [handleFileUpload]
+  );
 
   // Generate preview with validation
   const generatePreview = useCallback(() => {
-    const parsedRows = csvData.map(row => validateRow(row, csvHeaders, mapping));
+    const parsedRows = csvData.map((row) => validateRow(row, csvHeaders, mapping));
     setPreview(parsedRows);
     setStep('preview');
   }, [csvData, csvHeaders, mapping]);
@@ -239,30 +247,41 @@ export default function BulkUserImportPage() {
     setStep('importing');
     setImportProgress(0);
 
-    const validRows = preview.filter(row => row.isValid);
+    const validRows = preview.filter((row) => row.isValid);
     const result: ImportResult = {
       success: 0,
       failed: 0,
-      skipped: preview.filter(r => !r.isValid).length,
+      skipped: preview.filter((r) => !r.isValid).length,
       errors: preview
-        .map((row, idx) => row.isValid ? null : { row: idx + 2, message: row.errors.join('; '), email: row.email })
+        .map((row, idx) =>
+          row.isValid ? null : { row: idx + 2, message: row.errors.join('; '), email: row.email }
+        )
         .filter((e): e is NonNullable<typeof e> => e !== null),
       createdUsers: [],
     };
 
     // Simulate batch import with progress
     for (let i = 0; i < validRows.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 50)); // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 50)); // Simulate API call
 
       const row = validRows[i];
+      if (!row) continue;
 
       // Simulate occasional failures
       if (Math.random() > 0.95) {
         result.failed++;
-        result.errors.push({ row: i + 2, message: 'Failed to create user: duplicate email', email: row.email });
+        result.errors.push({
+          row: i + 2,
+          message: 'Failed to create user: duplicate email',
+          email: row.email,
+        });
       } else {
         result.success++;
-        result.createdUsers.push({ email: row.email, role: row.role, schoolName: row.schoolName || 'District' });
+        result.createdUsers.push({
+          email: row.email,
+          role: row.role,
+          schoolName: row.schoolName || 'District',
+        });
       }
 
       setImportProgress(Math.round(((i + 1) / validRows.length) * 100));
@@ -275,7 +294,8 @@ export default function BulkUserImportPage() {
 
   // Download template
   const downloadTemplate = () => {
-    const template = 'email,first_name,last_name,role,school_id,grade_level,class_id\njohn.doe@school.edu,John,Doe,TEACHER,school-1,,\njane.smith@school.edu,Jane,Smith,STUDENT,school-1,5,class-5a\n';
+    const template =
+      'email,first_name,last_name,role,school_id,grade_level,class_id\njohn.doe@school.edu,John,Doe,TEACHER,school-1,,\njane.smith@school.edu,Jane,Smith,STUDENT,school-1,5,class-5a\n';
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -289,7 +309,7 @@ export default function BulkUserImportPage() {
     if (!results) return;
 
     const report = ['Row,Email,Error'];
-    results.errors.forEach(err => {
+    results.errors.forEach((err) => {
       report.push(`${err.row},${err.email || ''},${err.message}`);
     });
 
@@ -313,18 +333,15 @@ export default function BulkUserImportPage() {
     setImportProgress(0);
   };
 
-  const validCount = preview.filter(r => r.isValid).length;
-  const invalidCount = preview.filter(r => !r.isValid).length;
+  const validCount = preview.filter((r) => r.isValid).length;
+  const invalidCount = preview.filter((r) => !r.isValid).length;
 
   return (
     <section className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link
-            href="/users"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <Link href="/users" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </Link>
           <div>
@@ -353,10 +370,20 @@ export default function BulkUserImportPage() {
 
           return (
             <div key={label} className="flex items-center">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                isCurrent ? 'bg-indigo-100 text-indigo-700' : isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-              }`}>
-                {isActive && !isCurrent ? <CheckCircle className="w-4 h-4" /> : <span className="w-4 h-4 flex items-center justify-center">{idx + 1}</span>}
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                  isCurrent
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : isActive
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {isActive && !isCurrent ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <span className="w-4 h-4 flex items-center justify-center">{idx + 1}</span>
+                )}
                 {label}
               </div>
               {idx < 3 && <ChevronRight className="w-4 h-4 text-gray-300 mx-1" />}
@@ -371,8 +398,13 @@ export default function BulkUserImportPage() {
           <h2 className="text-xl font-bold mb-6">Step 1: Upload CSV File</h2>
 
           <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => {
+              setIsDragging(false);
+            }}
             onDrop={handleDrop}
             className={`border-4 border-dashed rounded-xl p-12 text-center transition-colors ${
               isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50'
@@ -382,7 +414,12 @@ export default function BulkUserImportPage() {
               ref={fileInputRef}
               type="file"
               accept=".csv"
-              onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleFileUpload(file);
+                }
+              }}
               className="hidden"
             />
             <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -401,9 +438,11 @@ export default function BulkUserImportPage() {
           <div className="mt-8 p-6 bg-gray-50 rounded-xl">
             <h3 className="font-semibold text-gray-900 mb-4">Expected Columns</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {SYSTEM_FIELDS.filter(f => f.value).map(field => (
+              {SYSTEM_FIELDS.filter((f) => f.value).map((field) => (
                 <div key={field.value} className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${field.required ? 'bg-red-500' : 'bg-gray-300'}`} />
+                  <div
+                    className={`w-2 h-2 rounded-full ${field.required ? 'bg-red-500' : 'bg-gray-300'}`}
+                  />
                   <span className="text-sm text-gray-700">{field.label}</span>
                   {field.required && <span className="text-xs text-red-500">*</span>}
                 </div>
@@ -434,7 +473,7 @@ export default function BulkUserImportPage() {
           </div>
 
           <div className="space-y-4 mb-6">
-            {csvHeaders.map(header => (
+            {csvHeaders.map((header) => (
               <div key={header} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="w-1/3">
                   <p className="font-semibold text-gray-900">{header}</p>
@@ -445,13 +484,17 @@ export default function BulkUserImportPage() {
                 <ChevronRight className="w-5 h-5 text-gray-400" />
                 <select
                   value={mapping[header] || ''}
-                  onChange={(e) => setMapping({ ...mapping, [header]: e.target.value })}
+                  onChange={(e) => {
+                    setMapping({ ...mapping, [header]: e.target.value });
+                  }}
                   className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                     mapping[header] ? 'border-green-300 bg-green-50' : 'border-gray-300'
                   }`}
                 >
-                  {SYSTEM_FIELDS.map(field => (
-                    <option key={field.value} value={field.value}>{field.label}</option>
+                  {SYSTEM_FIELDS.map((field) => (
+                    <option key={field.value} value={field.value}>
+                      {field.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -460,14 +503,18 @@ export default function BulkUserImportPage() {
 
           <div className="flex gap-4">
             <button
-              onClick={() => setStep('upload')}
+              onClick={() => {
+                setStep('upload');
+              }}
               className="px-6 py-3 bg-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-300 transition-colors"
             >
               Back
             </button>
             <button
               onClick={generatePreview}
-              disabled={!mapping.first_name || !mapping.last_name || !mapping.email || !mapping.role}
+              disabled={
+                !mapping.first_name || !mapping.last_name || !mapping.email || !mapping.role
+              }
               className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Continue to Preview
@@ -519,15 +566,23 @@ export default function BulkUserImportPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-900">{row.email || '-'}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.firstName} {row.lastName}</td>
+                    <td className="px-4 py-3 text-gray-900">
+                      {row.firstName} {row.lastName}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        row.role === 'TEACHER' ? 'bg-blue-100 text-blue-700' :
-                        row.role === 'STUDENT' || row.role === 'LEARNER' ? 'bg-green-100 text-green-700' :
-                        row.role === 'PARENT' ? 'bg-purple-100 text-purple-700' :
-                        row.role === 'ADMIN' ? 'bg-amber-100 text-amber-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          row.role === 'TEACHER'
+                            ? 'bg-blue-100 text-blue-700'
+                            : row.role === 'STUDENT' || row.role === 'LEARNER'
+                              ? 'bg-green-100 text-green-700'
+                              : row.role === 'PARENT'
+                                ? 'bg-purple-100 text-purple-700'
+                                : row.role === 'ADMIN'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
                         {row.role}
                       </span>
                     </td>
@@ -552,7 +607,8 @@ export default function BulkUserImportPage() {
                     {invalidCount} row{invalidCount !== 1 ? 's' : ''} will be skipped
                   </p>
                   <p className="text-sm text-amber-700 mt-1">
-                    Rows with errors will not be imported. You can fix the CSV and re-upload, or proceed with valid rows only.
+                    Rows with errors will not be imported. You can fix the CSV and re-upload, or
+                    proceed with valid rows only.
                   </p>
                 </div>
               </div>
@@ -561,7 +617,9 @@ export default function BulkUserImportPage() {
 
           <div className="flex gap-4">
             <button
-              onClick={() => setStep('map')}
+              onClick={() => {
+                setStep('map');
+              }}
               className="px-6 py-3 bg-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-300 transition-colors"
             >
               Back
@@ -658,14 +716,19 @@ export default function BulkUserImportPage() {
               <h3 className="font-semibold text-gray-900 mb-3">Created Users (showing first 10)</h3>
               <div className="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto">
                 {results.createdUsers.slice(0, 10).map((user, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
+                  >
                     <div className="flex items-center gap-3">
                       <Users className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-900">{user.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">{user.schoolName}</span>
-                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">{user.role}</span>
+                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">
+                        {user.role}
+                      </span>
                     </div>
                   </div>
                 ))}

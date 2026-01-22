@@ -27,9 +27,9 @@ const GradeThemeContext = createContext<GradeThemeContextValue | null>(null);
 export interface GradeThemeProviderProps {
   children: ReactNode;
   /** Initial theme - defaults to navigator (middle school) */
-  initialTheme?: GradeBand;
+  initialTheme?: GradeBand | undefined;
   /** Initial grade number - will auto-map to theme */
-  initialGrade?: number;
+  initialGrade?: number | undefined;
 }
 
 export function GradeThemeProvider({

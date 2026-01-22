@@ -18,6 +18,11 @@ export function CompetitionCard({
   onViewDetails,
   className,
 }: CompetitionCardProps) {
+  const defaultConfig = {
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-600 dark:text-gray-300',
+    label: 'Unknown',
+  };
   const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
     upcoming: {
       bg: 'bg-blue-100 dark:bg-blue-900/30',
@@ -36,7 +41,7 @@ export function CompetitionCard({
     },
   };
 
-  const config = statusConfig[competition.status];
+  const config = statusConfig[competition.status] ?? defaultConfig;
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {

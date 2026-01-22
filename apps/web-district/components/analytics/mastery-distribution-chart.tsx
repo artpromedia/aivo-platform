@@ -2,24 +2,33 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface MasteryDistributionChartProps {
-  data: {
-    '0-25': number;
-    '26-50': number;
-    '51-75': number;
-    '76-100': number;
-  };
+interface MasteryBucket {
+  range: string;
+  minScore: number;
+  maxScore: number;
+  count: number;
+  percentage: number;
 }
 
-export function MasteryDistributionChart({ data }: MasteryDistributionChartProps) {
-  const chartData = [
-    { range: '0-25%', count: data['0-25'], fill: 'var(--color-danger)' },
-    { range: '26-50%', count: data['26-50'], fill: 'var(--color-warning)' },
-    { range: '51-75%', count: data['51-75'], fill: 'var(--color-primary)' },
-    { range: '76-100%', count: data['76-100'], fill: 'var(--color-success)' },
-  ];
+interface MasteryDistributionChartProps {
+  data: MasteryBucket[];
+}
 
-  const total = Object.values(data).reduce((sum, n) => sum + n, 0);
+const FILL_COLORS: Record<string, string> = {
+  '0-25': 'var(--color-danger)',
+  '26-50': 'var(--color-warning)',
+  '51-75': 'var(--color-primary)',
+  '76-100': 'var(--color-success)',
+};
+
+export function MasteryDistributionChart({ data }: MasteryDistributionChartProps) {
+  const chartData = data.map((bucket) => ({
+    range: bucket.range,
+    count: bucket.count,
+    fill: FILL_COLORS[bucket.range] ?? 'var(--color-primary)',
+  }));
+
+  const total = data.reduce((sum, bucket) => sum + bucket.count, 0);
 
   if (total === 0) {
     return (

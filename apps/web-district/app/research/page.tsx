@@ -1,10 +1,10 @@
 'use client';
 
-import { Card, Heading, Button, Badge } from '@aivo/ui-web';
+import { Card, Heading, Button } from '@aivo/ui-web';
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 
-import { useAuth } from '../../providers';
+import { useAuth } from '../providers';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -81,8 +81,8 @@ async function fetchProjects(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function ResearchProjectsPage() {
-  const { isAuthenticated } = useAuth();
-  
+  const { isAuthenticated: _isAuthenticated } = useAuth();
+
   const [projects, setProjects] = useState<ResearchProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +135,9 @@ export default function ResearchProjectsPage() {
         {['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CLOSED'].map((status) => (
           <button
             key={status}
-            onClick={() => toggleStatusFilter(status)}
+            onClick={() => {
+              toggleStatusFilter(status);
+            }}
             className={`rounded-full px-3 py-1 text-sm font-medium transition ${
               statusFilter.includes(status)
                 ? 'bg-primary text-white'
@@ -187,23 +189,27 @@ export default function ResearchProjectsPage() {
             <Link key={project.id} href={`/research/projects/${project.id}`}>
               <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                 <div className="flex items-start justify-between mb-3">
-                  <span className={`text-xs font-medium px-2 py-1 rounded ${STATUS_COLORS[project.status]}`}>
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded ${STATUS_COLORS[project.status]}`}
+                  >
                     {project.status.replace('_', ' ')}
                   </span>
-                  <span className="text-xs text-muted">
-                    {TYPE_LABELS[project.type]}
-                  </span>
+                  <span className="text-xs text-muted">{TYPE_LABELS[project.type]}</span>
                 </div>
-                
-                <Heading level={4} className="mb-2 line-clamp-2">
+
+                <Heading level={3} className="mb-2 line-clamp-2">
                   {project.title}
                 </Heading>
-                
+
                 <div className="text-sm text-muted space-y-1">
-                  <p><strong>PI:</strong> {project.piName}</p>
-                  <p><strong>Email:</strong> {project.piEmail}</p>
+                  <p>
+                    <strong>PI:</strong> {project.piName}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {project.piEmail}
+                  </p>
                 </div>
-                
+
                 <div className="mt-4 pt-3 border-t text-xs text-muted flex justify-between">
                   <span>Created {formatDate(project.createdAt)}</span>
                   <span>Updated {formatDate(project.updatedAt)}</span>

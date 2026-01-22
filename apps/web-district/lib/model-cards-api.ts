@@ -156,7 +156,7 @@ export function parseBestFor(intendedUseCases: string): string[] {
       continue;
     }
     if (inBestFor && (trimmed.startsWith('•') || trimmed.startsWith('-'))) {
-      bullets.push(trimmed.replace(/^[•\-]\s*/, ''));
+      bullets.push(trimmed.replace(/^[•-]\s*/, ''));
     } else if (inBestFor && trimmed && !trimmed.startsWith('•') && !trimmed.startsWith('-')) {
       break;
     }
@@ -180,7 +180,7 @@ export function parseNotAppropriateFor(limitations: string): string[] {
       continue;
     }
     if (inSection && (trimmed.startsWith('•') || trimmed.startsWith('-'))) {
-      bullets.push(trimmed.replace(/^[•\-]\s*/, ''));
+      bullets.push(trimmed.replace(/^[•-]\s*/, ''));
     } else if (inSection && trimmed.toLowerCase().includes('important:')) {
       break;
     }
@@ -193,13 +193,13 @@ export function parseNotAppropriateFor(limitations: string): string[] {
  * Extract disclaimer from limitations or safety text
  */
 export function extractDisclaimer(text: string): string | undefined {
-  const disclaimerMatch = text.match(/disclaimer:\s*(.+?)(?:\n\n|$)/is);
-  if (disclaimerMatch) {
+  const disclaimerMatch = /disclaimer:\s*(.+?)(?:\n\n|$)/is.exec(text);
+  if (disclaimerMatch?.[1]) {
     return disclaimerMatch[1].trim();
   }
 
-  const importantMatch = text.match(/important:\s*(.+?)(?:\n\n|$)/is);
-  if (importantMatch) {
+  const importantMatch = /important:\s*(.+?)(?:\n\n|$)/is.exec(text);
+  if (importantMatch?.[1]) {
     return importantMatch[1].trim();
   }
 

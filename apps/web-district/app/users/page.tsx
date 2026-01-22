@@ -8,10 +8,10 @@
 
 import * as React from 'react';
 
-import { UserTable } from './components/user-table';
-import { UserFormModal } from './components/user-form-modal';
 import { CsvImportModal } from './components/csv-import-modal';
 import { UserFilters } from './components/user-filters';
+import { UserFormModal } from './components/user-form-modal';
+import { UserTable } from './components/user-table';
 
 export interface User {
   id: string;
@@ -20,7 +20,7 @@ export interface User {
   lastName: string;
   role: 'TEACHER' | 'ADMIN' | 'LEARNER' | 'PARENT';
   status: 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'SUSPENDED';
-  schoolId?: string;
+  schoolId?: string | undefined;
   schoolName?: string;
   gradeLevel?: string;
   createdAt: string;
@@ -212,9 +212,7 @@ export default function UserManagementPage() {
 
     try {
       // In production, this would call the API
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
-      );
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)));
       setFilteredUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
       );
@@ -249,19 +247,21 @@ export default function UserManagementPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-            <p className="mt-1 text-gray-600">
-              Manage teachers, admins, and parent accounts
-            </p>
+            <p className="mt-1 text-gray-600">Manage teachers, admins, and parent accounts</p>
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => setShowCsvModal(true)}
+              onClick={() => {
+                setShowCsvModal(true);
+              }}
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Import CSV
             </button>
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                setShowCreateModal(true);
+              }}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Add User
@@ -283,7 +283,9 @@ export default function UserManagementPage() {
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
             {error}
             <button
-              onClick={() => setError(null)}
+              onClick={() => {
+                setError(null);
+              }}
               className="ml-4 text-sm underline"
             >
               Dismiss
@@ -298,7 +300,9 @@ export default function UserManagementPage() {
         <UserTable
           users={filteredUsers}
           loading={loading}
-          onEdit={(user) => setEditingUser(user)}
+          onEdit={(user) => {
+            setEditingUser(user);
+          }}
           onDelete={handleDeleteUser}
           onStatusChange={handleStatusChange}
         />
@@ -307,7 +311,9 @@ export default function UserManagementPage() {
         {showCreateModal && (
           <UserFormModal
             title="Add New User"
-            onClose={() => setShowCreateModal(false)}
+            onClose={() => {
+              setShowCreateModal(false);
+            }}
             onSubmit={handleCreateUser}
             loading={loading}
           />
@@ -318,7 +324,9 @@ export default function UserManagementPage() {
           <UserFormModal
             title="Edit User"
             user={editingUser}
-            onClose={() => setEditingUser(null)}
+            onClose={() => {
+              setEditingUser(null);
+            }}
             onSubmit={handleUpdateUser}
             loading={loading}
           />
@@ -327,7 +335,9 @@ export default function UserManagementPage() {
         {/* CSV Import Modal */}
         {showCsvModal && (
           <CsvImportModal
-            onClose={() => setShowCsvModal(false)}
+            onClose={() => {
+              setShowCsvModal(false);
+            }}
             onImport={handleCsvImport}
           />
         )}

@@ -59,9 +59,10 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
 
   const parseCsv = (text: string): ParsedRow[] => {
     const lines = text.split('\n').filter((line) => line.trim());
-    if (lines.length < 2) return [];
+    const headerLine = lines[0];
+    if (lines.length < 2 || !headerLine) return [];
 
-    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+    const headers = headerLine.split(',').map((h) => h.trim().toLowerCase());
     const emailIdx = headers.findIndex((h) => h.includes('email'));
     const firstNameIdx = headers.findIndex((h) => h.includes('first') || h === 'firstname');
     const lastNameIdx = headers.findIndex((h) => h.includes('last') || h === 'lastname');
@@ -103,8 +104,7 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
     let current = '';
     let inQuotes = false;
 
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
+    for (const char of line) {
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -160,12 +160,12 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
                   e.preventDefault();
                   setIsDragging(true);
                 }}
-                onDragLeave={() => { setIsDragging(false); }}
+                onDragLeave={() => {
+                  setIsDragging(false);
+                }}
                 onDrop={handleDrop}
                 className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 ${
-                  isDragging
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 bg-gray-50'
+                  isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
                 }`}
               >
                 {isLoading ? (
@@ -203,21 +203,15 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          email *
-                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">email *</th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
                           first_name *
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
                           last_name *
                         </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          role
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          school_id
-                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">role</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">school_id</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -262,21 +256,11 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="sticky top-0 bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">
-                        Status
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">
-                        Email
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">
-                        Name
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">
-                        Role
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">
-                        Errors
-                      </th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Status</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Email</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Name</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Role</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Errors</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -300,9 +284,7 @@ export function CsvImportModal({ onClose, onImport }: CsvImportModalProps) {
                         <td className="px-4 py-2 text-gray-600">{row.role}</td>
                         <td className="px-4 py-2">
                           {row.errors.length > 0 && (
-                            <span className="text-xs text-red-600">
-                              {row.errors.join(', ')}
-                            </span>
+                            <span className="text-xs text-red-600">{row.errors.join(', ')}</span>
                           )}
                         </td>
                       </tr>

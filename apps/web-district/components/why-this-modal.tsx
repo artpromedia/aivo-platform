@@ -11,7 +11,6 @@
  * - Graceful fallbacks
  */
 
-import { useCallback, useEffect, useState } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -28,7 +27,9 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
+import type { AuthSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 import type { Explanation, ExplanationDetails } from '@/lib/explanation-api';
 import {
@@ -36,7 +37,6 @@ import {
   getActionTypeLabel,
   formatRelativeDate,
 } from '@/lib/explanation-api';
-import type { AuthSession } from '@/lib/auth';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -47,7 +47,7 @@ interface WhyThisModalProps {
   onClose: () => void;
   entityType: string;
   entityId: string;
-  learnerId?: string;
+  learnerId?: string | undefined;
   session: AuthSession;
   title?: string;
 }
@@ -126,7 +126,9 @@ export function WhyThisButton({
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true);
+        }}
         className={buttonClasses}
         aria-label={label}
       >
@@ -136,7 +138,9 @@ export function WhyThisButton({
 
       <WhyThisModal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => {
+          setIsOpen(false);
+        }}
         entityType={entityType}
         entityId={entityId}
         learnerId={learnerId}
@@ -178,12 +182,12 @@ export function WhyThisModal({
 
       try {
         const response = await getExplanationsByEntity(entityType, entityId, session, {
-          learnerId,
+          ...(learnerId ? { learnerId } : {}),
           limit: 1,
         });
 
         if (response.explanations.length > 0) {
-          setExplanation(response.explanations[0]);
+          setExplanation(response.explanations[0] ?? null);
           setHasFallback(response.hasFallback);
         } else {
           setError('No explanation available');
@@ -207,7 +211,9 @@ export function WhyThisModal({
     };
 
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [isOpen, onClose]);
 
   // Focus trap and body scroll lock
@@ -271,7 +277,9 @@ export function WhyThisModal({
               explanation={explanation}
               hasFallback={hasFallback}
               showDetails={showDetails}
-              onToggleDetails={() => setShowDetails(!showDetails)}
+              onToggleDetails={() => {
+                setShowDetails(!showDetails);
+              }}
             />
           ) : null}
         </div>
@@ -372,7 +380,7 @@ function ExplanationContent({
       {/* Fallback note */}
       {hasFallback && (
         <div className="p-3 rounded-md bg-muted/50 text-sm text-muted-foreground">
-          <p>We're working on providing more detailed explanations for all decisions.</p>
+          <p>We&apos;re working on providing more detailed explanations for all decisions.</p>
         </div>
       )}
     </div>
@@ -445,7 +453,9 @@ export function WhyThisLink({
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true);
+        }}
         className={cn(
           'text-xs text-primary hover:text-primary/80 hover:underline transition-colors',
           className
@@ -456,7 +466,9 @@ export function WhyThisLink({
 
       <WhyThisModal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => {
+          setIsOpen(false);
+        }}
         entityType={entityType}
         entityId={entityId}
         learnerId={learnerId}
@@ -499,9 +511,7 @@ export function ExplanationCard({
     >
       <div className="flex items-center gap-2 mb-2">
         <ActionIcon actionType={explanation.actionType} className="text-primary" />
-        <span className="text-sm font-medium">
-          {getActionTypeLabel(explanation.actionType)}
-        </span>
+        <span className="text-sm font-medium">{getActionTypeLabel(explanation.actionType)}</span>
         <span className="ml-auto text-xs text-muted-foreground">
           {formatRelativeDate(explanation.createdAt)}
         </span>

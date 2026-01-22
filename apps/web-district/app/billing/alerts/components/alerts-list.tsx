@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-redundant-type-constituents, import/no-unresolved */
 'use client';
 
 import { useState } from 'react';
@@ -7,8 +6,8 @@ import type {
   SeatUsageAlert,
   SeatUsageAlertStatus,
   AlertSeverity,
-} from '../../../lib/billing-api';
-import { getGradeBandLabel } from '../../../lib/billing-api';
+} from '../../../../lib/billing-api';
+import { getGradeBandLabel } from '../../../../lib/billing-api';
 
 interface AlertsListProps {
   alerts: SeatUsageAlert[];
@@ -38,7 +37,9 @@ function AlertStatusBadge({ status }: { status: SeatUsageAlertStatus }) {
   };
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClasses[tone]}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClasses[tone]}`}
+    >
       {labels[status]}
     </span>
   );
@@ -181,9 +182,7 @@ function AlertCard({
           </div>
 
           <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-            <span>
-              Created {new Date(alert.createdAt).toLocaleDateString()}
-            </span>
+            <span>Created {new Date(alert.createdAt).toLocaleDateString()}</span>
             {alert.acknowledgedAt && (
               <span>• Acknowledged {new Date(alert.acknowledgedAt).toLocaleDateString()}</span>
             )}
@@ -196,14 +195,18 @@ function AlertCard({
         <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3">
           {alert.status === 'OPEN' && (
             <button
-              onClick={() => onAcknowledge(alert.id)}
+              onClick={() => {
+                onAcknowledge(alert.id);
+              }}
               className="rounded-md bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
             >
               Acknowledge
             </button>
           )}
           <button
-            onClick={() => onResolve(alert.id)}
+            onClick={() => {
+              onResolve(alert.id);
+            }}
             className="rounded-md bg-emerald-100 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-200"
           >
             Mark as Resolved
@@ -217,9 +220,7 @@ function AlertCard({
 export function AlertsList({ alerts, onAcknowledge, onResolve, isLoading }: AlertsListProps) {
   const [filter, setFilter] = useState<SeatUsageAlertStatus | 'ALL'>('ALL');
 
-  const filteredAlerts = alerts.filter(
-    (alert) => filter === 'ALL' || alert.status === filter
-  );
+  const filteredAlerts = alerts.filter((alert) => filter === 'ALL' || alert.status === filter);
 
   const openCount = alerts.filter((a) => a.status === 'OPEN').length;
   const acknowledgedCount = alerts.filter((a) => a.status === 'ACKNOWLEDGED').length;
@@ -244,7 +245,9 @@ export function AlertsList({ alerts, onAcknowledge, onResolve, isLoading }: Aler
       {/* Filter tabs */}
       <div className="flex gap-2 border-b border-slate-200 pb-3">
         <button
-          onClick={() => setFilter('ALL')}
+          onClick={() => {
+            setFilter('ALL');
+          }}
           className={`rounded-md px-3 py-1.5 text-sm font-medium ${
             filter === 'ALL'
               ? 'bg-slate-900 text-white'
@@ -254,7 +257,9 @@ export function AlertsList({ alerts, onAcknowledge, onResolve, isLoading }: Aler
           All ({alerts.length})
         </button>
         <button
-          onClick={() => setFilter('OPEN')}
+          onClick={() => {
+            setFilter('OPEN');
+          }}
           className={`rounded-md px-3 py-1.5 text-sm font-medium ${
             filter === 'OPEN'
               ? 'bg-amber-500 text-white'
@@ -264,7 +269,9 @@ export function AlertsList({ alerts, onAcknowledge, onResolve, isLoading }: Aler
           Open ({openCount})
         </button>
         <button
-          onClick={() => setFilter('ACKNOWLEDGED')}
+          onClick={() => {
+            setFilter('ACKNOWLEDGED');
+          }}
           className={`rounded-md px-3 py-1.5 text-sm font-medium ${
             filter === 'ACKNOWLEDGED'
               ? 'bg-blue-500 text-white'
@@ -274,7 +281,9 @@ export function AlertsList({ alerts, onAcknowledge, onResolve, isLoading }: Aler
           Acknowledged ({acknowledgedCount})
         </button>
         <button
-          onClick={() => setFilter('RESOLVED')}
+          onClick={() => {
+            setFilter('RESOLVED');
+          }}
           className={`rounded-md px-3 py-1.5 text-sm font-medium ${
             filter === 'RESOLVED'
               ? 'bg-emerald-500 text-white'

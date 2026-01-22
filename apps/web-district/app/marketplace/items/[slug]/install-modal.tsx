@@ -44,8 +44,9 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
   // Load schools if needed
   useEffect(() => {
     if (scope === 'schools' && schools.length === 0) {
-      loadSchools();
+      void loadSchools();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope]);
 
   async function loadSchools() {
@@ -57,8 +58,7 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
       const schoolList: School[] = response.schools.map((school) => ({
         id: school.schoolId,
         name: school.schoolName,
-        // Map grade band based on school name heuristics if not available
-        gradeBand: undefined,
+        gradeBand: '',
       }));
       setSchools(schoolList);
     } catch (err) {
@@ -80,14 +80,14 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
       if (scope === 'district') {
         await createInstallation(tenantId, {
           marketplaceItemId: item.id,
-          marketplaceItemVersionId: item.latestVersion?.id,
+          ...(item.latestVersion?.id ? { marketplaceItemVersionId: item.latestVersion.id } : {}),
           configJson: config,
           installReason: 'District-wide installation',
         });
       } else {
         await createSchoolInstallations(tenantId, {
           marketplaceItemId: item.id,
-          marketplaceItemVersionId: item.latestVersion?.id,
+          ...(item.latestVersion?.id ? { marketplaceItemVersionId: item.latestVersion.id } : {}),
           schoolIds: selectedSchools,
           configJson: config,
           installReason: `School-specific installation (${selectedSchools.length} schools)`,
@@ -129,7 +129,11 @@ export function InstallModal({ item, tenantId, onClose }: Props) {
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             {item.iconUrl ? (
-              <img src={item.iconUrl} alt={`${item.title} icon`} className="h-10 w-10 rounded-lg object-cover" />
+              <img
+                src={item.iconUrl}
+                alt={`${item.title} icon`}
+                className="h-10 w-10 rounded-lg object-cover"
+              />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-muted text-lg">
                 📦

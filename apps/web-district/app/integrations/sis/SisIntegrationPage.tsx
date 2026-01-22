@@ -6,7 +6,13 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 // TYPES
 // ============================================================================
 
-type SisProviderType = 'CLEVER' | 'CLASSLINK' | 'ONEROSTER_API' | 'ONEROSTER_CSV' | 'GOOGLE_WORKSPACE' | 'MICROSOFT_ENTRA';
+type SisProviderType =
+  | 'CLEVER'
+  | 'CLASSLINK'
+  | 'ONEROSTER_API'
+  | 'ONEROSTER_CSV'
+  | 'GOOGLE_WORKSPACE'
+  | 'MICROSOFT_ENTRA';
 type SyncStatus = 'PENDING' | 'IN_PROGRESS' | 'SUCCESS' | 'PARTIAL' | 'FAILURE' | 'CANCELLED';
 
 interface SisProvider {
@@ -62,7 +68,10 @@ interface SisIntegrationPageProps {
 // PROVIDER METADATA
 // ============================================================================
 
-const PROVIDER_INFO: Record<SisProviderType, { name: string; description: string; icon: string; requiresOAuth?: boolean }> = {
+const PROVIDER_INFO: Record<
+  SisProviderType,
+  { name: string; description: string; icon: string; requiresOAuth?: boolean }
+> = {
   CLEVER: {
     name: 'Clever',
     description: 'Connect to Clever for automatic rostering from your SIS',
@@ -118,7 +127,9 @@ async function fetchProviders(tenantId: string): Promise<SisProvider[]> {
   return data.providers;
 }
 
-async function _fetchProvider(providerId: string): Promise<{ provider: SisProvider; status: ProviderStatus }> {
+async function _fetchProvider(
+  providerId: string
+): Promise<{ provider: SisProvider; status: ProviderStatus }> {
   const res = await fetch(`${API_BASE}/v1/providers/${providerId}`);
   if (!res.ok) throw new Error('Failed to fetch provider');
   return res.json();
@@ -126,7 +137,12 @@ async function _fetchProvider(providerId: string): Promise<{ provider: SisProvid
 
 async function createProvider(
   tenantId: string,
-  data: { providerType: SisProviderType; name: string; config: Record<string, unknown>; syncSchedule?: string }
+  data: {
+    providerType: SisProviderType;
+    name: string;
+    config: Record<string, unknown>;
+    syncSchedule?: string;
+  }
 ): Promise<SisProvider> {
   const res = await fetch(`${API_BASE}/v1/providers`, {
     method: 'POST',
@@ -143,7 +159,12 @@ async function createProvider(
 
 async function updateProvider(
   providerId: string,
-  data: Partial<{ name: string; config: Record<string, unknown>; enabled: boolean; syncSchedule: string | null }>
+  data: Partial<{
+    name: string;
+    config: Record<string, unknown>;
+    enabled: boolean;
+    syncSchedule: string | null;
+  }>
 ): Promise<SisProvider> {
   const res = await fetch(`${API_BASE}/v1/providers/${providerId}`, {
     method: 'PATCH',
@@ -184,7 +205,9 @@ async function getOAuthStatus(providerId: string): Promise<{
 }
 
 async function disconnectOAuth(providerId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/v1/providers/${providerId}/oauth/disconnect`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE}/v1/providers/${providerId}/oauth/disconnect`, {
+    method: 'DELETE',
+  });
   if (!res.ok) throw new Error('Failed to disconnect OAuth');
 }
 
@@ -205,7 +228,10 @@ async function cancelSync(providerId: string): Promise<void> {
   await fetch(`${API_BASE}/v1/providers/${providerId}/sync/cancel`, { method: 'POST' });
 }
 
-async function fetchSyncRuns(providerId: string, limit = 10): Promise<{ runs: SyncRun[]; total: number }> {
+async function fetchSyncRuns(
+  providerId: string,
+  limit = 10
+): Promise<{ runs: SyncRun[]; total: number }> {
   const res = await fetch(`${API_BASE}/v1/providers/${providerId}/runs?limit=${limit}`);
   if (!res.ok) throw new Error('Failed to fetch sync runs');
   return res.json();
@@ -256,6 +282,7 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
     }
 
     async function loadDetails() {
+      if (!selectedProvider) return;
       try {
         const [status, runsData] = await Promise.all([
           fetchSyncStatus(selectedProvider.id),
@@ -271,11 +298,18 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
 
     // Poll for status updates
     const interval = setInterval(loadDetails, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [selectedProvider]);
 
   const handleAddProvider = useCallback(
-    async (data: { providerType: SisProviderType; name: string; config: Record<string, unknown>; syncSchedule?: string }) => {
+    async (data: {
+      providerType: SisProviderType;
+      name: string;
+      config: Record<string, unknown>;
+      syncSchedule?: string;
+    }) => {
       const provider = await createProvider(tenantId, data);
       setProviders((p) => [...p, provider]);
       setShowAddModal(false);
@@ -283,32 +317,42 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
     [tenantId]
   );
 
-  const handleUpdateProvider = useCallback(async (providerId: string, data: Partial<SisProvider>) => {
-    try {
-      const updated = await updateProvider(providerId, data);
-      setProviders((p) => p.map((provider) => (provider.id === providerId ? { ...provider, ...updated } : provider)));
-      if (selectedProvider?.id === providerId) {
-        setSelectedProvider((p) => (p ? { ...p, ...updated } : null));
+  const handleUpdateProvider = useCallback(
+    async (providerId: string, data: Partial<SisProvider>) => {
+      try {
+        const updated = await updateProvider(providerId, data);
+        setProviders((p) =>
+          p.map((provider) => (provider.id === providerId ? { ...provider, ...updated } : provider))
+        );
+        if (selectedProvider?.id === providerId) {
+          setSelectedProvider((p) => (p ? { ...p, ...updated } : null));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update provider');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update provider');
-    }
-  }, [selectedProvider]);
+    },
+    [selectedProvider]
+  );
 
-  const handleDeleteProvider = useCallback(async (providerId: string) => {
-    if (!confirm('Are you sure you want to delete this integration? All sync history will be lost.')) {
-      return;
-    }
-    try {
-      await deleteProvider(providerId);
-      setProviders((p) => p.filter((provider) => provider.id !== providerId));
-      if (selectedProvider?.id === providerId) {
-        setSelectedProvider(null);
+  const handleDeleteProvider = useCallback(
+    async (providerId: string) => {
+      if (
+        !confirm('Are you sure you want to delete this integration? All sync history will be lost.')
+      ) {
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete provider');
-    }
-  }, [selectedProvider]);
+      try {
+        await deleteProvider(providerId);
+        setProviders((p) => p.filter((provider) => provider.id !== providerId));
+        if (selectedProvider?.id === providerId) {
+          setSelectedProvider(null);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete provider');
+      }
+    },
+    [selectedProvider]
+  );
 
   const handleTriggerSync = useCallback(async () => {
     if (!selectedProvider) return;
@@ -351,7 +395,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setShowAddModal(true);
+          }}
           className="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-dark"
         >
           + Add Integration
@@ -360,7 +406,12 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
-          <button onClick={() => setError(null)} className="float-right">
+          <button
+            onClick={() => {
+              setError(null);
+            }}
+            className="float-right"
+          >
             ✕
           </button>
           {error}
@@ -382,7 +433,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
               {providers.map((provider) => (
                 <button
                   key={provider.id}
-                  onClick={() => setSelectedProvider(provider)}
+                  onClick={() => {
+                    setSelectedProvider(provider);
+                  }}
                   className={`w-full rounded-lg border p-4 text-left transition-colors ${
                     selectedProvider?.id === provider.id
                       ? 'border-primary bg-primary/5'
@@ -393,7 +446,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
                     <span className="text-2xl">{PROVIDER_INFO[provider.providerType].icon}</span>
                     <div className="flex-1">
                       <div className="font-medium">{provider.name}</div>
-                      <div className="text-sm text-gray-500">{PROVIDER_INFO[provider.providerType].name}</div>
+                      <div className="text-sm text-gray-500">
+                        {PROVIDER_INFO[provider.providerType].name}
+                      </div>
                     </div>
                     <div
                       className={`h-3 w-3 rounded-full ${
@@ -419,7 +474,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
               onDelete={() => handleDeleteProvider(selectedProvider.id)}
               onTriggerSync={handleTriggerSync}
               onCancelSync={handleCancelSync}
-              onConfigure={() => setShowConfigModal(true)}
+              onConfigure={() => {
+                setShowConfigModal(true);
+              }}
             />
           ) : (
             <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12 text-gray-500">
@@ -434,7 +491,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
         <AddProviderModal
           existingTypes={providers.map((p) => p.providerType)}
           onAdd={handleAddProvider}
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+          }}
         />
       )}
 
@@ -443,7 +502,9 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
         <ConfigureProviderModal
           provider={selectedProvider}
           onUpdate={(data) => handleUpdateProvider(selectedProvider.id, data)}
-          onClose={() => setShowConfigModal(false)}
+          onClose={() => {
+            setShowConfigModal(false);
+          }}
         />
       )}
     </div>
@@ -503,7 +564,7 @@ function ProviderDetails({
   // Load OAuth status for OAuth providers
   useEffect(() => {
     if (!isOAuthProvider) return;
-    
+
     async function loadOAuthStatus() {
       try {
         const status = await getOAuthStatus(provider.id);
@@ -532,7 +593,7 @@ function ProviderDetails({
       const { authUrl } = await initiateOAuth(provider.id);
       // Open OAuth popup
       const popup = window.open(authUrl, 'oauth', 'width=600,height=700,scrollbars=yes');
-      
+
       // Poll for completion
       oauthCheckIntervalRef.current = setInterval(async () => {
         if (popup?.closed) {
@@ -547,13 +608,18 @@ function ProviderDetails({
         }
       }, 500);
     } catch (err) {
-      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to initiate OAuth' });
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to initiate OAuth',
+      });
       setOauthLoading(false);
     }
   };
 
   const handleDisconnectOAuth = async () => {
-    if (!confirm('Are you sure you want to disconnect? You will need to re-authorize to sync again.')) {
+    if (
+      !confirm('Are you sure you want to disconnect? You will need to re-authorize to sync again.')
+    ) {
       return;
     }
     setOauthLoading(true);
@@ -561,7 +627,10 @@ function ProviderDetails({
       await disconnectOAuth(provider.id);
       setOauthStatus({ isConnected: false });
     } catch (err) {
-      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to disconnect' });
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to disconnect',
+      });
     } finally {
       setOauthLoading(false);
     }
@@ -616,7 +685,8 @@ function ProviderDetails({
           <div className="text-sm text-gray-500">Schedule</div>
           <div className="font-medium">
             {provider.syncSchedule
-              ? SCHEDULE_PRESETS.find((p) => p.value === provider.syncSchedule)?.label || provider.syncSchedule
+              ? SCHEDULE_PRESETS.find((p) => p.value === provider.syncSchedule)?.label ||
+                provider.syncSchedule
               : 'Manual only'}
           </div>
         </div>
@@ -634,11 +704,13 @@ function ProviderDetails({
 
       {/* OAuth Connection Status (for Google Workspace / Microsoft Entra) */}
       {isOAuthProvider && (
-        <div className={`rounded-lg border p-4 ${
-          oauthStatus?.isConnected 
-            ? 'border-green-200 bg-green-50' 
-            : 'border-yellow-200 bg-yellow-50'
-        }`}>
+        <div
+          className={`rounded-lg border p-4 ${
+            oauthStatus?.isConnected
+              ? 'border-green-200 bg-green-50'
+              : 'border-yellow-200 bg-yellow-50'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {oauthStatus?.isConnected ? (
@@ -647,7 +719,10 @@ function ProviderDetails({
                   <div>
                     <div className="font-medium text-green-900">Connected</div>
                     <div className="text-sm text-green-700">
-                      Authorized on {oauthStatus.connectedAt ? new Date(oauthStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                      Authorized on{' '}
+                      {oauthStatus.connectedAt
+                        ? new Date(oauthStatus.connectedAt).toLocaleDateString()
+                        : 'Unknown'}
                       {oauthStatus.expiresAt && (
                         <span className="ml-2">
                           • Expires {new Date(oauthStatus.expiresAt).toLocaleDateString()}
@@ -662,10 +737,9 @@ function ProviderDetails({
                   <div>
                     <div className="font-medium text-yellow-900">Not Connected</div>
                     <div className="text-sm text-yellow-700">
-                      {provider.providerType === 'GOOGLE_WORKSPACE' 
+                      {provider.providerType === 'GOOGLE_WORKSPACE'
                         ? 'Click "Connect Google" to authorize access to your Google Workspace domain'
-                        : 'Click "Connect Microsoft" to authorize access to your Microsoft 365 tenant'
-                      }
+                        : 'Click "Connect Microsoft" to authorize access to your Microsoft 365 tenant'}
                     </div>
                   </div>
                 </>
@@ -690,11 +764,11 @@ function ProviderDetails({
                       : 'bg-[#0078d4] hover:bg-[#106ebe]'
                   }`}
                 >
-                  {oauthLoading ? '⏳ Connecting...' : (
-                    provider.providerType === 'GOOGLE_WORKSPACE' 
-                      ? '🔐 Connect Google' 
-                      : '🔐 Connect Microsoft'
-                  )}
+                  {oauthLoading
+                    ? '⏳ Connecting...'
+                    : provider.providerType === 'GOOGLE_WORKSPACE'
+                      ? '🔐 Connect Google'
+                      : '🔐 Connect Microsoft'}
                 </button>
               )}
             </div>
@@ -714,9 +788,13 @@ function ProviderDetails({
       <div className="flex flex-wrap gap-3">
         <button
           onClick={onTriggerSync}
-          disabled={status?.isRunning || !provider.enabled || (isOAuthProvider && !oauthStatus?.isConnected)}
+          disabled={
+            status?.isRunning || !provider.enabled || (isOAuthProvider && !oauthStatus?.isConnected)
+          }
           className="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-dark disabled:opacity-50"
-          title={isOAuthProvider && !oauthStatus?.isConnected ? 'Connect OAuth first to sync' : undefined}
+          title={
+            isOAuthProvider && !oauthStatus?.isConnected ? 'Connect OAuth first to sync' : undefined
+          }
         >
           {status?.isRunning ? '⏳ Syncing...' : '▶️ Run Sync Now'}
         </button>
@@ -739,7 +817,9 @@ function ProviderDetails({
           <input
             type="checkbox"
             checked={provider.enabled}
-            onChange={(e) => onUpdate(provider.id, { enabled: e.target.checked })}
+            onChange={(e) => {
+              onUpdate(provider.id, { enabled: e.target.checked });
+            }}
           />
           <span>Enabled</span>
         </label>
@@ -789,7 +869,8 @@ function ProviderDetails({
                     <td className="p-2">
                       {run.stats ? (
                         <span className="text-xs">
-                          {run.stats.users.created} new users, {run.stats.classes.created} new classes
+                          {run.stats.users.created} new users, {run.stats.classes.created} new
+                          classes
                         </span>
                       ) : run.errorMessage ? (
                         <span className="text-xs text-red-600" title={run.errorMessage}>
@@ -849,7 +930,7 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
         providerType: selectedType,
         name,
         config,
-        syncSchedule: schedule || undefined,
+        ...(schedule ? { syncSchedule: schedule } : {}),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add integration');
@@ -858,25 +939,32 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 id="add-sis-modal-title" className="text-xl font-bold">Add SIS Integration</h2>
+          <h2 id="add-sis-modal-title" className="text-xl font-bold">
+            Add SIS Integration
+          </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</div>
-        )}
+        {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
         {step === 'select' ? (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">Select your Student Information System provider:</p>
+            <p className="text-sm text-gray-600">
+              Select your Student Information System provider:
+            </p>
             <div className="grid grid-cols-2 gap-3">
               {availableTypes.map((type) => (
                 <button
@@ -890,7 +978,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                 >
                   <div className="text-2xl">{PROVIDER_INFO[type].icon}</div>
                   <div className="mt-2 font-medium">{PROVIDER_INFO[type].name}</div>
-                  <div className="mt-1 text-xs text-gray-500">{PROVIDER_INFO[type].description}</div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    {PROVIDER_INFO[type].description}
+                  </div>
                 </button>
               ))}
             </div>
@@ -902,7 +992,12 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
           </div>
         ) : (
           <div className="space-y-4">
-            <button onClick={() => setStep('select')} className="text-sm text-primary hover:underline">
+            <button
+              onClick={() => {
+                setStep('select');
+              }}
+              className="text-sm text-primary hover:underline"
+            >
               ← Back to provider selection
             </button>
 
@@ -911,7 +1006,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2"
                 placeholder="My SIS Integration"
               />
@@ -925,7 +1022,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.clientId || ''}
-                    onChange={(e) => setConfig({ ...config, clientId: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, clientId: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -934,7 +1033,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="password"
                     value={config.clientSecret || ''}
-                    onChange={(e) => setConfig({ ...config, clientSecret: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, clientSecret: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -943,7 +1044,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.districtId || ''}
-                    onChange={(e) => setConfig({ ...config, districtId: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, districtId: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -957,7 +1060,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.clientId || ''}
-                    onChange={(e) => setConfig({ ...config, clientId: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, clientId: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -966,7 +1071,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="password"
                     value={config.clientSecret || ''}
-                    onChange={(e) => setConfig({ ...config, clientSecret: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, clientSecret: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -975,7 +1082,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.tenantId || ''}
-                    onChange={(e) => setConfig({ ...config, tenantId: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, tenantId: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -989,7 +1098,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="url"
                     value={config.baseUrl || ''}
-                    onChange={(e) => setConfig({ ...config, baseUrl: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, baseUrl: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="https://oneroster.example.com/ims/oneroster/v1p1"
                   />
@@ -999,7 +1110,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.clientId || ''}
-                    onChange={(e) => setConfig({ ...config, clientId: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, clientId: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -1008,7 +1121,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="password"
                     value={config.clientSecret || ''}
-                    onChange={(e) => setConfig({ ...config, clientSecret: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, clientSecret: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -1022,7 +1137,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config['sftp.host'] || ''}
-                    onChange={(e) => setConfig({ ...config, 'sftp.host': e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, 'sftp.host': e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -1031,7 +1148,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config['sftp.username'] || ''}
-                    onChange={(e) => setConfig({ ...config, 'sftp.username': e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, 'sftp.username': e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -1040,7 +1159,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="password"
                     value={config['sftp.password'] || ''}
-                    onChange={(e) => setConfig({ ...config, 'sftp.password': e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, 'sftp.password': e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -1049,7 +1170,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.remotePath || ''}
-                    onChange={(e) => setConfig({ ...config, remotePath: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, remotePath: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="/path/to/csv/files"
                   />
@@ -1065,8 +1188,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     <div>
                       <h4 className="font-medium text-blue-900">Google Workspace for Education</h4>
                       <p className="mt-1 text-sm text-blue-700">
-                        After creating this integration, you&apos;ll need to authorize access to your 
-                        Google Workspace domain. This requires a Google Workspace admin account.
+                        After creating this integration, you&apos;ll need to authorize access to
+                        your Google Workspace domain. This requires a Google Workspace admin
+                        account.
                       </p>
                     </div>
                   </div>
@@ -1076,7 +1200,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                   <input
                     type="text"
                     value={config.domain || ''}
-                    onChange={(e) => setConfig({ ...config, domain: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, domain: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="yourschool.edu"
                   />
@@ -1089,7 +1215,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     type="checkbox"
                     id="syncClassroom"
                     checked={config.syncClassroom === 'true'}
-                    onChange={(e) => setConfig({ ...config, syncClassroom: e.target.checked ? 'true' : 'false' })}
+                    onChange={(e) => {
+                      setConfig({ ...config, syncClassroom: e.target.checked ? 'true' : 'false' });
+                    }}
                     className="h-4 w-4 rounded border-gray-300"
                   />
                   <label htmlFor="syncClassroom" className="text-sm">
@@ -1101,7 +1229,12 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     type="checkbox"
                     id="syncOrganizationalUnits"
                     checked={config.syncOrganizationalUnits === 'true'}
-                    onChange={(e) => setConfig({ ...config, syncOrganizationalUnits: e.target.checked ? 'true' : 'false' })}
+                    onChange={(e) => {
+                      setConfig({
+                        ...config,
+                        syncOrganizationalUnits: e.target.checked ? 'true' : 'false',
+                      });
+                    }}
                     className="h-4 w-4 rounded border-gray-300"
                   />
                   <label htmlFor="syncOrganizationalUnits" className="text-sm">
@@ -1119,18 +1252,22 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     <div>
                       <h4 className="font-medium text-blue-900">Microsoft Entra ID (Azure AD)</h4>
                       <p className="mt-1 text-sm text-blue-700">
-                        After creating this integration, you&apos;ll need to authorize access to your 
-                        Microsoft 365 tenant. This requires a Microsoft 365 admin account.
+                        After creating this integration, you&apos;ll need to authorize access to
+                        your Microsoft 365 tenant. This requires a Microsoft 365 admin account.
                       </p>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Microsoft 365 Tenant Domain</label>
+                  <label className="mb-1 block text-sm font-medium">
+                    Microsoft 365 Tenant Domain
+                  </label>
                   <input
                     type="text"
                     value={config.domain || ''}
-                    onChange={(e) => setConfig({ ...config, domain: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, domain: e.target.value });
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="yourschool.onmicrosoft.com"
                   />
@@ -1143,7 +1280,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     type="checkbox"
                     id="syncTeams"
                     checked={config.syncTeams === 'true'}
-                    onChange={(e) => setConfig({ ...config, syncTeams: e.target.checked ? 'true' : 'false' })}
+                    onChange={(e) => {
+                      setConfig({ ...config, syncTeams: e.target.checked ? 'true' : 'false' });
+                    }}
                     className="h-4 w-4 rounded border-gray-300"
                   />
                   <label htmlFor="syncTeams" className="text-sm">
@@ -1155,7 +1294,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
                     type="checkbox"
                     id="syncSds"
                     checked={config.syncSds === 'true'}
-                    onChange={(e) => setConfig({ ...config, syncSds: e.target.checked ? 'true' : 'false' })}
+                    onChange={(e) => {
+                      setConfig({ ...config, syncSds: e.target.checked ? 'true' : 'false' });
+                    }}
                     className="h-4 w-4 rounded border-gray-300"
                   />
                   <label htmlFor="syncSds" className="text-sm">
@@ -1169,7 +1310,9 @@ function AddProviderModal({ existingTypes, onAdd, onClose }: AddProviderModalPro
               <label className="mb-1 block text-sm font-medium">Sync Schedule</label>
               <select
                 value={schedule}
-                onChange={(e) => setSchedule(e.target.value)}
+                onChange={(e) => {
+                  setSchedule(e.target.value);
+                }}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2"
               >
                 <option value="">Manual only</option>
@@ -1229,13 +1372,20 @@ function ConfigureProviderModal({ provider, onUpdate, onClose }: ConfigureProvid
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Configure {PROVIDER_INFO[provider.providerType].name}</h2>
+          <h2 className="text-xl font-bold">
+            Configure {PROVIDER_INFO[provider.providerType].name}
+          </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
@@ -1247,7 +1397,9 @@ function ConfigureProviderModal({ provider, onUpdate, onClose }: ConfigureProvid
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2"
             />
           </div>
@@ -1256,7 +1408,9 @@ function ConfigureProviderModal({ provider, onUpdate, onClose }: ConfigureProvid
             <label className="mb-1 block text-sm font-medium">Sync Schedule</label>
             <select
               value={schedule}
-              onChange={(e) => setSchedule(e.target.value)}
+              onChange={(e) => {
+                setSchedule(e.target.value);
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2"
             >
               <option value="">Manual only</option>
@@ -1317,7 +1471,9 @@ function SyncStatusBadge({ status }: { status: SyncStatus }) {
   };
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${styles[status]}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${styles[status]}`}
+    >
       {icons[status]} {status.replace('_', ' ')}
     </span>
   );

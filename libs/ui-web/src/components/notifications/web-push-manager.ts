@@ -53,8 +53,8 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCodePoint(bytes[i]);
+  for (const byte of bytes) {
+    binary += String.fromCodePoint(byte);
   }
   return globalThis.btoa(binary);
 }
@@ -83,15 +83,21 @@ export class WebPushManager {
   constructor(options: WebPushManagerOptions) {
     this.vapidPublicKey = urlBase64ToUint8Array(options.vapidPublicKey);
     this.serviceWorkerPath = options.serviceWorkerPath || '/push-service-worker.js';
-    this.onPermissionChange = options.onPermissionChange;
-    this.onSubscriptionChange = options.onSubscriptionChange;
+    if (options.onPermissionChange) {
+      this.onPermissionChange = options.onPermissionChange;
+    }
+    if (options.onSubscriptionChange) {
+      this.onSubscriptionChange = options.onSubscriptionChange;
+    }
   }
 
   /**
    * Check if push notifications are supported
    */
   isSupported(): boolean {
-    return 'serviceWorker' in navigator && 'PushManager' in globalThis && 'Notification' in globalThis;
+    return (
+      'serviceWorker' in navigator && 'PushManager' in globalThis && 'Notification' in globalThis
+    );
   }
 
   /**
@@ -284,7 +290,7 @@ export class WebPushManager {
       return;
     }
 
-    const notifications = await this.registration.getNotifications({ tag });
+    const notifications = await this.registration.getNotifications(tag ? { tag } : undefined);
     notifications.forEach((notification) => {
       notification.close();
     });
@@ -347,7 +353,7 @@ export function useWebPush({
   useEffect(() => {
     const manager = new WebPushManager({
       vapidPublicKey,
-      serviceWorkerPath,
+      ...(serviceWorkerPath ? { serviceWorkerPath } : {}),
       onPermissionChange: setPermission,
       onSubscriptionChange: (sub) => {
         setIsSubscribed(!!sub);

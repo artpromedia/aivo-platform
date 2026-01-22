@@ -1,6 +1,8 @@
-import { getAuthSession } from '../../../lib/auth';
-import { redirect } from 'next/navigation';
+import { Role } from '@aivo/ts-rbac';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+
+import { getAuthSession } from '../../../lib/auth';
 
 import { SsoConfigPage } from './SsoConfigPage';
 
@@ -16,7 +18,7 @@ export default async function SsoSettingsPage() {
   }
 
   // Check for district admin role
-  if (!auth.roles.includes('DISTRICT_ADMIN') && !auth.roles.includes('PLATFORM_ADMIN')) {
+  if (!auth.roles.includes(Role.DISTRICT_ADMIN) && !auth.roles.includes(Role.PLATFORM_ADMIN)) {
     redirect('/dashboard');
   }
 
@@ -29,8 +31,18 @@ export default async function SsoSettingsPage() {
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label="Back to settings"
         >
-          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </Link>
         <div>

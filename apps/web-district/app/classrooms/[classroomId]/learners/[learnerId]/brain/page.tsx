@@ -2,7 +2,6 @@ import type { Role } from '@aivo/ts-rbac';
 
 import { NotPermitted } from '../../../../../../components/not-permitted';
 import { getAuthSession } from '../../../../../../lib/auth';
-import { gradeToBand } from '../../../../../../lib/grade-band';
 import {
   ALLOWED_VIEWER_ROLES,
   fetchVirtualBrainSummary,
@@ -35,7 +34,6 @@ export default async function VirtualBrainPage({
       classroomId={params.classroomId}
       learnerId={params.learnerId}
       brain={brain}
-      gradeBand={brain.gradeBand ?? gradeToBand(null)}
     />
   );
 }

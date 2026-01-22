@@ -1,18 +1,17 @@
 'use client';
 
-import {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  type ReactNode,
-} from 'react';
+import type { MathRecognitionResult } from '@aivo/ts-types';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import { cn } from '../../utils/cn';
 import { Button } from '../button';
-import { ScratchPadCanvas, type ScratchPadCanvasRef, type ScratchPadCanvasProps } from './ScratchPadCanvas';
-import type { MathRecognitionResult } from '@aivo/ts-types';
+
+import {
+  ScratchPadCanvas,
+  type ScratchPadCanvasRef,
+  type ScratchPadCanvasProps,
+} from './ScratchPadCanvas';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -306,19 +305,13 @@ export function ScratchPadDrawer({
   return createPortal(
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} aria-hidden="true" />
 
       {/* Drawer */}
       <div
         className={cn(
           'absolute bg-surface shadow-2xl transition-transform duration-300',
-          isBottom
-            ? 'inset-x-0 bottom-0 rounded-t-xl'
-            : 'right-0 top-0 h-full rounded-l-xl'
+          isBottom ? 'inset-x-0 bottom-0 rounded-t-xl' : 'right-0 top-0 h-full rounded-l-xl'
         )}
         role="dialog"
         aria-modal="true"
@@ -484,12 +477,7 @@ export function useScratchPadPopup(initialOpen = false): UseScratchPadPopupRetur
 function CloseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M6 18L18 6M6 6l12 12"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }

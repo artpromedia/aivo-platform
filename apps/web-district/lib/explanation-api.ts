@@ -19,7 +19,7 @@ export interface ExplanationReason {
 export interface ExplanationInput {
   label: string;
   value: string;
-  unit?: string;
+  unit?: string | undefined;
 }
 
 export interface ExplanationDetails {
@@ -62,24 +62,22 @@ const FALLBACK_MESSAGES: Record<string, string> = {
   SKILL:
     "This skill was identified through analysis of the learner's performance data and curriculum alignment.",
   MODULE:
-    "This module was recommended based on prerequisite completion and learning path progression.",
+    'This module was recommended based on prerequisite completion and learning path progression.',
   RECOMMENDATION:
     "This recommendation was generated using learning analytics. We're enhancing our explanation system.",
   DEFAULT:
     "This decision was made based on learning data and educational goals aligned to the learner's progress.",
 };
 
-function createFallbackExplanation(
-  entityType: string,
-  entityId: string
-): Explanation {
+function createFallbackExplanation(entityType: string, entityId: string): Explanation {
   return {
     id: 'fallback',
     sourceType: 'SYSTEM',
     actionType: 'UNKNOWN',
     relatedEntityType: entityType,
     relatedEntityId: entityId,
-    summary: FALLBACK_MESSAGES[entityType] ?? FALLBACK_MESSAGES.DEFAULT,
+    summary:
+      FALLBACK_MESSAGES[entityType] ?? FALLBACK_MESSAGES.DEFAULT ?? 'No explanation available.',
     details: {
       reasons: [],
       inputs: [],
@@ -122,15 +120,12 @@ export async function getExplanationsByEntity(
   }
 
   try {
-    const response = await fetch(
-      `${ANALYTICS_API_URL}/explanations/by-entity?${params}`,
-      {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await fetch(`${ANALYTICS_API_URL}/explanations/by-entity?${params}`, {
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       // Return fallback on error

@@ -67,7 +67,6 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || process.env.NOD
 const MOCK_REQUESTED = process.env.USE_BILLING_MOCK === 'true';
 const USE_MOCK = IS_DEVELOPMENT && MOCK_REQUESTED;
 
-
 // ══════════════════════════════════════════════════════════════════════════════
 // API FUNCTIONS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1046,6 +1045,34 @@ export async function acknowledgeAlert(
 
   if (!res.ok) {
     throw new Error(`Failed to acknowledge alert: ${res.status}`);
+  }
+
+  return res.json() as Promise<SeatUsageAlert>;
+}
+
+/**
+ * Resolve a seat usage alert with a resolution note.
+ */
+export async function resolveAlert(
+  alertId: string,
+  resolution?: string,
+  accessToken?: string
+): Promise<SeatUsageAlert> {
+  if (USE_MOCK) {
+    return mockAcknowledgeAlert(alertId); // Reuse mock for now
+  }
+
+  const res = await fetch(`${billingSvcUrl}/billing/alerts/${alertId}/resolve`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify({ resolution }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to resolve alert: ${res.status}`);
   }
 
   return res.json() as Promise<SeatUsageAlert>;

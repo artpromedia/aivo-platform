@@ -7,7 +7,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   Building2,
   Users,
@@ -20,6 +19,7 @@ import {
   Activity,
   ChevronRight,
 } from 'lucide-react';
+import { useState } from 'react';
 
 export interface DistrictData {
   id: string;
@@ -168,8 +168,8 @@ export function DistrictOverview({
     },
   ];
 
-  const getColorClasses = (color: string) => {
-    const colors: Record<string, { bg: string; text: string; border: string }> = {
+  const getColorClasses = (color: string): { bg: string; text: string; border: string } => {
+    const colorMap: Record<string, { bg: string; text: string; border: string }> = {
       blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
       green: { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-200' },
       purple: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
@@ -177,7 +177,8 @@ export function DistrictOverview({
       emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
       indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' },
     };
-    return colors[color] || colors.blue;
+    const defaultColor = { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
+    return colorMap[color] ?? defaultColor;
   };
 
   return (
@@ -188,7 +189,8 @@ export function DistrictOverview({
           <div>
             <h2 className="text-2xl font-bold">{district.name}</h2>
             <p className="text-indigo-100 mt-1">
-              {district.totalSchools} schools • {district.totalStudents.toLocaleString()} students • {district.totalTeachers} educators
+              {district.totalSchools} schools • {district.totalStudents.toLocaleString()} students •{' '}
+              {district.totalTeachers} educators
             </p>
           </div>
           <div className="flex gap-3">
@@ -241,7 +243,9 @@ export function DistrictOverview({
           return (
             <button
               key={metric.id}
-              onClick={() => setSelectedMetric(metric.id === selectedMetric ? null : metric.id)}
+              onClick={() => {
+                setSelectedMetric(metric.id === selectedMetric ? null : metric.id);
+              }}
               className={`p-5 rounded-xl border-2 text-left transition-all hover:shadow-md ${
                 selectedMetric === metric.id
                   ? `${colors.bg} ${colors.border}`
@@ -253,9 +257,11 @@ export function DistrictOverview({
                   <Icon className={`w-5 h-5 ${colors.text}`} />
                 </div>
                 {metric.trend !== null && (
-                  <div className={`flex items-center gap-1 text-sm font-medium ${
-                    metric.trend >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <div
+                    className={`flex items-center gap-1 text-sm font-medium ${
+                      metric.trend >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
                     {metric.trend >= 0 ? (
                       <TrendingUp className="w-4 h-4" />
                     ) : (
@@ -289,14 +295,20 @@ export function DistrictOverview({
           <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
-                licensePercent > 90 ? 'bg-red-500' : licensePercent > 75 ? 'bg-amber-500' : 'bg-green-500'
+                licensePercent > 90
+                  ? 'bg-red-500'
+                  : licensePercent > 75
+                    ? 'bg-amber-500'
+                    : 'bg-green-500'
               }`}
               style={{ width: `${licensePercent}%` }}
             />
           </div>
           <div className="flex justify-between text-xs text-gray-500 mt-2">
             <span>{Math.round(licensePercent)}% utilized</span>
-            <span>{(district.licensesTotal - district.licensesUsed).toLocaleString()} available</span>
+            <span>
+              {(district.licensesTotal - district.licensesUsed).toLocaleString()} available
+            </span>
           </div>
         </div>
 
@@ -314,7 +326,11 @@ export function DistrictOverview({
           <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
-                budgetPercent > 90 ? 'bg-red-500' : budgetPercent > 75 ? 'bg-amber-500' : 'bg-blue-500'
+                budgetPercent > 90
+                  ? 'bg-red-500'
+                  : budgetPercent > 75
+                    ? 'bg-amber-500'
+                    : 'bg-blue-500'
               }`}
               style={{ width: `${budgetPercent}%` }}
             />

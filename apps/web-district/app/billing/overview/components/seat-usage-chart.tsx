@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands, import/no-unresolved */
 'use client';
 
 import { useState, useEffect } from 'react';
 
-import type { DetailedSeatUsage } from '../../../lib/billing-api';
-import { fetchDetailedSeatUsage, getGradeBandLabel } from '../../../lib/billing-api';
+import type { SeatUsageBySku } from '../../../../lib/billing-api';
+import { fetchDetailedSeatUsage, getGradeBandLabel } from '../../../../lib/billing-api';
 
 interface SeatUsageChartProps {
   className?: string;
@@ -103,7 +102,7 @@ function UsageLegend() {
 }
 
 export function SeatUsageChart({ className = '' }: Readonly<SeatUsageChartProps>) {
-  const [usageData, setUsageData] = useState<DetailedSeatUsage[]>([]);
+  const [usageData, setUsageData] = useState<SeatUsageBySku[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,8 +113,8 @@ export function SeatUsageChart({ className = '' }: Readonly<SeatUsageChartProps>
   const loadUsageData = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchDetailedSeatUsage();
-      setUsageData(data);
+      const data = await fetchDetailedSeatUsage('current-tenant');
+      setUsageData(data.usage);
     } catch (err) {
       setError('Failed to load usage data');
       console.error('Error loading seat usage:', err);
@@ -127,8 +126,8 @@ export function SeatUsageChart({ className = '' }: Readonly<SeatUsageChartProps>
   // Calculate totals
   const totals = usageData.reduce(
     (acc, item) => ({
-      committed: acc.committed + item.seatsCommitted,
-      allocated: acc.allocated + item.seatsAllocated,
+      committed: acc.committed + item.committedSeats,
+      allocated: acc.allocated + item.allocatedSeats,
       overage: acc.overage + item.overageUsed,
     }),
     { committed: 0, allocated: 0, overage: 0 }
@@ -204,8 +203,8 @@ export function SeatUsageChart({ className = '' }: Readonly<SeatUsageChartProps>
             <UtilizationBar
               key={`${item.sku}-${item.gradeBand}`}
               label={getGradeBandLabel(item.gradeBand)}
-              committed={item.seatsCommitted}
-              allocated={item.seatsAllocated}
+              committed={item.committedSeats}
+              allocated={item.allocatedSeats}
               overageUsed={item.overageUsed}
             />
           ))}

@@ -136,7 +136,7 @@ export function LessonGenerator({
     duration: defaults?.duration ?? 45,
     difficulty: defaults?.difficulty ?? 3,
     includeAssessment: defaults?.includeAssessment ?? true,
-    learningStyle: defaults?.learningStyle,
+    ...(defaults?.learningStyle ? { learningStyle: defaults.learningStyle } : {}),
   });
 
   // UI state
@@ -332,7 +332,6 @@ export function LessonGenerator({
           <FormField label="Learning Objectives" hint="What should students learn?">
             <div className="space-y-2">
               {formData.objectives.map((objective, index) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <div key={index} className="flex gap-2">
                   <input
                     type="text"
@@ -640,8 +639,9 @@ function LessonPreview({
 }
 
 function LessonBlockCard({ block }: Readonly<{ block: LessonBlock }>) {
+  const defaultConfig = { label: 'Content', color: 'bg-blue-100 text-blue-700', icon: '📝' };
   const typeConfig: Record<string, { label: string; color: string; icon: string }> = {
-    text: { label: 'Content', color: 'bg-blue-100 text-blue-700', icon: '📝' },
+    text: defaultConfig,
     activity: { label: 'Activity', color: 'bg-green-100 text-green-700', icon: '🎯' },
     media: { label: 'Media', color: 'bg-purple-100 text-purple-700', icon: '🎬' },
     discussion: { label: 'Discussion', color: 'bg-yellow-100 text-yellow-700', icon: '💬' },
@@ -649,7 +649,7 @@ function LessonBlockCard({ block }: Readonly<{ block: LessonBlock }>) {
     practice: { label: 'Practice', color: 'bg-pink-100 text-pink-700', icon: '✏️' },
   };
 
-  const config = typeConfig[block.type] ?? typeConfig.text;
+  const config = typeConfig[block.type] ?? defaultConfig;
 
   return (
     <div className="rounded-lg border border-border p-4">

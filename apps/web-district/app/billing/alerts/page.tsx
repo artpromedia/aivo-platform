@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 'use client';
 
 import Link from 'next/link';
@@ -21,8 +20,8 @@ export default function BillingAlertsPage() {
   const loadAlerts = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchSeatUsageAlerts();
-      setAlerts(data);
+      const data = await fetchSeatUsageAlerts('current-tenant');
+      setAlerts(data.alerts);
     } catch {
       setError('Failed to load alerts');
     } finally {

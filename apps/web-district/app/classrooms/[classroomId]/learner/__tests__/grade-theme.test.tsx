@@ -8,7 +8,7 @@ import { gradeToBand } from '../../../../../lib/grade-band.js';
 function TestComponent({ grade }: { grade: number }) {
   const band = gradeToBand(grade);
   return (
-    <GradeThemeProvider initialGrade={band}>
+    <GradeThemeProvider initialGrade={grade}>
       <div data-testid="band">{band}</div>
     </GradeThemeProvider>
   );

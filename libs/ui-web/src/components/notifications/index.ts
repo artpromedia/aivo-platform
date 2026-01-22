@@ -7,11 +7,19 @@
  */
 
 // Core notification components
-export { NotificationCenter, type NotificationCenterProps, type Notification } from './NotificationCenter';
+export {
+  NotificationCenter,
+  type NotificationCenterProps,
+  type Notification,
+} from './NotificationCenter';
 export { NotificationItem, type NotificationItemProps } from './NotificationItem';
 export * from './NotificationFilters';
 export * from './NotificationBadge';
-export * from './NotificationPreferences';
+export {
+  NotificationPreferences,
+  type NotificationPreferencesProps,
+  type NotificationPreferencesData,
+} from './NotificationPreferences';
 
 // Web Push (RE-AUDIT-005)
 export {
@@ -26,9 +34,10 @@ export {
 export * from './WebPushProvider';
 
 // API Client - exclude Notification type to avoid duplicate export
+// Note: NotificationPreferences type renamed to avoid conflict with component
 export {
   NotificationApiClient,
-  type NotificationPreferences,
+  type NotificationPreferences as ApiNotificationPreferences,
   type PaginatedResponse,
   type NotificationFilters as ApiNotificationFilters,
 } from './api-client';

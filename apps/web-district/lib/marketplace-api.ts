@@ -89,7 +89,7 @@ export interface MarketplaceInstallation {
 }
 
 export interface CatalogSearchParams {
-  query?: string;
+  query?: string | undefined;
   itemType?: 'CONTENT_PACK' | 'EMBEDDED_TOOL';
   subjects?: string[];
   gradeBands?: string[];
@@ -136,9 +136,13 @@ export interface UpdateInstallationRequest {
 const API_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:4070/api/v1';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const customHeaders = options.headers
-    ? Object.fromEntries(new Headers(options.headers).entries())
-    : {};
+  const customHeaders: Record<string, string> = {};
+  if (options.headers) {
+    const headers = new Headers(options.headers);
+    headers.forEach((value, key) => {
+      customHeaders[key] = value;
+    });
+  }
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
