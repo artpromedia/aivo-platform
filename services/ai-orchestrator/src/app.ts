@@ -2,14 +2,15 @@ import { randomUUID } from 'node:crypto';
 
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import Fastify, { type FastifyRequest, type FastifyPluginAsync } from 'fastify';
+import Fastify, { type FastifyRequest } from 'fastify';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
 
 import { config } from './config.js';
 
 // Type assertion helper for Fastify plugins with type provider mismatches
-const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
+
+const registerPlugin = (app: any, plugin: unknown, opts?: unknown) => app.register(plugin, opts);
 import { IncidentService } from './incidents/index.js';
 import { createPolicyEnforcer, type PolicyEnforcer } from './policy/index.js';
 import { LLMOrchestrator } from './providers/llm-orchestrator.js';
@@ -62,16 +63,16 @@ export function createApp(options: AppOptions = {}) {
   const redis = new Redis(config.redisUrl || 'redis://localhost:6379');
 
   // Security middleware
-  app.register(asPlugin(helmet), {
+  registerPlugin(app, helmet, {
     contentSecurityPolicy: false,
   });
 
   // Rate limiting - protect expensive AI calls
-  app.register(asPlugin(rateLimit), {
+  registerPlugin(app, rateLimit, {
     global: true,
     max: 30, // 30 AI requests per minute per user (expensive resource)
     timeWindow: '1 minute',
-    keyGenerator: (request) => {
+    keyGenerator: (request: FastifyRequest) => {
       // Use tenant + user for rate limiting to prevent abuse
       const tenantId = (request as { tenantId?: string }).tenantId;
       const userId = (request as { userId?: string }).userId;
@@ -81,13 +82,13 @@ export function createApp(options: AppOptions = {}) {
         (request.headers['x-forwarded-for'] as string)?.split(',')[0] || request.ip || 'unknown'
       );
     },
-    errorResponseBuilder: (request, context) => ({
+    errorResponseBuilder: (_request: FastifyRequest, context: { after: string }) => ({
       error: 'Too Many Requests',
       message: 'AI orchestrator rate limit exceeded. Please wait before making more AI requests.',
       retryAfter: context.after,
     }),
     // Skip rate limiting for health checks and internal endpoints
-    allowList: (request) =>
+    allowList: (request: FastifyRequest) =>
       request.url === '/health' || request.url === '/ready' || request.url.startsWith('/internal/'),
   });
 

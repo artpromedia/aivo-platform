@@ -11,7 +11,7 @@
  * - ai.session.completed - AI session completed
  */
 
-import { createClient, type RedisClientType } from 'redis';
+import Redis from 'ioredis';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -62,7 +62,7 @@ const EVENT_BUS_ENABLED = process.env.AI_EVENT_BUS_ENABLED !== 'false';
 // EVENT BUS CLIENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-let redisClient: RedisClientType | null = null;
+let redisClient: Redis | null = null;
 let isConnected = false;
 
 /**
@@ -79,9 +79,7 @@ export async function initializeEventBus(): Promise<void> {
   }
 
   try {
-    redisClient = createClient({
-      url: REDIS_URL,
-    });
+    redisClient = new Redis(REDIS_URL);
 
     redisClient.on('error', (err) => {
       console.error('[AiEventBus] Redis client error:', err);
@@ -96,8 +94,6 @@ export async function initializeEventBus(): Promise<void> {
     redisClient.on('reconnecting', () => {
       console.log('[AiEventBus] Reconnecting to Redis...');
     });
-
-    await redisClient.connect();
   } catch (error) {
     console.error('[AiEventBus] Failed to initialize:', error);
     // Don't throw - event bus failure shouldn't block core AI processing
@@ -151,7 +147,7 @@ export async function publishEvent(event: AiEvent): Promise<boolean> {
  */
 export async function closeEventBus(): Promise<void> {
   if (redisClient) {
-    await redisClient.quit();
+    redisClient.disconnect();
     redisClient = null;
     isConnected = false;
     console.log('[AiEventBus] Connection closed');

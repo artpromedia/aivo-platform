@@ -1,17 +1,24 @@
 import { prisma } from '../prisma.js';
-import { IndexStatus, DocumentStatus, SearchEngine } from '@prisma/client';
+
+// Define types locally since they're not exported from Prisma schema
+type IndexStatus = 'BUILDING' | 'ACTIVE' | 'STALE' | 'REBUILDING' | 'ERROR';
+type DocumentStatus = 'PENDING' | 'INDEXED' | 'ERROR' | 'DELETED';
+type SearchEngine = 'POSTGRES_FTS' | 'MEILISEARCH' | 'ELASTICSEARCH';
 
 // Index Management
-export async function createIndex(tenantId: string, data: {
-  name: string;
-  description?: string;
-  engine?: SearchEngine;
-  sourceType: string;
-  sourceTable: string;
-  fields: Record<string, any>;
-  settings?: Record<string, any>;
-  mappings?: Record<string, any>;
-}) {
+export async function createIndex(
+  tenantId: string,
+  data: {
+    name: string;
+    description?: string;
+    engine?: SearchEngine;
+    sourceType: string;
+    sourceTable: string;
+    fields: Record<string, any>;
+    settings?: Record<string, any>;
+    mappings?: Record<string, any>;
+  }
+) {
   return prisma.searchIndex.create({
     data: {
       tenantId,
@@ -39,10 +46,13 @@ export async function getIndex(tenantId: string, indexId: string) {
   });
 }
 
-export async function listIndexes(tenantId: string, filters?: {
-  status?: IndexStatus;
-  engine?: SearchEngine;
-}) {
+export async function listIndexes(
+  tenantId: string,
+  filters?: {
+    status?: IndexStatus;
+    engine?: SearchEngine;
+  }
+) {
   return prisma.searchIndex.findMany({
     where: {
       tenantId,
@@ -53,12 +63,16 @@ export async function listIndexes(tenantId: string, filters?: {
   });
 }
 
-export async function updateIndex(tenantId: string, indexId: string, data: {
-  description?: string;
-  fields?: Record<string, any>;
-  settings?: Record<string, any>;
-  mappings?: Record<string, any>;
-}) {
+export async function updateIndex(
+  tenantId: string,
+  indexId: string,
+  data: {
+    description?: string;
+    fields?: Record<string, any>;
+    settings?: Record<string, any>;
+    mappings?: Record<string, any>;
+  }
+) {
   return prisma.searchIndex.update({
     where: { id: indexId, tenantId },
     data: {
@@ -75,11 +89,15 @@ export async function deleteIndex(tenantId: string, indexId: string) {
 }
 
 // Document Indexing
-export async function indexDocument(tenantId: string, indexId: string, data: {
-  sourceId: string;
-  content: Record<string, any>;
-  metadata?: Record<string, any>;
-}) {
+export async function indexDocument(
+  tenantId: string,
+  indexId: string,
+  data: {
+    sourceId: string;
+    content: Record<string, any>;
+    metadata?: Record<string, any>;
+  }
+) {
   const searchVector = buildSearchVector(data.content);
 
   return prisma.searchDocument.upsert({
@@ -106,17 +124,21 @@ export async function indexDocument(tenantId: string, indexId: string, data: {
   });
 }
 
-export async function bulkIndexDocuments(tenantId: string, indexId: string, documents: Array<{
-  sourceId: string;
-  content: Record<string, any>;
-  metadata?: Record<string, any>;
-}>) {
+export async function bulkIndexDocuments(
+  tenantId: string,
+  indexId: string,
+  documents: {
+    sourceId: string;
+    content: Record<string, any>;
+    metadata?: Record<string, any>;
+  }[]
+) {
   const results = await Promise.allSettled(
-    documents.map(doc => indexDocument(tenantId, indexId, doc))
+    documents.map((doc) => indexDocument(tenantId, indexId, doc))
   );
 
-  const indexed = results.filter(r => r.status === 'fulfilled').length;
-  const failed = results.filter(r => r.status === 'rejected').length;
+  const indexed = results.filter((r) => r.status === 'fulfilled').length;
+  const failed = results.filter((r) => r.status === 'rejected').length;
 
   // Update document count
   await prisma.searchIndex.update({
@@ -140,17 +162,20 @@ export async function deleteDocument(tenantId: string, indexId: string, sourceId
 }
 
 // Search Operations
-export async function search(tenantId: string, params: {
-  indexName: string;
-  query: string;
-  filters?: Record<string, any>;
-  page?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  highlight?: boolean;
-  facets?: string[];
-}) {
+export async function search(
+  tenantId: string,
+  params: {
+    indexName: string;
+    query: string;
+    filters?: Record<string, any>;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    highlight?: boolean;
+    facets?: string[];
+  }
+) {
   const startTime = Date.now();
   const page = params.page || 1;
   const pageSize = Math.min(params.pageSize || 20, 100);
@@ -173,7 +198,7 @@ export async function search(tenantId: string, params: {
   const searchTerms = expandedQuery.toLowerCase().split(/\s+/).filter(Boolean);
 
   // For PostgreSQL FTS, we use ILIKE for simplicity (real impl would use tsvector)
-  const searchConditions = searchTerms.map(term => ({
+  const searchConditions = searchTerms.map((term) => ({
     searchVector: { contains: term },
   }));
 
@@ -185,7 +210,9 @@ export async function search(tenantId: string, params: {
         status: 'INDEXED',
         AND: searchConditions,
       },
-      orderBy: params.sortBy ? { [params.sortBy]: params.sortOrder || 'desc' } : { indexedAt: 'desc' },
+      orderBy: params.sortBy
+        ? { [params.sortBy]: params.sortOrder || 'desc' }
+        : { indexedAt: 'desc' },
       skip,
       take: pageSize,
     }),
@@ -216,16 +243,22 @@ export async function search(tenantId: string, params: {
   // Update suggestions
   await updateSuggestions(tenantId, params.indexName, params.query);
 
-  const results = documents.map(doc => ({
-    id: doc.sourceId,
-    score: 1.0, // Simplified scoring
-    source: doc.content,
-    metadata: doc.metadata,
-    ...(params.highlight && { highlights: generateHighlights(doc.content as Record<string, any>, searchTerms) }),
-  }));
+  const results = documents.map(
+    (doc: { sourceId: string; content: unknown; metadata: unknown }) => ({
+      id: doc.sourceId,
+      score: 1.0, // Simplified scoring
+      source: doc.content,
+      metadata: doc.metadata,
+      ...(params.highlight && {
+        highlights: generateHighlights(doc.content as Record<string, any>, searchTerms),
+      }),
+    })
+  );
 
   // Build facets if requested
-  const facetResults = params.facets ? await buildFacets(index.id, tenantId, params.facets) : undefined;
+  const facetResults = params.facets
+    ? await buildFacets(index.id, tenantId, params.facets)
+    : undefined;
 
   return {
     hits: results,
@@ -238,7 +271,12 @@ export async function search(tenantId: string, params: {
   };
 }
 
-export async function getSuggestions(tenantId: string, indexName: string, prefix: string, limit = 10) {
+export async function getSuggestions(
+  tenantId: string,
+  indexName: string,
+  prefix: string,
+  limit = 10
+) {
   return prisma.searchSuggestion.findMany({
     where: {
       tenantId,
@@ -252,7 +290,12 @@ export async function getSuggestions(tenantId: string, indexName: string, prefix
 }
 
 // Synonym Management
-export async function addSynonym(tenantId: string, indexId: string, term: string, synonyms: string[]) {
+export async function addSynonym(
+  tenantId: string,
+  indexId: string,
+  term: string,
+  synonyms: string[]
+) {
   return prisma.synonymRule.upsert({
     where: { indexId_term: { indexId, term } },
     create: { tenantId, indexId, term, synonyms },
@@ -267,11 +310,15 @@ export async function removeSynonym(tenantId: string, indexId: string, term: str
 }
 
 // Boost Rules
-export async function addBoostRule(tenantId: string, indexId: string, data: {
-  field: string;
-  boostFactor: number;
-  condition?: Record<string, any>;
-}) {
+export async function addBoostRule(
+  tenantId: string,
+  indexId: string,
+  data: {
+    field: string;
+    boostFactor: number;
+    condition?: Record<string, any>;
+  }
+) {
   return prisma.boostRule.create({
     data: {
       tenantId,
@@ -284,13 +331,17 @@ export async function addBoostRule(tenantId: string, indexId: string, data: {
 }
 
 // Facet Configuration
-export async function configureFacet(tenantId: string, indexName: string, data: {
-  field: string;
-  label: string;
-  type?: string;
-  settings?: Record<string, any>;
-  sortOrder?: number;
-}) {
+export async function configureFacet(
+  tenantId: string,
+  indexName: string,
+  data: {
+    field: string;
+    label: string;
+    type?: string;
+    settings?: Record<string, any>;
+    sortOrder?: number;
+  }
+) {
   return prisma.facetConfig.upsert({
     where: {
       tenantId_indexName_field: { tenantId, indexName, field: data.field },
@@ -338,11 +389,14 @@ export async function getReindexStatus(tenantId: string, jobId: string) {
 }
 
 // Analytics
-export async function getSearchAnalytics(tenantId: string, params: {
-  indexName?: string;
-  startDate: Date;
-  endDate: Date;
-}) {
+export async function getSearchAnalytics(
+  tenantId: string,
+  params: {
+    indexName?: string;
+    startDate: Date;
+    endDate: Date;
+  }
+) {
   const queries = await prisma.searchQuery.groupBy({
     by: ['indexName'],
     where: {
@@ -379,8 +433,11 @@ export async function getSearchAnalytics(tenantId: string, params: {
 
   return {
     summary: queries,
-    topQueries: topQueries.map(q => ({ query: q.query, count: q._count })),
-    zeroResultQueries: zeroResultQueries.map(q => q.query),
+    topQueries: topQueries.map((q: { query: string; _count: number }) => ({
+      query: q.query,
+      count: q._count,
+    })),
+    zeroResultQueries: zeroResultQueries.map((q: { query: string }) => q.query),
   };
 }
 
@@ -391,13 +448,16 @@ function buildSearchVector(content: Record<string, any>): string {
     if (typeof value === 'string') {
       values.push(value.toLowerCase());
     } else if (Array.isArray(value)) {
-      values.push(...value.filter(v => typeof v === 'string').map(v => v.toLowerCase()));
+      values.push(...value.filter((v) => typeof v === 'string').map((v) => v.toLowerCase()));
     }
   }
   return values.join(' ');
 }
 
-function expandQueryWithSynonyms(query: string, synonyms: Array<{ term: string; synonyms: string[] }>): string {
+function expandQueryWithSynonyms(
+  query: string,
+  synonyms: { term: string; synonyms: string[] }[]
+): string {
   let expanded = query;
   for (const rule of synonyms) {
     if (query.toLowerCase().includes(rule.term.toLowerCase())) {
@@ -407,11 +467,14 @@ function expandQueryWithSynonyms(query: string, synonyms: Array<{ term: string; 
   return expanded;
 }
 
-function generateHighlights(content: Record<string, any>, terms: string[]): Record<string, string[]> {
+function generateHighlights(
+  content: Record<string, any>,
+  terms: string[]
+): Record<string, string[]> {
   const highlights: Record<string, string[]> = {};
   for (const [field, value] of Object.entries(content)) {
     if (typeof value === 'string') {
-      const matches = terms.filter(term => value.toLowerCase().includes(term));
+      const matches = terms.filter((term) => value.toLowerCase().includes(term));
       if (matches.length > 0) {
         let highlighted = value;
         for (const term of matches) {
@@ -426,7 +489,7 @@ function generateHighlights(content: Record<string, any>, terms: string[]): Reco
 }
 
 async function buildFacets(indexId: string, tenantId: string, facetFields: string[]) {
-  const facets: Record<string, Array<{ value: string; count: number }>> = {};
+  const facets: Record<string, { value: string; count: number }[]> = {};
 
   for (const field of facetFields) {
     const documents = await prisma.searchDocument.findMany({

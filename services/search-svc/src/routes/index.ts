@@ -1,4 +1,5 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
+
 import * as searchService from '../services/searchService.js';
 
 export default async function routes(app: FastifyInstance) {
@@ -17,7 +18,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/indexes/:indexId', async (request, reply) => {
     const { indexId } = request.params as { indexId: string };
     const index = await searchService.getIndex(request.tenantId!, indexId);
-    if (!index) return reply.notFound('Index not found');
+    if (!index) return reply.status(404).send({ error: 'Index not found' });
     return index;
   });
 
@@ -128,7 +129,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/reindex-jobs/:jobId', async (request, reply) => {
     const { jobId } = request.params as { jobId: string };
     const job = await searchService.getReindexStatus(request.tenantId!, jobId);
-    if (!job) return reply.notFound('Reindex job not found');
+    if (!job) return reply.status(404).send({ error: 'Reindex job not found' });
     return job;
   });
 

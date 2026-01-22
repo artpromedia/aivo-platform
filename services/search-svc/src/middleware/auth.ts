@@ -1,5 +1,6 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
+
 import { config } from '../config.js';
 
 interface JwtPayload {
