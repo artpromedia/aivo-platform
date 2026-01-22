@@ -12,13 +12,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 
 import type { LOCALE_METADATA } from '../constants';
 import { I18nManager, i18n } from '../core/i18n-manager';
-import type {
-  SupportedLocale,
-  TFunction,
-  TranslationNamespace,
-  I18nConfig,
-  isRTLLocale,
-} from '../types';
+import type { SupportedLocale, TFunction, TranslationNamespace, I18nConfig } from '../types';
+import { isRTLLocale } from '../types';
 
 /**
  * I18n context value

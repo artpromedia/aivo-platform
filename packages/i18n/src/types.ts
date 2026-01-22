@@ -128,7 +128,7 @@ export interface I18nConfig {
  * Locale detection configuration
  */
 export interface LocaleDetectionConfig {
-  order: ('cookie' | 'localStorage' | 'navigator' | 'querystring' | 'header')[];
+  order: ('cookie' | 'localStorage' | 'navigator' | 'querystring' | 'header' | 'path')[];
   caches: ('cookie' | 'localStorage')[];
   cookieName?: string;
   localStorageKey?: string;
@@ -177,9 +177,24 @@ export interface TranslationOptions {
  */
 export interface DateFormatOptions {
   format?: 'short' | 'medium' | 'long' | 'full' | 'relative';
+  preset?: string;
   calendar?: string;
   timeZone?: string;
   hour12?: boolean;
+  dateStyle?: 'full' | 'long' | 'medium' | 'short';
+  timeStyle?: 'full' | 'long' | 'medium' | 'short';
+  numberingSystem?: string;
+  weekday?: 'long' | 'short' | 'narrow';
+  era?: 'long' | 'short' | 'narrow';
+  year?: 'numeric' | '2-digit';
+  month?: 'numeric' | '2-digit' | 'long' | 'short' | 'narrow';
+  day?: 'numeric' | '2-digit';
+  hour?: 'numeric' | '2-digit';
+  minute?: 'numeric' | '2-digit';
+  second?: 'numeric' | '2-digit';
+  fractionalSecondDigits?: 1 | 2 | 3;
+  timeZoneName?: 'long' | 'short' | 'shortOffset' | 'longOffset' | 'shortGeneric' | 'longGeneric';
+  dayPeriod?: 'narrow' | 'short' | 'long';
 }
 
 /**
@@ -188,14 +203,30 @@ export interface DateFormatOptions {
 export interface NumberFormatOptions {
   style?: 'decimal' | 'currency' | 'percent' | 'unit';
   currency?: string;
-  currencyDisplay?: 'symbol' | 'code' | 'name';
+  currencyDisplay?: 'symbol' | 'code' | 'name' | 'narrowSymbol';
+  currencySign?: 'standard' | 'accounting';
   unit?: string;
   unitDisplay?: 'short' | 'long' | 'narrow';
   notation?: 'standard' | 'scientific' | 'engineering' | 'compact';
+  compactDisplay?: 'short' | 'long';
+  signDisplay?: 'auto' | 'never' | 'always' | 'exceptZero';
+  minimumIntegerDigits?: number;
   minimumFractionDigits?: number;
   maximumFractionDigits?: number;
   minimumSignificantDigits?: number;
   maximumSignificantDigits?: number;
+  useGrouping?: boolean;
+  numberingSystem?: string;
+  roundingMode?:
+    | 'ceil'
+    | 'floor'
+    | 'expand'
+    | 'trunc'
+    | 'halfCeil'
+    | 'halfFloor'
+    | 'halfExpand'
+    | 'halfTrunc'
+    | 'halfEven';
 }
 
 /**
@@ -223,7 +254,10 @@ export interface I18nInstance {
   ) => string;
   formatPlural: (count: number, options: Record<PluralCategory, string>) => string;
   changeLocale: (locale: SupportedLocale) => Promise<void>;
-  loadNamespace: (namespace: TranslationNamespace) => Promise<void>;
+  loadNamespace: (
+    locale: SupportedLocale,
+    namespace: TranslationNamespace
+  ) => Promise<TranslationResource | void>;
   hasTranslation: (key: string, ns?: TranslationNamespace) => boolean;
   getLocaleMetadata: (locale?: SupportedLocale) => LocaleMetadata;
 }

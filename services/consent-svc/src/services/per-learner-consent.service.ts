@@ -21,10 +21,9 @@ import type {
   ConsentType,
   ConsentStatus,
   ConsentSource,
-  ConsentGateResult} from '../types.js';
-import {
-  ParentConsentSummary,
+  ConsentGateResult,
 } from '../types.js';
+import { ParentConsentSummary } from '../types.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -233,8 +232,11 @@ export class PerLearnerConsentService {
     learnerId: string,
     learnerName?: string
   ): Promise<PerLearnerConsentStatus> {
-    const client = 'connect' in clientOrPool ? await clientOrPool.connect() : clientOrPool;
-    const shouldRelease = 'connect' in clientOrPool;
+    const isPool = 'connect' in clientOrPool;
+    const client: PoolClient = isPool
+      ? await (clientOrPool as Pool).connect()
+      : (clientOrPool as PoolClient);
+    const shouldRelease = isPool;
 
     try {
       // Get all consents for this learner
@@ -282,10 +284,10 @@ export class PerLearnerConsentService {
       }
 
       // Determine overall status
-      const grantedCount = consentDetails.filter(c => c.status === 'GRANTED').length;
+      const grantedCount = consentDetails.filter((c) => c.status === 'GRANTED').length;
       const missingRequired = consentDetails
-        .filter(c => c.required && c.status !== 'GRANTED')
-        .map(c => c.type);
+        .filter((c) => c.required && c.status !== 'GRANTED')
+        .map((c) => c.type);
 
       let overallStatus: 'complete' | 'partial' | 'none';
       if (grantedCount === 0) {
@@ -560,7 +562,7 @@ export class PerLearnerConsentService {
         totalProcessed: 0,
         successful: 0,
         failed: params.learnerIds.length,
-        results: params.learnerIds.map(id => ({
+        results: params.learnerIds.map((id) => ({
           learnerId: id,
           consentType: 'DATA_PROCESSING',
           action: 'GRANT' as const,
@@ -574,7 +576,7 @@ export class PerLearnerConsentService {
       tenantId: params.tenantId,
       parentId: params.parentId,
       learnerIds: params.learnerIds,
-      consents: template.consents.map(type => ({ type, action: 'GRANT' })),
+      consents: template.consents.map((type) => ({ type, action: 'GRANT' })),
       source: params.source,
       ipAddress: params.ipAddress,
       userAgent: params.userAgent,
@@ -589,7 +591,7 @@ export class PerLearnerConsentService {
     learnerId: string,
     feature: string
   ): Promise<ConsentGateResult> {
-    const requirement = FEATURE_CONSENT_REQUIREMENTS.find(r => r.feature === feature);
+    const requirement = FEATURE_CONSENT_REQUIREMENTS.find((r) => r.feature === feature);
     if (!requirement) {
       return {
         allowed: true,
@@ -608,14 +610,10 @@ export class PerLearnerConsentService {
       );
 
       const grantedConsents = new Set(
-        result.rows
-          .filter(r => r.status === 'GRANTED')
-          .map(r => r.consent_type)
+        result.rows.filter((r) => r.status === 'GRANTED').map((r) => r.consent_type)
       );
 
-      const missingConsents = requirement.requiredConsents.filter(
-        c => !grantedConsents.has(c)
-      );
+      const missingConsents = requirement.requiredConsents.filter((c) => !grantedConsents.has(c));
 
       if (missingConsents.length === 0) {
         return {
@@ -654,7 +652,7 @@ export class PerLearnerConsentService {
       [tenantId ?? null]
     );
 
-    return result.rows.map(r => ({
+    return result.rows.map((r) => ({
       id: r.id,
       name: r.name,
       description: r.description,
@@ -700,14 +698,11 @@ export class PerLearnerConsentService {
   /**
    * Check if specific consents are granted
    */
-  private checkFeatureConsent(
-    feature: string,
-    consents: Map<ConsentType, Consent>
-  ): boolean {
-    const requirement = FEATURE_CONSENT_REQUIREMENTS.find(r => r.feature === feature);
+  private checkFeatureConsent(feature: string, consents: Map<ConsentType, Consent>): boolean {
+    const requirement = FEATURE_CONSENT_REQUIREMENTS.find((r) => r.feature === feature);
     if (!requirement) return true;
 
-    return requirement.requiredConsents.every(type => {
+    return requirement.requiredConsents.every((type) => {
       const consent = consents.get(type);
       return consent?.status === 'GRANTED';
     });
@@ -745,7 +740,7 @@ export class PerLearnerConsentService {
       [tenantId, parentId, expirationDate]
     );
 
-    return result.rows.map(r => ({
+    return result.rows.map((r) => ({
       learnerId: r.learner_id,
       learnerName: `${r.first_name} ${r.last_name}`,
       consent: {

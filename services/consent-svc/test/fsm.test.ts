@@ -13,6 +13,8 @@ const baseConsent: Consent = {
   granted_at: null,
   revoked_at: null,
   expires_at: null,
+  consent_text_version: null,
+  source: null,
   created_at: new Date('2024-01-01T00:00:00Z'),
   updated_at: new Date('2024-01-01T00:00:00Z'),
 };

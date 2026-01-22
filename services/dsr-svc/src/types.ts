@@ -1,14 +1,14 @@
 export type DsrRequestType = 'EXPORT' | 'DELETE';
 
-export type DsrRequestStatus = 
-  | 'PENDING'           // Initial state, awaiting review or processing
-  | 'APPROVED'          // Approved for processing (delete requests)
-  | 'IN_PROGRESS'       // Currently being processed
-  | 'GRACE_PERIOD'      // Deletion scheduled, within cancellation window
-  | 'COMPLETED'         // Successfully completed
-  | 'REJECTED'          // Rejected by admin
-  | 'CANCELLED'         // Cancelled during grace period
-  | 'FAILED';           // Processing failed
+export type DsrRequestStatus =
+  | 'PENDING' // Initial state, awaiting review or processing
+  | 'APPROVED' // Approved for processing (delete requests)
+  | 'IN_PROGRESS' // Currently being processed
+  | 'GRACE_PERIOD' // Deletion scheduled, within cancellation window
+  | 'COMPLETED' // Successfully completed
+  | 'REJECTED' // Rejected by admin
+  | 'CANCELLED' // Cancelled during grace period
+  | 'FAILED'; // Processing failed
 
 export type DsrJobStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
@@ -20,7 +20,8 @@ export type DsrAuditAction =
   | 'COMPLETED'
   | 'FAILED'
   | 'CANCELLED'
-  | 'DOWNLOADED';
+  | 'DOWNLOADED'
+  | 'PERMANENT_PURGE_COMPLETED';
 
 export interface DsrRequest {
   id: string;

@@ -27,7 +27,7 @@ import {
   formatTimeAgo,
   formatSmartRelative,
 } from '../formatters/relative-time';
-import type { SupportedLocale, TFunction, TranslationNamespace } from '../types';
+import type { SupportedLocale, TFunction, TranslationNamespace, LocaleMetadata } from '../types';
 
 import { useI18nContext } from './provider';
 
@@ -77,7 +77,7 @@ export function useLocale(): {
   changeLocale: (locale: SupportedLocale) => Promise<void>;
   supportedLocales: SupportedLocale[];
   isRTL: boolean;
-  metadata: ReturnType<typeof useI18nContext>['getLocaleMetadata'];
+  metadata: LocaleMetadata;
 } {
   const { locale, direction, changeLocale, supportedLocales, getLocaleMetadata } = useI18nContext();
 

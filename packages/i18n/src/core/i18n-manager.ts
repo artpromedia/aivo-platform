@@ -14,7 +14,6 @@ import { DEFAULT_I18N_CONFIG, LOCALE_METADATA } from '../constants';
 import type {
   SupportedLocale,
   I18nConfig,
-  I18nInstance,
   TFunction,
   TranslationNamespace,
   TranslationResource,
@@ -31,8 +30,9 @@ interface LoadedNamespace {
 
 /**
  * Core I18n Manager class
+ * Implements core i18n functionality - formatDate, formatNumber, etc. are exported separately
  */
-export class I18nManager implements I18nInstance {
+export class I18nManager {
   private static instance: I18nManager | null = null;
 
   private config: I18nConfig;
@@ -268,7 +268,9 @@ export class I18nManager implements I18nInstance {
    * Get translation function
    */
   t: TFunction = (key, options) => {
-    const namespace = options?.ns ?? this.config.defaultNamespace;
+    const namespace = (
+      typeof options?.ns === 'string' ? options.ns : this.config.defaultNamespace
+    ) as TranslationNamespace;
     return this.translate(key, options, namespace);
   };
 

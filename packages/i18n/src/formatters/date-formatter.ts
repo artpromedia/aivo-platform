@@ -156,17 +156,17 @@ export function formatDateRange(
     dateStyle: options.dateStyle ?? 'medium',
     timeStyle: options.timeStyle,
     timeZone: options.timeZone,
-  };
+  } as Intl.DateTimeFormatOptions;
 
-  const formatter = getFormatter(locale, intlOptions);
+  const formatter: Intl.DateTimeFormat = getFormatter(locale, intlOptions);
 
-  // Use formatRange if available (modern browsers)
-  if ('formatRange' in formatter) {
+  // Use formatRange if available (modern browsers), otherwise fallback
+  if (typeof (formatter as any).formatRange === 'function') {
     return (formatter as any).formatRange(start, end);
   }
 
   // Fallback for older browsers
-  return `${formatter.format(start)} – ${formatter.format(end)}`;
+  return `${(formatter as Intl.DateTimeFormat).format(start)} – ${(formatter as Intl.DateTimeFormat).format(end)}`;
 }
 
 /**

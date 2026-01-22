@@ -87,7 +87,7 @@ export function RTLProvider({
       isRTL,
       rtlStyle: (ltrStyles, rtlStyles) => rtlStyle(ltrStyles, rtlStyles, isRTL),
       rtlClass: (className) => rtlClass(className, isRTL),
-      rtlValue: <T,>(ltr: T, rtl: T) => (isRTL ? getRTLValue(ltr, rtl) : getLTRValue(ltr, rtl)),
+      rtlValue: <T,>(ltr: T, rtl: T) => (isRTL ? getRTLValue(ltr, rtl) : getLTRValue(ltr)),
       rtlIcon: (iconName) => rtlIcon(iconName, isRTL),
     }),
     [direction, isRTL]

@@ -218,7 +218,7 @@ Provide specific, actionable improvements with explanations.
    * Check terminology consistency
    */
   async checkTerminology(params: {
-    texts: Array<{ key: string; text: string }>;
+    texts: { key: string; text: string }[];
     locale: SupportedLocale;
     glossary: GlossaryEntry[];
   }): Promise<TerminologyIssue[]> {
@@ -377,7 +377,7 @@ Provide the adapted text and explain the changes made.
       throw new Error(`AI API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { choices: { message: { content: string } }[] };
     return data.choices[0].message.content;
   }
 
@@ -394,21 +394,19 @@ Provide the adapted text and explain the changes made.
 
       const parsed = JSON.parse(jsonMatch[0]);
 
-      const translations: AITranslatedText[] = parsed.translations.map(
-        (t: any, index: number) => ({
-          key: t.key,
-          sourceText: request.texts[index].text,
-          translatedText: t.translation,
-          confidence: t.confidence ?? 85,
-          qualityScore: t.confidence ?? 85,
-          alternatives: t.alternatives?.map((alt: string) => ({
-            text: alt,
-            confidence: 75,
-            style: 'neutral' as const,
-          })),
-          warnings: this.detectWarnings(request.texts[index], t.translation),
-        })
-      );
+      const translations: AITranslatedText[] = parsed.translations.map((t: any, index: number) => ({
+        key: t.key,
+        sourceText: request.texts[index].text,
+        translatedText: t.translation,
+        confidence: t.confidence ?? 85,
+        qualityScore: t.confidence ?? 85,
+        alternatives: t.alternatives?.map((alt: string) => ({
+          text: alt,
+          confidence: 75,
+          style: 'neutral' as const,
+        })),
+        warnings: this.detectWarnings(request.texts[index], t.translation),
+      }));
 
       return {
         translations,
@@ -441,8 +439,8 @@ Provide the adapted text and explain the changes made.
     }
 
     // Check placeholder preservation
-    const sourcePlaceholders = source.text.match(/\{[^}]+\}/g) || [];
-    const targetPlaceholders = translation.match(/\{[^}]+\}/g) || [];
+    const sourcePlaceholders: string[] = source.text.match(/\{[^}]+\}/g) ?? [];
+    const targetPlaceholders: string[] = translation.match(/\{[^}]+\}/g) ?? [];
 
     for (const placeholder of sourcePlaceholders) {
       if (!targetPlaceholders.includes(placeholder)) {
@@ -540,11 +538,11 @@ export interface TerminologyIssue {
 export interface GradeLevelAdaptation {
   originalText: string;
   adaptedText: string;
-  changes: Array<{
+  changes: {
     original: string;
     adapted: string;
     reason: string;
-  }>;
+  }[];
   readabilityScore: {
     before: number;
     after: number;

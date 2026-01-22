@@ -109,7 +109,7 @@ export const rtlPlugin = plugin(
     });
 
     // Spacing scale from theme
-    const spacing = theme('spacing') || {};
+    const spacing = (theme('spacing') || {}) as Record<string, string>;
 
     // Generate margin-inline-start utilities
     matchUtilities(

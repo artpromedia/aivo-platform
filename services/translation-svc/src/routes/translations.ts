@@ -8,7 +8,6 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { logger } from '../logger.js';
-
 import { TranslationService } from '../services/translation.service';
 
 const app = new Hono();
@@ -176,10 +175,19 @@ app.post('/translate', zValidator('json', machineTranslateSchema), async (c) => 
   const body = c.req.valid('json');
 
   try {
-    const result = await translationService.machineTranslate(body);
+    const result = await translationService.machineTranslate({
+      texts: body.texts,
+      sourceLocale: body.sourceLocale as SupportedLocale,
+      targetLocale: body.targetLocale as SupportedLocale,
+      provider: body.provider,
+      format: body.format,
+    });
     return c.json(result);
   } catch (error) {
-    logger.error({ err: error, sourceLocale: body.sourceLocale, targetLocale: body.targetLocale }, 'Error in machine translation');
+    logger.error(
+      { err: error, sourceLocale: body.sourceLocale, targetLocale: body.targetLocale },
+      'Error in machine translation'
+    );
     return c.json({ error: 'Failed to translate' }, 500);
   }
 });
@@ -227,7 +235,10 @@ app.post('/bundles/import', zValidator('json', importBundleSchema), async (c) =>
 
     return c.json(result);
   } catch (error) {
-    logger.error({ err: error, locale: body.locale, namespace: body.namespace }, 'Error importing bundle');
+    logger.error(
+      { err: error, locale: body.locale, namespace: body.namespace },
+      'Error importing bundle'
+    );
     return c.json({ error: 'Failed to import bundle' }, 500);
   }
 });
@@ -268,7 +279,10 @@ app.get('/missing/:sourceLocale/:targetLocale/:namespace', async (c) => {
 
     return c.json({ missingKeys, count: missingKeys.length });
   } catch (error) {
-    logger.error({ err: error, sourceLocale, targetLocale, namespace }, 'Error fetching missing translations');
+    logger.error(
+      { err: error, sourceLocale, targetLocale, namespace },
+      'Error fetching missing translations'
+    );
     return c.json({ error: 'Failed to fetch missing translations' }, 500);
   }
 });
@@ -314,13 +328,21 @@ app.post(
 
     try {
       const term = await translationService.addGlossaryTerm({
-        ...body,
+        term: body.term,
+        definition: body.definition,
+        locale: body.locale as SupportedLocale,
         translations: (body.translations ?? {}) as Record<SupportedLocale, string>,
+        category: body.category,
+        doNotTranslate: body.doNotTranslate,
+        caseSensitive: body.caseSensitive,
       });
 
       return c.json({ term }, 201);
     } catch (error) {
-      logger.error({ err: error, term: body.term, locale: body.locale }, 'Error adding glossary term');
+      logger.error(
+        { err: error, term: body.term, locale: body.locale },
+        'Error adding glossary term'
+      );
       return c.json({ error: 'Failed to add glossary term' }, 500);
     }
   }

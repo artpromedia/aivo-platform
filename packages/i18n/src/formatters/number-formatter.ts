@@ -39,7 +39,8 @@ export function formatNumber(
   locale: SupportedLocale,
   options: NumberFormatOptions = {}
 ): string {
-  const intlOptions: Intl.NumberFormatOptions = {
+  // Build options object with extended properties (some require newer ES versions)
+  const intlOptions: Record<string, unknown> = {
     style: options.style ?? 'decimal',
     currency: options.currency,
     currencyDisplay: options.currencyDisplay,
@@ -62,7 +63,7 @@ export function formatNumber(
   // Remove undefined values
   const cleanOptions = Object.fromEntries(
     Object.entries(intlOptions).filter(([_, v]) => v !== undefined)
-  );
+  ) as Intl.NumberFormatOptions;
 
   const formatter = getFormatter(locale, cleanOptions);
   return formatter.format(value);

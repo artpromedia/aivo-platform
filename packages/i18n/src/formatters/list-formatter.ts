@@ -104,7 +104,7 @@ export function formatListToParts(
   items: string[],
   locale: SupportedLocale,
   options: ListFormatOptions = {}
-): Intl.ListFormatPart[] {
+): { type: string; value: string }[] {
   if (items.length === 0) {
     return [];
   }
