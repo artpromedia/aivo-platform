@@ -24,8 +24,17 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "fastify": "^4.29.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "fastify": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "fastify": {
+      "optional": true
+    }
   },
   "files": [
     "dist"

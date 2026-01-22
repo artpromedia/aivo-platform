@@ -24,11 +24,7 @@ export * from './service-urls.js';
 export * from './dataloader.js';
 
 // DataLoader factory - exclude duplicate exports already in dataloader.js
-export {
-  DataLoaderFactory,
-  type PrismaLike,
-  type BaseEntity,
-} from './dataloader-factory.js';
+export { DataLoaderFactory, type PrismaLike, type BaseEntity } from './dataloader-factory.js';
 
 // Env validation - only export items not already in mock-mode.js
 export {
@@ -43,3 +39,6 @@ export {
 } from './env-validation.js';
 
 export * from './soft-delete.js';
+
+// Fastify plugin type helpers
+export { asPlugin, fastifyPlugin } from './fastify-helpers.js';

@@ -1,3 +1,6 @@
+// Utility functions
+export { cn } from './lib/utils';
+
 export { createGradeThemePlugin } from './tailwind/gradeThemePlugin';
 export { GradeThemeProvider, useGradeTheme } from './theme/grade-theme';
 export { AccessibilityProvider, useAccessibility } from './theme/accessibility';

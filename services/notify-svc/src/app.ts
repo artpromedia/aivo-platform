@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /**
  * Fastify Application Setup
  */
 
-import type { FastifyInstance } from 'fastify';
-import Fastify from 'fastify';
-import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import Fastify from 'fastify';
 
 import {
   initializePushService,
@@ -15,6 +14,7 @@ import {
 } from './channels/push/push-service.js';
 import { config } from './config.js';
 import { initializeNats, closeNats } from './events/notification-events.js';
+import { onboardingRoutes } from './onboarding/index.js';
 import { deactivateToken } from './repositories/device-token.repository.js';
 import {
   registerNotificationRoutes,
@@ -25,7 +25,9 @@ import {
   registerWebhookRoutes,
   registerEmailRoutes,
 } from './routes/index.js';
-import { onboardingRoutes } from './onboarding/index.js';
+
+// Type assertion helper for Fastify plugins with type provider mismatches
+const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 
 // Extend Fastify instance type
 declare module 'fastify' {
@@ -122,7 +124,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // RATE LIMITING
   // ════════════════════════════════════════════════════════════════════════════
 
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('notify-svc'));
+  await app.register(asPlugin(rateLimit), FastifyRateLimitPresets.publicApi('notify-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // REGISTER ROUTES

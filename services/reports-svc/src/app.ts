@@ -5,12 +5,15 @@
  * parent-friendly and teacher-friendly summary reports.
  */
 
-import type { FastifyInstance } from 'fastify';
-import Fastify from 'fastify';
-import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
+
+// Type assertion helper for Fastify plugins with type provider mismatches
+const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 import { authMiddleware } from './middleware/auth.js';
 import { classroomReportRoutes } from './routes/classroomReport.js';
 import { parentReportRoutes } from './routes/parentReport.js';
@@ -28,7 +31,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('reports-svc'));
+  await app.register(asPlugin(rateLimit), FastifyRateLimitPresets.internalApi('reports-svc'));
 
   // Health check (unauthenticated)
   app.get('/health', async () => ({ status: 'ok', service: 'reports-svc' }));
@@ -37,7 +40,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get('/ready', async () => ({ status: 'ok', service: 'reports-svc' }));
 
   // JWT auth for all other routes
-  await app.register(authMiddleware);
+  await app.register(asPlugin(authMiddleware));
 
   // Register report routes under /reports prefix
   await app.register(parentReportRoutes, { prefix: '/reports' });

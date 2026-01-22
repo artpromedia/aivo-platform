@@ -4,9 +4,12 @@
 
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
-import Fastify from 'fastify';
+import Fastify, { type FastifyPluginAsync } from 'fastify';
 
 import { config } from './config.js';
+
+// Type assertion helper for Fastify plugins with type provider mismatches
+const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 import { billingEventPublisher } from './events/billing.publisher.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { coverageRoutes } from './routes/coverage.routes.js';
@@ -31,7 +34,7 @@ async function main() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.billing('billing-svc'));
+  await app.register(asPlugin(rateLimit), FastifyRateLimitPresets.billing('billing-svc'));
 
   // Health check endpoint
   app.get('/health', async () => ({ status: 'ok', service: 'billing-svc' }));

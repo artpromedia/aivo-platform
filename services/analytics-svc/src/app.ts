@@ -1,9 +1,12 @@
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
+
+// Type assertion helper for Fastify plugins with type provider mismatches
+const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 import { authMiddleware } from './middleware/auth.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import { auditRoutes } from './routes/auditRoutes.js';
@@ -45,10 +48,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get('/ready', async () => ({ status: 'ok', service: 'analytics-svc' }));
 
   // JWT auth for all other routes
-  await app.register(authMiddleware);
+  await app.register(asPlugin(authMiddleware));
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.analytics('analytics-svc'));
+  await app.register(asPlugin(rateLimit), FastifyRateLimitPresets.analytics('analytics-svc'));
 
   // Register analytics routes under /analytics prefix
   await app.register(learnerAnalyticsRoutes, { prefix: '/analytics' });

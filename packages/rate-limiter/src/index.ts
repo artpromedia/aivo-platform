@@ -85,12 +85,8 @@ export type { RateLimitStore } from './stores/types';
 export * from './types';
 
 // Logger
-export {
-  RateLimiterLogger,
-  createLogger,
-  noopLogger,
-  setGlobalLogger,
-} from './logger';
+export type { Logger, RateLimiterLogger } from './logger';
+export { createLogger, noopLogger, setGlobalLogger } from './logger';
 
 // Gateway Integration
 export {

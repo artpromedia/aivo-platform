@@ -1,29 +1,32 @@
 import { randomUUID } from 'node:crypto';
 
-import Fastify, { type FastifyRequest } from 'fastify';
-import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
-import { Pool } from 'pg';
+import rateLimit from '@fastify/rate-limit';
+import Fastify, { type FastifyRequest, type FastifyPluginAsync } from 'fastify';
 import Redis from 'ioredis';
+import { Pool } from 'pg';
 
 import { config } from './config.js';
+
+// Type assertion helper for Fastify plugins with type provider mismatches
+const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 import { IncidentService } from './incidents/index.js';
 import { createPolicyEnforcer, type PolicyEnforcer } from './policy/index.js';
+import { LLMOrchestrator } from './providers/llm-orchestrator.js';
 import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js';
 import type { AgentConfigStore } from './registry/store.js';
 import { registerAdminStatsRoutes } from './routes/adminStats.js';
 import { registerBrainRoutes } from './routes/brain.js';
 import { emotionalStateRoutes } from './routes/emotionalState.js';
-import iepGenerationRoutes from './routes/iep-generation.js';
-import { registerInternalRoutes } from './routes/internal.js';
-import { socialStoryRoutes } from './routes/socialStories.js';
-import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
+import { registerFederatedLearningRoutes } from './routes/federated-learning.js';
+import { registerFineTuningRoutes } from './routes/fine-tuning.js';
 import gameGenerationRoutes from './routes/game-generation.js';
 import generationRoutes from './routes/generation.js';
+import iepGenerationRoutes from './routes/iep-generation.js';
+import { registerInternalRoutes } from './routes/internal.js';
 import { registerPromptDebuggingRoutes } from './routes/prompt-debugging.js';
-import { registerFineTuningRoutes } from './routes/fine-tuning.js';
-import { registerFederatedLearningRoutes } from './routes/federated-learning.js';
-import { LLMOrchestrator } from './providers/llm-orchestrator.js';
+import { socialStoryRoutes } from './routes/socialStories.js';
+import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
 import { UsageTracker } from './usage/index.js';
@@ -59,12 +62,12 @@ export function createApp(options: AppOptions = {}) {
   const redis = new Redis(config.redisUrl || 'redis://localhost:6379');
 
   // Security middleware
-  app.register(helmet, {
+  app.register(asPlugin(helmet), {
     contentSecurityPolicy: false,
   });
 
   // Rate limiting - protect expensive AI calls
-  app.register(rateLimit, {
+  app.register(asPlugin(rateLimit), {
     global: true,
     max: 30, // 30 AI requests per minute per user (expensive resource)
     timeWindow: '1 minute',
@@ -74,9 +77,9 @@ export function createApp(options: AppOptions = {}) {
       const userId = (request as { userId?: string }).userId;
       if (tenantId && userId) return `ai:${tenantId}:${userId}`;
       if (tenantId) return `ai:${tenantId}`;
-      return (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-        request.ip ||
-        'unknown';
+      return (
+        (request.headers['x-forwarded-for'] as string)?.split(',')[0] || request.ip || 'unknown'
+      );
     },
     errorResponseBuilder: (request, context) => ({
       error: 'Too Many Requests',
@@ -85,9 +88,7 @@ export function createApp(options: AppOptions = {}) {
     }),
     // Skip rate limiting for health checks and internal endpoints
     allowList: (request) =>
-      request.url === '/health' ||
-      request.url === '/ready' ||
-      request.url.startsWith('/internal/'),
+      request.url === '/health' || request.url === '/ready' || request.url.startsWith('/internal/'),
   });
 
   app.addHook('onRequest', async (request, reply) => {

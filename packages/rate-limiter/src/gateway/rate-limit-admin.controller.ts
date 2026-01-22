@@ -12,16 +12,14 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   HttpCode,
   HttpStatus,
   Inject,
-  UseGuards,
 } from '@nestjs/common';
 
 import { SkipRateLimit } from '../decorators/rate-limit.decorator';
 import { RateLimiter } from '../rate-limiter';
-import { RateLimitRule, RateLimitTier } from '../types';
+import type { RateLimitRule, RateLimitTier } from '../types';
 
 import { GATEWAY_RATE_LIMITER } from './gateway-rate-limit.module';
 
@@ -43,9 +41,7 @@ import { GATEWAY_RATE_LIMITER } from './gateway-rate-limit.module';
 @SkipRateLimit() // Admin endpoints bypass rate limiting
 // @UseGuards(AdminGuard) // Uncomment and implement your admin guard
 export class RateLimitAdminController {
-  constructor(
-    @Inject(GATEWAY_RATE_LIMITER) private readonly rateLimiter: RateLimiter
-  ) {}
+  constructor(@Inject(GATEWAY_RATE_LIMITER) private readonly rateLimiter: RateLimiter) {}
 
   /**
    * Get all rate limit rules
@@ -77,10 +73,7 @@ export class RateLimitAdminController {
    * Update an existing rule
    */
   @Put('rules/:id')
-  updateRule(
-    @Param('id') id: string,
-    @Body() rule: Partial<RateLimitRule>
-  ): { success: boolean } {
+  updateRule(@Param('id') id: string, @Body() rule: Partial<RateLimitRule>): { success: boolean } {
     // Remove old rule and add updated one
     const existingRule = this.rateLimiter.getRules().find((r) => r.id === id);
     if (!existingRule) {
