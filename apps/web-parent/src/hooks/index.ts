@@ -58,6 +58,19 @@ export {
   // Settings
   useUpdateDailyGoal,
   useMarkMessagesRead,
+
+  // Gamification (Sprint 3.1)
+  gamificationQueryKeys,
+  useGamificationAchievements,
+  useStudentTeam,
+  useTeamDetails,
+  useLeaderboard,
+  useActiveCompetitions,
+  useGamificationPrivacySettings,
+  useUpdateGamificationPrivacy,
+  useJoinTeam,
+  useLeaveTeam,
+  useJoinCompetition,
 } from './use-parent-data';
 
 // Reports Hooks (Sprint 1.7)

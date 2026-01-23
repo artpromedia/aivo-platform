@@ -583,3 +583,217 @@ export function useMarkMessagesRead() {
     },
   });
 }
+
+// ============================================================================
+// Gamification Hooks (Sprint 3.1)
+// ============================================================================
+
+import { gamificationApi } from '@/lib/api/gamification.api';
+
+/** Extended query keys for gamification */
+export const gamificationQueryKeys = {
+  achievements: (studentId: string) => ['gamification', 'achievements', studentId] as const,
+  studentTeam: (studentId: string) => ['gamification', 'team', studentId] as const,
+  teamDetails: (teamId: string) => ['gamification', 'team-details', teamId] as const,
+  leaderboard: (studentId: string, scope: string, timeFrame: string) =>
+    ['gamification', 'leaderboard', studentId, scope, timeFrame] as const,
+  competitions: (studentId: string) => ['gamification', 'competitions', studentId] as const,
+  privacySettings: (studentId: string) => ['gamification', 'privacy-settings', studentId] as const,
+} as const;
+
+/**
+ * Fetch achievements for a student from gamification service
+ */
+export function useGamificationAchievements(studentId: string | null) {
+  return useQuery({
+    queryKey: gamificationQueryKeys.achievements(studentId || ''),
+    queryFn: () => {
+      if (!studentId) throw new Error('No student selected');
+      return gamificationApi.getAchievements(studentId);
+    },
+    enabled: !!studentId,
+    staleTime: STALE_TIMES.medium,
+    retry: 3,
+  });
+}
+
+/**
+ * Fetch student's team
+ */
+export function useStudentTeam(studentId: string | null) {
+  return useQuery({
+    queryKey: gamificationQueryKeys.studentTeam(studentId || ''),
+    queryFn: () => {
+      if (!studentId) throw new Error('No student selected');
+      return gamificationApi.getStudentTeam(studentId);
+    },
+    enabled: !!studentId,
+    staleTime: STALE_TIMES.medium,
+    retry: 3,
+  });
+}
+
+/**
+ * Fetch team details including members
+ */
+export function useTeamDetails(teamId: string | null) {
+  return useQuery({
+    queryKey: gamificationQueryKeys.teamDetails(teamId || ''),
+    queryFn: () => {
+      if (!teamId) throw new Error('No team specified');
+      return gamificationApi.getTeamDetails(teamId);
+    },
+    enabled: !!teamId,
+    staleTime: STALE_TIMES.medium,
+    retry: 3,
+  });
+}
+
+/**
+ * Fetch leaderboard data
+ */
+export function useLeaderboard(options?: {
+  scope?: 'class' | 'school' | 'global';
+  period?: 'daily' | 'weekly' | 'monthly' | 'allTime';
+  limit?: number;
+  schoolId?: string;
+  classId?: string;
+}) {
+  const scope = options?.scope || 'class';
+  const period = options?.period || 'weekly';
+
+  return useQuery({
+    queryKey: gamificationQueryKeys.leaderboard('', scope, period),
+    queryFn: () => {
+      return gamificationApi.getLeaderboard({
+        scope: scope,
+        period: period,
+        limit: options?.limit,
+        schoolId: options?.schoolId,
+        classId: options?.classId,
+      });
+    },
+    staleTime: STALE_TIMES.short,
+    retry: 3,
+  });
+}
+
+/**
+ * Fetch active competitions
+ */
+export function useActiveCompetitions(studentId: string | null) {
+  return useQuery({
+    queryKey: gamificationQueryKeys.competitions(studentId || ''),
+    queryFn: () => {
+      if (!studentId) throw new Error('No student selected');
+      return gamificationApi.getActiveCompetitions({ studentId });
+    },
+    enabled: !!studentId,
+    staleTime: STALE_TIMES.medium,
+    retry: 3,
+  });
+}
+
+/**
+ * Fetch privacy settings for gamification
+ */
+export function useGamificationPrivacySettings(studentId: string | null) {
+  return useQuery({
+    queryKey: gamificationQueryKeys.privacySettings(studentId || ''),
+    queryFn: () => {
+      if (!studentId) throw new Error('No student selected');
+      return gamificationApi.getPrivacySettings(studentId);
+    },
+    enabled: !!studentId,
+    staleTime: STALE_TIMES.long,
+    retry: 3,
+  });
+}
+
+/**
+ * Update privacy settings for gamification
+ */
+export function useUpdateGamificationPrivacy() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      studentId,
+      settings,
+    }: {
+      studentId: string;
+      settings: {
+        showOnLeaderboard?: boolean;
+        showProfileToOthers?: boolean;
+        allowTeamInvites?: boolean;
+        showAchievements?: boolean;
+      };
+    }) => gamificationApi.updatePrivacySettings(studentId, settings),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: gamificationQueryKeys.privacySettings(variables.studentId),
+      });
+    },
+  });
+}
+
+/**
+ * Join a team
+ */
+export function useJoinTeam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ studentId, teamId }: { studentId: string; teamId: string }) =>
+      gamificationApi.joinTeam(studentId, teamId),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: gamificationQueryKeys.studentTeam(variables.studentId),
+      });
+    },
+  });
+}
+
+/**
+ * Leave current team
+ */
+export function useLeaveTeam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ studentId, teamId }: { studentId: string; teamId: string }) =>
+      gamificationApi.leaveTeam(studentId, teamId),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: gamificationQueryKeys.studentTeam(variables.studentId),
+      });
+    },
+  });
+}
+
+/**
+ * Join a competition
+ */
+export function useJoinCompetition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      studentId,
+      competitionId,
+      participantId,
+    }: {
+      studentId: string;
+      competitionId: string;
+      participantId?: string;
+    }) =>
+      gamificationApi.joinCompetition(competitionId, studentId, {
+        participantId,
+      }),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: gamificationQueryKeys.competitions(variables.studentId),
+      });
+    },
+  });
+}

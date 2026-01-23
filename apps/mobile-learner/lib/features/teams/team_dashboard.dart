@@ -5,76 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
-
-// ============================================================================
-// DATA MODELS
-// ============================================================================
-
-class TeamData {
-  final String id;
-  final String name;
-  final String description;
-  final String type;
-  final String? avatarUrl;
-  final int totalXp;
-  final int weeklyXp;
-  final int monthlyXp;
-  final int level;
-  final int memberCount;
-  final int maxMembers;
-  final int? rank;
-
-  TeamData({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.type,
-    this.avatarUrl,
-    required this.totalXp,
-    required this.weeklyXp,
-    required this.monthlyXp,
-    required this.level,
-    required this.memberCount,
-    required this.maxMembers,
-    this.rank,
-  });
-}
-
-class TeamMember {
-  final String id;
-  final String studentId;
-  final String role;
-  final int contributedXp;
-  final int weeklyContribution;
-  final String displayName;
-  final int? level;
-
-  TeamMember({
-    required this.id,
-    required this.studentId,
-    required this.role,
-    required this.contributedXp,
-    required this.weeklyContribution,
-    required this.displayName,
-    this.level,
-  });
-}
-
-class CompetitionStanding {
-  final String competitionId;
-  final String competitionName;
-  final int rank;
-  final int score;
-  final String timeRemaining;
-
-  CompetitionStanding({
-    required this.competitionId,
-    required this.competitionName,
-    required this.rank,
-    required this.score,
-    required this.timeRemaining,
-  });
-}
+import '../gamification/gamification_models.dart';
+import '../gamification/gamification_service.dart';
 
 // ============================================================================
 // TEAM DASHBOARD WIDGET
@@ -99,7 +31,8 @@ class TeamDashboard extends StatefulWidget {
 class _TeamDashboardState extends State<TeamDashboard>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TeamData? _team;
+  GamificationService? _gamificationService;
+  TeamDetails? _team;
   List<TeamMember> _members = [];
   List<CompetitionStanding> _competitions = [];
   bool _isLoading = true;
@@ -108,7 +41,17 @@ class _TeamDashboardState extends State<TeamDashboard>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadTeamData();
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    // Initialize service with required parameters - in production, get these from context/provider
+    _gamificationService = GamificationService(
+      baseUrl: 'https://api.aivo.com',
+      getAuthToken: () => '', // TODO: Get from auth provider
+      studentId: '', // TODO: Get from user context
+    );
+    await _loadTeamData();
   }
 
   @override
@@ -118,76 +61,33 @@ class _TeamDashboardState extends State<TeamDashboard>
   }
 
   Future<void> _loadTeamData() async {
-    setState(() => _isLoading = true);
+    if (_gamificationService == null) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      // In production, fetch from API
-      // final response = await http.get('/api/gamification/teams/${widget.teamId}');
+      // Fetch real data from gamification service
+      final results = await Future.wait([
+        _gamificationService!.getTeamDetails(widget.teamId),
+        _gamificationService!.getTeamMembers(widget.teamId),
+        _gamificationService!.getMyCompetitionStandings(),
+      ]);
 
-      // Mock data for demonstration
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      setState(() {
-        _team = TeamData(
-          id: widget.teamId,
-          name: 'Math Masters',
-          description: 'Conquering math problems together!',
-          type: 'school',
-          avatarUrl: null,
-          totalXp: 15750,
-          weeklyXp: 2340,
-          monthlyXp: 8920,
-          level: 12,
-          memberCount: 8,
-          maxMembers: 20,
-          rank: 5,
-        );
-
-        _members = [
-          TeamMember(
-            id: '1',
-            studentId: 'student1',
-            role: 'owner',
-            contributedXp: 5200,
-            weeklyContribution: 820,
-            displayName: 'Alice Johnson',
-            level: 15,
-          ),
-          TeamMember(
-            id: '2',
-            studentId: 'student2',
-            role: 'captain',
-            contributedXp: 4100,
-            weeklyContribution: 650,
-            displayName: 'Bob Smith',
-            level: 13,
-          ),
-          TeamMember(
-            id: '3',
-            studentId: 'student3',
-            role: 'member',
-            contributedXp: 3200,
-            weeklyContribution: 520,
-            displayName: 'Carol Davis',
-            level: 11,
-          ),
-        ];
-
-        _competitions = [
-          CompetitionStanding(
-            competitionId: 'comp1',
-            competitionName: 'Weekly Math Challenge',
-            rank: 3,
-            score: 1850,
-            timeRemaining: '2d 5h',
-          ),
-        ];
-
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() {
+          _team = results[0] as TeamDetails?;
+          _members = results[1] as List<TeamMember>;
+          _competitions = results[2] as List<CompetitionStanding>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load team data: $e')),
         );
@@ -197,11 +97,11 @@ class _TeamDashboardState extends State<TeamDashboard>
 
   Color _getTypeColor() {
     switch (_team?.type) {
-      case 'classroom':
+      case TeamType.classroom:
         return AivoBrand.success;
-      case 'school':
+      case TeamType.school:
         return Colors.blue;
-      case 'cross_school':
+      case TeamType.crossSchool:
         return Colors.purple;
       default:
         return AivoBrand.gray;

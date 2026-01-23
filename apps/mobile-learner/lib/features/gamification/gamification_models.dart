@@ -484,3 +484,517 @@ class GamificationConstants {
     return levels[level - 1];
   }
 }
+
+// ============================================================================
+// TEAM MODELS (Sprint 3.1)
+// ============================================================================
+
+/// Team types
+enum TeamType { classroom, school, crossSchool }
+
+/// Team member roles
+enum TeamMemberRole { owner, captain, member }
+
+/// Team model
+class Team {
+  final String id;
+  final String name;
+  final String description;
+  final String? avatarUrl;
+  final TeamType type;
+  final String? schoolId;
+  final String? classId;
+  final int totalXp;
+  final int weeklyXp;
+  final int monthlyXp;
+  final int level;
+  final int? rank;
+  final int memberCount;
+  final int maxMembers;
+  final bool isPublic;
+  final DateTime createdAt;
+
+  const Team({
+    required this.id,
+    required this.name,
+    required this.description,
+    this.avatarUrl,
+    required this.type,
+    this.schoolId,
+    this.classId,
+    required this.totalXp,
+    required this.weeklyXp,
+    required this.monthlyXp,
+    required this.level,
+    this.rank,
+    required this.memberCount,
+    required this.maxMembers,
+    required this.isPublic,
+    required this.createdAt,
+  });
+
+  Color get typeColor {
+    switch (type) {
+      case TeamType.classroom:
+        return AivoBrand.success;
+      case TeamType.school:
+        return Colors.blue;
+      case TeamType.crossSchool:
+        return Colors.purple;
+    }
+  }
+
+  factory Team.fromJson(Map<String, dynamic> json) {
+    return Team(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String? ?? '',
+      avatarUrl: json['avatarUrl'] as String?,
+      type: _parseTeamType(json['type'] as String?),
+      schoolId: json['schoolId'] as String?,
+      classId: json['classId'] as String?,
+      totalXp: json['totalXp'] as int? ?? 0,
+      weeklyXp: json['weeklyXp'] as int? ?? 0,
+      monthlyXp: json['monthlyXp'] as int? ?? 0,
+      level: json['level'] as int? ?? 1,
+      rank: json['rank'] as int?,
+      memberCount: json['memberCount'] as int? ?? 0,
+      maxMembers: json['maxMembers'] as int? ?? 20,
+      isPublic: json['isPublic'] as bool? ?? true,
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt'] as String) 
+          : DateTime.now(),
+    );
+  }
+
+  static TeamType _parseTeamType(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'classroom':
+        return TeamType.classroom;
+      case 'school':
+        return TeamType.school;
+      case 'cross_school':
+      case 'crossschool':
+        return TeamType.crossSchool;
+      default:
+        return TeamType.classroom;
+    }
+  }
+}
+
+/// Team member model
+class TeamMember {
+  final String id;
+  final String studentId;
+  final String displayName;
+  final String? avatarUrl;
+  final TeamMemberRole role;
+  final int contributedXp;
+  final int weeklyContribution;
+  final int? level;
+  final DateTime joinedAt;
+
+  const TeamMember({
+    required this.id,
+    required this.studentId,
+    required this.displayName,
+    this.avatarUrl,
+    required this.role,
+    required this.contributedXp,
+    required this.weeklyContribution,
+    this.level,
+    required this.joinedAt,
+  });
+
+  bool get isLeader => role == TeamMemberRole.owner;
+  bool get isCaptain => role == TeamMemberRole.captain;
+
+  String get roleEmoji {
+    switch (role) {
+      case TeamMemberRole.owner:
+        return '👑';
+      case TeamMemberRole.captain:
+        return '⭐';
+      case TeamMemberRole.member:
+        return '';
+    }
+  }
+
+  factory TeamMember.fromJson(Map<String, dynamic> json) {
+    return TeamMember(
+      id: json['id'] as String,
+      studentId: json['studentId'] as String,
+      displayName: json['displayName'] as String,
+      avatarUrl: json['avatarUrl'] as String?,
+      role: _parseRole(json['role'] as String?),
+      contributedXp: json['contributedXp'] as int? ?? 0,
+      weeklyContribution: json['weeklyContribution'] as int? ?? 0,
+      level: json['level'] as int?,
+      joinedAt: json['joinedAt'] != null 
+          ? DateTime.parse(json['joinedAt'] as String) 
+          : DateTime.now(),
+    );
+  }
+
+  static TeamMemberRole _parseRole(String? role) {
+    switch (role?.toLowerCase()) {
+      case 'owner':
+        return TeamMemberRole.owner;
+      case 'captain':
+        return TeamMemberRole.captain;
+      default:
+        return TeamMemberRole.member;
+    }
+  }
+}
+
+/// Team details with members and competitions
+class TeamDetails extends Team {
+  final List<TeamMember> members;
+  final List<CompetitionStanding> competitions;
+
+  const TeamDetails({
+    required super.id,
+    required super.name,
+    required super.description,
+    super.avatarUrl,
+    required super.type,
+    super.schoolId,
+    super.classId,
+    required super.totalXp,
+    required super.weeklyXp,
+    required super.monthlyXp,
+    required super.level,
+    super.rank,
+    required super.memberCount,
+    required super.maxMembers,
+    required super.isPublic,
+    required super.createdAt,
+    required this.members,
+    required this.competitions,
+  });
+
+  factory TeamDetails.fromJson(Map<String, dynamic> json) {
+    return TeamDetails(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String? ?? '',
+      avatarUrl: json['avatarUrl'] as String?,
+      type: Team._parseTeamType(json['type'] as String?),
+      schoolId: json['schoolId'] as String?,
+      classId: json['classId'] as String?,
+      totalXp: json['totalXp'] as int? ?? 0,
+      weeklyXp: json['weeklyXp'] as int? ?? 0,
+      monthlyXp: json['monthlyXp'] as int? ?? 0,
+      level: json['level'] as int? ?? 1,
+      rank: json['rank'] as int?,
+      memberCount: json['memberCount'] as int? ?? 0,
+      maxMembers: json['maxMembers'] as int? ?? 20,
+      isPublic: json['isPublic'] as bool? ?? true,
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt'] as String) 
+          : DateTime.now(),
+      members: (json['members'] as List<dynamic>?)
+          ?.map((m) => TeamMember.fromJson(m as Map<String, dynamic>))
+          .toList() ?? [],
+      competitions: (json['competitions'] as List<dynamic>?)
+          ?.map((c) => CompetitionStanding.fromJson(c as Map<String, dynamic>))
+          .toList() ?? [],
+    );
+  }
+}
+
+/// Team invite model
+class TeamInvite {
+  final String id;
+  final String teamId;
+  final String teamName;
+  final String invitedBy;
+  final String inviterName;
+  final String status;
+  final DateTime expiresAt;
+  final DateTime createdAt;
+
+  const TeamInvite({
+    required this.id,
+    required this.teamId,
+    required this.teamName,
+    required this.invitedBy,
+    required this.inviterName,
+    required this.status,
+    required this.expiresAt,
+    required this.createdAt,
+  });
+
+  bool get isPending => status == 'pending';
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+
+  factory TeamInvite.fromJson(Map<String, dynamic> json) {
+    return TeamInvite(
+      id: json['id'] as String,
+      teamId: json['teamId'] as String,
+      teamName: json['teamName'] as String,
+      invitedBy: json['invitedBy'] as String,
+      inviterName: json['inviterName'] as String? ?? 'Unknown',
+      status: json['status'] as String? ?? 'pending',
+      expiresAt: DateTime.parse(json['expiresAt'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+}
+
+// ============================================================================
+// COMPETITION MODELS (Sprint 3.1)
+// ============================================================================
+
+/// Competition types
+enum CompetitionType { individual, team, classRoom, school }
+
+/// Competition status
+enum CompetitionStatus { upcoming, active, ended, cancelled }
+
+/// Competition model
+class Competition {
+  final String id;
+  final String name;
+  final String description;
+  final CompetitionType type;
+  final String category;
+  final CompetitionStatus status;
+  final DateTime startDate;
+  final DateTime endDate;
+  final int currentParticipants;
+  final int? minParticipants;
+  final int? maxParticipants;
+  final bool isPublic;
+  final List<CompetitionPrize> prizes;
+
+  const Competition({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.type,
+    required this.category,
+    required this.status,
+    required this.startDate,
+    required this.endDate,
+    required this.currentParticipants,
+    this.minParticipants,
+    this.maxParticipants,
+    required this.isPublic,
+    required this.prizes,
+  });
+
+  bool get isActive => status == CompetitionStatus.active;
+  bool get isUpcoming => status == CompetitionStatus.upcoming;
+  bool get hasEnded => status == CompetitionStatus.ended;
+
+  Duration get timeRemaining => endDate.difference(DateTime.now());
+  Duration get timeUntilStart => startDate.difference(DateTime.now());
+
+  String get timeRemainingText {
+    if (hasEnded) return 'Ended';
+    if (isUpcoming) {
+      final days = timeUntilStart.inDays;
+      if (days > 0) return 'Starts in $days days';
+      final hours = timeUntilStart.inHours;
+      if (hours > 0) return 'Starts in $hours hours';
+      return 'Starting soon';
+    }
+    final days = timeRemaining.inDays;
+    if (days > 0) return '$days days left';
+    final hours = timeRemaining.inHours;
+    if (hours > 0) return '$hours hours left';
+    final minutes = timeRemaining.inMinutes;
+    return '$minutes minutes left';
+  }
+
+  Color get statusColor {
+    switch (status) {
+      case CompetitionStatus.active:
+        return AivoBrand.success;
+      case CompetitionStatus.upcoming:
+        return Colors.blue;
+      case CompetitionStatus.ended:
+        return AivoBrand.gray;
+      case CompetitionStatus.cancelled:
+        return AivoBrand.error;
+    }
+  }
+
+  factory Competition.fromJson(Map<String, dynamic> json) {
+    return Competition(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String? ?? '',
+      type: _parseCompetitionType(json['type'] as String?),
+      category: json['category'] as String? ?? 'xp_earned',
+      status: _parseCompetitionStatus(json['status'] as String?),
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+      currentParticipants: json['currentParticipants'] as int? ?? 0,
+      minParticipants: json['minParticipants'] as int?,
+      maxParticipants: json['maxParticipants'] as int?,
+      isPublic: json['isPublic'] as bool? ?? true,
+      prizes: (json['prizes'] as List<dynamic>?)
+          ?.map((p) => CompetitionPrize.fromJson(p as Map<String, dynamic>))
+          .toList() ?? [],
+    );
+  }
+
+  static CompetitionType _parseCompetitionType(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'individual':
+        return CompetitionType.individual;
+      case 'team':
+        return CompetitionType.team;
+      case 'class':
+      case 'classroom':
+        return CompetitionType.classRoom;
+      case 'school':
+        return CompetitionType.school;
+      default:
+        return CompetitionType.individual;
+    }
+  }
+
+  static CompetitionStatus _parseCompetitionStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'upcoming':
+        return CompetitionStatus.upcoming;
+      case 'active':
+        return CompetitionStatus.active;
+      case 'ended':
+        return CompetitionStatus.ended;
+      case 'cancelled':
+        return CompetitionStatus.cancelled;
+      default:
+        return CompetitionStatus.active;
+    }
+  }
+}
+
+/// Competition prize model
+class CompetitionPrize {
+  final int rank;
+  final int? xp;
+  final int? coins;
+  final int? gems;
+  final String? badge;
+  final String? title;
+
+  const CompetitionPrize({
+    required this.rank,
+    this.xp,
+    this.coins,
+    this.gems,
+    this.badge,
+    this.title,
+  });
+
+  String get displayText {
+    final parts = <String>[];
+    if (xp != null && xp! > 0) parts.add('$xp XP');
+    if (coins != null && coins! > 0) parts.add('$coins coins');
+    if (gems != null && gems! > 0) parts.add('$gems gems');
+    if (badge != null) parts.add('🏆 Badge');
+    if (title != null) parts.add('🎖️ Title');
+    return parts.isEmpty ? 'Prize' : parts.join(' + ');
+  }
+
+  factory CompetitionPrize.fromJson(Map<String, dynamic> json) {
+    return CompetitionPrize(
+      rank: json['rank'] as int,
+      xp: json['xp'] as int?,
+      coins: json['coins'] as int?,
+      gems: json['gems'] as int?,
+      badge: json['badge'] as String?,
+      title: json['title'] as String?,
+    );
+  }
+}
+
+/// Competition standing model
+class CompetitionStanding {
+  final String competitionId;
+  final String competitionName;
+  final int rank;
+  final int score;
+  final int totalParticipants;
+  final String timeRemaining;
+  final DateTime endsAt;
+
+  const CompetitionStanding({
+    required this.competitionId,
+    required this.competitionName,
+    required this.rank,
+    required this.score,
+    required this.totalParticipants,
+    required this.timeRemaining,
+    required this.endsAt,
+  });
+
+  bool get isTopThree => rank <= 3;
+
+  String get rankEmoji {
+    switch (rank) {
+      case 1:
+        return '🥇';
+      case 2:
+        return '🥈';
+      case 3:
+        return '🥉';
+      default:
+        return '#$rank';
+    }
+  }
+
+  factory CompetitionStanding.fromJson(Map<String, dynamic> json) {
+    return CompetitionStanding(
+      competitionId: json['competitionId'] as String,
+      competitionName: json['competitionName'] as String,
+      rank: json['rank'] as int,
+      score: json['score'] as int,
+      totalParticipants: json['totalParticipants'] as int? ?? 0,
+      timeRemaining: json['timeRemaining'] as String? ?? '',
+      endsAt: json['endsAt'] != null 
+          ? DateTime.parse(json['endsAt'] as String)
+          : DateTime.now().add(const Duration(days: 7)),
+    );
+  }
+}
+
+/// Competition participant model
+class CompetitionParticipant {
+  final int rank;
+  final String participantId;
+  final String participantName;
+  final String? avatarUrl;
+  final int score;
+  final int? previousRank;
+  final bool isCurrentUser;
+
+  const CompetitionParticipant({
+    required this.rank,
+    required this.participantId,
+    required this.participantName,
+    this.avatarUrl,
+    required this.score,
+    this.previousRank,
+    this.isCurrentUser = false,
+  });
+
+  int? get rankChange => previousRank != null ? previousRank! - rank : null;
+
+  factory CompetitionParticipant.fromJson(Map<String, dynamic> json, {String? currentUserId}) {
+    return CompetitionParticipant(
+      rank: json['rank'] as int,
+      participantId: json['participantId'] as String,
+      participantName: json['participantName'] as String,
+      avatarUrl: json['avatarUrl'] as String?,
+      score: json['score'] as int,
+      previousRank: json['previousRank'] as int?,
+      isCurrentUser: json['participantId'] == currentUserId,
+    );
+  }
+}

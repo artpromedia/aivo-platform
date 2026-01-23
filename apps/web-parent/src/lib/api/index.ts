@@ -105,3 +105,7 @@ export type {
   ReadReceipt,
   UnreadCounts,
 } from './messaging.api';
+
+// Gamification API (Sprint 3.1)
+export { gamificationApi } from './gamification.api';
+export * from './gamification.api';

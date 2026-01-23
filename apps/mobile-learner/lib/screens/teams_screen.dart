@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/theme/theme.dart';
 
+import '../features/gamification/gamification_models.dart';
+import '../features/gamification/gamification_service.dart';
+
 /// Teams Screen
 ///
 /// Displays team competitions, leaderboards, and team progress.
+/// Sprint 3.1: Now uses real gamification-svc API instead of hardcoded data.
 class TeamsScreen extends ConsumerStatefulWidget {
   final String learnerId;
 
@@ -20,11 +24,62 @@ class TeamsScreen extends ConsumerStatefulWidget {
 class _TeamsScreenState extends ConsumerState<TeamsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late GamificationService _gamificationService;
+
+  // Real data from API
+  TeamDetails? _myTeam;
+  List<Team> _leaderboard = [];
+  List<Competition> _competitions = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _initializeService();
+  }
+
+  void _initializeService() {
+    // TODO: Get baseUrl and authToken from app config/auth provider
+    _gamificationService = GamificationService(
+      baseUrl: 'http://localhost:3000', // Replace with actual base URL
+      getAuthToken: () => '', // Replace with actual auth token getter
+      studentId: widget.learnerId,
+    );
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Load all data in parallel
+      final results = await Future.wait([
+        _gamificationService.getStudentTeam(),
+        _gamificationService.getTeamLeaderboard(),
+        _gamificationService.getCompetitions(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _myTeam = results[0] as TeamDetails?;
+          _leaderboard = results[1] as List<Team>;
+          _competitions = results[2] as List<Competition>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -33,53 +88,39 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
     super.dispose();
   }
 
-  // Mock data - would come from provider/API in real app
-  final Map<String, dynamic> _myTeam = {
-    'id': 'team-dragons',
-    'name': 'Math Dragons',
-    'color': AivoBrand.error,
-    'icon': '🐉',
-    'rank': 2,
-    'score': 4520,
-    'streak': 5,
-    'members': [
-      {'id': '1', 'name': 'You', 'score': 1250, 'isLeader': true},
-      {'id': '2', 'name': 'Alex', 'score': 980},
-      {'id': '3', 'name': 'Jordan', 'score': 875},
-      {'id': '4', 'name': 'Sam', 'score': 820},
-      {'id': '5', 'name': 'Casey', 'score': 595},
-    ],
-  };
-
-  final List<Map<String, dynamic>> _leaderboard = [
-    {'name': 'Star Squad', 'icon': '⭐', 'color': AivoBrand.warning, 'score': 5200, 'rank': 1},
-    {'name': 'Math Dragons', 'icon': '🐉', 'color': AivoBrand.error, 'score': 4520, 'rank': 2},
-    {'name': 'Science Wizards', 'icon': '🧙', 'color': Colors.purple, 'score': 4180, 'rank': 3},
-    {'name': 'Reading Rockets', 'icon': '🚀', 'color': Colors.blue, 'score': 3950, 'rank': 4},
-    {'name': 'History Heroes', 'icon': '🏛️', 'color': Colors.brown, 'score': 3600, 'rank': 5},
-  ];
-
-  final List<Map<String, dynamic>> _competitions = [
-    {
-      'id': 'comp-1',
-      'title': 'Math Marathon Week',
-      'description': 'Complete math activities to earn points for your team',
-      'status': 'active',
-      'endDate': DateTime.now().add(const Duration(days: 3)),
-      'prize': '🏆 Special Badge',
-    },
-    {
-      'id': 'comp-2',
-      'title': 'Reading Challenge',
-      'description': 'Read stories and answer questions',
-      'status': 'upcoming',
-      'startDate': DateTime.now().add(const Duration(days: 5)),
-      'prize': '📚 Book Worm Badge',
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Teams')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Teams')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Failed to load data', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(_errorMessage!, style: TextStyle(color: AivoBrand.gray)),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Teams'),
@@ -92,18 +133,56 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMyTeamTab(),
-          _buildLeaderboardTab(),
-          _buildCompetitionsTab(),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildMyTeamTab(),
+            _buildLeaderboardTab(),
+            _buildCompetitionsTab(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMyTeamTab() {
+    if (_myTeam == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.group_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'No Team Yet',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Join or create a team to get started!',
+              style: TextStyle(color: AivoBrand.gray),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Navigate to team search/create
+              },
+              icon: const Icon(Icons.search),
+              label: const Text('Find a Team'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Get team color based on theme or default
+    final teamRank = _myTeam!.rank ?? 999;
+    final teamColor = teamRank <= 3 
+        ? [AivoBrand.warning, Colors.grey, Colors.brown][teamRank - 1]
+        : Theme.of(context).primaryColor;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -113,8 +192,8 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  (_myTeam['color'] as Color).withOpacity(0.8),
-                  (_myTeam['color'] as Color).withOpacity(0.6),
+                  teamColor.withOpacity(0.8),
+                  teamColor.withOpacity(0.6),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
@@ -123,12 +202,12 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
             child: Column(
               children: [
                 Text(
-                  _myTeam['icon'],
+                  '👥', // Default team icon
                   style: const TextStyle(fontSize: 50),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _myTeam['name'],
+                  _myTeam!.name,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -139,11 +218,11 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildStatBadge('🏆 #${_myTeam['rank']}', 'Rank'),
+                    _buildStatBadge('🏆 #${_myTeam!.rank ?? "-"}', 'Rank'),
                     const SizedBox(width: 16),
-                    _buildStatBadge('${_myTeam['score']}', 'Points'),
+                    _buildStatBadge('${_myTeam!.totalXp}', 'Points'),
                     const SizedBox(width: 16),
-                    _buildStatBadge('🔥 ${_myTeam['streak']}', 'Streak'),
+                    _buildStatBadge('🔥 ${_myTeam!.weeklyXp}', 'Weekly'),
                   ],
                 ),
               ],
@@ -159,7 +238,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
               ),
         ),
         const SizedBox(height: 12),
-        ...(_myTeam['members'] as List).asMap().entries.map((entry) {
+        ...(_myTeam!.members).asMap().entries.map((entry) {
           final index = entry.key;
           final member = entry.value;
           return _buildMemberCard(member, index + 1);
@@ -198,7 +277,8 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
     );
   }
 
-  Widget _buildMemberCard(Map<String, dynamic> member, int position) {
+  Widget _buildMemberCard(TeamMember member, int position) {
+    final isLeader = member.role == TeamMemberRole.owner;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -212,16 +292,16 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
           ),
         ),
         title: Text(
-          member['name'],
+          member.displayName,
           style: TextStyle(
-            fontWeight: member['isLeader'] == true ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isLeader ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        subtitle: member['isLeader'] == true
+        subtitle: isLeader
             ? const Text('Team Leader', style: TextStyle(color: Colors.amber))
             : null,
         trailing: Text(
-          '${member['score']} pts',
+          '${member.contributedXp} pts',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -231,12 +311,34 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
   }
 
   Widget _buildLeaderboardTab() {
+    if (_leaderboard.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.leaderboard_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'No Leaderboard Data',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Team rankings will appear here',
+              style: TextStyle(color: AivoBrand.gray),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _leaderboard.length,
       itemBuilder: (context, index) {
         final team = _leaderboard[index];
-        final isMyTeam = team['name'] == _myTeam['name'];
+        final isMyTeam = _myTeam != null && team.id == _myTeam!.id;
+        final rank = index + 1;
 
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -246,14 +348,14 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: _getRankColor(team['rank']),
+                color: _getRankColor(rank),
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: team['rank'] <= 3
-                    ? Text(_getRankEmoji(team['rank']), style: const TextStyle(fontSize: 20))
+                child: rank <= 3
+                    ? Text(_getRankEmoji(rank), style: const TextStyle(fontSize: 20))
                     : Text(
-                        '#${team['rank']}',
+                        '#$rank',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -263,10 +365,10 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
             ),
             title: Row(
               children: [
-                Text(team['icon']),
+                const Text('👥'), // Default team icon
                 const SizedBox(width: 8),
                 Text(
-                  team['name'],
+                  team.name,
                   style: TextStyle(
                     fontWeight: isMyTeam ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -292,7 +394,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
               ],
             ),
             trailing: Text(
-              '${team['score']}',
+              '${team.totalXp}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -305,12 +407,38 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
   }
 
   Widget _buildCompetitionsTab() {
+    if (_competitions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.emoji_events_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'No Competitions',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Check back later for new competitions!',
+              style: TextStyle(color: AivoBrand.gray),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _competitions.length,
       itemBuilder: (context, index) {
         final comp = _competitions[index];
-        final isActive = comp['status'] == 'active';
+        final isActive = comp.status == CompetitionStatus.active;
+
+        // Get primary prize description
+        final prizeText = comp.prizes.isNotEmpty 
+            ? comp.prizes.first.displayText 
+            : 'Rewards available';
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -334,7 +462,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isActive ? 'Active Now' : 'Scheduled',
+                      isActive ? 'Active Now' : _getCompetitionStatusText(comp.status),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -349,14 +477,14 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      comp['title'],
+                      comp.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      comp['description'],
+                      comp.description,
                       style: TextStyle(color: AivoBrand.gray[600]),
                     ),
                     const SizedBox(height: 12),
@@ -365,7 +493,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                         Icon(Icons.emoji_events, size: 16, color: Colors.amber[700]),
                         const SizedBox(width: 4),
                         Text(
-                          'Prize: ${comp['prize']}',
+                          'Prize: $prizeText',
                           style: TextStyle(
                             color: Colors.amber[700],
                             fontWeight: FontWeight.w600,
@@ -378,7 +506,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => _viewCompetition(comp['id']),
+                          onPressed: () => _viewCompetition(comp.id),
                           child: const Text('View Competition'),
                         ),
                       ),
@@ -390,6 +518,19 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
         );
       },
     );
+  }
+
+  String _getCompetitionStatusText(CompetitionStatus status) {
+    switch (status) {
+      case CompetitionStatus.upcoming:
+        return 'Coming Soon';
+      case CompetitionStatus.active:
+        return 'Active Now';
+      case CompetitionStatus.ended:
+        return 'Completed';
+      case CompetitionStatus.cancelled:
+        return 'Cancelled';
+    }
   }
 
   Color _getRankColor(int rank) {
