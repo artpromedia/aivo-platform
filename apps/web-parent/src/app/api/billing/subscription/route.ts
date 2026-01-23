@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('[billing/subscription GET] Error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }
@@ -50,7 +51,8 @@ export async function PUT(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('[billing/subscription PUT] Error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }
@@ -77,7 +79,8 @@ export async function DELETE(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('[billing/subscription DELETE] Error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

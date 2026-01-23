@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: 'District administration portal',
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const auth = await getAuthSession();
   const initialAuth = {
     isAuthenticated: !!auth,

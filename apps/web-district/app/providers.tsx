@@ -34,10 +34,10 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({
   children,
   initialAuth,
-}: {
+}: Readonly<{
   children: ReactNode;
   initialAuth: AuthState;
-}) {
+}>) {
   const router = useRouter();
   const [state] = useState<AuthState>(initialAuth);
 
@@ -59,7 +59,7 @@ export function useAuth() {
 /**
  * Network Status Wrapper - Shows offline banner when connectivity is lost
  */
-function NetworkStatusWrapper({ children }: { children: ReactNode }) {
+function NetworkStatusWrapper({ children }: Readonly<{ children: ReactNode }>) {
   const { isOnline } = useNetworkStatus();
 
   return (
@@ -73,7 +73,7 @@ function NetworkStatusWrapper({ children }: { children: ReactNode }) {
 /**
  * Root Providers with Error Boundary and Network Status
  */
-export function RootProviders({ children }: { children: ReactNode }) {
+export function RootProviders({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <ErrorBoundary fallback={<PageErrorFallback />}>
       <NetworkStatusWrapper>{children}</NetworkStatusWrapper>

@@ -540,6 +540,8 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
+  // Stack trace stored for error reporting
+  // ignore: unused_field
   StackTrace? _stackTrace;
 
   void _handleError(Object error, StackTrace? stack) {

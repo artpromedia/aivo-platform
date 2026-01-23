@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('[billing/route] Error fetching billing data:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

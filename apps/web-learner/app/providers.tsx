@@ -1,10 +1,12 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return -- Workspace package types resolved at build time */
+
 import {
   ErrorBoundary,
   OfflineBanner,
   useNetworkStatus,
-} from '@aivo/ui/components';
+} from '@aivo/ui/components'; // cspell:disable-line
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
