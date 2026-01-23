@@ -9,8 +9,8 @@
  * Sprint 4.2: Comprehensive Error Boundaries
  */
 
-import { useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCallback, useRef } from 'react';
 
 import { reportError, addBreadcrumb } from '../components/ErrorBoundary';
 
@@ -67,9 +67,15 @@ export interface UseApiErrorReturn {
 // =============================================================================
 
 const defaultToast = {
-  error: (message: string) => console.error('[Toast Error]', message),
-  warning: (message: string) => console.warn('[Toast Warning]', message),
-  info: (message: string) => console.info('[Toast Info]', message),
+  error: (message: string) => {
+    console.error('[Toast Error]', message);
+  },
+  warning: (message: string) => {
+    console.warn('[Toast Warning]', message);
+  },
+  info: (message: string) => {
+    console.info('[Toast Info]', message);
+  },
 };
 
 // =============================================================================
@@ -212,12 +218,17 @@ export function useApiError(
             }
             return;
 
-          case 429:
+          case 429: {
             const rateLimitMessage = getErrorMessage(error);
             if (shouldShowToast(rateLimitMessage)) {
-              toast.warning?.(rateLimitMessage) ?? toast.error(rateLimitMessage);
+              if (toast.warning) {
+                toast.warning(rateLimitMessage);
+              } else {
+                toast.error(rateLimitMessage);
+              }
             }
             return;
+          }
         }
       }
 
@@ -292,11 +303,8 @@ export function createQueryErrorHandler(options: QueryErrorHandlerOptions = {}) 
     if (isApiError(error)) {
       switch (error.status) {
         case 401:
-          message = 'Your session has expired.';
           // Redirect to login
-          if (typeof window !== 'undefined') {
-            window.location.href = options.loginPath || '/login';
-          }
+          globalThis.window.location.href = options.loginPath || '/login';
           return;
         case 403:
           message = 'You do not have permission for this action.';

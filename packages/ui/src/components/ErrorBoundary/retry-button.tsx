@@ -9,7 +9,7 @@
  * Sprint 4.2: Comprehensive Error Boundaries
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // =============================================================================
 // Types
@@ -56,9 +56,19 @@ export function RetryButton({
   disabled = false,
   className = '',
   showIcon = true,
-}: RetryButtonProps): JSX.Element {
+}: Readonly<RetryButtonProps>): React.JSX.Element {
   const [countdown, setCountdown] = useState(autoRetrySeconds ?? 0);
   const [isAutoRetrying, setIsAutoRetrying] = useState(autoRetryEnabled);
+
+  const handleRetry = useCallback(async () => {
+    setIsAutoRetrying(false);
+    await onRetry();
+  }, [onRetry]);
+
+  const cancelAutoRetry = useCallback(() => {
+    setIsAutoRetrying(false);
+    setCountdown(0);
+  }, []);
 
   // Handle countdown
   useEffect(() => {
@@ -74,7 +84,9 @@ export function RetryButton({
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   }, [isAutoRetrying, countdown]);
 
   // Auto-retry when countdown reaches 0
@@ -82,17 +94,14 @@ export function RetryButton({
     if (isAutoRetrying && countdown === 0 && !isLoading) {
       void handleRetry();
     }
-  }, [countdown, isAutoRetrying, isLoading]);
+  }, [countdown, isAutoRetrying, isLoading, handleRetry]);
 
-  const handleRetry = useCallback(async () => {
-    setIsAutoRetrying(false);
-    await onRetry();
-  }, [onRetry]);
-
-  const cancelAutoRetry = useCallback(() => {
-    setIsAutoRetrying(false);
-    setCountdown(0);
-  }, []);
+  // Helper function to get button label (extracted to avoid nested ternary)
+  const getButtonLabel = (): string => {
+    if (isLoading) return loadingLabel;
+    if (isAutoRetrying && countdown > 0) return `Retrying in ${countdown}s`;
+    return label;
+  };
 
   // Size classes
   const sizeClasses = {
@@ -119,7 +128,9 @@ export function RetryButton({
   return (
     <div className="flex items-center gap-2">
       <button
-        onClick={() => void handleRetry()}
+        onClick={() => {
+          void handleRetry();
+        }}
         disabled={disabled || isLoading}
         className={`
           inline-flex items-center justify-center rounded-lg font-medium
@@ -168,11 +179,7 @@ export function RetryButton({
           )
         )}
         <span>
-          {isLoading
-            ? loadingLabel
-            : isAutoRetrying && countdown > 0
-            ? `Retrying in ${countdown}s`
-            : label}
+          {getButtonLabel()}
         </span>
       </button>
 
@@ -201,7 +208,7 @@ export interface UseRetryOptions {
   maxDelay?: number;
   /** Backoff multiplier */
   backoffMultiplier?: number;
-  /** Condition to check if error is retryable */
+  /** Condition to check if error is retryable (cspell:disable-line) */
   shouldRetry?: (error: unknown, attempt: number) => boolean;
   /** Callback on each retry */
   onRetry?: (attempt: number, error: unknown) => void;

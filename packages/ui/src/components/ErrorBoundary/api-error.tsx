@@ -9,7 +9,7 @@
  * Sprint 4.2: Comprehensive Error Boundaries
  */
 
-import { type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 // =============================================================================
 // Types
@@ -17,7 +17,7 @@ import { type ReactNode } from 'react';
 
 export interface ApiErrorProps {
   /** The error that occurred */
-  error: Error | ApiError | unknown;
+  error: unknown;
   /** Callback to retry the failed operation */
   onRetry?: () => void;
   /** Whether a retry is in progress */
@@ -180,7 +180,7 @@ export function ApiErrorDisplay({
   actions,
   compact = false,
   className = '',
-}: ApiErrorProps): JSX.Element {
+}: Readonly<ApiErrorProps>): React.JSX.Element {
   const errorInfo = getErrorMessage(error);
   const displayTitle = title || errorInfo.title;
   const displayMessage = message || errorInfo.message;
@@ -286,7 +286,7 @@ export interface InlineErrorProps {
   onDismiss?: () => void;
 }
 
-export function InlineError({ message, onDismiss }: InlineErrorProps): JSX.Element {
+export function InlineError({ message, onDismiss }: Readonly<InlineErrorProps>): React.JSX.Element {
   return (
     <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
       <svg className="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
